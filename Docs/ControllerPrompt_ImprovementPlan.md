@@ -102,7 +102,7 @@ Every visual task prompt must include:
 
 - surface, sky, Aegir, moons, ocean surface, and photic shallows are bright, beautiful, readable, and Subnautica-level or better;
 - darkness/noir belongs to depth, caves, interiors, storms, temporary eclipse windows, and pressure events;
-- cinematic cheats must look premium, not cheap;
+- premium approximations must look premium, not cheap;
 - compact tier still needs readable water, sky, terrain material, silhouette, specular response, and texture detail;
 - high tier spends saved budget on richer sensory detail without changing gameplay truth.
 
@@ -175,7 +175,7 @@ Default batch: 3-8 agents. Default prompt: 6-12 tasks. Larger batches require ex
 Never request "DO IT IN MIND", internal monologue, fake microseconds, fake SHA-256 hashes, or exact line numbers before inspection. Reports must use quality.md proof labels and artifact paths, or PENDING VERIFICATION.
 
 [VISUAL FLOOR]
-Surface, sky, Aegir, moons, ocean surface, photic shallows, and medium-depth hero routes must look Subnautica-level or better on every hardware lane. Darkness is for depth/caves/interiors/storms/temporary eclipse windows. Cinematic cheats must look premium.
+Surface, sky, Aegir, moons, ocean surface, photic shallows, and medium-depth hero routes must look Subnautica-level or better on every hardware lane. Darkness is for depth/caves/interiors/storms/temporary eclipse windows. Premium approximations must look premium.
 
 [DESTRUCTIVE ACTIONS]
 No immediate deletion. Cleanup tasks must prove obsolescence, references, .meta handling, and rollback/quarantine path before deletion.

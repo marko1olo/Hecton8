@@ -15,7 +15,7 @@ Evidence: STATIC_DOC / STATIC_SOURCE / PY_READABILITY_PENDING_RERUN / UNITY_PROF
 - `UI_Data_Streaming_ZeroGC_Optimization.txt`: TMP text updates must stay zero-GC; runtime text remains `SetCharArray`.
 - `UI_Diegetic_Physical_Interfaces.txt`: interactive HUD is world-space, FOV-projected, not ScreenSpaceOverlay.
 - `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`: MX350 path rejects bloom and heavy UI post.
-- `OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`: chroma, blur, scanline, and wetness are visual fakes unless gameplay truth requires more.
+- `OPT_Premium_Approximation_Protocol.txt`: chroma, blur, scanline, and wetness are presentation approximations unless gameplay truth requires more.
 - `QA_Evidence_Text_Filter_Audit.txt`: source and Python results are not Unity profiler proof.
 
 ## TMP-SDF Weight Matrix

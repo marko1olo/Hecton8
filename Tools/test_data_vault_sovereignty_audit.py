@@ -160,6 +160,107 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["forbiddenDirectConstructors"], 0)
             self.assertEqual(payload["editorOfflineTransientScratchDirectConstructors"], 1)
 
+    def test_file_scoped_unity_editor_guard_sets_editor_surface_outside_editor_folder(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="h8_vault_editor_guard_surface_") as temp_dir:
+            root = Path(temp_dir)
+            source = root / "Assets" / "_Project" / "Scripts"
+            window = source / "VFX" / "Debris" / "ShinobuVoxelSculptorWindow.cs"
+            window.parent.mkdir(parents=True)
+            window.write_text(
+                "#if UNITY_EDITOR\n"
+                "using Unity.Collections;\n"
+                "using UnityEditor;\n"
+                "public sealed class ShinobuVoxelSculptorWindow : EditorWindow\n"
+                "{\n"
+                "    public void Bake() { _ = new NativeArray<int>(4, Allocator.TempJob); }\n"
+                "}\n"
+                "#endif\n",
+                encoding="utf-8",
+            )
+
+            findings = audit.scan_source_tree(source, root)
+            payload = audit.build_audit_payload(findings, source, root)
+
+            self.assertEqual(payload["findings"][0]["executionSurface"], "Editor")
+            self.assertEqual(payload["forbiddenDirectConstructors"], 0)
+            self.assertEqual(payload["runtimeForbiddenDirectConstructors"], 0)
+            self.assertEqual(payload["editorOfflineTransientScratchDirectConstructors"], 1)
+
+    def test_partial_unity_editor_guard_classifies_constructor_lines_separately(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="h8_vault_partial_editor_guard_") as temp_dir:
+            root = Path(temp_dir)
+            source = root / "Assets" / "_Project" / "Scripts"
+            runtime = source / "VFX" / "BiolumPulseSyncRuntime.cs"
+            runtime.parent.mkdir(parents=True)
+            runtime.write_text(
+                "public sealed class BiolumPulseSyncRuntime\n"
+                "{\n"
+                "    public void AllocateRuntime() { _ = new NativeArray<int>(4, Allocator.Persistent); }\n"
+                "#if UNITY_EDITOR\n"
+                "    public void AllocateEditorScratch() { _ = new NativeArray<float>(4, Allocator.TempJob); }\n"
+                "    public void AllocateEditorPersistent() { _ = new NativeArray<byte>(4, Allocator.Persistent); }\n"
+                "#endif\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            findings = audit.scan_source_tree(source, root)
+            payload = audit.build_audit_payload(findings, source, root)
+
+            self.assertEqual(payload["totalDirectConstructors"], 3)
+            self.assertEqual(payload["forbiddenDirectConstructors"], 2)
+            self.assertEqual(payload["runtimeForbiddenDirectConstructors"], 1)
+            self.assertEqual(payload["editorOfflineForbiddenDirectConstructors"], 1)
+            self.assertEqual(payload["editorOfflineTransientScratchDirectConstructors"], 1)
+            self.assertEqual(
+                payload["directConstructorsByExecutionSurface"],
+                {"Editor": 2, "Runtime": 1},
+            )
+            self.assertEqual(
+                payload["forbiddenDirectConstructorsByExecutionSurface"],
+                {"Editor": 1, "Runtime": 1},
+            )
+            self.assertEqual(
+                payload["editorOfflineForbiddenDirectConstructorsByAllocator"],
+                {"Persistent": 1},
+            )
+            self.assertEqual(payload["findings"][0]["executionSurface"], "Mixed")
+            self.assertEqual(
+                payload["findings"][0]["lineExecutionSurfaces"],
+                ["Runtime", "Editor", "Editor"],
+            )
+
+    def test_nested_preprocessor_guard_restores_active_parent_branch(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="h8_vault_nested_editor_guard_") as temp_dir:
+            root = Path(temp_dir)
+            source = root / "Assets" / "_Project" / "Scripts"
+            runtime = source / "VFX" / "MixedPreprocessorRuntime.cs"
+            runtime.parent.mkdir(parents=True)
+            runtime.write_text(
+                "public sealed class MixedPreprocessorRuntime\n"
+                "{\n"
+                "#if UNITY_EDITOR\n"
+                "    public void EditorA() { _ = new NativeArray<int>(4, Allocator.TempJob); }\n"
+                "#if HECTON_DEBUG\n"
+                "    public void EditorNested() { _ = new NativeArray<float>(4, Allocator.TempJob); }\n"
+                "#endif\n"
+                "    public void EditorB() { _ = new NativeArray<byte>(4, Allocator.TempJob); }\n"
+                "#endif\n"
+                "    public void RuntimeA() { _ = new NativeArray<int>(4, Allocator.Persistent); }\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            findings = audit.scan_source_tree(source, root)
+            payload = audit.build_audit_payload(findings, source, root)
+
+            self.assertEqual(
+                payload["findings"][0]["lineExecutionSurfaces"],
+                ["Editor", "Editor", "Editor", "Runtime"],
+            )
+            self.assertEqual(payload["runtimeForbiddenDirectConstructors"], 1)
+            self.assertEqual(payload["editorOfflineTransientScratchDirectConstructors"], 3)
+
     def test_editor_sentinel_tracked_constructor_wrapper_is_not_raw_ownership_debt(self) -> None:
         with tempfile.TemporaryDirectory(prefix="h8_vault_sentinel_wrapper_") as temp_dir:
             root = Path(temp_dir)

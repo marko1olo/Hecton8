@@ -22,7 +22,7 @@ Mandates followed:
 - `ARCH_Execution_Phases.txt`
 - `ARCH_Signal_Lane_Segregation.txt`
 - `DBG_Telemetry_Crash_Reporting_PostMortem.txt`
-- `OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`
+- `OPT_Premium_Approximation_Protocol.txt`
 - `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
 
 ## Calibration Boundary
@@ -36,7 +36,7 @@ Runtime owners already exist:
 - Movement/FPS comfort scalar: movement comfort path writing `_VRComfortVignette01`.
 - Haptic command payload: `ToolHapticsRuntime.HapticCommand`.
 
-Comfort remains a deterministic presentation fake: shader edge tunneling, HUD/PDA scale reduction, and bounded haptic pulses. Camera projection FOV mutation is rejected for XR.
+Comfort remains a deterministic presentation approximation: shader edge tunneling, HUD/PDA scale reduction, and bounded haptic pulses. Camera projection FOV mutation is rejected for XR.
 
 ## Runtime Integration Handoff
 

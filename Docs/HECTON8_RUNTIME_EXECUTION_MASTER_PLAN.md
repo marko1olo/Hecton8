@@ -25,7 +25,7 @@ Purpose: stable execution order for moving HECTON-8 toward a measurable runtime 
 - Read accessors stay pure: no allocation, scene search, publish, sync, job completion, or global mutation.
 - `GlobalQualityWeight` is continuous. No binary low/ultra quality branch is accepted as the scalability model.
 - Any system above `0.1ms` per frame is suspicious until profiler proof and load-shed behavior exist.
-- Visual fake first for water, light, flow, pressure, deformation, ambience, cables, particles, and distant motion.
+- Premium approximation first for water, light, flow, pressure, deformation, ambience, cables, particles, and distant motion.
 
 ## Execution Order
 

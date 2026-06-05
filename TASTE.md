@@ -12,6 +12,12 @@ This file defines what the project considers good.
 
 Use it during reviews when a screenshot, mechanic, shader, UI panel, sound, creature, room, or marketing asset technically works but may still be tasteless, derivative, noisy, fake, soft, or visually wrong for HECTON-8.
 
+For player-visible systems, review the project reference images before claiming visual direction:
+
+`C:\hades\Hecton8\Docs\mandatory if you work on systems that user sees (water, terrain, sky, flora, ui) - read this and all images inside (references)`
+
+The references are not a single camera target. They define the visual floor across surface, underwater, depth, terrain, sky, flora, water, and UI-adjacent composition. Agents must inspect close, far, surface, underwater, and alternate perspectives before accepting a visual result.
+
 ## Binding Production Standards
 
 Taste decides if the work belongs in HECTON-8. Production standards decide how to build it:
@@ -579,7 +585,7 @@ Use these in any taste review:
 2. What player decision does this sharpen?
 3. What sensory channel carries it on weak hardware?
 4. What does high-end hardware add without changing truth?
-5. What is the cheaper fake, and why is it enough or not enough?
+5. What is the cheaper premium approximation, and why is it enough or not enough?
 6. What would a hostile viewer call derivative here?
 7. What evidence remains after the moment ends?
 8. Does this serve pressure, machinery, salvage, sound, visibility, or black-water structure?

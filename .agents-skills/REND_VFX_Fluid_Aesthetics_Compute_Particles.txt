@@ -1,7 +1,7 @@
 # VFX_FLUID_AESTHETICS.md
 # HECTON-8 | Fluid VFX Technical Mandate v1.0
 
-## 2026-05-11 VISUAL-FAKE OVERRIDE
+## 2026-06-05 PREMIUM-APPROXIMATION OVERRIDE
 
 [RULE] Fluid VFX is presentation, not fluid truth.
 [RULE] Default water proof is screen-space depth fade, authored flow masks, GPU-side drift, and event-driven pooled emitters.

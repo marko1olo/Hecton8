@@ -1,12 +1,24 @@
 {
   "evidenceClass": "STATIC_SOURCE",
   "evidenceScope": "STATIC_IMAGE_IMPORT_INTENT",
-  "generatedAtUtc": "2026-06-05T17:18:45.118229+00:00",
+  "generatedAtUtc": "2026-06-05T18:30:22.103437+00:00",
   "sourceIndex": "Docs/GeneratedAssets/Batch31_LocalPBR/Batch31_LocalPBR_INDEX.json",
   "notUnityImported": true,
   "notVisualAcceptance": true,
-  "targetMaskContract": "_MaskMap ARM R=AO G=Roughness B=Metallic A=Emission/default1",
+  "targetMaskContract": "Production _MaskMap ARM R=AO G=Roughness B=Metallic; A is shader-specific (UberNoir emission/default1, Hecton_Master_Lit reserved/parallax height until owner fixes ARM emission); Hecton_Master_Lit requires _MasterShadowParams.w=3",
   "sourceMraoContract": "Source package calls map MRAO; playbook allows R=Metallic G=Roughness/Smoothness B=AO A=Emission/Wetness",
+  "batch31PromotionRequirement": "Before assigning Batch31 masks to Hecton_Master_Lit, create or migrate a material with serialized _MasterShadowParams.w proof: 3 for repacked ARM or 0 for true MRAO. Do not rely on shader default layout 0.",
+  "shaderContractEvidence": [
+    "Assets/_Project/Scripts/Editor/TextureChannelPacker/HectonMaskChannelPacker.cs:9: current packer contract R=AO G=Roughness B=Metallic A=Emission/default1",
+    "Assets/_Project/Scripts/Editor/TextureChannelPacker/HectonArmTextureChannelPacker.cs:1130: mip output writes AO, roughness, metallic, 255",
+    "Assets/_Project/Scripts/Editor/HectonMasterMaterialMigrator1615.cs:235,424-435: migrator serializes _MasterShadowParams.w from detected mask semantics; UberNoir _MaskMap -> layout 3 ARM, generic _MaskMap -> layout 1, _MraoMap -> layout 0",
+    "Assets/_Project/Art/Shaders/Hecton_Master_Lit.shader:57,241-263: selectable mask layouts; layout 3 decodes ARM R=AO G=Roughness B=Metallic",
+    "Static YAML scan: no current .mat/.prefab/.unity/.asset users of Hecton_Master_Lit GUID/name or serialized _MasterShadowParams were found on 2026-06-05",
+    "Assets/_Project/Art/Shaders/Hecton_Master_Lit.shader:331-332: emission mask is enabled for layout 2 only; do not claim ARM alpha emission here",
+    "Assets/_Project/Art/Shaders/Hecton8_UberNoir.hlsl:1741,1782,1822: _MaskMap ARM decode R=AO G=Roughness B=Metallic A=Emission",
+    "Assets/_Project/Art/Shaders/Bakers/Hecton_MraoAtlasLit.shader:7,111-117: _MraoMap decode R=Metallic G=Roughness B=AO A=Emission",
+    "Assets/_Project/Art/Shaders/TerrainMaster.shader:539-540,634,640: terrain path uses albedo alpha smoothness, constant metallic, occlusion=1; no packed mask sampler"
+  ],
   "summary": {
     "packages": 3,
     "rows": 21,
@@ -29,7 +41,8 @@
       "reviewRows": 0,
       "issues": [],
       "warnings": [
-        "blocked_channel_contract_mrao_vs_arm",
+        "blocked_channel_semantics_mrao_vs_arm",
+        "requires_shader_target_layout_decision",
         "not_unity_imported",
         "not_visual_acceptance"
       ],
@@ -53,7 +66,8 @@
       "reviewRows": 0,
       "issues": [],
       "warnings": [
-        "blocked_channel_contract_mrao_vs_arm",
+        "blocked_channel_semantics_mrao_vs_arm",
+        "requires_shader_target_layout_decision",
         "not_unity_imported",
         "not_visual_acceptance"
       ],
@@ -77,7 +91,8 @@
       "reviewRows": 0,
       "issues": [],
       "warnings": [
-        "blocked_channel_contract_mrao_vs_arm",
+        "blocked_channel_semantics_mrao_vs_arm",
+        "requires_shader_target_layout_decision",
         "not_unity_imported",
         "not_visual_acceptance"
       ],
@@ -197,7 +212,7 @@
       "max_size_ultra": 2048,
       "mipmaps": 1,
       "read_write": 0,
-      "channel_contract": "BLOCKED_CHANNEL_SEMANTICS: Source package calls map MRAO; playbook allows R=Metallic G=Roughness/Smoothness B=AO A=Emission/Wetness; target route says _MaskMap ARM R=AO G=Roughness B=Metallic A=Emission/default1.",
+      "channel_contract": "BLOCKED_CHANNEL_SEMANTICS: Source package calls map MRAO; playbook allows R=Metallic G=Roughness/Smoothness B=AO A=Emission/Wetness; target route says Production _MaskMap ARM R=AO G=Roughness B=Metallic; A is shader-specific (UberNoir emission/default1, Hecton_Master_Lit reserved/parallax height until owner fixes ARM emission); Hecton_Master_Lit requires _MasterShadowParams.w=3.",
       "channel_min": "0.0;114.0;147.0;255.0",
       "channel_max": "0.0;169.0;255.0;255.0",
       "channel_mean": "0.000;151.017;188.596;255.000",
@@ -477,7 +492,7 @@
       "max_size_ultra": 2048,
       "mipmaps": 1,
       "read_write": 0,
-      "channel_contract": "BLOCKED_CHANNEL_SEMANTICS: Source package calls map MRAO; playbook allows R=Metallic G=Roughness/Smoothness B=AO A=Emission/Wetness; target route says _MaskMap ARM R=AO G=Roughness B=Metallic A=Emission/default1.",
+      "channel_contract": "BLOCKED_CHANNEL_SEMANTICS: Source package calls map MRAO; playbook allows R=Metallic G=Roughness/Smoothness B=AO A=Emission/Wetness; target route says Production _MaskMap ARM R=AO G=Roughness B=Metallic; A is shader-specific (UberNoir emission/default1, Hecton_Master_Lit reserved/parallax height until owner fixes ARM emission); Hecton_Master_Lit requires _MasterShadowParams.w=3.",
       "channel_min": "0.0;176.0;147.0;255.0",
       "channel_max": "0.0;204.0;255.0;255.0",
       "channel_mean": "0.000;185.798;213.306;255.000",
@@ -757,7 +772,7 @@
       "max_size_ultra": 2048,
       "mipmaps": 1,
       "read_write": 0,
-      "channel_contract": "BLOCKED_CHANNEL_SEMANTICS: Source package calls map MRAO; playbook allows R=Metallic G=Roughness/Smoothness B=AO A=Emission/Wetness; target route says _MaskMap ARM R=AO G=Roughness B=Metallic A=Emission/default1.",
+      "channel_contract": "BLOCKED_CHANNEL_SEMANTICS: Source package calls map MRAO; playbook allows R=Metallic G=Roughness/Smoothness B=AO A=Emission/Wetness; target route says Production _MaskMap ARM R=AO G=Roughness B=Metallic; A is shader-specific (UberNoir emission/default1, Hecton_Master_Lit reserved/parallax height until owner fixes ARM emission); Hecton_Master_Lit requires _MasterShadowParams.w=3.",
       "channel_min": "0.0;184.0;147.0;255.0",
       "channel_max": "0.0;207.0;255.0;255.0",
       "channel_mean": "0.000;191.435;214.328;255.000",

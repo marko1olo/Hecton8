@@ -48,7 +48,7 @@ Date: 2026-05-11
 Low:
 - Primitive colliders.
 - fewer solver iterations.
-- dominant-axis drag and buoyancy cheats.
+- dominant-axis drag and buoyancy approximations.
 
 Middle:
 - limited compound primitives.

@@ -7,7 +7,7 @@ Scope: URP, RenderGraph, lighting, shadows, fog, water presentation, VFX, shader
 
 Rendering carries most of HECTON-8's realism. It must make darkness, pressure, water, corrosion, glass, instruments, silt, and scale feel expensive without turning MX350 into a slideshow. HECTON-8 rejects pretty post-processing that hides weak composition, unbounded volumetrics, material clones, generic blue sci-fi grading, and render features without proof.
 
-The render path is a visual fake engine. It sells believable consequences faster than physical simulation.
+The render path is a premium presentation engine. It sells believable consequences faster than physical simulation.
 
 ## Surface And Celestial Brightness Boundary
 
@@ -52,7 +52,7 @@ Evidence class: STATIC_SOURCE / STATIC_DOC only. These anchors do not prove Unit
 
 - `Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs` is the current fullscreen visor droplet/leak distortion renderer. Static source shows `HectonVisorFluidDistortionFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener, ILateFrameTickable`; it caches player, fluid, and DataVault dependencies through lifecycle/hot-swap paths, registers visual-sync work, writes a 300-row `BufferID.VisorRefractionBlackBox` telemetry ring under `SystemID.Vfx`, and dumps `Docs/AgentLogs/Dump_1335_VisorFluidRefraction.bin` only on non-finite input.
 - RenderGraph ownership: `VisorFluidPass.RecordRenderGraph` reads active color, depth, opaque color, optional compute-resolved diegetic lens mask, and imported constant buffers; writes `_HectonVisorFluidDistortion`; and assigns `resourceData.cameraColor`. It uses authored `FeatureSettings.material` and optional `lensComputeShader`; it is not allowed to instantiate runtime materials or become gameplay water/pressure truth.
-- Visual fake boundary: wet lens, hull-stress leaks, rain, water-density signal, dust, Snell/chromatic refraction, and lens-mask distortion are presentation fakes. They may sell water/pressure/visor material belief and scale through `GlobalQualityWeight`/visual-overkill fields, but they must not own flooding, pressure damage, fluid simulation, survival truth, save state, or navigation truth. Missing proof: renderer asset binding/import, Frame Debugger or RenderGraph Viewer pass order, GPU/CPU timing, GCMonitor, compact/high captures, and verification that the effect preserves center readability instead of hiding weak art.
+- Presentation boundary: wet lens, hull-stress leaks, rain, water-density signal, dust, Snell/chromatic refraction, and lens-mask distortion are presentation approximations. They may sell water/pressure/visor material belief and scale through `GlobalQualityWeight`/visual-overkill fields, but they must not own flooding, pressure damage, fluid simulation, survival truth, save state, or navigation truth. Missing proof: renderer asset binding/import, Frame Debugger or RenderGraph Viewer pass order, GPU/CPU timing, GCMonitor, compact/high captures, and verification that the effect preserves center readability instead of hiding weak art.
 
 ## Noir Color Doctrine
 
@@ -187,4 +187,4 @@ Reject:
 
 ## Acceptance Sentence
 
-Rendering is accepted only when it preserves route readability, sells pressure and material truth, scales continuously, proves its cost, and makes HECTON-8 look expensive through controlled fakes instead of brute-force effects.
+Rendering is accepted only when it preserves route readability, sells pressure and material truth, scales continuously, proves its cost, and makes HECTON-8 look expensive through controlled premium approximations instead of brute-force effects.

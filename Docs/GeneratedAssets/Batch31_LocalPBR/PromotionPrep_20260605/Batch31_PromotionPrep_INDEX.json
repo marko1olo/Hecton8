@@ -28,8 +28,8 @@
       },
       "semantic_status": "BLOCKED_CHANNEL_SEMANTICS",
       "promotion_ready": false,
-      "channel_semantics_blocker": "Source packed-mask channel semantics are not proven. Candidate PNGs exist for inspection only; shader/material owner must choose target contract or repack channels before Unity import.",
-      "mrao_preview_note": "MRAO Candidate PNG preserves alpha as emission data. MRAO_2x2 and contact sheet are RGB inspection previews that ignore alpha so channels remain visible."
+      "channel_semantics_blocker": "Candidate PNGs exist for inspection only. Promotion requires an explicit shader target plus material layout proof: repack to production ARM and serialize the target layout, or target a shader/material that decodes MRAO.",
+      "mrao_preview_note": "MRAO Candidate PNG alpha is candidate data only. RGB inspection previews ignore alpha so visible channels can be inspected; alpha must not be advertised as emission-ready for every shader target."
     },
     {
       "id": "TX_B31_PhoticSeabedSubstrate_2102",
@@ -55,8 +55,8 @@
       },
       "semantic_status": "BLOCKED_CHANNEL_SEMANTICS",
       "promotion_ready": false,
-      "channel_semantics_blocker": "Source packed-mask channel semantics are not proven. Candidate PNGs exist for inspection only; shader/material owner must choose target contract or repack channels before Unity import.",
-      "mrao_preview_note": "MRAO Candidate PNG preserves alpha as emission data. MRAO_2x2 and contact sheet are RGB inspection previews that ignore alpha so channels remain visible."
+      "channel_semantics_blocker": "Candidate PNGs exist for inspection only. Promotion requires an explicit shader target plus material layout proof: repack to production ARM and serialize the target layout, or target a shader/material that decodes MRAO.",
+      "mrao_preview_note": "MRAO Candidate PNG alpha is candidate data only. RGB inspection previews ignore alpha so visible channels can be inspected; alpha must not be advertised as emission-ready for every shader target."
     },
     {
       "id": "TX_B31_PhoticShellSandSubstrate_2102",
@@ -82,13 +82,13 @@
       },
       "semantic_status": "BLOCKED_CHANNEL_SEMANTICS",
       "promotion_ready": false,
-      "channel_semantics_blocker": "Source packed-mask channel semantics are not proven. Candidate PNGs exist for inspection only; shader/material owner must choose target contract or repack channels before Unity import.",
-      "mrao_preview_note": "MRAO Candidate PNG preserves alpha as emission data. MRAO_2x2 and contact sheet are RGB inspection previews that ignore alpha so channels remain visible."
+      "channel_semantics_blocker": "Candidate PNGs exist for inspection only. Promotion requires an explicit shader target plus material layout proof: repack to production ARM and serialize the target layout, or target a shader/material that decodes MRAO.",
+      "mrao_preview_note": "MRAO Candidate PNG alpha is candidate data only. RGB inspection previews ignore alpha so visible channels can be inspected; alpha must not be advertised as emission-ready for every shader target."
     }
   ],
   "semantic_status": "BLOCKED_CHANNEL_SEMANTICS",
   "promotion_ready": false,
-  "channel_semantics_blocker": "Source packed-mask channel semantics are not proven. Candidate PNGs exist for inspection only; shader/material owner must choose target contract or repack channels before Unity import.",
+  "channel_semantics_blocker": "Candidate PNGs exist for inspection only. Promotion requires an explicit shader target plus material layout proof: repack to production ARM and serialize the target layout, or target a shader/material that decodes MRAO.",
   "contact_sheet_sha256": "5fff767bb43bce4fff3df1e6858a165a78efea6c507edbda7e220b2598348e49",
-  "mrao_preview_note": "MRAO Candidate PNG preserves alpha as emission data. MRAO_2x2 and contact sheet are RGB inspection previews that ignore alpha so channels remain visible."
+  "mrao_preview_note": "MRAO Candidate PNG alpha is candidate data only. RGB inspection previews ignore alpha so visible channels can be inspected; alpha must not be advertised as emission-ready for every shader target."
 }

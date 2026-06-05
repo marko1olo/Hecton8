@@ -40,7 +40,7 @@ MANDATES = [
     "OPT_Zero_GC_Policy_AllocFree_Mandate.txt",
     "QA_Evidence_Text_Filter_Audit.txt",
     "DBG_Telemetry_Crash_Reporting_PostMortem.txt",
-    "OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt",
+    "OPT_Premium_Approximation_Protocol.txt",
     "OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt",
     "ARCH_Global_Registry_ServiceLocator_DI_Init.txt",
     "ARCH_Signal_Lane_Segregation.txt",
@@ -337,7 +337,7 @@ def build_report():
             "runtime_simulation_added": False,
             "global_quality_weight_runtime_requirement_applicable": False,
             "binary_quality_switches_in_owned_tooling": [],
-            "interpretation": "The work generated offline charts/reports. It did not add water/light/fog/physics/runtime visual systems, so fake-first and continuous GlobalQualityWeight scaling are not invoked.",
+            "interpretation": "The work generated offline charts/reports. It did not add water/light/fog/physics/runtime visual systems, so approximation-first and continuous GlobalQualityWeight scaling are not invoked.",
         },
         "token_report_headline": {
             "total_tokens": token_report["totals"]["total_tokens"],

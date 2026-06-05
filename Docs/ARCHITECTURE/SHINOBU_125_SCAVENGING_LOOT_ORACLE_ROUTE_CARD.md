@@ -129,7 +129,7 @@ Publish completion is an explicit `[BLOCKING_SYNC_POINT]` flush because `SignalB
 
 
 
-Incremental mining yield: forced oracle requests use `RequestFlagSuppressDepletionDelta`, so the item and visual fake are emitted without tombstoning the node before actual depletion.
+Incremental mining yield: forced oracle requests use `RequestFlagSuppressDepletionDelta`, so the item and visual approximation are emitted without tombstoning the node before actual depletion.
 
 
 
@@ -273,7 +273,7 @@ Rejected alternatives:
 
 
 
-- existing SignalBus lane only: rejected, no visual fake payload existed
+- existing SignalBus lane only: rejected, no visual approximation payload existed
 
 
 
@@ -303,8 +303,8 @@ H-Phi impact:
 - Lowers ResourceNode -> ObjectPool/PhysX/inventory entanglement.
 - Root assembly remains current reality.
 - No new sibling asmdef dependency.
-- Shared source-kind fact and visual fake payload moved to narrow contracts files.
-- Visual fake payload no longer imports World runtime AUP.
+- Shared source-kind fact and visual approximation payload moved to narrow contracts files.
+- Visual approximation payload no longer imports World runtime AUP.
 
 
 

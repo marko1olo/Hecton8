@@ -111,7 +111,7 @@ Load shed:
 
 - VRAM above guard: request mip downgrade, drain release queue, reduce non-primary render targets.
 - Frame time above `25ms` for 3 frames: lower quality weight target and reduce raymarch/post/boid/rigidbody budgets by owner order.
-- Physics p95 above `2.0ms`: reduce solver scope or replace noncritical work with a visual fake.
+- Physics p95 above `2.0ms`: reduce solver scope or replace noncritical work with a premium presentation approximation.
 - GC hot path above `0 B`: block until allocation source is removed.
 
 ## Asset Validation Gate

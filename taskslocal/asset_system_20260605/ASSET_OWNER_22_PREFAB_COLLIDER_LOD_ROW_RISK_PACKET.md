@@ -13,6 +13,7 @@ First-20 route blocker mapped: false promotion risk for visible route prefabs wh
 - `3dmodel.md`
 - `3DMODEL_HARD_SURFACE_MODULES.md`
 - `performance.md`
+- `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
 
 ## Static Row Risk Summary
 
@@ -79,6 +80,7 @@ No-renderer row clusters:
 - Token absence is not Unity component absence.
 - Token presence is not component correctness, material quality, collider authority, LOD quality, Addressables residency, SetPass cost, memory residency, or in-game quality.
 - The next owner must not use these rows as import, prefab, scene, visual, runtime, GC, or profiler proof.
+- The next owner must compare visible prefab route captures against the mandatory visual-reference digest before promotion. Static LOD/collider health cannot excuse a primitive silhouette, proxy material, flat panel, sparse route dressing, or dark/fog-hidden asset.
 
 ## Unity Prefab Readback Route
 
@@ -122,6 +124,7 @@ Static `LODGroup` text is not enough. The future owner must prove:
 - Transitions use hysteresis and dithered cross-fade where renderer support exists; dense alpha-blend fades are rejected for compact lanes.
 - Triangle counts, transition distances, bounds, material slots, and renderer ownership are captured per prefab family.
 - Scene route captures show no hard pop, silhouette collapse, primitive shape exposure, or placeholder material exposure.
+- Scene route captures include digest comparison notes for bright surface/photic, shoreline, medium-depth, cockpit/visor, or product-face context where the prefab is visible.
 
 ## Product-Face Rejection Gates
 
@@ -135,6 +138,7 @@ Reject promotion when any target row still has:
 - Proxy or placeholder folder source placed in a visible route.
 - MeshCollider using visual LOD0 geometry.
 - Darkness, fog, or post effects used to hide weak mesh or material quality.
+- Failure against the mandatory digest's surface, shoreline, photic, medium-depth, or cockpit/visor visual floor.
 
 ## Rollback Conditions
 

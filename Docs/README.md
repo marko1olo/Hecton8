@@ -7,6 +7,16 @@ Evidence class: STATIC_DOC / STATIC_SOURCE
 
 Purpose: stable read map for active documentation. This is not a current-work digest.
 
+## Product Compass
+
+HECTON-8 documentation should push agents toward one result: a playable, beautiful, optimized, believable underwater sci-fi survival game. Surface, sky, Aegir, coastline, water, flora, terrain, UI, tools, and hero routes must look intentional and premium while preserving performance and gameplay decision value.
+
+Use performance as a budget for immersion, not as a reason to make the product flat. Use documentation as a routing map, not as bureaucracy. Generated snapshots, reports, logs, and task files can provide evidence, but live source, root authority, route bibles, and fresh proof decide current truth.
+
+For player-visible work, inspect the reference images in:
+
+`C:\hades\Hecton8\Docs\mandatory if you work on systems that user sees (water, terrain, sky, flora, ui) - read this and all images inside (references)`
+
 ## Read Order
 
 This index is a read map, not an alternate authority hierarchy. The standing authority spine is defined in root `AGENTS.md`.
@@ -14,15 +24,16 @@ This index is a read map, not an alternate authority hierarchy. The standing aut
 Use this order when gathering documentation context:
 
 1. `AGENTS.md`
-2. `.agents-skills/README.md`
-3. task-relevant files under `.agents-skills/`
-4. `PROJECT_BIBLES.md`
-5. `VISION_LOCKS.md` when product vision or ambiguity is involved
-6. `TASTE.md` when player-facing, plus the matching root route bible for the current domain
-7. this index plus the active stable files listed below
-8. current C# source under `Assets/_Project` for source reality checks
-9. fresh proof artifacts under `Docs/Reports`
-10. archives under `Docs/DEPRECATED`, `Docs/_Archive`, and `Docs/Archive`
+2. `Docs/AGENT_AUTHORITY_ROUTING.md` for non-trivial task intake and no-loss rule routing
+3. `.agents-skills/README.md`
+4. task-relevant files under `.agents-skills/`
+5. `PROJECT_BIBLES.md`
+6. `VISION_LOCKS.md` when product vision or ambiguity is involved
+7. `TASTE.md` when player-facing, plus the matching root route bible for the current domain
+8. this index plus the active stable files listed below
+9. current C# source under `Assets/_Project` for source reality checks
+10. fresh proof artifacts under `Docs/Reports`
+11. archives under `Docs/DEPRECATED`, `Docs/_Archive`, and `Docs/Archive`
 
 `PROJECT_BIBLES.md`, `VISION_LOCKS.md`, and the standing root route bibles listed by `PROJECT_BIBLES.md` are explicit root authorities. Other root reports, prompts, status/log files, generated evidence, and task-progress prose are not.
 
@@ -34,6 +45,7 @@ Dated reports and archived files are evidence snapshots. They are not active sys
 
 | Need | Read |
 |---|---|
+| Agent task intake, no-loss rule routing, and tool-surface delegation | `Docs/AGENT_AUTHORITY_ROUTING.md` |
 | Root bible routing and domain bible selection | `PROJECT_BIBLES.md` |
 | User product vision locks and ambiguity resolution | `VISION_LOCKS.md` |
 | Procedural asset package pipeline binding route bible | `PROCEDURAL_ASSET_PIPELINE.md` |
@@ -88,7 +100,7 @@ Architecture spine:
 - `Docs/ARCHITECTURE/FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md`
 - `Docs/ARCHITECTURE/FIRST_20_MINUTES_ROUTE_BRIEF.md`
 - `Docs/ARCHITECTURE/PLATFORM_PORTABILITY_PROOF_LADDER.md`
-- `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`
+- `Docs/ARCHITECTURE/PREMIUM_APPROXIMATION_LEDGER.md`
 - `Docs/ARCHITECTURE/SCALABILITY_MATRIX.md`
 - `Docs/ARCHITECTURE/AUP_PRECISION_STANDARDS.md`
 - `Docs/ARCHITECTURE/ZERO_GC_UI_PIPELINE.md`

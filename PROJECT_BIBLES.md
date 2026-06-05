@@ -38,6 +38,21 @@ Batch prompts, controller prompts, task files, and old logs assign work; they do
 
 Planning snapshots such as `BUILD_PLAYTEST_ISSUES.md` and `MASTER_RELEASE_WORK_PLAN.md` are not standing design authority unless the user explicitly points at them for the current task.
 
+## Rule Hygiene
+
+Rules must reduce ambiguity, route agents to the right source, preserve product quality, and prevent stale reports or generated snapshots from becoming false authority. They must not make agents serve bureaucracy instead of the current player-facing or system-correctness task.
+
+Rule and bible updates must:
+
+- keep the player-facing visual reference folder requirement visible to agents working on water, terrain, sky, flora, UI, lighting, VFX, camera, materials, surface routes, or hero biomes;
+- keep performance subordinate to product-face quality, gameplay clarity, stability, and scalability;
+- keep `WORK AS MUCH AS POSSIBLE` as autonomy for finishing the current front, not as permission for bureaucracy or unrelated scope expansion;
+- keep source-reality discipline explicit: live source, current assets, and fresh proof beat old reports, generated snapshots, task files, and stale logs;
+- sync `.codexrules/AGENTS.md`, `.github/agents/AGENTS.md`, and `.agent/rules/AGENTS.md` by delegation or byte-intent copy;
+- keep `Docs/AGENT_AUTHORITY_ROUTING.md` current as the no-loss intake map for agents and as the required protocol before shortening or splitting rule monoliths;
+- regenerate `Docs/PROJECT_ROOT_BIBLES_COMBINED.md` with `python -B Tools/Docs/BuildProjectRootBiblesCombined.py`;
+- run `python -B Tools/Docs/BuildProjectRootBiblesCombined.py --check` and `git diff --check` over touched rule/doc files before reporting.
+
 ## Routes
 
 - Project taste and rejection language: `TASTE.md`

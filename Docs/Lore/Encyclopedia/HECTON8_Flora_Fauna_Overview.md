@@ -52,4 +52,4 @@ Atlas alteration should be progressive, not universal:
 
 Runtime note:
 
-Lore can support many species, variants, and scan notes while runtime keeps deterministic spawn tables and visual fakes. Do not require individual biological simulations for every creature or plant.
+Lore can support many species, variants, and scan notes while runtime keeps deterministic spawn tables and premium presentation approximations. Do not require individual biological simulations for every creature or plant.

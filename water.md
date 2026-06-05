@@ -280,4 +280,4 @@ Reject water work if:
 
 ## 13. Acceptance Sentence
 
-Water is accepted only when it makes pressure, route, damage, current, visibility, and material state more readable through controlled fakes, named truth owners, continuous quality scaling, zero-GC runtime paths, and measured proof where runtime behavior exists.
+Water is accepted only when it makes pressure, route, damage, current, visibility, and material state more readable through controlled premium presentation approximations, named truth owners, continuous quality scaling, zero-GC runtime paths, and measured proof where runtime behavior exists.

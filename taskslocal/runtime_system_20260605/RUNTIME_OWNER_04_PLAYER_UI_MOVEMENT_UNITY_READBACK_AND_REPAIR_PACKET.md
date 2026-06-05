@@ -18,8 +18,11 @@ This packet does not prove runtime readiness. All runtime behavior remains `PEND
 - `Docs/Reports/RuntimeSystem_20260605/ACTIVE_PLAYER_SCENE_CONFLICT_MAP_20260605.md/.csv`
 - `Docs/Reports/RuntimeSystem_20260605/SHELL_HUD_SCENE_BINDING_ESCALATION_20260605.md/.csv`
 - `Docs/Reports/RuntimeSystem_20260605/PLAYER_UI_MOVEMENT_STATIC_ANCHOR_AUDIT_20260605.md/.csv`
+- `Docs/Reports/RuntimeSystem_20260605/FORBIDDEN_RUNTIME_API_ROUTE_TRIAGE_20260605.md/.csv`
 - `taskslocal/runtime_system_20260605/RUNTIME_OWNER_02_SHELL_HUD_BLOCKER_REPAIR_PACKET.md`
 - `taskslocal/runtime_system_20260605/README.md`
+- `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/H8_1475_VISUAL_REFERENCE_COMPARISON_TEMPLATE_20260605.md`
 
 Static facts to preserve:
 
@@ -27,6 +30,7 @@ Static facts to preserve:
 - The scene-local shell binds `cameraRig` to the scene `Main Camera` transform.
 - `Player.prefab` contains production-looking `HectonPlayerMovement`, `PlayerInteraction`, Rigidbody, prefab camera, visor, and HUD bindings, but its GUID was not found in the targeted scene scan.
 - `HUD_Internal.prefab` contains disabled `SuitHUDScreenCompositor` and `forceScreenSpaceOverlay: 1`; it is latent until Unity readback proves active clone/binding status.
+- Source-context triage refines the raw forbidden-API grep: `SuitHUDScreenCompositor.forceScreenSpaceOverlay` is a P0 Editor Play Mode proof blocker, `SuitHUDV4CanvasOverlay` overlay branches appear editor-only/play-projection guarded by source, and `ThermalDynamicResolutionAdapter` dispatcher repair coroutine is a separate P1 runtime repair defect.
 - Static evidence is not runtime proof.
 
 ## Authority Docs And Mandates
@@ -34,7 +38,6 @@ Static facts to preserve:
 Read before execution:
 
 - `AGENTS.md`
-- `HECTON8_ORCHESTRATOR.md`
 - `PROJECT_BIBLES.md`
 - `TASTE.md`
 - `player.md`
@@ -50,6 +53,8 @@ Read before execution:
 - `.agents-skills/UI_Data_Streaming_ZeroGC_Optimization.txt`
 - `.agents-skills/CTRL_Device_Abstraction_Haptics.txt`
 - `.agents-skills/DBG_Telemetry_Crash_Reporting_PostMortem.txt`
+
+Read `HECTON8_ORCHESTRATOR.md` only if the future owner is explicitly assigned controller/orchestration work. An ordinary Unity/runtime owner must not read it.
 
 ## Owned Scope
 
@@ -80,7 +85,7 @@ Rule quote: one fact has one owner, one route, one proof artifact. `GlobalQualit
 
 2. Read the authority docs and mandates listed in this packet. Record the route bibles and mandates followed in the proof packet. Do not bulk-read unrelated archives or old logs.
 
-3. Reconfirm the static blocker evidence with targeted reads only: active scene-local `Player` with enabled shell, no targeted `Player.prefab` GUID hit in `02_HECTON_WORLD`, and `HUD_Internal.forceScreenSpaceOverlay: 1` latent overlay risk.
+3. Reconfirm the static blocker evidence with targeted reads only: active scene-local `Player` with enabled shell, no targeted `Player.prefab` GUID hit in `02_HECTON_WORLD`, `HUD_Internal.forceScreenSpaceOverlay: 1` latent overlay risk, and the source-context classifications from `FORBIDDEN_RUNTIME_API_ROUTE_TRIAGE_20260605.md/.csv`.
 
 4. Prepare a no-mutation Unity readback plan. It must read active object paths, prefab sources, enabled components, dispatcher lanes, `BootstrapState.CurrentPlayerObject`, render modes, camera stack, input owner, save owner, and black-box ring status without scene/prefab save.
 
@@ -114,21 +119,23 @@ Rule quote: one fact has one owner, one route, one proof artifact. `GlobalQualit
 
 17. Classify and repair HUD only after active stack readback. Reject any active interactive first-party gameplay HUD using `RenderMode.ScreenSpaceOverlay` unless it is explicitly approved as a noninteractive debug/loading/legal/accessibility/frontend bridge. If `HUD_Internal.forceScreenSpaceOverlay` is active for gameplay, reroute through diegetic/visor/world-space carrier using Unity API/editor script and read back the result.
 
-18. Checkpoint 2: produce `repair_disposition.md`. Required verdicts: shell `inactive/static risk/active blocker/repaired/still blocker`, HUD overlay `inactive/noninteractive bridge/repaired/still blocker`, production route `proven/unproven`, raw YAML mutation `NO`, public API mutation `NO or approved`, and runtime status `PENDING VERIFICATION` unless proof exists.
+18. Classify `ThermalDynamicResolutionAdapter` dispatcher repair coroutine separately from the player/HUD route. It is not a player-owner P0, but it remains a runtime no-coroutine defect until the graphics scalability owner converts the repair retry to a state-machine path and compiles it cleanly.
+
+19. Checkpoint 2: produce `repair_disposition.md`. Required verdicts: shell `inactive/static risk/active blocker/repaired/still blocker`, HUD overlay `inactive/noninteractive bridge/repaired/still blocker`, production route `proven/unproven`, scalability coroutine `not in scope/repaired/still blocker`, raw YAML mutation `NO`, public API mutation `NO or approved`, and runtime status `PENDING VERIFICATION` unless proof exists.
 
 ### Phase 3 - Route Proof: Movement, UI, Input, Save, Telemetry, Captures
 
-19. Prove walk and swim route operation: walk/shoreline movement, stop, turn, interaction lock, swim forward/strafe/ascend/descend, drag/inertia, surface/dive transition, depth/pressure response, camera readability, and no camera/UI script writing gameplay position.
+20. Prove walk and swim route operation: walk/shoreline movement, stop, turn, interaction lock, swim forward/strafe/ascend/descend, drag/inertia, surface/dive transition, depth/pressure response, camera readability, and no camera/UI script writing gameplay position.
 
-20. Prove interaction and HUD route operation: target acquisition, prompt display, interact spam x20, oxygen/depth/pressure/tool/route/warning/source-owner readouts, stale/fault display behavior, HUD text updates, and prompt recovery after PDA/pause/menu close.
+21. Prove interaction and HUD route operation: target acquisition, prompt display, interact spam x20, oxygen/depth/pressure/tool/route/warning/source-owner readouts, stale/fault display behavior, HUD text updates, and prompt recovery after PDA/pause/menu close.
 
-21. Prove PDA, pause, save/load, and input devices: PDA open/close x10, pause open/close x10, focus return, input lock, keyboard/mouse navigation, gamepad navigation, rebinding/conflict path if touched, save notification, save, load, restored player identity, restored position/state, and route return.
+22. Prove PDA, pause, save/load, and input devices: PDA open/close x10, pause open/close x10, focus return, input lock, keyboard/mouse navigation, gamepad navigation, rebinding/conflict path if touched, save notification, save, load, restored player identity, restored position/state, and route return.
 
-22. Prove performance and telemetry: 0 B/frame GC for input, movement, interaction probe, HUD text, PDA/pause navigation, camera visual sync, and telemetry write; profiler markers for each route; no direct `Input.GetKey`, `Input.GetAxis`, `Input.GetButton`, hot `Keyboard.current`, hot `Mouse.current`, hot `Gamepad.current`, `.text =`, `SetText(string)`, or runtime string formatting in active hot paths; 300-frame black-box rings and dump manifests for input, player kinematics, UI/HUD focus/state, and route error flags.
+23. Prove performance and telemetry: 0 B/frame GC for input, movement, interaction probe, HUD text, PDA/pause navigation, camera visual sync, and telemetry write; profiler markers for each route; no direct `Input.GetKey`, `Input.GetAxis`, `Input.GetButton`, hot `Keyboard.current`, hot `Mouse.current`, hot `Gamepad.current`, `.text =`, `SetText(string)`, or runtime string formatting in active hot paths; 300-frame black-box rings and dump manifests for input, player kinematics, UI/HUD focus/state, and route error flags.
 
-23. Capture compact and high route evidence: 720p, 16:9, 16:10, 21:9, and 4:3 screenshots; compact/low and high captures; short clip covering walk, swim, interact, HUD warning/prompt, PDA/pause, save/load return, and camera route readability. Captures must reject generic overlay HUD, unreadable text, route-hidden camera, clipped UI, and visual-floor downgrade.
+24. Capture compact and high route evidence: 720p, 16:9, 16:10, 21:9, and 4:3 screenshots; compact/low and high captures; short clip covering walk, swim, interact, HUD warning/prompt, PDA/pause, save/load return, and camera route readability. Captures must reject generic overlay HUD, unreadable text, route-hidden camera, clipped UI, and visual-floor downgrade. If the capture contributes to h8_1475 proof, it must be represented in `h8_1475_visual_reference_comparison.md` using `H8_1475_VISUAL_REFERENCE_COMPARISON_TEMPLATE_20260605.md`.
 
-24. Checkpoint 3: produce the final proof packet. Required labels: Unity Console, Play Mode/player route, profiler, GC, memory/VRAM if changed, save/load, black-box 300 frames, compact capture, high capture, input device matrix, rejection gates, files changed, and remaining `PENDING VERIFICATION`. Do not claim `READY`, `DONE`, `SOLVED`, or runtime readiness without current artifacts.
+25. Checkpoint 3: produce the final proof packet. Required labels: Unity Console, Play Mode/player route, profiler, GC, memory/VRAM if changed, save/load, black-box 300 frames, compact capture, high capture, input device matrix, rejection gates, files changed, and remaining `PENDING VERIFICATION`. Do not claim `READY`, `DONE`, `SOLVED`, or runtime readiness without current artifacts.
 
 ## Proof Packet Requirements
 
@@ -151,6 +158,7 @@ Write proof outside `Assets`, under the accepted runtime proof folder:
 - `black_box_dump_manifest.md`
 - compact and high screenshots
 - route proof clip
+- `h8_1475_visual_reference_comparison.md` when runtime captures are used for h8_1475 visual proof
 
 ## Rejection Gates
 

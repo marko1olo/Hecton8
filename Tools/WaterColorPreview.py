@@ -571,7 +571,7 @@ texel = uint2(flatIndex & 4095u, flatIndex >> 12);
 - Single cubemap path present: `{applied_rules["singleCubemapPath"]}`.
 
 ## Runtime Contract
-This data is a deterministic visual fake. Runtime code should sample textures; it should not recompute Beer-Lambert exponentials per pixel and should not add volumetric water-optics simulation on MX350.
+This data is a deterministic premium presentation approximation. Runtime code should sample textures; it should not recompute Beer-Lambert exponentials per pixel and should not add volumetric water-optics simulation on MX350.
 """,
         encoding="utf-8",
     )
@@ -706,7 +706,7 @@ def build_metadata(
                 {
                     "source": "RENDER_GI_RELAY_SYNC batch logs",
                     "url": "Docs/Archive/Batch003/AgentLogs/LOG_RENDER_GI_RELAY_SYNC.md",
-                    "appliedCheck": "Preserve the 1D depth-palette/fog-global visual fake path instead of runtime volumetric GI.",
+                    "appliedCheck": "Preserve the 1D depth-palette/fog-global premium approximation path instead of runtime volumetric GI.",
                 },
             ],
         },
@@ -724,7 +724,7 @@ def build_metadata(
             {
                 "source": "RENDER_GI_RELAY_SYNC batch logs",
                 "path": "Docs/Archive/Batch003/AgentLogs/LOG_RENDER_GI_RELAY_SYNC.md",
-                "usage": "Preserves the depth-palette/fog-global visual fake contract.",
+                "usage": "Preserves the depth-palette/fog-global premium approximation contract.",
             },
         ],
         "giRelayContract": gi_relay_contract,

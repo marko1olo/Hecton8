@@ -356,7 +356,7 @@ HECTON-8 rejects cheap graphics.
 
 Surface, sky, Aegir, moons, coastline, ocean surface, photic shallows, and medium-depth hero routes must look Subnautica-level or better on every hardware lane.
 Darkness/noir belongs to depth, caves, interiors, storms, temporary eclipse route-shadow windows, and pressure events.
-Never use fog, darkness, bloom, post-process, or "cinematic cheat" to hide primitive terrain, weak textures, placeholder meshes, flat water, muddy skies, or unfinished celestial art.
+Never use fog, darkness, bloom, post-process, or performance approximation to hide primitive terrain, weak textures, placeholder meshes, flat water, muddy skies, or unfinished celestial art.
 
 Compact tier still needs:
 - beautiful water color
@@ -369,18 +369,18 @@ Compact tier still needs:
 
 High/Ultra should spend saved performance on richer sensory detail without changing gameplay truth.
 
-CINEMATIC CHEAT RULE
-Fake-first is correct.
+PREMIUM APPROXIMATION RULE
+Premium approximation-first is correct.
 Cheap-looking-first is rejected.
 
-For water, lighting, deformation, pressure, flow, camera, VFX, and distant motion, ask whether a deterministic visual/audio/haptic/UI/proxy fake can preserve belief and gameplay truth.
-If the fake looks flat, muddy, blurry, crayon-like, or below the visual floor, the fake fails.
+For water, lighting, deformation, pressure, flow, camera, VFX, and distant motion, ask whether a deterministic visual/audio/haptic/UI/proxy premium approximation can preserve belief and gameplay truth.
+If the approximation looks flat, muddy, blurry, crayon-like, or below the visual floor, the approximation fails.
 
 Do not reduce visual work to "visually acceptable".
 The target is premium, readable, optimized, and believable.
 
 MATH AND PERFORMANCE RULE
-Any single feature above 0.1 ms is suspicious until proven with profiler evidence.
+Any single feature above 0.1 ms is suspicious until proven with profiler evidence. This is a triage threshold, not permission to flatten visuals or delete player value.
 This is budget discipline, not permission to make the game ugly.
 
 Reject proton-level or molecular simulation unless player truth and profiler proof demand it.

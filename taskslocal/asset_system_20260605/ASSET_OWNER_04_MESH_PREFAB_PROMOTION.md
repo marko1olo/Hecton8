@@ -6,6 +6,7 @@ Read first:
 
 - `Docs/AssetAudit/ASSET_ACTION_QUEUE_20260605.md`
 - `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md`
+- `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
 - `3dmodel.md`
 - `3DMODEL_GEOLOGY_ROCKS.md`
 - `3DMODEL_FLORA_CORAL.md`
@@ -33,6 +34,7 @@ Required checks:
 - Collider route: no complex MeshCollider without justification.
 - Static batching / GPU instancing compatibility.
 - Screenshot proof in route-like lighting, not isolated dark inspector view.
+- Screenshot proof must compare candidate/promoted prefab silhouettes and materials against the mandatory visual-reference digest where they appear in water, terrain, sky/ocean, flora, UI/cockpit, product-face, or medium-depth route views.
 
 Proof output:
 
@@ -40,3 +42,4 @@ Proof output:
 - List of prefabs requiring generated/authored mesh replacement.
 - Unity screenshots and Console/Stats if Unity is run.
 - No visible-route promotion without material proof.
+- No visible-route promotion if the asset reads as primitive, proxy, sparse, flat, or visually weaker than the matching digest reference context.

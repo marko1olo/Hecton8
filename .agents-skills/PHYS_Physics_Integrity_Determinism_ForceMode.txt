@@ -5,7 +5,7 @@
 [RULE] Gameplay code uses dispatcher/IFixedTick ownership, not ad hoc MonoBehaviour `FixedUpdate` implementations.
 [RULE] Jobs must not use `Schedule().Complete()` in the same hot-path method. Completion belongs to the designated end-of-frame/fixed-step barrier.
 [RULE] Direct `Rigidbody.AddForce` calls are owned by `PhysicsApplySystem` after force packet gather.
-[RULE] Before adding physics, apply `OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`.
+[RULE] Before adding physics, apply `OPT_Premium_Approximation_Protocol.txt`.
 [FORBID] Treating broken sample code in this file as copy-pasteable implementation.
 
 

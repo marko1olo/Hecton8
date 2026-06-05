@@ -27,7 +27,7 @@ Static documentation only. Current source, active architecture contracts, fresh 
 - `CORE_Abyss_Survival_Systems_O2_Pressure_Logic.txt`: O2 drain scales from stress and depth pressure.
 - `LOGI_Energy_Networks_Power_Grid_Graph_Flow.txt`: fabrication costs are explicit kWh values.
 - `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`: all runtime-facing IDs carry precomputed hashes.
-- `OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`: survival drain uses table math, not simulated body chemistry.
+- `OPT_Premium_Approximation_Protocol.txt`: survival drain uses table math, not simulated body chemistry.
 
 ## Hash Contract
 

@@ -17,11 +17,11 @@ Antigravity generated the requested PNGs/manifests under the allowed write scope
 - File presence and dimensions passed static validation.
 
 ## Channel Semantics Block
-- `BLOCKED_CHANNEL_SEMANTICS`: Batch31 source names map MRAO, while project docs disagree between playbook MRAO and ARM/_MaskMap conventions.
+- `BLOCKED_CHANNEL_SEMANTICS`: Batch31 source maps are MRAO-style candidates; production `_MaskMap` promotion requires repack/layout proof, not filename inference.
 - Source packed-mask channel semantics are not proven. Candidate PNGs exist for inspection only; shader/material owner must choose target contract or repack channels before Unity import.
 
 ## MRAO Preview Note
-- Candidate alpha remains emission data. MRAO 2x2 previews and the contact sheet ignore alpha so RGB channels are inspectable.
+- Candidate alpha remains candidate data. MRAO 2x2 previews and the contact sheet ignore alpha so RGB channels are inspectable.
 
 ## Generated Files
 | Relative File Path | Size (Bytes) | SHA-256 Hash |

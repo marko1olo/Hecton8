@@ -8,6 +8,16 @@ Scope: cross-system acceptance gates, proof artifacts, screenshot review, profil
 
 No system is accepted because it sounds good in chat.
 
+Quality means the change improves at least one real product dimension:
+
+- player-visible beauty, readability, or material truth;
+- player decision value, route clarity, or gameplay consequence;
+- runtime stability, memory safety, or compact-lane survival;
+- high-tier sensory richness without changing gameplay truth;
+- source authority, proof clarity, or a blocker that directly prevents the above.
+
+Documentation-only work is accepted only when it removes ambiguity, fixes stale authority, routes agents to the correct source, or records a durable proof boundary. Bureaucracy that does not unblock implementation is rejected.
+
 Acceptance requires proof appropriate to the change:
 
 - static scan;
@@ -33,7 +43,7 @@ Every player-facing change must answer:
 - What fails?
 - What remains readable on compact hardware?
 - What does high-end add without changing truth?
-- What cheaper fake was considered?
+- What cheaper premium approximation was considered?
 - What artifact proves the claim?
 
 If the answer is only "looks cool", reject.
@@ -61,7 +71,7 @@ Runtime claims require:
 - exact scene/repro;
 - hardware/tier statement.
 
-Any single feature over 0.1 ms is suspicious until proven.
+Any single feature over 0.1 ms is suspicious until proven. Treat this as a profiler triage threshold, not an automatic rejection and not a reason to reduce visual quality, route readability, or gameplay value.
 
 ## 3A. GlobalQualityWeight Gate
 
@@ -143,7 +153,7 @@ Reject or patch a controller/batch instruction if it:
 - demands `Status_[ID].md`, `Rationale_[ID].md`, or `LOG_[ID].md` without an explicit active agent ID or logging mode;
 - tells agents to delete deprecated paths immediately without scoped proof, `.meta` handling, and rollback awareness;
 - downgrades the visual target to "visually acceptable";
-- treats cinematic cheats, fake-first rendering, or the 0.1 ms suspicion rule as permission for flat water, muddy skies, weak terrain, blurry textures, primitive meshes, or placeholder-looking assets;
+- treats approximation-first rendering or the 0.1 ms suspicion rule as permission for flat water, muddy skies, weak terrain, blurry textures, primitive meshes, or placeholder-looking assets;
 - contains absolute implementation bans without profiling, capture, platform, or domain context;
 - asks for fake microseconds, fake proof, or proof-label upgrades not backed by artifacts;
 - omits the surface/photic-shallows/medium-depth Subnautica-level visual floor for visual work.

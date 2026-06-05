@@ -55,6 +55,7 @@ Latest diagnostic screenshots inspected after the surface/sky repair attempts:
 - `Docs/Reports/McpScreenshots/UnityMcp_MainCamera_20260605_surface_mat_ocean_ab.png`
 - `Docs/Reports/McpScreenshots/UnityMcp_MainCamera_20260605_crest_off_after_skyfix_ab.png`
 - `Docs/Reports/McpScreenshots/UnityMcp_MainCamera_20260605_skybox_nadir_floor_surface_restored_ab.png`
+- `Docs/Reports/McpScreenshots/UnityMcp_MainCamera_20260605_surface_ocean_no_clip_ab3.png`
 
 These MCP screenshots are diagnostic only. They are not accepted proof because there is no valid `Docs/Screenshots/HectonProofPackets/h8_1475_{session}/` manifest/checksum/log packet.
 
@@ -83,6 +84,8 @@ The current screenshots fail the reference floor in multiple independent ways:
 - Underwater evidence is catastrophic against the reference: `h8_1473_mainrt_underwater_0_5m.png` is basically green/yellow slab water with almost no route composition, no seabed detail, no coral/flora density, no fauna evidence, and no usable depth cue.
 - `h8_1474_underwater_20_50m_route.png` was already rejected in prior Batch31 analysis as mislabeled/invalid for true underwater route proof.
 - Latest `Docs/Reports/McpScreenshots` surface frames still fail after the sky/surface repair attempts: the horizon has a flat dark rectangular band, the Crest-off capture exposes a rectangular sea/ground plane, water reads as oversaturated turquoise/green slab instead of believable ocean volume, terrain reads as low-detail noisy black/acid moss, and foreground silhouettes read as primitive blocks rather than authored shoreline geology.
+- The latest no-clip surface frame improves water surface texture slightly, but it still shows the same dark horizon band, primitive black/yellow shoreline blobs, over-turquoise water, and weak Aegir/sky integration. It is still rejection evidence, not improvement proof.
+- Static source review found untracked `Assets/_Project/Art/Shaders/H8_SurfaceHorizonHaze_1428.shader` and `.shader.meta` files. The meta GUID has no serialized material/scene/prefab route found by targeted text search. The shader's transparent `ZTest Always` overlay can mask a horizon seam but cannot prove water, terrain, sky, or shoreline material truth.
 - Aegir is more readable than the terrain/water stack, but still depends on smeared bands and weak integration. A large sphere is not enough for hero-grade sky proof.
 - Current visual state cannot carry first-20 player trust. It looks like diagnostic terrain/water experiments, not a commercial underwater survival route.
 
@@ -135,6 +138,24 @@ Unity proof owner:
 
 - Produce `Docs/Screenshots/HectonProofPackets/h8_1475_{session}/manifest.json`, `manifest.sha256`, copied Unity log, and canonical screenshots.
 - Raw `Docs/Screenshots/MCP/*.png` files are not acceptance artifacts.
+
+## Post-Compaction Direct Image Review
+
+Directly inspected after controller evidence refresh:
+
+- `Docs/Reports/McpScreenshots/UnityMcp_MainCamera_20260605_surface_ocean_off_probe.png`
+- `Docs/Reports/McpScreenshots/UnityMcp_MainCamera_20260605_surface_no_leftwall_ab2.png`
+- `Docs/Reports/McpScreenshots/UnityMcp_MainCamera_20260605_surface_haze_ab1.png`
+- `Docs/AssetAudit/ContactSheets/mandatory_visual_references_current_20260605.png`
+
+Verdict: rejected.
+
+- The latest surface frames expose debug-layer composition: a rectangular horizon/sea slab, a separate flat dark or acid-turquoise water plane, and disconnected island chunks.
+- Waterline proof is absent. There is no credible contact breakup, wet-rock response, foam edge, refraction depth, or shoreline material transition comparable to `VREF-03`, `VREF-04`, `VREF-10`, or `VREF-11`.
+- Terrain reads as noisy black/acid moss over smoothed blockout shapes. It does not read as authored geology.
+- Aegir is visible but composited like a large sphere behind broken scene planes. Scale is not enough without atmospheric limb integration, cloud-band detail, and route composition.
+- The visible first-person tool/foreground in `surface_haze_ab1` reads as a transparent blockout/product-face failure, not a production instrument.
+- These screenshots cannot support first-20-minutes trust, h8_1475 acceptance, surface route acceptance, or product-face promotion.
 
 ## Low / Middle / High / Ultra Consequences
 

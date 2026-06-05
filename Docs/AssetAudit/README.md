@@ -100,6 +100,7 @@ Use these files before assigning or doing asset work:
 - Local authoring/tool inventory: `ASSET_AUTHORING_TOOL_INVENTORY_20260605.md` and `.csv`.
 - Audio taxonomy: `AUDIO_ASSET_TAXONOMY_20260605.md` and `.csv`.
 - Audio source folder matrix: `AUDIO_SOURCE_FOLDER_ROUTE_MATRIX_20260605.md` and `.csv`.
+- Audio route owner requirement matrix: `AUDIO_ROUTE_OWNER_REQUIREMENT_MATRIX_20260605.md` and `.csv`.
 - Audio source technical probe matrix: `AUDIO_FILE_TECHNICAL_PROPERTIES_20260605.md` and `.csv`.
 - Audio loudness/source dynamics matrix: `AUDIO_LOUDNESS_TECHNICAL_PROPERTIES_20260605.md` and `.csv`.
 - Audio profile/cue route matrix: `AUDIO_PROFILE_ROUTE_MATRIX_20260605.md` and `.csv`.
@@ -112,6 +113,9 @@ Use these files before assigning or doing asset work:
 - Texture duplicate/hash matrix: `TEXTURE_DUPLICATE_HASH_MATRIX_20260605.md` and `.csv`.
 - Texture active-route blocker detail: `TEXTURE_ACTIVE_ROUTE_BLOCKER_DETAIL_20260605.md` and `.csv`.
 - Batch31 local PBR import intent: `BATCH31_LOCAL_PBR_IMPORT_INTENT_20260605.md`, `.csv`, and `.json` (`STATIC_SOURCE`; packed-mask rows are `BLOCKED_CHANNEL_SEMANTICS`).
+- Batch31 static validation: `BATCH31_LOCAL_PBR_IMPORT_INTENT_STATIC_VALIDATION_20260605.md` (`STATIC_VALIDATION_ONLY`; unit-tested import-intent generation, no Unity promotion).
+- Batch31 channel-semantics decision queue: `BATCH31_CHANNEL_SEMANTICS_DECISION_QUEUE_20260605.md` and `.csv` (`STATIC_IMAGE_QA`; usable albedo/normal candidates vs blocked packed-mask rows).
+- Surface horizon haze rejection review: `SURFACE_HORIZON_HAZE_1428_STATIC_REVIEW_20260605.md` (`STATIC_REVIEW_ONLY`; rejects untracked `ZTest Always` haze and raw no-clip screenshot as proof).
 - Batch31 local PBR promotion prep: `Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/Batch31_PromotionPrep_INDEX.md` (`STATIC_IMAGE_PREP_ONLY`; preview/source artifacts only).
 - Material serialized risk matrix: `MATERIAL_FILE_TECHNICAL_PROPERTIES_20260605.md` and `.csv`.
 - Audio direct-ref detail: `AUDIO_DIRECT_REF_DETAIL_20260605.md` and `.csv`.

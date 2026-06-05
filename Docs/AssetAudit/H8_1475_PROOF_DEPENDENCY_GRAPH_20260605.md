@@ -15,6 +15,7 @@ This graph is not Unity proof, visual acceptance, runtime mix proof, profiler pr
 - `Docs/AssetAudit/H8_1475_READBACK_FIELD_MANIFEST_20260605.md/.csv`
 - `Docs/AssetAudit/VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.md/.csv`
 - `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.md/.csv`
+- `Docs/Reports/AssetSystem_20260605/H8_1475_VISUAL_REFERENCE_COMPARISON_TEMPLATE_20260605.md`
 - `Docs/AssetAudit/ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.md/.csv`
 - `Docs/Reports/RuntimeSystem_20260605/ACTIVE_PLAYER_SCENE_CONFLICT_MAP_20260605.md/.csv`
 
@@ -35,7 +36,7 @@ This graph is not Unity proof, visual acceptance, runtime mix proof, profiler pr
 | 11 | audio_p0_route_readback | `ASSET_OWNER_28` | audio route rows plus console export | Null MusicDirector mixer or direct Player AudioClip route without owner/release proof. |
 | 12 | canonical_screenshot_capture | `ASSET_OWNER_36` | required `h8_1475_*.png` set | Missing canonical screenshot or raw MCP PNG substitution. |
 | 13 | frame_stats_profiler_boundary | `ASSET_OWNER_36` | `frame_debugger_stats.md` | Missing render-route artifact without abort note or fake runtime numbers. |
-| 14 | final_packet_triage | `ASSET_OWNER_36` | final proof execution report | Acceptance claim without artifacts or any dirty mutation risk. |
+| 14 | final_packet_triage | `ASSET_OWNER_36` | final proof execution report plus `h8_1475_visual_reference_comparison.md` | Acceptance claim without artifacts, missing template-based comparison, or any dirty mutation risk. |
 
 ## Rules
 
@@ -44,6 +45,7 @@ This graph is not Unity proof, visual acceptance, runtime mix proof, profiler pr
 - Rows 05-11 are readback and triage only. They do not authorize material assignment, prefab apply, texture import, Addressables changes, or audio import edits.
 - Row 12 must use canonical packet screenshots. Raw `Docs/Screenshots/MCP/*.png` files are rejected as acceptance proof.
 - Row 13 can only prove render-route evidence. It cannot prove `0 B/frame`, runtime memory, save/load, platform readiness, or build health.
+- Row 14 must include `h8_1475_visual_reference_comparison.md` based on `H8_1475_VISUAL_REFERENCE_COMPARISON_TEMPLATE_20260605.md`. Missing comparison keeps the packet `PENDING_VERIFICATION`.
 - Row 14 may end as `PENDING_VERIFICATION` or `REJECTED`. It may not claim final readiness without matching Unity, Console, visual, profiler, GC, and memory artifacts.
 
 ## Regression Model

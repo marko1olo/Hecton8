@@ -12,7 +12,7 @@ Evidence class: STATIC_SOURCE / PY_CLI only until Unity import, shader binding, 
 
 ## Scope
 
-`Tools/AtmoPreview.py` bakes atmosphere presentation data for the space prologue. This is a visual-realistic fake, not a physical atmosphere simulator. Runtime should sample the baked payloads during rendering instead of integrating Rayleigh/Mie scattering per pixel on MX350.
+`Tools/AtmoPreview.py` bakes atmosphere presentation data for the space prologue. This is a premium visual approximation, not a physical atmosphere simulator. Runtime should sample the baked payloads during rendering instead of integrating Rayleigh/Mie scattering per pixel on MX350.
 
 ## Files
 

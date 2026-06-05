@@ -95,7 +95,7 @@ Celestial work must provide:
 - save/load phase proof if persistent;
 - compact visibility or route impact capture;
 - profiler proof if runtime cycle work changed;
-- explicit fake-first rationale if physical astronomy is requested.
+- explicit premium-approximation rationale if physical astronomy is requested.
 
 ## Rejection Gates
 

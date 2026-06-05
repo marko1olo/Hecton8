@@ -1518,7 +1518,7 @@ Hardware Impact: 0 us runtime gain.
 
 What was wrong -> Prior report exposed per-character economics but did not show the requested per-line and per-1000-code-character units directly.
 What was done -> Added explicit tokens/line, tokens/1k chars, output tokens/1k chars, GPT-5.5 dollars/1k lines, GPT-5.5 dollars/1k chars, and secondary Codex/observed-high dollars/1k chars to generated reports. Refreshed ledger/report from {fmt_int(report['file_count'])} JSONL files.
-Cinematic Cheats used -> None; audit/process hygiene only.
+Premium approximations used -> None; audit/process hygiene only.
 Exact Microseconds saved -> 0 us game runtime. Static telemetry and docs only.
 Interesting stats -> primary code lines {fmt_int(primary_code['lines'])}; code chars {fmt_int(primary_code['characters'])}; tokens/line {primary_code['tokens_per_line']:,.2f}; tokens/1k code chars {primary_code['tokens_per_1k_characters']:,.2f}; output tokens/1k code chars {primary_code['output_tokens_per_1k_characters']:,.2f}; GPT-5.5 dollars/1k LOC {fmt_money(primary_code['gpt_5_5_standard_usd_per_1k_lines'])}; GPT-5.5 dollars/1k code chars {fmt_money(primary_code['gpt_5_5_standard_usd_per_1k_characters'])}; input/output {io_stats['input_to_output_ratio']:,.2f}:1; top output session {(top_output or {}).get('session_id', 'none')} output {fmt_int((top_output or {}).get('output_tokens', 0))}; top reasoning session {(top_reasoning or {}).get('session_id', 'none')} reasoning {fmt_int((top_reasoning or {}).get('reasoning_output_tokens', 0))}.
 Evidence -> STATIC_LOCAL_CODEX_JSONL_AND_FILESYSTEM plus official OpenAI pricing pages. Runtime/Unity PlayMode proof absent.

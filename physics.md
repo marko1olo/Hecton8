@@ -51,7 +51,7 @@ Required presentation stack:
 
 Primary gameplay tether constraints use owned constraint packets or approved acceleration/Verlet-style packets consumed by the physics apply pipeline. Unity production joints are rejected as the default path.
 
-Cable sag, vibration, bend, recoil, and distant readability default to visual splines, VAT, audio, haptics, and shader fakes. Per-frame bend raycasts are rejected for presentation-only cables.
+Cable sag, vibration, bend, recoil, and distant readability default to visual splines, VAT, audio, haptics, and shader approximations. Per-frame bend raycasts are rejected for presentation-only cables.
 
 Tether truth must define:
 
@@ -121,7 +121,7 @@ Physics work must provide:
 - black-box fields through `telemetry.md`;
 - recovery/fallback behavior for NaN, invalid force, over-budget, and collision proxy failure.
 
-If fluid, tether, vehicle, or tool contact behavior changed, the proof must include the owning route and why a cheaper fake was insufficient.
+If fluid, tether, vehicle, or tool contact behavior changed, the proof must include the owning route and why a cheaper premium approximation was insufficient.
 
 ## Rejection Gates
 
@@ -137,4 +137,4 @@ Reject:
 
 ## Acceptance Sentence
 
-Physics is accepted only when it is bounded, phase-owned, deterministic, readable to the player, and more useful than a cheaper visual fake.
+Physics is accepted only when it is bounded, phase-owned, deterministic, readable to the player, and more useful than a cheaper premium presentation approximation.

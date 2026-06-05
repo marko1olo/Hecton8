@@ -12,15 +12,15 @@ Scope: frame budgets, zero-GC hot paths, memory/VRAM budgets, load shedding, are
 
 ## Prime Law
 
-Performance is the currency used to buy immersion. It is not an excuse to make the game ugly, empty, low-poly, or sterile. HECTON-8 must spend frame time only on player-readable pressure, danger, route, material truth, sound, control, and evidence.
+Performance is the currency used to buy immersion. It is not an excuse to make the game ugly, empty, low-poly, or sterile. HECTON-8 must spend frame time only on player-readable pressure, danger, route, material truth, sound, control, and evidence. If performance work does not protect or improve a player-visible route, gameplay clarity, stability, compact-lane survival, or high-tier sensory richness, it is not priority work.
 
-Any system that adds more than `0.1 ms` to a frame is suspicious until profiler evidence proves it is cold, amortized, load-shed, or essential. Any hot-path managed allocation is a defect. Any performance report without proof is a story.
+Any system that adds more than `0.1 ms` to a frame is suspicious until profiler evidence proves it is cold, amortized, load-shed, or essential. This is a measured-review trigger, not permission to delete visible quality or player decision value. Any hot-path managed allocation is a defect. Any performance report without proof is a story.
 
 ## Truth Ownership
 
 Performance does not own gameplay truth. It owns budgets, measurement, load-shed policy, allocation law, and rejection gates.
 
-Domain owners decide what matters. Performance decides whether the chosen route is affordable, scalable, and proved. If a visual or gameplay feature cannot fit the compact lane, it must define a cheaper fake or be rejected.
+Domain owners decide what matters. Performance decides whether the chosen route is affordable, scalable, and proved. If a visual or gameplay feature cannot fit the compact lane, it must define a cheaper premium approximation or be rejected.
 
 ## Frame Budget Law
 

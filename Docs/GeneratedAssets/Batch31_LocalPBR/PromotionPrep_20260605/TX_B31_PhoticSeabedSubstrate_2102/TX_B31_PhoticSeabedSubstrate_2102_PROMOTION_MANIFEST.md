@@ -29,18 +29,18 @@ These files represent local PBR source bakes prepped for future Unity inspection
 - **Red Channel**: Metallic (0.0 / Black)
 - **Green Channel**: Candidate AO (Source MRAO Green; source semantics unverified)
 - **Blue Channel**: Candidate Smoothness (Source MRAO Blue; source semantics unverified)
-- **Alpha Channel**: Emission (0.0 / Black)
+- **Alpha Channel**: Candidate data (0.0 / Black in current candidates); not shader-target emission proof
 
 ### Channel Statistics
 - **Metallic**: Min = 0, Max = 0, Mean = 0.00, Std = 0.00
 - **AO**: Min = 176, Max = 204, Mean = 185.80, Std = 2.97
 - **Smoothness**: Min = 147, Max = 255, Mean = 213.31, Std = 21.34
-- **Emission**: Min = 0, Max = 0, Mean = 0.00, Std = 0.00
+- **Candidate Alpha**: Min = 0, Max = 0, Mean = 0.00, Std = 0.00
 
 ## Target Unity Import Intent (Blocked Until Channel Decision)
 - **Albedo**: `sRGB = true`, `Texture Type = Default`, `Compression = BC7`, `Generate Mip Maps = true`
 - **Normal**: `sRGB = false`, `Texture Type = Normal map`, `Compression = BC5`, `Generate Mip Maps = true`
-- **MRAO Candidate**: `sRGB = false`, `Texture Type = Default`, `Compression = BC7`, `Generate Mip Maps = true`; **do not import until channel semantics are resolved**
+- **MRAO Candidate**: `sRGB = false`, `Texture Type = Default`, `Compression = BC7`, `Generate Mip Maps = true`; **do not import until shader target and serialized mask layout are proven**
 
 ## Scalability Consequences
 - **Low (Continuous Weight 0.0)**: Uses low-res (512px) texture mips, basic ambient occlusion, and disabled specular details to protect memory. The visual quality is kept at the absolute minimum acceptable standard.

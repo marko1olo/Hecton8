@@ -1,0 +1,1486 @@
+{
+  "audit": {
+    "allowedDirectConstructors": 12,
+    "allowedNativeArrayDeclarations": 62,
+    "allowedNativeCollectionDeclarations": 62,
+    "allowedPathSuffixes": [
+      "Assets/_Project/Scripts/Core/Memory/H8Memory.cs"
+    ],
+    "burstJobInputNativeCollectionDeclarations": 62,
+    "declarationAllowedPathSuffixes": [
+      "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs"
+    ],
+    "declarationFileCount": 3,
+    "declarationFindings": [
+      {
+        "allowed": false,
+        "burstOwner": false,
+        "classification": "unknownStructField",
+        "collectionType": "NativeArray",
+        "count": 1,
+        "lines": [
+          313
+        ],
+        "names": [
+          "Entries"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 311,
+        "ownerType": "BlackBoxDumpSnapshotOwner",
+        "path": "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs"
+      },
+      {
+        "allowed": false,
+        "burstOwner": false,
+        "classification": "persistentOwnerField",
+        "collectionType": "NativeArray",
+        "count": 2,
+        "lines": [
+          378,
+          387
+        ],
+        "names": [
+          "_blackBoxDumpWriteBytes",
+          "_csvOverrideReadBytes"
+        ],
+        "ownerKind": "class",
+        "ownerLine": 184,
+        "ownerType": "BiolumPulseSyncRuntime",
+        "path": "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 6,
+        "lines": [
+          4367,
+          4369,
+          4371,
+          4373,
+          4375,
+          4377
+        ],
+        "names": [
+          "PulseState",
+          "ProfileFloats",
+          "WeatherSignal",
+          "PredatorSignal",
+          "SyncPulses",
+          "SyncPulseAges"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 4364,
+        "ownerType": "AdvanceBiolumPhasesJob",
+        "path": "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 1,
+        "lines": [
+          1276
+        ],
+        "names": [
+          "Telemetry"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 1274,
+        "ownerType": "InitializeCameraJuiceTelemetryJob",
+        "path": "Assets/_Project/Scripts/VFX/CameraJuiceSystem_CameraJuiceBurst.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 2,
+        "lines": [
+          2325,
+          2328
+        ],
+        "names": [
+          "Positions",
+          "JobState"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 2323,
+        "ownerType": "AgeCarveDebrisMirrorJob",
+        "path": "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 4,
+        "lines": [
+          2377,
+          2378,
+          2379,
+          2382
+        ],
+        "names": [
+          "Positions",
+          "Velocities",
+          "Requests",
+          "JobState"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 2375,
+        "ownerType": "CarveDebrisInjectBatchJob",
+        "path": "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 3,
+        "lines": [
+          182,
+          183,
+          185
+        ],
+        "names": [
+          "Accepted",
+          "TelemetryRing",
+          "TelemetryCursor"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 179,
+        "ownerType": "MockLaserCarveGateJob",
+        "path": "Assets/_Project/Scripts/VFX/Debris/ShinobuDeltaCrusherJobs.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 1,
+        "lines": [
+          227
+        ],
+        "names": [
+          "Dispatches"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 220,
+        "ownerType": "ChunkBoundarySplitJob",
+        "path": "Assets/_Project/Scripts/VFX/Debris/ShinobuDeltaCrusherJobs.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 1,
+        "lines": [
+          259
+        ],
+        "names": [
+          "Densities"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 257,
+        "ownerType": "MockVoxelGridGeneratorJob",
+        "path": "Assets/_Project/Scripts/VFX/Debris/ShinobuDeltaCrusherJobs.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 2,
+        "lines": [
+          274,
+          275
+        ],
+        "names": [
+          "SourceDensities",
+          "DensityAccumulator"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 272,
+        "ownerType": "InitializeDensityAccumulatorJob",
+        "path": "Assets/_Project/Scripts/VFX/Debris/ShinobuDeltaCrusherJobs.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 2,
+        "lines": [
+          349,
+          350
+        ],
+        "names": [
+          "DensityAccumulator",
+          "OutputDensities"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 347,
+        "ownerType": "ApplyCarveDensityDeltasJob",
+        "path": "Assets/_Project/Scripts/VFX/Debris/ShinobuDeltaCrusherJobs.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 2,
+        "lines": [
+          369,
+          371
+        ],
+        "names": [
+          "Input",
+          "Stats"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 367,
+        "ownerType": "RleCompressSByteJob",
+        "path": "Assets/_Project/Scripts/VFX/Debris/ShinobuDeltaCrusherJobs.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeList",
+        "count": 1,
+        "lines": [
+          370
+        ],
+        "names": [
+          "OutputPairs"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 367,
+        "ownerType": "RleCompressSByteJob",
+        "path": "Assets/_Project/Scripts/VFX/Debris/ShinobuDeltaCrusherJobs.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeList",
+        "count": 1,
+        "lines": [
+          459
+        ],
+        "names": [
+          "InputPairs"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 457,
+        "ownerType": "RleDecompressSByteJob",
+        "path": "Assets/_Project/Scripts/VFX/Debris/ShinobuDeltaCrusherJobs.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 2,
+        "lines": [
+          460,
+          461
+        ],
+        "names": [
+          "Output",
+          "WrittenCount"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 457,
+        "ownerType": "RleDecompressSByteJob",
+        "path": "Assets/_Project/Scripts/VFX/Debris/ShinobuDeltaCrusherJobs.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 2,
+        "lines": [
+          486,
+          487
+        ],
+        "names": [
+          "RemovedMass",
+          "DebrisCount"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 484,
+        "ownerType": "DebrisMassToCountJob",
+        "path": "Assets/_Project/Scripts/VFX/Debris/ShinobuDeltaCrusherJobs.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 2,
+        "lines": [
+          507,
+          508
+        ],
+        "names": [
+          "Particles",
+          "DebrisCount"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 505,
+        "ownerType": "DebrisEmitFromMassJob",
+        "path": "Assets/_Project/Scripts/VFX/Debris/ShinobuDeltaCrusherJobs.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 1,
+        "lines": [
+          569
+        ],
+        "names": [
+          "Particles"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 567,
+        "ownerType": "DebrisPhysicsFakeJob",
+        "path": "Assets/_Project/Scripts/VFX/Debris/ShinobuDeltaCrusherJobs.cs"
+      },
+      {
+        "allowed": false,
+        "burstOwner": false,
+        "classification": "persistentOwnerField",
+        "collectionType": "NativeArray",
+        "count": 3,
+        "lines": [
+          673,
+          674,
+          712
+        ],
+        "names": [
+          "_mockWakeScratch",
+          "_propwashEventScratch",
+          "_wakeProfileParseScratch"
+        ],
+        "ownerKind": "class",
+        "ownerLine": 29,
+        "ownerType": "HectonMarineSnowRenderer",
+        "path": "Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 2,
+        "lines": [
+          305,
+          306
+        ],
+        "names": [
+          "Source",
+          "Destination"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 303,
+        "ownerType": "CopyFoamParamsToMappedBufferJob",
+        "path": "Assets/_Project/Scripts/VFX/JacobianFoam/JacobianFoamContracts.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 2,
+        "lines": [
+          322,
+          323
+        ],
+        "names": [
+          "Source",
+          "Destination"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 320,
+        "ownerType": "CopyFoamWakesToMappedBufferJob",
+        "path": "Assets/_Project/Scripts/VFX/JacobianFoam/JacobianFoamContracts.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 3,
+        "lines": [
+          345,
+          346,
+          347
+        ],
+        "names": [
+          "Params",
+          "Tuning",
+          "WakeImpacts"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 343,
+        "ownerType": "GenerateMockStormStateJob",
+        "path": "Assets/_Project/Scripts/VFX/JacobianFoam/JacobianFoamContracts.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 3,
+        "lines": [
+          692,
+          693,
+          694
+        ],
+        "names": [
+          "Targets",
+          "Candidates",
+          "TargetCount"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 690,
+        "ownerType": "GenerateMockThermalTargetsJob",
+        "path": "Assets/_Project/Scripts/VFX/Parasites/ParasiteSwarmContracts.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 2,
+        "lines": [
+          749,
+          750
+        ],
+        "names": [
+          "Candidates",
+          "CandidateCount"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 747,
+        "ownerType": "ExtractParasiteTargetsJob",
+        "path": "Assets/_Project/Scripts/VFX/Parasites/ParasiteSwarmContracts.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 3,
+        "lines": [
+          803,
+          804,
+          805
+        ],
+        "names": [
+          "Candidates",
+          "Targets",
+          "TargetCount"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 801,
+        "ownerType": "SelectTopParasiteTargetsJob",
+        "path": "Assets/_Project/Scripts/VFX/Parasites/ParasiteSwarmContracts.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 3,
+        "lines": [
+          1632,
+          1633,
+          1634
+        ],
+        "names": [
+          "States",
+          "MockSignals",
+          "Scalars"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 1630,
+        "ownerType": "PlasmaBeamMockLaserFireJob",
+        "path": "Assets/_Project/Scripts/VFX/PlasmaBeam/ShinobuPlasmaBeamRuntime.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 4,
+        "lines": [
+          1750,
+          1751,
+          1752,
+          1753
+        ],
+        "names": [
+          "States",
+          "Vertices",
+          "TrigLut",
+          "Scalars"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 1748,
+        "ownerType": "PlasmaBeamTubeMeshingJob",
+        "path": "Assets/_Project/Scripts/VFX/PlasmaBeam/ShinobuPlasmaBeamRuntime.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 5,
+        "lines": [
+          1902,
+          1903,
+          1904,
+          1905,
+          1906
+        ],
+        "names": [
+          "States",
+          "Scalars",
+          "Args",
+          "TelemetryRing",
+          "AcousticTaps"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 1900,
+        "ownerType": "PlasmaBeamArgsTelemetryJob",
+        "path": "Assets/_Project/Scripts/VFX/PlasmaBeam/ShinobuPlasmaBeamRuntime.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 1,
+        "lines": [
+          248
+        ],
+        "names": [
+          "PointLights"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 246,
+        "ownerType": "BuildMockVolumetricLightsJob",
+        "path": "Assets/_Project/Scripts/VFX/VolumetricFogContracts.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 1,
+        "lines": [
+          55
+        ],
+        "names": [
+          "WakeSources"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 53,
+        "ownerType": "WakeDecayJob",
+        "path": "Assets/_Project/Scripts/VFX/Wakes/WakeDisplacementData.cs"
+      }
+    ],
+    "declarationPattern": "^\\s*(?:\\[[^\\]]+\\]\\s*)*(?:(?:public|private|protected|internal|static|readonly|volatile|unsafe|new)\\s+)+(?P<collection>NativeArray|NativeList|Native(?:Parallel)?HashMap)\\s*<[^>;]+>\\s+(?P<name>[A-Za-z_]\\w*)\\s*(?:;|,|=\\s*(?!>))",
+    "directConstructorsByExecutionSurface": {
+      "Editor": 14,
+      "Runtime": 4
+    },
+    "editorOfflineForbiddenDirectConstructors": 2,
+    "editorOfflineForbiddenDirectConstructorsByAllocator": {
+      "Persistent": 2
+    },
+    "editorOfflinePersistentPreviewDeclarationFindings": [],
+    "editorOfflinePersistentPreviewNativeCollectionDeclarations": 0,
+    "editorOfflineSessionScratchDeclarationFindings": [],
+    "editorOfflineSessionScratchNativeCollectionDeclarations": 0,
+    "editorOfflineTransientScratchDirectConstructors": 12,
+    "findingCount": 4,
+    "findings": [
+      {
+        "allocatorCounts": {
+          "Persistent": 3
+        },
+        "allocatorKinds": [
+          "Persistent",
+          "Persistent",
+          "Persistent"
+        ],
+        "allowed": false,
+        "count": 3,
+        "domain": "VFX",
+        "executionSurface": "Mixed",
+        "forbiddenAllocatorCounts": {
+          "Persistent": 3
+        },
+        "forbiddenAllocatorCountsByExecutionSurface": {
+          "Editor": {
+            "Persistent": 1
+          },
+          "Runtime": {
+            "Persistent": 2
+          }
+        },
+        "forbiddenCount": 3,
+        "forbiddenLineExecutionSurfaceCounts": {
+          "Editor": 1,
+          "Runtime": 2
+        },
+        "forbiddenLineExecutionSurfaces": [
+          "Runtime",
+          "Editor",
+          "Runtime"
+        ],
+        "forbiddenLines": [
+          330,
+          3012,
+          3987
+        ],
+        "lineExecutionSurfaceCounts": {
+          "Editor": 1,
+          "Runtime": 2
+        },
+        "lineExecutionSurfaces": [
+          "Runtime",
+          "Editor",
+          "Runtime"
+        ],
+        "lines": [
+          330,
+          3012,
+          3987
+        ],
+        "path": "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs",
+        "pathAllowed": false,
+        "transientEditorScratchAllocatorCounts": {},
+        "transientEditorScratchCount": 0,
+        "transientEditorScratchExecutionSurfaceCounts": {},
+        "transientEditorScratchExecutionSurfaces": [],
+        "transientEditorScratchLines": []
+      },
+      {
+        "allocatorCounts": {
+          "TempJob": 12
+        },
+        "allocatorKinds": [
+          "TempJob",
+          "TempJob",
+          "TempJob",
+          "TempJob",
+          "TempJob",
+          "TempJob",
+          "TempJob",
+          "TempJob",
+          "TempJob",
+          "TempJob",
+          "TempJob",
+          "TempJob"
+        ],
+        "allowed": true,
+        "count": 12,
+        "domain": "VFX",
+        "executionSurface": "Editor",
+        "forbiddenAllocatorCounts": {},
+        "forbiddenAllocatorCountsByExecutionSurface": {},
+        "forbiddenCount": 0,
+        "forbiddenLineExecutionSurfaceCounts": {},
+        "forbiddenLineExecutionSurfaces": [],
+        "forbiddenLines": [],
+        "lineExecutionSurfaceCounts": {
+          "Editor": 12
+        },
+        "lineExecutionSurfaces": [
+          "Editor",
+          "Editor",
+          "Editor",
+          "Editor",
+          "Editor",
+          "Editor",
+          "Editor",
+          "Editor",
+          "Editor",
+          "Editor",
+          "Editor",
+          "Editor"
+        ],
+        "lines": [
+          248,
+          249,
+          250,
+          251,
+          679,
+          680,
+          681,
+          682,
+          683,
+          684,
+          685,
+          686
+        ],
+        "path": "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs",
+        "pathAllowed": false,
+        "transientEditorScratchAllocatorCounts": {
+          "TempJob": 12
+        },
+        "transientEditorScratchCount": 12,
+        "transientEditorScratchExecutionSurfaceCounts": {
+          "Editor": 12
+        },
+        "transientEditorScratchExecutionSurfaces": [
+          "Editor",
+          "Editor",
+          "Editor",
+          "Editor",
+          "Editor",
+          "Editor",
+          "Editor",
+          "Editor",
+          "Editor",
+          "Editor",
+          "Editor",
+          "Editor"
+        ],
+        "transientEditorScratchLines": [
+          248,
+          249,
+          250,
+          251,
+          679,
+          680,
+          681,
+          682,
+          683,
+          684,
+          685,
+          686
+        ]
+      },
+      {
+        "allocatorCounts": {
+          "Persistent": 2
+        },
+        "allocatorKinds": [
+          "Persistent",
+          "Persistent"
+        ],
+        "allowed": false,
+        "count": 2,
+        "domain": "VFX",
+        "executionSurface": "Mixed",
+        "forbiddenAllocatorCounts": {
+          "Persistent": 2
+        },
+        "forbiddenAllocatorCountsByExecutionSurface": {
+          "Editor": {
+            "Persistent": 1
+          },
+          "Runtime": {
+            "Persistent": 1
+          }
+        },
+        "forbiddenCount": 2,
+        "forbiddenLineExecutionSurfaceCounts": {
+          "Editor": 1,
+          "Runtime": 1
+        },
+        "forbiddenLineExecutionSurfaces": [
+          "Runtime",
+          "Editor"
+        ],
+        "forbiddenLines": [
+          1347,
+          2005
+        ],
+        "lineExecutionSurfaceCounts": {
+          "Editor": 1,
+          "Runtime": 1
+        },
+        "lineExecutionSurfaces": [
+          "Runtime",
+          "Editor"
+        ],
+        "lines": [
+          1347,
+          2005
+        ],
+        "path": "Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs",
+        "pathAllowed": false,
+        "transientEditorScratchAllocatorCounts": {},
+        "transientEditorScratchCount": 0,
+        "transientEditorScratchExecutionSurfaceCounts": {},
+        "transientEditorScratchExecutionSurfaces": [],
+        "transientEditorScratchLines": []
+      },
+      {
+        "allocatorCounts": {
+          "Temp": 1
+        },
+        "allocatorKinds": [
+          "Temp"
+        ],
+        "allowed": false,
+        "count": 1,
+        "domain": "VFX",
+        "executionSurface": "Runtime",
+        "forbiddenAllocatorCounts": {
+          "Temp": 1
+        },
+        "forbiddenAllocatorCountsByExecutionSurface": {
+          "Runtime": {
+            "Temp": 1
+          }
+        },
+        "forbiddenCount": 1,
+        "forbiddenLineExecutionSurfaceCounts": {
+          "Runtime": 1
+        },
+        "forbiddenLineExecutionSurfaces": [
+          "Runtime"
+        ],
+        "forbiddenLines": [
+          1483
+        ],
+        "lineExecutionSurfaceCounts": {
+          "Runtime": 1
+        },
+        "lineExecutionSurfaces": [
+          "Runtime"
+        ],
+        "lines": [
+          1483
+        ],
+        "path": "Assets/_Project/Scripts/VFX/PlasmaBeam/ShinobuPlasmaBeamRuntime.cs",
+        "pathAllowed": false,
+        "transientEditorScratchAllocatorCounts": {},
+        "transientEditorScratchCount": 0,
+        "transientEditorScratchExecutionSurfaceCounts": {},
+        "transientEditorScratchExecutionSurfaces": [],
+        "transientEditorScratchLines": []
+      }
+    ],
+    "forbiddenDirectConstructors": 6,
+    "forbiddenDirectConstructorsByAllocator": {
+      "Persistent": 5,
+      "Temp": 1
+    },
+    "forbiddenDirectConstructorsByExecutionSurface": {
+      "Editor": 2,
+      "Runtime": 4
+    },
+    "forbiddenFileCount": 3,
+    "forbiddenNativeArrayDeclarations": 6,
+    "forbiddenNativeCollectionDeclarations": 6,
+    "jobInputDeclarationFindings": [
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 6,
+        "lines": [
+          4367,
+          4369,
+          4371,
+          4373,
+          4375,
+          4377
+        ],
+        "names": [
+          "PulseState",
+          "ProfileFloats",
+          "WeatherSignal",
+          "PredatorSignal",
+          "SyncPulses",
+          "SyncPulseAges"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 4364,
+        "ownerType": "AdvanceBiolumPhasesJob",
+        "path": "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 1,
+        "lines": [
+          1276
+        ],
+        "names": [
+          "Telemetry"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 1274,
+        "ownerType": "InitializeCameraJuiceTelemetryJob",
+        "path": "Assets/_Project/Scripts/VFX/CameraJuiceSystem_CameraJuiceBurst.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 2,
+        "lines": [
+          2325,
+          2328
+        ],
+        "names": [
+          "Positions",
+          "JobState"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 2323,
+        "ownerType": "AgeCarveDebrisMirrorJob",
+        "path": "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 4,
+        "lines": [
+          2377,
+          2378,
+          2379,
+          2382
+        ],
+        "names": [
+          "Positions",
+          "Velocities",
+          "Requests",
+          "JobState"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 2375,
+        "ownerType": "CarveDebrisInjectBatchJob",
+        "path": "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 3,
+        "lines": [
+          182,
+          183,
+          185
+        ],
+        "names": [
+          "Accepted",
+          "TelemetryRing",
+          "TelemetryCursor"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 179,
+        "ownerType": "MockLaserCarveGateJob",
+        "path": "Assets/_Project/Scripts/VFX/Debris/ShinobuDeltaCrusherJobs.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 1,
+        "lines": [
+          227
+        ],
+        "names": [
+          "Dispatches"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 220,
+        "ownerType": "ChunkBoundarySplitJob",
+        "path": "Assets/_Project/Scripts/VFX/Debris/ShinobuDeltaCrusherJobs.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 1,
+        "lines": [
+          259
+        ],
+        "names": [
+          "Densities"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 257,
+        "ownerType": "MockVoxelGridGeneratorJob",
+        "path": "Assets/_Project/Scripts/VFX/Debris/ShinobuDeltaCrusherJobs.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 2,
+        "lines": [
+          274,
+          275
+        ],
+        "names": [
+          "SourceDensities",
+          "DensityAccumulator"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 272,
+        "ownerType": "InitializeDensityAccumulatorJob",
+        "path": "Assets/_Project/Scripts/VFX/Debris/ShinobuDeltaCrusherJobs.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 2,
+        "lines": [
+          349,
+          350
+        ],
+        "names": [
+          "DensityAccumulator",
+          "OutputDensities"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 347,
+        "ownerType": "ApplyCarveDensityDeltasJob",
+        "path": "Assets/_Project/Scripts/VFX/Debris/ShinobuDeltaCrusherJobs.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 2,
+        "lines": [
+          369,
+          371
+        ],
+        "names": [
+          "Input",
+          "Stats"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 367,
+        "ownerType": "RleCompressSByteJob",
+        "path": "Assets/_Project/Scripts/VFX/Debris/ShinobuDeltaCrusherJobs.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeList",
+        "count": 1,
+        "lines": [
+          370
+        ],
+        "names": [
+          "OutputPairs"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 367,
+        "ownerType": "RleCompressSByteJob",
+        "path": "Assets/_Project/Scripts/VFX/Debris/ShinobuDeltaCrusherJobs.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeList",
+        "count": 1,
+        "lines": [
+          459
+        ],
+        "names": [
+          "InputPairs"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 457,
+        "ownerType": "RleDecompressSByteJob",
+        "path": "Assets/_Project/Scripts/VFX/Debris/ShinobuDeltaCrusherJobs.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 2,
+        "lines": [
+          460,
+          461
+        ],
+        "names": [
+          "Output",
+          "WrittenCount"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 457,
+        "ownerType": "RleDecompressSByteJob",
+        "path": "Assets/_Project/Scripts/VFX/Debris/ShinobuDeltaCrusherJobs.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 2,
+        "lines": [
+          486,
+          487
+        ],
+        "names": [
+          "RemovedMass",
+          "DebrisCount"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 484,
+        "ownerType": "DebrisMassToCountJob",
+        "path": "Assets/_Project/Scripts/VFX/Debris/ShinobuDeltaCrusherJobs.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 2,
+        "lines": [
+          507,
+          508
+        ],
+        "names": [
+          "Particles",
+          "DebrisCount"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 505,
+        "ownerType": "DebrisEmitFromMassJob",
+        "path": "Assets/_Project/Scripts/VFX/Debris/ShinobuDeltaCrusherJobs.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 1,
+        "lines": [
+          569
+        ],
+        "names": [
+          "Particles"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 567,
+        "ownerType": "DebrisPhysicsFakeJob",
+        "path": "Assets/_Project/Scripts/VFX/Debris/ShinobuDeltaCrusherJobs.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 2,
+        "lines": [
+          305,
+          306
+        ],
+        "names": [
+          "Source",
+          "Destination"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 303,
+        "ownerType": "CopyFoamParamsToMappedBufferJob",
+        "path": "Assets/_Project/Scripts/VFX/JacobianFoam/JacobianFoamContracts.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 2,
+        "lines": [
+          322,
+          323
+        ],
+        "names": [
+          "Source",
+          "Destination"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 320,
+        "ownerType": "CopyFoamWakesToMappedBufferJob",
+        "path": "Assets/_Project/Scripts/VFX/JacobianFoam/JacobianFoamContracts.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 3,
+        "lines": [
+          345,
+          346,
+          347
+        ],
+        "names": [
+          "Params",
+          "Tuning",
+          "WakeImpacts"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 343,
+        "ownerType": "GenerateMockStormStateJob",
+        "path": "Assets/_Project/Scripts/VFX/JacobianFoam/JacobianFoamContracts.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 3,
+        "lines": [
+          692,
+          693,
+          694
+        ],
+        "names": [
+          "Targets",
+          "Candidates",
+          "TargetCount"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 690,
+        "ownerType": "GenerateMockThermalTargetsJob",
+        "path": "Assets/_Project/Scripts/VFX/Parasites/ParasiteSwarmContracts.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 2,
+        "lines": [
+          749,
+          750
+        ],
+        "names": [
+          "Candidates",
+          "CandidateCount"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 747,
+        "ownerType": "ExtractParasiteTargetsJob",
+        "path": "Assets/_Project/Scripts/VFX/Parasites/ParasiteSwarmContracts.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 3,
+        "lines": [
+          803,
+          804,
+          805
+        ],
+        "names": [
+          "Candidates",
+          "Targets",
+          "TargetCount"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 801,
+        "ownerType": "SelectTopParasiteTargetsJob",
+        "path": "Assets/_Project/Scripts/VFX/Parasites/ParasiteSwarmContracts.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 3,
+        "lines": [
+          1632,
+          1633,
+          1634
+        ],
+        "names": [
+          "States",
+          "MockSignals",
+          "Scalars"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 1630,
+        "ownerType": "PlasmaBeamMockLaserFireJob",
+        "path": "Assets/_Project/Scripts/VFX/PlasmaBeam/ShinobuPlasmaBeamRuntime.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 4,
+        "lines": [
+          1750,
+          1751,
+          1752,
+          1753
+        ],
+        "names": [
+          "States",
+          "Vertices",
+          "TrigLut",
+          "Scalars"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 1748,
+        "ownerType": "PlasmaBeamTubeMeshingJob",
+        "path": "Assets/_Project/Scripts/VFX/PlasmaBeam/ShinobuPlasmaBeamRuntime.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 5,
+        "lines": [
+          1902,
+          1903,
+          1904,
+          1905,
+          1906
+        ],
+        "names": [
+          "States",
+          "Scalars",
+          "Args",
+          "TelemetryRing",
+          "AcousticTaps"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 1900,
+        "ownerType": "PlasmaBeamArgsTelemetryJob",
+        "path": "Assets/_Project/Scripts/VFX/PlasmaBeam/ShinobuPlasmaBeamRuntime.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 1,
+        "lines": [
+          248
+        ],
+        "names": [
+          "PointLights"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 246,
+        "ownerType": "BuildMockVolumetricLightsJob",
+        "path": "Assets/_Project/Scripts/VFX/VolumetricFogContracts.cs"
+      },
+      {
+        "allowed": true,
+        "burstOwner": true,
+        "classification": "burstJobInput",
+        "collectionType": "NativeArray",
+        "count": 1,
+        "lines": [
+          55
+        ],
+        "names": [
+          "WakeSources"
+        ],
+        "ownerKind": "struct",
+        "ownerLine": 53,
+        "ownerType": "WakeDecayJob",
+        "path": "Assets/_Project/Scripts/VFX/Wakes/WakeDisplacementData.cs"
+      }
+    ],
+    "jobInputNativeCollectionDeclarations": 62,
+    "nativeViewNativeCollectionDeclarations": 0,
+    "pattern": "\\bnew\\s+NativeArray\\s*<",
+    "persistentDeclarationFindings": [
+      {
+        "allowed": false,
+        "burstOwner": false,
+        "classification": "persistentOwnerField",
+        "collectionType": "NativeArray",
+        "count": 2,
+        "lines": [
+          378,
+          387
+        ],
+        "names": [
+          "_blackBoxDumpWriteBytes",
+          "_csvOverrideReadBytes"
+        ],
+        "ownerKind": "class",
+        "ownerLine": 184,
+        "ownerType": "BiolumPulseSyncRuntime",
+        "path": "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs"
+      },
+      {
+        "allowed": false,
+        "burstOwner": false,
+        "classification": "persistentOwnerField",
+        "collectionType": "NativeArray",
+        "count": 3,
+        "lines": [
+          673,
+          674,
+          712
+        ],
+        "names": [
+          "_mockWakeScratch",
+          "_propwashEventScratch",
+          "_wakeProfileParseScratch"
+        ],
+        "ownerKind": "class",
+        "ownerLine": 29,
+        "ownerType": "HectonMarineSnowRenderer",
+        "path": "Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs"
+      }
+    ],
+    "persistentNativeCollectionDeclarations": 5,
+    "runtimeForbiddenDirectConstructors": 4,
+    "schema": "hecton8.datavault_sovereignty_audit.v3",
+    "sourceRoot": "Assets/_Project/Scripts/VFX",
+    "totalDirectConstructors": 18,
+    "totalNativeArrayDeclarations": 68,
+    "totalNativeCollectionDeclarations": 68,
+    "transientJobDataNativeCollectionDeclarations": 0,
+    "unknownOwnerNativeCollectionDeclarations": 0,
+    "unknownStructNativeCollectionDeclarations": 1
+  },
+  "baselinePath": "Docs/AgentLogs/DataVaultSovereigntyBaseline_VAULT_SOVEREIGNTY_ENFORCER.json",
+  "baselineSchema": null,
+  "regressionByDomain": [],
+  "regressionByExecutionSurface": [],
+  "regressionDetails": [],
+  "regressionErrors": [],
+  "schema": "hecton8.datavault_sovereignty_audit_report.v2"
+}

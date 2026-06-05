@@ -584,7 +584,7 @@ def build_export_document(specs: Sequence[Dict[str, object]]) -> Dict[str, objec
             "control_rule": "Forward acceleration is limited by operational mass plus surge added mass; lateral and vertical motion pay larger added-mass penalties.",
             "drag_rule": "Steady speed costs cubic power because drag is quadratic and shaft power is drag force times speed.",
             "rotation_rule": "Pitch, yaw, and roll use separate angular damping tensors so hull shape controls attitude feel.",
-            "cavitation_rule": "Speed and depth thresholds drive acoustic/VFX feedback; bubble microphysics remains a presentation fake.",
+            "cavitation_rule": "Speed and depth thresholds drive acoustic/VFX feedback; bubble microphysics remains a premium presentation approximation.",
         },
         "units": {
             "density": "kg/m^3",

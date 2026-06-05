@@ -1,10 +1,10 @@
 # EQUIPMENT_INTERACTION.md
 
-## 2026-05-11 VISUAL-FAKE / PHYSICS OWNERSHIP OVERRIDE
+## 2026-06-05 PREMIUM-APPROXIMATION / PHYSICS OWNERSHIP OVERRIDE
 
 [RULE] Tool interaction may create gameplay state, decals, pooled VFX, audio, haptics, and structural graph edges. Tool modules do not create Unity Joint gameplay constraints as a production path.
 [FORBID] `ConfigurableJoint`, `SpringJoint`, `HingeJoint`, or direct concrete physics ownership from tool modules.
-[REQUIRE] Welds, anchors, hooks, and tethers publish deterministic structure/physics requests to the owning system. Presentation-only cable, seam, heat shimmer, slag, and recoil default to pooled visual/audio/haptic fakes.
+[REQUIRE] Welds, anchors, hooks, and tethers publish deterministic structure/physics requests to the owning system. Presentation-only cable, seam, heat shimmer, slag, and recoil default to pooled visual/audio/haptic approximations.
 
 ---
 

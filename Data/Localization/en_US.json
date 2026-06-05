@@ -731,7 +731,7 @@
       "Hash": "0x455FC39D",
       "Layer": "Narrative",
       "Category": "pda_technical_log",
-      "Text": "Flood Plane Scalar // Noncritical rooms do not need real fluid truth. They need scalar fill ratio, shader wetness plane, pooled leak audio, and a number the pump graph can trust. Save the expensive mass and center-of-mass changes for vessels or rooms the player controls. That fake-first line is the same doctrine used by <link=0xAA2ED91E>."
+      "Text": "Flood Plane Scalar // Noncritical rooms do not need real fluid truth. They need scalar fill ratio, shader wetness plane, pooled leak audio, and a number the pump graph can trust. Save the expensive mass and center-of-mass changes for vessels or rooms the player controls. That approximation-first line is the same doctrine used by <link=0xAA2ED91E>."
     },
     {
       "LocID": "TECH_15",

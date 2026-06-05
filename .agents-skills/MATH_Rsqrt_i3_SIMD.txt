@@ -85,7 +85,7 @@ float invLen = math.rsqrt(math.max(lenSq, 1e-8f));
 float3 n = v * invLen;
 ```
 
-Low-tier visual fake:
+Low-tier visual approximation:
 
 ```
 float invApprox = math.rcp(math.max(math.cmax(math.abs(v)), 1e-4f));

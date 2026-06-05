@@ -133,7 +133,7 @@ Save and static data:
 
 Presentation:
 
-- Visual fake first.
+- Premium approximation first.
 - Quality scales continuously through `GlobalQualityWeight`.
 - Rendering proof requires shader/import/render artifacts, not just source references.
 

@@ -852,7 +852,7 @@ Required presentation stack:
 
 Primary gameplay tether constraints use owned constraint packets or approved acceleration/Verlet-style packets consumed by the physics apply pipeline. Unity production joints are rejected as the default path.
 
-Cable sag, vibration, bend, recoil, and distant readability default to visual splines, VAT, audio, haptics, and shader fakes. Per-frame bend raycasts are rejected for presentation-only cables.
+Cable sag, vibration, bend, recoil, and distant readability default to visual splines, VAT, audio, haptics, and shader approximations. Per-frame bend raycasts are rejected for presentation-only cables.
 
 Tether truth must define:
 
@@ -922,7 +922,7 @@ Physics work must provide:
 - black-box fields through `telemetry.md`;
 - recovery/fallback behavior for NaN, invalid force, over-budget, and collision proxy failure.
 
-If fluid, tether, vehicle, or tool contact behavior changed, the proof must include the owning route and why a cheaper fake was insufficient.
+If fluid, tether, vehicle, or tool contact behavior changed, the proof must include the owning route and why a cheaper premium approximation was insufficient.
 
 ## Rejection Gates
 
@@ -938,7 +938,7 @@ Reject:
 
 ## Acceptance Sentence
 
-Physics is accepted only when it is bounded, phase-owned, deterministic, readable to the player, and more useful than a cheaper visual fake.
+Physics is accepted only when it is bounded, phase-owned, deterministic, readable to the player, and more useful than a cheaper premium presentation approximation.
 
 ## 06 - PROCEDURAL_ASSET_PIPELINE.md
 
@@ -1174,7 +1174,7 @@ Scope: URP, RenderGraph, lighting, shadows, fog, water presentation, VFX, shader
 
 Rendering carries most of HECTON-8's realism. It must make darkness, pressure, water, corrosion, glass, instruments, silt, and scale feel expensive without turning MX350 into a slideshow. HECTON-8 rejects pretty post-processing that hides weak composition, unbounded volumetrics, material clones, generic blue sci-fi grading, and render features without proof.
 
-The render path is a visual fake engine. It sells believable consequences faster than physical simulation.
+The render path is a premium presentation engine. It sells believable consequences faster than physical simulation.
 
 ## Surface And Celestial Brightness Boundary
 
@@ -1219,7 +1219,7 @@ Evidence class: STATIC_SOURCE / STATIC_DOC only. These anchors do not prove Unit
 
 - `Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs` is the current fullscreen visor droplet/leak distortion renderer. Static source shows `HectonVisorFluidDistortionFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener, ILateFrameTickable`; it caches player, fluid, and DataVault dependencies through lifecycle/hot-swap paths, registers visual-sync work, writes a 300-row `BufferID.VisorRefractionBlackBox` telemetry ring under `SystemID.Vfx`, and dumps `Docs/AgentLogs/Dump_1335_VisorFluidRefraction.bin` only on non-finite input.
 - RenderGraph ownership: `VisorFluidPass.RecordRenderGraph` reads active color, depth, opaque color, optional compute-resolved diegetic lens mask, and imported constant buffers; writes `_HectonVisorFluidDistortion`; and assigns `resourceData.cameraColor`. It uses authored `FeatureSettings.material` and optional `lensComputeShader`; it is not allowed to instantiate runtime materials or become gameplay water/pressure truth.
-- Visual fake boundary: wet lens, hull-stress leaks, rain, water-density signal, dust, Snell/chromatic refraction, and lens-mask distortion are presentation fakes. They may sell water/pressure/visor material belief and scale through `GlobalQualityWeight`/visual-overkill fields, but they must not own flooding, pressure damage, fluid simulation, survival truth, save state, or navigation truth. Missing proof: renderer asset binding/import, Frame Debugger or RenderGraph Viewer pass order, GPU/CPU timing, GCMonitor, compact/high captures, and verification that the effect preserves center readability instead of hiding weak art.
+- Presentation boundary: wet lens, hull-stress leaks, rain, water-density signal, dust, Snell/chromatic refraction, and lens-mask distortion are presentation approximations. They may sell water/pressure/visor material belief and scale through `GlobalQualityWeight`/visual-overkill fields, but they must not own flooding, pressure damage, fluid simulation, survival truth, save state, or navigation truth. Missing proof: renderer asset binding/import, Frame Debugger or RenderGraph Viewer pass order, GPU/CPU timing, GCMonitor, compact/high captures, and verification that the effect preserves center readability instead of hiding weak art.
 
 ## Noir Color Doctrine
 
@@ -1354,7 +1354,7 @@ Reject:
 
 ## Acceptance Sentence
 
-Rendering is accepted only when it preserves route readability, sells pressure and material truth, scales continuously, proves its cost, and makes HECTON-8 look expensive through controlled fakes instead of brute-force effects.
+Rendering is accepted only when it preserves route readability, sells pressure and material truth, scales continuously, proves its cost, and makes HECTON-8 look expensive through controlled premium approximations instead of brute-force effects.
 
 ## 08 - streaming.md
 
@@ -1971,6 +1971,21 @@ Batch prompts, controller prompts, task files, and old logs assign work; they do
 
 Planning snapshots such as `BUILD_PLAYTEST_ISSUES.md` and `MASTER_RELEASE_WORK_PLAN.md` are not standing design authority unless the user explicitly points at them for the current task.
 
+## Rule Hygiene
+
+Rules must reduce ambiguity, route agents to the right source, preserve product quality, and prevent stale reports or generated snapshots from becoming false authority. They must not make agents serve bureaucracy instead of the current player-facing or system-correctness task.
+
+Rule and bible updates must:
+
+- keep the player-facing visual reference folder requirement visible to agents working on water, terrain, sky, flora, UI, lighting, VFX, camera, materials, surface routes, or hero biomes;
+- keep performance subordinate to product-face quality, gameplay clarity, stability, and scalability;
+- keep `WORK AS MUCH AS POSSIBLE` as autonomy for finishing the current front, not as permission for bureaucracy or unrelated scope expansion;
+- keep source-reality discipline explicit: live source, current assets, and fresh proof beat old reports, generated snapshots, task files, and stale logs;
+- sync `.codexrules/AGENTS.md`, `.github/agents/AGENTS.md`, and `.agent/rules/AGENTS.md` by delegation or byte-intent copy;
+- keep `Docs/AGENT_AUTHORITY_ROUTING.md` current as the no-loss intake map for agents and as the required protocol before shortening or splitting rule monoliths;
+- regenerate `Docs/PROJECT_ROOT_BIBLES_COMBINED.md` with `python -B Tools/Docs/BuildProjectRootBiblesCombined.py`;
+- run `python -B Tools/Docs/BuildProjectRootBiblesCombined.py --check` and `git diff --check` over touched rule/doc files before reporting.
+
 ## Routes
 
 - Project taste and rejection language: `TASTE.md`
@@ -2161,7 +2176,7 @@ Celestial work must provide:
 - save/load phase proof if persistent;
 - compact visibility or route impact capture;
 - profiler proof if runtime cycle work changed;
-- explicit fake-first rationale if physical astronomy is requested.
+- explicit premium-approximation rationale if physical astronomy is requested.
 
 ## Rejection Gates
 
@@ -3455,7 +3470,7 @@ Evidence class: STATIC_SOURCE / STATIC_DOC only. These anchors are documentation
 
 - `Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs`: owner is the UI navigation diegetic compass. It registers `ISlowTickable` and `ILateFrameTickable` on `PriorityLayer.UI`, consumes typed signal snapshots for anomaly, calibration, survival vitals, system health, and AUP shift, and reads/writes DataVault compass lanes. UI GC boundary: cardinal output uses fixed `char[2]` and `TMP_Text.SetCharArray`; no runtime string formatting, `TMP_Text.text`, hierarchy search, or registry polling may be added to the readout path. Proof gaps: Play Mode binding, compact readability screenshot, GC/profiler capture, and scene/prefab physical carrier proof.
 - `Assets/_Project/Scripts/Visor/SpectrumSystem.cs`: owner is visor spectrum/sonar presentation. It owns bounded fixed queues for mode/pulse/ping/snapshot/echo/ping-return UI events and consumes active sonar and spatial-audio-derived inputs into presentation. It does not own hidden world truth, AI truth, or objective truth. Proof gaps: active sonar HUD/visor screenshot, UI/audio reaction proof, Frame Debugger/Profiler/GC proof, and compact readability proof.
-- `Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs`: owner is visor fluid/distortion presentation. It is a RenderGraph visual fake over the player camera using cached wet lens, hull stress, water density, lens state, and quality fields. It must preserve critical HUD readability; it cannot be used to hide primitive water, weak terrain, unreadable route cues, or missing damage/flooding truth. Proof gaps: Frame Debugger/RenderGraph Viewer, compact/high visual captures, GPU/CPU timing, and GC proof.
+- `Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs`: owner is visor fluid/distortion presentation. It is a RenderGraph presentation approximation over the player camera using cached wet lens, hull stress, water density, lens state, and quality fields. It must preserve critical HUD readability; it cannot be used to hide primitive water, weak terrain, unreadable route cues, or missing damage/flooding truth. Proof gaps: Frame Debugger/RenderGraph Viewer, compact/high visual captures, GPU/CPU timing, and GC proof.
 - `Assets/_Project/Scripts/AtlasSignal/SignalBeacon.cs`: owner is Atlas signal beacon telemetry and acoustic breadcrumb presentation. It publishes partial signal strength/static/error/recovered-bit telemetry for PDA/HUD consumers and acoustic ping payloads for audio/sonar lanes. It is not a quest/save authority; recovered fragment persistence and objective effects require separate narrative/persistence proof.
 
 ## 14. Acceptance Sentence
@@ -3728,7 +3743,7 @@ Required:
 - fixed pools for recurring effects;
 - no instantiate/destroy during gameplay spikes;
 - no CPU readback from particle state except diagnostics;
-- GPU particles or shader fakes for dense ambience;
+- GPU particles or shader approximations for dense ambience;
 - hard caps per region, source, and effect family;
 - event coalescing for spammy sources;
 - no new materials per effect instance.
@@ -3739,7 +3754,7 @@ For many effects, the best implementation is a shader parameter, decal, VAT, atl
 
 `GlobalQualityWeight` may scale particle count, spawn cadence, flipbook resolution, light contribution, secondary trails, decal density, shader distortion, and diagnostic overlays. It must not change damage truth, hazard truth, or owner state.
 
-Compact keeps cause-readable silhouettes, pooled low-count particles, decals, shader fakes, and audio/UI reinforcement. Middle adds density. High adds richer local response. Ultra adds cinematic layering only within hard caps.
+Compact keeps cause-readable silhouettes, pooled low-count particles, decals, shader approximations, and audio/UI reinforcement. Middle adds density. High adds richer local response. Ultra adds cinematic layering only within hard caps.
 
 ## Production Packet
 
@@ -4511,6 +4526,7 @@ Source: `3DMODEL_FAUNA.md`
 # 3DMODEL_FAUNA
 
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
+Evidence class: STATIC_DOC / AUTHORING_STANDARD
 Scope: generated creatures, shells, jaws, fins, tails, tentacles, skeletons, carcasses, VAT-ready bodies, and fauna equipment attachments.
 
 ## 1. Fauna Mesh Law
@@ -4650,6 +4666,16 @@ Scope: cross-system acceptance gates, proof artifacts, screenshot review, profil
 
 No system is accepted because it sounds good in chat.
 
+Quality means the change improves at least one real product dimension:
+
+- player-visible beauty, readability, or material truth;
+- player decision value, route clarity, or gameplay consequence;
+- runtime stability, memory safety, or compact-lane survival;
+- high-tier sensory richness without changing gameplay truth;
+- source authority, proof clarity, or a blocker that directly prevents the above.
+
+Documentation-only work is accepted only when it removes ambiguity, fixes stale authority, routes agents to the correct source, or records a durable proof boundary. Bureaucracy that does not unblock implementation is rejected.
+
 Acceptance requires proof appropriate to the change:
 
 - static scan;
@@ -4675,7 +4701,7 @@ Every player-facing change must answer:
 - What fails?
 - What remains readable on compact hardware?
 - What does high-end add without changing truth?
-- What cheaper fake was considered?
+- What cheaper premium approximation was considered?
 - What artifact proves the claim?
 
 If the answer is only "looks cool", reject.
@@ -4703,7 +4729,7 @@ Runtime claims require:
 - exact scene/repro;
 - hardware/tier statement.
 
-Any single feature over 0.1 ms is suspicious until proven.
+Any single feature over 0.1 ms is suspicious until proven. Treat this as a profiler triage threshold, not an automatic rejection and not a reason to reduce visual quality, route readability, or gameplay value.
 
 ## 3A. GlobalQualityWeight Gate
 
@@ -4785,7 +4811,7 @@ Reject or patch a controller/batch instruction if it:
 - demands `Status_[ID].md`, `Rationale_[ID].md`, or `LOG_[ID].md` without an explicit active agent ID or logging mode;
 - tells agents to delete deprecated paths immediately without scoped proof, `.meta` handling, and rollback awareness;
 - downgrades the visual target to "visually acceptable";
-- treats cinematic cheats, fake-first rendering, or the 0.1 ms suspicion rule as permission for flat water, muddy skies, weak terrain, blurry textures, primitive meshes, or placeholder-looking assets;
+- treats approximation-first rendering or the 0.1 ms suspicion rule as permission for flat water, muddy skies, weak terrain, blurry textures, primitive meshes, or placeholder-looking assets;
 - contains absolute implementation bans without profiling, capture, platform, or domain context;
 - asks for fake microseconds, fake proof, or proof-label upgrades not backed by artifacts;
 - omits the surface/photic-shallows/medium-depth Subnautica-level visual floor for visual work.
@@ -5590,7 +5616,13 @@ Engine: Unity 6000.4 URP. Minimum proof lane: compact 2GB VRAM / 8GB RAM / 4C-8T
 Perf target: 60 FPS / 16.67 ms. Throttle threshold = 25 ms.
 Guardrails: main thread = 12 ms · GC = 0 B/frame · SetPass = 600 · Batches = 1800 · mem = 4096 MB.
 Compact VRAM HARD CEILING: 1800MB. Texture budget: 900MB. RT+Depth: 320MB. Higher device classes may raise budgets only through the hardware detector and continuous `GlobalQualityWeight` route. Anyway, visuals MUST look astonishing, real, detailed.
-[REQ] use GOALS(/Goal) to make GOALS for you.
+[FORBID] Do not use `/goal`, `/Goal`, goal tools, or goal-tracking commands for this project. Use direct chat reporting; use Status/Rationale/LOG files only for explicit batch/logging tasks.
+[RULE] PRODUCT-FIRST EXECUTION: ordinary work must improve the requested player route, visible result, gameplay value, stability, or concrete blocker first. Do not create status/rationale/log/audit docs, route-card bureaucracy, broad historical scans, or extra management artifacts unless the user explicitly requests batch/logging or the changed artifact genuinely needs a concise decision record.
+[RULE] PERFORMANCE IS A SERVANT: performance work exists to protect or buy player-visible beauty, gameplay clarity, stability, and scalability. Do not remove visual/gameplay value solely to satisfy a metric; if a budget fails, solve it with a premium approximation, load-shed gate, cadence/tier scaling, or richer high-tier path that preserves the product face.
+[RULE] RULE SOURCE OWNERSHIP: `AGENTS.md` is the canonical agent-law source. `.codexrules/AGENTS.md`, `.github/agents/AGENTS.md`, and `.agent/rules/AGENTS.md` must either delegate to it or be kept byte-intent synced after rule edits. `Docs/PROJECT_ROOT_BIBLES_COMBINED.md` is generated; do not hand-edit it. Regenerate it with `python -B Tools/Docs/BuildProjectRootBiblesCombined.py` after root bible or rule-source edits.
+[RULE] SOURCE REALITY DISCIPLINE: work from live source, current assets, and fresh proof before trusting old reports, generated snapshots, task files, or stale logs. Keep edits scoped to the owner route needed for the current request, preserve unrelated dirty files, and do not rewrite history to make a report look cleaner. If documentation and source disagree, state the evidence boundary and update the stable source of truth.
+[RULE] TASK AUTHORITY ROUTING: for non-trivial work, route through `Docs/AGENT_AUTHORITY_ROUTING.md` after this file. The routing file does not replace any rule; it tells agents which root bibles, mandate files, reference images, source files, and proof artifacts must be read for the current task. Rule splitting must follow its no-loss protocol.
+[REQ] For any agent who works on player-visible systems (water, terrain, sky, flora, UI, VFX, lighting, camera, materials, surface route, or hero biome), read and visually inspect every image in `C:\hades\Hecton8\Docs\mandatory if you work on systems that user sees (water, terrain, sky, flora, ui) - read this and all images inside (references)` before claiming taste or visual direction. HECTON-8 is a universal game system, not a single beauty shot: change perspective, dive, inspect close and far views, and reject bad frames honestly with a concrete improvement path.
 [REQ] Graduation response: used/total > 0.90 triggers Mip-downgrade.
 [REQ] About `GlobalQualityWeight` - it is nice to make hardware-dependant optimization, but do not make shitty choices of graphics. Graphics worse than Subnautica is ABSOLUTELY PROHIBITED ON ANY HARDWARE LEVEL!
 [REQ] Surface, sky, Aegir, moons, clouds, coastline, ocean surface, and photic shallows are NOT the dark/noir zone. They must be bright, legible, beautiful, premium, and detailed on every hardware lane. Darkness, gloom, crushed blacks, and hostile noir grading belong to depth, caves, interiors, storms, eclipse windows, and pressure events only. Never use darkness/fog/post to hide primitive terrain, weak textures, procedural scribbles, or unfinished celestial art.
@@ -5744,7 +5776,7 @@ Current static reality (2026-05-13 DOC_AUDIT): forbidden UPM IDs are absent, but
 
 ## PRIME DIRECTIVES — VIOLATION = REJECTION
 
-### 0. AUTHORITY SPINE + VISUAL FAKE FIRST
+### 0. AUTHORITY SPINE + PREMIUM APPROXIMATION
 
 [RULE] Long-lived authority lives in stable project docs, not dated reports:
 1. `AGENTS.md`
@@ -5762,7 +5794,7 @@ Current static reality (2026-05-13 DOC_AUDIT): forbidden UPM IDs are absent, but
 13. `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md`
 14. `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md`
 15. `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_MIGRATION_LEDGER.md`
-16. `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`
+16. `Docs/ARCHITECTURE/PREMIUM_APPROXIMATION_LEDGER.md`
 17. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/README.md`
 18. `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/README.md`
 
@@ -5772,10 +5804,10 @@ Current static reality (2026-05-13 DOC_AUDIT): forbidden UPM IDs are absent, but
 [RULE] New subsystem setup involving global authority starts owner-local and follows `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md` before adding Registry/Signal/Vault/EventBus surface.
 [RULE] New or changed global authority routes require a review disposition from `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md`: `GREEN`, `YELLOW`, `RED`, or `KILL`. Only `GREEN` can merge without further fixes.
 
-[RULE] Cinematic Cheat Protocol: any physical simulation of water, light, deformation, pressure, flow, ambience, cable sag, particles, flora motion, or distant motion must first prove that a deterministic visual/audio/haptic/UI/proxy fake cannot preserve player belief and gameplay correctness.
-[RULE] Default path is visual-realistic fake. Physical simulation is allowed only for player-critical collision/control, save-affecting state, combat/damage truth, or gameplay-critical hazards.
-[RULE] Fake-first is not cheap-looking-first. A fake is accepted only if screenshots/captures preserve beauty, depth, material truth, route readability, and gameplay belief. A fake that produces flat water, muddy sky, weak terrain, crayon texture, empty fog, or low-detail hero assets is rejected even if it is fast.
-[RULE] Any single runtime system adding more than `0.1ms` to a frame is suspicious until profiler proof, quality-tier gate, and load-shed behavior exist. This is a budget discipline rule, not permission to lower the visual floor. Saved frame time must buy stronger visuals, gameplay clarity, or stability.
+[RULE] Premium Approximation Protocol: any physical simulation of water, light, deformation, pressure, flow, ambience, cable sag, particles, flora motion, or distant motion must first prove that a deterministic authored/shader/audio/haptic/UI/proxy route cannot preserve player belief and gameplay correctness.
+[RULE] Default path is premium, deterministic, player-believable approximation. Physical simulation is allowed only for player-critical collision/control, save-affecting state, combat/damage truth, or gameplay-critical hazards.
+[RULE] Approximation-first is not cheapness-first. An approximation is accepted only if screenshots/captures preserve beauty, depth, material truth, route readability, gameplay belief, and the visual floor. Any approximation that produces flat water, muddy sky, weak terrain, crayon texture, empty fog, or low-detail hero assets is rejected even if it is fast.
+[RULE] Any single runtime system adding more than `0.1ms` to a frame is suspicious until profiler proof, quality-tier gate, and load-shed behavior exist. This is a triage threshold for measured review, not an automatic rejection and not permission to lower the visual floor. Saved frame time must buy stronger visuals, gameplay clarity, stability, or compact-lane survival.
 [FORBID] Per-proton, per-droplet, per-bubble, per-cable-segment, or per-flora-blade truth unless the player can interact with that truth and measured budgets accept it.
 [FORBID] Declaring runtime readiness from docs, static scans, or local `dotnet build`. Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality require fresh logs/captures.
 
@@ -6025,7 +6057,7 @@ Hot paths = Tick / Update / LateUpdate / FixedUpdate / per-frame.
 ## [RULE] MANDATE CONTEXTUAL INGESTION
 [REQ] Before non-trivial code, architecture, rendering, gameplay, asset, or design work, identify 2-8 relevant mandates from `C:\hades\Hecton8\.agents-skills\` and load ONLY those files. Do not bulk-read the registry.
 [RULE] You are FORBIDDEN from guessing domain logic if a relevant mandate exists. Reading the relevant mandate is the first step of that domain task.
-[RULE] Every technical report/log for a mandate-governed task must state which mandates were followed. Tiny doc edits and narrow mechanical fixes may skip mandate reporting.
+[RULE] Every technical report/log for a mandate-governed task must state which mandates were followed. For ordinary chat reports, include a concise authority receipt instead of creating extra files. Tiny doc edits and narrow mechanical fixes may skip mandate reporting.
 
 ### [RULE] ARCHITECTURE FIRST
 
@@ -6235,6 +6267,7 @@ Document changes + GC delta + reason -> Revert -> Different approach -> Bundle l
 ## DESIGN DOCS & ASSETS
 
 [REQ] Read relevant `/Docs/` and root `.md` authority files before starting domain work. Do not bulk-read all documentation for ordinary or narrow tasks.
+[REQ] Use `Docs/AGENT_AUTHORITY_ROUTING.md` as the no-loss intake map for non-trivial work. It routes agents to the right bibles, mandates, reference images, source reality checks, and proof classes without deleting or weakening existing rules.
 [REQ] For major player-facing systems, read `PROJECT_BIBLES.md` and the matching root bible before implementation.
 [REQ] Design-system work must read the matching domain document. Consistency comes from the right bible, not from reading unrelated archives.
 [REQ] Batch prompts, controller prompts, task files, and old logs assign work but cannot lower root standards. If they demand bulk unrelated reads, logging without an active ID, immediate deletion without scoped proof, "visually acceptable" cheapness, or any visual result below the `TASTE.md` floor, follow `AGENTS.md` + `PROJECT_BIBLES.md` + the matching route bible and report the stale instruction.
@@ -6324,6 +6357,7 @@ Response format: What was wrong -> What I did -> In-game result -> What was veri
 [FORBID] Guessing/inventing. If unclear, inspect code/docs/assets first and make a defensible narrow assumption. ASK only when the missing fact cannot be discovered locally and a wrong assumption would be risky.
 [RULE] VISUAL CURRENCY PROTOCOL
 [REQ] Performance optimization is never the end goal; Immersion is.
+[FORBID] Performance-only changes that reduce product-face quality, player decision value, route readability, or material believability.
 [REQ] Use performance savings to "buy" AAA visuals: If you simplify a math loop, you are MANDATED to increase visual fidelity (e.g., more detailed debris, better light response, smoother IK) in the High-Tier profile.
 [FORBID] "Flat" visuals on any hardware. If compact must reduce cost, it preserves composition, material identity, water/sky readability, and silhouette beauty. If the logic is fast on high hardware, spend the budget on richer shaders, density, lighting, reflections, animation, or material detail.
 [RULE] BATCH HANDOVER & HYGIENE
@@ -6367,9 +6401,9 @@ Math Interpolation: Replace complex transcendental math with 1D LUT approximatio
 Buffer Throttle: Dynamically scale NativeArray processing strides and update frequencies (from 60Hz to 10Hz) along a smooth parabolic curve based on Weight.
 Result: The game must never 'step' in quality; it must breathe with the hardware
 [ADDITIONAL PROTOCOLS]
-- Cinematic Cheat Protocol: Any physical simulation (water, light, deformation) must be checked for the possibility of replacing it with a "visual fake" (1D texture, triangle wave).
-- Visual fake means believable visual result, not visibly cheap result. If the fake fails screenshots or player readability, improve the fake, add authored assets/textures, or use a more expensive path behind `GlobalQualityWeight`.
-- Frame Time Dictatorship: Any system that adds more than 0.1 ms to a frame is considered suspicious. Simulating "protons" is prohibited.
+- Premium Approximation Protocol: Any physical simulation (water, light, deformation) must be checked against a premium authored/shader/audio/haptic/UI/proxy approximation before runtime complexity is accepted.
+- Premium approximation means believable, beautiful, player-readable result, not visibly cheap result. If the approximation fails screenshots or player readability, improve art/assets/textures or use a more expensive path behind `GlobalQualityWeight`.
+- Frame Time Discipline: Any system that adds more than 0.1 ms to a frame is suspicious until measured and tier-gated. This is a profiling trigger, not a reason to flatten visuals or delete player value. Simulating "protons" is prohibited.
 - The system must be predictable and controllable. Predictability over realism.
 - Scalability potential: on cheap devices it must be visually nice and fast, on top-tier devices it must be visual overkill!
 - Optimization must never be the goal; Immersion is the goal. Use performance as a currency to buy better visuals.
@@ -6384,7 +6418,7 @@ Mandatory Thinking: "How does this look on a toaster?" AND "How does this look o
 [FORBID] "I don't know why it crashed" as an answer. If you didn't implement the Black Box, the crash is your fault.
 
 1. MEMORY SOVEREIGNTY (DATA-LOCAL PURITY)
-   - PERSISTENT ALIAS BAN: You are strictly forbidden from declaring or maintaining persistent `NativeArray<T>`, `NativeList<T>`, or `NativeQueue<T>` fields within any `MonoBehaviour` or runtime manager class. 
+   - PERSISTENT ALIAS BAN: You are strictly forbidden from declaring or maintaining persistent `NativeArray<T>`, `NativeList<T>`, or `NativeQueue<T>` fields within any `MonoBehaviour` or runtime manager class.
    - TRANSIENT RESOLUTION: All native state must reside inside the `GlobalDataVault`. You must resolve memory views (`TryResolveHandle`) strictly within method/job scope and discard them immediately at the end of the execution phase.
    - LOCKING INTEGRITY: You must wrap all mutable data-resolutions inside a strict `try/finally` block, releasing the writer lock (`ReleaseWriteLock`) immediately after job scheduling to prevent memory relocation deadlocks.
 
@@ -6393,18 +6427,22 @@ Mandatory Thinking: "How does this look on a toaster?" AND "How does this look o
    - DECENTRALIZED BROADCASTS: All first-party hot-path communication must use unmanaged, explicit-layout `SignalBus<T>` lanes. Payloads must contain zero managed references (`string`, `GameObject`, class references). Convert strings to `uint` FNV-1a hashes and world positions to `double3` AUP before publishing.
 
 3. KINEMATIC & COLLISION DETERMINISM
-   - PHYSX COLLIDER EXCLUSION: You must completely eliminate synchronous `Physics.SphereCast`, `Raycast`, and `CapsuleCast` calls from hot movement loops. 
+   - PHYSX COLLIDER EXCLUSION: You must completely eliminate synchronous `Physics.SphereCast`, `Raycast`, and `CapsuleCast` calls from hot movement loops.
    - SDF COLLISION RESOLUTION: All character and vehicle collisions against the environment must be computed speculatively by sampling the 3D Voxel SDF from the `GlobalDataVault` inside Burst-compiled jobs.
    - AUP SHIFT RIGOUR: All spatial calculations must subtract the sector/camera `double3` AUP origin first, perform local physics/friction math in `float3` space, and cast back to `double3` for the authoritative position.
 
-4. THE "DEAR LIE" VS. ACADEMIC OVER-ENGINEERING
-   - THE SUFFICIENCY LAW: Do not write proton-level physical or medical simulations where a visual fake preserves player belief. 
+4. PREMIUM APPROXIMATION VS. ACADEMIC OVER-ENGINEERING
+   - THE SUFFICIENCY LAW: Do not write proton-level physical or medical simulations where a premium presentation approximation preserves player belief.
    - THE I3 MATH-LOD RULE: You must completely eliminate binary quality switches (`if (isLowEnd)`). Scale mathematical solver complexity, iteration budgets, and cadence smoothly and continuously using the `GlobalQualityWeight` (0.0 to 1.0) parameter.
    - THE 1-FRAME LATENCY MASK: Move all GPU, material, particle, and audio writes out of simulation phases and into `LateFrameTick` or `VISUAL_SYNC`. The presentation layer must act as a read-only observer of the finalized simulation data.
 ---
+
+[REQ] WORK AS MUCH AS POSSIBLE. WORK LONG HOURS. DON'T SKIMP ON ANALYSIS, LOCAL EVIDENCE, IMPLEMENTATION, VERIFICATION, OR RE-CHECKING. DON'T SIMPLIFY THE USER'S MEANING OR REDUCE THE REQUESTED TASK. Do not stop to ask the user for obvious next steps: inspect locally, make defensible assumptions, fix required adjacent blockers, and keep moving until the current front is genuinely handled. Autonomy is not bureaucracy: do not create logs/status/route-card artifacts, mutate unrelated fronts, or start unrelated tasks unless the user asked for orchestration/batch work or the adjacent fix is required to keep the current change correct.
+
+---
 ## FINAL DIRECTIVE
 
-Zero GC. Production-ready. Enterprise quality. Now.
+Zero GC in hot runtime paths. Production-ready means correct player route, integrated code/data, measured proof where applicable, and no bureaucracy theater. Enterprise quality. Now.
 No "good enough for testing". Any change without improvement is harmful.
 FACTS ONLY. NO OPTIMISM. OBEY DOCUMENTS, LOGS, OBJECTIVE DATA.
 
@@ -6425,6 +6463,12 @@ This is not a design doc. It does not define features, quests, budgets, owners, 
 This file defines what the project considers good.
 
 Use it during reviews when a screenshot, mechanic, shader, UI panel, sound, creature, room, or marketing asset technically works but may still be tasteless, derivative, noisy, fake, soft, or visually wrong for HECTON-8.
+
+For player-visible systems, review the project reference images before claiming visual direction:
+
+`C:\hades\Hecton8\Docs\mandatory if you work on systems that user sees (water, terrain, sky, flora, ui) - read this and all images inside (references)`
+
+The references are not a single camera target. They define the visual floor across surface, underwater, depth, terrain, sky, flora, water, and UI-adjacent composition. Agents must inspect close, far, surface, underwater, and alternate perspectives before accepting a visual result.
 
 ## Binding Production Standards
 
@@ -6993,7 +7037,7 @@ Use these in any taste review:
 2. What player decision does this sharpen?
 3. What sensory channel carries it on weak hardware?
 4. What does high-end hardware add without changing truth?
-5. What is the cheaper fake, and why is it enough or not enough?
+5. What is the cheaper premium approximation, and why is it enough or not enough?
 6. What would a hostile viewer call derivative here?
 7. What evidence remains after the moment ends?
 8. Does this serve pressure, machinery, salvage, sound, visibility, or black-water structure?
@@ -8270,15 +8314,15 @@ Scope: frame budgets, zero-GC hot paths, memory/VRAM budgets, load shedding, are
 
 ## Prime Law
 
-Performance is the currency used to buy immersion. It is not an excuse to make the game ugly, empty, low-poly, or sterile. HECTON-8 must spend frame time only on player-readable pressure, danger, route, material truth, sound, control, and evidence.
+Performance is the currency used to buy immersion. It is not an excuse to make the game ugly, empty, low-poly, or sterile. HECTON-8 must spend frame time only on player-readable pressure, danger, route, material truth, sound, control, and evidence. If performance work does not protect or improve a player-visible route, gameplay clarity, stability, compact-lane survival, or high-tier sensory richness, it is not priority work.
 
-Any system that adds more than `0.1 ms` to a frame is suspicious until profiler evidence proves it is cold, amortized, load-shed, or essential. Any hot-path managed allocation is a defect. Any performance report without proof is a story.
+Any system that adds more than `0.1 ms` to a frame is suspicious until profiler evidence proves it is cold, amortized, load-shed, or essential. This is a measured-review trigger, not permission to delete visible quality or player decision value. Any hot-path managed allocation is a defect. Any performance report without proof is a story.
 
 ## Truth Ownership
 
 Performance does not own gameplay truth. It owns budgets, measurement, load-shed policy, allocation law, and rejection gates.
 
-Domain owners decide what matters. Performance decides whether the chosen route is affordable, scalable, and proved. If a visual or gameplay feature cannot fit the compact lane, it must define a cheaper fake or be rejected.
+Domain owners decide what matters. Performance decides whether the chosen route is affordable, scalable, and proved. If a visual or gameplay feature cannot fit the compact lane, it must define a cheaper premium approximation or be rejected.
 
 ## Frame Budget Law
 
@@ -8696,7 +8740,7 @@ LOD2:
 
 - Preserve mass and root/anchor shape.
 - Replace minor branches/blades with simplified shells or cards.
-- Keep vertex color R/G/B semantics because shader fakes still read them.
+- Keep vertex color R/G/B semantics because shader approximations still read them.
 
 HLOD:
 
@@ -9021,6 +9065,7 @@ Source: `3DMODEL_TEXTURES_MATERIALS.md`
 # 3DMODEL_TEXTURES_MATERIALS
 
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
+Evidence class: STATIC_DOC / AUTHORING_STANDARD
 Scope: generated and authored textures, material assignment, PBR masks, atlas packing, UV density, texture import settings, and shader data streams for generated assets.
 
 For source creation recipes, AI-assisted texture prompts, procedural height/normal/MRAO bake rules, and visual acceptance gates, read `3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md` before authoring or generating texture families.
@@ -9185,6 +9230,7 @@ Source: `3DMODEL_EQUIPMENT_PROPS.md`
 # 3DMODEL_EQUIPMENT_PROPS
 
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
+Evidence class: STATIC_DOC / AUTHORING_STANDARD
 Scope: tools, devices, cockpit parts, lab machinery, storage containers, cables, handholds, consoles, valves, pumps, lights, sensors, and small generated set dressing.
 
 ## 1. Prop Law
@@ -9315,6 +9361,7 @@ Source: `3DMODEL_GEOLOGY_ROCKS.md`
 # 3DMODEL_GEOLOGY_ROCKS
 
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
+Evidence class: STATIC_DOC / AUTHORING_STANDARD
 Scope: rocks, boulders, cliffs, ore nodes, cave chunks, thermal vents, mineral shelves, basalt columns, sediment layers, and geological props.
 
 ## 1. Geology Mesh Law
@@ -10678,6 +10725,7 @@ Source: `3DMODEL_HARD_SURFACE_MODULES.md`
 # 3DMODEL_HARD_SURFACE_MODULES
 
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
+Evidence class: STATIC_DOC / AUTHORING_STANDARD
 Scope: DeepReach modules, airlocks, wreckage shells, submarine components, doors, panels, corridors, pipes, supports, and industrial structure meshes.
 
 ## 1. Shape Language
@@ -11121,7 +11169,7 @@ Reject water work if:
 
 ## 13. Acceptance Sentence
 
-Water is accepted only when it makes pressure, route, damage, current, visibility, and material state more readable through controlled fakes, named truth owners, continuous quality scaling, zero-GC runtime paths, and measured proof where runtime behavior exists.
+Water is accepted only when it makes pressure, route, damage, current, visibility, and material state more readable through controlled premium presentation approximations, named truth owners, continuous quality scaling, zero-GC runtime paths, and measured proof where runtime behavior exists.
 
 ## 59 - audio.md
 

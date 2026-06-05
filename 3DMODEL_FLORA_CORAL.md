@@ -92,7 +92,7 @@ LOD2:
 
 - Preserve mass and root/anchor shape.
 - Replace minor branches/blades with simplified shells or cards.
-- Keep vertex color R/G/B semantics because shader fakes still read them.
+- Keep vertex color R/G/B semantics because shader approximations still read them.
 
 HLOD:
 

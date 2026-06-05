@@ -12,7 +12,8 @@ First-20 route moment affected: bright first exit, ocean skin, shoreline/waterli
 
 - `.agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt`
 - `.agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
-- `.agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`
+- `.agents-skills/OPT_Premium_Approximation_Protocol.txt`
+- `Docs/ARCHITECTURE/PREMIUM_APPROXIMATION_LEDGER.md`
 - `.agents-skills/STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`
 - `.agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
 - `.agents-skills/QA_Evidence_Text_Filter_Audit.txt`

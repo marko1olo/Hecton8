@@ -1,7 +1,7 @@
 # URP_GRAPHICS_HOTPATH.md
-## 2026-05-11 VISUAL-FAKE OVERRIDE
+## 2026-06-05 PREMIUM-APPROXIMATION OVERRIDE
 
-[RULE] The render path carries most realism. Prefer shader/post/LOD fakes over gameplay simulation.
+[RULE] The render path carries most realism. Prefer shader/post/LOD approximations over gameplay simulation.
 [RULE] MX350/MINIMAL uses cheap fog, dither, LUT haze, baked AO, impostors, HLOD cards, and authored masks before raymarching or dynamic lights.
 [RULE] Full or half-res raymarching is MED+ only unless a fresh MX350 profiler capture proves the cost.
 [FORBID] Bloom, full volumetrics, runtime lens flares, per-object material clones, or high-sample post stacks on MX350.
@@ -302,7 +302,7 @@ IN.positionCS.z += _DepthBias * IN.positionCS.w * decalMask;
 [RULE] MaxShadowDistance = 40m (underwater visibility cap). CSM: 2 cascades only on MIN spec.
 [SCALE] Cascade splits: QUALITY_LOW = [8m, 25m] | QUALITY_HIGH = [5m, 15m, 35m] (3 cascades).
 [RULE] Spot lights (bioluminescent creatures, dive lights): 512px shadow map each. Max 2 casting spots active simultaneously.
-[FORBID] Point light shadows on MIN spec. Fake via SDF proximity shadow in shader:
+[FORBID] Point light shadows on MIN spec. Approximate via SDF proximity shadow in shader:
 [MATH] SDF soft shadow approximation (for point lights on LOW):
   softShadow(ro, rd, mint, maxt, k):
     res = 1.0; t = mint

@@ -1,6 +1,6 @@
 # H8 1475 Readback Field Manifest - 2026-06-05
 
-Status: `STATIC VERIFIED / PENDING UNITY PROOF`.
+Status: `STATIC_STRUCTURE_REVIEWED / PENDING UNITY PROOF`.
 Evidence class: `STATIC_DOC`.
 Runtime proof: absent.
 Unity execution: not performed by this worker.

@@ -1,20 +1,18 @@
-﻿# Subnautica 2 Screenshot Visual Cheats For HECTON-8
+# Subnautica 2 Screenshot Visual Approximation References For HECTON-8
 
 Date: 2026-05-17
-Status: SOURCE-REFERENCE CHEAT SHEET / RUNTIME PENDING
+Status: SOURCE-REFERENCE APPROXIMATION SHEET / RUNTIME PENDING
 
 ## Authority Boundary
 
 Static documentation only. Current source, active architecture contracts, fresh proof artifacts, and official platform rules override dated claims in this file. No runtime, profiler, memory, render, platform, public-page, or ship-readiness proof is implied by this file alone.
 
 Source dossier: `Docs/Reports/SUBNAUTICA_2_UE5_REFERENCE_DOSSIER.md`
-Related authority: `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`
+Related authority: `Docs/ARCHITECTURE/PREMIUM_APPROXIMATION_LEDGER.md`
 
 ## Purpose
 
-This file translates six inspected official Steam screenshots for Subnautica 2 into HECTON-8
-visual-fake tactics. It does not copy art direction. It extracts rendering and composition tricks
-that can be implemented through deterministic, tiered presentation systems.
+This file translates six inspected official Steam screenshots for Subnautica 2 into HECTON-8 premium approximation tactics. It does not copy art direction. It extracts rendering and composition methods that can be implemented through deterministic, tiered presentation systems.
 
 ## Global Reading
 
@@ -32,9 +30,9 @@ The visible screenshot bar is not impossible tech. It is disciplined staging:
 
 HECTON-8 can compete if it treats these as authored contracts, not random post-processing.
 
-## Screenshot-Derived Cheat Table
+## Screenshot-Derived Approximation Table
 
-| Reference surface | HECTON-8 fake-first answer | Low | Middle | High | Ultra |
+| Reference surface | HECTON-8 approximation-first answer | Low | Middle | High | Ultra |
 |---|---|---:|---:|---:|---:|
 | Blue/yellow base exterior haze | Biome fog LUT + local emissive anchors | 1D LUT, dither fog | fog volume records | local light shafts | raymarch shafts + silt |
 | Clean base interior | Modular material discipline + readable function lights | baked AO, no SSR | reflection probes | wetness accents | SSR/SSDO gated |

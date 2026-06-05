@@ -6,7 +6,7 @@
     "control_rule": "Forward acceleration is limited by operational mass plus surge added mass; lateral and vertical motion pay larger added-mass penalties.",
     "drag_rule": "Steady speed costs cubic power because drag is quadratic and shaft power is drag force times speed.",
     "rotation_rule": "Pitch, yaw, and roll use separate angular damping tensors so hull shape controls attitude feel.",
-    "cavitation_rule": "Speed and depth thresholds drive acoustic/VFX feedback; bubble microphysics remains a presentation fake."
+    "cavitation_rule": "Speed and depth thresholds drive acoustic/VFX feedback; bubble microphysics remains a premium presentation approximation."
   },
   "physics_derivation": {
     "density_contract": "SEA_WATER_DENSITY_KG_M3 is 1025.0 to match the runtime ocean physics contract; the baker and consumer must not disagree on rho.",

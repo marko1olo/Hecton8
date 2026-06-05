@@ -1,0 +1,6756 @@
+{
+  "schema": "hecton8.project_metrics_dashboard.v2",
+  "generated_at_samara": "2026-06-05T22:23:01.501900+04:00",
+  "token_report": "Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-06-05.json",
+  "dashboard_markdown": "Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-06-05.md",
+  "chart_count": 112,
+  "long_range_windows_days": [
+    7,
+    14,
+    30,
+    60,
+    90
+  ],
+  "charts": [
+    {
+      "name": "hourly_total_tokens_last_96h",
+      "title": "Hourly total tokens - last 96h",
+      "path": "MetricCharts/2026-06-05/hourly_total_tokens_last_96h.png",
+      "description": ""
+    },
+    {
+      "name": "hourly_cost_last_96h",
+      "title": "Hourly GPT-5.5 standard cost - last 96h",
+      "path": "MetricCharts/2026-06-05/hourly_cost_last_96h.png",
+      "description": ""
+    },
+    {
+      "name": "hourly_io_stack_last_96h",
+      "title": "Hourly input/output stack - last 96h",
+      "path": "MetricCharts/2026-06-05/hourly_io_stack_last_96h.png",
+      "description": ""
+    },
+    {
+      "name": "hourly_output_reasoning_last_96h",
+      "title": "Hourly output and reasoning output - last 96h",
+      "path": "MetricCharts/2026-06-05/hourly_output_reasoning_last_96h.png",
+      "description": ""
+    },
+    {
+      "name": "hourly_ratios_last_96h",
+      "title": "Hourly cache/output/reasoning ratios - last 96h",
+      "path": "MetricCharts/2026-06-05/hourly_ratios_last_96h.png",
+      "description": ""
+    },
+    {
+      "name": "hourly_cache_savings_last_96h",
+      "title": "Hourly cache discount saved - last 96h",
+      "path": "MetricCharts/2026-06-05/hourly_cache_savings_last_96h.png",
+      "description": ""
+    },
+    {
+      "name": "hourly_actual_vs_no_cache_cost_last_96h",
+      "title": "Hourly actual vs no-cache GPT-5.5 cost - last 96h",
+      "path": "MetricCharts/2026-06-05/hourly_actual_vs_no_cache_cost_last_96h.png",
+      "description": ""
+    },
+    {
+      "name": "hourly_effective_cost_per_1m_last_96h",
+      "title": "Hourly effective USD per 1M total tokens - last 96h",
+      "path": "MetricCharts/2026-06-05/hourly_effective_cost_per_1m_last_96h.png",
+      "description": ""
+    },
+    {
+      "name": "hourly_output_cost_share_last_96h",
+      "title": "Hourly output cost share - last 96h",
+      "path": "MetricCharts/2026-06-05/hourly_output_cost_share_last_96h.png",
+      "description": ""
+    },
+    {
+      "name": "hourly_printed_pages_last_96h",
+      "title": "Hourly human-scale burn - last 96h",
+      "path": "MetricCharts/2026-06-05/hourly_printed_pages_last_96h.png",
+      "description": ""
+    },
+    {
+      "name": "hourly_cached_to_uncached_ratio_last_96h",
+      "title": "Hourly cached-to-uncached input ratio - last 96h",
+      "path": "MetricCharts/2026-06-05/hourly_cached_to_uncached_ratio_last_96h.png",
+      "description": ""
+    },
+    {
+      "name": "hourly_token_day_hour_heatmap_last_96h",
+      "title": "Token heatmap by day/hour - last 96h",
+      "path": "MetricCharts/2026-06-05/hourly_token_day_hour_heatmap_last_96h.png",
+      "description": "Last-96-hour total token pressure by local Samara day and hour."
+    },
+    {
+      "name": "token_weekday_hour_heatmap_all",
+      "title": "Token heatmap by weekday/hour - all available hours",
+      "path": "MetricCharts/2026-06-05/token_weekday_hour_heatmap_all.png",
+      "description": "All available hourly token pressure aggregated by Samara weekday and hour."
+    },
+    {
+      "name": "cost_weekday_hour_heatmap_all",
+      "title": "Cost heatmap by weekday/hour - all available hours",
+      "path": "MetricCharts/2026-06-05/cost_weekday_hour_heatmap_all.png",
+      "description": "All available hourly GPT-5.5 API-equivalent cost aggregated by Samara weekday and hour."
+    },
+    {
+      "name": "daily_total_tokens_last_7d",
+      "title": "Daily total tokens - last 7 days",
+      "path": "MetricCharts/2026-06-05/daily_total_tokens_last_7d.png",
+      "description": "Long-range token consumption window covering the last 7 calendar days with start/end/peak labels."
+    },
+    {
+      "name": "daily_cost_last_7d",
+      "title": "Daily GPT-5.5 standard cost - last 7 days",
+      "path": "MetricCharts/2026-06-05/daily_cost_last_7d.png",
+      "description": "Long-range GPT-5.5 API-equivalent cost window covering the last 7 calendar days with start/end/peak labels."
+    },
+    {
+      "name": "daily_io_stack_last_7d",
+      "title": "Daily input/output stack - last 7 days",
+      "path": "MetricCharts/2026-06-05/daily_io_stack_last_7d.png",
+      "description": "Long-range daily token composition window covering the last 7 calendar days."
+    },
+    {
+      "name": "daily_ratios_last_7d",
+      "title": "Daily cache/output/reasoning ratios - last 7 days",
+      "path": "MetricCharts/2026-06-05/daily_ratios_last_7d.png",
+      "description": "Long-range daily quality-of-usage ratios covering the last 7 calendar days."
+    },
+    {
+      "name": "daily_cache_savings_last_7d",
+      "title": "Daily cache discount saved - last 7 days",
+      "path": "MetricCharts/2026-06-05/daily_cache_savings_last_7d.png",
+      "description": "Long-range cache-discount value window covering the last 7 calendar days."
+    },
+    {
+      "name": "daily_effective_cost_per_1m_last_7d",
+      "title": "Daily effective USD per 1M total tokens - last 7 days",
+      "path": "MetricCharts/2026-06-05/daily_effective_cost_per_1m_last_7d.png",
+      "description": "Long-range effective blended token price window covering the last 7 calendar days."
+    },
+    {
+      "name": "daily_total_tokens_last_14d",
+      "title": "Daily total tokens - last 14 days",
+      "path": "MetricCharts/2026-06-05/daily_total_tokens_last_14d.png",
+      "description": "Long-range token consumption window covering the last 14 calendar days with start/end/peak labels."
+    },
+    {
+      "name": "daily_cost_last_14d",
+      "title": "Daily GPT-5.5 standard cost - last 14 days",
+      "path": "MetricCharts/2026-06-05/daily_cost_last_14d.png",
+      "description": "Long-range GPT-5.5 API-equivalent cost window covering the last 14 calendar days with start/end/peak labels."
+    },
+    {
+      "name": "daily_io_stack_last_14d",
+      "title": "Daily input/output stack - last 14 days",
+      "path": "MetricCharts/2026-06-05/daily_io_stack_last_14d.png",
+      "description": "Long-range daily token composition window covering the last 14 calendar days."
+    },
+    {
+      "name": "daily_ratios_last_14d",
+      "title": "Daily cache/output/reasoning ratios - last 14 days",
+      "path": "MetricCharts/2026-06-05/daily_ratios_last_14d.png",
+      "description": "Long-range daily quality-of-usage ratios covering the last 14 calendar days."
+    },
+    {
+      "name": "daily_cache_savings_last_14d",
+      "title": "Daily cache discount saved - last 14 days",
+      "path": "MetricCharts/2026-06-05/daily_cache_savings_last_14d.png",
+      "description": "Long-range cache-discount value window covering the last 14 calendar days."
+    },
+    {
+      "name": "daily_effective_cost_per_1m_last_14d",
+      "title": "Daily effective USD per 1M total tokens - last 14 days",
+      "path": "MetricCharts/2026-06-05/daily_effective_cost_per_1m_last_14d.png",
+      "description": "Long-range effective blended token price window covering the last 14 calendar days."
+    },
+    {
+      "name": "daily_total_tokens_last_30d",
+      "title": "Daily total tokens - last 30 days",
+      "path": "MetricCharts/2026-06-05/daily_total_tokens_last_30d.png",
+      "description": "Long-range token consumption window covering the last 30 calendar days with start/end/peak labels."
+    },
+    {
+      "name": "daily_cost_last_30d",
+      "title": "Daily GPT-5.5 standard cost - last 30 days",
+      "path": "MetricCharts/2026-06-05/daily_cost_last_30d.png",
+      "description": "Long-range GPT-5.5 API-equivalent cost window covering the last 30 calendar days with start/end/peak labels."
+    },
+    {
+      "name": "daily_io_stack_last_30d",
+      "title": "Daily input/output stack - last 30 days",
+      "path": "MetricCharts/2026-06-05/daily_io_stack_last_30d.png",
+      "description": "Long-range daily token composition window covering the last 30 calendar days."
+    },
+    {
+      "name": "daily_ratios_last_30d",
+      "title": "Daily cache/output/reasoning ratios - last 30 days",
+      "path": "MetricCharts/2026-06-05/daily_ratios_last_30d.png",
+      "description": "Long-range daily quality-of-usage ratios covering the last 30 calendar days."
+    },
+    {
+      "name": "daily_cache_savings_last_30d",
+      "title": "Daily cache discount saved - last 30 days",
+      "path": "MetricCharts/2026-06-05/daily_cache_savings_last_30d.png",
+      "description": "Long-range cache-discount value window covering the last 30 calendar days."
+    },
+    {
+      "name": "daily_effective_cost_per_1m_last_30d",
+      "title": "Daily effective USD per 1M total tokens - last 30 days",
+      "path": "MetricCharts/2026-06-05/daily_effective_cost_per_1m_last_30d.png",
+      "description": "Long-range effective blended token price window covering the last 30 calendar days."
+    },
+    {
+      "name": "daily_total_tokens_last_60d",
+      "title": "Daily total tokens - last 60 days",
+      "path": "MetricCharts/2026-06-05/daily_total_tokens_last_60d.png",
+      "description": "Long-range token consumption window covering the last 60 calendar days with start/end/peak labels."
+    },
+    {
+      "name": "daily_cost_last_60d",
+      "title": "Daily GPT-5.5 standard cost - last 60 days",
+      "path": "MetricCharts/2026-06-05/daily_cost_last_60d.png",
+      "description": "Long-range GPT-5.5 API-equivalent cost window covering the last 60 calendar days with start/end/peak labels."
+    },
+    {
+      "name": "daily_io_stack_last_60d",
+      "title": "Daily input/output stack - last 60 days",
+      "path": "MetricCharts/2026-06-05/daily_io_stack_last_60d.png",
+      "description": "Long-range daily token composition window covering the last 60 calendar days."
+    },
+    {
+      "name": "daily_ratios_last_60d",
+      "title": "Daily cache/output/reasoning ratios - last 60 days",
+      "path": "MetricCharts/2026-06-05/daily_ratios_last_60d.png",
+      "description": "Long-range daily quality-of-usage ratios covering the last 60 calendar days."
+    },
+    {
+      "name": "daily_cache_savings_last_60d",
+      "title": "Daily cache discount saved - last 60 days",
+      "path": "MetricCharts/2026-06-05/daily_cache_savings_last_60d.png",
+      "description": "Long-range cache-discount value window covering the last 60 calendar days."
+    },
+    {
+      "name": "daily_effective_cost_per_1m_last_60d",
+      "title": "Daily effective USD per 1M total tokens - last 60 days",
+      "path": "MetricCharts/2026-06-05/daily_effective_cost_per_1m_last_60d.png",
+      "description": "Long-range effective blended token price window covering the last 60 calendar days."
+    },
+    {
+      "name": "daily_total_tokens_last_90d",
+      "title": "Daily total tokens - last 90 days",
+      "path": "MetricCharts/2026-06-05/daily_total_tokens_last_90d.png",
+      "description": "Long-range token consumption window covering the last 90 calendar days with start/end/peak labels."
+    },
+    {
+      "name": "daily_cost_last_90d",
+      "title": "Daily GPT-5.5 standard cost - last 90 days",
+      "path": "MetricCharts/2026-06-05/daily_cost_last_90d.png",
+      "description": "Long-range GPT-5.5 API-equivalent cost window covering the last 90 calendar days with start/end/peak labels."
+    },
+    {
+      "name": "daily_io_stack_last_90d",
+      "title": "Daily input/output stack - last 90 days",
+      "path": "MetricCharts/2026-06-05/daily_io_stack_last_90d.png",
+      "description": "Long-range daily token composition window covering the last 90 calendar days."
+    },
+    {
+      "name": "daily_ratios_last_90d",
+      "title": "Daily cache/output/reasoning ratios - last 90 days",
+      "path": "MetricCharts/2026-06-05/daily_ratios_last_90d.png",
+      "description": "Long-range daily quality-of-usage ratios covering the last 90 calendar days."
+    },
+    {
+      "name": "daily_cache_savings_last_90d",
+      "title": "Daily cache discount saved - last 90 days",
+      "path": "MetricCharts/2026-06-05/daily_cache_savings_last_90d.png",
+      "description": "Long-range cache-discount value window covering the last 90 calendar days."
+    },
+    {
+      "name": "daily_effective_cost_per_1m_last_90d",
+      "title": "Daily effective USD per 1M total tokens - last 90 days",
+      "path": "MetricCharts/2026-06-05/daily_effective_cost_per_1m_last_90d.png",
+      "description": "Long-range effective blended token price window covering the last 90 calendar days."
+    },
+    {
+      "name": "daily_total_tokens",
+      "title": "Daily total tokens",
+      "path": "MetricCharts/2026-06-05/daily_total_tokens.png",
+      "description": ""
+    },
+    {
+      "name": "daily_cost",
+      "title": "Daily GPT-5.5 standard cost",
+      "path": "MetricCharts/2026-06-05/daily_cost.png",
+      "description": ""
+    },
+    {
+      "name": "daily_io_stack",
+      "title": "Daily input/output stack",
+      "path": "MetricCharts/2026-06-05/daily_io_stack.png",
+      "description": ""
+    },
+    {
+      "name": "daily_output_reasoning",
+      "title": "Daily output and reasoning output",
+      "path": "MetricCharts/2026-06-05/daily_output_reasoning.png",
+      "description": ""
+    },
+    {
+      "name": "daily_ratios",
+      "title": "Daily cache/output/reasoning ratios",
+      "path": "MetricCharts/2026-06-05/daily_ratios.png",
+      "description": ""
+    },
+    {
+      "name": "daily_cache_savings",
+      "title": "Daily cache discount saved",
+      "path": "MetricCharts/2026-06-05/daily_cache_savings.png",
+      "description": ""
+    },
+    {
+      "name": "daily_actual_vs_no_cache_cost",
+      "title": "Daily actual vs no-cache GPT-5.5 cost",
+      "path": "MetricCharts/2026-06-05/daily_actual_vs_no_cache_cost.png",
+      "description": ""
+    },
+    {
+      "name": "daily_effective_cost_per_1m",
+      "title": "Daily effective USD per 1M total tokens",
+      "path": "MetricCharts/2026-06-05/daily_effective_cost_per_1m.png",
+      "description": ""
+    },
+    {
+      "name": "daily_output_cost_share",
+      "title": "Daily output cost share",
+      "path": "MetricCharts/2026-06-05/daily_output_cost_share.png",
+      "description": ""
+    },
+    {
+      "name": "daily_printed_pages",
+      "title": "Daily human-scale burn",
+      "path": "MetricCharts/2026-06-05/daily_printed_pages.png",
+      "description": ""
+    },
+    {
+      "name": "weekly_total_tokens",
+      "title": "Weekly total tokens",
+      "path": "MetricCharts/2026-06-05/weekly_total_tokens.png",
+      "description": ""
+    },
+    {
+      "name": "weekly_cost",
+      "title": "Weekly GPT-5.5 standard cost",
+      "path": "MetricCharts/2026-06-05/weekly_cost.png",
+      "description": ""
+    },
+    {
+      "name": "weekly_io_stack",
+      "title": "Weekly input/output stack",
+      "path": "MetricCharts/2026-06-05/weekly_io_stack.png",
+      "description": ""
+    },
+    {
+      "name": "weekly_output_reasoning",
+      "title": "Weekly output and reasoning output",
+      "path": "MetricCharts/2026-06-05/weekly_output_reasoning.png",
+      "description": ""
+    },
+    {
+      "name": "weekly_ratios",
+      "title": "Weekly cache/output/reasoning ratios",
+      "path": "MetricCharts/2026-06-05/weekly_ratios.png",
+      "description": ""
+    },
+    {
+      "name": "weekly_cache_savings",
+      "title": "Weekly cache discount saved",
+      "path": "MetricCharts/2026-06-05/weekly_cache_savings.png",
+      "description": ""
+    },
+    {
+      "name": "weekly_effective_cost_per_1m",
+      "title": "Weekly effective USD per 1M total tokens",
+      "path": "MetricCharts/2026-06-05/weekly_effective_cost_per_1m.png",
+      "description": ""
+    },
+    {
+      "name": "weekly_output_cost_share",
+      "title": "Weekly output cost share",
+      "path": "MetricCharts/2026-06-05/weekly_output_cost_share.png",
+      "description": ""
+    },
+    {
+      "name": "model_effort_tokens_top20",
+      "title": "Top model+effort buckets by tokens",
+      "path": "MetricCharts/2026-06-05/model_effort_tokens_top20.png",
+      "description": ""
+    },
+    {
+      "name": "model_effort_cost_top20",
+      "title": "Top model+effort buckets by model-standard cost",
+      "path": "MetricCharts/2026-06-05/model_effort_cost_top20.png",
+      "description": ""
+    },
+    {
+      "name": "model_effort_output_top20",
+      "title": "Top model+effort buckets by output tokens",
+      "path": "MetricCharts/2026-06-05/model_effort_output_top20.png",
+      "description": ""
+    },
+    {
+      "name": "model_effort_reasoning_top20",
+      "title": "Top model+effort buckets by reasoning output",
+      "path": "MetricCharts/2026-06-05/model_effort_reasoning_top20.png",
+      "description": ""
+    },
+    {
+      "name": "model_effort_effective_cost_per_1m_top20",
+      "title": "Top priced model+effort buckets by effective USD per 1M tokens",
+      "path": "MetricCharts/2026-06-05/model_effort_effective_cost_per_1m_top20.png",
+      "description": ""
+    },
+    {
+      "name": "top_sessions_total_tokens",
+      "title": "Top sessions by total tokens",
+      "path": "MetricCharts/2026-06-05/top_sessions_total_tokens.png",
+      "description": ""
+    },
+    {
+      "name": "top_sessions_output_tokens",
+      "title": "Top sessions by output tokens",
+      "path": "MetricCharts/2026-06-05/top_sessions_output_tokens.png",
+      "description": ""
+    },
+    {
+      "name": "top_sessions_reasoning_tokens",
+      "title": "Top sessions by reasoning output tokens",
+      "path": "MetricCharts/2026-06-05/top_sessions_reasoning_tokens.png",
+      "description": ""
+    },
+    {
+      "name": "top_sessions_cost",
+      "title": "Top sessions by GPT-5.5 standard cost",
+      "path": "MetricCharts/2026-06-05/top_sessions_cost.png",
+      "description": ""
+    },
+    {
+      "name": "top_cwd_total_tokens",
+      "title": "Top CWD buckets by total tokens",
+      "path": "MetricCharts/2026-06-05/top_cwd_total_tokens.png",
+      "description": ""
+    },
+    {
+      "name": "top_source_total_tokens",
+      "title": "Top telemetry sources by total tokens",
+      "path": "MetricCharts/2026-06-05/top_source_total_tokens.png",
+      "description": ""
+    },
+    {
+      "name": "top_originator_total_tokens",
+      "title": "Top originators by total tokens",
+      "path": "MetricCharts/2026-06-05/top_originator_total_tokens.png",
+      "description": ""
+    },
+    {
+      "name": "top_plan_total_tokens",
+      "title": "Top plan buckets by total tokens",
+      "path": "MetricCharts/2026-06-05/top_plan_total_tokens.png",
+      "description": ""
+    },
+    {
+      "name": "top_cli_total_tokens",
+      "title": "Top CLI versions by total tokens",
+      "path": "MetricCharts/2026-06-05/top_cli_total_tokens.png",
+      "description": ""
+    },
+    {
+      "name": "project_lines_by_scope",
+      "title": "Current project lines by scope",
+      "path": "MetricCharts/2026-06-05/project_lines_by_scope.png",
+      "description": ""
+    },
+    {
+      "name": "token_density_by_scope",
+      "title": "Token density by current source scope",
+      "path": "MetricCharts/2026-06-05/token_density_by_scope.png",
+      "description": ""
+    },
+    {
+      "name": "cost_per_1k_lines_by_scope",
+      "title": "GPT-5.5 standard cost per 1k current lines by scope",
+      "path": "MetricCharts/2026-06-05/cost_per_1k_lines_by_scope.png",
+      "description": ""
+    },
+    {
+      "name": "cost_per_1k_chars_by_scope",
+      "title": "GPT-5.5 standard cost per 1k current characters by scope",
+      "path": "MetricCharts/2026-06-05/cost_per_1k_chars_by_scope.png",
+      "description": ""
+    },
+    {
+      "name": "output_tokens_per_1k_chars_by_scope",
+      "title": "Output tokens per 1k current characters by scope",
+      "path": "MetricCharts/2026-06-05/output_tokens_per_1k_chars_by_scope.png",
+      "description": ""
+    },
+    {
+      "name": "file_counts_by_extension",
+      "title": "Project file counts by extension",
+      "path": "MetricCharts/2026-06-05/file_counts_by_extension.png",
+      "description": ""
+    },
+    {
+      "name": "bytes_by_extension",
+      "title": "Project bytes by extension",
+      "path": "MetricCharts/2026-06-05/bytes_by_extension.png",
+      "description": ""
+    },
+    {
+      "name": "lines_by_extension",
+      "title": "Project text lines by extension",
+      "path": "MetricCharts/2026-06-05/lines_by_extension.png",
+      "description": ""
+    },
+    {
+      "name": "avg_bytes_per_file_by_extension",
+      "title": "Average bytes per file by extension",
+      "path": "MetricCharts/2026-06-05/avg_bytes_per_file_by_extension.png",
+      "description": ""
+    },
+    {
+      "name": "avg_lines_per_file_by_extension",
+      "title": "Average text lines per file by extension",
+      "path": "MetricCharts/2026-06-05/avg_lines_per_file_by_extension.png",
+      "description": ""
+    },
+    {
+      "name": "file_counts_by_root",
+      "title": "Project file counts by root folder",
+      "path": "MetricCharts/2026-06-05/file_counts_by_root.png",
+      "description": ""
+    },
+    {
+      "name": "docs_artifact_counts",
+      "title": "Documentation and audit artifact counts",
+      "path": "MetricCharts/2026-06-05/docs_artifact_counts.png",
+      "description": ""
+    },
+    {
+      "name": "largest_files_by_bytes",
+      "title": "Largest project files by bytes",
+      "path": "MetricCharts/2026-06-05/largest_files_by_bytes.png",
+      "description": ""
+    },
+    {
+      "name": "largest_text_files_by_lines",
+      "title": "Largest text files by lines",
+      "path": "MetricCharts/2026-06-05/largest_text_files_by_lines.png",
+      "description": ""
+    },
+    {
+      "name": "git_commits_by_day",
+      "title": "Git commits by day since 2026-04-01",
+      "path": "MetricCharts/2026-06-05/git_commits_by_day.png",
+      "description": ""
+    },
+    {
+      "name": "git_churn_by_day",
+      "title": "Git churn by day since 2026-04-01",
+      "path": "MetricCharts/2026-06-05/git_churn_by_day.png",
+      "description": ""
+    },
+    {
+      "name": "git_insertions_deletions_by_day",
+      "title": "Git insertions/deletions by day",
+      "path": "MetricCharts/2026-06-05/git_insertions_deletions_by_day.png",
+      "description": ""
+    },
+    {
+      "name": "git_files_changed_by_day",
+      "title": "Git files changed by day since 2026-04-01",
+      "path": "MetricCharts/2026-06-05/git_files_changed_by_day.png",
+      "description": ""
+    },
+    {
+      "name": "git_net_lines_by_day",
+      "title": "Git net lines by day since 2026-04-01",
+      "path": "MetricCharts/2026-06-05/git_net_lines_by_day.png",
+      "description": ""
+    },
+    {
+      "name": "git_churn_per_commit_by_day",
+      "title": "Git churn per commit by day",
+      "path": "MetricCharts/2026-06-05/git_churn_per_commit_by_day.png",
+      "description": ""
+    },
+    {
+      "name": "git_commits_by_week",
+      "title": "Git commits by ISO week",
+      "path": "MetricCharts/2026-06-05/git_commits_by_week.png",
+      "description": ""
+    },
+    {
+      "name": "git_churn_by_week",
+      "title": "Git churn by ISO week",
+      "path": "MetricCharts/2026-06-05/git_churn_by_week.png",
+      "description": ""
+    },
+    {
+      "name": "git_files_changed_by_week",
+      "title": "Git files changed by ISO week",
+      "path": "MetricCharts/2026-06-05/git_files_changed_by_week.png",
+      "description": ""
+    },
+    {
+      "name": "git_net_lines_by_week",
+      "title": "Git net lines by ISO week",
+      "path": "MetricCharts/2026-06-05/git_net_lines_by_week.png",
+      "description": ""
+    },
+    {
+      "name": "git_churn_per_commit_by_week",
+      "title": "Git churn per commit by ISO week",
+      "path": "MetricCharts/2026-06-05/git_churn_per_commit_by_week.png",
+      "description": ""
+    },
+    {
+      "name": "git_commit_weekday_hour_heatmap",
+      "title": "Git commit heatmap by Samara weekday/hour",
+      "path": "MetricCharts/2026-06-05/git_commit_weekday_hour_heatmap.png",
+      "description": ""
+    },
+    {
+      "name": "git_churn_weekday_hour_heatmap",
+      "title": "Git churn heatmap by Samara weekday/hour",
+      "path": "MetricCharts/2026-06-05/git_churn_weekday_hour_heatmap.png",
+      "description": "Committed changed-line pressure by Samara weekday and hour."
+    },
+    {
+      "name": "daily_tokens_per_git_changed_line",
+      "title": "Daily tokens per committed changed line",
+      "path": "MetricCharts/2026-06-05/daily_tokens_per_git_changed_line.png",
+      "description": "Correlation-only: token usage and git churn are grouped by calendar day, not causally matched per task."
+    },
+    {
+      "name": "daily_cost_per_git_changed_line",
+      "title": "Daily GPT-5.5 cost per committed changed line",
+      "path": "MetricCharts/2026-06-05/daily_cost_per_git_changed_line.png",
+      "description": "Correlation-only: token usage and git churn are grouped by calendar day, not causally matched per task."
+    },
+    {
+      "name": "daily_tokens_vs_git_churn",
+      "title": "Daily tokens vs git churn",
+      "path": "MetricCharts/2026-06-05/daily_tokens_vs_git_churn.png",
+      "description": "Correlation-only scatter: shows whether high-token days also had high committed churn."
+    },
+    {
+      "name": "daily_cost_vs_git_churn",
+      "title": "Daily GPT-5.5 cost vs git churn",
+      "path": "MetricCharts/2026-06-05/daily_cost_vs_git_churn.png",
+      "description": "Correlation-only scatter: shows cost pressure against committed churn."
+    },
+    {
+      "name": "current_snapshot_token_velocity",
+      "title": "Current snapshot token velocity by class",
+      "path": "MetricCharts/2026-06-05/current_snapshot_token_velocity.png",
+      "description": ""
+    },
+    {
+      "name": "current_snapshot_money_velocity",
+      "title": "Current snapshot API-equivalent money velocity",
+      "path": "MetricCharts/2026-06-05/current_snapshot_money_velocity.png",
+      "description": ""
+    },
+    {
+      "name": "current_snapshot_code_velocity",
+      "title": "Current snapshot code and density velocity",
+      "path": "MetricCharts/2026-06-05/current_snapshot_code_velocity.png",
+      "description": ""
+    },
+    {
+      "name": "layperson_all_time_scale",
+      "title": "All-time token scale for non-specialists",
+      "path": "MetricCharts/2026-06-05/layperson_all_time_scale.png",
+      "description": ""
+    },
+    {
+      "name": "layperson_current_burn_rate",
+      "title": "Current burn-rate scale for non-specialists",
+      "path": "MetricCharts/2026-06-05/layperson_current_burn_rate.png",
+      "description": ""
+    }
+  ],
+  "token_headline": {
+    "total_tokens": 136435886730,
+    "sessions_with_usage": 3412,
+    "gpt_5_5_standard_cost_usd": 105635.64016899999,
+    "pricing_context_rules": {
+      "base_rate_note": "GPT-5.5 base API-equivalent uses input $5.00, cached input $0.50, output $30.00 per 1M tokens.",
+      "long_context_trigger_input_tokens": 272000,
+      "long_context_surcharge_note": "Official pricing applies 2x input and 1.5x output when prompts exceed 272K input tokens. Local Codex JSONL does not expose provider-side per-request context classification, so this report adds an upper-bound sensitivity instead of pretending exact surcharge billing.",
+      "regional_uplift_note": "Some regions can add about 10 percent. Local JSONL does not expose billing region, so this is a sensitivity row only.",
+      "gpt_5_5_long_context_upper_bound_usd": 204169.211633,
+      "gpt_5_5_long_context_upper_bound_delta_usd": 98533.57146400001,
+      "gpt_5_5_regional_10pct_usd": 116199.20418590002,
+      "gpt_5_5_regional_10pct_delta_usd": 10563.564016900025,
+      "gpt_5_5_long_context_regional_10pct_upper_bound_usd": 224586.13279630002,
+      "post_cutoff_long_context_event_rule": "Lower-bound detector for post-cutoff positive delta events whose delta input_tokens exceeds 272000. Provider-side exact long-context classification remains unavailable in local JSONL; zero detected events is not proof of zero all-time surcharge.",
+      "post_cutoff_long_context_event_evidence_class": "LOCAL_JSONL_DELTA_LOWER_BOUND_NOT_PROVIDER_INVOICE_CLASSIFICATION",
+      "post_cutoff_long_context_event_count": 0,
+      "post_cutoff_long_context_event_usage": {
+        "input_tokens": 0,
+        "cached_input_tokens": 0,
+        "output_tokens": 0,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 0
+      },
+      "post_cutoff_long_context_event_base_usd": 0.0,
+      "post_cutoff_long_context_event_surcharge_delta_usd": 0.0,
+      "post_cutoff_base_delta_cost_usd": 1409.1199819999997
+    },
+    "velocity": {
+      "total_tokens_per_hour": 34005437.19172758,
+      "total_tokens_per_day": 816130492.6014619,
+      "total_tokens_per_minute": 566757.2865287929,
+      "total_tokens_per_second": 9445.954775479882,
+      "input_tokens_per_hour": 33839202.30607205,
+      "cached_input_tokens_per_hour": 32254386.98422058,
+      "uncached_input_tokens_per_hour": 1584815.321851472,
+      "output_tokens_per_hour": 166234.88565553064,
+      "reasoning_output_tokens_per_hour": 41511.03586145624,
+      "sessions_with_usage_per_hour": 5.5846087759545355,
+      "jsonl_files_per_hour": -40.20506170438117,
+      "primary_code_lines_per_hour": 309.5233351101001,
+      "primary_code_lines_per_day": 7428.560042642403,
+      "primary_code_characters_per_hour": 13707.061610862404,
+      "primary_code_characters_per_day": 328969.4786606977,
+      "tokens_per_net_primary_code_line": 109863.88854860187,
+      "input_tokens_per_net_primary_code_line": 109326.82117177098,
+      "output_tokens_per_net_primary_code_line": 537.0673768308922,
+      "reasoning_tokens_per_net_primary_code_line": 134.1127829560586,
+      "tokens_per_1k_net_primary_code_chars": 2480869.945516213,
+      "output_tokens_per_1k_net_primary_code_chars": 12127.682093716925,
+      "gpt_5_5_standard_usd_per_hour": 29.038316671033346,
+      "gpt_5_5_standard_usd_per_day": 696.9196001048003,
+      "gpt_5_5_priority_usd_per_hour": 72.59579167758382,
+      "gpt_5_3_codex_standard_usd_per_hour": 10.745232934656139,
+      "gpt_5_5_standard_usd_per_net_primary_code_line": 0.09381624380825494,
+      "gpt_5_5_standard_usd_per_1k_net_primary_code_chars": 2.118493189526588
+    }
+  },
+  "project_metrics": {
+    "extension_by_files": [
+      {
+        "extension": ".meta",
+        "files": 16674,
+        "bytes": 8417638,
+        "lines": 362279,
+        "avg_bytes_per_file": 504.836152093079,
+        "avg_lines_per_file": 21.727180040782056
+      },
+      {
+        "extension": ".md",
+        "files": 15713,
+        "bytes": 52503442,
+        "lines": 941071,
+        "avg_bytes_per_file": 3341.401514669382,
+        "avg_lines_per_file": 59.891236555718194
+      },
+      {
+        "extension": ".cs",
+        "files": 6101,
+        "bytes": 136344932,
+        "lines": 3143595,
+        "avg_bytes_per_file": 22347.964595967875,
+        "avg_lines_per_file": 515.2589739386985
+      },
+      {
+        "extension": ".asset",
+        "files": 3692,
+        "bytes": 1045648306,
+        "lines": 1295650,
+        "avg_bytes_per_file": 283220.0178764897,
+        "avg_lines_per_file": 350.9344528710726
+      },
+      {
+        "extension": ".png",
+        "files": 2863,
+        "bytes": 1889540020,
+        "lines": 0,
+        "avg_bytes_per_file": 659986.0356269648,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".json",
+        "files": 2537,
+        "bytes": 672380403,
+        "lines": 17221648,
+        "avg_bytes_per_file": 265029.7213243989,
+        "avg_lines_per_file": 6788.193929838392
+      },
+      {
+        "extension": ".prefab",
+        "files": 1143,
+        "bytes": 13108016,
+        "lines": 452429,
+        "avg_bytes_per_file": 11468.080489938759,
+        "avg_lines_per_file": 395.8258967629046
+      },
+      {
+        "extension": ".mat",
+        "files": 1113,
+        "bytes": 2527658,
+        "lines": 0,
+        "avg_bytes_per_file": 2271.0314465408806,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".txt",
+        "files": 1110,
+        "bytes": 10367973,
+        "lines": 106806,
+        "avg_bytes_per_file": 9340.516216216216,
+        "avg_lines_per_file": 96.22162162162162
+      },
+      {
+        "extension": ".cache",
+        "files": 1098,
+        "bytes": 79145307,
+        "lines": 0,
+        "avg_bytes_per_file": 72081.33606557376,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".dll",
+        "files": 878,
+        "bytes": 1169295136,
+        "lines": 0,
+        "avg_bytes_per_file": 1331771.2255125286,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".log",
+        "files": 795,
+        "bytes": 93272317,
+        "lines": 0,
+        "avg_bytes_per_file": 117323.66918238993,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".csv",
+        "files": 786,
+        "bytes": 102652788,
+        "lines": 0,
+        "avg_bytes_per_file": 130601.51145038167,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".pdb",
+        "files": 756,
+        "bytes": 280955412,
+        "lines": 0,
+        "avg_bytes_per_file": 371634.14285714284,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".shader",
+        "files": 490,
+        "bytes": 8087821,
+        "lines": 169114,
+        "avg_bytes_per_file": 16505.757142857143,
+        "avg_lines_per_file": 345.130612244898
+      },
+      {
+        "extension": ".editorconfig",
+        "files": 343,
+        "bytes": 119847,
+        "lines": 0,
+        "avg_bytes_per_file": 349.40816326530614,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".fbx",
+        "files": 300,
+        "bytes": 23637244,
+        "lines": 0,
+        "avg_bytes_per_file": 78790.81333333334,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".py",
+        "files": 260,
+        "bytes": 5845274,
+        "lines": 128887,
+        "avg_bytes_per_file": 22481.823076923076,
+        "avg_lines_per_file": 495.71923076923076
+      },
+      {
+        "extension": ".asmdef",
+        "files": 232,
+        "bytes": 143798,
+        "lines": 5259,
+        "avg_bytes_per_file": 619.8189655172414,
+        "avg_lines_per_file": 22.66810344827586
+      },
+      {
+        "extension": ".hlsl",
+        "files": 149,
+        "bytes": 924326,
+        "lines": 22782,
+        "avg_bytes_per_file": 6203.5302013422815,
+        "avg_lines_per_file": 152.8993288590604
+      },
+      {
+        "extension": ".xml",
+        "files": 128,
+        "bytes": 4482179,
+        "lines": 52162,
+        "avg_bytes_per_file": 35017.0234375,
+        "avg_lines_per_file": 407.515625
+      },
+      {
+        "extension": ".ptx",
+        "files": 122,
+        "bytes": 4939143,
+        "lines": 0,
+        "avg_bytes_per_file": 40484.77868852459,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".buildwithskipanalyzers",
+        "files": 104,
+        "bytes": 0,
+        "lines": 0,
+        "avg_bytes_per_file": 0.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".sha256",
+        "files": 99,
+        "bytes": 10238,
+        "lines": 0,
+        "avg_bytes_per_file": 103.41414141414141,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".shadersubgraph",
+        "files": 92,
+        "bytes": 4966308,
+        "lines": 0,
+        "avg_bytes_per_file": 53981.608695652176,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".ogg",
+        "files": 89,
+        "bytes": 179899401,
+        "lines": 0,
+        "avg_bytes_per_file": 2021341.5842696629,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".compute",
+        "files": 80,
+        "bytes": 732208,
+        "lines": 18332,
+        "avg_bytes_per_file": 9152.6,
+        "avg_lines_per_file": 229.15
+      },
+      {
+        "extension": ".csproj",
+        "files": 75,
+        "bytes": 384064,
+        "lines": 0,
+        "avg_bytes_per_file": 5120.8533333333335,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".pyc",
+        "files": 66,
+        "bytes": 2833585,
+        "lines": 0,
+        "avg_bytes_per_file": 42933.106060606064,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".ps1",
+        "files": 60,
+        "bytes": 1484943,
+        "lines": 27290,
+        "avg_bytes_per_file": 24749.05,
+        "avg_lines_per_file": 454.8333333333333
+      },
+      {
+        "extension": ".bin",
+        "files": 56,
+        "bytes": 7963129,
+        "lines": 0,
+        "avg_bytes_per_file": 142198.73214285713,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".unity",
+        "files": 53,
+        "bytes": 129095617,
+        "lines": 0,
+        "avg_bytes_per_file": 2435766.3584905663,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".uss",
+        "files": 52,
+        "bytes": 61024,
+        "lines": 0,
+        "avg_bytes_per_file": 1173.5384615384614,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".cginc",
+        "files": 48,
+        "bytes": 299622,
+        "lines": 8255,
+        "avg_bytes_per_file": 6242.125,
+        "avg_lines_per_file": 171.97916666666666
+      },
+      {
+        "extension": ".wav",
+        "files": 45,
+        "bytes": 306075462,
+        "lines": 0,
+        "avg_bytes_per_file": 6801676.933333334,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".jpg",
+        "files": 44,
+        "bytes": 108728665,
+        "lines": 0,
+        "avg_bytes_per_file": 2471106.022727273,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".shadergraph",
+        "files": 39,
+        "bytes": 3660565,
+        "lines": 0,
+        "avg_bytes_per_file": 93860.64102564103,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".diff",
+        "files": 35,
+        "bytes": 5773626,
+        "lines": 0,
+        "avg_bytes_per_file": 164960.74285714285,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".asmref",
+        "files": 34,
+        "bytes": 2074,
+        "lines": 0,
+        "avg_bytes_per_file": 61.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".props",
+        "files": 33,
+        "bytes": 38329,
+        "lines": 0,
+        "avg_bytes_per_file": 1161.4848484848485,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".targets",
+        "files": 33,
+        "bytes": 84609,
+        "lines": 0,
+        "avg_bytes_per_file": 2563.909090909091,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".unitypackage",
+        "files": 31,
+        "bytes": 25775679,
+        "lines": 0,
+        "avg_bytes_per_file": 831473.5161290322,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".ttf",
+        "files": 25,
+        "bytes": 13846388,
+        "lines": 0,
+        "avg_bytes_per_file": 553855.52,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".h8bin",
+        "files": 21,
+        "bytes": 5083664,
+        "lines": 0,
+        "avg_bytes_per_file": 242079.2380952381,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".pso",
+        "files": 19,
+        "bytes": 48436,
+        "lines": 0,
+        "avg_bytes_per_file": 2549.2631578947367,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": "[no_ext]",
+        "files": 18,
+        "bytes": 58035026,
+        "lines": 0,
+        "avg_bytes_per_file": 3224168.111111111,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".exe",
+        "files": 15,
+        "bytes": 3579312,
+        "lines": 0,
+        "avg_bytes_per_file": 238620.8,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".svg",
+        "files": 14,
+        "bytes": 46575,
+        "lines": 0,
+        "avg_bytes_per_file": 3326.785714285714,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".terrainlayer",
+        "files": 13,
+        "bytes": 10862,
+        "lines": 0,
+        "avg_bytes_per_file": 835.5384615384615,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".uxml",
+        "files": 12,
+        "bytes": 12624,
+        "lines": 241,
+        "avg_bytes_per_file": 1052.0,
+        "avg_lines_per_file": 20.083333333333332
+      },
+      {
+        "extension": ".backup",
+        "files": 11,
+        "bytes": 663952,
+        "lines": 0,
+        "avg_bytes_per_file": 60359.27272727273,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".raw",
+        "files": 11,
+        "bytes": 8937250,
+        "lines": 0,
+        "avg_bytes_per_file": 812477.2727272727,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".patch",
+        "files": 10,
+        "bytes": 829100,
+        "lines": 0,
+        "avg_bytes_per_file": 82910.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".mdc",
+        "files": 10,
+        "bytes": 59166,
+        "lines": 0,
+        "avg_bytes_per_file": 5916.6,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".tga",
+        "files": 10,
+        "bytes": 96481530,
+        "lines": 0,
+        "avg_bytes_per_file": 9648153.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".shadervariants",
+        "files": 9,
+        "bytes": 7994,
+        "lines": 0,
+        "avg_bytes_per_file": 888.2222222222222,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".pdf",
+        "files": 8,
+        "bytes": 78489329,
+        "lines": 0,
+        "avg_bytes_per_file": 9811166.125,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".gif",
+        "files": 7,
+        "bytes": 39309426,
+        "lines": 0,
+        "avg_bytes_per_file": 5615632.285714285,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".webp",
+        "files": 7,
+        "bytes": 478896,
+        "lines": 0,
+        "avg_bytes_per_file": 68413.71428571429,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".config",
+        "files": 7,
+        "bytes": 146374,
+        "lines": 0,
+        "avg_bytes_per_file": 20910.571428571428,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".rsp",
+        "files": 6,
+        "bytes": 419908,
+        "lines": 0,
+        "avg_bytes_per_file": 69984.66666666667,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".anim",
+        "files": 6,
+        "bytes": 86287,
+        "lines": 0,
+        "avg_bytes_per_file": 14381.166666666666,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".mp4",
+        "files": 6,
+        "bytes": 20294164,
+        "lines": 0,
+        "avg_bytes_per_file": 3382360.6666666665,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".template",
+        "files": 6,
+        "bytes": 29203,
+        "lines": 0,
+        "avg_bytes_per_file": 4867.166666666667,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".zip",
+        "files": 5,
+        "bytes": 47083821,
+        "lines": 0,
+        "avg_bytes_per_file": 9416764.2,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".kiro",
+        "files": 5,
+        "bytes": 557,
+        "lines": 0,
+        "avg_bytes_per_file": 111.4,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".vso",
+        "files": 4,
+        "bytes": 3888,
+        "lines": 0,
+        "avg_bytes_per_file": 972.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".curves",
+        "files": 4,
+        "bytes": 1549089,
+        "lines": 0,
+        "avg_bytes_per_file": 387272.25,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".html",
+        "files": 4,
+        "bytes": 86515,
+        "lines": 2393,
+        "avg_bytes_per_file": 21628.75,
+        "avg_lines_per_file": 598.25
+      },
+      {
+        "extension": ".data",
+        "files": 4,
+        "bytes": 510523,
+        "lines": 0,
+        "avg_bytes_per_file": 127630.75,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".gso",
+        "files": 3,
+        "bytes": 4564,
+        "lines": 0,
+        "avg_bytes_per_file": 1521.3333333333333,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".lz4",
+        "files": 3,
+        "bytes": 3671,
+        "lines": 0,
+        "avg_bytes_per_file": 1223.6666666666667,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".plist",
+        "files": 3,
+        "bytes": 4071,
+        "lines": 0,
+        "avg_bytes_per_file": 1357.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".exp",
+        "files": 3,
+        "bytes": 45678,
+        "lines": 0,
+        "avg_bytes_per_file": 15226.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".lib",
+        "files": 3,
+        "bytes": 79416,
+        "lines": 0,
+        "avg_bytes_per_file": 26472.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".mp3",
+        "files": 3,
+        "bytes": 2326634,
+        "lines": 0,
+        "avg_bytes_per_file": 775544.6666666666,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".19632",
+        "files": 3,
+        "bytes": 2993636,
+        "lines": 0,
+        "avg_bytes_per_file": 997878.6666666666,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".21032",
+        "files": 3,
+        "bytes": 2993592,
+        "lines": 0,
+        "avg_bytes_per_file": 997864.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".66660",
+        "files": 3,
+        "bytes": 2993508,
+        "lines": 0,
+        "avg_bytes_per_file": 997836.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".aspx",
+        "files": 3,
+        "bytes": 181725,
+        "lines": 0,
+        "avg_bytes_per_file": 60575.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".map",
+        "files": 3,
+        "bytes": 7866,
+        "lines": 0,
+        "avg_bytes_per_file": 2622.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".browser",
+        "files": 3,
+        "bytes": 4815,
+        "lines": 0,
+        "avg_bytes_per_file": 1605.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".assets",
+        "files": 3,
+        "bytes": 100615872,
+        "lines": 0,
+        "avg_bytes_per_file": 33538624.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".ress",
+        "files": 3,
+        "bytes": 76854800,
+        "lines": 0,
+        "avg_bytes_per_file": 25618266.666666668,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".webm",
+        "files": 3,
+        "bytes": 1139281,
+        "lines": 0,
+        "avg_bytes_per_file": 379760.3333333333,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".bat",
+        "files": 3,
+        "bytes": 4073,
+        "lines": 124,
+        "avg_bytes_per_file": 1357.6666666666667,
+        "avg_lines_per_file": 41.333333333333336
+      },
+      {
+        "extension": ".inputactions",
+        "files": 2,
+        "bytes": 69840,
+        "lines": 0,
+        "avg_bytes_per_file": 34920.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".exr",
+        "files": 2,
+        "bytes": 333587,
+        "lines": 0,
+        "avg_bytes_per_file": 166793.5,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".mixer",
+        "files": 2,
+        "bytes": 8476,
+        "lines": 0,
+        "avg_bytes_per_file": 4238.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".controller",
+        "files": 2,
+        "bytes": 3688,
+        "lines": 0,
+        "avg_bytes_per_file": 1844.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".h",
+        "files": 2,
+        "bytes": 27309,
+        "lines": 0,
+        "avg_bytes_per_file": 13654.5,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".tif",
+        "files": 2,
+        "bytes": 152632,
+        "lines": 0,
+        "avg_bytes_per_file": 76316.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".cpp",
+        "files": 2,
+        "bytes": 37064,
+        "lines": 0,
+        "avg_bytes_per_file": 18532.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".bytes",
+        "files": 2,
+        "bytes": 1680,
+        "lines": 0,
+        "avg_bytes_per_file": 840.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".psd",
+        "files": 2,
+        "bytes": 923080,
+        "lines": 0,
+        "avg_bytes_per_file": 461540.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".otf",
+        "files": 2,
+        "bytes": 32905100,
+        "lines": 0,
+        "avg_bytes_per_file": 16452550.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".h8dump",
+        "files": 2,
+        "bytes": 44991,
+        "lines": 0,
+        "avg_bytes_per_file": 22495.5,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".52260",
+        "files": 2,
+        "bytes": 2894824,
+        "lines": 0,
+        "avg_bytes_per_file": 1447412.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".resource",
+        "files": 2,
+        "bytes": 34194272,
+        "lines": 0,
+        "avg_bytes_per_file": 17097136.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".obj",
+        "files": 2,
+        "bytes": 71568,
+        "lines": 0,
+        "avg_bytes_per_file": 35784.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".slnx",
+        "files": 1,
+        "bytes": 3299,
+        "lines": 0,
+        "avg_bytes_per_file": 3299.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".sarif",
+        "files": 1,
+        "bytes": 0,
+        "lines": 0,
+        "avg_bytes_per_file": 0.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".tmp",
+        "files": 1,
+        "bytes": 0,
+        "lines": 0,
+        "avg_bytes_per_file": 0.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".csx",
+        "files": 1,
+        "bytes": 58456,
+        "lines": 0,
+        "avg_bytes_per_file": 58456.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".nupkg",
+        "files": 1,
+        "bytes": 102160,
+        "lines": 0,
+        "avg_bytes_per_file": 102160.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".p7s",
+        "files": 1,
+        "bytes": 18702,
+        "lines": 0,
+        "avg_bytes_per_file": 18702.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".nuspec",
+        "files": 1,
+        "bytes": 1941,
+        "lines": 0,
+        "avg_bytes_per_file": 1941.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".psmdcp",
+        "files": 1,
+        "bytes": 977,
+        "lines": 0,
+        "avg_bytes_per_file": 977.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".lock",
+        "files": 1,
+        "bytes": 689,
+        "lines": 0,
+        "avg_bytes_per_file": 689.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".js",
+        "files": 1,
+        "bytes": 124702,
+        "lines": 0,
+        "avg_bytes_per_file": 124702.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".bmp",
+        "files": 1,
+        "bytes": 49208,
+        "lines": 0,
+        "avg_bytes_per_file": 49208.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".def",
+        "files": 1,
+        "bytes": 7810,
+        "lines": 0,
+        "avg_bytes_per_file": 7810.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".shadergraph2",
+        "files": 1,
+        "bytes": 337944,
+        "lines": 0,
+        "avg_bytes_per_file": 337944.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".lighting",
+        "files": 1,
+        "bytes": 1822,
+        "lines": 0,
+        "avg_bytes_per_file": 1822.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".aar",
+        "files": 1,
+        "bytes": 1341205,
+        "lines": 0,
+        "avg_bytes_per_file": 1341205.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".modulemap",
+        "files": 1,
+        "bytes": 107,
+        "lines": 0,
+        "avg_bytes_per_file": 107.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".dylib",
+        "files": 1,
+        "bytes": 1255699,
+        "lines": 0,
+        "avg_bytes_per_file": 1255699.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".surfshader",
+        "files": 1,
+        "bytes": 263,
+        "lines": 0,
+        "avg_bytes_per_file": 263.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".css",
+        "files": 1,
+        "bytes": 2167,
+        "lines": 158,
+        "avg_bytes_per_file": 2167.0,
+        "avg_lines_per_file": 158.0
+      },
+      {
+        "extension": ".so",
+        "files": 1,
+        "bytes": 440704,
+        "lines": 0,
+        "avg_bytes_per_file": 440704.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".strings",
+        "files": 1,
+        "bytes": 92,
+        "lines": 0,
+        "avg_bytes_per_file": 92.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".solid",
+        "files": 1,
+        "bytes": 30277,
+        "lines": 0,
+        "avg_bytes_per_file": 30277.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".bac",
+        "files": 1,
+        "bytes": 414,
+        "lines": 0,
+        "avg_bytes_per_file": 414.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".gradle",
+        "files": 1,
+        "bytes": 1242,
+        "lines": 0,
+        "avg_bytes_per_file": 1242.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".hdr",
+        "files": 1,
+        "bytes": 170913,
+        "lines": 0,
+        "avg_bytes_per_file": 170913.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".glb",
+        "files": 1,
+        "bytes": 11545576,
+        "lines": 0,
+        "avg_bytes_per_file": 11545576.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".rendertexture",
+        "files": 1,
+        "bytes": 860,
+        "lines": 0,
+        "avg_bytes_per_file": 860.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".flac",
+        "files": 1,
+        "bytes": 62991,
+        "lines": 0,
+        "avg_bytes_per_file": 62991.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".h8jsonl",
+        "files": 1,
+        "bytes": 155363,
+        "lines": 0,
+        "avg_bytes_per_file": 155363.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".rar",
+        "files": 1,
+        "bytes": 12502,
+        "lines": 0,
+        "avg_bytes_per_file": 12502.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ". think deeply, plan",
+        "files": 1,
+        "bytes": 0,
+        "lines": 0,
+        "avg_bytes_per_file": 0.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".11652",
+        "files": 1,
+        "bytes": 1311590,
+        "lines": 0,
+        "avg_bytes_per_file": 1311590.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".26132",
+        "files": 1,
+        "bytes": 1442635,
+        "lines": 0,
+        "avg_bytes_per_file": 1442635.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".62732",
+        "files": 1,
+        "bytes": 2879673,
+        "lines": 0,
+        "avg_bytes_per_file": 2879673.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".tsv",
+        "files": 1,
+        "bytes": 681659,
+        "lines": 0,
+        "avg_bytes_per_file": 681659.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".ini",
+        "files": 1,
+        "bytes": 311984,
+        "lines": 0,
+        "avg_bytes_per_file": 311984.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".info",
+        "files": 1,
+        "bytes": 20,
+        "lines": 0,
+        "avg_bytes_per_file": 20.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".sgsubgraphdb",
+        "files": 1,
+        "bytes": 0,
+        "lines": 0,
+        "avg_bytes_per_file": 0.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".yml",
+        "files": 1,
+        "bytes": 731,
+        "lines": 22,
+        "avg_bytes_per_file": 731.0,
+        "avg_lines_per_file": 22.0
+      },
+      {
+        "extension": ".sh",
+        "files": 1,
+        "bytes": 210,
+        "lines": 0,
+        "avg_bytes_per_file": 210.0,
+        "avg_lines_per_file": 0.0
+      }
+    ],
+    "extension_by_bytes": [
+      {
+        "extension": ".png",
+        "files": 2863,
+        "bytes": 1889540020,
+        "lines": 0,
+        "avg_bytes_per_file": 659986.0356269648,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".dll",
+        "files": 878,
+        "bytes": 1169295136,
+        "lines": 0,
+        "avg_bytes_per_file": 1331771.2255125286,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".asset",
+        "files": 3692,
+        "bytes": 1045648306,
+        "lines": 1295650,
+        "avg_bytes_per_file": 283220.0178764897,
+        "avg_lines_per_file": 350.9344528710726
+      },
+      {
+        "extension": ".json",
+        "files": 2537,
+        "bytes": 672380403,
+        "lines": 17221648,
+        "avg_bytes_per_file": 265029.7213243989,
+        "avg_lines_per_file": 6788.193929838392
+      },
+      {
+        "extension": ".wav",
+        "files": 45,
+        "bytes": 306075462,
+        "lines": 0,
+        "avg_bytes_per_file": 6801676.933333334,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".pdb",
+        "files": 756,
+        "bytes": 280955412,
+        "lines": 0,
+        "avg_bytes_per_file": 371634.14285714284,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".ogg",
+        "files": 89,
+        "bytes": 179899401,
+        "lines": 0,
+        "avg_bytes_per_file": 2021341.5842696629,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".cs",
+        "files": 6101,
+        "bytes": 136344932,
+        "lines": 3143595,
+        "avg_bytes_per_file": 22347.964595967875,
+        "avg_lines_per_file": 515.2589739386985
+      },
+      {
+        "extension": ".unity",
+        "files": 53,
+        "bytes": 129095617,
+        "lines": 0,
+        "avg_bytes_per_file": 2435766.3584905663,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".jpg",
+        "files": 44,
+        "bytes": 108728665,
+        "lines": 0,
+        "avg_bytes_per_file": 2471106.022727273,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".csv",
+        "files": 786,
+        "bytes": 102652788,
+        "lines": 0,
+        "avg_bytes_per_file": 130601.51145038167,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".assets",
+        "files": 3,
+        "bytes": 100615872,
+        "lines": 0,
+        "avg_bytes_per_file": 33538624.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".tga",
+        "files": 10,
+        "bytes": 96481530,
+        "lines": 0,
+        "avg_bytes_per_file": 9648153.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".log",
+        "files": 795,
+        "bytes": 93272317,
+        "lines": 0,
+        "avg_bytes_per_file": 117323.66918238993,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".cache",
+        "files": 1098,
+        "bytes": 79145307,
+        "lines": 0,
+        "avg_bytes_per_file": 72081.33606557376,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".pdf",
+        "files": 8,
+        "bytes": 78489329,
+        "lines": 0,
+        "avg_bytes_per_file": 9811166.125,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".ress",
+        "files": 3,
+        "bytes": 76854800,
+        "lines": 0,
+        "avg_bytes_per_file": 25618266.666666668,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": "[no_ext]",
+        "files": 18,
+        "bytes": 58035026,
+        "lines": 0,
+        "avg_bytes_per_file": 3224168.111111111,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".md",
+        "files": 15713,
+        "bytes": 52503442,
+        "lines": 941071,
+        "avg_bytes_per_file": 3341.401514669382,
+        "avg_lines_per_file": 59.891236555718194
+      },
+      {
+        "extension": ".zip",
+        "files": 5,
+        "bytes": 47083821,
+        "lines": 0,
+        "avg_bytes_per_file": 9416764.2,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".gif",
+        "files": 7,
+        "bytes": 39309426,
+        "lines": 0,
+        "avg_bytes_per_file": 5615632.285714285,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".resource",
+        "files": 2,
+        "bytes": 34194272,
+        "lines": 0,
+        "avg_bytes_per_file": 17097136.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".otf",
+        "files": 2,
+        "bytes": 32905100,
+        "lines": 0,
+        "avg_bytes_per_file": 16452550.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".unitypackage",
+        "files": 31,
+        "bytes": 25775679,
+        "lines": 0,
+        "avg_bytes_per_file": 831473.5161290322,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".fbx",
+        "files": 300,
+        "bytes": 23637244,
+        "lines": 0,
+        "avg_bytes_per_file": 78790.81333333334,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".mp4",
+        "files": 6,
+        "bytes": 20294164,
+        "lines": 0,
+        "avg_bytes_per_file": 3382360.6666666665,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".ttf",
+        "files": 25,
+        "bytes": 13846388,
+        "lines": 0,
+        "avg_bytes_per_file": 553855.52,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".prefab",
+        "files": 1143,
+        "bytes": 13108016,
+        "lines": 452429,
+        "avg_bytes_per_file": 11468.080489938759,
+        "avg_lines_per_file": 395.8258967629046
+      },
+      {
+        "extension": ".glb",
+        "files": 1,
+        "bytes": 11545576,
+        "lines": 0,
+        "avg_bytes_per_file": 11545576.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".txt",
+        "files": 1110,
+        "bytes": 10367973,
+        "lines": 106806,
+        "avg_bytes_per_file": 9340.516216216216,
+        "avg_lines_per_file": 96.22162162162162
+      },
+      {
+        "extension": ".raw",
+        "files": 11,
+        "bytes": 8937250,
+        "lines": 0,
+        "avg_bytes_per_file": 812477.2727272727,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".meta",
+        "files": 16674,
+        "bytes": 8417638,
+        "lines": 362279,
+        "avg_bytes_per_file": 504.836152093079,
+        "avg_lines_per_file": 21.727180040782056
+      },
+      {
+        "extension": ".shader",
+        "files": 490,
+        "bytes": 8087821,
+        "lines": 169114,
+        "avg_bytes_per_file": 16505.757142857143,
+        "avg_lines_per_file": 345.130612244898
+      },
+      {
+        "extension": ".bin",
+        "files": 56,
+        "bytes": 7963129,
+        "lines": 0,
+        "avg_bytes_per_file": 142198.73214285713,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".py",
+        "files": 260,
+        "bytes": 5845274,
+        "lines": 128887,
+        "avg_bytes_per_file": 22481.823076923076,
+        "avg_lines_per_file": 495.71923076923076
+      },
+      {
+        "extension": ".diff",
+        "files": 35,
+        "bytes": 5773626,
+        "lines": 0,
+        "avg_bytes_per_file": 164960.74285714285,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".h8bin",
+        "files": 21,
+        "bytes": 5083664,
+        "lines": 0,
+        "avg_bytes_per_file": 242079.2380952381,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".shadersubgraph",
+        "files": 92,
+        "bytes": 4966308,
+        "lines": 0,
+        "avg_bytes_per_file": 53981.608695652176,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".ptx",
+        "files": 122,
+        "bytes": 4939143,
+        "lines": 0,
+        "avg_bytes_per_file": 40484.77868852459,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".xml",
+        "files": 128,
+        "bytes": 4482179,
+        "lines": 52162,
+        "avg_bytes_per_file": 35017.0234375,
+        "avg_lines_per_file": 407.515625
+      },
+      {
+        "extension": ".shadergraph",
+        "files": 39,
+        "bytes": 3660565,
+        "lines": 0,
+        "avg_bytes_per_file": 93860.64102564103,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".exe",
+        "files": 15,
+        "bytes": 3579312,
+        "lines": 0,
+        "avg_bytes_per_file": 238620.8,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".19632",
+        "files": 3,
+        "bytes": 2993636,
+        "lines": 0,
+        "avg_bytes_per_file": 997878.6666666666,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".21032",
+        "files": 3,
+        "bytes": 2993592,
+        "lines": 0,
+        "avg_bytes_per_file": 997864.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".66660",
+        "files": 3,
+        "bytes": 2993508,
+        "lines": 0,
+        "avg_bytes_per_file": 997836.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".52260",
+        "files": 2,
+        "bytes": 2894824,
+        "lines": 0,
+        "avg_bytes_per_file": 1447412.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".62732",
+        "files": 1,
+        "bytes": 2879673,
+        "lines": 0,
+        "avg_bytes_per_file": 2879673.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".pyc",
+        "files": 66,
+        "bytes": 2833585,
+        "lines": 0,
+        "avg_bytes_per_file": 42933.106060606064,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".mat",
+        "files": 1113,
+        "bytes": 2527658,
+        "lines": 0,
+        "avg_bytes_per_file": 2271.0314465408806,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".mp3",
+        "files": 3,
+        "bytes": 2326634,
+        "lines": 0,
+        "avg_bytes_per_file": 775544.6666666666,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".curves",
+        "files": 4,
+        "bytes": 1549089,
+        "lines": 0,
+        "avg_bytes_per_file": 387272.25,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".ps1",
+        "files": 60,
+        "bytes": 1484943,
+        "lines": 27290,
+        "avg_bytes_per_file": 24749.05,
+        "avg_lines_per_file": 454.8333333333333
+      },
+      {
+        "extension": ".26132",
+        "files": 1,
+        "bytes": 1442635,
+        "lines": 0,
+        "avg_bytes_per_file": 1442635.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".aar",
+        "files": 1,
+        "bytes": 1341205,
+        "lines": 0,
+        "avg_bytes_per_file": 1341205.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".11652",
+        "files": 1,
+        "bytes": 1311590,
+        "lines": 0,
+        "avg_bytes_per_file": 1311590.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".dylib",
+        "files": 1,
+        "bytes": 1255699,
+        "lines": 0,
+        "avg_bytes_per_file": 1255699.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".webm",
+        "files": 3,
+        "bytes": 1139281,
+        "lines": 0,
+        "avg_bytes_per_file": 379760.3333333333,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".hlsl",
+        "files": 149,
+        "bytes": 924326,
+        "lines": 22782,
+        "avg_bytes_per_file": 6203.5302013422815,
+        "avg_lines_per_file": 152.8993288590604
+      },
+      {
+        "extension": ".psd",
+        "files": 2,
+        "bytes": 923080,
+        "lines": 0,
+        "avg_bytes_per_file": 461540.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".patch",
+        "files": 10,
+        "bytes": 829100,
+        "lines": 0,
+        "avg_bytes_per_file": 82910.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".compute",
+        "files": 80,
+        "bytes": 732208,
+        "lines": 18332,
+        "avg_bytes_per_file": 9152.6,
+        "avg_lines_per_file": 229.15
+      },
+      {
+        "extension": ".tsv",
+        "files": 1,
+        "bytes": 681659,
+        "lines": 0,
+        "avg_bytes_per_file": 681659.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".backup",
+        "files": 11,
+        "bytes": 663952,
+        "lines": 0,
+        "avg_bytes_per_file": 60359.27272727273,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".data",
+        "files": 4,
+        "bytes": 510523,
+        "lines": 0,
+        "avg_bytes_per_file": 127630.75,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".webp",
+        "files": 7,
+        "bytes": 478896,
+        "lines": 0,
+        "avg_bytes_per_file": 68413.71428571429,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".so",
+        "files": 1,
+        "bytes": 440704,
+        "lines": 0,
+        "avg_bytes_per_file": 440704.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".rsp",
+        "files": 6,
+        "bytes": 419908,
+        "lines": 0,
+        "avg_bytes_per_file": 69984.66666666667,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".csproj",
+        "files": 75,
+        "bytes": 384064,
+        "lines": 0,
+        "avg_bytes_per_file": 5120.8533333333335,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".shadergraph2",
+        "files": 1,
+        "bytes": 337944,
+        "lines": 0,
+        "avg_bytes_per_file": 337944.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".exr",
+        "files": 2,
+        "bytes": 333587,
+        "lines": 0,
+        "avg_bytes_per_file": 166793.5,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".ini",
+        "files": 1,
+        "bytes": 311984,
+        "lines": 0,
+        "avg_bytes_per_file": 311984.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".cginc",
+        "files": 48,
+        "bytes": 299622,
+        "lines": 8255,
+        "avg_bytes_per_file": 6242.125,
+        "avg_lines_per_file": 171.97916666666666
+      },
+      {
+        "extension": ".aspx",
+        "files": 3,
+        "bytes": 181725,
+        "lines": 0,
+        "avg_bytes_per_file": 60575.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".hdr",
+        "files": 1,
+        "bytes": 170913,
+        "lines": 0,
+        "avg_bytes_per_file": 170913.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".h8jsonl",
+        "files": 1,
+        "bytes": 155363,
+        "lines": 0,
+        "avg_bytes_per_file": 155363.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".tif",
+        "files": 2,
+        "bytes": 152632,
+        "lines": 0,
+        "avg_bytes_per_file": 76316.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".config",
+        "files": 7,
+        "bytes": 146374,
+        "lines": 0,
+        "avg_bytes_per_file": 20910.571428571428,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".asmdef",
+        "files": 232,
+        "bytes": 143798,
+        "lines": 5259,
+        "avg_bytes_per_file": 619.8189655172414,
+        "avg_lines_per_file": 22.66810344827586
+      },
+      {
+        "extension": ".js",
+        "files": 1,
+        "bytes": 124702,
+        "lines": 0,
+        "avg_bytes_per_file": 124702.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".editorconfig",
+        "files": 343,
+        "bytes": 119847,
+        "lines": 0,
+        "avg_bytes_per_file": 349.40816326530614,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".nupkg",
+        "files": 1,
+        "bytes": 102160,
+        "lines": 0,
+        "avg_bytes_per_file": 102160.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".html",
+        "files": 4,
+        "bytes": 86515,
+        "lines": 2393,
+        "avg_bytes_per_file": 21628.75,
+        "avg_lines_per_file": 598.25
+      },
+      {
+        "extension": ".anim",
+        "files": 6,
+        "bytes": 86287,
+        "lines": 0,
+        "avg_bytes_per_file": 14381.166666666666,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".targets",
+        "files": 33,
+        "bytes": 84609,
+        "lines": 0,
+        "avg_bytes_per_file": 2563.909090909091,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".lib",
+        "files": 3,
+        "bytes": 79416,
+        "lines": 0,
+        "avg_bytes_per_file": 26472.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".obj",
+        "files": 2,
+        "bytes": 71568,
+        "lines": 0,
+        "avg_bytes_per_file": 35784.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".inputactions",
+        "files": 2,
+        "bytes": 69840,
+        "lines": 0,
+        "avg_bytes_per_file": 34920.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".flac",
+        "files": 1,
+        "bytes": 62991,
+        "lines": 0,
+        "avg_bytes_per_file": 62991.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".uss",
+        "files": 52,
+        "bytes": 61024,
+        "lines": 0,
+        "avg_bytes_per_file": 1173.5384615384614,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".mdc",
+        "files": 10,
+        "bytes": 59166,
+        "lines": 0,
+        "avg_bytes_per_file": 5916.6,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".csx",
+        "files": 1,
+        "bytes": 58456,
+        "lines": 0,
+        "avg_bytes_per_file": 58456.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".bmp",
+        "files": 1,
+        "bytes": 49208,
+        "lines": 0,
+        "avg_bytes_per_file": 49208.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".pso",
+        "files": 19,
+        "bytes": 48436,
+        "lines": 0,
+        "avg_bytes_per_file": 2549.2631578947367,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".svg",
+        "files": 14,
+        "bytes": 46575,
+        "lines": 0,
+        "avg_bytes_per_file": 3326.785714285714,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".exp",
+        "files": 3,
+        "bytes": 45678,
+        "lines": 0,
+        "avg_bytes_per_file": 15226.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".h8dump",
+        "files": 2,
+        "bytes": 44991,
+        "lines": 0,
+        "avg_bytes_per_file": 22495.5,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".props",
+        "files": 33,
+        "bytes": 38329,
+        "lines": 0,
+        "avg_bytes_per_file": 1161.4848484848485,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".cpp",
+        "files": 2,
+        "bytes": 37064,
+        "lines": 0,
+        "avg_bytes_per_file": 18532.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".solid",
+        "files": 1,
+        "bytes": 30277,
+        "lines": 0,
+        "avg_bytes_per_file": 30277.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".template",
+        "files": 6,
+        "bytes": 29203,
+        "lines": 0,
+        "avg_bytes_per_file": 4867.166666666667,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".h",
+        "files": 2,
+        "bytes": 27309,
+        "lines": 0,
+        "avg_bytes_per_file": 13654.5,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".p7s",
+        "files": 1,
+        "bytes": 18702,
+        "lines": 0,
+        "avg_bytes_per_file": 18702.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".uxml",
+        "files": 12,
+        "bytes": 12624,
+        "lines": 241,
+        "avg_bytes_per_file": 1052.0,
+        "avg_lines_per_file": 20.083333333333332
+      },
+      {
+        "extension": ".rar",
+        "files": 1,
+        "bytes": 12502,
+        "lines": 0,
+        "avg_bytes_per_file": 12502.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".terrainlayer",
+        "files": 13,
+        "bytes": 10862,
+        "lines": 0,
+        "avg_bytes_per_file": 835.5384615384615,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".sha256",
+        "files": 99,
+        "bytes": 10238,
+        "lines": 0,
+        "avg_bytes_per_file": 103.41414141414141,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".mixer",
+        "files": 2,
+        "bytes": 8476,
+        "lines": 0,
+        "avg_bytes_per_file": 4238.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".shadervariants",
+        "files": 9,
+        "bytes": 7994,
+        "lines": 0,
+        "avg_bytes_per_file": 888.2222222222222,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".map",
+        "files": 3,
+        "bytes": 7866,
+        "lines": 0,
+        "avg_bytes_per_file": 2622.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".def",
+        "files": 1,
+        "bytes": 7810,
+        "lines": 0,
+        "avg_bytes_per_file": 7810.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".browser",
+        "files": 3,
+        "bytes": 4815,
+        "lines": 0,
+        "avg_bytes_per_file": 1605.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".gso",
+        "files": 3,
+        "bytes": 4564,
+        "lines": 0,
+        "avg_bytes_per_file": 1521.3333333333333,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".bat",
+        "files": 3,
+        "bytes": 4073,
+        "lines": 124,
+        "avg_bytes_per_file": 1357.6666666666667,
+        "avg_lines_per_file": 41.333333333333336
+      },
+      {
+        "extension": ".plist",
+        "files": 3,
+        "bytes": 4071,
+        "lines": 0,
+        "avg_bytes_per_file": 1357.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".vso",
+        "files": 4,
+        "bytes": 3888,
+        "lines": 0,
+        "avg_bytes_per_file": 972.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".controller",
+        "files": 2,
+        "bytes": 3688,
+        "lines": 0,
+        "avg_bytes_per_file": 1844.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".lz4",
+        "files": 3,
+        "bytes": 3671,
+        "lines": 0,
+        "avg_bytes_per_file": 1223.6666666666667,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".slnx",
+        "files": 1,
+        "bytes": 3299,
+        "lines": 0,
+        "avg_bytes_per_file": 3299.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".css",
+        "files": 1,
+        "bytes": 2167,
+        "lines": 158,
+        "avg_bytes_per_file": 2167.0,
+        "avg_lines_per_file": 158.0
+      },
+      {
+        "extension": ".asmref",
+        "files": 34,
+        "bytes": 2074,
+        "lines": 0,
+        "avg_bytes_per_file": 61.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".nuspec",
+        "files": 1,
+        "bytes": 1941,
+        "lines": 0,
+        "avg_bytes_per_file": 1941.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".lighting",
+        "files": 1,
+        "bytes": 1822,
+        "lines": 0,
+        "avg_bytes_per_file": 1822.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".bytes",
+        "files": 2,
+        "bytes": 1680,
+        "lines": 0,
+        "avg_bytes_per_file": 840.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".gradle",
+        "files": 1,
+        "bytes": 1242,
+        "lines": 0,
+        "avg_bytes_per_file": 1242.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".psmdcp",
+        "files": 1,
+        "bytes": 977,
+        "lines": 0,
+        "avg_bytes_per_file": 977.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".rendertexture",
+        "files": 1,
+        "bytes": 860,
+        "lines": 0,
+        "avg_bytes_per_file": 860.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".yml",
+        "files": 1,
+        "bytes": 731,
+        "lines": 22,
+        "avg_bytes_per_file": 731.0,
+        "avg_lines_per_file": 22.0
+      },
+      {
+        "extension": ".lock",
+        "files": 1,
+        "bytes": 689,
+        "lines": 0,
+        "avg_bytes_per_file": 689.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".kiro",
+        "files": 5,
+        "bytes": 557,
+        "lines": 0,
+        "avg_bytes_per_file": 111.4,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".bac",
+        "files": 1,
+        "bytes": 414,
+        "lines": 0,
+        "avg_bytes_per_file": 414.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".surfshader",
+        "files": 1,
+        "bytes": 263,
+        "lines": 0,
+        "avg_bytes_per_file": 263.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".sh",
+        "files": 1,
+        "bytes": 210,
+        "lines": 0,
+        "avg_bytes_per_file": 210.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".modulemap",
+        "files": 1,
+        "bytes": 107,
+        "lines": 0,
+        "avg_bytes_per_file": 107.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".strings",
+        "files": 1,
+        "bytes": 92,
+        "lines": 0,
+        "avg_bytes_per_file": 92.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".info",
+        "files": 1,
+        "bytes": 20,
+        "lines": 0,
+        "avg_bytes_per_file": 20.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".sarif",
+        "files": 1,
+        "bytes": 0,
+        "lines": 0,
+        "avg_bytes_per_file": 0.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".buildwithskipanalyzers",
+        "files": 104,
+        "bytes": 0,
+        "lines": 0,
+        "avg_bytes_per_file": 0.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".tmp",
+        "files": 1,
+        "bytes": 0,
+        "lines": 0,
+        "avg_bytes_per_file": 0.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ". think deeply, plan",
+        "files": 1,
+        "bytes": 0,
+        "lines": 0,
+        "avg_bytes_per_file": 0.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".sgsubgraphdb",
+        "files": 1,
+        "bytes": 0,
+        "lines": 0,
+        "avg_bytes_per_file": 0.0,
+        "avg_lines_per_file": 0.0
+      }
+    ],
+    "extension_by_lines": [
+      {
+        "extension": ".json",
+        "files": 2537,
+        "bytes": 672380403,
+        "lines": 17221648,
+        "avg_bytes_per_file": 265029.7213243989,
+        "avg_lines_per_file": 6788.193929838392
+      },
+      {
+        "extension": ".cs",
+        "files": 6101,
+        "bytes": 136344932,
+        "lines": 3143595,
+        "avg_bytes_per_file": 22347.964595967875,
+        "avg_lines_per_file": 515.2589739386985
+      },
+      {
+        "extension": ".asset",
+        "files": 3692,
+        "bytes": 1045648306,
+        "lines": 1295650,
+        "avg_bytes_per_file": 283220.0178764897,
+        "avg_lines_per_file": 350.9344528710726
+      },
+      {
+        "extension": ".md",
+        "files": 15713,
+        "bytes": 52503442,
+        "lines": 941071,
+        "avg_bytes_per_file": 3341.401514669382,
+        "avg_lines_per_file": 59.891236555718194
+      },
+      {
+        "extension": ".prefab",
+        "files": 1143,
+        "bytes": 13108016,
+        "lines": 452429,
+        "avg_bytes_per_file": 11468.080489938759,
+        "avg_lines_per_file": 395.8258967629046
+      },
+      {
+        "extension": ".meta",
+        "files": 16674,
+        "bytes": 8417638,
+        "lines": 362279,
+        "avg_bytes_per_file": 504.836152093079,
+        "avg_lines_per_file": 21.727180040782056
+      },
+      {
+        "extension": ".shader",
+        "files": 490,
+        "bytes": 8087821,
+        "lines": 169114,
+        "avg_bytes_per_file": 16505.757142857143,
+        "avg_lines_per_file": 345.130612244898
+      },
+      {
+        "extension": ".py",
+        "files": 260,
+        "bytes": 5845274,
+        "lines": 128887,
+        "avg_bytes_per_file": 22481.823076923076,
+        "avg_lines_per_file": 495.71923076923076
+      },
+      {
+        "extension": ".txt",
+        "files": 1110,
+        "bytes": 10367973,
+        "lines": 106806,
+        "avg_bytes_per_file": 9340.516216216216,
+        "avg_lines_per_file": 96.22162162162162
+      },
+      {
+        "extension": ".xml",
+        "files": 128,
+        "bytes": 4482179,
+        "lines": 52162,
+        "avg_bytes_per_file": 35017.0234375,
+        "avg_lines_per_file": 407.515625
+      },
+      {
+        "extension": ".ps1",
+        "files": 60,
+        "bytes": 1484943,
+        "lines": 27290,
+        "avg_bytes_per_file": 24749.05,
+        "avg_lines_per_file": 454.8333333333333
+      },
+      {
+        "extension": ".hlsl",
+        "files": 149,
+        "bytes": 924326,
+        "lines": 22782,
+        "avg_bytes_per_file": 6203.5302013422815,
+        "avg_lines_per_file": 152.8993288590604
+      },
+      {
+        "extension": ".compute",
+        "files": 80,
+        "bytes": 732208,
+        "lines": 18332,
+        "avg_bytes_per_file": 9152.6,
+        "avg_lines_per_file": 229.15
+      },
+      {
+        "extension": ".cginc",
+        "files": 48,
+        "bytes": 299622,
+        "lines": 8255,
+        "avg_bytes_per_file": 6242.125,
+        "avg_lines_per_file": 171.97916666666666
+      },
+      {
+        "extension": ".asmdef",
+        "files": 232,
+        "bytes": 143798,
+        "lines": 5259,
+        "avg_bytes_per_file": 619.8189655172414,
+        "avg_lines_per_file": 22.66810344827586
+      },
+      {
+        "extension": ".html",
+        "files": 4,
+        "bytes": 86515,
+        "lines": 2393,
+        "avg_bytes_per_file": 21628.75,
+        "avg_lines_per_file": 598.25
+      },
+      {
+        "extension": ".uxml",
+        "files": 12,
+        "bytes": 12624,
+        "lines": 241,
+        "avg_bytes_per_file": 1052.0,
+        "avg_lines_per_file": 20.083333333333332
+      },
+      {
+        "extension": ".css",
+        "files": 1,
+        "bytes": 2167,
+        "lines": 158,
+        "avg_bytes_per_file": 2167.0,
+        "avg_lines_per_file": 158.0
+      },
+      {
+        "extension": ".bat",
+        "files": 3,
+        "bytes": 4073,
+        "lines": 124,
+        "avg_bytes_per_file": 1357.6666666666667,
+        "avg_lines_per_file": 41.333333333333336
+      },
+      {
+        "extension": ".yml",
+        "files": 1,
+        "bytes": 731,
+        "lines": 22,
+        "avg_bytes_per_file": 731.0,
+        "avg_lines_per_file": 22.0
+      }
+    ],
+    "extension_by_avg_bytes_per_file": [
+      {
+        "extension": ".assets",
+        "files": 3,
+        "bytes": 100615872,
+        "lines": 0,
+        "avg_bytes_per_file": 33538624.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".ress",
+        "files": 3,
+        "bytes": 76854800,
+        "lines": 0,
+        "avg_bytes_per_file": 25618266.666666668,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".resource",
+        "files": 2,
+        "bytes": 34194272,
+        "lines": 0,
+        "avg_bytes_per_file": 17097136.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".otf",
+        "files": 2,
+        "bytes": 32905100,
+        "lines": 0,
+        "avg_bytes_per_file": 16452550.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".glb",
+        "files": 1,
+        "bytes": 11545576,
+        "lines": 0,
+        "avg_bytes_per_file": 11545576.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".pdf",
+        "files": 8,
+        "bytes": 78489329,
+        "lines": 0,
+        "avg_bytes_per_file": 9811166.125,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".tga",
+        "files": 10,
+        "bytes": 96481530,
+        "lines": 0,
+        "avg_bytes_per_file": 9648153.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".zip",
+        "files": 5,
+        "bytes": 47083821,
+        "lines": 0,
+        "avg_bytes_per_file": 9416764.2,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".wav",
+        "files": 45,
+        "bytes": 306075462,
+        "lines": 0,
+        "avg_bytes_per_file": 6801676.933333334,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".gif",
+        "files": 7,
+        "bytes": 39309426,
+        "lines": 0,
+        "avg_bytes_per_file": 5615632.285714285,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".mp4",
+        "files": 6,
+        "bytes": 20294164,
+        "lines": 0,
+        "avg_bytes_per_file": 3382360.6666666665,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": "[no_ext]",
+        "files": 18,
+        "bytes": 58035026,
+        "lines": 0,
+        "avg_bytes_per_file": 3224168.111111111,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".62732",
+        "files": 1,
+        "bytes": 2879673,
+        "lines": 0,
+        "avg_bytes_per_file": 2879673.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".jpg",
+        "files": 44,
+        "bytes": 108728665,
+        "lines": 0,
+        "avg_bytes_per_file": 2471106.022727273,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".unity",
+        "files": 53,
+        "bytes": 129095617,
+        "lines": 0,
+        "avg_bytes_per_file": 2435766.3584905663,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".ogg",
+        "files": 89,
+        "bytes": 179899401,
+        "lines": 0,
+        "avg_bytes_per_file": 2021341.5842696629,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".52260",
+        "files": 2,
+        "bytes": 2894824,
+        "lines": 0,
+        "avg_bytes_per_file": 1447412.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".26132",
+        "files": 1,
+        "bytes": 1442635,
+        "lines": 0,
+        "avg_bytes_per_file": 1442635.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".aar",
+        "files": 1,
+        "bytes": 1341205,
+        "lines": 0,
+        "avg_bytes_per_file": 1341205.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".dll",
+        "files": 878,
+        "bytes": 1169295136,
+        "lines": 0,
+        "avg_bytes_per_file": 1331771.2255125286,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".11652",
+        "files": 1,
+        "bytes": 1311590,
+        "lines": 0,
+        "avg_bytes_per_file": 1311590.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".dylib",
+        "files": 1,
+        "bytes": 1255699,
+        "lines": 0,
+        "avg_bytes_per_file": 1255699.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".19632",
+        "files": 3,
+        "bytes": 2993636,
+        "lines": 0,
+        "avg_bytes_per_file": 997878.6666666666,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".21032",
+        "files": 3,
+        "bytes": 2993592,
+        "lines": 0,
+        "avg_bytes_per_file": 997864.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".66660",
+        "files": 3,
+        "bytes": 2993508,
+        "lines": 0,
+        "avg_bytes_per_file": 997836.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".unitypackage",
+        "files": 31,
+        "bytes": 25775679,
+        "lines": 0,
+        "avg_bytes_per_file": 831473.5161290322,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".raw",
+        "files": 11,
+        "bytes": 8937250,
+        "lines": 0,
+        "avg_bytes_per_file": 812477.2727272727,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".mp3",
+        "files": 3,
+        "bytes": 2326634,
+        "lines": 0,
+        "avg_bytes_per_file": 775544.6666666666,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".tsv",
+        "files": 1,
+        "bytes": 681659,
+        "lines": 0,
+        "avg_bytes_per_file": 681659.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".png",
+        "files": 2863,
+        "bytes": 1889540020,
+        "lines": 0,
+        "avg_bytes_per_file": 659986.0356269648,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".ttf",
+        "files": 25,
+        "bytes": 13846388,
+        "lines": 0,
+        "avg_bytes_per_file": 553855.52,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".psd",
+        "files": 2,
+        "bytes": 923080,
+        "lines": 0,
+        "avg_bytes_per_file": 461540.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".so",
+        "files": 1,
+        "bytes": 440704,
+        "lines": 0,
+        "avg_bytes_per_file": 440704.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".curves",
+        "files": 4,
+        "bytes": 1549089,
+        "lines": 0,
+        "avg_bytes_per_file": 387272.25,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".webm",
+        "files": 3,
+        "bytes": 1139281,
+        "lines": 0,
+        "avg_bytes_per_file": 379760.3333333333,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".pdb",
+        "files": 756,
+        "bytes": 280955412,
+        "lines": 0,
+        "avg_bytes_per_file": 371634.14285714284,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".shadergraph2",
+        "files": 1,
+        "bytes": 337944,
+        "lines": 0,
+        "avg_bytes_per_file": 337944.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".ini",
+        "files": 1,
+        "bytes": 311984,
+        "lines": 0,
+        "avg_bytes_per_file": 311984.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".asset",
+        "files": 3692,
+        "bytes": 1045648306,
+        "lines": 1295650,
+        "avg_bytes_per_file": 283220.0178764897,
+        "avg_lines_per_file": 350.9344528710726
+      },
+      {
+        "extension": ".json",
+        "files": 2537,
+        "bytes": 672380403,
+        "lines": 17221648,
+        "avg_bytes_per_file": 265029.7213243989,
+        "avg_lines_per_file": 6788.193929838392
+      },
+      {
+        "extension": ".h8bin",
+        "files": 21,
+        "bytes": 5083664,
+        "lines": 0,
+        "avg_bytes_per_file": 242079.2380952381,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".exe",
+        "files": 15,
+        "bytes": 3579312,
+        "lines": 0,
+        "avg_bytes_per_file": 238620.8,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".hdr",
+        "files": 1,
+        "bytes": 170913,
+        "lines": 0,
+        "avg_bytes_per_file": 170913.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".exr",
+        "files": 2,
+        "bytes": 333587,
+        "lines": 0,
+        "avg_bytes_per_file": 166793.5,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".diff",
+        "files": 35,
+        "bytes": 5773626,
+        "lines": 0,
+        "avg_bytes_per_file": 164960.74285714285,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".h8jsonl",
+        "files": 1,
+        "bytes": 155363,
+        "lines": 0,
+        "avg_bytes_per_file": 155363.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".bin",
+        "files": 56,
+        "bytes": 7963129,
+        "lines": 0,
+        "avg_bytes_per_file": 142198.73214285713,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".csv",
+        "files": 786,
+        "bytes": 102652788,
+        "lines": 0,
+        "avg_bytes_per_file": 130601.51145038167,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".data",
+        "files": 4,
+        "bytes": 510523,
+        "lines": 0,
+        "avg_bytes_per_file": 127630.75,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".js",
+        "files": 1,
+        "bytes": 124702,
+        "lines": 0,
+        "avg_bytes_per_file": 124702.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".log",
+        "files": 795,
+        "bytes": 93272317,
+        "lines": 0,
+        "avg_bytes_per_file": 117323.66918238993,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".nupkg",
+        "files": 1,
+        "bytes": 102160,
+        "lines": 0,
+        "avg_bytes_per_file": 102160.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".shadergraph",
+        "files": 39,
+        "bytes": 3660565,
+        "lines": 0,
+        "avg_bytes_per_file": 93860.64102564103,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".patch",
+        "files": 10,
+        "bytes": 829100,
+        "lines": 0,
+        "avg_bytes_per_file": 82910.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".fbx",
+        "files": 300,
+        "bytes": 23637244,
+        "lines": 0,
+        "avg_bytes_per_file": 78790.81333333334,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".tif",
+        "files": 2,
+        "bytes": 152632,
+        "lines": 0,
+        "avg_bytes_per_file": 76316.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".cache",
+        "files": 1098,
+        "bytes": 79145307,
+        "lines": 0,
+        "avg_bytes_per_file": 72081.33606557376,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".rsp",
+        "files": 6,
+        "bytes": 419908,
+        "lines": 0,
+        "avg_bytes_per_file": 69984.66666666667,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".webp",
+        "files": 7,
+        "bytes": 478896,
+        "lines": 0,
+        "avg_bytes_per_file": 68413.71428571429,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".flac",
+        "files": 1,
+        "bytes": 62991,
+        "lines": 0,
+        "avg_bytes_per_file": 62991.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".aspx",
+        "files": 3,
+        "bytes": 181725,
+        "lines": 0,
+        "avg_bytes_per_file": 60575.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".backup",
+        "files": 11,
+        "bytes": 663952,
+        "lines": 0,
+        "avg_bytes_per_file": 60359.27272727273,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".csx",
+        "files": 1,
+        "bytes": 58456,
+        "lines": 0,
+        "avg_bytes_per_file": 58456.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".shadersubgraph",
+        "files": 92,
+        "bytes": 4966308,
+        "lines": 0,
+        "avg_bytes_per_file": 53981.608695652176,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".bmp",
+        "files": 1,
+        "bytes": 49208,
+        "lines": 0,
+        "avg_bytes_per_file": 49208.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".pyc",
+        "files": 66,
+        "bytes": 2833585,
+        "lines": 0,
+        "avg_bytes_per_file": 42933.106060606064,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".ptx",
+        "files": 122,
+        "bytes": 4939143,
+        "lines": 0,
+        "avg_bytes_per_file": 40484.77868852459,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".obj",
+        "files": 2,
+        "bytes": 71568,
+        "lines": 0,
+        "avg_bytes_per_file": 35784.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".xml",
+        "files": 128,
+        "bytes": 4482179,
+        "lines": 52162,
+        "avg_bytes_per_file": 35017.0234375,
+        "avg_lines_per_file": 407.515625
+      },
+      {
+        "extension": ".inputactions",
+        "files": 2,
+        "bytes": 69840,
+        "lines": 0,
+        "avg_bytes_per_file": 34920.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".solid",
+        "files": 1,
+        "bytes": 30277,
+        "lines": 0,
+        "avg_bytes_per_file": 30277.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".lib",
+        "files": 3,
+        "bytes": 79416,
+        "lines": 0,
+        "avg_bytes_per_file": 26472.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".ps1",
+        "files": 60,
+        "bytes": 1484943,
+        "lines": 27290,
+        "avg_bytes_per_file": 24749.05,
+        "avg_lines_per_file": 454.8333333333333
+      },
+      {
+        "extension": ".h8dump",
+        "files": 2,
+        "bytes": 44991,
+        "lines": 0,
+        "avg_bytes_per_file": 22495.5,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".py",
+        "files": 260,
+        "bytes": 5845274,
+        "lines": 128887,
+        "avg_bytes_per_file": 22481.823076923076,
+        "avg_lines_per_file": 495.71923076923076
+      },
+      {
+        "extension": ".cs",
+        "files": 6101,
+        "bytes": 136344932,
+        "lines": 3143595,
+        "avg_bytes_per_file": 22347.964595967875,
+        "avg_lines_per_file": 515.2589739386985
+      },
+      {
+        "extension": ".html",
+        "files": 4,
+        "bytes": 86515,
+        "lines": 2393,
+        "avg_bytes_per_file": 21628.75,
+        "avg_lines_per_file": 598.25
+      },
+      {
+        "extension": ".config",
+        "files": 7,
+        "bytes": 146374,
+        "lines": 0,
+        "avg_bytes_per_file": 20910.571428571428,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".p7s",
+        "files": 1,
+        "bytes": 18702,
+        "lines": 0,
+        "avg_bytes_per_file": 18702.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".cpp",
+        "files": 2,
+        "bytes": 37064,
+        "lines": 0,
+        "avg_bytes_per_file": 18532.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".shader",
+        "files": 490,
+        "bytes": 8087821,
+        "lines": 169114,
+        "avg_bytes_per_file": 16505.757142857143,
+        "avg_lines_per_file": 345.130612244898
+      },
+      {
+        "extension": ".exp",
+        "files": 3,
+        "bytes": 45678,
+        "lines": 0,
+        "avg_bytes_per_file": 15226.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".anim",
+        "files": 6,
+        "bytes": 86287,
+        "lines": 0,
+        "avg_bytes_per_file": 14381.166666666666,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".h",
+        "files": 2,
+        "bytes": 27309,
+        "lines": 0,
+        "avg_bytes_per_file": 13654.5,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".rar",
+        "files": 1,
+        "bytes": 12502,
+        "lines": 0,
+        "avg_bytes_per_file": 12502.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".prefab",
+        "files": 1143,
+        "bytes": 13108016,
+        "lines": 452429,
+        "avg_bytes_per_file": 11468.080489938759,
+        "avg_lines_per_file": 395.8258967629046
+      },
+      {
+        "extension": ".txt",
+        "files": 1110,
+        "bytes": 10367973,
+        "lines": 106806,
+        "avg_bytes_per_file": 9340.516216216216,
+        "avg_lines_per_file": 96.22162162162162
+      },
+      {
+        "extension": ".compute",
+        "files": 80,
+        "bytes": 732208,
+        "lines": 18332,
+        "avg_bytes_per_file": 9152.6,
+        "avg_lines_per_file": 229.15
+      },
+      {
+        "extension": ".def",
+        "files": 1,
+        "bytes": 7810,
+        "lines": 0,
+        "avg_bytes_per_file": 7810.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".cginc",
+        "files": 48,
+        "bytes": 299622,
+        "lines": 8255,
+        "avg_bytes_per_file": 6242.125,
+        "avg_lines_per_file": 171.97916666666666
+      },
+      {
+        "extension": ".hlsl",
+        "files": 149,
+        "bytes": 924326,
+        "lines": 22782,
+        "avg_bytes_per_file": 6203.5302013422815,
+        "avg_lines_per_file": 152.8993288590604
+      },
+      {
+        "extension": ".mdc",
+        "files": 10,
+        "bytes": 59166,
+        "lines": 0,
+        "avg_bytes_per_file": 5916.6,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".csproj",
+        "files": 75,
+        "bytes": 384064,
+        "lines": 0,
+        "avg_bytes_per_file": 5120.8533333333335,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".template",
+        "files": 6,
+        "bytes": 29203,
+        "lines": 0,
+        "avg_bytes_per_file": 4867.166666666667,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".mixer",
+        "files": 2,
+        "bytes": 8476,
+        "lines": 0,
+        "avg_bytes_per_file": 4238.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".md",
+        "files": 15713,
+        "bytes": 52503442,
+        "lines": 941071,
+        "avg_bytes_per_file": 3341.401514669382,
+        "avg_lines_per_file": 59.891236555718194
+      },
+      {
+        "extension": ".svg",
+        "files": 14,
+        "bytes": 46575,
+        "lines": 0,
+        "avg_bytes_per_file": 3326.785714285714,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".slnx",
+        "files": 1,
+        "bytes": 3299,
+        "lines": 0,
+        "avg_bytes_per_file": 3299.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".map",
+        "files": 3,
+        "bytes": 7866,
+        "lines": 0,
+        "avg_bytes_per_file": 2622.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".targets",
+        "files": 33,
+        "bytes": 84609,
+        "lines": 0,
+        "avg_bytes_per_file": 2563.909090909091,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".pso",
+        "files": 19,
+        "bytes": 48436,
+        "lines": 0,
+        "avg_bytes_per_file": 2549.2631578947367,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".mat",
+        "files": 1113,
+        "bytes": 2527658,
+        "lines": 0,
+        "avg_bytes_per_file": 2271.0314465408806,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".css",
+        "files": 1,
+        "bytes": 2167,
+        "lines": 158,
+        "avg_bytes_per_file": 2167.0,
+        "avg_lines_per_file": 158.0
+      },
+      {
+        "extension": ".nuspec",
+        "files": 1,
+        "bytes": 1941,
+        "lines": 0,
+        "avg_bytes_per_file": 1941.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".controller",
+        "files": 2,
+        "bytes": 3688,
+        "lines": 0,
+        "avg_bytes_per_file": 1844.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".lighting",
+        "files": 1,
+        "bytes": 1822,
+        "lines": 0,
+        "avg_bytes_per_file": 1822.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".browser",
+        "files": 3,
+        "bytes": 4815,
+        "lines": 0,
+        "avg_bytes_per_file": 1605.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".gso",
+        "files": 3,
+        "bytes": 4564,
+        "lines": 0,
+        "avg_bytes_per_file": 1521.3333333333333,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".bat",
+        "files": 3,
+        "bytes": 4073,
+        "lines": 124,
+        "avg_bytes_per_file": 1357.6666666666667,
+        "avg_lines_per_file": 41.333333333333336
+      },
+      {
+        "extension": ".plist",
+        "files": 3,
+        "bytes": 4071,
+        "lines": 0,
+        "avg_bytes_per_file": 1357.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".gradle",
+        "files": 1,
+        "bytes": 1242,
+        "lines": 0,
+        "avg_bytes_per_file": 1242.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".lz4",
+        "files": 3,
+        "bytes": 3671,
+        "lines": 0,
+        "avg_bytes_per_file": 1223.6666666666667,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".uss",
+        "files": 52,
+        "bytes": 61024,
+        "lines": 0,
+        "avg_bytes_per_file": 1173.5384615384614,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".props",
+        "files": 33,
+        "bytes": 38329,
+        "lines": 0,
+        "avg_bytes_per_file": 1161.4848484848485,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".uxml",
+        "files": 12,
+        "bytes": 12624,
+        "lines": 241,
+        "avg_bytes_per_file": 1052.0,
+        "avg_lines_per_file": 20.083333333333332
+      },
+      {
+        "extension": ".psmdcp",
+        "files": 1,
+        "bytes": 977,
+        "lines": 0,
+        "avg_bytes_per_file": 977.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".vso",
+        "files": 4,
+        "bytes": 3888,
+        "lines": 0,
+        "avg_bytes_per_file": 972.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".shadervariants",
+        "files": 9,
+        "bytes": 7994,
+        "lines": 0,
+        "avg_bytes_per_file": 888.2222222222222,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".rendertexture",
+        "files": 1,
+        "bytes": 860,
+        "lines": 0,
+        "avg_bytes_per_file": 860.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".bytes",
+        "files": 2,
+        "bytes": 1680,
+        "lines": 0,
+        "avg_bytes_per_file": 840.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".terrainlayer",
+        "files": 13,
+        "bytes": 10862,
+        "lines": 0,
+        "avg_bytes_per_file": 835.5384615384615,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".yml",
+        "files": 1,
+        "bytes": 731,
+        "lines": 22,
+        "avg_bytes_per_file": 731.0,
+        "avg_lines_per_file": 22.0
+      },
+      {
+        "extension": ".lock",
+        "files": 1,
+        "bytes": 689,
+        "lines": 0,
+        "avg_bytes_per_file": 689.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".asmdef",
+        "files": 232,
+        "bytes": 143798,
+        "lines": 5259,
+        "avg_bytes_per_file": 619.8189655172414,
+        "avg_lines_per_file": 22.66810344827586
+      },
+      {
+        "extension": ".meta",
+        "files": 16674,
+        "bytes": 8417638,
+        "lines": 362279,
+        "avg_bytes_per_file": 504.836152093079,
+        "avg_lines_per_file": 21.727180040782056
+      },
+      {
+        "extension": ".bac",
+        "files": 1,
+        "bytes": 414,
+        "lines": 0,
+        "avg_bytes_per_file": 414.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".editorconfig",
+        "files": 343,
+        "bytes": 119847,
+        "lines": 0,
+        "avg_bytes_per_file": 349.40816326530614,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".surfshader",
+        "files": 1,
+        "bytes": 263,
+        "lines": 0,
+        "avg_bytes_per_file": 263.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".sh",
+        "files": 1,
+        "bytes": 210,
+        "lines": 0,
+        "avg_bytes_per_file": 210.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".kiro",
+        "files": 5,
+        "bytes": 557,
+        "lines": 0,
+        "avg_bytes_per_file": 111.4,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".modulemap",
+        "files": 1,
+        "bytes": 107,
+        "lines": 0,
+        "avg_bytes_per_file": 107.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".sha256",
+        "files": 99,
+        "bytes": 10238,
+        "lines": 0,
+        "avg_bytes_per_file": 103.41414141414141,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".strings",
+        "files": 1,
+        "bytes": 92,
+        "lines": 0,
+        "avg_bytes_per_file": 92.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".asmref",
+        "files": 34,
+        "bytes": 2074,
+        "lines": 0,
+        "avg_bytes_per_file": 61.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".info",
+        "files": 1,
+        "bytes": 20,
+        "lines": 0,
+        "avg_bytes_per_file": 20.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".sarif",
+        "files": 1,
+        "bytes": 0,
+        "lines": 0,
+        "avg_bytes_per_file": 0.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".buildwithskipanalyzers",
+        "files": 104,
+        "bytes": 0,
+        "lines": 0,
+        "avg_bytes_per_file": 0.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".tmp",
+        "files": 1,
+        "bytes": 0,
+        "lines": 0,
+        "avg_bytes_per_file": 0.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ". think deeply, plan",
+        "files": 1,
+        "bytes": 0,
+        "lines": 0,
+        "avg_bytes_per_file": 0.0,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".sgsubgraphdb",
+        "files": 1,
+        "bytes": 0,
+        "lines": 0,
+        "avg_bytes_per_file": 0.0,
+        "avg_lines_per_file": 0.0
+      }
+    ],
+    "extension_by_avg_lines_per_file": [
+      {
+        "extension": ".json",
+        "files": 2537,
+        "bytes": 672380403,
+        "lines": 17221648,
+        "avg_bytes_per_file": 265029.7213243989,
+        "avg_lines_per_file": 6788.193929838392
+      },
+      {
+        "extension": ".html",
+        "files": 4,
+        "bytes": 86515,
+        "lines": 2393,
+        "avg_bytes_per_file": 21628.75,
+        "avg_lines_per_file": 598.25
+      },
+      {
+        "extension": ".cs",
+        "files": 6101,
+        "bytes": 136344932,
+        "lines": 3143595,
+        "avg_bytes_per_file": 22347.964595967875,
+        "avg_lines_per_file": 515.2589739386985
+      },
+      {
+        "extension": ".py",
+        "files": 260,
+        "bytes": 5845274,
+        "lines": 128887,
+        "avg_bytes_per_file": 22481.823076923076,
+        "avg_lines_per_file": 495.71923076923076
+      },
+      {
+        "extension": ".ps1",
+        "files": 60,
+        "bytes": 1484943,
+        "lines": 27290,
+        "avg_bytes_per_file": 24749.05,
+        "avg_lines_per_file": 454.8333333333333
+      },
+      {
+        "extension": ".xml",
+        "files": 128,
+        "bytes": 4482179,
+        "lines": 52162,
+        "avg_bytes_per_file": 35017.0234375,
+        "avg_lines_per_file": 407.515625
+      },
+      {
+        "extension": ".prefab",
+        "files": 1143,
+        "bytes": 13108016,
+        "lines": 452429,
+        "avg_bytes_per_file": 11468.080489938759,
+        "avg_lines_per_file": 395.8258967629046
+      },
+      {
+        "extension": ".asset",
+        "files": 3692,
+        "bytes": 1045648306,
+        "lines": 1295650,
+        "avg_bytes_per_file": 283220.0178764897,
+        "avg_lines_per_file": 350.9344528710726
+      },
+      {
+        "extension": ".shader",
+        "files": 490,
+        "bytes": 8087821,
+        "lines": 169114,
+        "avg_bytes_per_file": 16505.757142857143,
+        "avg_lines_per_file": 345.130612244898
+      },
+      {
+        "extension": ".compute",
+        "files": 80,
+        "bytes": 732208,
+        "lines": 18332,
+        "avg_bytes_per_file": 9152.6,
+        "avg_lines_per_file": 229.15
+      },
+      {
+        "extension": ".cginc",
+        "files": 48,
+        "bytes": 299622,
+        "lines": 8255,
+        "avg_bytes_per_file": 6242.125,
+        "avg_lines_per_file": 171.97916666666666
+      },
+      {
+        "extension": ".css",
+        "files": 1,
+        "bytes": 2167,
+        "lines": 158,
+        "avg_bytes_per_file": 2167.0,
+        "avg_lines_per_file": 158.0
+      },
+      {
+        "extension": ".hlsl",
+        "files": 149,
+        "bytes": 924326,
+        "lines": 22782,
+        "avg_bytes_per_file": 6203.5302013422815,
+        "avg_lines_per_file": 152.8993288590604
+      },
+      {
+        "extension": ".txt",
+        "files": 1110,
+        "bytes": 10367973,
+        "lines": 106806,
+        "avg_bytes_per_file": 9340.516216216216,
+        "avg_lines_per_file": 96.22162162162162
+      },
+      {
+        "extension": ".md",
+        "files": 15713,
+        "bytes": 52503442,
+        "lines": 941071,
+        "avg_bytes_per_file": 3341.401514669382,
+        "avg_lines_per_file": 59.891236555718194
+      },
+      {
+        "extension": ".bat",
+        "files": 3,
+        "bytes": 4073,
+        "lines": 124,
+        "avg_bytes_per_file": 1357.6666666666667,
+        "avg_lines_per_file": 41.333333333333336
+      },
+      {
+        "extension": ".asmdef",
+        "files": 232,
+        "bytes": 143798,
+        "lines": 5259,
+        "avg_bytes_per_file": 619.8189655172414,
+        "avg_lines_per_file": 22.66810344827586
+      },
+      {
+        "extension": ".yml",
+        "files": 1,
+        "bytes": 731,
+        "lines": 22,
+        "avg_bytes_per_file": 731.0,
+        "avg_lines_per_file": 22.0
+      },
+      {
+        "extension": ".meta",
+        "files": 16674,
+        "bytes": 8417638,
+        "lines": 362279,
+        "avg_bytes_per_file": 504.836152093079,
+        "avg_lines_per_file": 21.727180040782056
+      },
+      {
+        "extension": ".uxml",
+        "files": 12,
+        "bytes": 12624,
+        "lines": 241,
+        "avg_bytes_per_file": 1052.0,
+        "avg_lines_per_file": 20.083333333333332
+      }
+    ],
+    "root_counts": [
+      {
+        "label": "Assets",
+        "files": 26719
+      },
+      {
+        "label": "Docs",
+        "files": 20965
+      },
+      {
+        "label": ".codexbuild",
+        "files": 4725
+      },
+      {
+        "label": "Packages",
+        "files": 2591
+      },
+      {
+        "label": ".codex_tmp",
+        "files": 740
+      },
+      {
+        "label": "CodexArtifacts",
+        "files": 628
+      },
+      {
+        "label": "igra",
+        "files": 394
+      },
+      {
+        "label": "Tools",
+        "files": 374
+      },
+      {
+        "label": "MarketingAssets",
+        "files": 350
+      },
+      {
+        "label": ".codex-artifacts",
+        "files": 342
+      },
+      {
+        "label": "taskslocal",
+        "files": 301
+      },
+      {
+        "label": "Data",
+        "files": 220
+      },
+      {
+        "label": ".agents-skills",
+        "files": 81
+      },
+      {
+        "label": ".tmp",
+        "files": 79
+      },
+      {
+        "label": "ModdingSDK",
+        "files": 50
+      },
+      {
+        "label": "ProjectSettings",
+        "files": 32
+      },
+      {
+        "label": ".agent",
+        "files": 24
+      },
+      {
+        "label": ".kiro",
+        "files": 21
+      },
+      {
+        "label": ".cursor",
+        "files": 11
+      },
+      {
+        "label": ".codex-build",
+        "files": 8
+      },
+      {
+        "label": ".kilo",
+        "files": 6
+      },
+      {
+        "label": "NativeAudio",
+        "files": 6
+      },
+      {
+        "label": "internal-specs",
+        "files": 5
+      },
+      {
+        "label": ".vscode",
+        "files": 4
+      },
+      {
+        "label": "Lore",
+        "files": 3
+      },
+      {
+        "label": ".github",
+        "files": 2
+      },
+      {
+        "label": ".editorconfig",
+        "files": 1
+      },
+      {
+        "label": ".gitattributes",
+        "files": 1
+      },
+      {
+        "label": ".gitignore",
+        "files": 1
+      },
+      {
+        "label": "3dmodel.md",
+        "files": 1
+      },
+      {
+        "label": "3DMODEL_EQUIPMENT_PROPS.md",
+        "files": 1
+      },
+      {
+        "label": "3DMODEL_FAUNA.md",
+        "files": 1
+      },
+      {
+        "label": "3DMODEL_FLORA_CORAL.md",
+        "files": 1
+      },
+      {
+        "label": "3DMODEL_GEOLOGY_ROCKS.md",
+        "files": 1
+      },
+      {
+        "label": "3DMODEL_HARD_SURFACE_MODULES.md",
+        "files": 1
+      },
+      {
+        "label": "3DMODEL_HERO_REALISM_OVERKILL.md",
+        "files": 1
+      },
+      {
+        "label": "3DMODEL_TEXTURES_MATERIALS.md",
+        "files": 1
+      },
+      {
+        "label": "3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md",
+        "files": 1
+      },
+      {
+        "label": "accessibility.md",
+        "files": 1
+      },
+      {
+        "label": "AGENTS.md",
+        "files": 1
+      },
+      {
+        "label": "ai.md",
+        "files": 1
+      },
+      {
+        "label": "AmplifyImpostors.Editor.csproj",
+        "files": 1
+      },
+      {
+        "label": "AmplifyImpostors.Runtime.csproj",
+        "files": 1
+      },
+      {
+        "label": "animation.md",
+        "files": 1
+      },
+      {
+        "label": "Assembly-CSharp-Editor-firstpass.csproj",
+        "files": 1
+      },
+      {
+        "label": "Assembly-CSharp-Editor.csproj",
+        "files": 1
+      },
+      {
+        "label": "Assembly-CSharp-firstpass.csproj",
+        "files": 1
+      },
+      {
+        "label": "Assembly-CSharp.csproj",
+        "files": 1
+      },
+      {
+        "label": "AstarPathfindingProject.csproj",
+        "files": 1
+      },
+      {
+        "label": "AstarPathfindingProjectEditor.csproj",
+        "files": 1
+      },
+      {
+        "label": "atmosphere.md",
+        "files": 1
+      },
+      {
+        "label": "audio.md",
+        "files": 1
+      },
+      {
+        "label": "authoring.md",
+        "files": 1
+      },
+      {
+        "label": "BakeryEditorAssembly.csproj",
+        "files": 1
+      },
+      {
+        "label": "BakeryRuntimeAssembly.csproj",
+        "files": 1
+      },
+      {
+        "label": "biological_metabolism_profiles.csv",
+        "files": 1
+      },
+      {
+        "label": "biological_mutation_profiles.csv",
+        "files": 1
+      },
+      {
+        "label": "biolum_pulse_profiles.csv",
+        "files": 1
+      },
+      {
+        "label": "bootstrap.md",
+        "files": 1
+      },
+      {
+        "label": "buhlmann_3tissue_profiles.csv",
+        "files": 1
+      },
+      {
+        "label": "buhlmann_zh16_profiles.csv",
+        "files": 1
+      },
+      {
+        "label": "BUILD_PLAYTEST_ISSUES.md",
+        "files": 1
+      },
+      {
+        "label": "camera.md",
+        "files": 1
+      },
+      {
+        "label": "celestial.md",
+        "files": 1
+      },
+      {
+        "label": "cinematics.md",
+        "files": 1
+      },
+      {
+        "label": "combat.md",
+        "files": 1
+      },
+      {
+        "label": "compute.md",
+        "files": 1
+      },
+      {
+        "label": "construction.md",
+        "files": 1
+      },
+      {
+        "label": "creatures.md",
+        "files": 1
+      },
+      {
+        "label": "Crest.csproj",
+        "files": 1
+      },
+      {
+        "label": "Crest.Helpers.Editor.csproj",
+        "files": 1
+      },
+      {
+        "label": "data.md",
+        "files": 1
+      },
+      {
+        "label": "Den.Tools.csproj",
+        "files": 1
+      },
+      {
+        "label": "Den.Tools.Editor.csproj",
+        "files": 1
+      },
+      {
+        "label": "Directory.Build.props",
+        "files": 1
+      },
+      {
+        "label": "Directory.Build.targets",
+        "files": 1
+      },
+      {
+        "label": "drones.md",
+        "files": 1
+      },
+      {
+        "label": "drone_hardware_profiles.csv",
+        "files": 1
+      },
+      {
+        "label": "EasySave3.csproj",
+        "files": 1
+      },
+      {
+        "label": "EasySave3Editor.csproj",
+        "files": 1
+      },
+      {
+        "label": "ecosystem.md",
+        "files": 1
+      },
+      {
+        "label": "gameplay.md",
+        "files": 1
+      },
+      {
+        "label": "glitch_profiles.csv",
+        "files": 1
+      },
+      {
+        "label": "GPUInstancer.csproj",
+        "files": 1
+      },
+      {
+        "label": "GPUInstancer.Editor.csproj",
+        "files": 1
+      },
+      {
+        "label": "Hecton8.Bootstrap.Contracts.csproj",
+        "files": 1
+      },
+      {
+        "label": "Hecton8.Core.csproj",
+        "files": 1
+      },
+      {
+        "label": "Hecton8.Editor.csproj",
+        "files": 1
+      },
+      {
+        "label": "Hecton8.Input.Generated.csproj",
+        "files": 1
+      },
+      {
+        "label": "Hecton8.slnx",
+        "files": 1
+      },
+      {
+        "label": "Hecton8.World.Contracts.csproj",
+        "files": 1
+      },
+      {
+        "label": "Hecton8.World.Dots.csproj",
+        "files": 1
+      },
+      {
+        "label": "HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md",
+        "files": 1
+      },
+      {
+        "label": "HECTON8_ORCHESTRATOR.md",
+        "files": 1
+      },
+      {
+        "label": "input.md",
+        "files": 1
+      },
+      {
+        "label": "input_profiles.csv",
+        "files": 1
+      },
+      {
+        "label": "inventory.md",
+        "files": 1
+      },
+      {
+        "label": "JBooth.MicroSplat.Core.csproj",
+        "files": 1
+      },
+      {
+        "label": "JBooth.MicroSplat.Core.Editor.csproj",
+        "files": 1
+      },
+      {
+        "label": "lighting.md",
+        "files": 1
+      },
+      {
+        "label": "localization.md",
+        "files": 1
+      },
+      {
+        "label": "Lofelt.NiceVibrations.csproj",
+        "files": 1
+      },
+      {
+        "label": "Lofelt.NiceVibrations.Demo.csproj",
+        "files": 1
+      },
+      {
+        "label": "Lofelt.NiceVibrations.Editor.csproj",
+        "files": 1
+      },
+      {
+        "label": "logistics.md",
+        "files": 1
+      },
+      {
+        "label": "MapMagic.csproj",
+        "files": 1
+      },
+      {
+        "label": "MapMagic.Editor.csproj",
+        "files": 1
+      },
+      {
+        "label": "MapMagic.MicroSplat.csproj",
+        "files": 1
+      },
+      {
+        "label": "MapMagic.MicroSplat.Editor.csproj",
+        "files": 1
+      },
+      {
+        "label": "MapMagic.Settings.csproj",
+        "files": 1
+      },
+      {
+        "label": "MASTER_RELEASE_WORK_PLAN.md",
+        "files": 1
+      },
+      {
+        "label": "math.md",
+        "files": 1
+      },
+      {
+        "label": "MeshBakerCore.csproj",
+        "files": 1
+      },
+      {
+        "label": "MeshBakerEditor.csproj",
+        "files": 1
+      },
+      {
+        "label": "modding.md",
+        "files": 1
+      },
+      {
+        "label": "MoreMountains.Feedbacks.Authorizations.csproj",
+        "files": 1
+      },
+      {
+        "label": "MoreMountains.Feedbacks.Cinemachine.csproj",
+        "files": 1
+      },
+      {
+        "label": "MoreMountains.Feedbacks.csproj",
+        "files": 1
+      },
+      {
+        "label": "MoreMountains.Feedbacks.Editor.csproj",
+        "files": 1
+      },
+      {
+        "label": "MoreMountains.Feedbacks.HDRP.csproj",
+        "files": 1
+      },
+      {
+        "label": "MoreMountains.Feedbacks.MMTools.csproj",
+        "files": 1
+      },
+      {
+        "label": "MoreMountains.Feedbacks.NiceVibrations.csproj",
+        "files": 1
+      },
+      {
+        "label": "MoreMountains.Feedbacks.PostProcessing.csproj",
+        "files": 1
+      },
+      {
+        "label": "MoreMountains.Feedbacks.TextMeshPro.csproj",
+        "files": 1
+      },
+      {
+        "label": "MoreMountains.Feedbacks.URP.csproj",
+        "files": 1
+      },
+      {
+        "label": "MoreMountains.Tools.csproj",
+        "files": 1
+      },
+      {
+        "label": "MoreMountains.Tools.Editor.csproj",
+        "files": 1
+      },
+      {
+        "label": "narrative.md",
+        "files": 1
+      },
+      {
+        "label": "networking.md",
+        "files": 1
+      },
+      {
+        "label": "PackageToolsEditor.csproj",
+        "files": 1
+      },
+      {
+        "label": "pda_interface_profiles.csv",
+        "files": 1
+      },
+      {
+        "label": "performance.md",
+        "files": 1
+      },
+      {
+        "label": "persistence.md",
+        "files": 1
+      },
+      {
+        "label": "physics.md",
+        "files": 1
+      },
+      {
+        "label": "platform.md",
+        "files": 1
+      },
+      {
+        "label": "player.md",
+        "files": 1
+      },
+      {
+        "label": "presentation.md",
+        "files": 1
+      },
+      {
+        "label": "PROCEDURAL_ASSET_PIPELINE.md",
+        "files": 1
+      },
+      {
+        "label": "PROJECT_BIBLES.md",
+        "files": 1
+      },
+      {
+        "label": "quality.md",
+        "files": 1
+      },
+      {
+        "label": "release.md",
+        "files": 1
+      },
+      {
+        "label": "rendering.md",
+        "files": 1
+      },
+      {
+        "label": "sdf_baking_profiles.csv",
+        "files": 1
+      },
+      {
+        "label": "settings.md",
+        "files": 1
+      },
+      {
+        "label": "shaders.md",
+        "files": 1
+      },
+      {
+        "label": "ShapesEditor.csproj",
+        "files": 1
+      },
+      {
+        "label": "ShapesRuntime.csproj",
+        "files": 1
+      },
+      {
+        "label": "shit do not touch.txt",
+        "files": 1
+      },
+      {
+        "label": "Sirenix.OdinInspector.Modules.UnityMathematics.csproj",
+        "files": 1
+      },
+      {
+        "label": "sonar.md",
+        "files": 1
+      },
+      {
+        "label": "streaming.md",
+        "files": 1
+      },
+      {
+        "label": "survival.md",
+        "files": 1
+      },
+      {
+        "label": "systems.md",
+        "files": 1
+      },
+      {
+        "label": "TASTE.md",
+        "files": 1
+      },
+      {
+        "label": "Tayx.Graphy.csproj",
+        "files": 1
+      },
+      {
+        "label": "Tayx.Graphy.Editor.csproj",
+        "files": 1
+      },
+      {
+        "label": "Technie.PhysicsCreator.Updater.csproj",
+        "files": 1
+      },
+      {
+        "label": "TechniePhysicsCreator.csproj",
+        "files": 1
+      },
+      {
+        "label": "telemetry.md",
+        "files": 1
+      },
+      {
+        "label": "Temp_1428_asset_candidates.txt",
+        "files": 1
+      },
+      {
+        "label": "Temp_1428_asset_candidates_full.txt",
+        "files": 1
+      },
+      {
+        "label": "Temp_1428_crest_files.txt",
+        "files": 1
+      },
+      {
+        "label": "Temp_1428_log_marker.txt",
+        "files": 1
+      },
+      {
+        "label": "terrain.md",
+        "files": 1
+      },
+      {
+        "label": "testing.md",
+        "files": 1
+      },
+      {
+        "label": "textes.md",
+        "files": 1
+      },
+      {
+        "label": "tools.md",
+        "files": 1
+      },
+      {
+        "label": "ui.md",
+        "files": 1
+      },
+      {
+        "label": "UI_DIEGETIC_HUD_STANDARDS.md",
+        "files": 1
+      },
+      {
+        "label": "UI_MENU_SCREEN_STANDARDS.md",
+        "files": 1
+      },
+      {
+        "label": "Unity.RenderPipelines.Core.Editor.csproj",
+        "files": 1
+      },
+      {
+        "label": "Unity.RenderPipelines.Universal.Editor.csproj",
+        "files": 1
+      },
+      {
+        "label": "Unity.RenderPipelines.Universal.Runtime.csproj",
+        "files": 1
+      },
+      {
+        "label": "Unity.ShaderGraph.Editor.csproj",
+        "files": 1
+      },
+      {
+        "label": "vehicles.md",
+        "files": 1
+      },
+      {
+        "label": "vfx.md",
+        "files": 1
+      },
+      {
+        "label": "VISION_LOCKS.md",
+        "files": 1
+      },
+      {
+        "label": "visor_properties.csv",
+        "files": 1
+      },
+      {
+        "label": "VolumetricLightBeam.csproj",
+        "files": 1
+      },
+      {
+        "label": "VolumetricLightBeam.Editor.csproj",
+        "files": 1
+      },
+      {
+        "label": "voxels.md",
+        "files": 1
+      },
+      {
+        "label": "water.md",
+        "files": 1
+      },
+      {
+        "label": "world.md",
+        "files": 1
+      },
+      {
+        "label": "wreckage_deformation_profiles.csv",
+        "files": 1
+      },
+      {
+        "label": "writing.md",
+        "files": 1
+      },
+      {
+        "label": "xr.md",
+        "files": 1
+      },
+      {
+        "label": "_1627_extracted_prompt.tmp.xml",
+        "files": 1
+      },
+      {
+        "label": "_1713_extracted_prompt.tmp.xml",
+        "files": 1
+      },
+      {
+        "label": ".codexrules",
+        "files": 1
+      }
+    ],
+    "largest_files": [
+      {
+        "path": "Assets/Editor/x64/Bakery/cudnn64_7.dll",
+        "bytes": 338200992,
+        "extension": ".dll"
+      },
+      {
+        "path": "igra/Submerge_Data/sharedassets0.assets",
+        "bytes": 91188100,
+        "extension": ".assets"
+      },
+      {
+        "path": "igra/UnityPlayer.dll",
+        "bytes": 85044144,
+        "extension": ".dll"
+      },
+      {
+        "path": "Assets/ScifiFacility/Textures/Base_dirt_roughness.png",
+        "bytes": 73478616,
+        "extension": ".png"
+      },
+      {
+        "path": "Assets/ScifiFacility/Textures/Base_02_dirt_roughness.png",
+        "bytes": 73087193,
+        "extension": ".png"
+      },
+      {
+        "path": "igra/Submerge_Data/sharedassets0.assets.resS",
+        "bytes": 67992976,
+        "extension": ".ress"
+      },
+      {
+        "path": "Assets/MapMagic/Map_Graph/New Gen/Mask_Data2 1.asset",
+        "bytes": 67111188,
+        "extension": ".asset"
+      },
+      {
+        "path": "Assets/MapMagic/Map_Graph/New Gen/USE IT.asset",
+        "bytes": 67111124,
+        "extension": ".asset"
+      },
+      {
+        "path": "Assets/ScifiFacility/Textures/BrushedMetal_dirt_roughness.png",
+        "bytes": 63869519,
+        "extension": ".png"
+      },
+      {
+        "path": "Assets/Editor/x64/Bakery/OpenImageDenoise.dll",
+        "bytes": 45172064,
+        "extension": ".dll"
+      },
+      {
+        "path": "Assets/Editor/x64/Bakery/optix_denoiser.6.0.0.dll",
+        "bytes": 42589600,
+        "extension": ".dll"
+      },
+      {
+        "path": "Assets/Editor/x64/Bakery/optix.51.dll",
+        "bytes": 40401408,
+        "extension": ".dll"
+      },
+      {
+        "path": "Assets/Editor/x64/Bakery/optix.1.dll",
+        "bytes": 38267976,
+        "extension": ".dll"
+      },
+      {
+        "path": "igra/Submerge_Data/sharedassets0.resource",
+        "bytes": 34177568,
+        "extension": ".resource"
+      },
+      {
+        "path": "Assets/_Project/Audio/Underwater Ambient.wav",
+        "bytes": 34045244,
+        "extension": ".wav"
+      },
+      {
+        "path": "Assets/_Project/Scenes/02_HECTON_WORLD_BISECT_NO_MONOBEHAVIOURS_1428.unity",
+        "bytes": 33762760,
+        "extension": ".unity"
+      },
+      {
+        "path": "Assets/_Project/Scenes/02_HECTON_WORLD_BISECT_NO_HEAVY_BOOT_1428.unity",
+        "bytes": 33753560,
+        "extension": ".unity"
+      },
+      {
+        "path": "Assets/_Project/Scenes/02_HECTON_WORLD_BISECT_NO_TERRAIN_PROCEDURAL_1428.unity",
+        "bytes": 33753016,
+        "extension": ".unity"
+      },
+      {
+        "path": "igra/Submerge_Data/level0",
+        "bytes": 32787564,
+        "extension": "[no_ext]"
+      },
+      {
+        "path": "Assets/Editor/x64/Bakery/optix_denoiser.51.dll",
+        "bytes": 32577024,
+        "extension": ".dll"
+      },
+      {
+        "path": ".codexbuild/somatic_build.log",
+        "bytes": 30492700,
+        "extension": ".log"
+      },
+      {
+        "path": "Assets/ScifiFacility/Textures/Base_03_normal.png",
+        "bytes": 27999574,
+        "extension": ".png"
+      },
+      {
+        "path": "Assets/_Project/Audio/Atmos 1.wav",
+        "bytes": 26496044,
+        "extension": ".wav"
+      },
+      {
+        "path": "Assets/_Project/Audio/Atmos 2.wav",
+        "bytes": 26112044,
+        "extension": ".wav"
+      },
+      {
+        "path": "Assets/MantisLODEditor/Utility/MantisLODEditorCommandLine.zip",
+        "bytes": 25727858,
+        "extension": ".zip"
+      },
+      {
+        "path": "Assets/_Project/Audio/Atmos 3.wav",
+        "bytes": 24960044,
+        "extension": ".wav"
+      },
+      {
+        "path": "Assets/_Project/Audio/Atmos 4.wav",
+        "bytes": 24768044,
+        "extension": ".wav"
+      },
+      {
+        "path": "Assets/_Project/Audio/Atmos 1 Loop.wav",
+        "bytes": 24576044,
+        "extension": ".wav"
+      },
+      {
+        "path": "Assets/_Project/Audio/Atmos 2 Loop.wav",
+        "bytes": 24576044,
+        "extension": ".wav"
+      },
+      {
+        "path": "Assets/ScifiFacility/Textures/Base_05_dirt_roughness.png",
+        "bytes": 24490400,
+        "extension": ".png"
+      },
+      {
+        "path": "Assets/ScifiFacility/Textures/Base_04_dirt_roughness.png",
+        "bytes": 24490355,
+        "extension": ".png"
+      },
+      {
+        "path": "Assets/_Project/Audio/Atmos 5.wav",
+        "bytes": 24384044,
+        "extension": ".wav"
+      },
+      {
+        "path": "Assets/ScifiFacility/Textures/Base_03_dirt_roughness.png",
+        "bytes": 24377210,
+        "extension": ".png"
+      },
+      {
+        "path": "Assets/_Project/Audio/Atmos 3 Loop.wav",
+        "bytes": 23040044,
+        "extension": ".wav"
+      },
+      {
+        "path": "Assets/_Project/Audio/Atmos 4 Loop.wav",
+        "bytes": 23040044,
+        "extension": ".wav"
+      },
+      {
+        "path": "Assets/_Project/Audio/Atmos 5 Loop.wav",
+        "bytes": 23040044,
+        "extension": ".wav"
+      },
+      {
+        "path": "Assets/ScifiFacility/Textures/DetailSheet_normal.png",
+        "bytes": 21529425,
+        "extension": ".png"
+      },
+      {
+        "path": "Assets/ScifiFacility/Textures/Base_04_normal.png",
+        "bytes": 21422409,
+        "extension": ".png"
+      },
+      {
+        "path": "Assets/ScifiFacility/Textures/Base_05_normal.png",
+        "bytes": 21261545,
+        "extension": ".png"
+      },
+      {
+        "path": "Assets/ScifiFacility/Textures/WetGlass_normal.png",
+        "bytes": 21167882,
+        "extension": ".png"
+      }
+    ],
+    "largest_text_files": [
+      {
+        "path": "Docs/Reports/ASSEMBLY_BINARY_SCHEMA_AUDIT_SHINOBU_359.filecache.json",
+        "lines": 327797,
+        "extension": ".json"
+      },
+      {
+        "path": "Assets/MapMagic/Map_Graph/New Gen/ACTUAL TERRAIN_GEMINI.asset",
+        "lines": 258969,
+        "extension": ".asset"
+      },
+      {
+        "path": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1304_APEX_LOOP13_FULL.json",
+        "lines": 134753,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1304_FULL_APEX_RECHECK.json",
+        "lines": 134339,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1304_APEX_LOOP12_FULL.json",
+        "lines": 134249,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/DOCUMENTATION_CORPUS_INVENTORY_X_012.json",
+        "lines": 133833,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1307_PROJECT_PARSE_CHECK.json",
+        "lines": 131999,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1303_WHOLE_SCRIPTS.json",
+        "lines": 131963,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_EXORCISM_REPORT_1317_BEFORE.json",
+        "lines": 131855,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1315_BASELINE.json",
+        "lines": 131855,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_UNKNOWN_CURRENT_20260526_0052.json",
+        "lines": 131855,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1315_PASS1.json",
+        "lines": 131819,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1315_PASS2.json",
+        "lines": 130037,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_X_000_HAZARD_PENDING.json",
+        "lines": 129426,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_X_000_SPATIAL_PENDING.json",
+        "lines": 129171,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1304_FULL.json",
+        "lines": 127794,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1304_FULL_AFTER_APEX.json",
+        "lines": 127556,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1304_FULL_AFTER_VAULT_AUDIO.json",
+        "lines": 127471,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1304_FULL_APEX_FINAL.json",
+        "lines": 126876,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1304_FULL_FINAL.json",
+        "lines": 126876,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_EXORCISM_REPORT_1317_AFTER_RAW.json",
+        "lines": 125213,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_EXORCISM_REAUDIT_1317_NATIVE_RAW.json",
+        "lines": 123593,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1315_PASS3.json",
+        "lines": 123593,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1315_PASS4.json",
+        "lines": 123593,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1329_BEFORE_FULL.json",
+        "lines": 123593,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_EXORCISM_REAUDIT_1317_APEX2_NATIVE_RAW.json",
+        "lines": 122909,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_EXORCISM_REAUDIT_1317_APEX3_NATIVE_RAW.json",
+        "lines": 122909,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_EXORCISM_REAUDIT_1317_APEX4_NATIVE_RAW.json",
+        "lines": 122909,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_EXORCISM_REAUDIT_1317_FINAL_NATIVE_RAW.json",
+        "lines": 122909,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1315_PASS5.json",
+        "lines": 122909,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1315_PASS6.json",
+        "lines": 122909,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1315_PASS7.json",
+        "lines": 122909,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1329_AFTER_FULL.json",
+        "lines": 122909,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1315_PASS8.json",
+        "lines": 122855,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1315_PASS9.json",
+        "lines": 122855,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_EXORCISM_REAUDIT_1317_RERUN2_NATIVE_RAW.json",
+        "lines": 122801,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_EXORCISM_REAUDIT_1317_RERUN3_NATIVE_RAW.json",
+        "lines": 122801,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_EXORCISM_REAUDIT_1317_RERUN4_NATIVE_RAW.json",
+        "lines": 122801,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_EXORCISM_REAUDIT_1317_RERUN5_NATIVE_RAW.json",
+        "lines": 122801,
+        "extension": ".json"
+      },
+      {
+        "path": "Docs/Reports/VAULT_EXORCISM_REAUDIT_1317_RERUN_NATIVE_RAW.json",
+        "lines": 122801,
+        "extension": ".json"
+      }
+    ],
+    "doc_artifacts": [
+      {
+        "label": "Docs reports json",
+        "count": 1619
+      },
+      {
+        "label": "Docs reports md",
+        "count": 189
+      },
+      {
+        "label": "Agent logs md",
+        "count": 502
+      },
+      {
+        "label": "Agent logs json",
+        "count": 0
+      },
+      {
+        "label": "Task status md",
+        "count": 254
+      },
+      {
+        "label": "Architecture md",
+        "count": 186
+      },
+      {
+        "label": "Modding md",
+        "count": 18
+      },
+      {
+        "label": "Editor tests cs",
+        "count": 77
+      }
+    ]
+  },
+  "git_metrics": {
+    "daily": [
+      {
+        "period": "2026-04-01",
+        "commits": 1,
+        "insertions": 38537,
+        "deletions": 3143,
+        "files_changed": 473,
+        "churn": 41680,
+        "net_lines": 35394,
+        "churn_per_commit": 41680.0,
+        "files_changed_per_commit": 473.0
+      },
+      {
+        "period": "2026-04-02",
+        "commits": 3,
+        "insertions": 17313,
+        "deletions": 4346,
+        "files_changed": 246,
+        "churn": 21659,
+        "net_lines": 12967,
+        "churn_per_commit": 7219.666666666667,
+        "files_changed_per_commit": 82.0
+      },
+      {
+        "period": "2026-04-03",
+        "commits": 2,
+        "insertions": 75892,
+        "deletions": 9962,
+        "files_changed": 256,
+        "churn": 85854,
+        "net_lines": 65930,
+        "churn_per_commit": 42927.0,
+        "files_changed_per_commit": 128.0
+      },
+      {
+        "period": "2026-04-04",
+        "commits": 2,
+        "insertions": 4197,
+        "deletions": 3061,
+        "files_changed": 92,
+        "churn": 7258,
+        "net_lines": 1136,
+        "churn_per_commit": 3629.0,
+        "files_changed_per_commit": 46.0
+      },
+      {
+        "period": "2026-04-05",
+        "commits": 3,
+        "insertions": 39467,
+        "deletions": 6609,
+        "files_changed": 587,
+        "churn": 46076,
+        "net_lines": 32858,
+        "churn_per_commit": 15358.666666666666,
+        "files_changed_per_commit": 195.66666666666666
+      },
+      {
+        "period": "2026-04-06",
+        "commits": 2,
+        "insertions": 36142,
+        "deletions": 2801,
+        "files_changed": 156,
+        "churn": 38943,
+        "net_lines": 33341,
+        "churn_per_commit": 19471.5,
+        "files_changed_per_commit": 78.0
+      },
+      {
+        "period": "2026-04-07",
+        "commits": 2,
+        "insertions": 29689,
+        "deletions": 5640,
+        "files_changed": 343,
+        "churn": 35329,
+        "net_lines": 24049,
+        "churn_per_commit": 17664.5,
+        "files_changed_per_commit": 171.5
+      },
+      {
+        "period": "2026-04-08",
+        "commits": 4,
+        "insertions": 49564,
+        "deletions": 9213,
+        "files_changed": 689,
+        "churn": 58777,
+        "net_lines": 40351,
+        "churn_per_commit": 14694.25,
+        "files_changed_per_commit": 172.25
+      },
+      {
+        "period": "2026-04-09",
+        "commits": 5,
+        "insertions": 98178,
+        "deletions": 10964,
+        "files_changed": 1239,
+        "churn": 109142,
+        "net_lines": 87214,
+        "churn_per_commit": 21828.4,
+        "files_changed_per_commit": 247.8
+      },
+      {
+        "period": "2026-04-10",
+        "commits": 2,
+        "insertions": 27185,
+        "deletions": 20217,
+        "files_changed": 517,
+        "churn": 47402,
+        "net_lines": 6968,
+        "churn_per_commit": 23701.0,
+        "files_changed_per_commit": 258.5
+      },
+      {
+        "period": "2026-04-11",
+        "commits": 3,
+        "insertions": 153041,
+        "deletions": 11757,
+        "files_changed": 1609,
+        "churn": 164798,
+        "net_lines": 141284,
+        "churn_per_commit": 54932.666666666664,
+        "files_changed_per_commit": 536.3333333333334
+      },
+      {
+        "period": "2026-04-12",
+        "commits": 1,
+        "insertions": 19739,
+        "deletions": 5662,
+        "files_changed": 181,
+        "churn": 25401,
+        "net_lines": 14077,
+        "churn_per_commit": 25401.0,
+        "files_changed_per_commit": 181.0
+      },
+      {
+        "period": "2026-04-14",
+        "commits": 1,
+        "insertions": 59776,
+        "deletions": 41109,
+        "files_changed": 886,
+        "churn": 100885,
+        "net_lines": 18667,
+        "churn_per_commit": 100885.0,
+        "files_changed_per_commit": 886.0
+      },
+      {
+        "period": "2026-04-15",
+        "commits": 1,
+        "insertions": 44326,
+        "deletions": 4386,
+        "files_changed": 168,
+        "churn": 48712,
+        "net_lines": 39940,
+        "churn_per_commit": 48712.0,
+        "files_changed_per_commit": 168.0
+      },
+      {
+        "period": "2026-04-17",
+        "commits": 1,
+        "insertions": 73082,
+        "deletions": 8233,
+        "files_changed": 679,
+        "churn": 81315,
+        "net_lines": 64849,
+        "churn_per_commit": 81315.0,
+        "files_changed_per_commit": 679.0
+      },
+      {
+        "period": "2026-04-18",
+        "commits": 3,
+        "insertions": 83861,
+        "deletions": 22777,
+        "files_changed": 841,
+        "churn": 106638,
+        "net_lines": 61084,
+        "churn_per_commit": 35546.0,
+        "files_changed_per_commit": 280.3333333333333
+      },
+      {
+        "period": "2026-04-19",
+        "commits": 1,
+        "insertions": 6904,
+        "deletions": 5417,
+        "files_changed": 73,
+        "churn": 12321,
+        "net_lines": 1487,
+        "churn_per_commit": 12321.0,
+        "files_changed_per_commit": 73.0
+      },
+      {
+        "period": "2026-04-20",
+        "commits": 1,
+        "insertions": 46190,
+        "deletions": 18291,
+        "files_changed": 909,
+        "churn": 64481,
+        "net_lines": 27899,
+        "churn_per_commit": 64481.0,
+        "files_changed_per_commit": 909.0
+      },
+      {
+        "period": "2026-04-21",
+        "commits": 1,
+        "insertions": 59444,
+        "deletions": 5216,
+        "files_changed": 422,
+        "churn": 64660,
+        "net_lines": 54228,
+        "churn_per_commit": 64660.0,
+        "files_changed_per_commit": 422.0
+      },
+      {
+        "period": "2026-04-22",
+        "commits": 3,
+        "insertions": 186663,
+        "deletions": 7991,
+        "files_changed": 1264,
+        "churn": 194654,
+        "net_lines": 178672,
+        "churn_per_commit": 64884.666666666664,
+        "files_changed_per_commit": 421.3333333333333
+      },
+      {
+        "period": "2026-04-23",
+        "commits": 5,
+        "insertions": 90235,
+        "deletions": 22560,
+        "files_changed": 1367,
+        "churn": 112795,
+        "net_lines": 67675,
+        "churn_per_commit": 22559.0,
+        "files_changed_per_commit": 273.4
+      },
+      {
+        "period": "2026-04-24",
+        "commits": 1,
+        "insertions": 5786,
+        "deletions": 2989,
+        "files_changed": 69,
+        "churn": 8775,
+        "net_lines": 2797,
+        "churn_per_commit": 8775.0,
+        "files_changed_per_commit": 69.0
+      },
+      {
+        "period": "2026-04-28",
+        "commits": 2,
+        "insertions": 526918,
+        "deletions": 98076,
+        "files_changed": 5018,
+        "churn": 624994,
+        "net_lines": 428842,
+        "churn_per_commit": 312497.0,
+        "files_changed_per_commit": 2509.0
+      },
+      {
+        "period": "2026-04-29",
+        "commits": 14,
+        "insertions": 139989,
+        "deletions": 26768,
+        "files_changed": 1801,
+        "churn": 166757,
+        "net_lines": 113221,
+        "churn_per_commit": 11911.214285714286,
+        "files_changed_per_commit": 128.64285714285714
+      },
+      {
+        "period": "2026-04-30",
+        "commits": 6,
+        "insertions": 90442,
+        "deletions": 16730,
+        "files_changed": 1034,
+        "churn": 107172,
+        "net_lines": 73712,
+        "churn_per_commit": 17862.0,
+        "files_changed_per_commit": 172.33333333333334
+      },
+      {
+        "period": "2026-05-01",
+        "commits": 3,
+        "insertions": 156868,
+        "deletions": 25556,
+        "files_changed": 1062,
+        "churn": 182424,
+        "net_lines": 131312,
+        "churn_per_commit": 60808.0,
+        "files_changed_per_commit": 354.0
+      },
+      {
+        "period": "2026-05-03",
+        "commits": 1,
+        "insertions": 30382,
+        "deletions": 86313,
+        "files_changed": 625,
+        "churn": 116695,
+        "net_lines": -55931,
+        "churn_per_commit": 116695.0,
+        "files_changed_per_commit": 625.0
+      },
+      {
+        "period": "2026-05-04",
+        "commits": 3,
+        "insertions": 161481,
+        "deletions": 22107,
+        "files_changed": 1333,
+        "churn": 183588,
+        "net_lines": 139374,
+        "churn_per_commit": 61196.0,
+        "files_changed_per_commit": 444.3333333333333
+      },
+      {
+        "period": "2026-05-05",
+        "commits": 3,
+        "insertions": 1035389,
+        "deletions": 26294,
+        "files_changed": 2780,
+        "churn": 1061683,
+        "net_lines": 1009095,
+        "churn_per_commit": 353894.3333333333,
+        "files_changed_per_commit": 926.6666666666666
+      },
+      {
+        "period": "2026-05-06",
+        "commits": 3,
+        "insertions": 45174,
+        "deletions": 23338,
+        "files_changed": 356,
+        "churn": 68512,
+        "net_lines": 21836,
+        "churn_per_commit": 22837.333333333332,
+        "files_changed_per_commit": 118.66666666666667
+      },
+      {
+        "period": "2026-05-07",
+        "commits": 2,
+        "insertions": 61875,
+        "deletions": 24283,
+        "files_changed": 722,
+        "churn": 86158,
+        "net_lines": 37592,
+        "churn_per_commit": 43079.0,
+        "files_changed_per_commit": 361.0
+      },
+      {
+        "period": "2026-05-08",
+        "commits": 1,
+        "insertions": 49517,
+        "deletions": 16761,
+        "files_changed": 377,
+        "churn": 66278,
+        "net_lines": 32756,
+        "churn_per_commit": 66278.0,
+        "files_changed_per_commit": 377.0
+      },
+      {
+        "period": "2026-05-09",
+        "commits": 1,
+        "insertions": 89638,
+        "deletions": 37268,
+        "files_changed": 653,
+        "churn": 126906,
+        "net_lines": 52370,
+        "churn_per_commit": 126906.0,
+        "files_changed_per_commit": 653.0
+      },
+      {
+        "period": "2026-05-10",
+        "commits": 2,
+        "insertions": 82800,
+        "deletions": 175712,
+        "files_changed": 1633,
+        "churn": 258512,
+        "net_lines": -92912,
+        "churn_per_commit": 129256.0,
+        "files_changed_per_commit": 816.5
+      },
+      {
+        "period": "2026-05-11",
+        "commits": 6,
+        "insertions": 41572,
+        "deletions": 31655,
+        "files_changed": 662,
+        "churn": 73227,
+        "net_lines": 9917,
+        "churn_per_commit": 12204.5,
+        "files_changed_per_commit": 110.33333333333333
+      },
+      {
+        "period": "2026-05-12",
+        "commits": 1,
+        "insertions": 170373,
+        "deletions": 112133,
+        "files_changed": 1381,
+        "churn": 282506,
+        "net_lines": 58240,
+        "churn_per_commit": 282506.0,
+        "files_changed_per_commit": 1381.0
+      },
+      {
+        "period": "2026-05-13",
+        "commits": 10,
+        "insertions": 125948,
+        "deletions": 9313,
+        "files_changed": 1562,
+        "churn": 135261,
+        "net_lines": 116635,
+        "churn_per_commit": 13526.1,
+        "files_changed_per_commit": 156.2
+      },
+      {
+        "period": "2026-05-14",
+        "commits": 24,
+        "insertions": 335755,
+        "deletions": 43737,
+        "files_changed": 3697,
+        "churn": 379492,
+        "net_lines": 292018,
+        "churn_per_commit": 15812.166666666666,
+        "files_changed_per_commit": 154.04166666666666
+      },
+      {
+        "period": "2026-05-15",
+        "commits": 282,
+        "insertions": 732501,
+        "deletions": 25691,
+        "files_changed": 5732,
+        "churn": 758192,
+        "net_lines": 706810,
+        "churn_per_commit": 2688.624113475177,
+        "files_changed_per_commit": 20.326241134751772
+      },
+      {
+        "period": "2026-05-16",
+        "commits": 52,
+        "insertions": 119775,
+        "deletions": 108046,
+        "files_changed": 2920,
+        "churn": 227821,
+        "net_lines": 11729,
+        "churn_per_commit": 4381.173076923077,
+        "files_changed_per_commit": 56.15384615384615
+      },
+      {
+        "period": "2026-05-17",
+        "commits": 19,
+        "insertions": 1232046,
+        "deletions": 39096,
+        "files_changed": 3615,
+        "churn": 1271142,
+        "net_lines": 1192950,
+        "churn_per_commit": 66902.21052631579,
+        "files_changed_per_commit": 190.26315789473685
+      },
+      {
+        "period": "2026-05-18",
+        "commits": 2,
+        "insertions": 1642,
+        "deletions": 280,
+        "files_changed": 9,
+        "churn": 1922,
+        "net_lines": 1362,
+        "churn_per_commit": 961.0,
+        "files_changed_per_commit": 4.5
+      },
+      {
+        "period": "2026-05-19",
+        "commits": 17,
+        "insertions": 1084408,
+        "deletions": 36357,
+        "files_changed": 3245,
+        "churn": 1120765,
+        "net_lines": 1048051,
+        "churn_per_commit": 65927.35294117648,
+        "files_changed_per_commit": 190.88235294117646
+      },
+      {
+        "period": "2026-05-20",
+        "commits": 5,
+        "insertions": 1004276,
+        "deletions": 92884,
+        "files_changed": 3838,
+        "churn": 1097160,
+        "net_lines": 911392,
+        "churn_per_commit": 219432.0,
+        "files_changed_per_commit": 767.6
+      },
+      {
+        "period": "2026-05-21",
+        "commits": 33,
+        "insertions": 709543,
+        "deletions": 226717,
+        "files_changed": 4150,
+        "churn": 936260,
+        "net_lines": 482826,
+        "churn_per_commit": 28371.515151515152,
+        "files_changed_per_commit": 125.75757575757575
+      },
+      {
+        "period": "2026-05-22",
+        "commits": 110,
+        "insertions": 894838,
+        "deletions": 54570,
+        "files_changed": 1709,
+        "churn": 949408,
+        "net_lines": 840268,
+        "churn_per_commit": 8630.981818181817,
+        "files_changed_per_commit": 15.536363636363637
+      },
+      {
+        "period": "2026-05-23",
+        "commits": 33,
+        "insertions": 553358,
+        "deletions": 301,
+        "files_changed": 496,
+        "churn": 553659,
+        "net_lines": 553057,
+        "churn_per_commit": 16777.545454545456,
+        "files_changed_per_commit": 15.030303030303031
+      },
+      {
+        "period": "2026-05-24",
+        "commits": 25,
+        "insertions": 3111,
+        "deletions": 748,
+        "files_changed": 477,
+        "churn": 3859,
+        "net_lines": 2363,
+        "churn_per_commit": 154.36,
+        "files_changed_per_commit": 19.08
+      },
+      {
+        "period": "2026-05-25",
+        "commits": 69,
+        "insertions": 1836385,
+        "deletions": 222700,
+        "files_changed": 6225,
+        "churn": 2059085,
+        "net_lines": 1613685,
+        "churn_per_commit": 29841.8115942029,
+        "files_changed_per_commit": 90.21739130434783
+      },
+      {
+        "period": "2026-05-26",
+        "commits": 1,
+        "insertions": 2503561,
+        "deletions": 55500,
+        "files_changed": 1433,
+        "churn": 2559061,
+        "net_lines": 2448061,
+        "churn_per_commit": 2559061.0,
+        "files_changed_per_commit": 1433.0
+      },
+      {
+        "period": "2026-05-27",
+        "commits": 28,
+        "insertions": 12869756,
+        "deletions": 273699,
+        "files_changed": 3345,
+        "churn": 13143455,
+        "net_lines": 12596057,
+        "churn_per_commit": 469409.10714285716,
+        "files_changed_per_commit": 119.46428571428571
+      },
+      {
+        "period": "2026-05-28",
+        "commits": 83,
+        "insertions": 1296950,
+        "deletions": 96163,
+        "files_changed": 2788,
+        "churn": 1393113,
+        "net_lines": 1200787,
+        "churn_per_commit": 16784.493975903613,
+        "files_changed_per_commit": 33.59036144578313
+      },
+      {
+        "period": "2026-05-29",
+        "commits": 21,
+        "insertions": 107436,
+        "deletions": 42715,
+        "files_changed": 1058,
+        "churn": 150151,
+        "net_lines": 64721,
+        "churn_per_commit": 7150.047619047619,
+        "files_changed_per_commit": 50.38095238095238
+      },
+      {
+        "period": "2026-05-30",
+        "commits": 5,
+        "insertions": 312444,
+        "deletions": 474855,
+        "files_changed": 3733,
+        "churn": 787299,
+        "net_lines": -162411,
+        "churn_per_commit": 157459.8,
+        "files_changed_per_commit": 746.6
+      },
+      {
+        "period": "2026-05-31",
+        "commits": 4,
+        "insertions": 76104,
+        "deletions": 2344,
+        "files_changed": 571,
+        "churn": 78448,
+        "net_lines": 73760,
+        "churn_per_commit": 19612.0,
+        "files_changed_per_commit": 142.75
+      },
+      {
+        "period": "2026-06-02",
+        "commits": 7,
+        "insertions": 421491,
+        "deletions": 19869,
+        "files_changed": 7346,
+        "churn": 441360,
+        "net_lines": 401622,
+        "churn_per_commit": 63051.42857142857,
+        "files_changed_per_commit": 1049.4285714285713
+      },
+      {
+        "period": "2026-06-03",
+        "commits": 1,
+        "insertions": 837472,
+        "deletions": 68180,
+        "files_changed": 16785,
+        "churn": 905652,
+        "net_lines": 769292,
+        "churn_per_commit": 905652.0,
+        "files_changed_per_commit": 16785.0
+      },
+      {
+        "period": "2026-06-05",
+        "commits": 28,
+        "insertions": 813618,
+        "deletions": 206194,
+        "files_changed": 19465,
+        "churn": 1019812,
+        "net_lines": 607424,
+        "churn_per_commit": 36421.857142857145,
+        "files_changed_per_commit": 695.1785714285714
+      }
+    ],
+    "weekly": [
+      {
+        "period": "2026-W14",
+        "commits": 11,
+        "insertions": 175406,
+        "deletions": 27121,
+        "files_changed": 1654,
+        "churn": 202527,
+        "net_lines": 148285,
+        "churn_per_commit": 18411.545454545456,
+        "files_changed_per_commit": 150.36363636363637
+      },
+      {
+        "period": "2026-W15",
+        "commits": 19,
+        "insertions": 413538,
+        "deletions": 66254,
+        "files_changed": 4734,
+        "churn": 479792,
+        "net_lines": 347284,
+        "churn_per_commit": 25252.21052631579,
+        "files_changed_per_commit": 249.1578947368421
+      },
+      {
+        "period": "2026-W16",
+        "commits": 7,
+        "insertions": 267949,
+        "deletions": 81922,
+        "files_changed": 2647,
+        "churn": 349871,
+        "net_lines": 186027,
+        "churn_per_commit": 49981.57142857143,
+        "files_changed_per_commit": 378.14285714285717
+      },
+      {
+        "period": "2026-W17",
+        "commits": 11,
+        "insertions": 388318,
+        "deletions": 57047,
+        "files_changed": 4031,
+        "churn": 445365,
+        "net_lines": 331271,
+        "churn_per_commit": 40487.72727272727,
+        "files_changed_per_commit": 366.45454545454544
+      },
+      {
+        "period": "2026-W18",
+        "commits": 26,
+        "insertions": 944599,
+        "deletions": 253443,
+        "files_changed": 9540,
+        "churn": 1198042,
+        "net_lines": 691156,
+        "churn_per_commit": 46078.53846153846,
+        "files_changed_per_commit": 366.9230769230769
+      },
+      {
+        "period": "2026-W19",
+        "commits": 15,
+        "insertions": 1525874,
+        "deletions": 325763,
+        "files_changed": 7854,
+        "churn": 1851637,
+        "net_lines": 1200111,
+        "churn_per_commit": 123442.46666666666,
+        "files_changed_per_commit": 523.6
+      },
+      {
+        "period": "2026-W20",
+        "commits": 394,
+        "insertions": 2757970,
+        "deletions": 369671,
+        "files_changed": 19569,
+        "churn": 3127641,
+        "net_lines": 2388299,
+        "churn_per_commit": 7938.175126903553,
+        "files_changed_per_commit": 49.66751269035533
+      },
+      {
+        "period": "2026-W21",
+        "commits": 225,
+        "insertions": 4251176,
+        "deletions": 411857,
+        "files_changed": 13924,
+        "churn": 4663033,
+        "net_lines": 3839319,
+        "churn_per_commit": 20724.591111111113,
+        "files_changed_per_commit": 61.88444444444445
+      },
+      {
+        "period": "2026-W22",
+        "commits": 211,
+        "insertions": 19002636,
+        "deletions": 1167976,
+        "files_changed": 19153,
+        "churn": 20170612,
+        "net_lines": 17834660,
+        "churn_per_commit": 95595.31753554502,
+        "files_changed_per_commit": 90.77251184834124
+      },
+      {
+        "period": "2026-W23",
+        "commits": 36,
+        "insertions": 2072581,
+        "deletions": 294243,
+        "files_changed": 43596,
+        "churn": 2366824,
+        "net_lines": 1778338,
+        "churn_per_commit": 65745.11111111111,
+        "files_changed_per_commit": 1211.0
+      }
+    ],
+    "weekday_hour_commit_heatmap": [
+      [
+        2,
+        0,
+        0,
+        4,
+        40,
+        3,
+        19,
+        8,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        3
+      ],
+      [
+        2,
+        6,
+        7,
+        1,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
+        3,
+        1,
+        1,
+        5,
+        0,
+        0,
+        3,
+        0,
+        0,
+        1,
+        1
+      ],
+      [
+        2,
+        1,
+        3,
+        3,
+        4,
+        1,
+        5,
+        1,
+        0,
+        0,
+        0,
+        1,
+        2,
+        2,
+        4,
+        3,
+        0,
+        0,
+        2,
+        0,
+        3,
+        19,
+        2,
+        12
+      ],
+      [
+        3,
+        1,
+        18,
+        6,
+        1,
+        26,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        4,
+        6,
+        20,
+        3,
+        1,
+        5,
+        0,
+        1,
+        1,
+        1,
+        28,
+        35
+      ],
+      [
+        48,
+        26,
+        32,
+        34,
+        18,
+        11,
+        6,
+        6,
+        6,
+        7,
+        6,
+        6,
+        12,
+        2,
+        24,
+        4,
+        21,
+        21,
+        15,
+        48,
+        37,
+        21,
+        22,
+        18
+      ],
+      [
+        10,
+        6,
+        0,
+        0,
+        5,
+        15,
+        5,
+        0,
+        0,
+        0,
+        1,
+        6,
+        7,
+        0,
+        2,
+        8,
+        8,
+        9,
+        5,
+        1,
+        3,
+        2,
+        1,
+        5
+      ],
+      [
+        1,
+        0,
+        1,
+        0,
+        2,
+        2,
+        0,
+        0,
+        0,
+        1,
+        1,
+        0,
+        5,
+        1,
+        5,
+        1,
+        6,
+        8,
+        9,
+        10,
+        2,
+        0,
+        1,
+        0
+      ]
+    ],
+    "weekday_hour_churn_heatmap": [
+      [
+        106720,
+        0,
+        0,
+        90013,
+        2028478,
+        243,
+        52450,
+        494,
+        0,
+        0,
+        0,
+        0,
+        11321,
+        0,
+        4264,
+        0,
+        0,
+        51820,
+        34679,
+        0,
+        0,
+        0,
+        0,
+        40764
+      ],
+      [
+        550,
+        717025,
+        2562933,
+        64660,
+        784712,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        147875,
+        296863,
+        592083,
+        15453,
+        215541,
+        0,
+        0,
+        578131,
+        0,
+        0,
+        32911,
+        282506
+      ],
+      [
+        51829,
+        42347,
+        23496,
+        44651,
+        159438,
+        91196,
+        5284,
+        9401,
+        0,
+        0,
+        0,
+        24075,
+        13854,
+        72650,
+        1042925,
+        33439,
+        0,
+        0,
+        58145,
+        0,
+        72747,
+        12918269,
+        19123,
+        1177751
+      ],
+      [
+        59728,
+        97211,
+        758419,
+        154168,
+        708,
+        427457,
+        0,
+        0,
+        0,
+        0,
+        0,
+        24386,
+        210170,
+        4654,
+        149894,
+        1893,
+        9351,
+        3872,
+        0,
+        31796,
+        26456,
+        11110,
+        231886,
+        942632
+      ],
+      [
+        137052,
+        72133,
+        246065,
+        129546,
+        105757,
+        83173,
+        87949,
+        115055,
+        75035,
+        1086750,
+        60599,
+        67629,
+        99921,
+        0,
+        146592,
+        49259,
+        94440,
+        19641,
+        9099,
+        74064,
+        13940,
+        13338,
+        353037,
+        209537
+      ],
+      [
+        12967,
+        279,
+        0,
+        0,
+        222391,
+        5538,
+        2000,
+        0,
+        0,
+        0,
+        6631,
+        28296,
+        221964,
+        0,
+        679611,
+        1048,
+        1176,
+        162170,
+        535,
+        136,
+        21578,
+        2983,
+        403,
+        604673
+      ],
+      [
+        12321,
+        0,
+        2155,
+        0,
+        695622,
+        98589,
+        0,
+        0,
+        0,
+        1641,
+        713,
+        0,
+        334,
+        92408,
+        19803,
+        7960,
+        423371,
+        142812,
+        48314,
+        717,
+        264566,
+        0,
+        1128,
+        0
+      ]
+    ]
+  }
+}

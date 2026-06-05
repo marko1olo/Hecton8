@@ -59,7 +59,7 @@ Forbidden wording in active contracts:
 | Weight band | Expected behavior |
 |---|---|
 | `0.00..0.24` | Quest/MX350 survival path: stable frame before fidelity |
-| `0.25..0.49` | low/middle path: reduced samples, early LOD, shader fakes |
+| `0.25..0.49` | low/middle path: reduced samples, early LOD, shader approximations |
 | `0.50..0.74` | high path: fuller near-field presentation, guarded volumetrics |
 | `0.75..1.00` | ultra path: extra density and hero-zone visuals within measured budget |
 

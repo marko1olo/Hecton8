@@ -23,7 +23,8 @@ No screenshot currently exists or passes by this document. Raw `Docs/Screenshots
 ## Mandates Followed
 
 - `.agents-skills/QA_Evidence_Text_Filter_Audit.txt`
-- `.agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`
+- `.agents-skills/OPT_Premium_Approximation_Protocol.txt`
+- `Docs/ARCHITECTURE/PREMIUM_APPROXIMATION_LEDGER.md`
 - `.agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
 - `.agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt`
 - `.agents-skills/REND_Shader_Noir_Aesthetics_Dithering_Fog.txt`
@@ -43,6 +44,10 @@ Discovered reference folder:
 Folder listing plus local image inspection is now recorded in:
 
 `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
+
+Required comparison template for the future proof packet:
+
+`Docs/Reports/AssetSystem_20260605/H8_1475_VISUAL_REFERENCE_COMPARISON_TEMPLATE_20260605.md`
 
 Images were not copied into this report.
 
@@ -103,6 +108,7 @@ Minimum packet contents:
 - `no_mutation_readback_report.md`
 - `dirty_state_audit.md`
 - `frame_debugger_stats.md`
+- `h8_1475_visual_reference_comparison.md` based on `Docs/Reports/AssetSystem_20260605/H8_1475_VISUAL_REFERENCE_COMPARISON_TEMPLATE_20260605.md`
 - canonical `h8_1475_*.png` screenshots or exact `ABORTED_<view>.md` notes
 - final contact sheet or manifest row mapping every screenshot to its readback
 

@@ -223,4 +223,4 @@ Runtime evidence remains separate and must include the actual command/tool, time
 
 
 
-This document replaces the previous damaged `PROCEDURAL_ASSET_PIPELINE.md` text whose Russian headings and bullets were unrecoverable mojibake/question-mark placeholders. The usable intent has been preserved as an English static contract: deliver production assets, prefer visual fakes, keep ownership routed through current architecture, and do not claim runtime readiness from static docs.
+This document replaces the previous damaged `PROCEDURAL_ASSET_PIPELINE.md` text whose Russian headings and bullets were unrecoverable mojibake/question-mark placeholders. The usable intent has been preserved as an English static contract: deliver production assets, prefer premium presentation approximations, keep ownership routed through current architecture, and do not claim runtime readiness from static docs.

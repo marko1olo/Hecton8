@@ -68,6 +68,14 @@ class Batch31LocalPbrImportIntentTests(unittest.TestCase):
         self.assertEqual(4, report["summary"]["rows"])
         self.assertEqual(1, report["summary"]["blockedRows"])
         self.assertEqual(1, report["summary"]["channelContractBlockedPackages"])
+        self.assertIn("_MasterShadowParams.w proof", report["batch31PromotionRequirement"])
+        self.assertTrue(any("HectonMasterMaterialMigrator1615.cs" in item for item in report["shaderContractEvidence"]))
+        self.assertTrue(any("HectonMaskChannelPacker.cs" in item for item in report["shaderContractEvidence"]))
+        self.assertTrue(any("Hecton_Master_Lit.shader" in item and "layout 3" in item for item in report["shaderContractEvidence"]))
+        self.assertTrue(any("Hecton8_UberNoir.hlsl" in item for item in report["shaderContractEvidence"]))
+        self.assertTrue(any("Hecton_MraoAtlasLit.shader" in item for item in report["shaderContractEvidence"]))
+        self.assertIn("blocked_channel_semantics_mrao_vs_arm", report["packages"][0]["warnings"])
+        self.assertIn("requires_shader_target_layout_decision", report["packages"][0]["warnings"])
         self.assertTrue(any(row["role_key"] == "mrao" and row["verdict"] == "BLOCKED" and row["runtime_import"] == 0 for row in report["rows"]))
 
     def test_build_report_flags_hash_mismatch(self) -> None:

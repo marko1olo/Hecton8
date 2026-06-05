@@ -45,7 +45,7 @@ Required:
 - fixed pools for recurring effects;
 - no instantiate/destroy during gameplay spikes;
 - no CPU readback from particle state except diagnostics;
-- GPU particles or shader fakes for dense ambience;
+- GPU particles or shader approximations for dense ambience;
 - hard caps per region, source, and effect family;
 - event coalescing for spammy sources;
 - no new materials per effect instance.
@@ -56,7 +56,7 @@ For many effects, the best implementation is a shader parameter, decal, VAT, atl
 
 `GlobalQualityWeight` may scale particle count, spawn cadence, flipbook resolution, light contribution, secondary trails, decal density, shader distortion, and diagnostic overlays. It must not change damage truth, hazard truth, or owner state.
 
-Compact keeps cause-readable silhouettes, pooled low-count particles, decals, shader fakes, and audio/UI reinforcement. Middle adds density. High adds richer local response. Ultra adds cinematic layering only within hard caps.
+Compact keeps cause-readable silhouettes, pooled low-count particles, decals, shader approximations, and audio/UI reinforcement. Middle adds density. High adds richer local response. Ultra adds cinematic layering only within hard caps.
 
 ## Production Packet
 

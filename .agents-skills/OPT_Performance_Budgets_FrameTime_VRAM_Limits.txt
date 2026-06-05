@@ -1,13 +1,13 @@
 # PERFORMANCE_BUDGETS.md
 # HECTON-8 | Underwater Horror | NASA-Punk / Deep Sea Noir
 
-## 2026-05-11 VISUAL-FAKE OVERRIDE
+## 2026-06-05 PREMIUM-APPROXIMATION OVERRIDE
 
-[RULE] `OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt` is now part of this performance budget.
+[RULE] `OPT_Premium_Approximation_Protocol.txt` is now part of this performance budget.
 [RULE] Any system costing more than `0.1ms` in a frame is suspicious until profiler evidence proves it is cold, amortized, or load-shed.
 [RULE] Burst/Jobs are a throughput tool, not a blanket win. They are accepted only for batched, data-local work whose scheduling, memory movement, and completion are amortized.
 [RULE] Job completion belongs in dispatcher-owned swap/completion windows or annotated cold teardown/init paths.
-[RULE] Simulate only gameplay truth. Water, fog, light, particles, slosh, ambience, debris, cable sag, and pressure feedback default to deterministic visual/audio/haptic fakes.
+[RULE] Simulate only gameplay truth. Water, fog, light, particles, slosh, ambience, debris, cable sag, and pressure feedback default to deterministic premium visual/audio/haptic approximations.
 [FORBID] Bloom on compact/MINIMAL. The old MINIMAL post budget entry for Bloom is superseded.
 [FORBID] FSR2/DLSS-class temporal upscalers on compact/MINIMAL. Use render scale, Unity STP where proven, or FSR1-class spatial upscaling only.
 [FORBID] Per-proton, per-droplet, per-bubble, per-blade, or per-cable-segment simulation as a default production path.
@@ -189,7 +189,7 @@ Runtime authority law:
 ### 3.5 Render Resolution & Upscaling
 
 // [FORBID] Heavy temporal upscalers (FSR2/DLSS-class) on compact/MINIMAL/LOW.
-// Use spatial upscale, Unity STP, or fixed render-scale cheats before temporal upscalers.
+// Use spatial upscale, Unity STP, or fixed render-scale reduction before temporal upscalers.
 LOW:      Render at 85% native -> spatial upscale / STP only -> output native
 MED:      Render at native     -> STP optional               -> output native
 HIGH:     Render at native     -> TAA/STP optional           -> output native

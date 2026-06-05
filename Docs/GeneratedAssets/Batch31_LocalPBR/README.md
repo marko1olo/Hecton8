@@ -4,7 +4,7 @@ Status: `LOCAL_SOURCE_BAKE_STATIC_ONLY`.
 
 This folder contains local PBR source-bake candidates, manifests, source crops, contact sheets, and static index data. Use `Batch31_LocalPBR_INDEX.md` as the detailed local index.
 
-Promotion-prep artifacts live in `PromotionPrep_20260605/`. Current status is `BLOCKED_CHANNEL_SEMANTICS`: albedo/normal source prep exists, but packed-mask channels must not be promoted until the shader/material owner resolves the MRAO versus ARM/_MaskMap convention.
+Promotion-prep artifacts live in `PromotionPrep_20260605/`. Current status is `BLOCKED_CHANNEL_SEMANTICS`: albedo/normal source prep exists, but generated `MRAOSource` masks must not be promoted to production `_MaskMap` by filename. Promotion requires either repacking to ARM (`R=AO/G=Roughness/B=Metallic`) and setting the target shader/material layout explicitly, or targeting a shader that actually decodes MRAO.
 
 Boundary:
 

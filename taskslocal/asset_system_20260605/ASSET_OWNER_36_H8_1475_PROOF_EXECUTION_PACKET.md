@@ -26,8 +26,10 @@ Read before execution:
 - `Docs/AssetAudit/VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.md`
 - `Docs/AssetAudit/VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.csv`
 - `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
+- `Docs/AssetAudit/VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.md`
 - `Docs/Reports/AssetSystem_20260605/H8_1475_CANONICAL_SHOTLIST_20260605.md`
 - `Docs/Reports/AssetSystem_20260605/H8_1475_CANONICAL_SHOTLIST_20260605.csv`
+- `Docs/Reports/AssetSystem_20260605/H8_1475_VISUAL_REFERENCE_COMPARISON_TEMPLATE_20260605.md`
 - `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_REJECTION_20260605.md`
 - `Docs/Reports/AssetSystem_20260605/ASSET_OWNER_18_PRODUCT_FACE_VALIDATOR_SYNTHESIS_20260605.md`
 - `Docs/Reports/RuntimeSystem_20260605/ACTIVE_PLAYER_SCENE_CONFLICT_MAP_20260605.md`
@@ -231,7 +233,7 @@ If Unity exposes a dirty scene, prefab, material, importer, Addressables asset, 
    - moon albedo/normal/mask slots
    Acceptance proof: `h8_1475_sky_aegir_slots_inspector.png`. Fallback: missing effective slot remains blocker; do not assign candidate textures.
 
-15. Capture bright surface sky/Aegir/ocean route and compare against mandatory references. Acceptance proof: visual comparison section in `visual_reference_comparison.md` with reference requirements from `CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`: `BEST ILLUST`-level bright coastline/island composition, readable whitewater/ocean surface, dense alien vegetation or route scale cue, huge Aegir/gas-giant read, layered clouds, premium Aegir limb/cloud detail, readable surface, no muddy sphere, no darkness/fog cover. Reject smeared, toy-like, muddy, pasted, empty, or surface-darkened results.
+15. Capture bright surface sky/Aegir/ocean route and compare against mandatory references. Acceptance proof: visual comparison section in `h8_1475_visual_reference_comparison.md`, using `H8_1475_VISUAL_REFERENCE_COMPARISON_TEMPLATE_20260605.md`, with reference requirements from `CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md` and `VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.csv` rows `VREF-03`, `VREF-05`, and `VREF-15`: `BEST ILLUST`-level bright coastline/island composition, readable whitewater/ocean surface, dense alien vegetation or route scale cue, huge Aegir/gas-giant read, layered clouds, premium Aegir limb/cloud detail, readable surface, no muddy sphere, no darkness/fog cover. Reject smeared, toy-like, muddy, pasted, empty, or surface-darkened results.
 
 16. Read Crest/ocean route:
    - active `OceanRenderer`;
@@ -284,7 +286,7 @@ If Unity exposes a dirty scene, prefab, material, importer, Addressables asset, 
 
 26. Collect GCMonitor/profiler boundaries only if already available without mutation or process contention. Acceptance proof: report whether GC/frame-time/memory proof is `ABSENT`, `GCMonitor_CAPTURED`, `PROFILER_CAPTURED`, or `MEMORY_CAPTURED`. Screenshots and Frame Debugger do not prove `0 B/frame`, frame time, memory residency, save/load, or platform readiness. Fallback: mark runtime performance `PENDING_VERIFICATION`.
 
-27. Perform visual-reference comparison against the mandatory reference set recorded in `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605` and the image-read digest `CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`. Acceptance proof: `visual_reference_comparison.md` maps screenshots to water volume, shoreline contact, terrain material truth, Aegir/sky hero quality, underwater route density, HUD/cockpit integration, and proof packet validity. It must explicitly state which mandatory image signals each shot satisfies or fails. Reject any claim supported only by raw MCP PNGs, stale screenshots, static reports, or controller prose.
+27. Perform visual-reference comparison against the mandatory reference set recorded in `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605`, the image-read digest `CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`, the owner rows in `VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.csv`, and the fixed template `H8_1475_VISUAL_REFERENCE_COMPARISON_TEMPLATE_20260605.md`. Acceptance proof: `h8_1475_visual_reference_comparison.md` maps screenshots to water volume, shoreline contact, terrain material truth, Aegir/sky hero quality, underwater route density, HUD/cockpit integration, product-face state, and proof packet validity. It must explicitly state which mandatory VREF signals each shot satisfies or fails. Reject any claim supported only by raw MCP PNGs, stale screenshots, static reports, or controller prose.
 
 28. Finalize dirty-state audit. Acceptance proof: `dirty_state_audit.md` states no scene, prefab, material, importer, Addressables, package, or project settings dirty state after readback, or `ABORTED_BEFORE_MUTATION` with exact dirty object path. Fallback: if Unity is dirty, do not save; abort.
 

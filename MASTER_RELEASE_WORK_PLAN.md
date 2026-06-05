@@ -67,5 +67,5 @@ Work outside that route must name the blocker it removes.
 - No runtime readiness from static docs.
 - No feature is done because source exists.
 - No binary quality switches; use continuous `GlobalQualityWeight`.
-- Use visual fakes before physical simulation unless gameplay truth requires simulation.
+- Use premium presentation approximations before physical simulation unless gameplay truth requires simulation.
 - Protect weak, middle, high, and ultra tiers with continuous budgets, not hard dichotomies.

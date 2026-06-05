@@ -22,6 +22,7 @@ First-20-minutes route moment: bright surface exit, Aegir/sky/moons, ocean/shore
 ## Authority And Mandates Followed
 
 - `AGENTS.md`
+- `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
 - `rendering.md`
 - `water.md`
 - `terrain.md`
@@ -47,6 +48,11 @@ Static source reports used:
 - `Docs/Reports/AssetSystem_20260605/AUDIO_POLICY_CONFLICT_AND_CUE_DISPOSITION_3213_20260605.md`
 - `Docs/Reports/AssetSystem_20260605/MESH_PREFAB_PROMOTION_STATIC_TABLE_3214_20260605.md`
 - `Docs/GeneratedAssets/AssetSystem_20260605/TEXTURE_AUTHORING_MANIFEST_3212_20260605.md`
+
+Mandatory visual-reference digest use:
+
+- Every future visual readback step for sky/Aegir/moons, Crest/ocean/foam, terrain/geology, flora/proxy, UI oxygen, and Addressables-covered visual assets must compare captures against `CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`.
+- Missing comparison keeps the route `PENDING VERIFICATION`. The digest does not replace Unity readback, Frame Debugger, Console, memory, or profiler proof.
 
 ## Hard Gate Before Unity Owner Starts
 
@@ -84,6 +90,7 @@ Use this name pattern:
 - `Docs/Reports/AssetSystem_20260605/ASSET_OWNER_06_FRAME_DEBUGGER_<step>_<YYYYMMDD_HHMMSS>.md`
 - `Docs/Reports/AssetSystem_20260605/ASSET_OWNER_06_CONSOLE_<YYYYMMDD_HHMMSS>.txt`
 - `Docs/Reports/AssetSystem_20260605/ASSET_OWNER_06_ADDRESSABLES_READBACK_<YYYYMMDD_HHMMSS>.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_OWNER_06_VISUAL_REFERENCE_COMPARISON_<YYYYMMDD_HHMMSS>.md`
 
 Do not save screenshots, logs, exports, or temporary captures under `Assets/`.
 
@@ -159,6 +166,7 @@ Proof artifacts needed:
 - `ASSET_OWNER_06_UNITY_READBACK_scene_sky_aegir_<timestamp>.md`: table of scene object, material, shader, slots, null/missing refs, active/inactive status.
 - `ASSET_OWNER_06_FRAME_DEBUGGER_scene_sky_aegir_<timestamp>.md`: skybox pass, Aegir/cloud renderers, moon renderers if visible.
 - Console export after scene load.
+- Digest comparison notes for surface sky/Aegir/moons against the mandatory image-read digest.
 
 Reject conditions:
 
@@ -168,6 +176,7 @@ Reject conditions:
 - `TX_H8AegirGasGiantBakedDisc_1428.png` is used as final hero Aegir without replacement/proof.
 - Moon route visibly uses generic rock/basalt terrain texture as hero celestial art.
 - Any screenshot hides weak sky/celestial art through darkness, fog, bloom, or exposure crush.
+- Future capture lacks mandatory digest comparison for `BEST ILLUST` surface composition, Aegir/gas-giant scale, cloud layering, and ocean/shore context.
 
 No-save/no-apply rules:
 
@@ -215,6 +224,7 @@ Proof artifacts needed:
 - `ASSET_OWNER_06_UNITY_READBACK_crest_foam_<timestamp>.md`: active material/slot/scalar table.
 - `ASSET_OWNER_06_FRAME_DEBUGGER_crest_foam_<timestamp>.md`: Crest ocean/foam passes and visible foam/contact draw.
 - Console export after scene load.
+- Digest comparison notes for ocean/shoreline/foam/contact against the mandatory image-read digest.
 
 Reject conditions:
 
@@ -223,6 +233,7 @@ Reject conditions:
 - Crest material slots are missing/null, or active material cannot be resolved.
 - First-party runtime wrapper, clone, material override, or custom runtime Crest patch exists as part of the readback route.
 - Surface/ocean screenshots are dark, flat, muddy, or below the water/terrain visual floor.
+- Future capture lacks mandatory digest comparison for shoreline whitewater, wet contact, transparent shallow water, and readable ocean surface.
 
 No-save/no-apply rules:
 
@@ -272,6 +283,7 @@ Proof artifacts needed:
 - `ASSET_OWNER_06_UNITY_READBACK_terrain_geology_<timestamp>.md`: terrain receiver/material/shader/slot and sampled rock prefab table.
 - `ASSET_OWNER_06_FRAME_DEBUGGER_terrain_geology_<timestamp>.md`: terrain material draw, rock material draw if visible, SetPass/batch notes from Stats if available.
 - Console export after scene load.
+- Digest comparison notes for terrain/geology against the mandatory image-read digest.
 
 Reject conditions:
 
@@ -280,6 +292,7 @@ Reject conditions:
 - Generated Batch31/Gemini basalt/sand sources are treated as final imported material art.
 - `ProceduralFinals` rocks lack material/shader import validity or show bad LOD/collider route.
 - Terrain/material variety is achieved by adding unbounded independent Texture2D bindings instead of route-owned arrays/validated virtual texturing.
+- Future capture lacks mandatory digest comparison for bright coastline, shallow substrate, cliff/water, and medium-depth material identity.
 
 No-save/no-apply rules:
 
@@ -321,6 +334,7 @@ Proof artifacts needed:
 - `ASSET_OWNER_06_UNITY_READBACK_flora_proxy_<timestamp>.md`: object/material/visibility table plus sampled candidate prefab table.
 - `ASSET_OWNER_06_FRAME_DEBUGGER_flora_proxy_<timestamp>.md`: proxy material draw if visible.
 - Console export after scene load.
+- Digest comparison notes for flora/coral/kelp density and silhouette against the mandatory image-read digest.
 
 Reject conditions:
 
@@ -329,6 +343,7 @@ Reject conditions:
 - `Nature/Flora/Baked` remains assigned to proxy-labeled materials without final material ownership/proof.
 - `BioForge/Shallows/PorousRock` uses MeshCollider as visible/decorative collision route without explicit collider proxy proof.
 - Flora/coral silhouette collapses, lacks LOD proof, or uses alpha blend where dither/alpha clip is required.
+- Future capture lacks mandatory digest comparison for dense photic organic dressing and medium-depth silhouette/biolum anchors.
 
 No-save/no-apply rules:
 
@@ -369,6 +384,7 @@ Proof artifacts needed:
 - `ASSET_OWNER_06_ui_oxygen_hud_preview_<timestamp>.png`: HUD/Game or Prefab preview showing oxygen visual.
 - `ASSET_OWNER_06_UNITY_READBACK_ui_oxygen_<timestamp>.md`: sprite binding/import/atlas table.
 - Console export after prefab/scenes load.
+- Digest comparison notes for HUD oxygen readability against bright surface/photic, medium/deep, and cockpit/visor reference contexts.
 
 Reject conditions:
 
@@ -377,6 +393,7 @@ Reject conditions:
 - No atlas owner exists for standalone 1024 UI source candidates.
 - Runtime HUD path uses allocation-prone text/sprite churn, scene searches, or `TMP_Text.text` for repeated oxygen readout updates in later proof.
 - Oxygen HUD is unreadable at compact target scale or appears as a black/empty icon.
+- Future capture lacks mandatory digest comparison for oxygen icon/readout readability in user-visible route contexts.
 
 No-save/no-apply rules:
 
@@ -521,6 +538,7 @@ Stop immediately and write only a concise failure note under `Docs/Reports/Asset
 - Frame Debugger is render route evidence, not memory/residency proof.
 - Addressables settings/group/key evidence is lifecycle setup evidence, not loaded handle, release, or GPU residency proof.
 - Runtime readiness still requires Unity Console, Play Mode/profiler/GCMonitor where relevant, Memory Profiler/VRAM evidence, and reviewed screenshots.
+- Reviewed screenshots must include `ASSET_OWNER_06_VISUAL_REFERENCE_COMPARISON_<timestamp>.md` for user-visible water, terrain, sky/Aegir, flora, UI, and route VFX contexts.
 
 ## Scalability Consequences To Record In Future Readback
 

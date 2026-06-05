@@ -86,8 +86,8 @@
   },
   "semantic_status": "BLOCKED_CHANNEL_SEMANTICS",
   "promotion_ready": false,
-  "channel_semantics_blocker": "Source packed-mask channel semantics are not proven. Candidate PNGs exist for inspection only; shader/material owner must choose target contract or repack channels before Unity import.",
-  "source_channel_contract_risk": "Batch31 source names map MRAO, while project docs disagree: playbook MRAO R=Metallic/G=Roughness-or-Smoothness/B=AO; ARM pipeline _MaskMap R=AO/G=Roughness/B=Metallic/A=Emission.",
-  "required_owner_decision": "Resolve shader/material mask contract and repack or relabel channels before Unity import.",
-  "mrao_preview_note": "MRAO Candidate PNG preserves alpha as emission data. MRAO_2x2 and contact sheet are RGB inspection previews that ignore alpha so channels remain visible."
+  "channel_semantics_blocker": "Candidate PNGs exist for inspection only. Promotion requires an explicit shader target plus material layout proof: repack to production ARM and serialize the target layout, or target a shader/material that decodes MRAO.",
+  "source_channel_contract_risk": "Batch31 source maps are MRAO-style candidates. Production _MaskMap is ARM R=AO/G=Roughness/B=Metallic; Hecton_Master_Lit requires serialized _MasterShadowParams.w=3 for ARM, or w=0 only if the material deliberately targets true MRAO.",
+  "required_owner_decision": "Choose shader target and serialized mask layout. For Hecton_Master_Lit, prove _MasterShadowParams.w=3 for ARM or w=0 for true MRAO before Unity import.",
+  "mrao_preview_note": "MRAO Candidate PNG alpha is candidate data only. RGB inspection previews ignore alpha so visible channels can be inspected; alpha must not be advertised as emission-ready for every shader target."
 }

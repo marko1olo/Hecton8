@@ -10,6 +10,7 @@ No Unity run, import, material edit, prefab edit, scene save, Addressables build
 
 - `STRM_Async_Asset_Upload_Texture_Settings`
 - `QA_Evidence_Text_Filter_Audit`
+- `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
 
 ## Evidence Boundary
 
@@ -27,6 +28,7 @@ Hard boundary:
 - Pixel dimensions are not route visual quality.
 - Static image probe is not material, shader, mip, or scene proof.
 - This packet is routing evidence only. Future import/material/scene work must use Unity importer/API routes, not raw YAML mutation.
+- Mip/streaming downgrades must be judged against the mandatory visual-reference digest for bright surface, sky/Aegir, shoreline, photic shallows, flora/coral, UI/cockpit, and medium-depth contexts. Memory relief that makes those contexts flat, blurry, muddy, or primitive is rejected.
 
 ## Static Row Map
 
@@ -132,6 +134,7 @@ Required future captures:
 - medium-depth hero route with mip transitions observed during movement;
 - close and mid camera views for hero-scale Aegir/cloud/geology rows;
 - material contact sheets only as support, never as route proof.
+- side-by-side digest comparison notes for every route screenshot affected by streaming mip, max-size, compression, or residency changes.
 
 Reject screenshots if:
 

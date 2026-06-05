@@ -41,9 +41,12 @@ The current reference set has 15 images. Future visual review must cite `VREF-01
 Current static parse anchor:
 
 - `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`
-- 51 curated CSV files.
-- 14497 data rows.
-- `ASSET_FRONT_FILE_MAP_20260605.csv`: 105 rows.
+- 54 curated CSV files.
+- 14543 data rows.
+- `ASSET_FRONT_FILE_MAP_20260605.csv`: 115 rows.
+- `AUDIO_ROUTE_OWNER_REQUIREMENT_MATRIX_20260605.csv`: 13 rows.
+- `BATCH31_CHANNEL_SEMANTICS_DECISION_QUEUE_20260605.csv`: 7 rows.
+- `BATCH31_LOCAL_PBR_IMPORT_INTENT_20260605.csv`: sparse sidecar, not in the zero-empty curated set.
 
 Unity gate remains blocked while `Unity.ILPP.Runner`, `UnityPackageManager`, `UnityShaderCompiler`, and `mcp-for-unity` are active.
 
@@ -70,9 +73,10 @@ New target tables:
 - `Docs/Reports/AssetSystem_20260605/PRODUCT_FACE_STATIC_EXECUTION_REFINEMENT_20260605.md/.csv`: 14 product-face material/prefab execution refinement rows; not Unity proof or visual acceptance.
 - `AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.md/.csv`: 6 P0 rows.
 - `Docs/Reports/AssetSystem_20260605/AUDIO_P0_STATIC_EXECUTION_REFINEMENT_20260605.md/.csv`: 6 row-level audio P0 execution refinements; not runtime mix or listening proof.
-- `H8_1475_READBACK_FIELD_MANIFEST_20260605.md/.csv`: 120 readback/proof rows.
+- `H8_1475_READBACK_FIELD_MANIFEST_20260605.md/.csv`: 123 readback/proof rows.
 - `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.md/.csv`: 7 gap rows; `Docs/Screenshots/HectonProofPackets/` absent.
 - `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.md/.csv`: 7 mandatory-reference critique rows for future h8_1475 screenshot rejection/pass review; not visual acceptance.
+- `Docs/Reports/AssetSystem_20260605/H8_1475_VISUAL_REFERENCE_COMPARISON_TEMPLATE_20260605.md`: fixed required shape for future `h8_1475_visual_reference_comparison.md`; not visual proof.
 - `H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.md/.csv`: 14 dependency rows ordering future no-mutation h8_1475 proof execution; not Unity proof.
 - `LARGE_SOURCE_OWNER_REVIEW_20260605.md/.csv`: 5 large texture/audio source buckets; not deletion, import, or runtime residency proof.
 - `ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.md/.csv`: 5-row routing crosswalk across material, prefab, audio, h8_1475 readback, and visual capture-gap target tables.

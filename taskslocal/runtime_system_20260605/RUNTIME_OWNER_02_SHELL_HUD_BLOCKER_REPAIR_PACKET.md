@@ -30,6 +30,11 @@ Do not claim code is fixed. Do not claim runtime readiness. This packet exists t
 
 Root bibles sampled: `player.md`, `input.md`, `ui.md`, `systems.md`, `performance.md`.
 
+## Visual Proof Inputs
+
+- `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md` - mandatory user-facing visual reference digest for water, terrain, sky, flora, and UI.
+- `Docs/Reports/AssetSystem_20260605/H8_1475_VISUAL_REFERENCE_COMPARISON_TEMPLATE_20260605.md` - required template for `h8_1475_visual_reference_comparison.md` when shell/HUD repair captures feed h8_1475 proof.
+
 ## Analysis Gate For Future Runtime Owner
 
 [ANALYSIS]
@@ -118,7 +123,7 @@ Use these anchors before any mutation:
 
 17. Static scan active HUD/UI route for forbidden text updates: `.text =`, `SetText(string)`, interpolation, `string.Format`, numeric `.ToString()`, enum `.ToString()`, runtime hierarchy hashing, and string-key localization in HUD/update paths. Verify active UI text route uses preallocated buffers, `TryFormat`, `TMP_Text.SetCharArray`, `TmpTextNoAlloc`, `CharBufferPool`, or equivalent fixed-buffer path.
 
-18. Checkpoint C: produce HUD/zero-GC report. Required verdicts: `HUD_Internal` production status, active canvas render modes, physical carrier/anchor, critical readout source owner, text update path, input navigation path, screenshot status, UI GC proof status, and whether ScreenSpaceOverlay remains a blocker.
+18. Checkpoint C: produce HUD/zero-GC report. Required verdicts: `HUD_Internal` production status, active canvas render modes, physical carrier/anchor, critical readout source owner, text update path, input navigation path, screenshot status, UI GC proof status, and whether ScreenSpaceOverlay remains a blocker. If screenshots feed h8_1475 visual proof, include `h8_1475_visual_reference_comparison.md` built from the current template and mandatory visual reference digest.
 
 ### Lane F - Black-Box / Telemetry Proof
 
@@ -154,6 +159,7 @@ Required files under the current accepted proof-packet path:
 - `zero_gc_ui_scan_and_profiler.md`
 - `route_control_readback.md`
 - `black_box_dump_manifest.md`
+- `h8_1475_visual_reference_comparison.md` when shell/HUD repair captures feed h8_1475 visual proof
 - screenshots for 720p, 16:9, 16:10, 21:9, 4:3
 - short clip showing movement, swim, interaction, HUD prompt, PDA/pause, and return path
 
@@ -183,6 +189,7 @@ Continuous scaling notes:
 - PDA/pause/rebinding requires mouse only.
 - Camera writes gameplay truth.
 - No 300-frame black-box ring for player/input/UI critical state.
+- Missing `h8_1475_visual_reference_comparison.md` when shell/HUD captures are used as h8_1475 visual proof.
 - Report claims `READY`, `PASS`, `DONE`, `SOLVED`, or runtime readiness without Unity Console, Play Mode/player run, Profiler/GC, screenshot/clip, and save/load evidence.
 
 ## Final Reporting Template For Future Runtime Agent

@@ -19,6 +19,8 @@ Route blocker removed: current product-face source gates failed and current visu
 
 - `Docs/Reports/AssetSystem_20260605/ASSET_OWNER_18_PRODUCT_FACE_VALIDATOR_SYNTHESIS_20260605.md`: Unity batchmode source gates failed. Material/texture gate: `Prefabs=42`, `Materials=43`, `Failures=183`, `Warnings=4`. Prefab quality gate failed for all `42` checked prefabs. Sky/ocean source primitive gate failed with `2` checked prefabs and `2` failures.
 - `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_REJECTION_20260605.md`: current visual state rejected; `h8_1475` proof packet absent; raw MCP screenshots are diagnostic only.
+- `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`: mandatory image-read digest for user-visible water, terrain, sky/Aegir, flora/coral, UI/cockpit, shoreline, and medium-depth reference signals.
+- `Docs/AssetAudit/VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.md`: current VREF-to-owner routing for material owners.
 - `Docs/AssetAudit/MATERIAL_FILE_TECHNICAL_PROPERTIES_20260605.md`: `392` material files scanned; `290` have no static texture GUIDs; `314` have empty texture slot tokens; `41` include `WorldProceduralProxy`; `42` include proxy/placeholder tokens; `260` unresolved shader GUIDs by static map.
 - `Docs/AssetAudit/TEXTURE_ACTIVE_ROUTE_BLOCKER_DETAIL_20260605.md`: active route blocker rows include `45` P0 rows, `44` P1 rows, and `20` P2 rows. Key families: terrain/geology `51`, flora/coral/fauna `48`, sky/Aegir/cloud `8`, water foam rejected support `1`, water/caustic support `1`.
 - `Docs/AssetAudit/TEXTURE_AUTHORING_RECIPES_20260605.md`: foam/contact, Aegir/sky, wet basalt/shell sand, and UI oxygen route recipes are source-only until cleanup, PBR role separation, import readback, material binding, screenshots, and proof exist.
@@ -42,12 +44,15 @@ Read before execution:
 - `.agents-skills/REND_Shader_Noir_Aesthetics_Dithering_Fog.txt`
 - `.agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt`
 - `.agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
-- `.agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`
+- `.agents-skills/OPT_Premium_Approximation_Protocol.txt`
+- `Docs/ARCHITECTURE/PREMIUM_APPROXIMATION_LEDGER.md`
 - `.agents-skills/STRM_Async_Asset_Upload_Texture_Settings.txt`
 - `.agents-skills/STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`
 - `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md`
 - `Docs/Reports/AssetSystem_20260605/ASSET_OWNER_18_PRODUCT_FACE_VALIDATOR_SYNTHESIS_20260605.md`
 - `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_REJECTION_20260605.md`
+- `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
+- `Docs/AssetAudit/VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.md`
 - `Docs/AssetAudit/MATERIAL_FILE_TECHNICAL_PROPERTIES_20260605.md`
 - `Docs/AssetAudit/TEXTURE_ACTIVE_ROUTE_BLOCKER_DETAIL_20260605.md`
 - `Docs/AssetAudit/TEXTURE_AUTHORING_RECIPES_20260605.md`
@@ -138,7 +143,7 @@ This packet does not authorize runtime code, wrappers, packages, project setting
 27. Capture canonical Game View and Scene View screenshots: bright surface/ocean skin, shoreline/waterline, photic shallow, medium-depth hero route, player/suit, held tools, pickup, transport/product-face prefab, sky/Aegir/cloud context, and flora/coral material sample where active.
 28. Capture Frame Debugger or RenderGraph/Stats evidence: shader names, material assets, texture slots, keyword state, transparent pressure, SetPass, batches, material instance count, and no Crest clone/wrapper path.
 29. Capture memory/VRAM/import evidence: texture memory, total reserved memory, streaming mip state, async upload spike behavior, and compact 1800MB VRAM / 900MB texture budget pressure. Runtime claims without profiler or Memory Profiler stay `PENDING_VERIFICATION`.
-30. Final gate: compare captures against `VISUAL_REFERENCE_REJECTION_20260605.md` reference floor. If water, terrain, sky/Aegir, shore contact, tools, pickups, flora/coral, or product-face materials remain flat, muddy, primitive, blurry, dark-covered, or below Subnautica-level surface/shallow/mid-depth floor, mark `REJECTED`, not accepted.
+30. Final gate: compare captures against `VISUAL_REFERENCE_REJECTION_20260605.md` and `CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`. If water, terrain, sky/Aegir, shore contact, tools, pickups, flora/coral, UI/cockpit, or product-face materials remain flat, muddy, primitive, blurry, dark-covered, or below the digest's surface/shallow/mid-depth floor, mark `REJECTED`, not accepted.
 
 ## Proof Requirements
 
@@ -166,6 +171,7 @@ Abort and report if:
 - Crest repair would require runtime wrapper, clone, override, or `_WD_*` artist texture misuse.
 - Final candidate source remains watermarked, seamed, baked-light, false-PBR, or channel-undocumented.
 - Screenshot proof relies on fog/darkness/post/crop to hide weak assets.
+- Screenshot proof omits mandatory digest comparison for any user-visible water, terrain, sky/Aegir, flora/coral, UI/cockpit, shoreline, or medium-depth material route.
 - Material binding breaks compile/import, creates shader errors, introduces package-default fallback, or increases SetPass/material uniqueness without proof.
 - Compact lane loses readable ocean color, sky/Aegir, waterline, route cues, material identity, or instrument/product-face readability.
 

@@ -47,6 +47,7 @@ Required authority/report reads used for this packet:
 - `player.md`
 - `Docs/Reports/AssetSystem_20260605/ASSET_OWNER_18_PRODUCT_FACE_VALIDATOR_SYNTHESIS_20260605.md`
 - `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_REJECTION_20260605.md`
+- `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
 - `Docs/Reports/Batch31/PLAYER_HUD_BOOTSTRAP_BINDING_BLOCKER_20260605.md`
 - `Docs/Reports/Batch31/CREST_TERRAIN_GUID_RESOLUTION_20260605.md`
 - `Docs/Reports/Batch31/SKY_TEXTURE_SLOT_RESOLUTION_20260605.md`
@@ -57,7 +58,8 @@ Mandates loaded:
 
 - `.agents-skills/QA_Evidence_Text_Filter_Audit.txt`
 - `.agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
-- `.agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`
+- `.agents-skills/OPT_Premium_Approximation_Protocol.txt`
+- `Docs/ARCHITECTURE/PREMIUM_APPROXIMATION_LEDGER.md`
 - `.agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt`
 - `.agents-skills/ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`
 - `.agents-skills/UI_Diegetic_Physical_Interfaces.txt`
@@ -79,6 +81,7 @@ Known hard blockers:
 - `Assets/_Project/Prefabs/Sky_System.prefab` has active visible primitive sky dome risk: `Sky_System/Sphere` uses Unity built-in primitive mesh `Sphere`.
 - `Assets/_Project/Prefabs/Ocean_Crest.prefab` has product-face primitive risk: `SargassumMicroFaunaBoids.boidMesh` points to Unity built-in primitive mesh `Plane`.
 - Existing MCP screenshots are rejected as acceptance artifacts because no valid `Docs/Screenshots/HectonProofPackets/h8_1475_{session}/` manifest/checksum/log packet exists.
+- Future no-mutation screenshots must include pass/fail comparison against the mandatory visual-reference digest for surface, shoreline, photic, underwater 0-5 m, medium-depth, sky/Aegir, player/HUD, cockpit/visor, and product-face contexts.
 
 ## Hard Gate Before Unity Readback Starts
 
@@ -444,8 +447,11 @@ The `h8_1475` packet must include, at minimum:
 - `h8_1475_crest_ocean_slots_inspector.png`
 - `h8_1475_terrain_material_slots_inspector.png`
 - `h8_1475_product_face_primitive_targets_inspector.png`
+- `h8_1475_visual_reference_comparison.md`
 
 If any view is impossible to capture safely without mutation or process contention, the packet must include an `ABORTED_<view>.md` note instead of a fake screenshot.
+
+The visual-reference comparison file must cite `CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md` and state which mandatory image signals each capture passes or fails. It is not allowed to replace missing screenshot, Frame Debugger, memory, console, or readback evidence.
 
 ## Abort Conditions
 
@@ -490,6 +496,7 @@ Abort report must include:
 - Cadence: no update cadence changes are authorized. Quality/cadence claims remain pending unless measured.
 - Correctness: one fact, one owner, one route, one proof artifact. Product-face source gates stay failed when owner/route/proof is missing.
 - Visual: surface, sky, Aegir, ocean surface, shoreline, photic terrain, HUD, and first-person route captures must meet the Subnautica-level floor. Darkness/fog/post cannot hide weak art.
+- Visual-reference comparison: mandatory digest signals must be checked explicitly. Missing comparison keeps the proof packet `PENDING_VERIFICATION`.
 
 ## Continuous GlobalQualityWeight Consequences To Record
 
@@ -506,6 +513,7 @@ Required no-mutation outputs:
 - `Docs/Screenshots/HectonProofPackets/h8_1475_<YYYYMMDD_HHMMSS>/manifest.sha256`
 - `Docs/Screenshots/HectonProofPackets/h8_1475_<YYYYMMDD_HHMMSS>/UnityLog.txt`
 - canonical `h8_1475_*.png` screenshots listed above
+- `h8_1475_visual_reference_comparison.md`
 - `Docs/Reports/AssetSystem_20260605/ASSET_OWNER_26_UNITY_READBACK_NO_MUTATION_<YYYYMMDD_HHMMSS>.md`
 - `Docs/Reports/AssetSystem_20260605/ASSET_OWNER_26_FRAME_DEBUGGER_STATS_<YYYYMMDD_HHMMSS>.md`
 - `Docs/Reports/AssetSystem_20260605/ASSET_OWNER_26_CONSOLE_<YYYYMMDD_HHMMSS>.txt`

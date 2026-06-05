@@ -15,7 +15,7 @@ CSV companion: `Docs/AssetAudit/ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605
 | `PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.csv` | 124 | `PENDING UNITY READBACK` | `taskslocal/asset_system_20260605/ASSET_OWNER_24_PRODUCT_FACE_MATERIAL_REPAIR_PACKET.md` |
 | `PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.csv` | 39 | `PENDING UNITY PREFAB READBACK` | `taskslocal/asset_system_20260605/ASSET_OWNER_25_PREFAB_PRIMITIVE_MESH_REPLACEMENT_PACKET.md` |
 | `AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.csv` | 6 | `PENDING_VERIFICATION` | `taskslocal/asset_system_20260605/ASSET_OWNER_28_AUDIO_REMEDIATION_EXECUTION_PACKET.md` |
-| `H8_1475_READBACK_FIELD_MANIFEST_20260605.csv` | 120 | `PENDING CLEAN PROCESS GATE` | `taskslocal/asset_system_20260605/ASSET_OWNER_26_UNITY_READBACK_NO_MUTATION_PACKET.md` |
+| `H8_1475_READBACK_FIELD_MANIFEST_20260605.csv` | 123 | `PENDING CLEAN PROCESS GATE` | `taskslocal/asset_system_20260605/ASSET_OWNER_26_UNITY_READBACK_NO_MUTATION_PACKET.md` |
 | `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.csv` | 7 | `REJECTED / PENDING_H8_1475_PROOF` | `Ocean/Crest owner; Material/texture owner; Sky/Aegir owner; Terrain/geology owner; Underwater VFX/source owner; UI/HUD owner; Product-face prefab owner; Unity proof owner.` |
 
 ## Dispatch Rules
@@ -54,8 +54,8 @@ CSV companion: `Docs/AssetAudit/ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605
 
 ### h8_1475_no_mutation_readback_scope
 
-- Source table: `H8_1475_READBACK_FIELD_MANIFEST_20260605.csv` (120 rows).
-- Primary blockers: Readback manifest domains: player_hud=20; crest_ocean=16; terrain_material=14; product_face=13; sky_aegir=12; screenshots=9; no_mutation=8; proof_packet=7.
+- Source table: `H8_1475_READBACK_FIELD_MANIFEST_20260605.csv` (123 rows).
+- Primary blockers: Readback manifest domains: player_hud=23; crest_ocean=16; terrain_material=14; product_face=13; sky_aegir=12; screenshots=9; no_mutation=8; proof_packet=7; process_gate=4; dirty_state=4; frame_debugger_stats=4; scalability=4; console_log=3; runtime_claims=2.
 - First action: Wait for clean process gate; create h8_1475 proof packet folder; perform read-only Unity/Editor readback; abort on dirty/save/import/build mutation pressure.
 - Required proof: manifest.json; manifest.sha256; copied Unity log; screenshots; Console; Frame Debugger or Stats; exact readback fields; dirty-state report; no-mutation statement.
 - Forbidden shortcut: No scene or prefab save; no import; no Addressables build; no project settings; no material assignment; no wrapper; no acceptance from manifest existence alone.

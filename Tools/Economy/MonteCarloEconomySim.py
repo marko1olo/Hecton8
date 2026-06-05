@@ -802,7 +802,7 @@ def write_report(
                 "- `DATA_Inventory_Resources_Items_SOA_Layout.txt`: raw resource truth stays data-only.",
                 "- `QA_Evidence_Text_Filter_Audit.txt`: claims are labeled as CLI/static evidence, not runtime proof.",
                 "- `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`: no Unity hot path touched.",
-                "- `OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`: offline audit replaces runtime probing for this task.",
+                "- `OPT_Premium_Approximation_Protocol.txt`: offline audit replaces runtime probing for this task.",
                 "",
                 "## First Base Raw Demand",
                 "",

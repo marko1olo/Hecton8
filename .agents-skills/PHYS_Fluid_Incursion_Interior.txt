@@ -1,7 +1,7 @@
 ```markdown
-## 2026-05-11 VISUAL-FAKE OVERRIDE
+## 2026-06-05 PREMIUM-APPROXIMATION OVERRIDE
 
-[RULE] Interior flooding defaults to gameplay state plus presentation fake.
+[RULE] Interior flooding defaults to gameplay state plus premium presentation approximation.
 [RULE] Real mass/center-of-mass mutation is allowed only for player-controlled vessels, active salvage objects, or hull-breach gameplay where control truth changes.
 [RULE] Non-critical compartments use scalar fill ratio, pooled leak VFX, audio creaks, haptics, HUD alarms, and shader wetness planes.
 [FORBID] Continuous internal fluid, slosh, pressure, or transfer simulation for rooms the player cannot inspect, enter, or control.

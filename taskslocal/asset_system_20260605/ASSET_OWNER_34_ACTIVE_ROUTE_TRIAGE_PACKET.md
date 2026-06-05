@@ -19,6 +19,7 @@ This packet is directly distributable to a future Unity/readback or asset-owner 
 - `Docs/AssetAudit/H8_1475_READBACK_FIELD_MANIFEST_20260605.md`
 - `Docs/AssetAudit/H8_1475_READBACK_FIELD_MANIFEST_20260605.csv`
 - `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_REJECTION_20260605.md`
+- `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
 
 Static facts from the evidence:
 
@@ -29,6 +30,7 @@ Static facts from the evidence:
 - Product-face prefab table: 39 P0 rows. Static counts include 56 built-in primitive refs and 39 rows missing static `LODGroup` tokens. This is STATIC/PENDING UNITY PREFAB READBACK, not acceptance.
 - `h8_1475` manifest domains include player/HUD, sky/Aegir, Crest/ocean, terrain/material, product-face, screenshots, no-mutation, proof packet, Frame Debugger/Stats, process gate, dirty state, console/log, scalability, and runtime-claim guards.
 - Visual reference report decision: current product-face visual promotion is `REJECTED / PENDING UNITY PROOF`; existing MCP screenshots are diagnostic only and are not acceptance artifacts.
+- Mandatory visual-reference digest decision: future h8_1475 and route captures must state pass/fail against the current image-read digest for surface, shoreline, photic, medium-depth, sky/Aegir, flora/coral, UI/cockpit, and product-face contexts.
 
 ## Why Still Needed
 
@@ -134,20 +136,21 @@ Checkpoint 2 after task 12: if material/prefab links are incomplete, mark remain
 15. Require `manifest.json` to keep acceptance state `PENDING_VERIFICATION`. Acceptance proof: task output forbids `ACCEPTED` in manifest from readback alone.
 16. Require `manifest.sha256` to hash the actual `manifest.json`; no invented hashes. Acceptance proof: report command/path used to generate the checksum.
 17. Add canonical screenshot requirements for bright first surface exit, shoreline/waterline, underwater 0.5m/photic shallows, 20-50m route, Aegir/sky, player/HUD/tool view, product-face pickup/transport where relevant. Acceptance proof: missing screenshots require `ABORTED_<view>.md` with reason, not silent omission.
-18. Add Frame Debugger/Stats requirements for shader names, material asset paths, keywords, SetPass, batches, material instance count, SRP Batcher/GPU Resident Drawer risk, Crest visible-slot use, and render route proof. Acceptance proof: no visual promotion without this evidence.
+18. Add visual-reference comparison requirement using `CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`. Acceptance proof: each canonical screenshot names mandatory image signals passed or failed; missing comparison keeps the route `PENDING UNITY PROOF`.
+19. Add Frame Debugger/Stats requirements for shader names, material asset paths, keywords, SetPass, batches, material instance count, SRP Batcher/GPU Resident Drawer risk, Crest visible-slot use, and render route proof. Acceptance proof: no visual promotion without this evidence.
 
-Checkpoint 3 after task 18: if `h8_1475` packet cannot be produced completely, final state is `PENDING UNITY PROOF`; do not accept or promote product-face visuals.
+Checkpoint 3 after task 19: if `h8_1475` packet cannot be produced completely, final state is `PENDING UNITY PROOF`; do not accept or promote product-face visuals.
 
-19. For texture/material targets, require import readback: sRGB, texture type, compression, mipmaps, streaming mips, max size, read/write state, platform override, role classification, and channel semantics. Acceptance proof: each changed map has albedo/base, normal/detail-normal, packed MRAO/mask, emission/wetness/contact/alpha role where used.
-20. For prefab/mesh targets, require Prefab Stage or scoped Editor API readback: renderer paths, mesh refs, material refs, LODGroup state, colliders, scripts, pivots, sockets, anchors, active/inactive state, and scene overrides. Acceptance proof: collider report distinguishes `COL_*` proxy, trigger, gameplay collision, visual mesh, and any MeshCollider misuse.
-21. For audio-direct rows, require owner handoff to the audio remediation route. Acceptance proof: no sound route gets deleted or unwired from static GUID evidence; runtime mix and import settings remain `PENDING AUDIO READBACK`.
-22. For scriptable/native assets, require owner-local classification before mutation. Acceptance proof: no ScriptableObject runtime mutation or route assignment change is made from CSV presence.
-23. For third-party or legacy rows, classify as integrity review, not cleanup. Acceptance proof: no move, strip, delete, or package change; Crest/Feel/legacy assets remain quarantined for named owner decisions.
-24. For texture/material streaming rows, require Addressables/import/residency proof. Acceptance proof: no resident-memory, compact VRAM, texture budget, or async upload claim without Unity/Memory Profiler or player capture artifacts.
+20. For texture/material targets, require import readback: sRGB, texture type, compression, mipmaps, streaming mips, max size, read/write state, platform override, role classification, and channel semantics. Acceptance proof: each changed map has albedo/base, normal/detail-normal, packed MRAO/mask, emission/wetness/contact/alpha role where used.
+21. For prefab/mesh targets, require Prefab Stage or scoped Editor API readback: renderer paths, mesh refs, material refs, LODGroup state, colliders, scripts, pivots, sockets, anchors, active/inactive state, and scene overrides. Acceptance proof: collider report distinguishes `COL_*` proxy, trigger, gameplay collision, visual mesh, and any MeshCollider misuse.
+22. For audio-direct rows, require owner handoff to the audio remediation route. Acceptance proof: no sound route gets deleted or unwired from static GUID evidence; runtime mix and import settings remain `PENDING AUDIO READBACK`.
+23. For scriptable/native assets, require owner-local classification before mutation. Acceptance proof: no ScriptableObject runtime mutation or route assignment change is made from CSV presence.
+24. For third-party or legacy rows, classify as integrity review, not cleanup. Acceptance proof: no move, strip, delete, or package change; Crest/Feel/legacy assets remain quarantined for named owner decisions.
+25. For texture/material streaming rows, require Addressables/import/residency proof. Acceptance proof: no resident-memory, compact VRAM, texture budget, or async upload claim without Unity/Memory Profiler or player capture artifacts.
 
-Checkpoint 4 after task 24: if any owner lane lacks proof route, mark `PENDING_OWNER_PROOF_ROUTE`. If Unity/import/compile is dirty or blocked, mark `BLOCKED_UNITY_GATE` and stop.
+Checkpoint 4 after task 25: if any owner lane lacks proof route, mark `PENDING_OWNER_PROOF_ROUTE`. If Unity/import/compile is dirty or blocked, mark `BLOCKED_UNITY_GATE` and stop.
 
-25. Produce the final owner report with sections: what was wrong, what was triaged, Unity/proof state, files inspected, rows changed or generated, blockers, residual risks, and exact next owner packets. Acceptance proof: every non-trivial claim has evidence class, artifact path, command/tool, date, and residual risk.
+26. Produce the final owner report with sections: what was wrong, what was triaged, Unity/proof state, files inspected, rows changed or generated, blockers, residual risks, and exact next owner packets. Acceptance proof: every non-trivial claim has evidence class, artifact path, command/tool, date, and residual risk.
 
 ## BLOCKED / PENDING Rules
 
@@ -173,6 +176,7 @@ Future owner output must include:
 - No-mutation readback report.
 - Dirty-state audit.
 - Canonical screenshots or explicit abort notes.
+- Visual-reference comparison report citing `CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`.
 - Frame Debugger/Stats report.
 - Row-level status table mapping GUID triage rows to P0 blocker families and owner lanes.
 - Regression model: CPU, GC, memory/VRAM, cadence, correctness, hot-path impact, failure modes, why kept/rejected.

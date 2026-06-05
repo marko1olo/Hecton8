@@ -16,6 +16,7 @@ Mandates followed:
 - `world.md`
 - `Docs/AssetAudit/README.md`
 - `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
+- `Docs/AssetAudit/VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.md`
 
 ## Exact Blocker
 
@@ -35,6 +36,8 @@ Static reachability is not live renderer proof. It is enough to block visual pro
 Future flora/coral/kelp replacement work must compare route captures against the mandatory visual-reference digest:
 
 `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
+
+Minimum owner-routing rows: `VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.csv` `VREF-02`, `VREF-06`, `VREF-07`, `VREF-08`, `VREF-09`, `VREF-10`, `VREF-11`, and `VREF-12`.
 
 Reference signals that must survive the future Unity proof:
 

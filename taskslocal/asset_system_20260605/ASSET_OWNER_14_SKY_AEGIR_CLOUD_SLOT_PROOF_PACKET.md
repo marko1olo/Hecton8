@@ -11,12 +11,14 @@ First-20 route moment: bright first surface exit with readable sky, Aegir, moons
 ## Mandates Followed
 
 - `QA_Evidence_Text_Filter_Audit`
-- `OPT_Cinematic_Cheat_Protocol_Visual_Fake_First`
+- `.agents-skills/OPT_Premium_Approximation_Protocol.txt`
+- `Docs/ARCHITECTURE/PREMIUM_APPROXIMATION_LEDGER.md`
 - `OPT_Performance_Budgets_FrameTime_VRAM_Limits`
 - `REND_Shader_Noir_Aesthetics_Dithering_Fog`
 - `REND_URP_Graphics_HotPath_Optimization_HLOD`
 - `STRM_Async_Asset_Upload_Texture_Settings`
 - `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
+- `Docs/AssetAudit/VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.md`
 
 ## Boundary
 
@@ -33,6 +35,7 @@ Rejected evidence inflation:
 - Static material path does not prove active renderer use.
 - Contact sheet does not prove Unity shader response.
 - `01_ORBIT` or prologue references do not prove `02_HECTON_WORLD` first-route visibility.
+- Sky/Aegir review must use `VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.csv` rows `VREF-03`, `VREF-05`, and `VREF-15` before any pass/fail statement.
 - Scene YAML/static refs do not prove importer settings, VRAM, SetPass, shader variants, Frame Debugger pass order, screenshots, or runtime route quality.
 
 ## Exact Blocker Groups

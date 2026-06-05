@@ -1,5 +1,6 @@
 using System;
 using System.Buffers.Binary;
+using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
@@ -47,6 +48,7 @@ namespace Hecton8.Graphics.Scalability
         private const uint UpscalerNativeHash = 0x4E415456u; // NATV
         private const uint UpscalerBilateralTaaHash = 0x42494C55u; // BILU
         private const uint UpscalerBilateralDrsHash = 0x42445253u; // BDRS
+        private const uint DumpIoFailureHash = 0x44525349u; // DRSI
         private const uint CsvMinScaleLimitHash = 0xF3608E52u;
         private const uint CsvSmoothingFactorHash = 0x6D58F632u;
         private const uint CsvSharpeningMultiplierHash = 0x4ADC1687u;
@@ -54,7 +56,10 @@ namespace Hecton8.Graphics.Scalability
         private const uint CsvMiddleMinScaleHash = 0x8D1CCECEu;
         private const uint CsvHighMinScaleHash = 0x0F348BAFu;
         private const uint CsvUltraMinScaleHash = 0x0328B0C7u;
-        private const string DumpFileName = "Dump_13KRA.bin";
+        private const string DumpRelativeDirectory = "Docs/AgentLogs";
+        private const string DumpFilePrefix = "Dump_THERMAL_DRS_";
+        private const string DumpFileExtension = ".bin";
+        private const string DumpPayloadLabel = "ThermalDrsBlackBoxDumpPayload";
         private const float DangerFrameTimeMs = 15.0f;
         private const float TargetFrameTimeMs = 16.66f;
         private const float PanicFrameTimeMs = 33.0f;
@@ -212,6 +217,7 @@ namespace Hecton8.Graphics.Scalability
         private bool _hotSwapRegistered;
         private bool _sceneLoadedRepairRegistered;
         private bool _dispatcherRegistrationRepairRunning;
+        private int _dispatcherRegistrationRepairFramesRemaining;
         private bool _systemScalerInstalled;
         private bool _blackBoxDumped;
         private uint _blackBoxDumpHash;
@@ -239,9 +245,7 @@ namespace Hecton8.Graphics.Scalability
         private float _mockQualityWeight01 = 1f;
         private float _mockReconstructionScale01 = PolicyMaxScale;
         private float _mockReconstructionQuality01 = PolicyMaxScale;
-#pragma warning disable CS0414
         private string _blackBoxDumpPath;
-#pragma warning restore CS0414
         private DrsScaleLimitsDTO _scaleLimits;
         private ResolutionScaleState _scaleStateMirror;
         private DrsStateDTO _drsState;
@@ -472,7 +476,7 @@ namespace Hecton8.Graphics.Scalability
         {
             bool ownsAdapter = ReferenceEquals(s_activeAdapter, this);
             _dispatcherRegistrationRepairRunning = false;
-            StopAllCoroutines();
+            _dispatcherRegistrationRepairFramesRemaining = 0;
             TryUnregister();
             TryUnregisterLateFrame();
             TryUnregisterHotSwap();
@@ -613,6 +617,7 @@ namespace Hecton8.Graphics.Scalability
 
         public void LateFrameTick()
         {
+            AdvanceDispatcherRegistrationRepair();
             AdvanceThermalResolutionState(SystemDispatcher.CurrentFrameUnscaledDeltaTime);
 
             if (!ReferenceEquals(s_activeAdapter, this))
@@ -652,6 +657,8 @@ namespace Hecton8.Graphics.Scalability
 
         public void SlowTick()
         {
+            AdvanceDispatcherRegistrationRepair();
+
             if (_lateFrameRegistrationRequested)
             {
                 _lateFrameRegistrationRequested = false;
@@ -1550,33 +1557,44 @@ namespace Hecton8.Graphics.Scalability
 
         private void RequestDispatcherPhaseRegistrationRepair()
         {
-            if (!Application.isPlaying ||
-                _dispatcherRegistrationRepairRunning ||
-                (_registeredLateFrame && _registeredSlowTick))
+            if (!Application.isPlaying || (_registeredLateFrame && _registeredSlowTick))
             {
+                _dispatcherRegistrationRepairRunning = false;
+                _dispatcherRegistrationRepairFramesRemaining = 0;
                 return;
             }
 
-            StartCoroutine(RepairDispatcherPhaseRegistrationCold());
-        }
-
-        private System.Collections.IEnumerator RepairDispatcherPhaseRegistrationCold()
-        {
-            _dispatcherRegistrationRepairRunning = true;
-            int remainingFrames = DispatcherRegistrationRepairMaxFrames;
-            while (Application.isPlaying &&
-                   enabled &&
-                   (!_registeredLateFrame || !_registeredSlowTick) &&
-                   remainingFrames-- > 0)
+            if (!_dispatcherRegistrationRepairRunning)
             {
-                TryRegister();
-                if (_registeredLateFrame && _registeredSlowTick)
-                    break;
-
-                yield return null;
+                _dispatcherRegistrationRepairRunning = true;
+                _dispatcherRegistrationRepairFramesRemaining = DispatcherRegistrationRepairMaxFrames;
             }
 
-            _dispatcherRegistrationRepairRunning = false;
+            AdvanceDispatcherRegistrationRepair();
+        }
+
+        private void AdvanceDispatcherRegistrationRepair()
+        {
+            if (!_dispatcherRegistrationRepairRunning)
+                return;
+
+            if (!Application.isPlaying ||
+                !enabled ||
+                (_registeredLateFrame && _registeredSlowTick) ||
+                _dispatcherRegistrationRepairFramesRemaining <= 0)
+            {
+                _dispatcherRegistrationRepairRunning = false;
+                _dispatcherRegistrationRepairFramesRemaining = 0;
+                return;
+            }
+
+            _dispatcherRegistrationRepairFramesRemaining--;
+            TryRegister();
+            if (_registeredLateFrame && _registeredSlowTick)
+            {
+                _dispatcherRegistrationRepairRunning = false;
+                _dispatcherRegistrationRepairFramesRemaining = 0;
+            }
         }
 
         private void TryUnregister()
@@ -2176,43 +2194,102 @@ namespace Hecton8.Graphics.Scalability
             if (_blackBoxDumped || telemetryRing == null || telemetryLength < TelemetryCapacity)
                 return;
 
+            NativeArray<byte> payload = default;
             try
             {
-                int count = math.min(TelemetryCapacity, telemetryLength);
-                Span<byte> header = stackalloc byte[TelemetryHeaderBytes];
-                BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(0, 4), TelemetryMagic);
-                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(4, 4), count);
-                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(8, 4), _telemetryCursor);
-                BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(12, 4), _sequence);
-                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(16, 4), DrsTelemetryEntryBytes);
+                if (string.IsNullOrWhiteSpace(_blackBoxDumpPath))
+                    ResolveBlackBoxDumpPathCold();
 
-                uint hash = TelemetryMagic ^ (uint)count ^ (uint)_telemetryCursor ^ _sequence;
-                Span<byte> telemetryBytes = stackalloc byte[DrsTelemetryEntryBytes];
+                int count = math.min(TelemetryCapacity, telemetryLength);
+                int byteCount = TelemetryHeaderBytes + count * DrsTelemetryEntryBytes;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(ThermalDynamicResolutionAdapter),
+                    DumpPayloadLabel);
+                byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                Span<byte> payloadBytes = new Span<byte>(payloadPtr, byteCount);
+                BinaryPrimitives.WriteUInt32LittleEndian(payloadBytes.Slice(0, 4), TelemetryMagic);
+                BinaryPrimitives.WriteInt32LittleEndian(payloadBytes.Slice(4, 4), count);
+                BinaryPrimitives.WriteInt32LittleEndian(payloadBytes.Slice(8, 4), _telemetryCursor);
+                BinaryPrimitives.WriteUInt32LittleEndian(payloadBytes.Slice(12, 4), _sequence);
+                BinaryPrimitives.WriteInt32LittleEndian(payloadBytes.Slice(16, 4), DrsTelemetryEntryBytes);
+
+                int writeOffset = TelemetryHeaderBytes;
                 for (int i = 0; i < count; i++)
                 {
                     int index = _telemetryCursor + i;
                     if (index >= count)
                         index -= count;
 
+                    Span<byte> telemetryBytes = payloadBytes.Slice(writeOffset, DrsTelemetryEntryBytes);
                     WriteDrsTelemetryEntryLittleEndian(
                         telemetryBytes,
                         telemetryRing[index]);
-                    for (int byteIndex = 0; byteIndex < telemetryBytes.Length; byteIndex++)
-                        hash = (hash * 16777619u) ^ telemetryBytes[byteIndex];
+                    writeOffset += DrsTelemetryEntryBytes;
                 }
 
-                _blackBoxDumpHash = hash;
-                _blackBoxDumped = true;
+                uint hash = 2166136261u ^ TelemetryMagic;
+                for (int byteIndex = 0; byteIndex < byteCount; byteIndex++)
+                    hash = (hash ^ payloadBytes[byteIndex]) * 16777619u;
+
+                if (NativeFaultDumpWriter.TryWriteAll(_blackBoxDumpPath, payload, byteCount))
+                {
+                    _blackBoxDumpHash = hash == 0u ? 2166136261u : hash;
+                    _blackBoxDumped = true;
+                }
+                else
+                {
+                    GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)DumpIoFailureHash));
+                }
             }
-            catch (Exception)
+            catch (IOException)
             {
-                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)TelemetryMagic));
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)DumpIoFailureHash));
+            }
+            catch (UnauthorizedAccessException)
+            {
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)DumpIoFailureHash));
+            }
+            catch (ArgumentException)
+            {
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)DumpIoFailureHash));
+            }
+            catch (NotSupportedException)
+            {
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)DumpIoFailureHash));
+            }
+            catch (System.Security.SecurityException)
+            {
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)DumpIoFailureHash));
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(ThermalDynamicResolutionAdapter),
+                    DumpPayloadLabel);
             }
         }
 
         private void ResolveBlackBoxDumpPathCold()
         {
-            _blackBoxDumpPath = null;
+            string fileName = string.Concat(
+                DumpFilePrefix,
+                DateTime.UtcNow.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture),
+                DumpFileExtension);
+#if UNITY_EDITOR
+            string dataPath = Application.dataPath;
+            if (!string.IsNullOrEmpty(dataPath))
+            {
+                DirectoryInfo assetsDirectory = Directory.GetParent(dataPath);
+                if (assetsDirectory != null)
+                {
+                    _blackBoxDumpPath = Path.Combine(assetsDirectory.FullName, DumpRelativeDirectory, fileName);
+                    return;
+                }
+            }
+#endif
+            _blackBoxDumpPath = Path.Combine(DumpRelativeDirectory, fileName);
         }
 
         private static void WriteDrsTelemetryEntryLittleEndian(Span<byte> destination, DrsTelemetryEntry entry)

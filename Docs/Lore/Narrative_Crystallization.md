@@ -343,7 +343,7 @@ Source: user hard-sci-fi direction plus local source scan.
 
 ### Hard-Sci-Fi Implementation Bias
 
-- Use authored ephemeris windows, fixed sky states, tide/ecliptic tables, signal windows, and visual fakes.
+- Use authored ephemeris windows, fixed sky states, tide/ecliptic tables, signal windows, and premium presentation approximations.
 - Do not require continuous N-body simulation in gameplay.
 - Orbital mechanics should constrain the fiction:
   - when the carrier can talk,

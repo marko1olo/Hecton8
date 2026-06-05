@@ -10,6 +10,7 @@ No Unity run, import, material edit, prefab edit, scene save, Addressables build
 
 - `STRM_Async_Asset_Upload_Texture_Settings`
 - `REND_URP_Graphics_HotPath_Optimization_HLOD`
+- `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
 
 ## Hard Boundary
 
@@ -38,6 +39,7 @@ Counts are from `Docs/AssetAudit/TEXTURE_ACTIVE_ROUTE_BLOCKER_DETAIL_20260605.cs
 - `WorldProceduralProxy` and `WorldRuntime/ProceduralPlaceholders` materials are not final route materials.
 - Generated/source-only packs under `Docs/GeneratedAssets/AssetSystem_20260605/` are reference inputs only. Source files without import settings, material readback, screenshot, and memory proof are not product art.
 - Static contact sheets cannot prove in-game visual quality.
+- Future screenshots and contact sheets must compare against the mandatory visual-reference digest. Reject water, terrain, sky/Aegir, flora/coral, caustic, or UI-facing import changes that fail the digest's bright surface, shoreline, photic, dense organic, and medium-depth route signals.
 
 ## Safe Execution Route
 
@@ -54,6 +56,7 @@ Counts are from `Docs/AssetAudit/TEXTURE_ACTIVE_ROUTE_BLOCKER_DETAIL_20260605.cs
 - Importer readback: `PENDING UNITY`. Required for sRGB, type, compression, mipmaps, streaming mips, platform overrides, max size, and read/write.
 - Material readback: `PENDING UNITY`. Required for Crest/ocean, sky/Aegir, terrain/geology, flora/coral/fauna, and caustic bindings.
 - Contact sheet/screenshot proof: `PENDING UNITY`. Required for bright surface route, waterline contact, Aegir/sky, terrain/geology seams, organic silhouettes, and caustic response.
+- Digest comparison proof: `PENDING UNITY`. Required before any material/import blocker can be promoted for user-visible water, terrain, sky, flora, UI, or route VFX contexts.
 - Memory/VRAM proof: `PENDING UNITY`. Required before any readiness claim against compact 2GB VRAM / 900MB texture-budget lane.
 - Render proof: `PENDING UNITY`. Required for SetPass, batches, shader variants, SRP Batcher, HLOD/LOD/dither behavior, and Frame Debugger route.
 

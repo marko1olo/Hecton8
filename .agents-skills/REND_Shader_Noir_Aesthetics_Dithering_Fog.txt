@@ -1,5 +1,5 @@
 # SHADER_AESTHETICS_NOIR.md
-## 2026-05-11 VISUAL-FAKE OVERRIDE
+## 2026-06-05 PREMIUM-APPROXIMATION OVERRIDE
 
 [RULE] Noir realism is carried by controlled post, fog, LUTs, dither, authored masks, and lighting eligibility, not physical atmospheric simulation.
 [RULE] MX350 path uses depth fog/LUT haze and baked AO; raymarch fog is MED+/HIGH only after profiler proof.
@@ -76,7 +76,7 @@ Stencil layer reserved: bit 7 (`0x80`) -> UI geometry writes this bit, dither pa
 
 ### 2.5 Blue Noise Shadow Dithering
 
-[RULE] Shadow dithering is allowed only as a visual fake for fade/crossfade/contact breakup, not as a replacement for real occluder logic.
+[RULE] Shadow dithering is allowed only as a premium presentation approximation for fade/crossfade/contact breakup, not as a replacement for real occluder logic.
 [RULE] Use the same R8 blue-noise asset family as the post dither path. No extra shadow-noise texture family without VRAM approval.
 [RULE] LOW tier may use Bayer 4x4 for alpha-shadow fades; MED+ may use blue noise if shimmer is lower in capture.
 

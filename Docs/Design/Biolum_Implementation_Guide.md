@@ -23,7 +23,7 @@ Runtime target: shader-driven bioluminescence sync, no physical light simulation
 
 ## Runtime Doctrine
 
-This is a deterministic presentation fake. Do not spawn dynamic lights per coral, fish, ping, or pulse. Consumers should drive emissive shader parameters, SSGI eligibility, fog tint contribution, or GPU instance data from preloaded binary records.
+This is a deterministic presentation approximation. Do not spawn dynamic lights per coral, fish, ping, or pulse. Consumers should drive emissive shader parameters, SSGI eligibility, fog tint contribution, or GPU instance data from preloaded binary records.
 
 Hot path requirements:
 

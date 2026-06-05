@@ -1,5 +1,5 @@
 # WEATHER_ABYSSAL_CURRENTS.md
-## 2026-05-11 VISUAL-FAKE OVERRIDE
+## 2026-06-05 PREMIUM-APPROXIMATION OVERRIDE
 
 [RULE] Weather and abyssal currents are presentation-first.
 [RULE] Flow fields drive VFX/audio/AI hints before they drive physics.
@@ -121,7 +121,7 @@ IF bit4(W) == 1:
 [RULE] Flow fields may consume thermodynamic heat-source summaries, but they do not own thermal authority.
 [RULE] Heat sources are read-only packets: AUP/world position, intensity, radius, lifetime, and source id.
 [RULE] Logistics `THERMAL_COOLANT` availability can damp heat-source intensity only through a thermodynamics-owned summary. Flow does not query Logistics directly.
-[RULE] Visual updrafts, bubbles, shimmer, and turbulence are presentation fakes unless player-critical hazard/damage state is explicitly marked by the thermodynamics owner.
+[RULE] Visual updrafts, bubbles, shimmer, and turbulence are presentation approximations unless player-critical hazard/damage state is explicitly marked by the thermodynamics owner.
 
 [FORBID] Flow-field jobs reading or writing `LogisticsNode`.
 [FORBID] Flow-field jobs solving resource throughput.

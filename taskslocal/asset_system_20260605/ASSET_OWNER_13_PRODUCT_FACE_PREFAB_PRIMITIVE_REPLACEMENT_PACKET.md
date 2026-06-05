@@ -13,6 +13,7 @@ First-20 route blocker mapped: false promotion risk for visible tools, pickups, 
 - `.agents-skills/STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`
 - `.agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
 - `.agents-skills/QA_Evidence_Text_Filter_Audit.txt`
+- `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
 
 ## Static Blocker Groups
 
@@ -30,6 +31,18 @@ Source: `Docs/AssetAudit/MESH_PREFAB_SOURCE_FOLDER_ROUTE_MATRIX_20260605.md` and
 | `Assets/_Project/Prefabs` | 21 prefabs; 0 LODGroup; 6 primitive refs; 1 MeshCollider token | Root prefab folder needs owner assignment before visible route promotion. Primitive refs and MeshCollider token require scoped proof. | `UNCLASSIFIED_PREFAB_SOURCE` |
 
 Related hard rejects, not this packet's visible replacement source: `WorldProceduralProxy` and `WorldRuntime/ProceduralPlaceholders` remain `REJECT_VISIBLE_ROUTE_PLACEMENT` until replaced by final route-owned prefabs.
+
+## Mandatory Visual Reference Alignment
+
+Future route screenshots must compare product-face replacements against:
+
+`Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
+
+Required consequences:
+
+- Tools, pickups, construction, transport, buildings, and support prefabs must survive bright surface/photic, shoreline, medium-depth, and cockpit/visor contexts without reading as primitive shapes with textures.
+- Sky/ocean-facing product assets must not camouflage weak `BEST ILLUST`-level surface requirements: bright coastline/ocean read, Aegir/sky scale, waterline contact, and route composition.
+- Medium-depth proof must preserve silhouette, material identity, and functional read under darker water and biolum anchors; it cannot hide weak assets with black fog or bloom.
 
 ## Replacement Requirements
 
@@ -62,6 +75,7 @@ Static documents do not clear these gates.
 - LOD proof: triangle counts, transition distances, dither/crossfade behavior, silhouette captures, and cull/HLOD behavior are recorded.
 - Collider proof: `COL_*` proxy layout, primitive/convex budget, interaction trigger layout, and no visual LOD0 MeshCollider misuse.
 - Route screenshot proof: bright surface/photic/medium-depth route captures show product-face tools/pickups/construction/transport/support assets without primitive silhouettes or placeholder materials.
+- Visual-reference comparison proof: route captures name the digest signals passed or failed for surface, shoreline, photic, cockpit/visor, and medium-depth contexts.
 - Stats/Frame Debugger proof: SetPass, batches, shadow casters, material variants, and renderer ownership stay inside budget.
 - Addressables/residency proof: required before broad placement, streaming groups, or route-wide promotion. Must include load/release handle ownership and memory/residency evidence.
 

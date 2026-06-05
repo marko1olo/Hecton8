@@ -24,7 +24,7 @@ Evidence class: STATIC_SOURCE only. Unity import, shader import, RenderGraph Vie
 
 ## Dear Lie
 
-Shoreline foam is a screen-space visual fake.
+Shoreline foam is a screen-space presentation approximation.
 
 Shader route:
 

@@ -17,6 +17,7 @@ No Unity run, import, build, Play Mode, Addressables window work, catalog build,
 - `Docs/AssetAudit/README.md`
 - `Docs/AssetAudit/ADDRESSABLES_ASSET_GROUP_PLAN_20260605.md`
 - `Docs/AssetAudit/ADDRESSABLES_ASSET_GROUP_PLAN_20260605.csv`
+- `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
 - `Docs/Reports/AssetSystem_20260605/ADDRESSABLES_STATIC_COVERAGE_GAP_3218_20260605.md`
 - `Docs/Reports/AssetSystem_20260605/ADDRESSABLES_GROUP_PLAN_3220_20260605.md`
 - `Docs/Reports/AssetSystem_20260605/ASSET_PLANNING_CONSOLIDATION_3222_20260605.md`
@@ -36,6 +37,8 @@ No Unity run, import, build, Play Mode, Addressables window work, catalog build,
 | Heavy group load mode unproved | Heavy sky, ocean, terrain, flora, audio, and prefab groups have no `AssetLoadMode` evidence. | `RequestedAssetAndDependencies` evidence unless a tiny always-hot exception has a written cap and Memory Profiler artifact. |
 | No load/release evidence | No loaded handle count, owner list, ref-count sample, release ledger, leak audit, or pressure behavior exists for current candidates. | Runtime owner ledger with acquire/release records, ref-count transitions, pending-release drain evidence, and stale-handle/leak report fields. |
 | No memory/residency evidence | Current docs do not prove RAM, VRAM, texture mip residency, resident/committed split, audio memory, or upload behavior. | Memory Profiler, VRAM/texture ledger, mip target table, audio memory table, upload budget/range evidence, and pressure response artifacts. |
+
+Mandatory visual-reference consequence: Addressables grouping, mip residency, load mode, unload pressure, or compact-lane decisions cannot be accepted if future captures fail `CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md` for surface sky/Aegir, ocean/shoreline, photic terrain/flora, UI oxygen, product-face, or medium-depth route contexts.
 
 ## No-Mutation Boundaries
 
@@ -66,6 +69,7 @@ Required before any group/key/catalog work:
 - `Docs/Screenshots/HectonProofPackets/ASSET_OWNER_06_*` screenshots for sky/Aegir, Crest/ocean/foam, terrain/geology, flora/proxy, UI oxygen, audio config, Player prefab refs, and Addressables groups window.
 - `Docs/Reports/AssetSystem_20260605/ASSET_OWNER_06_UNITY_READBACK_*` reports for the same domains.
 - `Docs/Reports/AssetSystem_20260605/ASSET_OWNER_06_FRAME_DEBUGGER_*` reports where visual routing matters.
+- `Docs/Reports/AssetSystem_20260605/ASSET_OWNER_06_VISUAL_REFERENCE_COMPARISON_*` reports for visual routes covered by the group plan.
 - `Docs/Reports/AssetSystem_20260605/ASSET_OWNER_06_CONSOLE_*.txt` covering scene load, prefab readback, asset readback, and Addressables inspection.
 - If present, any `ASSET_OWNER_06_STOP_*.md` blocks group creation until corrected by a later scoped owner artifact.
 
@@ -110,6 +114,7 @@ Required from future Addressables owner:
 - If SpriteAtlas/import/HUD binding is absent, reject core UI sprite group promotion.
 - If load/release/ref-count evidence is missing or contradictory, revert scoped lifecycle changes.
 - If memory/VRAM/upload pressure exceeds compact budget or harms route readability, revert scoped group additions or split the group.
+- If load mode, mip residency, pressure response, or group split harms mandatory digest readability for user-visible water, terrain, sky/Aegir, flora, UI/cockpit, product-face, or medium-depth route views, revert or split the route.
 - If a future report uses static text hits as runtime evidence, downgrade that claim to PENDING_VERIFICATION.
 
 ## Continuous GlobalQualityWeight Consequences

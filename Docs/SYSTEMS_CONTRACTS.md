@@ -23,7 +23,7 @@ Purpose: non-asset runtime systems contracts. This file defines target behavior 
 - Persistent native/job-visible/global state uses `GlobalDataVault` or an owner-local proof contract.
 - Replay/black-box state uses fixed-size circular buffers, not unbounded frame-lane logs.
 - Feature cost must scale through continuous `GlobalQualityWeight` where fidelity can vary.
-- Visual fake first for audio, lighting, fluid, pressure, ambience, particles, and distant motion.
+- Premium approximation first for audio, lighting, fluid, pressure, ambience, particles, and distant motion.
 
 ## Source Reality Notes
 

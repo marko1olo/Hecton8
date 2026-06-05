@@ -22,7 +22,7 @@ New-Item -ItemType Directory -Force -Path $ScanRoot | Out-Null
 
 $SelectedMandates = @(
     ".agents-skills\OPT_Zero_GC_Policy_AllocFree_Mandate.txt",
-    ".agents-skills\OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt",
+    ".agents-skills\OPT_Premium_Approximation_Protocol.txt",
     ".agents-skills\OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt",
     ".agents-skills\ARCH_Global_Registry_ServiceLocator_DI_Init.txt",
     ".agents-skills\ARCH_Execution_Phases.txt",
@@ -74,7 +74,7 @@ $Groups = @(
         Id = "03_rendering_visuals"
         Title = "Rendering, Shaders, Lighting, VFX, Water Presentation"
         Bibles = @("rendering.md","shaders.md","lighting.md","vfx.md","presentation.md","water.md","atmosphere.md","platform.md","performance.md","compute.md")
-        MandatePatterns = @("REND_","GPU_","CORE_Weather","OPT_Performance","OPT_Cinematic")
+        MandatePatterns = @("REND_","GPU_","CORE_Weather","OPT_Performance","OPT_Premium")
         Roots = @("Assets\_Project\Scripts\Rendering","Assets\_Project\Scripts\Graphics","Assets\_Project\Scripts\VFX","Assets\_Project\Scripts\Lighting","Assets\_Project\Scripts\Atmosphere","Assets\_Project\Scripts\Environment","Assets\_Project\Editor","Data\Visuals","Tools")
         EvidenceRegex = "RenderGraph|ScriptableRendererFeature|Shader|HLOD|BatchRendererGroup|GraphicsBuffer|VFX|Light|Fog|Water|Material|CBUFFER|ComputeShader|Volumetric|Caustic|Post"
         Proof = "Frame Debugger/RenderGraph capture, URP asset proof, shader variant count, material batching proof, compact/high screenshots, GPU/VRAM profiler captures."
@@ -92,7 +92,7 @@ $Groups = @(
         Id = "05_physics_vehicles_water"
         Title = "Physics, Vehicles, Pressure, Water Truth, Survival Physiology"
         Bibles = @("physics.md","vehicles.md","water.md","survival.md","combat.md","animation.md","camera.md")
-        MandatePatterns = @("PHYS_","CORE_Submarine","CORE_Abyss","CORE_Damage","ANIM_","OPT_Cinematic")
+        MandatePatterns = @("PHYS_","CORE_Submarine","CORE_Abyss","CORE_Damage","ANIM_","OPT_Premium")
         Roots = @("Assets\_Project\Scripts\Physics","Assets\_Project\Scripts\Vehicles","Assets\_Project\Scripts\Physiology","Assets\_Project\Scripts\Thermodynamics","Assets\_Project\Scripts\Atmosphere","Assets\_Project\Editor\Physics","Assets\_Project\Scripts\World")
         EvidenceRegex = "Rigidbody|ForcePacket|NonAlloc|Collider|MeshCollider|Buoyancy|Pressure|Water|Tether|Vehicle|Submarine|Survival|Damage|Physiology|FixedTick"
         Proof = "Fixed-step owner proof, force packet routing, NonAlloc query proof, collision proxy report, compact/high vehicle capture, NaN/black-box dump proof."
@@ -128,7 +128,7 @@ $Groups = @(
         Id = "09_audio_narrative_presentation"
         Title = "Audio, Narrative, PDA, Cinematics, Public Text"
         Bibles = @("audio.md","narrative.md","presentation.md","cinematics.md","textes.md","accessibility.md","sonar.md")
-        MandatePatterns = @("AUD_","AUDIO_","PROG_","QA_","OPT_Cinematic")
+        MandatePatterns = @("AUD_","AUDIO_","PROG_","QA_","OPT_Premium")
         Roots = @("Assets\_Project\Scripts\Audio","Assets\_Project\Scripts\AudioLog","Assets\_Project\Scripts\Narrative","Assets\_Project\Scripts\Quest","Assets\_Project\Scripts\PDA","Assets\_Project\Scripts\VFX","Assets\_Project\Scripts\Visor")
         EvidenceRegex = "Audio|DSP|Sonar|Narrative|Quest|PDA|BlackBox|Subtitle|Cinematic|Presentation|Warning|Log|Binaural|Hydrophone"
         Proof = "DSP/voice budget proof, soundscape capture, narrative evidence-before-text proof, subtitle/accessibility proof, capture-truth label proof for public material."

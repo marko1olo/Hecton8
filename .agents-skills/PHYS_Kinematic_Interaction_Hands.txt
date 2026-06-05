@@ -5,7 +5,7 @@
 
 [RULE] This mandate describes control math, not direct Rigidbody ownership. Current AGENTS.md and `PHYS_Physics_Integrity_Determinism_ForceMode.txt` require force/velocity-change output to pass through the owned physics apply pipeline.
 [FORBID] Tool/hand interaction code calling `Rigidbody.AddForce`, `Rigidbody.AddTorque`, or Unity Joint APIs directly in production.
-[REQUIRE] Grab, drag, and angular correction produce deterministic apply packets with VelocityChange/Acceleration semantics. Visual-only hand lag, cable sway, object tremor, water wake, and haptic rumble default to presentation fakes.
+[REQUIRE] Grab, drag, and angular correction produce deterministic apply packets with VelocityChange/Acceleration semantics. Visual-only hand lag, cable sway, object tremor, water wake, and haptic rumble default to presentation approximations.
 
 ---
 

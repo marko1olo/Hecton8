@@ -7,6 +7,7 @@ Read first:
 - `Docs/AssetAudit/ASSET_ACTION_QUEUE_20260605.md`
 - `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md`
 - `Docs/AssetAudit/TEXTURE_MATERIAL_USAGE_REVIEW_20260605.md`
+- `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
 - `rendering.md`
 - `water.md`
 - `terrain.md`
@@ -28,6 +29,7 @@ Required checks:
 - Read candidate geology/flora material refs for proxy/placeholder contamination.
 - Confirm why visually rejected `foam.png` is still serialized-reachable through active world/ocean users.
 - Confirm and plan replacement for the four `WorldProceduralProxy` flora/coral/kelp materials serialized in `02_HECTON_WORLD.unity`.
+- Compare future readback screenshots against the mandatory visual-reference digest for surface sky/Aegir/ocean, shoreline, photic terrain, flora/coral, and medium-depth route material readability.
 
 Proof output:
 
@@ -43,3 +45,4 @@ Hard rejects:
 - No Crest wrapper/material clone.
 - No visual acceptance from Editor inspector only.
 - No darkness/fog cover-up for weak surface/shallow art.
+- No material route promotion if the future capture fails the mandatory digest signals: `BEST ILLUST`-level bright surface composition, readable shoreline/water contact, photic substrate, dense organic route dressing, huge Aegir/sky read, and medium-depth silhouette clarity.

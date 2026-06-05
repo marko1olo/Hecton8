@@ -9,7 +9,7 @@ import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any, Container, Iterable, Sequence
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -108,6 +108,8 @@ class FileFinding:
     allowed: bool
     allocator_counts: tuple[tuple[str, int], ...] = ()
     allocator_kinds: tuple[str, ...] = ()
+    execution_surface: str = ""
+    execution_surfaces: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -161,6 +163,21 @@ def count_values(values: Iterable[str]) -> dict[str, int]:
     return result
 
 
+def count_allocator_values_by_surface(
+    execution_surfaces: Sequence[str],
+    allocator_kinds: Sequence[str],
+) -> dict[str, dict[str, int]]:
+    result: dict[str, dict[str, int]] = {}
+    count = min(len(execution_surfaces), len(allocator_kinds))
+    for index in range(count):
+        surface = execution_surfaces[index]
+        allocator = allocator_kinds[index]
+        surface_counts = result.setdefault(surface, {})
+        surface_counts[allocator] = surface_counts.get(allocator, 0) + 1
+
+    return {surface: dict(sorted(counts.items())) for surface, counts in sorted(result.items())}
+
+
 def should_skip(path: Path) -> bool:
     return any(part in SKIP_DIR_NAMES for part in path.parts)
 
@@ -186,6 +203,8 @@ def scan_source_tree(
         except OSError as exc:
             raise OSError(f"failed to read {path}") from exc
         sanitized_lines = sanitize_csharp_source(source).splitlines()
+        relative_path = normalize_path(path, repo_root)
+        line_execution_surfaces = extract_line_execution_surfaces_for_source(relative_path, source)
 
         for line_index, line in enumerate(sanitized_lines):
             if NATIVE_ARRAY_CONSTRUCTOR_RE.search(line):
@@ -198,7 +217,8 @@ def scan_source_tree(
         if not line_numbers:
             continue
 
-        relative_path = normalize_path(path, repo_root)
+        constructor_surfaces = tuple(resolve_line_execution_surface(line_execution_surfaces, line_number) for line_number in line_numbers)
+        execution_surface = summarize_execution_surfaces(constructor_surfaces)
         findings.append(
             FileFinding(
                 path=relative_path,
@@ -207,6 +227,8 @@ def scan_source_tree(
                 allowed=is_allowed_path(relative_path, allowed_suffixes),
                 allocator_counts=tuple(sorted(count_values(allocator_kinds).items())),
                 allocator_kinds=tuple(allocator_kinds),
+                execution_surface=execution_surface,
+                execution_surfaces=constructor_surfaces,
             )
         )
 
@@ -316,6 +338,103 @@ def sanitize_csharp_source(source: str) -> str:
     return "".join(result)
 
 
+def source_is_file_scoped_unity_editor_guard(source: str) -> bool:
+    meaningful_lines = [
+        line.strip().lstrip("\ufeff")
+        for line in source.splitlines()
+        if line.strip()
+    ]
+    return (
+        len(meaningful_lines) >= 2
+        and meaningful_lines[0] == "#if UNITY_EDITOR"
+        and meaningful_lines[-1] == "#endif"
+    )
+
+
+def extract_execution_surface_for_source(relative_path: str, source: str) -> str:
+    if source_is_file_scoped_unity_editor_guard(source):
+        return "Editor"
+
+    return extract_execution_surface(relative_path)
+
+
+def preprocessor_condition_surface(condition: str, parent_surface: str, default_surface: str) -> str:
+    normalized = condition.replace("(", " ").replace(")", " ").strip()
+    if "!UNITY_EDITOR" in normalized:
+        return default_surface
+    if "DEVELOPMENT_BUILD" in normalized:
+        return "Dev"
+    if "UNITY_EDITOR" in normalized:
+        return "Editor"
+
+    return parent_surface
+
+
+def extract_line_execution_surfaces_for_source(relative_path: str, source: str) -> list[str]:
+    default_surface = extract_execution_surface_for_source(relative_path, source)
+    raw_lines = source.splitlines()
+    surfaces: list[str] = []
+    stack: list[tuple[str, str, str, str]] = []
+    active_surface = default_surface
+
+    for raw_line in raw_lines:
+        stripped = raw_line.strip().lstrip("\ufeff")
+        if stripped.startswith("#if "):
+            parent_surface = active_surface
+            condition = stripped[4:].strip()
+            if_surface = preprocessor_condition_surface(condition, parent_surface, default_surface)
+            else_surface = default_surface if if_surface != parent_surface else parent_surface
+            stack.append((parent_surface, if_surface, else_surface, if_surface))
+            active_surface = if_surface
+            surfaces.append(active_surface)
+            continue
+        if stripped.startswith("#elif "):
+            if stack:
+                parent_surface, _, else_surface, _ = stack[-1]
+                condition = stripped[6:].strip()
+                active_surface = preprocessor_condition_surface(condition, parent_surface, default_surface)
+                stack[-1] = (parent_surface, active_surface, else_surface, active_surface)
+            surfaces.append(active_surface)
+            continue
+        if stripped == "#else":
+            if stack:
+                parent_surface, if_surface, else_surface, _ = stack[-1]
+                active_surface = else_surface
+                stack[-1] = (parent_surface, if_surface, else_surface, active_surface)
+            surfaces.append(active_surface)
+            continue
+        if stripped == "#endif":
+            if stack:
+                parent_surface, _, _, _ = stack.pop()
+                active_surface = stack[-1][3] if stack else parent_surface
+            surfaces.append(active_surface)
+            continue
+
+        surfaces.append(active_surface)
+
+    return surfaces
+
+
+def resolve_line_execution_surface(line_execution_surfaces: Sequence[str], line_number: int) -> str:
+    index = line_number - 1
+    if index < 0 or index >= len(line_execution_surfaces):
+        return RUNTIME_SURFACE
+
+    return line_execution_surfaces[index]
+
+
+def summarize_execution_surfaces(execution_surfaces: Sequence[str]) -> str:
+    if not execution_surfaces:
+        return RUNTIME_SURFACE
+
+    first_surface = execution_surfaces[0]
+    for surface in execution_surfaces:
+        if surface != first_surface:
+            return "Mixed"
+
+    return first_surface
+
+
 def is_job_scope(scope: TypeScope | None) -> bool:
     if scope is None:
         return False
@@ -373,24 +492,33 @@ def constructor_is_gate_relevant(execution_surface: str, allocator: str) -> bool
 
 
 def constructor_finding_to_dict(finding: FileFinding) -> dict[str, Any]:
-    execution_surface = extract_execution_surface(finding.path)
     line_numbers = list(finding.lines)
     allocator_kinds = list(finding.allocator_kinds)
+    line_execution_surfaces = list(finding.execution_surfaces)
+    if len(line_execution_surfaces) != len(line_numbers):
+        fallback_surface = finding.execution_surface or extract_execution_surface(finding.path)
+        line_execution_surfaces = [fallback_surface for _ in line_numbers]
+    execution_surface = finding.execution_surface or summarize_execution_surfaces(line_execution_surfaces)
     forbidden_lines: list[int] = []
     forbidden_allocators: list[str] = []
+    forbidden_surfaces: list[str] = []
     transient_lines: list[int] = []
     transient_allocators: list[str] = []
+    transient_surfaces: list[str] = []
 
     for index, line_number in enumerate(line_numbers):
         allocator = allocator_kinds[index] if index < len(allocator_kinds) else "Unknown"
+        line_surface = line_execution_surfaces[index]
         if finding.allowed:
             continue
-        if constructor_is_gate_relevant(execution_surface, allocator):
+        if constructor_is_gate_relevant(line_surface, allocator):
             forbidden_lines.append(line_number)
             forbidden_allocators.append(allocator)
+            forbidden_surfaces.append(line_surface)
         else:
             transient_lines.append(line_number)
             transient_allocators.append(allocator)
+            transient_surfaces.append(line_surface)
 
     forbidden_count = len(forbidden_lines)
     return {
@@ -400,14 +528,24 @@ def constructor_finding_to_dict(finding: FileFinding) -> dict[str, Any]:
         "allowed": finding.allowed or forbidden_count == 0,
         "pathAllowed": finding.allowed,
         "executionSurface": execution_surface,
+        "lineExecutionSurfaces": line_execution_surfaces,
+        "lineExecutionSurfaceCounts": count_values(line_execution_surfaces),
         "domain": extract_domain(finding.path),
         "allocatorCounts": dict(finding.allocator_counts),
         "allocatorKinds": allocator_kinds,
         "forbiddenCount": forbidden_count,
         "forbiddenLines": forbidden_lines,
+        "forbiddenLineExecutionSurfaces": forbidden_surfaces,
+        "forbiddenLineExecutionSurfaceCounts": count_values(forbidden_surfaces),
         "forbiddenAllocatorCounts": count_values(forbidden_allocators),
+        "forbiddenAllocatorCountsByExecutionSurface": count_allocator_values_by_surface(
+            forbidden_surfaces,
+            forbidden_allocators,
+        ),
         "transientEditorScratchCount": len(transient_lines),
         "transientEditorScratchLines": transient_lines,
+        "transientEditorScratchExecutionSurfaces": transient_surfaces,
+        "transientEditorScratchExecutionSurfaceCounts": count_values(transient_surfaces),
         "transientEditorScratchAllocatorCounts": count_values(transient_allocators),
     }
 
@@ -650,6 +788,8 @@ def scan_source_tree_with_declarations(
         except OSError as exc:
             raise OSError(f"failed to read {path}") from exc
         sanitized_lines = sanitize_csharp_source(source).splitlines()
+        relative_path = normalize_path(path, repo_root)
+        line_execution_surfaces = extract_line_execution_surfaces_for_source(relative_path, source)
 
         for line_index, line in enumerate(sanitized_lines):
             if NATIVE_ARRAY_CONSTRUCTOR_RE.search(line):
@@ -659,7 +799,11 @@ def scan_source_tree_with_declarations(
                     classify_constructor_allocator_at_line(sanitized_lines, line_index, source)
                 )
 
-        relative_path = normalize_path(path, repo_root)
+        constructor_surfaces = tuple(
+            resolve_line_execution_surface(line_execution_surfaces, line_number)
+            for line_number in constructor_lines
+        )
+        execution_surface = summarize_execution_surfaces(constructor_surfaces)
         file_declaration_findings: list[DeclarationFinding] = []
         if any(token in source for token in NATIVE_COLLECTION_TOKENS):
             file_declaration_findings = scan_native_collection_declarations_in_source(
@@ -680,6 +824,8 @@ def scan_source_tree_with_declarations(
                     allowed=is_allowed_path(relative_path, constructor_allowed_suffixes),
                     allocator_counts=tuple(sorted(count_values(constructor_allocator_kinds).items())),
                     allocator_kinds=tuple(constructor_allocator_kinds),
+                    execution_surface=execution_surface,
+                    execution_surfaces=constructor_surfaces,
                 )
             )
         declaration_findings.extend(file_declaration_findings)
@@ -703,28 +849,23 @@ def build_audit_payload(
     editor_offline_transient_scratch_direct = sum(
         int(finding["transientEditorScratchCount"])
         for finding in constructor_findings
-        if finding["executionSurface"] in EDITOR_OFFLINE_SURFACES
     )
-    forbidden_runtime_constructor_count = sum(
-        int(finding["forbiddenCount"])
-        for finding in constructor_findings
-        if int(finding["forbiddenCount"]) > 0 and finding["executionSurface"] == RUNTIME_SURFACE
+    forbidden_runtime_constructor_count = aggregate_constructor_count_for_surfaces(
+        constructor_findings,
+        "forbiddenLineExecutionSurfaceCounts",
+        {RUNTIME_SURFACE},
     )
-    forbidden_editor_offline_constructor_count = sum(
-        int(finding["forbiddenCount"])
-        for finding in constructor_findings
-        if int(finding["forbiddenCount"]) > 0 and finding["executionSurface"] in EDITOR_OFFLINE_SURFACES
+    forbidden_editor_offline_constructor_count = aggregate_constructor_count_for_surfaces(
+        constructor_findings,
+        "forbiddenLineExecutionSurfaceCounts",
+        EDITOR_OFFLINE_SURFACES,
     )
     forbidden_constructor_allocator_counts = aggregate_constructor_allocators(
         [finding for finding in constructor_findings if int(finding["forbiddenCount"]) > 0]
     )
-    editor_offline_forbidden_constructor_allocator_counts = aggregate_constructor_allocators(
-        [
-            finding
-            for finding in constructor_findings
-            if int(finding["forbiddenCount"]) > 0
-            and finding["executionSurface"] in EDITOR_OFFLINE_SURFACES
-        ]
+    editor_offline_forbidden_constructor_allocator_counts = aggregate_constructor_allocators_for_surfaces(
+        [finding for finding in constructor_findings if int(finding["forbiddenCount"]) > 0],
+        EDITOR_OFFLINE_SURFACES,
     )
     declaration_findings = tuple(declaration_findings or ())
     total_declarations = sum(finding.count for finding in declaration_findings)
@@ -770,10 +911,13 @@ def build_audit_payload(
         "totalDirectConstructors": total_direct,
         "allowedDirectConstructors": allowed_direct,
         "forbiddenDirectConstructors": forbidden_direct,
-        "directConstructorsByExecutionSurface": aggregate_current_findings_by_surface(constructor_findings),
-        "forbiddenDirectConstructorsByExecutionSurface": aggregate_current_findings_by_surface(
+        "directConstructorsByExecutionSurface": aggregate_constructor_surface_counts(
+            constructor_findings,
+            "lineExecutionSurfaceCounts",
+        ),
+        "forbiddenDirectConstructorsByExecutionSurface": aggregate_constructor_surface_counts(
             [finding for finding in constructor_findings if int(finding["forbiddenCount"]) > 0],
-            "forbiddenCount",
+            "forbiddenLineExecutionSurfaceCounts",
         ),
         "forbiddenDirectConstructorsByAllocator": forbidden_constructor_allocator_counts,
         "editorOfflineForbiddenDirectConstructorsByAllocator": editor_offline_forbidden_constructor_allocator_counts,
@@ -970,6 +1114,39 @@ def aggregate_current_findings_by_surface(
     return dict(sorted(result.items()))
 
 
+def aggregate_constructor_surface_counts(
+    findings: Sequence[dict[str, Any]],
+    counts_key: str,
+) -> dict[str, int]:
+    result: dict[str, int] = {}
+    for finding in findings:
+        surface_counts = finding.get(counts_key, {})
+        if not isinstance(surface_counts, dict):
+            continue
+        for surface, count in surface_counts.items():
+            key = str(surface)
+            result[key] = result.get(key, 0) + int(count)
+
+    return dict(sorted(result.items()))
+
+
+def aggregate_constructor_count_for_surfaces(
+    findings: Sequence[dict[str, Any]],
+    counts_key: str,
+    surfaces: Container[str],
+) -> int:
+    total = 0
+    for finding in findings:
+        surface_counts = finding.get(counts_key, {})
+        if not isinstance(surface_counts, dict):
+            continue
+        for surface, count in surface_counts.items():
+            if str(surface) in surfaces:
+                total += int(count)
+
+    return total
+
+
 def aggregate_constructor_allocators(findings: Sequence[dict[str, Any]]) -> dict[str, int]:
     result: dict[str, int] = {}
     for finding in findings:
@@ -979,6 +1156,25 @@ def aggregate_constructor_allocators(findings: Sequence[dict[str, Any]]) -> dict
         for allocator, count in allocator_counts.items():
             key = str(allocator)
             result[key] = result.get(key, 0) + int(count)
+
+    return dict(sorted(result.items()))
+
+
+def aggregate_constructor_allocators_for_surfaces(
+    findings: Sequence[dict[str, Any]],
+    surfaces: Container[str],
+) -> dict[str, int]:
+    result: dict[str, int] = {}
+    for finding in findings:
+        surface_allocator_counts = finding.get("forbiddenAllocatorCountsByExecutionSurface", {})
+        if not isinstance(surface_allocator_counts, dict):
+            continue
+        for surface, allocator_counts in surface_allocator_counts.items():
+            if str(surface) not in surfaces or not isinstance(allocator_counts, dict):
+                continue
+            for allocator, count in allocator_counts.items():
+                key = str(allocator)
+                result[key] = result.get(key, 0) + int(count)
 
     return dict(sorted(result.items()))
 

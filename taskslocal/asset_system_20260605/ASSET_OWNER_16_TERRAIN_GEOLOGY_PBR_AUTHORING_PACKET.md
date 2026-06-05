@@ -13,6 +13,7 @@ No Unity run, import edit, material edit, prefab edit, scene save, build, Play M
 - `.agents-skills/STRM_Async_Asset_Upload_Texture_Settings.txt`
 - `.agents-skills/QA_Evidence_Text_Filter_Audit.txt`
 - `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
+- `Docs/AssetAudit/VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.md`
 
 ## Route Blocker
 
@@ -45,6 +46,7 @@ Future terrain/geology proof must compare captures against:
 
 Required reference signals:
 
+- `VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.csv` rows `VREF-02`, `VREF-03`, `VREF-04`, `VREF-05`, `VREF-08`, `VREF-10`, `VREF-11`, `VREF-12`, `VREF-13`, `VREF-14`, and `VREF-15`: minimum owner-routing rows for terrain/geology proof.
 - `BEST ILLUST - ON SURFACE...png`: primary surface target. Terrain must support a bright readable coastline, wet shoreline rock, large-scale route silhouettes, dense vegetation contact, and premium water/sky/Aegir composition.
 - `CLIFFS AND WATER PREVIOUSLY IN DEVELOPMENT...jpg` and `CLIFFS SKY AND GAS GIANT PREVIOUSLY IN DEVELOPMENT...jpg.jpg`: previous direction evidence for stratified cliffs, waterline geometry, and gas-giant scale. These are not final acceptance without richer surface dressing and PBR proof.
 - `shallowwater.jpg`, `shallows.webp`, and `ubnautic.webp`: shallow substrate must show shell/sand/rock identity, water/terrain contact, caustic-readable surface detail, and route clarity.

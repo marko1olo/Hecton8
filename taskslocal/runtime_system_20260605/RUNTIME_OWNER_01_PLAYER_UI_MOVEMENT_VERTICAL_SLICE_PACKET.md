@@ -21,12 +21,18 @@ Parked work rejected: decorative UI chrome, fake screenshot-only HUD, shell/cont
 - `.agents-skills/ARCH_Global_Registry_ServiceLocator_DI_Init.txt`
 - `.agents-skills/ARCH_Signal_Lane_Segregation.txt`
 - `.agents-skills/CTRL_Device_Abstraction_Haptics.txt`
+- `.agents-skills/UI_Diegetic_Physical_Interfaces.txt`
 - `.agents-skills/UI_Data_Streaming_ZeroGC_Optimization.txt`
 - `.agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
 - `.agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
 - `.agents-skills/DBG_Telemetry_Crash_Reporting_PostMortem.txt`
 
 Root bibles read: `player.md`, `ui.md`, `input.md`, `gameplay.md`, `systems.md`, `performance.md`, `VISION_LOCKS.md`, `TASTE.md`.
+
+## Visual Proof Inputs
+
+- `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md` - mandatory user-facing visual reference digest for water, terrain, sky, flora, and UI. Runtime captures must be judged against this, not against static task prose.
+- `Docs/Reports/AssetSystem_20260605/H8_1475_VISUAL_REFERENCE_COMPARISON_TEMPLATE_20260605.md` - required template for `h8_1475_visual_reference_comparison.md` when movement/HUD captures are used in the h8_1475 proof packet.
 
 ## Static Candidate Anchors
 
@@ -66,6 +72,7 @@ These are static anchors only. Treat every activation claim as `PENDING VERIFICA
 - Do not change public interfaces in `Hecton8.Core.Contracts` without dependency proof and explicit approval.
 - Do not add a new global registry slot or signal lane unless owner-local/interface routes are proven insufficient and the route card can get `GREEN`.
 - Runtime hot paths: 0 B GC, no `Update/LateUpdate/FixedUpdate` gameplay truth except allowed presentation exceptions, no scene search, no hot `GlobalRegistry`, no runtime string formatting, no hot material clones.
+- Any capture used for h8_1475 visual proof must include `h8_1475_visual_reference_comparison.md` built from the current template and mandatory visual reference digest. Missing comparison keeps visual proof `PENDING VERIFICATION`.
 
 ## Implementation Tasks
 
@@ -95,7 +102,7 @@ These are static anchors only. Treat every activation claim as `PENDING VERIFICA
 21. Verify HUD text update route: `TMP_Text.SetCharArray`, `TmpTextNoAlloc`, `CharBufferPool`, or fixed buffers. No `TMP_Text.text`, interpolation, `ToString()`, `SetText(string)`, or runtime hierarchy hashing in hot update path.
 22. Verify UI visibility route: `CanvasGroup.alpha`, `interactable`, `blocksRaycasts`; no hot `SetActive` toggling for active HUD/menu state.
 23. Verify PDA/pause focus boundary: gameplay input lock, UI navigation action layer, default focus on open, cancel/close, save/load entry, rebinding entry, and return to gameplay without stale interaction locks.
-24. Checkpoint D: 720p, 16:9, 16:10, 21:9, and 4:3 UI screenshots. Capture normal, warning, disabled, menu-open, and rebinding states. Text clipping or unreadable instrument hierarchy is rejection.
+24. Checkpoint D: 720p, 16:9, 16:10, 21:9, and 4:3 UI screenshots. Capture normal, warning, disabled, menu-open, and rebinding states. Text clipping or unreadable instrument hierarchy is rejection. If these captures contribute to h8_1475 proof, create `h8_1475_visual_reference_comparison.md` from `H8_1475_VISUAL_REFERENCE_COMPARISON_TEMPLATE_20260605.md` and compare against the mandatory visual reference digest.
 
 25. Add or verify black-box telemetry for player critical state: last 300 frames of AUP/world position, velocity, movement mode, depth, underwater flag, oxygen, pressure/stress, input bitmask, active tool, interaction target hash, UI focus state, error flags, and owner frame id.
 26. Add or verify dump route on NaN/error. If no explicit agent ID is active at runtime, dump as `Docs/AgentLogs/Dump_PLAYER_UI_MOVEMENT_{timestamp}.bin` plus manifest. Do not allocate during hot telemetry writes.
@@ -119,6 +126,7 @@ Required files:
 - `profiler_summary.md`
 - `save_load_diff.md`
 - `black_box_dump_manifest.md`
+- `h8_1475_visual_reference_comparison.md` when movement/HUD captures are used for h8_1475 visual proof
 - screenshots:
   - `01_surface_coast_aegir_ui_on.png`
   - `02_underwater_0_5m_hud_prompt.png`

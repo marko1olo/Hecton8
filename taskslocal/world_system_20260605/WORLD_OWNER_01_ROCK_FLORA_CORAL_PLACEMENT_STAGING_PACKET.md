@@ -42,7 +42,8 @@ Mandates followed by this packet:
 - `.agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt`
 - `.agents-skills/STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`
 - `.agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
-- `.agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`
+- `.agents-skills/OPT_Premium_Approximation_Protocol.txt`
+- `Docs/ARCHITECTURE/PREMIUM_APPROXIMATION_LEDGER.md`
 - `.agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
 - `.agents-skills/DBG_Telemetry_Crash_Reporting_PostMortem.txt`
 
@@ -227,7 +228,7 @@ Checkpoint 3: if candidate proof is static-only, classify `CANDIDATE_POOL_BLOCKE
 
 16. Stage route composition in a no-save planning pass: landmark skeleton first, return-path anchors second, resource pocket support third, hazard edge support fourth, scenic density last.
 17. For every proposed cluster, write a one-line reason: what decision it sharpens and what physical fact justifies it. Delete cluster plans that cannot answer both.
-18. Define visual fake-first rules for flora motion, marine snow, fish cards, caustic/beam masks, and foam/contact support. Prefer shader/VFX/presentation fakes; physics only when gameplay truth requires it.
+18. Define premium approximation rules for flora motion, marine snow, fish cards, caustic/beam masks, and foam/contact support. Prefer authored shader/VFX/audio/haptic/UI/proxy approximation; physics only when gameplay truth requires it.
 19. Define continuous `GlobalQualityWeight` density curve: density, LOD residency, texture residency, shadow eligibility, VFX density, and diagnostic depth scale smoothly from 0.0 to 1.0.
 20. Define load-shed behavior: under VRAM/frame pressure, reduce optional density, texture residency, shadow eligibility, and VFX cadence before removing route-critical landmarks or material identity.
 

@@ -13,6 +13,7 @@ Runtime/import state: no images generated, no Unity import, no material binding,
 - `TASTE.md`
 - `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_REJECTION_20260605.md`
 - `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
+- `Docs/AssetAudit/VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.md`
 - `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md`
 - `Docs/AssetAudit/TEXTURE_AUTHORING_RECIPES_20260605.md`
 - `Docs/Reports/Batch31/3106_UNDERWATER_ROUTE_VOLUME_OWNER.md`
@@ -26,7 +27,8 @@ Runtime/import state: no images generated, no Unity import, no material binding,
 Mandates followed:
 
 - `.agents-skills/REND_VFX_Fluid_Aesthetics_Compute_Particles.txt`
-- `.agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`
+- `.agents-skills/OPT_Premium_Approximation_Protocol.txt`
+- `Docs/ARCHITECTURE/PREMIUM_APPROXIMATION_LEDGER.md`
 - `.agents-skills/STRM_Async_Asset_Upload_Texture_Settings.txt`
 - `.agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
 - `.agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt`
@@ -41,6 +43,8 @@ Removes source blockers for the first bright photic exit and first swim route. T
 Future source generation and Unity proof must compare contact sheets and route captures against:
 
 `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
+
+Required owner-routing rows: `VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.csv` `VREF-01`, `VREF-02`, `VREF-06`, `VREF-07`, `VREF-08`, `VREF-09`, `VREF-10`, `VREF-11`, `VREF-12`, `VREF-13`, and `VREF-14`.
 
 Reference signals by source family:
 

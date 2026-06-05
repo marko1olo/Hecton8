@@ -14,6 +14,7 @@ First-20 route moment: bright surface exit, ocean contact, shoreline/waterline r
 - `3DMODEL_TEXTURES_MATERIALS.md`
 - `3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md`
 - `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
+- `Docs/AssetAudit/VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.md`
 
 ## Exact Blocker
 
@@ -23,6 +24,7 @@ Flat/tiled foam contact is unacceptable for HECTON-8 surface, shoreline, and wat
 
 Mandatory reference alignment:
 
+- Use `VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.csv` rows `VREF-02`, `VREF-03`, `VREF-04`, `VREF-05`, `VREF-10`, `VREF-11`, `VREF-12`, `VREF-13`, and `VREF-15` before authoring or judging foam/contact maps.
 - Surface target: `BEST ILLUST` requires bright coastline/island composition, readable ocean/whitewater, dense alien vegetation or route scale cue, huge Aegir/gas-giant read, and layered clouds.
 - Shoreline target: previous-development cliff/water references require believable waterline contact, wet rock response, transparent shallows, and geometry-scale foam breakup.
 - Shallow target: `beauty`, `shallows`, `shallowwater`, and `ubnautic` require cyan readable water, caustic impression, sand/rock shelves, arches, flora/coral scale, and no empty plane concealed by foam.

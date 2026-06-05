@@ -16,12 +16,19 @@ RENDERER_PATH = ROOT / "Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs"
 MARINE_SNOW_COMPUTE_PATH = ROOT / "Assets/_Project/Art/Shaders/Hecton_MarineSnow.compute"
 HLSL_PATH = ROOT / "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl"
 HOMEOSTASIS_PATH = ROOT / "Assets/_Project/Scripts/Core/HomeostasisBrain.cs"
-DRS_ADAPTER_PATH = ROOT / "Assets/_Project/Scripts/Graphics/DRS/ThermalDynamicResolutionAdapter.cs"
+DRS_ADAPTER_PATH = ROOT / "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs"
 
 EXPECTED_SYSTEM_BITS = {
     "ParticleAdvection": 5,
     "VolumetricFogHighRes": 6,
     "NonCriticalVfx": 20,
+}
+
+TIER_CONSTANT_PREFIX = {
+    "Low": "MinimumQuality",
+    "Mid": "MiddleQuality",
+    "High": "MaximumQuality",
+    "Ultra": "OverkillQuality",
 }
 
 
@@ -52,6 +59,8 @@ def validate_tier_rows(data: dict, catalog: str) -> None:
 
     for tier in data["tierBudgets"]:
         tier_name = str(tier["tier"])
+        constant_prefix = TIER_CONSTANT_PREFIX.get(tier_name)
+        require(constant_prefix is not None, f"{tier_name} has no catalog constant prefix")
         particle_count = int(tier["particleCount"])
         marine_snow = int(tier["marineSnowCount"])
         bubbles = int(tier["bubbleCount"])
@@ -62,20 +71,22 @@ def validate_tier_rows(data: dict, catalog: str) -> None:
         require(particle_count <= max_threads, f"{tier_name} exceeds MX350 max dispatch threads")
         require(groups == int(tier["dispatchGroupsAt64Threads"]), f"{tier_name} group count mismatch")
 
-        require_catalog_constant(catalog, f"{tier_name}ParticleCount", particle_count)
-        require_catalog_constant(catalog, f"{tier_name}MarineSnowCount", marine_snow)
-        require_catalog_constant(catalog, f"{tier_name}BubbleCount", bubbles)
-        require_catalog_constant(catalog, f"{tier_name}DebrisCount", debris)
-        require_catalog_float_constant(catalog, f"{tier_name}StepDistanceMeters", float(tier["stepDistanceMeters"]))
-        require_catalog_constant(catalog, f"{tier_name}ShadowTaps", int(tier["shadowTaps"]))
-        require_catalog_constant(catalog, f"{tier_name}FlowResampleFrames", int(tier["flowResampleFrames"]))
+        require_catalog_constant(catalog, f"{constant_prefix}ParticleCount", particle_count)
+        require_catalog_constant(catalog, f"{constant_prefix}MarineSnowCount", marine_snow)
+        require_catalog_constant(catalog, f"{constant_prefix}BubbleCount", bubbles)
+        require_catalog_constant(catalog, f"{constant_prefix}DebrisCount", debris)
+        require_catalog_float_constant(catalog, f"{constant_prefix}StepDistanceMeters", float(tier["stepDistanceMeters"]))
+        require_catalog_constant(catalog, f"{constant_prefix}ShadowTaps", int(tier["shadowTaps"]))
+        require_catalog_constant(catalog, f"{constant_prefix}FlowResampleFrames", int(tier["flowResampleFrames"]))
 
 
 def validate_handoff_contract(data: dict, catalog: str, renderer: str, homeostasis: str, drs_adapter: str) -> None:
     require(data.get("targetConsumer") == "REND_DYNAMIC_RESOLUTION_ADAPTER", "wrong target consumer")
     require("ThermalDynamicResolutionAdapter" in drs_adapter, "DRS adapter class missing")
-    require("Dump_REND_DYNAMIC_RESOLUTION_ADAPTER.bin" in drs_adapter, "DRS adapter blackbox dump name missing")
     require("IDynamicResolutionRuntime" in drs_adapter, "DRS adapter runtime contract missing")
+    require("TelemetryCapacity = 300" in drs_adapter, "DRS adapter must retain 300-frame telemetry ring")
+    require("DumpFileName" in drs_adapter, "DRS adapter dump file route missing")
+    require("DumpBlackBoxOnce" in drs_adapter, "DRS adapter black-box dump method missing")
 
     binding_rows = {str(row["name"]): row for row in data["systemBitBindings"]}
     for name, bit_index in EXPECTED_SYSTEM_BITS.items():
@@ -85,7 +96,14 @@ def validate_handoff_contract(data: dict, catalog: str, renderer: str, homeostas
         require(int(row["bitIndex"]) == bit_index, f"{name} bitIndex drift")
         require(int(str(row["bitHex"]), 16) == expected_mask, f"{name} bitHex drift")
         enum_pattern = rf"{re.escape(name)}\s*=\s*1UL\s*<<\s*{bit_index}\b"
-        require(re.search(enum_pattern, homeostasis) is not None, f"Homeostasis SystemBit drift for {name}")
+        enum_direct = re.search(enum_pattern, homeostasis) is not None
+        enum_alias = False
+        alias_match = re.search(rf"{re.escape(name)}\s*=\s*(\w+)\b", homeostasis)
+        if alias_match is not None:
+            alias_name = alias_match.group(1)
+            alias_pattern = rf"{re.escape(alias_name)}\s*=\s*1UL\s*<<\s*{bit_index}\b"
+            enum_alias = re.search(alias_pattern, homeostasis) is not None
+        require(enum_direct or enum_alias, f"Homeostasis SystemBit drift for {name}")
         require(
             f"public const ulong {name}Mask = (ulong)SystemBit.{name};" in catalog,
             f"catalog mask binding missing {name}",
@@ -122,6 +140,10 @@ def validate_pressure_gates(data: dict, catalog: str, renderer: str, marine_snow
     require(float(pressure_rows[3]["emergencyMarineSnowMultiplier"]) == 0.5, "emergency snow multiplier must be 0.5")
 
     required_catalog_terms = (
+        "ResolveContinuousBudget",
+        "math.smoothstep(0f, 0.45f, q)",
+        "math.smoothstep(0.35f, 0.85f, q)",
+        "math.smoothstep(0.72f, 1f, q)",
         "pressureLevel >= 2",
         "pressureLevel == 1",
         "NonCriticalVfxMask",
@@ -139,7 +161,9 @@ def validate_pressure_gates(data: dict, catalog: str, renderer: str, marine_snow
     required_renderer_terms = (
         "HomeostasisBrain.PressureLevel",
         "HomeostasisBrain.CurrentKillSwitchMask",
-        "ResolveBudgetForPressure",
+        "BuildContinuousPressureBudget",
+        "BuildContinuousScalabilityParams",
+        "ResolveContinuousPoolCapacity",
         "ApplyKillSwitchCount",
         "VolumetricFogHighResMask",
         "ResolveEffectiveShadowTaps",
@@ -163,9 +187,9 @@ def validate_pressure_gates(data: dict, catalog: str, renderer: str, marine_snow
     )
 
     required_compute_terms = (
-        "if (_MarineSnowScalabilityParams.x <= 0.5)",
-        "return float3(0.0, 0.0, 0.0);",
-        "bool flowAdvectionEnabled = _MarineSnowScalabilityParams.x > 0.5;",
+        "float scalabilityQuality = saturate(_MarineSnowScalabilityParams.x * 0.5);",
+        "float highDetailWeight = smoothstep(0.5, 1.0, scalabilityQuality);",
+        "bool flowAdvectionEnabled = scalabilityQuality > EPSILON",
         "if (flowAdvectionEnabled)",
         "EvaluateShallowWaterFieldData(particle.Pos)",
         "particle.Vel.xz *= saturate(1.0 - dt * 2.0);",
@@ -176,13 +200,14 @@ def validate_pressure_gates(data: dict, catalog: str, renderer: str, marine_snow
 
 def validate_renderer_binding(renderer: str) -> None:
     required_bindings = (
-        "Mx350MarineSnowParticleCapacity = VfxComputeParticleBudgetCatalog.LowMarineSnowCount",
-        "MidMarineSnowParticleCapacity = VfxComputeParticleBudgetCatalog.MidMarineSnowCount",
-        "HighMarineSnowParticleCapacity = VfxComputeParticleBudgetCatalog.HighMarineSnowCount",
-        "UltraMarineSnowParticleCapacity = VfxComputeParticleBudgetCatalog.UltraMarineSnowCount",
+        "MinimumMarineSnowParticleCapacity = VfxComputeParticleBudgetCatalog.MinimumQualityMarineSnowCount",
+        "OverkillMarineSnowParticleCapacity = VfxComputeParticleBudgetCatalog.OverkillQualityMarineSnowCount",
+        "MaxMarineSnowParticleCapacity = OverkillMarineSnowParticleCapacity",
         "VfxComputeParticleBudgetCatalog.ApplyKillSwitchCount",
         "HomeostasisBrain.CurrentKillSwitchMask",
         "HomeostasisBrain.PressureLevel",
+        "BuildContinuousPressureBudget",
+        "ResolveContinuousPoolCapacity",
     )
     for binding in required_bindings:
         require(binding in renderer, f"renderer missing binding: {binding}")
@@ -223,6 +248,10 @@ def main() -> int:
     drs_adapter = DRS_ADAPTER_PATH.read_text(encoding="utf-8")
 
     require(data.get("status") == "VFX BUDGETED", "JSON status is not VFX BUDGETED")
+    require(
+        "Unity runtime and GPU profiler verification are still pending" in str(data.get("statusNote", "")),
+        "JSON must not imply runtime/GPU readiness",
+    )
     validate_tier_rows(data, catalog)
     validate_handoff_contract(data, catalog, renderer, homeostasis, drs_adapter)
     validate_pressure_gates(data, catalog, renderer, marine_snow_compute)

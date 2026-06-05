@@ -20,6 +20,7 @@ Route blocker mapped: future ocean owners get a narrow proof route instead of pr
 - `performance.md`
 - `Docs/AssetAudit/README.md`
 - `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
+- `Docs/AssetAudit/VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.md`
 
 ## Static Blockers
 
@@ -28,6 +29,7 @@ Route blocker mapped: future ocean owners get a narrow proof route instead of pr
 - Static material paths do not prove active renderer use, shader response, Crest binding, texture residency, frame time, or in-game water quality.
 - Surface, ocean skin, shoreline, sky, Aegir, clouds, moons, and photic shallows are bright-route content. Darkness, fog, bloom, vignette, storm grade, or exposure crush cannot be used to conceal weak water, foam, terrain, or celestial art.
 - Mandatory visual reference digest sets `BEST ILLUST` as the primary surface target: bright coastline/island, readable ocean/whitewater, dense alien vegetation or route scale cue, huge Aegir/gas-giant read, layered clouds, and no surface-dark concealment.
+- `VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.csv` rows `VREF-02`, `VREF-03`, `VREF-04`, `VREF-05`, `VREF-10`, `VREF-11`, `VREF-12`, `VREF-13`, and `VREF-15` are the minimum owner-routing rows for ocean/shoreline proof.
 
 ## Crest Boundary
 

@@ -179,7 +179,7 @@ The fullscreen Voronoi helper keeps squared cell distance and remaps line intens
 
 RenderGraph destination inherits active camera color format and strips depth, MSAA, mips, and auto-mips.
 
-This avoids fixed-format conversion risk while preserving the fullscreen visual fake.
+This avoids fixed-format conversion risk while preserving the fullscreen presentation approximation.
 
 
 

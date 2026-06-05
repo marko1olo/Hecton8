@@ -13,7 +13,7 @@ Full pre-distillation snapshot: `Docs/DEPRECATED/Root_Generated_Snapshots_2026-0
 
 - Runtime source and material assets own implementation details.
 - `Docs/PROJECT_BASELINE.md` owns global documentation boundaries.
-- `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md` owns approved fake-first rendering patterns.
+- `Docs/ARCHITECTURE/PREMIUM_APPROXIMATION_LEDGER.md` owns approved approximation-first rendering patterns.
 - Proof requires screenshots, render/debugger evidence, shader-variant evidence, GPU timing, or runtime logs. Static doctrine alone proves nothing.
 
 ## Surface Rules

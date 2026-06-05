@@ -21,7 +21,7 @@ Before coding or writing a technical report, read `2-8` mandates that match the 
 
 Minimum examples:
 
-- physics, movement, vehicles, collision: `PHYS_Physics_Integrity_Determinism_ForceMode.txt`, `CORE_Submarine_Vehicles_Kinematics_AUP.txt`, `MATH_Coordinate_Precision_AUP_FloatingOrigin.txt`, `OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`
+- physics, movement, vehicles, collision: `PHYS_Physics_Integrity_Determinism_ForceMode.txt`, `CORE_Submarine_Vehicles_Kinematics_AUP.txt`, `MATH_Coordinate_Precision_AUP_FloatingOrigin.txt`, `OPT_Premium_Approximation_Protocol.txt`
 - rendering, fog, light, particles: `REND_URP_Graphics_HotPath_Optimization_HLOD.txt`, `REND_Shader_Noir_Aesthetics_Dithering_Fog.txt`, `REND_Abyssal_Lighting_Voxel_Occlusion_Shadows.txt`, `REND_VFX_Fluid_Aesthetics_Compute_Particles.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
 - save, streaming, persistence: `DATA_Save_Persistence_Binary_Delta_Checksum.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`, `STRM_Persistent_Object_Registry.txt`
 - runtime DTOs, binary payloads, signal payloads: `DATA_Runtime_Struct_Layout_ARM64.txt`, `QA_Evidence_Text_Filter_Audit.txt`, `ARCH_Signal_Lane_Segregation.txt`
@@ -31,7 +31,7 @@ Minimum examples:
 
 ## Current Doctrine
 
-- Visual-realistic fake first. Simulate only gameplay truth.
+- Premium approximation first. Simulate only gameplay truth.
 - Any runtime system over `0.1ms` is suspicious until profiler proof and load-shed behavior exist.
 - No per-proton, per-droplet, per-bubble, per-cable-segment, or per-flora-blade truth by default.
 - Zero GC in hot paths remains non-negotiable.
@@ -64,7 +64,7 @@ When mandate text conflicts:
 
 1. `AGENTS.md` wins.
 2. A dated `2026-05-11` override in a mandate wins over older body text.
-3. `OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt` wins over simulate-first wording for water, light, deformation, pressure, flow, ambience, cable sag, particles, flora motion, and distant motion.
+3. `OPT_Premium_Approximation_Protocol.txt` wins over simulate-first wording for water, light, deformation, pressure, flow, ambience, cable sag, particles, flora motion, and distant motion.
 4. `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt` wins on frame, VRAM, RAM, quality-tier, and load-shed budgets.
 5. `OPT_Zero_GC_Policy_AllocFree_Mandate.txt` wins on allocation policy.
 6. `ARCH_Execution_Phases.txt` wins on runtime phase ownership.
@@ -80,7 +80,7 @@ When mandate text conflicts:
 ## Registry Buckets
 
 - `ARCH_*`: bootstrap, registry, service ownership, execution phases, signal lane segregation.
-- `OPT_*`: performance, zero-GC, native memory, cinematic-cheat doctrine.
+- `OPT_*`: performance, zero-GC, native memory, premium approximation doctrine.
 - `PHYS_*`: physics truth, contacts, kinematics, tether, fluid/incursion.
 - `REND_*`, `GPU_*`, `VOX_*`: rendering, VFX, shader, compute, voxel, MapMagic.
 - `CORE_*`: player-facing systems, submarine, tools, weather, damage, survival.

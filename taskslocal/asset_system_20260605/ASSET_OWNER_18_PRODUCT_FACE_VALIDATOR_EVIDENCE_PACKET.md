@@ -10,6 +10,7 @@ First-20 route blocker mapped: false promotion risk for visible product-face too
 
 - `.agents-skills/QA_Evidence_Text_Filter_Audit.txt`
 - `.agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt`
+- `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
 
 ## Evidence Boundary
 
@@ -19,6 +20,7 @@ These validators are editor source gates. Their findings are useful stop signals
 - Validator no-finding text, if any future run emits it, does not prove route visuals, active scene binding, import settings, VRAM, material-submit counts, shader variants, GC, frame time, screenshots, or player route quality.
 - A future batchmode log can raise the validator observation to `UNITY_CONSOLE` evidence for that editor run only. It still cannot prove in-game visuals.
 - Any claim beyond source inspection remains `PENDING_VERIFICATION` until backed by Unity readback, Game View and Scene View captures, Frame Debugger, profiler, memory, and route-scene artifacts.
+- Any future source cleanup or validator pass that affects water, terrain, sky/Aegir, flora/coral, UI/cockpit, product-face, or medium-depth route visuals must also compare captures against the mandatory visual-reference digest before promotion.
 
 ## Mapped Validators
 
@@ -130,6 +132,7 @@ Stop future promotion work if any of these appear:
 - Built-in primitive mesh appears on visible product-face prefab source or visible sky/ocean source.
 - Sky/Aegir/cloud/moon/ocean proof is attempted from orbit/prologue/static refs instead of `02_HECTON_WORLD` route readback.
 - Future evidence claims route visuals from static source, menu text, or batchmode log alone.
+- Future evidence omits mandatory digest comparison for a user-visible product-face, sky/ocean, shoreline, terrain, flora/coral, UI/cockpit, or medium-depth route result.
 - Any proposed fix uses raw YAML mutation, scene save without scoped dirty proof, runtime material clone, Crest wrapper, package default material, or darkness/fog/post to conceal weak art.
 
 ## Regression Model
@@ -158,5 +161,6 @@ These are checkpoints on one continuous `GlobalQualityWeight` curve, not binary 
 3. For any source cleanup, perform Unity-safe scoped edits only after process gate clears.
 4. Read back prefab assets and live `02_HECTON_WORLD` scene instances.
 5. Capture bright surface/photic screenshots, Frame Debugger, Stats, profiler, memory, and GC evidence before any visual route claim.
+6. Add a visual-reference comparison report citing `CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`; missing comparison keeps the result `PENDING_VERIFICATION`.
 
 Final status: `PENDING_VERIFICATION`.

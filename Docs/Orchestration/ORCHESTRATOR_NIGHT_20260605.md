@@ -5346,3 +5346,613 @@ Current state:
 
 - Static packet alignment only.
 - All four routes remain `PENDING_VERIFICATION` until source generation/import where applicable, Unity readback, route screenshots, Frame Debugger/Stats, memory/VRAM, GC/profiler, console, and visual reference comparison evidence exist.
+
+## 2026-06-05 Asset Reference Count Correction Cursor 69
+
+Current front:
+
+- Asset-only visual-reference routing and static proof hygiene.
+- No Unity, import, material, shader, scene, prefab, Addressables, build, Play Mode, screenshot, profiler, or `Assets` mutation was performed.
+
+Integrated artifacts:
+
+- `Docs/AssetAudit/VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.md`
+- `Docs/AssetAudit/VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.csv`
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.md`
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`
+- `Docs/AssetAudit/ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.md`
+- `Docs/AssetAudit/ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.csv`
+- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_WORKER_BOARD_20260605.md`
+- `Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.md`
+- `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md`
+- `Docs/AssetAudit/README.md`
+- `taskslocal/asset_system_20260605/README.md`
+
+Latest correction:
+
+- Boyle `019e98c4-cd8b-7021-a659-aba3d27c39b6` completed read-only verification and was closed.
+- Stale `H8_1475_READBACK_FIELD_MANIFEST_20260605.csv` count `120` was corrected to `123` in file map, next-action board, P0 routing synthesis markdown/CSV, and worker board.
+- P0 routing synthesis domain counts now match the actual readback manifest: player_hud=23, crest_ocean=16, terrain_material=14, product_face=13, sky_aegir=12, screenshots=9, no_mutation=8, proof_packet=7, process_gate=4, dirty_state=4, frame_debugger_stats=4, scalability=4, console_log=3, runtime_claims=2.
+- `VISUAL_REFERENCE_VS_CURRENT_REJECTION_MATRIX_20260605.md/.csv` is now represented in `ASSET_FRONT_FILE_MAP_20260605.md/.csv`.
+- `VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.md/.csv` maps `VREF-01` through `VREF-15` to owner packets for water, terrain, sky, flora, UI, cockpit, and h8_1475 proof execution.
+
+Latest validation:
+
+- Curated CSV parser: 51 files, 14497 data rows, zero schema/empty-cell errors.
+- `ASSET_FRONT_FILE_MAP_20260605.csv`: 105 rows, 7 columns, zero empty cells.
+- `ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.csv`: 5 rows, 14 columns, zero empty cells.
+- `VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.csv`: 15 rows, 9 columns, zero empty cells.
+- Scoped replacement-character scan on touched asset handoff files returned zero hits.
+- Scoped `git diff --check` passed with CRLF warnings only.
+
+Process/tooling gate:
+
+- CPU sample: 100.
+- Active blockers: `mcp-for-unity`, `Unity`, `Unity.ILPP.Runner`, `UnityPackageManager`, and multiple `UnityShaderCompiler`.
+- Unity readback/import/build/Play Mode/h8_1475 capture remains blocked.
+
+Current state:
+
+- Current mandatory reference folder remains `Docs/mandatory if you work on systems that user sees (water, terrain, sky, flora, ui) - read this and all images inside (references)/`.
+- Current VREF ledger remains `Docs/AssetAudit/VISUAL_REFERENCE_PATH_CONTINUITY_20260605.md/.csv`.
+- Contact sheet remains `Docs/AssetAudit/ContactSheets/mandatory_visual_references_current_20260605.png`.
+- All asset visual routes remain `PENDING_VERIFICATION`; no static document is visual acceptance.
+
+Next valid controller action:
+
+- Continue static/controller fronts while Unity gate is red.
+- Valid next static fronts: route VREF owner matrix into any remaining owner packets, extend water/terrain/sky/flora/UI source-side generation specs, or continue audio/texture source-side hygiene.
+- Do not run Unity proof, build, import mutation, prefab/material save, Addressables changes, h8_1475 capture, or runtime repair until process gate is clean and MCP/tooling state is available.
+
+## 2026-06-05 Visible Asset Packet VREF Alignment Cursor 70
+
+Current front:
+
+- Asset-only owner packet alignment for visible systems.
+- No Unity, import, material, shader, scene, prefab, Addressables, build, Play Mode, screenshot, profiler, code, or `Assets` mutation was performed.
+
+Integrated packets:
+
+- `taskslocal/asset_system_20260605/ASSET_OWNER_11_WATER_FOAM_CONTACT_AUTHORING_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_12_FLORA_PROXY_MATERIAL_REPLACEMENT_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_14_SKY_AEGIR_CLOUD_SLOT_PROOF_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_16_TERRAIN_GEOLOGY_PBR_AUTHORING_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_17_UI_OXYGEN_SPRITE_ATLAS_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_20_OCEAN_CREST_CONTACT_PROOF_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_24_PRODUCT_FACE_MATERIAL_REPAIR_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_25_PREFAB_PRIMITIVE_MESH_REPLACEMENT_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_27_UNDERWATER_VFX_SOURCE_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md`
+
+Latest change:
+
+- Each listed user-visible owner packet now names `Docs/AssetAudit/VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.md`.
+- Each listed packet has concrete VREF row routing for its domain:
+  - water/ocean/foam/contact: `VREF-02`, `VREF-03`, `VREF-04`, `VREF-05`, `VREF-10`, `VREF-11`, `VREF-12`, `VREF-13`, `VREF-15`;
+  - sky/Aegir: `VREF-03`, `VREF-05`, `VREF-15`;
+  - flora/coral/kelp: `VREF-02`, `VREF-06`, `VREF-07`, `VREF-08`, `VREF-09`, `VREF-10`, `VREF-11`, `VREF-12`;
+  - terrain/geology: `VREF-02`, `VREF-03`, `VREF-04`, `VREF-05`, `VREF-08`, `VREF-10`, `VREF-11`, `VREF-12`, `VREF-13`, `VREF-14`, `VREF-15`;
+  - UI/cockpit: `VREF-03`, `VREF-09`, `VREF-10`, `VREF-12`, `VREF-14`;
+  - underwater VFX: `VREF-01`, `VREF-02`, `VREF-06`, `VREF-07`, `VREF-08`, `VREF-09`, `VREF-10`, `VREF-11`, `VREF-12`, `VREF-13`, `VREF-14`;
+  - h8_1475 proof execution: owner matrix rows are now required input for `visual_reference_comparison.md`.
+
+Validation:
+
+- Matrix mention count check: all 10 listed packets contain `VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605`.
+- Scoped replacement-character scan on listed packets returned zero hits.
+- Scoped `git diff --check` passed with CRLF warnings only.
+
+Process/tooling gate:
+
+- Last gate remains red: CPU sample 100 with active `mcp-for-unity`, `Unity`, `Unity.ILPP.Runner`, `UnityPackageManager`, and multiple `UnityShaderCompiler`.
+- Unity readback/import/build/Play Mode/h8_1475 capture remains blocked.
+
+Current state:
+
+- Static packet alignment only.
+- All visual routes remain `PENDING_VERIFICATION` until source generation/import where applicable, Unity readback, route screenshots, Frame Debugger/Stats, memory/VRAM, GC/profiler, console, and VREF comparison evidence exist.
+
+## 2026-06-05 Controller Cursor 70
+
+Current front:
+
+- Runtime/player/HUD, h8_1475 proof discipline, MCP/tooling recovery, and visual rejection integration remain active.
+- Unity/API mutation remains blocked by process gate.
+- This pass did not edit `Assets`, scenes, prefabs, materials, project settings, Addressables, import settings, or raw YAML.
+
+Evidence refresh:
+
+- Process gate sample: CPU `100`.
+- Active blockers: `mcp-for-unity`, `Unity`, `Unity.ILPP.Runner`, `UnityPackageManager`, and multiple `UnityShaderCompiler`.
+- MCP HTTP log shows server `mcp-for-unity-server 3.4.1` running at `http://127.0.0.1:8088/mcp`, plugin `Hecton8` registered, and 30 tools synced from Unity.
+- Tooling existence does not clear the gate. Readback/import/build/Play Mode/h8_1475 capture remain blocked until a fresh safe process sample exists.
+
+Direct visual review:
+
+- Inspected `Docs/Reports/McpScreenshots/UnityMcp_MainCamera_20260605_surface_ocean_off_probe.png`.
+- Inspected `Docs/Reports/McpScreenshots/UnityMcp_MainCamera_20260605_surface_no_leftwall_ab2.png`.
+- Inspected `Docs/Reports/McpScreenshots/UnityMcp_MainCamera_20260605_surface_haze_ab1.png`.
+- Compared against `Docs/AssetAudit/ContactSheets/mandatory_visual_references_current_20260605.png`.
+- Verdict: rejected. Latest surface frames show rectangular horizon/sea slabs, flat dark or acid-turquoise water planes, disconnected island chunks, noisy black/acid terrain, weak Aegir integration, and blockout-looking foreground/tool geometry.
+- `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_REJECTION_20260605.md` was updated with this direct post-compaction image review.
+
+Last accepted/rejected evidence:
+
+- Accepted static proof boundary: curated asset CSV set remains 51 files, 14497 rows, zero schema/empty-cell errors from Cursor 69.
+- Rejected visual evidence: latest MCP surface screenshots remain diagnostic only and fail the mandatory reference floor.
+- Active runtime blocker: scene-local shell `Player` plus `HectonWorldShellController1428`/HUD overlay risks remain unresolved until Unity readback and repair packet execution.
+
+Next valid controller action:
+
+- Spawn independent static agents for MCP/readback preflight, h8_1475 anti-false-proof alignment, and runtime/UI/tool product-face crosswalk.
+- Continue local validation and memory integration while agents run.
+- Do not run Unity proof, build, import mutation, scene save, prefab/material save, Addressables changes, h8_1475 capture, or runtime repair until the gate is clean.
+
+## 2026-06-05 Controller Cursor 71
+
+Current front:
+
+- Subagent delegation failed externally. Local controller took over static packet work.
+- Unity/API mutation remains blocked by process gate.
+- This pass did not edit `Assets`, scenes, prefabs, materials, project settings, Addressables, import settings, or raw YAML.
+
+Subagent state:
+
+- Rawls `019e98db-1bf5-7861-ada1-de38cb8284db`: backend `403 Forbidden`; closed. No usable output.
+- Faraday `019e98db-48cc-7322-b20d-ec7f733f2eb5`: backend `403 Forbidden`; closed. No usable output.
+- Pascal `019e98db-8285-7613-a8eb-110d4d905a0a`: backend `403 Forbidden`; closed. No usable output.
+- Nietzsche `019e98dd-f5d3-7ac1-a060-3cc2627ff7ab`: backend `403 Forbidden`; closed. No usable output.
+
+Integrated local artifacts:
+
+- `taskslocal/runtime_system_20260605/RUNTIME_OWNER_05_MCP_GATE_AND_READBACK_RECOVERY_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_37_H8_1475_ANTI_FALSE_PROOF_ALIGNMENT_PACKET.md`
+- `Docs/Reports/RuntimeSystem_20260605/PLAYER_UI_TOOL_PRODUCT_FACE_CROSSWALK_20260605.md`
+- `Docs/Reports/RuntimeSystem_20260605/PLAYER_UI_TOOL_PRODUCT_FACE_CROSSWALK_20260605.csv`
+- `Docs/Reports/AssetSystem_20260605/PREMIUM_APPROXIMATION_RENAME_TRIAGE_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/PREMIUM_APPROXIMATION_RENAME_TRIAGE_20260605.csv`
+- `taskslocal/asset_system_20260605/README.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_WORKER_BOARD_20260605.md`
+
+Latest changes:
+
+- Runtime packet 05 now defines exact process/MCP/editor preflight before packet 04 can run player/HUD repair.
+- Asset packet 37 blocks false h8_1475 acceptance from shell-player, overlay-HUD, blockout-tool, landscape-only, or stale MCP screenshot evidence.
+- Runtime/product-face crosswalk maps active player, movement/swim, input, HUD, interaction, foreground tool, audio lifecycle, h8_1475 manifest, and visual floor into one proof route.
+- Premium approximation rename triage maps current packets still referencing the deleted cinematic-cheat mandate and points them to `.agents-skills/OPT_Premium_Approximation_Protocol.txt` plus `Docs/ARCHITECTURE/PREMIUM_APPROXIMATION_LEDGER.md`.
+- Asset static validation summary now includes the rename triage CSV.
+
+Validation:
+
+- `PLAYER_UI_TOOL_PRODUCT_FACE_CROSSWALK_20260605.csv`: 10 rows, 9 columns, zero empty cells.
+- `PREMIUM_APPROXIMATION_RENAME_TRIAGE_20260605.csv`: 15 rows, 7 columns, zero empty cells.
+- `ASSET_OWNER_37_H8_1475_ANTI_FALSE_PROOF_ALIGNMENT_PACKET.md`: 18 numbered tasks, zero replacement characters, zero four-question-mark placeholder runs.
+- `RUNTIME_OWNER_05_MCP_GATE_AND_READBACK_RECOVERY_PACKET.md`: 24 numbered tasks, zero replacement characters, zero four-question-mark placeholder runs.
+- Curated asset CSV parser: 52 files, 14514 data rows, zero schema/empty-cell errors.
+- Scoped replacement-character scan on touched controller files returned zero hits.
+- Scoped `git diff --check` passed with CRLF warnings only.
+
+Process/tooling gate:
+
+- CPU sample: 62.
+- Active blockers: `mcp-for-unity`, `Unity`, `Unity.ILPP.Runner`, `UnityPackageManager`, and multiple `UnityShaderCompiler`.
+- Unity readback/import/build/Play Mode/h8_1475 capture remains blocked.
+
+Current state:
+
+- Static/controller work only.
+- Latest MCP surface screenshots remain rejected diagnostic evidence.
+- h8_1475 cannot be accepted without active production player, HUD/visor/cockpit, foreground tool, movement/swim/input, VREF comparison, manifest/checksum/log, console, profiler/GC, memory/VRAM, and dirty-state proof.
+- Premium approximation rename does not relax the visual floor. Cheap flat fakes remain rejected.
+
+Next valid controller action:
+
+- Continue static/controller fronts while Unity gate is red.
+- Valid next static fronts: patch current packet references from old cinematic-cheat mandate to premium approximation, extend runtime repair packet with exact code-owner notes, or audit untracked shader/source artifacts for proof-language and Unity-import risk.
+- Do not run Unity proof, build, import mutation, prefab/material save, Addressables changes, h8_1475 capture, or runtime repair until process gate is clean and MCP/tooling state is available.
+
+## 2026-06-05 Controller Cursor 72
+
+Current front:
+
+- Premium approximation mandate rename cleanup was executed for current active packets/reports.
+- Unity/API mutation remains blocked by process gate.
+- This pass did not edit `Assets`, scenes, prefabs, materials, project settings, Addressables, import settings, or raw YAML.
+
+Integrated artifacts:
+
+- `taskslocal/world_system_20260605/WORLD_OWNER_01_ROCK_FLORA_CORAL_PLACEMENT_STAGING_PACKET.md`
+- `taskslocal/world_system_20260605/WORLD_OWNER_01_FIRST20_ROUTE_PLACEMENT_STAGING_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_14_SKY_AEGIR_CLOUD_SLOT_PROOF_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_24_PRODUCT_FACE_MATERIAL_REPAIR_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_25_PREFAB_PRIMITIVE_MESH_REPLACEMENT_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_26_UNITY_READBACK_NO_MUTATION_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_27_UNDERWATER_VFX_SOURCE_PACKET.md`
+- `Docs/Reports/AssetSystem_20260605/H8_1475_CANONICAL_SHOTLIST_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/PRODUCT_FACE_STATIC_EXECUTION_REFINEMENT_20260605.md/.csv`
+- `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_VS_CURRENT_REJECTION_MATRIX_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/PREMIUM_APPROXIMATION_RENAME_TRIAGE_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`
+
+Latest changes:
+
+- Replaced current active packet/report references to deleted `.agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt` with `.agents-skills/OPT_Premium_Approximation_Protocol.txt`.
+- Added `Docs/ARCHITECTURE/PREMIUM_APPROXIMATION_LEDGER.md` where current packets needed the architecture ledger.
+- Reworded current active `visual fake-first` prose to premium deterministic approximation language.
+- Kept `PREMIUM_APPROXIMATION_RENAME_TRIAGE_20260605.csv` as audit trail with old references; non-triage active files were patched.
+
+Validation:
+
+- Old mandate/old terminology grep in active current scopes excluding the triage audit file: 0 hits.
+- `PRODUCT_FACE_STATIC_EXECUTION_REFINEMENT_20260605.csv`: 14 rows, 10 columns, zero empty cells after row text update.
+- Curated asset CSV parser: 52 files, 14514 data rows, zero schema/empty-cell errors.
+- Scoped replacement-character scan on touched files: zero hits.
+- Scoped `git diff --check`: CRLF warnings only.
+
+Process/tooling gate:
+
+- CPU sample: 100.
+- Active blockers: `mcp-for-unity`, `Unity`, `Unity.ILPP.Runner`, `UnityPackageManager`, and multiple `UnityShaderCompiler`.
+- Unity readback/import/build/Play Mode/h8_1475 capture remains blocked.
+
+Current state:
+
+- Premium approximation cleanup is routing hygiene only. It does not approve cheap flat fakes, physical over-simulation, visual acceptance, or runtime readiness.
+- Latest MCP surface screenshots remain rejected diagnostic evidence.
+- h8_1475 and player/UI/movement proof remain blocked until process gate clears and runtime packet 05 then packet 04 execute.
+
+Next valid controller action:
+
+- Audit untracked shader/source artifacts and new MCP screenshot artifacts for proof-language, import-risk, and current visual-floor rejection while Unity gate remains red.
+- Do not run Unity proof, build, import mutation, prefab/material save, Addressables changes, h8_1475 capture, or runtime repair until process gate is clean and MCP/tooling state is available.
+
+## 2026-06-05 Controller Cursor 73
+
+Current front:
+
+- Surface horizon haze/untracked shader evidence was reviewed.
+- Unity/API readback remains blocked by process/tooling gate.
+- This pass did not edit `Assets`, scenes, prefabs, materials, project settings, Addressables, import settings, or raw YAML.
+
+Integrated artifact:
+
+- `Docs/AssetAudit/SURFACE_HORIZON_HAZE_1428_STATIC_REVIEW_20260605.md`
+
+Latest changes:
+
+- Added direct review of new diagnostic screenshots:
+  - `Docs/Reports/McpScreenshots/UnityMcp_MainCamera_20260605_surface_underwater_renderer_off_probe.png`
+  - `Docs/Reports/McpScreenshots/UnityMcp_MainCamera_20260605_surface_ocean_only_no_albedo_transparency_probe.png`
+  - `Docs/Reports/McpScreenshots/UnityMcp_MainCamera_20260605_surface_haze_ocean_ab5.png`
+  - `Docs/Reports/McpScreenshots/UnityMcp_MainCamera_20260605_surface_horizon_shader_ab4.png`
+- Verdict remains rejected. The new frames still show black horizon strips, acid/mint water planes, detached island blobs, weak shoreline contact, and weak Aegir integration.
+- `surface_haze_ocean_ab5` specifically proves the risk of `ZTest Always` haze: it hides the seam by turning shoreline into green milk. That is camouflage, not premium approximation.
+
+MCP/process state:
+
+- MCP health endpoint reported healthy, version `9.7.2b20260527052008`.
+- `/api/instances` returned an empty instance list at the check time.
+- A new Unity process then appeared with `Unity.ILPP.Runner` and `UnityPackageManager`; Unity startup/import gate is red.
+
+Validation:
+
+- Surface haze static review: zero replacement characters, zero four-question-mark placeholder runs.
+- Scoped `git diff --check`: CRLF warnings only.
+
+Current state:
+
+- The untracked shader `Assets/_Project/Art/Shaders/H8_SurfaceHorizonHaze_1428.shader` remains unaccepted source risk, not route proof.
+- Latest MCP screenshots remain rejection evidence, not h8_1475 or surface route proof.
+- Unity readback/import/build/Play Mode/h8_1475 capture remains blocked until process gate is clean and MCP has a current Unity instance.
+
+Next valid controller action:
+
+- Review and integrate the runtime P1 thermal DRS coroutine repair packet while Unity gate is red.
+- Do not run Unity proof, build, import mutation, prefab/material save, Addressables changes, h8_1475 capture, or runtime repair until process gate is clean and MCP/tooling state is available.
+
+## 2026-06-05 Visual Owner Packet Digest Propagation Cursor 71
+
+Current front:
+
+- Mandatory visual-reference digest linkage was propagated through the remaining non-audio, user-visible asset owner packets.
+- No Unity, import, material, shader, scene, prefab, SpriteAtlas, Addressables, code, build, Play Mode, screenshot, profiler, or `Assets` mutation was performed.
+
+Integrated artifacts:
+
+- `taskslocal/asset_system_20260605/ASSET_OWNER_01_UNITY_MATERIAL_READBACK.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_02_TEXTURE_AUTHORING.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_04_MESH_PREFAB_PROMOTION.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_05_UI_SPRITE_ROUTE.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_06_UNITY_READBACK_EXECUTION_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_07_TOOL_AND_ROUTE_EXECUTION_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_09_TEXTURE_MATERIAL_IMPORT_BLOCKERS_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_13_PRODUCT_FACE_PREFAB_PRIMITIVE_REPLACEMENT_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_15_ADDRESSABLES_ASSET_GROUP_EXECUTION_BLOCKERS_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_18_PRODUCT_FACE_VALIDATOR_EVIDENCE_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_21_TEXTURE_STREAMING_MIP_STATIC_RISK_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_22_PREFAB_COLLIDER_LOD_ROW_RISK_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_24_PRODUCT_FACE_MATERIAL_REPAIR_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_25_PREFAB_PRIMITIVE_MESH_REPLACEMENT_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_26_UNITY_READBACK_NO_MUTATION_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_34_ACTIVE_ROUTE_TRIAGE_PACKET.md`
+- `taskslocal/asset_system_20260605/README.md`
+
+Latest changes:
+
+- Visual/product-face packets now require `CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md` comparison before promotion where they touch water, terrain, sky/Aegir, flora/coral, UI/cockpit, shoreline, product-face, route VFX, h8_1475, or medium-depth route views.
+- Addressables and mip/streaming packets now reject memory/residency choices that preserve budgets by degrading mandatory-reference readability.
+- Validator and readback packets now require visual-reference comparison reports instead of allowing validator logs or raw screenshots to imply acceptance.
+- Remaining packets without digest linkage are audio-only or unreferenced-source cleanup review.
+
+Validation:
+
+- Remaining no-digest task packets: audio owner packets 03, 08, 10, 19, 23, 28, plus cleanup-review packet 35.
+- Asset-system scoped scan found zero exact stale static-proof labels.
+- Asset task packet mojibake/replacement scan found zero hits.
+- Scoped `git diff --check` passed with line-ending warnings only.
+
+Current state:
+
+- Static/controller packet alignment only.
+- Visual routes remain `PENDING_VERIFICATION` until Unity readback, route screenshots, Frame Debugger/Stats, memory/VRAM, GC/profiler, console, and mandatory visual-reference comparison artifacts exist.
+
+## 2026-06-05 H8_1475 Visual Comparison Template Cursor 72
+
+Current front:
+
+- The future `h8_1475_visual_reference_comparison.md` output now has a fixed static template and is linked into the h8_1475 proof chain.
+- No Unity, import, material, shader, scene, prefab, SpriteAtlas, Addressables, code, build, Play Mode, screenshot, profiler, or `Assets` mutation was performed.
+
+Integrated artifacts:
+
+- `Docs/Reports/AssetSystem_20260605/H8_1475_VISUAL_REFERENCE_COMPARISON_TEMPLATE_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/H8_1475_CANONICAL_SHOTLIST_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md`
+- `taskslocal/asset_system_20260605/README.md`
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.md`
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`
+- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md`
+
+Latest changes:
+
+- Added static template for future proof packet file `h8_1475_visual_reference_comparison.md`.
+- Template requires pass/fail fields for surface, shoreline, photic terrain, shallow underwater, medium depth, player/HUD, product-face, Crest readback, sky readback, terrain readback, and final packet completeness.
+- Shotlist, critique checklist, owner 36 packet, file map, synthesis, validation summary, and local asset README now point at the template.
+- `ASSET_FRONT_FILE_MAP_20260605.csv` now parses as 106 rows, 7 columns, zero empty cells.
+- Static validation summary now states 52 curated CSV files and 14514 data rows with zero empty cells.
+
+Validation:
+
+- Exact stale static-proof label scan returned zero hits.
+- Touched-file mojibake/replacement scan returned zero hits.
+- Scoped `git diff --check` passed with line-ending warnings only.
+
+Current state:
+
+- Static template only.
+- No screenshot, visual, Unity, profiler, memory, GC, build, or runtime acceptance exists.
+
+## 2026-06-05 Audio Route and Batch31 Static Reconciliation Cursor 73
+
+Current front:
+
+- Asset-only controller reconciliation continued while Unity/import/build gate stayed blocked.
+- No Unity, import, material, shader, scene, prefab, SpriteAtlas, Addressables, code, build, Play Mode, screenshot, profiler, or `Assets` mutation was performed.
+
+Integrated artifacts:
+
+- `Docs/AssetAudit/AUDIO_ROUTE_OWNER_REQUIREMENT_MATRIX_20260605.md`
+- `Docs/AssetAudit/AUDIO_ROUTE_OWNER_REQUIREMENT_MATRIX_20260605.csv`
+- `Docs/AssetAudit/BATCH31_LOCAL_PBR_IMPORT_INTENT_20260605.md`
+- `Docs/AssetAudit/BATCH31_LOCAL_PBR_IMPORT_INTENT_20260605.csv`
+- `Docs/AssetAudit/BATCH31_LOCAL_PBR_IMPORT_INTENT_20260605.json`
+- `Docs/AssetAudit/BATCH31_LOCAL_PBR_IMPORT_INTENT_STATIC_VALIDATION_20260605.md`
+- `Docs/AssetAudit/SURFACE_HORIZON_HAZE_1428_STATIC_REVIEW_20260605.md`
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.md`
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`
+- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_WORKER_BOARD_20260605.md`
+- `Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.md`
+- `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md`
+- `Docs/AssetAudit/README.md`
+- `taskslocal/asset_system_20260605/README.md`
+
+Latest changes:
+
+- Audio route matrix now maps 13 MusicDirector, player loop, ambience, UI, and VO blockers to owner packets 08, 10, 19, 23, and 28.
+- Batch31 local PBR import intent is indexed as sparse sidecar evidence, not a zero-empty curated CSV. Packed-mask rows remain blocked by MRAO/ARM channel semantics.
+- Surface horizon haze review remains a rejection artifact: untracked transparent `ZTest Always` haze and raw no-clip screenshots cannot prove surface/ocean/shoreline/sky quality.
+- `ASSET_FRONT_FILE_MAP_20260605.csv` now parses as 113 rows, 7 columns, zero empty cells.
+- Static validation summary now states 53 curated zero-empty CSV files and 14534 data rows.
+
+Validation:
+
+- Summary table parser matched every listed CSV against actual rows, columns, and empty-cell counts: 53 files, 14534 rows, zero mismatches.
+- `AUDIO_ROUTE_OWNER_REQUIREMENT_MATRIX_20260605.csv`: 13 rows, 13 columns, zero empty cells.
+- `BATCH31_LOCAL_PBR_IMPORT_INTENT_20260605.csv`: 21 rows, 38 columns, 36 intentional sparse cells; excluded from zero-empty curated set.
+- Touched-file replacement-character scan returned zero hits.
+- Scoped `git diff --check` passed with line-ending warnings only.
+
+Current state:
+
+- Static/controller routing only.
+- Current process gate sample: CPU `100`; active `Unity`, `Unity Hub`, and `mcp-for-unity`.
+- Unity readback/import/build/Play Mode remains blocked.
+
+## 2026-06-05 Batch31 Channel Semantics Decision Queue Cursor 74
+
+Current front:
+
+- Batch31 local PBR sources were inspected as static image/source prep only.
+- No Unity, import, material, shader, scene, prefab, Addressables, code, build, Play Mode, screenshot, profiler, or `Assets` mutation was performed.
+
+Integrated artifacts:
+
+- `Docs/AssetAudit/BATCH31_CHANNEL_SEMANTICS_DECISION_QUEUE_20260605.md`
+- `Docs/AssetAudit/BATCH31_CHANNEL_SEMANTICS_DECISION_QUEUE_20260605.csv`
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.md`
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`
+- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_WORKER_BOARD_20260605.md`
+- `Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.md`
+- `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md`
+- `Docs/AssetAudit/README.md`
+- `taskslocal/asset_system_20260605/README.md`
+
+Latest changes:
+
+- Added a 7-row Batch31 decision queue separating usable albedo/normal candidates from blocked MRAO-style packed-mask candidates.
+- Wet basalt is limited to shoreline/wet-rock source candidacy pending seam, macro-repeat, material, residency, and screenshot proof.
+- Photic seabed and shell sand are limited to shallow-route source candidacy pending distinct biome roles, seam/scale proof, material readback, and mandatory-reference screenshots.
+- All Batch31 packed-mask rows remain `BLOCKED_CHANNEL_SEMANTICS`; importing by `_MaskMap` or filename alone is rejected.
+- `ASSET_FRONT_FILE_MAP_20260605.csv` now parses as 115 rows, 7 columns, zero empty cells.
+- Static validation summary now states 54 curated zero-empty CSV files and 14543 data rows.
+
+Validation:
+
+- Summary table parser matched every listed CSV against actual rows, columns, and empty-cell counts: 54 files, 14543 rows, zero mismatches.
+- `BATCH31_CHANNEL_SEMANTICS_DECISION_QUEUE_20260605.csv`: 7 rows, 13 columns, zero empty cells.
+- Touched-file replacement-character scan returned zero hits.
+- Scoped `git diff --check` passed with line-ending warnings only.
+
+Current state:
+
+- Static/controller source QA only.
+- Current process gate sample after validation: CPU `76`.
+- Unity readback/import/build/Play Mode remains blocked by CPU policy.
+
+## 2026-06-05 H8_1475 Template Dependency Linkage Cursor 73
+
+Current front:
+
+- The h8_1475 visual comparison template was linked into the dependency graph, central asset index, and next-action board.
+- Existing stale static-proof wording in the h8_1475 readback manifest was corrected.
+- No Unity, import, material, shader, scene, prefab, Addressables, code, build, Play Mode, screenshot, profiler, or `Assets` mutation was performed.
+
+Integrated artifacts:
+
+- `Docs/AssetAudit/H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.md`
+- `Docs/AssetAudit/H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.csv`
+- `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md`
+- `Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.md`
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`
+- `Docs/AssetAudit/H8_1475_READBACK_FIELD_MANIFEST_20260605.md`
+
+Latest changes:
+
+- Dependency graph row 02 now names `H8_1475_VISUAL_REFERENCE_COMPARISON_TEMPLATE` as a required static input.
+- Dependency graph row 14 now requires `h8_1475_visual_reference_comparison.md` and rejects missing template-based comparison.
+- Central index and next-action board now expose the static template as a required h8_1475 proof-chain artifact.
+- `H8_1475_READBACK_FIELD_MANIFEST_20260605.md` status changed from stale static-proof wording to `STATIC_STRUCTURE_REVIEWED / PENDING UNITY PROOF`.
+
+Validation:
+
+- `ASSET_FRONT_FILE_MAP_20260605.csv`: 106 rows, 7 columns, zero empty cells.
+- `H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.csv`: 14 rows, 10 columns, zero empty cells.
+- Asset docs/task/orchestration exact stale static-proof label scan returned zero hits.
+- Touched h8 readback manifest mojibake/replacement scan returned zero hits.
+- Scoped `git diff --check` passed with line-ending warnings only.
+
+Current state:
+
+- Static routing/proof-template hygiene only.
+- h8_1475 remains blocked until clean process gate and no-mutation Unity proof execution.
+
+## 2026-06-05 Runtime Player/HUD Proof Packet Hygiene Cursor 74
+
+Current front:
+
+- Runtime/player/HUD packet hygiene continued while Unity/import/build/readback stayed blocked.
+- No Unity, Play Mode, import, build, profiler, scene, prefab, material, Addressables, code, or `Assets` mutation was performed.
+
+Integrated artifacts:
+
+- `taskslocal/runtime_system_20260605/README.md`
+- `taskslocal/runtime_system_20260605/RUNTIME_OWNER_01_PLAYER_UI_MOVEMENT_VERTICAL_SLICE_PACKET.md`
+- `taskslocal/runtime_system_20260605/RUNTIME_OWNER_02_SHELL_HUD_BLOCKER_REPAIR_PACKET.md`
+- `taskslocal/runtime_system_20260605/RUNTIME_OWNER_05_MCP_GATE_AND_READBACK_RECOVERY_PACKET.md`
+
+Latest changes:
+
+- Runtime packet index now names the mandatory visual reference digest and h8_1475 visual-reference comparison template as shared proof inputs.
+- Packet 01 now requires `h8_1475_visual_reference_comparison.md` when player movement/HUD captures feed h8_1475 visual proof.
+- Packet 02 now requires the same comparison artifact when shell/HUD repair captures feed h8_1475 proof.
+- Packet 05 now treats orchestration cursor references as authoring-time static evidence only; future owners must read the latest orchestration tail at execution time.
+- Ordinary runtime owners are explicitly told not to read `HECTON8_ORCHESTRATOR.md` unless assigned controller/orchestration work.
+
+Validation:
+
+- Runtime packet h8 visual-reference link scan found the expected links in README and packets 01, 02, 04, and 05.
+- Exact stale static-proof label scan over runtime packets, asset reports, asset audits, and this orchestration file returned zero hits.
+- Runtime packet mojibake/replacement-character scan returned zero hits.
+- Scoped `git diff --check` passed with line-ending warnings only.
+
+Process gate:
+
+- Current sample: CPU `53`; active processes: `Unity`, `Unity.ILPP.Runner`, `UnityPackageManager`, `UnityShaderCompiler`, `mcp-for-unity`.
+- Unity readback, import, build, Play Mode, profiler, screenshot, and MCP Unity-state probing remain blocked.
+
+Current state:
+
+- Static packet/proof-route hygiene only.
+- Runtime player, HUD, input, movement, save/load, GC, profiler, and visual quality remain `PENDING VERIFICATION`.
+
+## 2026-06-05 Runtime Crosswalk and DRS Packet Correction Cursor 75
+
+Current front:
+
+- Runtime/product-face crosswalk and DRS repair packets were corrected while Unity/import/build/readback stayed blocked.
+- No Unity, Play Mode, import, build, profiler, scene, prefab, material, Addressables, code, or `Assets` mutation was performed.
+
+Integrated artifacts:
+
+- `Docs/Reports/RuntimeSystem_20260605/PLAYER_UI_TOOL_PRODUCT_FACE_CROSSWALK_20260605.md`
+- `Docs/Reports/RuntimeSystem_20260605/PLAYER_UI_TOOL_PRODUCT_FACE_CROSSWALK_20260605.csv`
+- `Docs/Reports/RuntimeSystem_20260605/THERMAL_DRS_STATIC_DEFECT_ANCHORS_20260605.md`
+- `Docs/Reports/RuntimeSystem_20260605/THERMAL_DRS_STATIC_DEFECT_ANCHORS_20260605.csv`
+- `taskslocal/runtime_system_20260605/README.md`
+- `taskslocal/runtime_system_20260605/RUNTIME_OWNER_06_THERMAL_DRS_COROUTINE_REPAIR_PACKET.md`
+- `taskslocal/runtime_system_20260605/RUNTIME_OWNER_07_THERMAL_DRS_BLACKBOX_DUMP_ROUTE_PACKET.md`
+
+Latest changes:
+
+- Runtime/product-face crosswalk now names the mandatory visual reference digest and h8_1475 visual-reference comparison template.
+- Crosswalk CSV now requires `h8_1475_visual_reference_comparison.md` for h8_1475 manifest and visual-floor proof rows.
+- DRS coroutine repair packet now cross-links packet 07 so coroutine removal and black-box route repair happen in one source edit, compile, and profiler pass after process gate clears.
+- DRS black-box packet corrected its static facts: current source keeps fixed `Dump_13KRA.bin`, has no `File.*`/stream/`WriteAll*` write route, and marks `_blackBoxDumped = true` after hash calculation rather than after binary artifact write.
+- Added DRS static defect anchor report/CSV with seven source rows covering coroutine start, `IEnumerator`, `yield return`, `StopAllCoroutines`, stale dump const, null dump path, and missing file-write route.
+- Runtime index now states packet 07 must replace both stale filename and no-file-write black-box behavior with a deterministic owner/system binary dump route.
+- Runtime owner packet numbering corrected: MCP gate remains owner 05, DRS coroutine repair is owner 06, and DRS black-box dump route is owner 07. Duplicate owner 05 was removed from runtime packet routing.
+
+Validation:
+
+- `PLAYER_UI_TOOL_PRODUCT_FACE_CROSSWALK_20260605.csv`: 10 rows, 9 columns, zero empty cells.
+- `THERMAL_DRS_STATIC_DEFECT_ANCHORS_20260605.csv`: 7 rows, 7 columns, zero empty cells.
+- Full runtime report CSV parse: 7 files, 72 rows total, zero empty cells.
+- Runtime crosswalk/packet link scan found expected h8 comparison and DRS defect references.
+- Runtime owner-number scan: owners 01, 02, 04, 05, 06, and 07 each have exactly one packet.
+- Runtime packet/crosswalk exact stale static-proof label and mojibake/replacement-character scan returned zero hits.
+- Scoped trailing-whitespace scan returned zero hits.
+- Scoped `git diff --check` passed with line-ending warnings only.
+
+Current state:
+
+- Static source/report hygiene only.
+- DRS runtime defects remain present in source until a clean process gate permits code edit plus compile/profiler proof.
+- Unity readback/import/build/Play Mode remains blocked by the last recorded process gate.
+
+Process recheck:
+
+- Three-sample gate after this cursor: CPU `17`, `88`, `80`; only named watched process was `mcp-for-unity`.
+- Gate verdict remains blocked because two samples exceeded 50 percent even though Unity/import/compiler/package process names were absent.
+- Second three-sample gate: CPU `90`, `62`, `68`; active watched processes included `Unity`, `Unity.ILPP.Runner`, `UnityPackageManager`, `UnityShaderCompiler`, and `mcp-for-unity`.
+- Gate verdict remains blocked for source repair, Unity readback, import, build, Play Mode, profiler, screenshot, and MCP Unity-state probing.

@@ -29,6 +29,7 @@ Current controller limitation: MCP resources/templates were empty and `.kiro/set
 5. `Docs/AssetAudit/TEXTURE_MATERIAL_FAMILY_ROUTE_MATRIX_20260605.csv`
 6. `Docs/AssetAudit/AUDIO_PROFILE_ROUTE_MATRIX_20260605.csv`
 7. `taskslocal/asset_system_20260605/ASSET_OWNER_06_UNITY_READBACK_EXECUTION_PACKET.md`
+8. `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
 
 ## Execution Order
 
@@ -41,6 +42,8 @@ Current controller limitation: MCP resources/templates were empty and `.kiro/set
 | 5 | terrain/geology | Read back terrain/geology materials and candidate prefabs | Geology final validators after readback | Terrain screenshot, material/texture table, LOD/collider proof |
 | 6 | UI oxygen | Read back HUD sprite binding and atlas/import state | UI route table, IconBaker only as source prep | HUD screenshot, sprite/import/atlas table |
 | 7 | Addressables | Read current settings/groups/labels only | Addressables plan, no creation until owner decision | Settings/group/catalog table, handle/release plan |
+
+For rows 1, 2, 4, 5, and 6, the proof must also include digest comparison notes against `CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`. Missing comparison keeps the visual route `PENDING VERIFICATION`.
 
 ## Tool Selection Rules
 
@@ -62,6 +65,7 @@ Every execution output must state:
 - Low/Middle/High/Ultra consequence.
 - Regression model: CPU, GC, memory/VRAM, cadence, correctness.
 - Runtime proof absent or present, with artifact paths.
+- Mandatory visual-reference comparison state for water, terrain, sky/Aegir, flora, UI/cockpit, shoreline, or medium-depth route outputs.
 
 ## Stop Conditions
 
@@ -73,5 +77,6 @@ Stop and report without saving if:
 - Target material/prefab/scene needs a public API or project-setting change.
 - Crest material route would require a runtime wrapper/clone.
 - The visual route would rely on darkness, fog, bloom, or low-detail proxy content.
+- The output omits mandatory digest comparison for a user-visible route.
 
 Final status: `PENDING VERIFICATION`.

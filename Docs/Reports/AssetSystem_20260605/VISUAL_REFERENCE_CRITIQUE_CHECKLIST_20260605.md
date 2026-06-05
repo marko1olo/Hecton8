@@ -20,7 +20,8 @@ Current state remains rejected because the canonical proof packet is missing:
 
 ## Mandates Followed
 
-- `.agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`
+- `.agents-skills/OPT_Premium_Approximation_Protocol.txt`
+- `Docs/ARCHITECTURE/PREMIUM_APPROXIMATION_LEDGER.md`
 - `.agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt`
 - `.agents-skills/REND_Shader_Noir_Aesthetics_Dithering_Fog.txt`
 - `.agents-skills/REND_Abyssal_Lighting_Voxel_Occlusion_Shadows.txt`
@@ -35,6 +36,7 @@ Current reference folder: `Docs/mandatory if you work on systems that user sees 
 Path continuity ledger: `Docs/AssetAudit/VISUAL_REFERENCE_PATH_CONTINUITY_20260605.md/.csv`.
 Current contact sheet: `Docs/AssetAudit/ContactSheets/mandatory_visual_references_current_20260605.png`.
 Image-read digest: `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`.
+Comparison template: `Docs/Reports/AssetSystem_20260605/H8_1475_VISUAL_REFERENCE_COMPARISON_TEMPLATE_20260605.md`.
 
 Older reports may reference `Docs/OBYAZATELNYE PRIMERY PO KARTINKAM` or the Cyrillic basename. Those paths are stale in the current worktree. Use the continuity ledger before review.
 
@@ -71,6 +73,7 @@ The future `h8_1475` review must use these packet names from the proof execution
 - `h8_1475_crest_ocean_slots_inspector.png`
 - `h8_1475_terrain_material_slots_inspector.png`
 - `h8_1475_product_face_primitive_targets_inspector.png`
+- `h8_1475_visual_reference_comparison.md`, created from `H8_1475_VISUAL_REFERENCE_COMPARISON_TEMPLATE_20260605.md`
 
 Optional but preferred when safe:
 
@@ -80,6 +83,8 @@ Optional but preferred when safe:
 - `h8_1475_stats_overlay_surface_route.png`
 
 If any required view cannot be captured without mutation, the packet must include `ABORTED_<view>.md` with the failed prerequisite and last safe step. Missing view means `PENDING_VERIFICATION` or `REJECTED`, not pass.
+
+Missing `h8_1475_visual_reference_comparison.md` means `PENDING_VERIFICATION` even when screenshots exist.
 
 ## Critique Rules
 

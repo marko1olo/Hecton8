@@ -40,13 +40,16 @@ Mandates followed by this packet:
 - `.agents-skills/STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`
 - `.agents-skills/TOOL_Procedural_Wreckage_Generator.txt`
 - `.agents-skills/PHYS_Physics_Integrity_Determinism_ForceMode.txt`
-- `.agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`
+- `.agents-skills/OPT_Premium_Approximation_Protocol.txt`
+- `Docs/ARCHITECTURE/PREMIUM_APPROXIMATION_LEDGER.md`
 
 Static evidence used:
 
 - `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md`
 - `Docs/Reports/AssetSystem_20260605/ASSET_OWNER_18_PRODUCT_FACE_VALIDATOR_SYNTHESIS_20260605.md`
 - `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_REJECTION_20260605.md`
+- `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
+- `Docs/AssetAudit/VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.md`
 - `Docs/AssetAudit/PREFAB_FILE_TECHNICAL_PROPERTIES_20260605.md`
 - `Docs/AssetAudit/PREFAB_FILE_TECHNICAL_PROPERTIES_20260605.csv`
 - `Docs/AssetAudit/MODEL_FILE_IMPORT_RISK_MATRIX_20260605.md`
@@ -75,7 +78,7 @@ Hard target findings:
 - `Assets/_Project/Prefabs/Ocean_Crest.prefab`: validator reports `SargassumMicroFaunaBoids.boidMesh` uses Unity built-in primitive mesh `Plane`; static row shows `NO_STATIC_LODGROUP_TOKEN|BUILTIN_PRIMITIVE_MESH_REF`.
 - Narrow accepted Crest input exceptions are data-only: `Ocean_Crest/SargassumWaveDampingInput`, `Ocean_Crest/SargassumFoamDampingInput`, and `Ocean_Crest/SargassumOilFilmInput`. They do not authorize visible primitive product art.
 
-The visual reference rejection confirms that current route visuals are rejected and that placement camouflage is not allowed. Do not scatter rocks/flora/coral over failed water, terrain, sky, Aegir, shoreline, or ocean contact art to hide missing base quality.
+The visual reference rejection confirms that current route visuals are rejected and that placement camouflage is not allowed. The mandatory visual-reference digest plus `VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.csv` define the current image bar for bright surface, shoreline, photic, medium-depth, and cockpit/visor contexts. Do not scatter rocks/flora/coral over failed water, terrain, sky, Aegir, shoreline, or ocean contact art to hide missing base quality.
 
 ## Owned Future Scope
 
@@ -140,7 +143,7 @@ Checkpoint 1: reject any plan whose final visible asset still reads as cube, sph
 11. For `Ocean_Crest.prefab`, isolate only `SargassumMicroFaunaBoids.boidMesh`. Replace the built-in plane with an authored/generated micro-fauna card/impostor/VAT mesh source that has a silhouette reason and material route.
 12. Preserve Crest canonical asset materials. Do not write wrappers, material clones, runtime overrides, or custom Crest patch scripts.
 13. Verify the three accepted hidden input primitives remain data-input exceptions only and are not visible product art. Do not replace them unless future Crest owner proves they render visibly.
-14. Define micro-fauna visual fake route: designed impostor/card/VAT presentation is preferred over physical simulation. Proof must show it reads as sargassum/micro-fauna motion, not flat water camouflage.
+14. Define micro-fauna premium approximation route: designed impostor/card/VAT presentation is preferred over physical simulation. Proof must show it reads as sargassum/micro-fauna motion, not flat water camouflage.
 15. Require Frame Debugger/Game View proof that micro-fauna replacement does not cover broken foam, waterline, terrain, or ocean surface failures.
 
 Checkpoint 2: if the micro-fauna route cannot be visually proven without hiding water failure, mark `BLOCKED_BY_OCEAN_BASE_ART` and do not camouflage.
@@ -158,7 +161,7 @@ Checkpoint 3: if any scoped edit breaks scripts, anchors, sockets, prefab identi
 ### Phase 4 - Route Proof And Performance Guard
 
 21. Capture prefab proof views: textured render, flat-material render, wireframe, collider overlay, LOD transition, and material-ID or mask view for representative player/tool/resource/transport/sky/micro-fauna targets.
-22. Capture route proof in a valid proof packet under `Docs/Screenshots/HectonProofPackets/ASSET_OWNER_25_<session>/`: bright first-exit surface/photic view, held tool close view, resource pickup view, transport view, sky/Aegir/ocean context, and micro-fauna/ocean view when visible.
+22. Capture route proof in a valid proof packet under `Docs/Screenshots/HectonProofPackets/ASSET_OWNER_25_<session>/`: bright first-exit surface/photic view, held tool close view, resource pickup view, transport view, sky/Aegir/ocean context, and micro-fauna/ocean view when visible. Add digest comparison notes for every visible target.
 23. Record Unity Console/import state and Frame Debugger/Stats for product-face draws: SetPass, batches, material variants, shadow casters, LOD state, and whether GPU Resident Drawer/SRP Batcher compatibility is preserved.
 24. Record profiler/GC/memory evidence only if runtime behavior, prefab scripts, Addressables, renderer counts, colliders, or scene placement changed. Otherwise mark runtime performance `PENDING VERIFICATION`; do not invent 0 B/frame or frame-time numbers.
 25. Produce final owner log with exact files touched, exact prefab asset readback, active scene instance readback, proof artifact paths, rollback actions, remaining blocked targets, and low/middle/high/ultra consequences.
@@ -182,6 +185,7 @@ Required artifacts:
 - Collider report: `COL_*` child list, primitive/convex type, layer, trigger state, visual LOD0 MeshCollider misuse check.
 - Material report: `MAT_*` asset paths, shader, `TX_*` roles, channel semantics, compression/mip/import state, SRP Batcher/instancing note.
 - Screenshots: flat-material, final-material, wireframe, collider overlay, LOD transition, route capture, compact-readable capture, high/ultra enrichment capture where available.
+- Visual-reference comparison: explicit pass/fail notes against `CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md` for each relevant route capture.
 - Frame Debugger/Stats report for visible product-face route draws.
 - Profiler/GC/memory report if runtime placement, scripts, Addressables, renderer count, collider count, or scene state changed.
 
@@ -204,6 +208,7 @@ Abort and write a concise blocked note if any condition occurs:
 - Any replacement requires changing public API, project settings, package settings, Crest material ownership, MapMagic settings, or third-party asset internals.
 - Any route depends on a sibling agent artifact that is not already on disk. Mark `BLOCKED_BY_DEPENDENCY`; do not fabricate.
 - The visual replacement looks primitive, toy-like, flat, blurry, crayon-like, or below the Subnautica-level floor in surface/photic/medium-depth proof.
+- The proof packet omits mandatory visual-reference digest comparison for product-face targets visible in surface, shoreline, photic, medium-depth, sky/ocean, or cockpit/visor contexts.
 - The replacement hides weak water, terrain, sky, Aegir, foam, or shoreline art through placement, fog, darkness, bloom, or post.
 - Collider replacement changes player contact, interaction reach, docking/hand pose, harvest trigger, or traversal truth without owner approval.
 - LOD replacement causes silhouette collapse, hard pop, primitive fallback exposure, missing cull behavior, or unstable transition.

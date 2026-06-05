@@ -9,10 +9,10 @@
 This index lists all prepped packages in Batch 31 Promotion Prep (`PromotionPrep_20260605`).
 
 ## MRAO Preview Note
-The contact sheet and MRAO 2x2 previews are RGB inspection views that ignore alpha so packed channels are visible. The candidate texture alpha remains emission data and does not prove Unity import readiness.
+The contact sheet and MRAO 2x2 previews are RGB inspection views that ignore alpha so packed channels are visible. Candidate alpha is not shader-target proof and must not be treated as emission-ready for every target.
 
 ## Channel Semantics Block
-Batch31 source masks remain blocked because current project documents disagree between MRAO and ARM/_MaskMap channel conventions. The generated MRAO candidate files are inspection artifacts only, not import-ready material inputs.
+Batch31 source masks remain blocked because generated MRAO-style candidates are not production `_MaskMap` inputs by filename. Promotion requires a shader target plus serialized material layout proof: repack to ARM and set the target layout, or deliberately target an MRAO decoder.
 
 ## Contact Sheet
 - [Contact Sheet](file:///C:/hades/Hecton8/Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/Batch31_PromotionPrep_contact_sheet.png)

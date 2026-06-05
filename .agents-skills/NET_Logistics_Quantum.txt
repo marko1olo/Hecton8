@@ -27,7 +27,7 @@ Long-distance power state is synchronized by dirty graph components:
 
 ---
 
-## Cinematic Cheat
+## Premium Approximation
 
 Instant sync is allowed because player-facing power behavior is binary/low-frequency:
 - powered

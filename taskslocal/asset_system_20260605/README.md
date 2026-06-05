@@ -126,12 +126,17 @@ Current start-here navigator:
 - `Docs/AssetAudit/ContactSheets/mandatory_visual_references_current_20260605.png` is the contact sheet for the current 15-reference set.
 - `Docs/AssetAudit/VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.md/.csv` maps `VREF-01` through `VREF-15` to water, terrain, sky, flora, UI, cockpit, and h8_1475 proof owner packets.
 - `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md` is the current image-read digest for the mandatory visual references. Use it before water, terrain, sky, flora, UI, cockpit, shoreline, or h8_1475 visual proof work.
+- Current digest-linked visual/product-face packets: 01, 02, 04, 05, 06, 07, 09, 11-18, 20-22, 24-27, 34, and 36. Remaining no-digest packets are audio-only or unreferenced-source cleanup review, not current mandatory visual-reference scope.
 - `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.md/.csv` is the mandatory-reference critique checklist for future h8_1475 screenshot pass/fail review; it is not visual acceptance.
 - `Docs/Reports/AssetSystem_20260605/H8_1475_CANONICAL_SHOTLIST_20260605.md/.csv` is the canonical h8_1475 shotlist aligned to the image-read digest; it is not screenshot proof.
+- `Docs/Reports/AssetSystem_20260605/H8_1475_VISUAL_REFERENCE_COMPARISON_TEMPLATE_20260605.md` is the fixed template for the future proof-packet file `h8_1475_visual_reference_comparison.md`; it is not visual proof.
 - `Docs/AssetAudit/H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.md/.csv` orders the future no-mutation h8_1475 proof packet dependencies; it is not execution proof.
 - `Docs/AssetAudit/ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.md/.csv` is the compact crosswalk for assigning owners 24-36 from the P0 target/readback/capture tables.
 - `Docs/AssetAudit/ASSET_OWNER_PACKET_INDEX_20260605.md/.csv` maps asset owner IDs 01-36 and marks 29-33 as output-only target-table worker IDs.
-- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` records current static parse hygiene for 51 curated CSV files, including visual-reference critique, current visual-reference path continuity, VREF-to-owner requirement matrix, visual-reference current rejection matrix, h8_1475 canonical shotlist, audio P0 execution refinement, product-face execution refinement, and clean scoped audio CSVs outside `Docs/AssetAudit`.
+- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` records current static parse hygiene for 54 curated CSV files, including visual-reference critique, current visual-reference path continuity, VREF-to-owner requirement matrix, visual-reference current rejection matrix, h8_1475 canonical shotlist, audio P0 execution refinement, audio route owner matrix, Batch31 channel-semantics decision queue, product-face execution refinement, and clean scoped audio CSVs outside `Docs/AssetAudit`. Batch31 import-intent CSV is sparse sidecar evidence, not part of the zero-empty set.
+- `Docs/AssetAudit/AUDIO_ROUTE_OWNER_REQUIREMENT_MATRIX_20260605.md/.csv` maps current music, ambient, player-loop, UI, and VO blockers to owners 08, 10, 19, 23, and 28 before audio route execution.
+- `Docs/AssetAudit/BATCH31_LOCAL_PBR_IMPORT_INTENT_20260605.md/.csv/.json` plus `BATCH31_LOCAL_PBR_IMPORT_INTENT_STATIC_VALIDATION_20260605.md` are blocked static import-intent evidence for local PBR sources; do not import packed masks until the MRAO/ARM route is chosen and proven.
+- `Docs/AssetAudit/BATCH31_CHANNEL_SEMANTICS_DECISION_QUEUE_20260605.md/.csv` separates Batch31 usable albedo/normal source candidates from blocked packed-mask candidates before terrain, shoreline, or photic material owners act.
 - `Docs/AssetAudit/ASSET_AUTHORING_TOOL_INVENTORY_20260605.md/.csv` maps existing local offline/editor tools so future owners reuse known generators/scanners instead of inventing new ones.
 - `Docs/AssetAudit/AUDIO_PROFILE_ROUTE_MATRIX_20260605.md/.csv` maps MusicDirector/profile/cue-family blockers before audio owners touch route data.
 - `Docs/AssetAudit/AUDIO_SOURCE_FOLDER_ROUTE_MATRIX_20260605.md/.csv` maps audio source folders to long-bed, low-Q, direct-ref, placeholder, owner, and Addressables risks.
@@ -162,6 +167,7 @@ Current start-here navigator:
 - `taskslocal/asset_system_20260605/ASSET_OWNER_34_ACTIVE_ROUTE_TRIAGE_PACKET.md` is the exact packet for converting active GUID triage rows into owner execution without static-to-runtime promotion.
 - `taskslocal/asset_system_20260605/ASSET_OWNER_35_UNREFERENCED_SOURCE_CLEANUP_REVIEW_PACKET.md` is the exact packet for unreferenced source cleanup review; it is not deletion authorization.
 - `taskslocal/asset_system_20260605/ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md` is the exact packet for canonical h8_1475 no-mutation Unity proof execution after a clean process gate.
+- `taskslocal/asset_system_20260605/ASSET_OWNER_37_H8_1475_ANTI_FALSE_PROOF_ALIGNMENT_PACKET.md` is the exact packet for blocking false h8_1475 acceptance from shell-player, overlay-HUD, blockout-tool, landscape-only, or stale MCP screenshot evidence.
 
 Do not:
 
@@ -204,6 +210,7 @@ Task files:
 - `ASSET_OWNER_34_ACTIVE_ROUTE_TRIAGE_PACKET.md`
 - `ASSET_OWNER_35_UNREFERENCED_SOURCE_CLEANUP_REVIEW_PACKET.md`
 - `ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md`
+- `ASSET_OWNER_37_H8_1475_ANTI_FALSE_PROOF_ALIGNMENT_PACKET.md`
 
 Active follow-up workers:
 
@@ -251,6 +258,7 @@ Latest owner packets:
 - For active GUID route triage execution, use `ASSET_OWNER_34_ACTIVE_ROUTE_TRIAGE_PACKET.md`.
 - For unreferenced source cleanup review, use `ASSET_OWNER_35_UNREFERENCED_SOURCE_CLEANUP_REVIEW_PACKET.md`; never delete from the triage table alone.
 - For canonical h8_1475 proof execution, use `ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md`.
+- For h8_1475 anti-false-proof gating, use `ASSET_OWNER_37_H8_1475_ANTI_FALSE_PROOF_ALIGNMENT_PACKET.md` before accepting any screenshot packet that could bypass active production player, HUD, input, foreground tool, or VREF comparison proof.
 
 Recipe/spec handoff:
 

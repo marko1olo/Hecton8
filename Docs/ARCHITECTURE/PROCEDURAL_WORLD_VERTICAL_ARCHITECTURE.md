@@ -5,7 +5,7 @@ Status: ACTIVE ARCHITECTURE CONTRACT
 Owner: DOCS_ACTUALIZATION
 Evidence class: STATIC_DOC / STATIC_SOURCE
 
-Purpose: stable contract for vertical world composition, flooded-terrestrial geography, streaming ownership, and fake-first procedural presentation. This is not a generation progress report.
+Purpose: stable contract for vertical world composition, flooded-terrestrial geography, streaming ownership, and approximation-first procedural presentation. This is not a generation progress report.
 
 Full pre-distillation snapshot: `Docs/DEPRECATED/Root_Generated_Snapshots_2026-05-26/PROCEDURAL_WORLD_VERTICAL_ARCHITECTURE.md`.
 
