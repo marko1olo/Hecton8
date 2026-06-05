@@ -393,7 +393,7 @@ Additional completed orchestration updates:
 - `3108_FIRST20_STAKE_UI_ROUTE_OWNER` completed and agent closed. Static route/UI matrix only; runtime, Unity, profiler, GC, visual packet, and save/load proof pending.
 - `3110_LORE_WORLD_CONSISTENCY_OWNER` completed and agent closed. Copper remains Drill-gated and not first-route reachable; weakening Drill gate rejected; preferred reroute remains `Data_FiberKelp -> Comp_FiberMesh -> Comp_PressureSeal` with placement/fabricator/seal target/quest/save/Unity blockers.
 - `UNITY_OWNER_WORK_ORDER_SYNTHESIZER` completed and agent closed. Next Unity pass must be readback-first, with process gate clean, no scene save, no raw YAML, no Crest slot guessing, no movement/UI claim while shell owns tagged player.
-- `BATCH31_REPORT_REJECTION_AUDITOR` and `STATUS_WORDING_AND_BOARD_AUDITOR` completed and closed. Auditors reported no completed report falsely claims runtime/profiler/visual acceptance; scanned-file list lives in the auditor result, not this memory tail. Controller must downgrade all `STATIC VERIFIED`, `COMPLETE`, `PASS`, or `likely wired` wording to static/file-scope only unless Unity/Play/profiler/GC/screenshot/player-build proof is cited.
+- `BATCH31_REPORT_REJECTION_AUDITOR` and `STATUS_WORDING_AND_BOARD_AUDITOR` completed and closed. Auditors reported no completed report falsely claims runtime/profiler/visual acceptance; scanned-file list lives in the auditor result, not this memory tail. Controller must downgrade all `banned static-proof wording`, `COMPLETE`, `PASS`, or `likely wired` wording to static/file-scope only unless Unity/Play/profiler/GC/screenshot/player-build proof is cited.
 
 Currently active:
 
@@ -509,7 +509,7 @@ Stable docs updated for source coverage:
 Spawned active documentation workers:
 
 - Hilbert `019e94d8-383e-7eb3-a722-01293c768f97`: completed core signal/memory/persistence anchors in `Docs/SYSTEMS_CONTRACTS.md`, `Docs/ARCHITECTURE/GLOBAL_SIGNAL_CORRIDOR.md`, `Docs/ARCHITECTURE/SAVE_PAGING_PROTOCOL.md`, `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md`, `data.md`, and `persistence.md`; primary static checks passed with CRLF warnings only.
-- Euclid `019e94d8-af30-7202-bc96-194766d099fc`: completed scene/first-20/proof decision brief at `Docs/Reports/Batch31/FIRST20_SCENE_RESOURCE_PROOF_DECISION_BRIEF_20260605.md`; primary patched evidence wording from `STATIC VERIFIED`/`accepted` to static-reviewed/listed language.
+- Euclid `019e94d8-af30-7202-bc96-194766d099fc`: completed scene/first-20/proof decision brief at `Docs/Reports/Batch31/FIRST20_SCENE_RESOURCE_PROOF_DECISION_BRIEF_20260605.md`; primary patched evidence wording from `banned static-proof wording`/`accepted` to static-reviewed/listed language.
 - Russell `019e94e0-7d7f-7d60-a995-47353e0a5877`: completed water/vehicle/damage/lighting anchors in `water.md`, `physics.md`, `vehicles.md`, `logistics.md`, `lighting.md`, `Docs/ARCHITECTURE/HABITAT_LOGISTICS_GRAPH.md`, `Docs/ARCHITECTURE/Vehicle_Component_Damage_Router_SHINOBU_152.md`, `Docs/ARCHITECTURE/SHINOBU_151_DYNAMIC_POINT_LIGHT_CULLING_ROUTE_CARD.md`, `Docs/ARCHITECTURE/SHINOBU_251_SUBMARINE_ADDED_MASS_ROUTE_CARD.md`, and `Docs/ARCHITECTURE/SHINOBU_263_ANALYTICAL_GERSTNER_WAVE_SOLVER.md`; primary patched `water.md` static-proof wording to `STATIC_SOURCE_REVIEWED`; static checks passed with CRLF warnings only.
 - Singer `019e94e0-e383-7f70-9981-36e50c875061`: completed UI/sonar/visor/nav anchors in `ui.md`, `sonar.md`, `rendering.md`, `UI_DIEGETIC_HUD_STANDARDS.md`, `Docs/ARCHITECTURE/VISOR_AR_STENCIL_RENDERER.md`, and `Docs/ARCHITECTURE/SHINOBU_265_WATER_OPTICS_ROUTE_CARD.md`; `water.md` untouched; static checks passed with CRLF warnings only.
 - Pascal `019e94e2-68ef-7df0-ae00-fc0a9532bda7`: completed world/material/mining/flora/AI anchors in `shaders.md`, `world.md`, `terrain.md`, `voxels.md`, `tools.md`, `ai.md`, `creatures.md`, and `3DMODEL_FLORA_CORAL.md`; `SYSTEMS_CONTRACTS.md` and `rendering.md` not edited; static checks passed with CRLF warnings only.
@@ -526,7 +526,7 @@ Root bible evidence-header pass:
 
 Stable proof-language sweep:
 
-- Targeted grep over route bibles and `Docs/ARCHITECTURE` found one actionable root drift in `data.md`: static-only work told agents to use `STATIC VERIFIED`.
+- Targeted grep over route bibles and `Docs/ARCHITECTURE` found one actionable root drift in `data.md`: static-only work told agents to use `banned static-proof wording`.
 - Patched `data.md` to require `STATIC_SOURCE_REVIEWED` / `STATIC_DOC_REVIEWED`.
 - Remaining grep hits were negative rules, proof requirements, technical job-completion language, or `quality.md` label definitions; no runtime readiness claim accepted.
 
@@ -997,7 +997,7 @@ Local controller output:
 - Confirmed `Docs/AssetAudit/ASSET_ACTION_QUEUE_20260605.md` and `.csv` exist.
 - Current action queue: P0 = 4, P1 = 5, P2 = 2.
 - P0 blockers: rejected foam source active-reachable, `WorldProceduralProxy` flora/coral/kelp active scene materials, null MusicDirector music/stinger mixer groups, direct `Player.prefab` AudioClip refs.
-- Proof-language sweep found no `STATIC VERIFIED`, runtime-ready, Unity-verified, visual-pass, or final-acceptance claim in the scanned asset-front scope.
+- Proof-language sweep found no `banned static-proof wording`, runtime-ready, Unity-verified, visual-pass, or final-acceptance claim in the scanned asset-front scope.
 - Local diff whitespace check on new AssetSystem reports and this orchestration file passed.
 
 ## 2026-06-05 Lore System Resume After Compression
@@ -1016,7 +1016,7 @@ Process gate:
 Controller refresh:
 
 - 3211 Peirce completed and was closed. Created `P467_ATLAS6_PUBLIC_REPAIR_NETWORK_BRIDGE.production.md` plus 3211 Status/Rationale/LOG. Evidence class STATIC_DOC only.
-- 3212 Einstein produced `P468_XENON_OMEGA_PUBLIC_MATERIAL_BRIDGE.production.md` plus 3212 Status/Rationale/LOG. Controller corrected wording from `STATIC VERIFIED` to `STATIC_DOC_COMPLETE / RUNTIME_AND_NATIVE_REVIEW_PENDING` in 3212 Status/LOG.
+- 3212 Einstein produced `P468_XENON_OMEGA_PUBLIC_MATERIAL_BRIDGE.production.md` plus 3212 Status/Rationale/LOG. Controller corrected wording from `banned static-proof wording` to `STATIC_DOC_COMPLETE / RUNTIME_AND_NATIVE_REVIEW_PENDING` in 3212 Status/LOG.
 - P467/P468 UTF-8 static scan with explicit UTF-8: `U+FFFD=0`, `U+00C3=0`, `U+00D0=0`, `U+00D8=0`, `U+00E6=0`, `U+00EC=0`, `U+00D7=0`.
 - P467/P468 schema scan: 15 locale row headings, 1 `source_authority` row, 14 `draft_machine_or_llm` rows each.
 - 3213 Linnaeus remains active for `P469_AEGIR_RELAY_WINDOW_BRIDGE.production.md`; no disk output yet at refresh.
@@ -1114,7 +1114,7 @@ Controller integration:
 
 - 3215 Franklin completed and was closed.
 - Created `P470_KEELMARK_TONNE_WINDOW_BRIDGE.production.md`, `Status_3215.md`, and `LOG_3215.md`.
-- Controller corrected `Status_3215.md` wording from `STATIC VERIFIED` to `STATIC_DOC_COMPLETE / RUNTIME_AND_NATIVE_REVIEW_PENDING`.
+- Controller corrected `Status_3215.md` wording from `banned static-proof wording` to `STATIC_DOC_COMPLETE / RUNTIME_AND_NATIVE_REVIEW_PENDING`.
 - P470 static scan: 15 locale rows, 1 `source_authority`, 14 `draft_machine_or_llm`, `U+FFFD=0`.
 
 Controller action:
@@ -1217,7 +1217,7 @@ Controller integration:
 - 3218 Galileo completed and was closed.
 - Created `P472_TAU_CETI_PUBLIC_LEDGER_PRESSURE_BRIDGE.production.md`, `Status_3218.md`, `LOG_3218.md`, and `Rationale_3218.md`.
 - Controller static scan: 15 locale headings, 1 `source_authority`, 14 `draft_machine_or_llm`, `U+FFFD=0`, exact mojibake marker codepoints all 0.
-- Controller corrected `Status_3218.md` from `STATIC VERIFIED` to `STATIC_DOC_COMPLETE / RUNTIME_AND_NATIVE_REVIEW_PENDING`.
+- Controller corrected `Status_3218.md` from `banned static-proof wording` to `STATIC_DOC_COMPLETE / RUNTIME_AND_NATIVE_REVIEW_PENDING`.
 
 Active lore workers:
 
@@ -1283,7 +1283,7 @@ Controller integration:
 - Created `Status_3221.md`, `LOG_3221.md`, `Rationale_3221.md`, and `3221_RS093_ROUTE_CARD_SOURCE.md`.
 - 3221 exporter proof: `python Tools/AppliedLoreRouteCardExporter.py --root .` -> `applied_lore_route_cards=458`.
 - 3221 source-only audit proof: `AppliedLore source audit OK ... packets=464 rows=6960 graph_rows=464 route_cards=458 route_source_rows=458 ...`.
-- Controller corrected 3221 status/report wording from `STATIC VERIFIED` to `STATIC_SOURCE_AUDIT_PASSED / RUNTIME_AND_H8BIN_REVIEW_PENDING`.
+- Controller corrected 3221 status/report wording from `banned static-proof wording` to `STATIC_SOURCE_AUDIT_PASSED / RUNTIME_AND_H8BIN_REVIEW_PENDING`.
 
 RS093 state:
 
@@ -1488,7 +1488,7 @@ Controller integration:
 - 3222 Faraday output landed and worker was closed.
 - Created `P474_SOL_CORE_REMOTE_CLAIM_AUTHORITY_BRIDGE.production.md`, `Status_3222.md`, and `LOG_3222.md`.
 - Controller static scan: 15 locale headings, 1 `source_authority`, 14 `draft_machine_or_llm`, `U+FFFD=0`, exact mojibake marker codepoints all 0.
-- Controller corrected 3222 wording from `STATIC VERIFIED` to `STATIC_DOC_COMPLETE / RUNTIME_AND_NATIVE_REVIEW_PENDING`.
+- Controller corrected 3222 wording from `banned static-proof wording` to `STATIC_DOC_COMPLETE / RUNTIME_AND_NATIVE_REVIEW_PENDING`.
 
 RS093 source state:
 
@@ -1635,7 +1635,7 @@ Next action:
 Controller integration:
 
 - 3224 Gibbs completed `P475_CENTAURI_CHARTER_LEGITIMACY_BRIDGE.production.md`.
-- Controller corrected `Status_3224.md` from `STATIC VERIFIED` to `STATIC_DOC_COMPLETE / RUNTIME_AND_NATIVE_REVIEW_PENDING`.
+- Controller corrected `Status_3224.md` from `banned static-proof wording` to `STATIC_DOC_COMPLETE / RUNTIME_AND_NATIVE_REVIEW_PENDING`.
 - Static file-shape validation passed: 15/15 locale sections, 1 source_authority row, 14 draft_machine_or_llm rows, U+FFFD=0, explicit mojibake markers=0, runtime/DataMonolith/h8bin readiness claims=0.
 
 Active lore workers:
@@ -1678,7 +1678,7 @@ Controller static audit:
 
 - P461-P475 production packets checked for file-shape only.
 - Result: 15/15 locale sections each, 1 source_authority row each, 14 draft_machine_or_llm rows each, U+FFFD=0, explicit mojibake marker hits=0, readiness overclaim hits=0.
-- Current Batch32 proof-language sweep over reports/status/log/rationale found no remaining `STATIC VERIFIED` or `STATIC_VERIFIED` after correcting `Status_3209.md` and `3204_UTF8_MOJIBAKE_AND_CLONE_AUDIT.md`.
+- Current Batch32 proof-language sweep over reports/status/log/rationale found no remaining `banned static-proof wording` or `banned underscored static-proof wording` after correcting `Status_3209.md` and `3204_UTF8_MOJIBAKE_AND_CLONE_AUDIT.md`.
 
 Controller planning:
 
@@ -1766,7 +1766,7 @@ Process gate:
 
 Controller action:
 
-- Full P461-P479 packet shape audit passed: each has 15 unique locale headings, 1 source_authority row, 14 draft_machine_or_llm rows, U+FFFD=0, bracketed headings=0, explicit mojibake markers=0, and no `STATIC VERIFIED` wording.
+- Full P461-P479 packet shape audit passed: each has 15 unique locale headings, 1 source_authority row, 14 draft_machine_or_llm rows, U+FFFD=0, bracketed headings=0, explicit mojibake markers=0, and no `banned static-proof wording` wording.
 - Created task files for P480-P483 lower Deep Reach office packet expansion.
 - Updated `BATCH_INDEX.txt`.
 - Spawned 3229 Jason `019e9542-648b-7610-bf29-c2f9de68f2c1`.
@@ -1814,8 +1814,8 @@ Controller integration:
 
 - P480-P483 landed on disk before callbacks completed.
 - Controller validation for P480-P483 passed: each has 15 unique locale headings, 1 source_authority row, 14 draft_machine_or_llm rows, U+FFFD=0, bracketed locale/status headings=0, explicit mojibake markers=0, positive runtime/DataMonolith/h8bin/Unity/native/publication readiness claims=0.
-- P482 had overstrong `STATIC VERIFIED` wording in packet/status; controller downgraded to `STATIC_DOC_STRUCTURE_REVIEWED / RUNTIME_AND_NATIVE_REVIEW_PENDING`.
-- Batch32 current lore-front proof-language scan is clean for `STATIC VERIFIED`, `STATIC_VERIFIED`, and positive runtime/DataMonolith/h8bin/Unity/native/publication readiness claims.
+- P482 had overstrong `banned static-proof wording` wording in packet/status; controller downgraded to `STATIC_DOC_STRUCTURE_REVIEWED / RUNTIME_AND_NATIVE_REVIEW_PENDING`.
+- Batch32 current lore-front proof-language scan is clean for `banned static-proof wording`, `banned underscored static-proof wording`, and positive runtime/DataMonolith/h8bin/Unity/native/publication readiness claims.
 
 Active lore workers:
 
@@ -2322,7 +2322,7 @@ Integrated:
 - Gibbs `019e955b-3e2e-7912-b740-7019bb035586` closed and integrated.
   - Added `Docs/GeneratedAssets/README.md`, `Docs/GeneratedAssets/AssetSystem_20260605/README.md`, `Docs/GeneratedAssets/Gemini/README.md`, and `Docs/GeneratedAssets/Batch31_LocalPBR/README.md`.
   - Patched `Docs/GeneratedAssets/Gemini/README_GENERATION_QUEUE_20260604.md`.
-  - Controller check: `git diff --check` passed; static/no-import/no-runtime/no-visual-proof language exists; `STATIC VERIFIED` removed; `Docs/GeneratedAssets/Gemini/Outputs/Batch22` remains absent and is now documented as expected/future only.
+  - Controller check: `git diff --check` passed; static/no-import/no-runtime/no-visual-proof language exists; `banned static-proof wording` removed; `Docs/GeneratedAssets/Gemini/Outputs/Batch22` remains absent and is now documented as expected/future only.
 
 Dispatched:
 
@@ -3225,6 +3225,233 @@ Next valid orchestration move:
 
 - Create another isolated STATIC_DOC packet wave, or plan source admission only under a clean process gate with explicit source/bake owner. Source CSV, route-card, generated-page, h8bin, Unity, runtime, native localization, and publication claims remain forbidden from static bundles alone.
 
+## 2026-06-05 Documentation Completeness Continuation 48
+
+Integrated:
+
+- `Docs/Reports/DocumentationCompleteness_20260605/LORE_RS103_STATIC_RECHECK_20260605.md`.
+
+Validation:
+
+- RS103 manifest JSON parse: PASS.
+- RS103 bundle JSON parse: PASS.
+- Manifest/bundle packet counts: 3 / 3.
+- Missing localized surface keys: 0.
+- True readiness flags: 0.
+- P509-P512 static production packets: each has 15 locale headings, 1 source-authority row, and 14 draft rows.
+- UTF-8 BOM hits: 0.
+- U+FFFD hits: 0.
+- Mojibake marker hits: 0.
+
+Boundary:
+
+- RS103 remains static-source candidate evidence for P509-P511 only.
+- P512 remains STATIC_DOC only until a later release-set/source-admission owner handles it.
+- This is not native localization review, source CSV admission, route-card generation, h8bin/DataMonolith proof, Unity proof, runtime proof, website/wiki export proof, or publication readiness.
+
+## 2026-06-05 Documentation Completeness Continuation 49
+
+Correction:
+
+- The earlier RS102 mojibake block was stale against current disk evidence and relied on console-render symptoms instead of byte/codepoint proof.
+- Current RS102 static recheck over `RS102_PROOF_ORDER_RELATION_RECEIPT_BRIDGE.packets.json` and P506-P508 production packets:
+  - JSON parse: PASS.
+  - Manifest/bundle packet counts: 3 / 3.
+  - Locales per packet: 15.
+  - Required localized surface keys: present.
+  - UTF-8 BOM: absent.
+  - U+FFFD: 0.
+  - Latin-1/C1 mojibake marker/codepoint hits: 0.
+  - Arabic/Hebrew/CJK codepoint ranges are present where expected.
+  - Readiness flags remain false.
+
+Updated:
+
+- `Docs/Lore/AppliedContent/release_sets/RS102_PROOF_ORDER_RELATION_RECEIPT_BRIDGE.md`
+- `Docs/Lore/AppliedContent/release_sets/RS102_PROOF_ORDER_RELATION_RECEIPT_BRIDGE_manifest.json`
+- `Docs/Lore/AppliedContent/packets/RS102_PROOF_ORDER_RELATION_RECEIPT_BRIDGE.packets.json`
+- `Docs/Lore/AppliedContent/production_packets/P506_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE.production.md`
+- `Docs/Lore/AppliedContent/production_packets/P507_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE.production.md`
+- `Docs/Lore/AppliedContent/production_packets/P508_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE.production.md`
+- `Docs/Reports/Batch32/CONTROLLER_RS102_PROOF_ORDER_RELATION_RECEIPT_20260605.md`
+- `Docs/Reports/DocumentationCompleteness_20260605/LORE_RS102_MOJIBAKE_RECHECK_20260605.md`
+- `Docs/Reports/DocumentationCompleteness_20260605/DOC_COMPLETENESS_WORKER_BOARD_20260605.md`
+
+Boundary:
+
+- RS102 is static-source candidate only.
+- Non-English rows remain `draft_machine_or_llm`, not native-reviewed.
+- No source CSV admission, route-card generation, generated page, h8bin/DataMonolith bake, Unity placement, runtime string-pool extraction, public website/wiki export, or publication readiness is proven.
+
+## 2026-06-05 Asset Controller Continuation 48
+
+Current front:
+
+- User resumed autonomous work and current active scope is asset-only: textures, music/audio, meshes, materials, prefabs, source packs, proof routing.
+- The earlier lore continuation is not the active front for this pass.
+- Active owner: controller-local asset front.
+
+Last accepted evidence:
+
+- Static asset CSV parse hygiene only: 37 files, 14114 data rows, zero empty cells.
+- `ASSET_FRONT_FILE_MAP_20260605.csv` now parses as 68 rows.
+- Integrated target-table wave:
+  - `PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.csv`: 124 rows.
+  - `PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.csv`: 39 rows.
+  - `AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.csv`: 6 rows.
+  - `H8_1475_READBACK_FIELD_MANIFEST_20260605.csv`: 120 rows.
+  - `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.csv`: 7 rows.
+
+Last rejected evidence:
+
+- Product-face visuals remain rejected by `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_REJECTION_20260605.md`.
+- Current screenshots/readback state does not meet the surface/water/terrain/Aegir/reference floor.
+
+Updated:
+
+- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_WORKER_BOARD_20260605.md`
+- `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md`
+- `Docs/AssetAudit/README.md`
+- `taskslocal/asset_system_20260605/README.md`
+
+Current process gate:
+
+- CPU sample `76`.
+- Active blockers: `mcp-for-unity`, `Unity`, `Unity.ILPP.Runner`, `UnityPackageManager`, `UnityShaderCompiler`.
+- Unity readback/import/build/Play Mode remains blocked.
+
+Next valid action:
+
+- Run scoped static hygiene validation over touched asset docs.
+- Continue asset-only static/systematization while Unity gate is red.
+
+## 2026-06-05 Lore System Continuation 48
+
+Current front:
+
+- Active scope remains lore-system AppliedContent and future website/wiki/PDA/scanner/terminal/caption/string-pool integration metadata.
+- Active owner: controller-local with three completed lore packet workers.
+- Unity/build/source-bake/runtime work remains out of scope for this continuation.
+
+Integrated:
+
+- Worker STATIC_DOC wave completed P509-P511:
+  - Dalton `019e984e-adc0-7073-9ca9-50a8acce10d5`: `P509_PUBLIC_ARCHIVE_CUSTODY_DIVERGENCE_BRIDGE.production.md`
+  - Bacon `019e984e-cb02-7860-a60f-02e033d954e7`: `P510_SCANNER_CONFIDENCE_DOWNGRADE_REASON_BRIDGE.production.md`
+  - Aquinas `019e984e-ec9d-7990-89cd-8d112bb9112c`: `P511_PDA_EVIDENCE_FAMILY_REVIEW_PROMPT_BRIDGE.production.md`
+- Controller-local side packet completed:
+  - `P512_PUBLIC_ARCHIVE_DISPUTE_REASON_CODE_BRIDGE.production.md`
+- Controller-local source prep completed RS103 `RS103_CUSTODY_DOWNGRADE_REVIEW_BRIDGE` for P509-P511 only.
+- Output:
+  - `Docs/Lore/AppliedContent/release_sets/RS103_CUSTODY_DOWNGRADE_REVIEW_BRIDGE.md`
+  - `Docs/Lore/AppliedContent/release_sets/RS103_CUSTODY_DOWNGRADE_REVIEW_BRIDGE_manifest.json`
+  - `Docs/Lore/AppliedContent/packets/RS103_CUSTODY_DOWNGRADE_REVIEW_BRIDGE.packets.json`
+  - `Docs/Reports/Batch32/CONTROLLER_RS103_CUSTODY_DOWNGRADE_REVIEW_20260605.md`
+
+Validation:
+
+- P509-P512: 15 exact locale headings each; 1 source_authority row each; 14 draft_machine_or_llm rows each.
+- RS103 strict JSON parse PASS.
+- Manifest packet count 3.
+- Bundle packet count 3.
+- 15 locales per packet.
+- Required localized surface keys present.
+- UTF-8 BOM absent.
+- U+FFFD=0.
+- Explicit mojibake marker/codepoint hits=0.
+- Readiness flags false.
+
+Updated:
+
+- `Docs/Reports/Batch32/BATCH32_LORE_SYSTEM_LIVE_BOARD.md`
+- `Docs/Reports/Batch32/CONTROLLER_SOURCE_ADMISSION_LEDGER_P461_P491_20260605.md`
+- `Docs/Reports/Batch32/CONTROLLER_PACKET_AND_SOURCE_STATE_AUDIT_P461_P495_20260605.md`
+- `Docs/Reports/Batch32/CONTROLLER_NATIVE_LOCALIZATION_BACKLOG_P500_P508_20260605.md`
+
+Current state:
+
+- P461-P464 are source-admitted static-audited rows.
+- RS094 covers P467-P474 as STATIC_SOURCE candidate.
+- RS095 covers P465, P466, P475-P479 as STATIC_SOURCE candidate.
+- RS096 covers P480-P487 as STATIC_SOURCE candidate.
+- RS097 covers P488-P491 as STATIC_SOURCE candidate.
+- RS098 covers P492-P495 as STATIC_SOURCE candidate.
+- RS099 covers P496-P499 as STATIC_SOURCE candidate.
+- RS100 covers P500-P502 as STATIC_SOURCE candidate.
+- RS101 covers P503-P505 as STATIC_SOURCE candidate.
+- RS102 covers P506-P508 as STATIC_SOURCE candidate.
+- RS103 covers P509-P511 as STATIC_SOURCE candidate.
+- P512 remains STATIC_DOC only.
+
+Next valid orchestration move:
+
+- Create another isolated STATIC_DOC packet wave, or group P512 with later packets into a source-candidate set. Source CSV, route-card, generated-page, h8bin, Unity, runtime, native localization, and publication claims remain forbidden from static bundles alone.
+
+## 2026-06-05 Lore System Continuation 49
+
+Current front:
+
+- Active scope remains lore-system AppliedContent and future website/wiki/PDA/scanner/terminal/caption/string-pool integration metadata.
+- Active owner: controller-local.
+- Unity/build/source-bake/runtime work remains out of scope for this continuation.
+
+Integrated:
+
+- Controller-local STATIC_DOC wave completed P512-P514:
+  - `P512_PUBLIC_ARCHIVE_DISPUTE_REASON_CODE_BRIDGE.production.md`
+  - `P513_ARCHIVE_RESOLUTION_HOLD_PROMPT_BRIDGE.production.md`
+  - `P514_PDA_NEXT_PROOF_CHECKLIST_BRIDGE.production.md`
+- Controller-local source prep completed RS104 `RS104_DISPUTE_HOLD_CHECKLIST_BRIDGE` for P512-P514 only.
+- Output:
+  - `Docs/Lore/AppliedContent/release_sets/RS104_DISPUTE_HOLD_CHECKLIST_BRIDGE.md`
+  - `Docs/Lore/AppliedContent/release_sets/RS104_DISPUTE_HOLD_CHECKLIST_BRIDGE_manifest.json`
+  - `Docs/Lore/AppliedContent/packets/RS104_DISPUTE_HOLD_CHECKLIST_BRIDGE.packets.json`
+  - `Docs/Reports/Batch32/CONTROLLER_RS104_DISPUTE_HOLD_CHECKLIST_20260605.md`
+
+Validation:
+
+- P512-P514: 15 exact locale headings each; 1 source_authority row each; 14 draft_machine_or_llm rows each.
+- RS104 strict JSON parse PASS.
+- Manifest packet count 3.
+- Bundle packet count 3.
+- 15 locales per packet.
+- Required localized surface keys present.
+- UTF-8 BOM absent.
+- U+FFFD=0.
+- Explicit mojibake marker/codepoint hits=0.
+- Readiness flags false.
+
+Correction:
+
+- Prior console-render based mojibake wording on RS102 was corrected in the live board, ledger, and packet/source audit. Byte/codepoint validation over P506-P508 and RS102 is the accepted evidence; console rendering of RTL/CJK is not file proof.
+
+Updated:
+
+- `Docs/Reports/Batch32/BATCH32_LORE_SYSTEM_LIVE_BOARD.md`
+- `Docs/Reports/Batch32/CONTROLLER_SOURCE_ADMISSION_LEDGER_P461_P491_20260605.md`
+- `Docs/Reports/Batch32/CONTROLLER_PACKET_AND_SOURCE_STATE_AUDIT_P461_P495_20260605.md`
+
+Current state:
+
+- P461-P464 are source-admitted static-audited rows.
+- RS094 covers P467-P474 as STATIC_SOURCE candidate.
+- RS095 covers P465, P466, P475-P479 as STATIC_SOURCE candidate.
+- RS096 covers P480-P487 as STATIC_SOURCE candidate.
+- RS097 covers P488-P491 as STATIC_SOURCE candidate.
+- RS098 covers P492-P495 as STATIC_SOURCE candidate.
+- RS099 covers P496-P499 as STATIC_SOURCE candidate.
+- RS100 covers P500-P502 as STATIC_SOURCE candidate.
+- RS101 covers P503-P505 as STATIC_SOURCE candidate.
+- RS102 covers P506-P508 as STATIC_SOURCE candidate.
+- RS103 covers P509-P511 as STATIC_SOURCE candidate.
+- RS104 covers P512-P514 as STATIC_SOURCE candidate.
+
+Next valid orchestration move:
+
+- Create another isolated STATIC_DOC packet wave, or plan source admission only under a clean process gate with explicit source/bake owner. Source CSV, route-card, generated-page, h8bin, Unity, runtime, native localization, and publication claims remain forbidden from static bundles alone.
+
 ## 2026-06-05 Asset System Continuation 44
 
 Current front:
@@ -3287,3 +3514,381 @@ Process gate:
 
 - Latest sample: CPU `45`; active `mcp-for-unity`, `Unity`, `Unity.ILPP.Runner`, `UnityPackageManager`, and `UnityShaderCompiler`.
 - Unity/readback/import/build/Play Mode remains blocked.
+
+## 2026-06-05 Asset System Continuation 45
+
+Current front:
+
+- Asset-only orchestration remains active: textures, music/audio, meshes, materials, prefabs, scene-reachable asset routes, source packs, and proof routing.
+- No batch ID is active. No `Status_[ID]`, `Rationale_[ID]`, or `LOG_[ID]` files are authorized.
+
+Evidence refresh:
+
+- Latest accepted asset-front evidence remains static only.
+- Latest rejected Unity evidence remains the 2026-06-04 raw editor screenshot/quarantine-scene mutation note; it is not product proof.
+- Fresh process gate sample: CPU `16`; active `mcp-for-unity`, `Unity`, `Unity.ILPP.Runner`, `UnityPackageManager`, and `UnityShaderCompiler`. Unity/readback/import/build/Play Mode remains blocked.
+
+Local controller output:
+
+- Added `Docs/AssetAudit/ASSET_GUID_REFERENCE_MATRIX_20260605.md`.
+- Added `Docs/AssetAudit/ASSET_GUID_REFERENCE_MATRIX_20260605.csv`.
+- Added `Docs/AssetAudit/ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.md`.
+- Added `Docs/AssetAudit/ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.csv`.
+- Added `Docs/AssetAudit/ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.md`.
+- Added `Docs/AssetAudit/ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.csv`.
+- Static GUID matrix scope: asset-like files under `Assets` including textures, audio/music, models, materials, prefabs, scenes, scriptable/native assets, shader/VFX assets, sprite atlases, fonts, physics materials, and haptic assets.
+- Matrix counts: 7420 rows, 21 columns, zero empty cells.
+- Static reachability counts: 3932 referenced rows, 3488 unreferenced rows, 630 active `02_HECTON_WORLD` reachable rows, 25 direct audio scene/prefab review rows, 3090 non-first-party or legacy path rows, 46 large texture source rows >= 8 MB, and 12 large audio source rows >= 10 MB.
+- Active-route GUID triage counts: 800 rows, 15 columns, zero empty cells; 655 P0 active-route rows, 145 P1 scene-route rows, and 8 owner lanes.
+- Unreferenced source triage counts: 3488 rows, 15 columns, zero empty cells; 9 action buckets and 31 rows >= 8 MB.
+
+Controller updates:
+
+- Updated `Docs/AssetAudit/README.md`, `taskslocal/asset_system_20260605/README.md`, `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.md/.csv`, `Docs/Reports/AssetSystem_20260605/ASSET_WORKER_BOARD_20260605.md`, `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`, `Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md`, and `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md`.
+- Current static CSV parse after integration and later P0 target-table wave: 37 files, 14114 data rows, zero empty cells.
+
+Boundary:
+
+- No `Assets/` mutation, no raw YAML patch, no Unity import/readback/build, no Addressables settings/group/key/catalog edits, no prefab/material/scene save, and no runtime/visual/audio acceptance claim.
+- Evidence class remains `STATIC_SOURCE` and `STATIC_DOC`.
+
+## 2026-06-05 Documentation Completeness Continuation 33
+
+Current front:
+
+- User resumed the documentation-completeness objective after compaction/resume: all documentation actuality and completeness for systems, scripts, support docs, lore, and proof routing.
+- Newer asset-system continuation above is a separate independent lane. The active user request for this continuation is documentation.
+
+Evidence refresh:
+
+- Read tail of this orchestration memory.
+- Read `HECTON8_ORCHESTRATOR.md`.
+- Inspected newest `Docs/Reports/DocumentationCompleteness_20260605` reports.
+- Sampled active Unity/build state: CPU `24.7`; Unity, Unity ILPP, UnityPackageManager, and UnityShaderCompiler active. No build/import/Play Mode/profiler command launched.
+- Current worktree has unrelated existing changes to `AGENTS.md`, `Assets/_Project/Prefabs/Sky_System.prefab`, `CON`, and an asset-system report. Documentation continuation does not touch them.
+
+Integrated:
+
+- Added `Docs/Reports/DocumentationCompleteness_20260605/SOURCE_ROUTING_FAMILY_AUDITS_SYNTHESIS_20260605.md`.
+- Added `Docs/Reports/DocumentationCompleteness_20260605/README.md`.
+- Added `taskslocal/documentation_completeness_20260605/DOC_SOURCE_ROUTING_SHARED_DOC_PATCH_PACKET.txt`.
+- Updated `Docs/Reports/README.md` with current 2026-06-05 evidence-snapshot fronts.
+- Updated `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md` with the 2026-06-05 documentation-completeness static refresh.
+- Updated `taskslocal/documentation_completeness_20260605/BATCH_INDEX.txt`.
+- Updated `Docs/Reports/DocumentationCompleteness_20260605/DOC_COMPLETENESS_WORKER_BOARD_20260605.md`.
+- Updated `Docs/Reports/DocumentationCompleteness_20260605/DOC_COMPLETENESS_SYNTHESIS_AND_PATCH_QUEUE_20260605.md`.
+
+Static findings:
+
+- The four source-routing family audits are now synthesized into one shared-doc patch queue.
+- Counts overlap across families and must not be summed globally.
+- The issue is routing precision, not new runtime overclaim: broad folder rows and short path mentions are too weak for exact source-owner routing.
+
+Next action:
+
+- Dispatch exactly one worker for `Docs/ARCHITECTURE/SOURCE_SYSTEMS_REALITY_MAP.md` and `Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md` using `DOC_SOURCE_ROUTING_SHARED_DOC_PATCH_PACKET.txt`.
+- Keep all Unity/build/import/runtime proof claims pending.
+
+## 2026-06-05 Documentation Completeness Continuation 34
+
+Integrated:
+
+- Epicurus `019e9844-2e97-73a1-9fc7-43802da5a1f1` executed `taskslocal/documentation_completeness_20260605/DOC_SOURCE_ROUTING_SHARED_DOC_PATCH_PACKET.txt`.
+- Changed files:
+  - `Docs/ARCHITECTURE/SOURCE_SYSTEMS_REALITY_MAP.md`
+  - `Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md`
+- Added grouped exact-anchor overlays for core execution, signals, DataVault/H8Memory, SaveSystem, Data Monolith, tools, UI/PDA/visor/sonar, audio/VFX/rendering/water, world/streaming/voxel/biome, player/physics/survival/vehicles, and AI/fauna/ecosystem/narrative/quest/modding/plugin companion gaps.
+- Updated controller files and indexes:
+  - `Docs/Reports/DocumentationCompleteness_20260605/DOC_COMPLETENESS_SYNTHESIS_AND_PATCH_QUEUE_20260605.md`
+  - `Docs/Reports/DocumentationCompleteness_20260605/DOC_COMPLETENESS_WORKER_BOARD_20260605.md`
+  - `Docs/Reports/DocumentationCompleteness_20260605/README.md`
+  - `taskslocal/documentation_completeness_20260605/BATCH_INDEX.txt`
+  - `taskslocal/documentation_completeness_20260605/DOC_SOURCE_ROUTING_SHARED_DOC_PATCH_PACKET.txt`
+
+Validation:
+
+- `git diff --check -- Docs/ARCHITECTURE/SOURCE_SYSTEMS_REALITY_MAP.md Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md` passed with LF-to-CRLF warnings only.
+- Concrete source-anchor scan across those two docs: `282` concrete `Assets/_Project/Scripts/*.cs` anchors, `0` missing concrete anchors.
+- Rejected-readiness phrase scan returned no hits.
+
+Boundary:
+
+- Static documentation/source routing only.
+- No Unity, build, import, Play Mode, profiler, visual, save/load, platform, Data Monolith, or first-20 route proof produced.
+
+## 2026-06-05 Documentation Completeness Continuation 35
+
+Control-doc metadata scan:
+
+- Scoped control markdown files: root `*.md`, `Docs/*.md`, `Docs/ARCHITECTURE/*.md`, `Docs/*/README.md`, and `Docs/*/*/README.md`.
+- Excluded archives, deprecated folders, report bodies, task/log files, and bulk article/content files.
+- Initial scan: `75` control docs, missing `Status:` `1`, missing `Evidence class:` `8`, missing static/pending boundary marker `5`.
+
+Patched:
+
+- `3DMODEL_EQUIPMENT_PROPS.md`
+- `3DMODEL_FAUNA.md`
+- `3DMODEL_GEOLOGY_ROCKS.md`
+- `3DMODEL_HARD_SURFACE_MODULES.md`
+- `3DMODEL_TEXTURES_MATERIALS.md`
+- `HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md`
+- `HECTON8_ORCHESTRATOR.md`
+- `MASTER_RELEASE_WORK_PLAN.md`
+
+Report/ledger updates:
+
+- Added `Docs/Reports/DocumentationCompleteness_20260605/CONTROL_DOC_METADATA_BOUNDARY_AUDIT_20260605.md`.
+- Updated `Docs/Reports/DocumentationCompleteness_20260605/README.md`.
+- Updated `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
+- Updated `Docs/Reports/DocumentationCompleteness_20260605/DOC_COMPLETENESS_WORKER_BOARD_20260605.md`.
+
+Postpatch scan:
+
+- `75` scoped control docs.
+- Missing `Evidence class:` `0`.
+- Missing static/pending boundary marker `0`.
+- Missing `Status:` `1`, limited to read-only `AGENTS.md`; not patched by law.
+
+Boundary:
+
+- Static metadata/documentation only.
+- No runtime, Unity, build, import, Play Mode, profiler, visual, save/load, platform, Data Monolith, or first-20 proof produced.
+
+## 2026-06-05 Documentation Completeness Continuation 36
+
+RS102 lore/source-candidate recheck:
+
+- New Batch32/lore files appeared while the documentation front was running:
+  - `Docs/Lore/AppliedContent/release_sets/RS102_PROOF_ORDER_RELATION_RECEIPT_BRIDGE.md`
+  - `Docs/Lore/AppliedContent/release_sets/RS102_PROOF_ORDER_RELATION_RECEIPT_BRIDGE_manifest.json`
+  - `Docs/Lore/AppliedContent/packets/RS102_PROOF_ORDER_RELATION_RECEIPT_BRIDGE.packets.json`
+  - `Docs/Lore/AppliedContent/production_packets/P506_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE.production.md`
+  - `Docs/Lore/AppliedContent/production_packets/P507_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE.production.md`
+  - `Docs/Lore/AppliedContent/production_packets/P508_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE.production.md`
+  - `Docs/Reports/Batch32/CONTROLLER_RS102_PROOF_ORDER_RELATION_RECEIPT_20260605.md`
+
+Static recheck:
+
+- Manifest JSON parse: pass.
+- Bundle JSON parse: pass.
+- Packet count: `3`.
+- Production markdown locale headings: `15` each for P506-P508.
+- Source/draft row shape: `1` `source_authority`, `14` `draft_machine_or_llm` each for P506-P508.
+- UTF-8 BOM absent and U+FFFD `0`.
+- Readiness flags false.
+- Positive runtime/native/DataMonolith/h8bin/Unity/generated-page/publication claims absent.
+- Mojibake marker failures:
+  - bundle `17507`
+  - P506 `897`
+  - P507 `894`
+  - P508 `710`
+
+Patched:
+
+- Downgraded RS102 release set status to `LOCALIZATION_MOJIBAKE_RECHECK_FAILED / DOWNSTREAM_BLOCKED`.
+- Added localization-failed notes to P506-P508 production packets.
+- Updated RS102 manifest and packet bundle status.
+- Updated Batch32 RS102 controller report, live board, packet/source-state audit, and source-admission ledger.
+- Added `Docs/Reports/DocumentationCompleteness_20260605/LORE_RS102_MOJIBAKE_RECHECK_20260605.md`.
+- Updated `Docs/Reports/DocumentationCompleteness_20260605/README.md` and worker board.
+
+Boundary:
+
+- English source_authority rows remain source-candidate text only.
+- RS102 non-English rows are blocked until regenerated or replaced through the localization pipeline and a clean mojibake recheck exists.
+- No source CSV admission, route-card wiring, generated-page export, h8bin bake, DataMonolith payload, Unity placement, runtime string-pool extraction, native localization review, public website publication, wiki publication, or player-build proof produced.
+
+## 2026-06-05 Asset / Visual Controller Continuation 45
+
+User directive:
+
+- Continue without using the Goal tool.
+- Keep working autonomously.
+- Orchestrator role remains primary: coordinate agents and judge proof; manual project edits only after owner work is assigned and gates allow it.
+
+Evidence refresh:
+
+- Active disk front is asset/product-face orchestration, not only old Batch31 visual recovery.
+- Fresh process gate: CPU `38`; active `Unity`, `Unity.ILPP.Runner`, and `UnityShaderCompiler` processes.
+- Unity readback/import/build/Play Mode remains blocked despite CPU below 50 because compiler/shader/import-related processes are active.
+
+New controller report:
+
+- Added `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_REJECTION_20260605.md`.
+- Evidence class: `STATIC_IMAGE_QA + UNITY_BATCHMODE_LOG + STATIC_DOC`.
+- Verdict: current product-face visuals are rejected against `Docs/ОБЯЗАТЕЛЬНЫЕ ПРИМЕРЫ ПО КАРТИНКАМ`.
+- Current MCP screenshots are diagnostic only; no `h8_1475` proof packet exists.
+- Hard visual failures:
+  - surface water reads as repetitive green/teal sheet;
+  - terrain/coastline reads as crushed dark/noisy blob;
+  - Aegir is oversized but smeared/muddy/toy-like;
+  - shoreline lacks believable foam/wet-rock contact;
+  - underwater evidence is green/yellow slab water with no route density;
+  - no current screenshot meets the mandatory reference floor.
+
+New dispatched sidecar/worker wave:
+
+- `ASSET_OWNER_24_PRODUCT_FACE_MATERIAL_REPAIR_PACKET_WRITER` -> Boyle `019e9842-5447-7c52-833b-3adb9c9bae9b`.
+  - Write scope: `taskslocal/asset_system_20260605/ASSET_OWNER_24_PRODUCT_FACE_MATERIAL_REPAIR_PACKET.md`.
+- `ASSET_OWNER_25_PREFAB_PRIMITIVE_MESH_REPLACEMENT_PACKET_WRITER` -> Huygens `019e9842-6a98-75b3-a570-dffad774734b`.
+  - Write scope: `taskslocal/asset_system_20260605/ASSET_OWNER_25_PREFAB_PRIMITIVE_MESH_REPLACEMENT_PACKET.md`.
+- `ASSET_OWNER_26_UNITY_READBACK_PACKET_WRITER` -> Jason `019e9842-7ef1-7d22-b5cd-728e1980c2ad`.
+  - Write scope: `taskslocal/asset_system_20260605/ASSET_OWNER_26_UNITY_READBACK_NO_MUTATION_PACKET.md`.
+- `ASSET_OWNER_27_UNDERWATER_VFX_SOURCE_PACKET_WRITER` -> Parfit `019e9842-9367-72a2-b358-458f8761216a`.
+  - Write scope: `taskslocal/asset_system_20260605/ASSET_OWNER_27_UNDERWATER_VFX_SOURCE_PACKET.md`.
+- `ASSET_OWNER_28_AUDIO_REMEDIATION_PACKET_WRITER` -> Boole `019e9842-a83f-7e51-8bdb-52008bc5f8d9`.
+  - Write scope: `taskslocal/asset_system_20260605/ASSET_OWNER_28_AUDIO_REMEDIATION_EXECUTION_PACKET.md`.
+
+Current stance:
+
+- Product-face visual promotion remains rejected.
+- Existing static source gates already fail; new work must create execution packets for repair owners.
+- Do not place flora/rocks/coral to hide the failed base. Placement comes after water/sky/terrain/material/player proof.
+
+## 2026-06-05 Asset / Visual Controller Continuation 46
+
+Integrated completed packet wave:
+
+- `ASSET_OWNER_24_PRODUCT_FACE_MATERIAL_REPAIR_PACKET.md` created by Boyle.
+- `ASSET_OWNER_25_PREFAB_PRIMITIVE_MESH_REPLACEMENT_PACKET.md` created by Huygens.
+- `ASSET_OWNER_26_UNITY_READBACK_NO_MUTATION_PACKET.md` created by Jason.
+- `ASSET_OWNER_27_UNDERWATER_VFX_SOURCE_PACKET.md` created by Parfit.
+- `ASSET_OWNER_28_AUDIO_REMEDIATION_EXECUTION_PACKET.md` created by Boole.
+
+Navigation updated:
+
+- `Docs/AssetAudit/README.md`
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.md`
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`
+- `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md`
+- `taskslocal/asset_system_20260605/README.md`
+
+Validation:
+
+- Scoped `git diff --check` clean for new/updated routing files.
+- Mojibake scan clean for touched asset routing/rejection files.
+
+Latest process gate:
+
+- CPU `53`.
+- Active blockers: `mcp-for-unity`, `Unity`, `Unity.ILPP.Runner`, `UnityPackageManager`, `UnityShaderCompiler`.
+- Unity readback/import/build/Play Mode still blocked.
+
+New active target-table wave:
+
+- `ASSET_OWNER_29_MATERIAL_P0_TARGET_TABLE_WORKER` -> Arendt `019e984d-50a0-7bc3-80d3-05c6a29cea99`.
+  - Write scope: `Docs/AssetAudit/PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.md/.csv`.
+- `ASSET_OWNER_30_PREFAB_P0_TARGET_TABLE_WORKER` -> Heisenberg `019e984d-6621-77f0-ac7b-3612526db263`.
+  - Write scope: `Docs/AssetAudit/PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.md/.csv`.
+- `ASSET_OWNER_31_AUDIO_P0_TARGET_TABLE_WORKER` -> Noether `019e984d-7a8e-7fa0-ac77-15eafa69bb4c`.
+  - Write scope: `Docs/AssetAudit/AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.md/.csv`.
+- `ASSET_OWNER_32_H8_1475_READBACK_FIELD_MANIFEST_WORKER` -> Kepler `019e984d-8f68-7280-8e89-c982e454b41a`.
+  - Write scope: `Docs/AssetAudit/H8_1475_READBACK_FIELD_MANIFEST_20260605.md/.csv`.
+- `ASSET_OWNER_33_VISUAL_REFERENCE_CAPTURE_GAP_WORKER` -> Hume `019e984d-a3c2-7443-b7ad-efcee1f0c3c1`.
+  - Write scope: `Docs/AssetAudit/VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.md/.csv`.
+
+Current controller stance:
+
+- Work continues through static target extraction while Unity gate is red.
+- Future Unity owner must use `ASSET_OWNER_26_UNITY_READBACK_NO_MUTATION_PACKET.md` only after a fresh clean process gate.
+
+## 2026-06-05 Asset / Visual Controller Continuation 47
+
+Integrated completed target-table wave:
+
+- `PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.md/.csv` by Arendt.
+  - 124 rows.
+  - 45 P0 texture blocker rows and 79 material-route rows.
+  - All rows `PENDING UNITY READBACK`.
+- `PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.md/.csv` by Heisenberg.
+  - 39 rows.
+  - Player 1, Held Tools 12, World Tool Items 12, Pickups 8, Transport 4, Sky 1, Ocean micro-fauna route 1.
+  - All rows `PENDING UNITY PREFAB READBACK`.
+- `AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.md/.csv` by Noether.
+  - 6 P0 rows: two MusicDirector null mixer refs, two `dive_splash.wav` `Player.prefab` refs, two `Underwater Ambient.wav` `Player.prefab` refs.
+- `H8_1475_READBACK_FIELD_MANIFEST_20260605.md/.csv` by Kepler.
+  - 120 readback/proof fields.
+  - Covers player/HUD, sky/Aegir, Crest/ocean, terrain/material, primitive product-face prefabs, packet metadata, dirty-state audit, screenshots, console/log, Frame Debugger/Stats.
+- `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.md/.csv` by Hume.
+  - 7 visual gap rows.
+  - Confirms `Docs/Screenshots/HectonProofPackets/` is absent and raw MCP PNGs remain diagnostic only.
+
+Navigation/summary updates:
+
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.md/.csv`
+- `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md`
+- `Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`
+
+Static validation:
+
+- New target-table CSV counts verified:
+  - material P0: 124 rows, 10 columns, 0 empty cells.
+  - prefab P0: 39 rows, 11 columns, 0 empty cells.
+  - audio P0: 6 rows, 9 columns, 0 empty cells.
+  - h8_1475 field manifest: 120 rows, 7 columns, 0 empty cells.
+  - visual gap: 7 rows, 8 columns, 0 empty cells.
+- Asset static validation summary now states 37 CSV files, 14114 rows, 0 empty cells.
+
+Current process gate:
+
+- Latest sampled gate before integration stayed red: CPU 100, active `mcp-for-unity`, `Unity`, `Unity.ILPP.Runner`, `UnityPackageManager`, and multiple `UnityShaderCompiler` processes.
+- Unity readback/build/import/Play Mode remains blocked.
+
+## 2026-06-05 Lore System Continuation 47
+
+Current front:
+
+- User resumed autonomous work and narrowed the active scope back to lore-system integration.
+- Active owner: controller-local lore front.
+- Unity/build/source-bake/runtime work remains out of scope for this continuation.
+
+Integrated:
+
+- Controller-local STATIC_DOC wave completed P506-P508:
+  - `P506_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE.production.md`
+  - `P507_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE.production.md`
+  - `P508_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE.production.md`
+- Controller-local source prep completed RS102 `RS102_PROOF_ORDER_RELATION_RECEIPT_BRIDGE` for P506-P508 only.
+- Output:
+  - `Docs/Lore/AppliedContent/release_sets/RS102_PROOF_ORDER_RELATION_RECEIPT_BRIDGE.md`
+  - `Docs/Lore/AppliedContent/release_sets/RS102_PROOF_ORDER_RELATION_RECEIPT_BRIDGE_manifest.json`
+  - `Docs/Lore/AppliedContent/packets/RS102_PROOF_ORDER_RELATION_RECEIPT_BRIDGE.packets.json`
+  - `Docs/Reports/Batch32/CONTROLLER_RS102_PROOF_ORDER_RELATION_RECEIPT_20260605.md`
+
+Validation:
+
+- P506-P508: 15 exact locale headings each; 1 source_authority row each; 14 draft_machine_or_llm rows each.
+- RS102 strict JSON parse PASS.
+- Manifest packet count 3.
+- Bundle packet count 3.
+- 15 locales per packet.
+- Required localized surface keys present.
+- UTF-8 BOM absent.
+- U+FFFD=0.
+- Explicit mojibake marker/codepoint hits=0.
+- Beyond-scope packet content absent from RS102.
+- Readiness flags false.
+
+Updated:
+
+- `Docs/Reports/Batch32/BATCH32_LORE_SYSTEM_LIVE_BOARD.md`
+- `Docs/Reports/Batch32/CONTROLLER_SOURCE_ADMISSION_LEDGER_P461_P491_20260605.md`
+- `Docs/Reports/Batch32/CONTROLLER_PACKET_AND_SOURCE_STATE_AUDIT_P461_P495_20260605.md`
+
+Current state:
+
+- P461-P464 are source-admitted static-audited rows.
+- RS094 covers P467-P474 as STATIC_SOURCE candidate.
+- RS095 covers P465, P466, P475-P479 as STATIC_SOURCE candidate.
+- RS096 covers P480-P487 as STATIC_SOURCE candidate.
+- RS097 covers P488-P491 as STATIC_SOURCE candidate.
+- RS098 covers P492-P495 as STATIC_SOURCE candidate.
+- RS099 covers P496-P499 as STATIC_SOURCE candidate.
+- RS100 covers P500-P502 as STATIC_SOURCE candidate.
+- RS101 covers P503-P505 as STATIC_SOURCE candidate.
+- RS102 covers P506-P508 as STATIC_SOURCE candidate.
+
+Next valid orchestration move:
+
+- Create another isolated STATIC_DOC packet wave, or plan source admission only under a clean process gate with explicit source/bake owner. Source CSV, route-card, generated-page, h8bin, Unity, runtime, native localization, and publication claims remain forbidden from static bundles alone.

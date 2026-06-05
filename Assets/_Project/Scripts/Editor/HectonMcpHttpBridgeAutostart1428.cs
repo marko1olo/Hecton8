@@ -21,6 +21,10 @@ namespace Hecton8.EditorTools
         private const string LocalMcpUrl = "http://127.0.0.1:8088";
         private const string StartOnceFlagRelativePath = "Library/MCPForUnity/RunState/H8_MCP_HTTP_START_ONCE.flag";
         private const int BridgeStartTimeoutMilliseconds = 10000;
+        private const double StartFlagPollIntervalSeconds = 2.0;
+
+        private static bool _isStartingBridge;
+        private static double _nextStartFlagPollTime;
 
         static HectonMcpHttpBridgeAutostart1428()
         {
@@ -30,6 +34,8 @@ namespace Hecton8.EditorTools
             ConfigureMcpEditorPrefs();
             EditorApplication.delayCall -= ConsumeStartOnceFlagAfterEditorReady;
             EditorApplication.delayCall += ConsumeStartOnceFlagAfterEditorReady;
+            EditorApplication.update -= PollStartOnceFlag;
+            EditorApplication.update += PollStartOnceFlag;
         }
 
         private static object ResolveStaticProperty(string typeName, string propertyName)
@@ -101,20 +107,29 @@ namespace Hecton8.EditorTools
 
         private static async Task StartBridgeOnceAsync()
         {
+            if (_isStartingBridge)
+                return;
+
+            _isStartingBridge = true;
             ConfigureMcpEditorPrefs();
             Debug.Log("[HectonMcpHttpBridge1428] Invoking one-shot MCP HTTP bridge start.");
 
-            object bridge = ResolveStaticProperty("MCPForUnity.Editor.Services.MCPServiceLocator, MCPForUnity.Editor", "Bridge");
-            MethodInfo startMethod = bridge?.GetType().GetMethod("StartAsync", BindingFlags.Instance | BindingFlags.Public);
-            if (startMethod == null)
-            {
-                Debug.LogWarning("[HectonMcpHttpBridge1428] MCP bridge StartAsync not found.");
-                return;
-            }
-
             try
             {
-                object result = startMethod.Invoke(bridge, null);
+                object transport = ResolveStaticProperty("MCPForUnity.Editor.Services.MCPServiceLocator, MCPForUnity.Editor", "TransportManager");
+                Type modeType = Type.GetType("MCPForUnity.Editor.Services.Transport.TransportMode, MCPForUnity.Editor", false);
+                object httpMode = modeType != null ? Enum.Parse(modeType, "Http") : null;
+                MethodInfo startMethod = modeType != null
+                    ? transport?.GetType().GetMethod("StartAsync", BindingFlags.Instance | BindingFlags.Public, null, new[] { modeType }, null)
+                    : null;
+
+                if (startMethod == null || httpMode == null)
+                {
+                    Debug.LogWarning("[HectonMcpHttpBridge1428] MCP HTTP transport StartAsync not found.");
+                    return;
+                }
+
+                object result = startMethod.Invoke(transport, new[] { httpMode });
                 if (result is Task<bool> boolTask)
                 {
                     if (await Task.WhenAny(boolTask, Task.Delay(BridgeStartTimeoutMilliseconds)) != boolTask)
@@ -147,6 +162,28 @@ namespace Hecton8.EditorTools
             {
                 Debug.LogError("[HectonMcpHttpBridge1428] One-shot MCP HTTP bridge start failed: " + exception.Message);
             }
+            finally
+            {
+                _isStartingBridge = false;
+            }
+        }
+
+        private static void PollStartOnceFlag()
+        {
+            if (Application.isBatchMode)
+                return;
+
+            double now = EditorApplication.timeSinceStartup;
+            if (now < _nextStartFlagPollTime)
+                return;
+
+            _nextStartFlagPollTime = now + StartFlagPollIntervalSeconds;
+            if (!TryConsumeStartOnceFlag())
+                return;
+
+            Debug.Log("[HectonMcpHttpBridge1428] Polled MCP HTTP bridge start flag consumed.");
+            EditorApplication.delayCall -= StartBridgeOnce;
+            EditorApplication.delayCall += StartBridgeOnce;
         }
     }
 }

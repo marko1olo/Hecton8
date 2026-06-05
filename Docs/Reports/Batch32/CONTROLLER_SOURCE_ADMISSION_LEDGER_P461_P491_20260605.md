@@ -1,4 +1,4 @@
-# Controller Source Admission Ledger P461-P505
+# Controller Source Admission Ledger P461-P514
 
 Evidence class: STATIC_CONTROLLER_SYNTHESIS.
 Runtime proof: absent.
@@ -32,11 +32,14 @@ This ledger separates authoring packets, source candidates, and source-admitted 
 | P496-P499 | STATIC_SOURCE_CANDIDATE | RS099 candidate bundle exists; JSON parses; 4 packets; 15 locales per packet; required surface keys present; runtime/import/native/binary/page/publication readiness false. |
 | P500-P502 | STATIC_SOURCE_CANDIDATE | RS100 candidate bundle exists; JSON parses; 3 packets; 15 locales per packet; required surface keys present; runtime/import/native/binary/page/publication readiness false. |
 | P503-P505 | STATIC_SOURCE_CANDIDATE | RS101 candidate bundle exists; JSON parses; 3 packets; 15 locales per packet; required surface keys present; runtime/import/native/binary/page/publication readiness false. |
+| P506-P508 | STATIC_SOURCE_CANDIDATE | RS102 candidate bundle exists; JSON parses; 3 packets; 15 locales per packet; required surface keys present; runtime/import/native/binary/page/publication readiness false; byte/codepoint mojibake marker scan clean. |
+| P509-P511 | STATIC_SOURCE_CANDIDATE | RS103 candidate bundle exists; JSON parses; 3 packets; 15 locales per packet; required surface keys present; runtime/import/native/binary/page/publication readiness false. |
+| P512-P514 | STATIC_SOURCE_CANDIDATE | RS104 candidate bundle exists; JSON parses; 3 packets; 15 locales per packet; required surface keys present; runtime/import/native/binary/page/publication readiness false. |
 
 ## Admission Rules
 
-- Do not add P465-P505 to source CSV, route cards, generated pages, h8bin, or Unity binding from this ledger.
-- Do not treat RS094, RS095, RS096, RS097, RS098, RS099, RS100, or RS101 as importer-ready. They are source-candidate artifacts only.
+- Do not add P465-P514 to source CSV, route cards, generated pages, h8bin, or Unity binding from this ledger.
+- Do not treat RS094, RS095, RS096, RS097, RS098, RS099, RS100, RS101, RS102, RS103, or RS104 as importer-ready. They are source-candidate artifacts only.
 - Do not treat non-English packet rows as native-reviewed. All non-English packet rows remain draft_machine_or_llm until native, RTL/CJK/font/layout, source extraction, and runtime proof exist.
 - Runtime must consume baked tables/string pools only after the approved authoring bridge. Runtime must not parse Markdown or these JSON candidate files.
 

@@ -1,6 +1,7 @@
 # 3DMODEL_HARD_SURFACE_MODULES
 
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
+Evidence class: STATIC_DOC / AUTHORING_STANDARD
 Scope: DeepReach modules, airlocks, wreckage shells, submarine components, doors, panels, corridors, pipes, supports, and industrial structure meshes.
 
 ## 1. Shape Language

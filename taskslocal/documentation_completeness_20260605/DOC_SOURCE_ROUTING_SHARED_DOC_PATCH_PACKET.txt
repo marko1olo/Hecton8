@@ -1,0 +1,86 @@
+HECTON-8 Documentation Completeness Task Packet
+
+Packet: DOC_SOURCE_ROUTING_SHARED_DOC_PATCH_PACKET
+Status: EXECUTED_STATIC_PASS
+Evidence class: STATIC_SOURCE / STATIC_DOC
+
+Objective:
+Patch the stable source-routing architecture docs so the four 2026-06-05 source-routing family audits are represented as grouped exact-anchor route families with proof requirements and runtime-pending boundaries.
+
+Authority basis:
+- AGENTS.md
+- HECTON8_ORCHESTRATOR.md
+- Docs/ARCHITECTURE/SOURCE_SYSTEMS_REALITY_MAP.md
+- Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md
+- Docs/Reports/DocumentationCompleteness_20260605/SOURCE_ROUTING_PRESENTATION_FAMILY_AUDIT_20260605.md
+- Docs/Reports/DocumentationCompleteness_20260605/SOURCE_ROUTING_AUTHORING_DATA_FAMILY_AUDIT_20260605.md
+- Docs/Reports/DocumentationCompleteness_20260605/SOURCE_ROUTING_WORLD_GAMEPLAY_FAMILY_AUDIT_20260605.md
+- Docs/Reports/DocumentationCompleteness_20260605/SOURCE_ROUTING_CORE_SYSTEMS_FAMILY_AUDIT_20260605.md
+- Docs/Reports/DocumentationCompleteness_20260605/SOURCE_ROUTING_FAMILY_AUDITS_SYNTHESIS_20260605.md
+
+Write scope:
+- Docs/ARCHITECTURE/SOURCE_SYSTEMS_REALITY_MAP.md
+- Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md
+
+Forbidden write scope:
+- AGENTS.md
+- root route bibles
+- source code
+- Assets/
+- Packages/
+- ProjectSettings/
+- scenes, prefabs, materials, import settings, or generated assets
+- Docs/Tasks/Status_*.md, Docs/AgentLogs/Rationale_*.md, Docs/AgentLogs/LOG_*.md
+- dated source-routing worker reports
+
+Required patch model:
+1. Preserve existing structure and static/runtime boundary language in both target docs.
+2. Add grouped exact-anchor route rows or compact addendum entries. Do not add thousands of per-file rows.
+3. Make clear that broad folder coverage is not proof of exact source-owner routing.
+4. Keep evidence class as STATIC_SOURCE / STATIC_DOC.
+5. Every new group must include owner route/bible, source family or exemplar anchors, required proof artifact class, and runtime status.
+6. Runtime/import/Unity/build/profiler/platform/readiness status must remain PENDING until fresh runtime proof exists.
+
+Required source-routing groups:
+- Core execution / bootstrap / dispatcher / GlobalRegistry / contracts.
+- SignalBus / GlobalSignals bridge / payload-layout / telemetry black-box.
+- GlobalDataVault / H8Memory / memory-contract surfaces.
+- SaveSystem / persistence / Merkle / entity and voxel delta / migration.
+- Data Monolith authoring and runtime split: compiler, static arena, DTO/hash, reconstruction jobs, fuzzer/audit.
+- Tools runtime and authoring parser split: tool runtime, upgrade matrix, CSV parser isolation.
+- UI / PDA / Visor / HUD / sonar / scanner / subtitles / menu presentation.
+- Audio / VFX / graphics / lighting / rendering / water / third-party bridge companion files.
+- World / terrain / streaming / voxel / biome / procedural scatter / wreckage / vegetation.
+- Player / physics / survival / construction / interaction / vehicles / power / thermodynamics / atmosphere.
+- AI / Fauna / Ecosystem / Narrative / Quest / AudioLog / Modding / Plugins companion gaps.
+
+Rejected wording:
+- "runtime-ready"
+- "platform-ready"
+- "release-ready"
+- "validated in Unity"
+- "0 B/frame"
+- "profiler verified"
+- "Data Monolith ready"
+- "first-20 ready"
+- any equivalent claim unless the target doc explicitly labels it as absent, pending, or forbidden.
+
+Required validation:
+- Run `git diff --check -- Docs/ARCHITECTURE/SOURCE_SYSTEMS_REALITY_MAP.md Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md`.
+- Run a scoped readiness-word scan on the two target docs and report whether hits are negative/proof-pending only.
+- Do not run Unity, dotnet build, importers, Play Mode, Addressables build, package restore, tests, profiler, or player build.
+
+Expected final report:
+- Files changed.
+- Exact source-routing groups added.
+- Evidence class preserved.
+- Readiness wording scan result.
+- Validation command result.
+- Explicit statement: no runtime, Unity, build, import, profiler, visual, save/load, or platform proof was produced.
+
+Execution note:
+- Worker Epicurus `019e9844-2e97-73a1-9fc7-43802da5a1f1` executed this packet.
+- Changed files were limited to `Docs/ARCHITECTURE/SOURCE_SYSTEMS_REALITY_MAP.md` and `Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md`.
+- Controller validation found `282` concrete source anchors in the two target docs and `0` missing concrete anchors.
+- `git diff --check` passed with LF-to-CRLF warnings only.
+- Rejected-readiness phrase scan returned no hits.

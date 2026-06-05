@@ -1,6 +1,7 @@
 # HECTON-8 Local Orchestrator Charter
 
 Status: LOCAL ORCHESTRATION LAW / TASK DISPATCH RULES / NOT A RUNTIME BIBLE
+Evidence class: STATIC_DOC / LOCAL_PROCESS
 Former filename: `shit do not touch.txt`
 
 This document defines how the user and local Codex coordinate HECTON-8 work when Codex has direct access to the repository, Unity project, diffs, task history, screenshots, logs, and proof artifacts.

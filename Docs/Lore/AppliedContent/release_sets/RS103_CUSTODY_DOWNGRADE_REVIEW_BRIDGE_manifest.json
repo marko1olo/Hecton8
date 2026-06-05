@@ -1,0 +1,24 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS103_CUSTODY_DOWNGRADE_REVIEW_BRIDGE",
+  "status": "canonical_source_candidate_pending_controller_review_and_downstream_wiring",
+  "packets": [
+    "P509_PUBLIC_ARCHIVE_CUSTODY_DIVERGENCE_BRIDGE",
+    "P510_SCANNER_CONFIDENCE_DOWNGRADE_REASON_BRIDGE",
+    "P511_PDA_EVIDENCE_FAMILY_REVIEW_PROMPT_BRIDGE"
+  ],
+  "authoring_packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P509_PUBLIC_ARCHIVE_CUSTODY_DIVERGENCE_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P510_SCANNER_CONFIDENCE_DOWNGRADE_REASON_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P511_PDA_EVIDENCE_FAMILY_REVIEW_PROMPT_BRIDGE.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false,
+  "evidence_class": "STATIC_SOURCE"
+}

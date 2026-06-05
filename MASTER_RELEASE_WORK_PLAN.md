@@ -3,7 +3,7 @@
 Date: 2026-05-26
 Status: PENDING VERIFICATION
 Owner: root roadmap anchor
-Evidence: STATIC_DOC only unless an artifact path is cited
+Evidence class: STATIC_DOC only unless an artifact path is cited
 
 ## Authority
 

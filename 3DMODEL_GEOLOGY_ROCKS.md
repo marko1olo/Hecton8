@@ -1,6 +1,7 @@
 # 3DMODEL_GEOLOGY_ROCKS
 
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
+Evidence class: STATIC_DOC / AUTHORING_STANDARD
 Scope: rocks, boulders, cliffs, ore nodes, cave chunks, thermal vents, mineral shelves, basalt columns, sediment layers, and geological props.
 
 ## 1. Geology Mesh Law

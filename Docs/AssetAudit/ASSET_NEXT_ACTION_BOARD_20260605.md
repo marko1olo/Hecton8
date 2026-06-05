@@ -28,4 +28,34 @@ CSV companion: `Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.csv`.
 
 If the process/tooling gate is red or Unity/MCP is unavailable, do not run Unity, importers, editor-mutating tools, or builds. Continue static/source-side documentation only.
 
+## Controller Continuation 45
+
+New rejection evidence:
+
+- `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_REJECTION_20260605.md`
+
+Mandatory visual comparison now explicitly rejects current diagnostic MCP screenshots against the required reference images. The immediate product-face problem is not just static asset hygiene. The actual seen output fails water volume, shoreline contact, Aegir/sky quality, terrain material truth, underwater route density, and valid proof-packet requirements.
+
+Additional dispatched owner packets:
+
+- `ASSET_OWNER_24_PRODUCT_FACE_MATERIAL_REPAIR_PACKET.md`: product-face material/texture route repair.
+- `ASSET_OWNER_25_PREFAB_PRIMITIVE_MESH_REPLACEMENT_PACKET.md`: visible built-in primitive mesh replacement, LOD, collider proxy, material proof.
+- `ASSET_OWNER_26_UNITY_READBACK_NO_MUTATION_PACKET.md`: no-mutation Unity readback queue for product-face blockers.
+- `ASSET_OWNER_27_UNDERWATER_VFX_SOURCE_PACKET.md`: missing fish/marine-snow/foam/caustic source specs.
+- `ASSET_OWNER_28_AUDIO_REMEDIATION_EXECUTION_PACKET.md`: audio routing/import/source remediation execution packet.
+
+New target tables:
+
+- `PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.md/.csv`: 124 P0 rows, all `PENDING UNITY READBACK`.
+- `PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.md/.csv`: 39 P0 rows, all `PENDING UNITY PREFAB READBACK`.
+- `AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.md/.csv`: 6 P0 rows.
+- `H8_1475_READBACK_FIELD_MANIFEST_20260605.md/.csv`: 120 readback/proof rows.
+- `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.md/.csv`: 7 gap rows; `Docs/Screenshots/HectonProofPackets/` absent.
+
+Current gate at dispatch:
+
+- CPU: `99`.
+- Active blockers: `Unity`, `Unity.ILPP.Runner`, `UnityPackageManager`, `UnityShaderCompiler`, `mcp-for-unity`.
+- Unity readback/import/build/Play Mode remains blocked.
+
 Final status: `PENDING VERIFICATION`.

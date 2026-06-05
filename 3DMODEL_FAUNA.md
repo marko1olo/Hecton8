@@ -1,6 +1,7 @@
 # 3DMODEL_FAUNA
 
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
+Evidence class: STATIC_DOC / AUTHORING_STANDARD
 Scope: generated creatures, shells, jaws, fins, tails, tentacles, skeletons, carcasses, VAT-ready bodies, and fauna equipment attachments.
 
 ## 1. Fauna Mesh Law

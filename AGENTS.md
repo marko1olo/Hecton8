@@ -8,7 +8,7 @@ Engine: Unity 6000.4 URP. Minimum proof lane: compact 2GB VRAM / 8GB RAM / 4C-8T
 Perf target: 60 FPS / 16.67 ms. Throttle threshold = 25 ms.
 Guardrails: main thread = 12 ms · GC = 0 B/frame · SetPass = 600 · Batches = 1800 · mem = 4096 MB.
 Compact VRAM HARD CEILING: 1800MB. Texture budget: 900MB. RT+Depth: 320MB. Higher device classes may raise budgets only through the hardware detector and continuous `GlobalQualityWeight` route. Anyway, visuals MUST look astonishing, real, detailed.
-[REQ] use GOALS(/Goal) to make GOALS for you.
+[FORBID] Do not use `/goal`, `/Goal`, goal tools, or goal-tracking commands for this project. Use direct chat reporting; use Status/Rationale/LOG files only for explicit batch/logging tasks.
 [REQ] Graduation response: used/total > 0.90 triggers Mip-downgrade.
 [REQ] About `GlobalQualityWeight` - it is nice to make hardware-dependant optimization, but do not make shitty choices of graphics. Graphics worse than Subnautica is ABSOLUTELY PROHIBITED ON ANY HARDWARE LEVEL!
 [REQ] Surface, sky, Aegir, moons, clouds, coastline, ocean surface, and photic shallows are NOT the dark/noir zone. They must be bright, legible, beautiful, premium, and detailed on every hardware lane. Darkness, gloom, crushed blacks, and hostile noir grading belong to depth, caves, interiors, storms, eclipse windows, and pressure events only. Never use darkness/fog/post to hide primitive terrain, weak textures, procedural scribbles, or unfinished celestial art.

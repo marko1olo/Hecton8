@@ -1,6 +1,6 @@
 # Documentation Completeness Worker Board - 2026-06-05
 
-Status: `PATCH_WORKERS_INTEGRATED / NEXT_PATCH_WAVE_READY`.
+Status: `PATCH_WORKERS_INTEGRATED / SOURCE_ROUTING_SHARED_DOC_PATCH_STATIC_PASS / CONTROL_DOC_METADATA_STATIC_PASS`.
 Evidence class: `STATIC_DOC` / `STATIC_SOURCE` / `FILESYSTEM`.
 Current front: documentation completeness, source coverage, root bible completeness, and doc governance consistency.
 First-20 route moment: addresses documentation ambiguity that prevents safe work on first surface exit, photic route, runtime systems, asset residency, audio, UI, save/load, and proof gates.
@@ -12,7 +12,7 @@ This board is orchestration state, not implementation proof. It does not prove c
 
 ## Process Gate
 
-- Latest sampled Unity/build/readback gate remains blocked for this documentation lane: CPU was `100`, Unity, Unity ILPP, UnityPackageManager, and UnityShaderCompiler were active. No build/import/profiler work was launched.
+- Latest sampled Unity/build/readback gate remains blocked for this documentation lane: CPU was `24.7`, Unity, Unity ILPP, UnityPackageManager, and UnityShaderCompiler were active. No build/import/profiler work was launched.
 - Documentation audits are static-only and must not run Unity, dotnet builds, importers, Play Mode, Addressables build, package operations, or tests.
 
 ## Mandates Followed
@@ -82,12 +82,14 @@ This board is orchestration state, not implementation proof. It does not prove c
 | Zeno `019e958a-82ce-7311-95ff-9ccf1202732a` | Source routing audit - world/gameplay family | `Docs/Reports/DocumentationCompleteness_20260605/SOURCE_ROUTING_WORLD_GAMEPLAY_FAMILY_AUDIT_20260605.md` | `INTEGRATED_CLOSED` |
 | Faraday `019e958a-9ea6-7013-9cdf-397bb5cf45e8` | Source routing audit - core/systems family | `Docs/Reports/DocumentationCompleteness_20260605/SOURCE_ROUTING_CORE_SYSTEMS_FAMILY_AUDIT_20260605.md` | `INTEGRATED_CLOSED` |
 | Laplace `019e958e-9ee9-7fe3-a448-1e5830f4f77d` | Combined root bibles regeneration | `Docs/PROJECT_ROOT_BIBLES_COMBINED.md`; `Tools/Docs/BuildProjectRootBiblesCombined.py` | `INTEGRATED_CLOSED` |
+| Epicurus `019e9844-2e97-73a1-9fc7-43802da5a1f1` | Source-routing shared-doc patch | `Docs/ARCHITECTURE/SOURCE_SYSTEMS_REALITY_MAP.md`; `Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md` | `INTEGRATED_CLOSED` |
 
 ## Prepared Next-Wave Packets
 
 - `taskslocal/documentation_completeness_20260605/DOC_WAVE1_PROCEDURAL_ASSET_PIPELINE_IDENTITY.txt`
 - `taskslocal/documentation_completeness_20260605/DOC_WAVE3_PRODUCT_CORE_FIRST20_HOOKS.txt`
 - `taskslocal/documentation_completeness_20260605/DOC_WAVE3_PRESENTATION_BOUNDARY_HOTPATH_GQW.txt`
+- `taskslocal/documentation_completeness_20260605/DOC_SOURCE_ROUTING_SHARED_DOC_PATCH_PACKET.txt`
 
 ## Controller Rules
 
@@ -147,6 +149,14 @@ This board is orchestration state, not implementation proof. It does not prove c
 - Laplace added deterministic generator `Tools/Docs/BuildProjectRootBiblesCombined.py` and regenerated `Docs/PROJECT_ROOT_BIBLES_COMBINED.md`. Controller validation: `python -B Tools/Docs/BuildProjectRootBiblesCombined.py --check` passed; source index count `71`; live source hook count `57`; combined hook count `57`; readiness hits are inherited negative prohibitions only.
 - Zeno produced `SOURCE_ROUTING_WORLD_GAMEPLAY_FAMILY_AUDIT_20260605.md`. Controller validation: `git diff --check` clean; report is `STATIC_SOURCE / STATIC_DOC` only; key findings are 815 inspected folder scripts with 86 exact anchors and 729 exact-path gaps, plus 165 matching loose-root family scripts.
 - Faraday produced `SOURCE_ROUTING_CORE_SYSTEMS_FAMILY_AUDIT_20260605.md`. Controller validation: `git diff --check` clean; report is `STATIC_SOURCE / STATIC_DOC` only; key findings are 638 unique inspected scripts with 44 exact anchors and 594 missing exact anchors.
+- Controller added `Docs/Reports/DocumentationCompleteness_20260605/SOURCE_ROUTING_FAMILY_AUDITS_SYNTHESIS_20260605.md` and `taskslocal/documentation_completeness_20260605/DOC_SOURCE_ROUTING_SHARED_DOC_PATCH_PACKET.txt`. The synthesis keeps the four family audits static-only, warns not to sum overlapping counts globally, and routes the next patch to one shared-doc worker for `SOURCE_SYSTEMS_REALITY_MAP.md` plus `DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md`.
+- Controller added `Docs/Reports/DocumentationCompleteness_20260605/README.md` as a dated report-folder index. It labels the folder as a static evidence snapshot, not stable project authority, and points the open queue at the source-routing shared-doc patch.
+- Controller patched `Docs/Reports/README.md` so the top-level reports index names `DocumentationCompleteness_20260605`, `AssetSystem_20260605`, and `Batch32` as active 2026-06-05 evidence-snapshot fronts without promoting them to stable authority.
+- Controller patched `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md` with a 2026-06-05 documentation-completeness static refresh: script/routing counts, root-bible hook state, architecture metadata state, combined snapshot regeneration, and proof-language scan boundary.
+- Epicurus patched `Docs/ARCHITECTURE/SOURCE_SYSTEMS_REALITY_MAP.md` and `Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md` with grouped exact-anchor source-routing overlays. Controller validation: `git diff --check` passed with LF-to-CRLF warnings only; concrete source-anchor check found `282` concrete anchors and `0` missing; rejected-readiness phrase scan returned no hits.
+- Controller added `Docs/Reports/DocumentationCompleteness_20260605/CONTROL_DOC_METADATA_BOUNDARY_AUDIT_20260605.md` and patched eight control docs missing canonical evidence-class metadata. Postpatch scan: `75` scoped control docs, missing `Evidence class:` `0`, missing static/pending boundary marker `0`; the only missing `Status:` hit is read-only `AGENTS.md`.
+- Controller corrected `Docs/Reports/DocumentationCompleteness_20260605/LORE_RS102_MOJIBAKE_RECHECK_20260605.md` after byte/codepoint evidence superseded the earlier console-render mojibake block. Static recheck: JSON parses, packet counts are `3`/`3`, locale counts are `15` per packet, required localized surface keys are present, readiness flags remain false, UTF-8 BOM and U+FFFD are absent, Latin-1/C1 mojibake marker hits are `0`, and Arabic/Hebrew/CJK codepoint ranges are present where expected. RS102 remains static-source candidate only, not native-reviewed or runtime/source admitted.
+- Controller added `Docs/Reports/DocumentationCompleteness_20260605/LORE_RS103_STATIC_RECHECK_20260605.md` after the RS102 failure. Static recheck: manifest and bundle JSON parse, packet counts are `3`/`3`, missing localized surface keys `0`, true readiness flags `0`, P509-P512 each have `15` locale headings with `1` source-authority row and `14` draft rows, and BOM/U+FFFD/mojibake marker hits are `0`. RS103 remains static-source candidate for P509-P511 only; P512 remains static-doc only.
 
 ## Current Static Facts
 
@@ -164,4 +174,4 @@ This board is orchestration state, not implementation proof. It does not prove c
 - Cadence: no runtime cadence changed.
 - Correctness: this front reduces doc ambiguity only; it does not prove any system.
 
-Final status: `PATCH_WORKERS_INTEGRATED / NEXT_PATCH_WAVE_READY / PENDING VERIFICATION`.
+Final status: `PATCH_WORKERS_INTEGRATED / SOURCE_ROUTING_SHARED_DOC_PATCH_STATIC_PASS / CONTROL_DOC_METADATA_STATIC_PASS / PENDING VERIFICATION`.

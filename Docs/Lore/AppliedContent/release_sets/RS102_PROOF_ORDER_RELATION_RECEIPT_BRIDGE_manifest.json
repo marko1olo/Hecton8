@@ -1,0 +1,24 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS102_PROOF_ORDER_RELATION_RECEIPT_BRIDGE",
+  "status": "canonical_source_candidate_pending_controller_review_and_downstream_wiring",
+  "packets": [
+    "P506_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE",
+    "P507_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE",
+    "P508_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE"
+  ],
+  "authoring_packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P506_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P507_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P508_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false,
+  "evidence_class": "STATIC_SOURCE"
+}

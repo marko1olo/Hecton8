@@ -2,9 +2,9 @@
 
 Status: `PENDING VERIFICATION`.
 Evidence class: `STATIC_DOC`.
-Scope: asset-front CSV/doc hygiene after the current asset-only consolidation.
+Scope: curated asset-front CSV/doc hygiene after the current asset-only consolidation.
 
-This file proves only static parse hygiene for current asset-front planning artifacts. It does not prove Unity import state, material binding, Addressables residency, audio mix behavior, visual quality, GC, frame time, or memory safety.
+This file proves only static parse hygiene for the curated current asset-front planning artifacts listed below. It does not prove whole-folder CSV hygiene, Unity import state, material binding, Addressables residency, audio mix behavior, visual quality, GC, frame time, or memory safety.
 
 ## Current Static Parse Set
 
@@ -38,22 +38,41 @@ This file proves only static parse hygiene for current asset-front planning arti
 | `Docs/AssetAudit/AUDIO_DIRECT_REF_DETAIL_20260605.csv` | 28 | 18 | 0 |
 | `Docs/AssetAudit/TEXTURE_ACTIVE_ROUTE_BLOCKER_DETAIL_20260605.csv` | 109 | 21 | 0 |
 | `Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.csv` | 11 | 11 | 0 |
-| `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv` | 52 | 7 | 0 |
+| `Docs/AssetAudit/ASSET_GUID_REFERENCE_MATRIX_20260605.csv` | 7420 | 21 | 0 |
+| `Docs/AssetAudit/ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.csv` | 800 | 15 | 0 |
+| `Docs/AssetAudit/ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.csv` | 3488 | 15 | 0 |
+| `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv` | 68 | 7 | 0 |
+| `Docs/AssetAudit/PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.csv` | 124 | 10 | 0 |
+| `Docs/AssetAudit/PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.csv` | 39 | 11 | 0 |
+| `Docs/AssetAudit/AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.csv` | 6 | 9 | 0 |
+| `Docs/AssetAudit/H8_1475_READBACK_FIELD_MANIFEST_20260605.csv` | 120 | 7 | 0 |
+| `Docs/AssetAudit/VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.csv` | 7 | 8 | 0 |
 
-Total current rows: `2094`.
+Total current rows: `14114`.
+
+## Excluded Older/Sidecar CSV Boundary
+
+The whole `Docs/AssetAudit/*.csv` folder currently contains `41` CSV files, not `37`. The following older/sidecar CSVs are outside this curated zero-empty set and must not be treated as covered by the result above:
+
+| File | Rows | Empty cells | Boundary |
+|---|---:|---:|---|
+| `Docs/AssetAudit/AUDIO_ASSET_STATIC_LEDGER_20260605.csv` | 138 | 0 | Older ledger, not part of current curated asset-front parse set. |
+| `Docs/AssetAudit/TEXTURE_ASSET_STATIC_LEDGER_20260605.csv` | 190 | 202 | Older/source ledger with known empty cells. |
+| `Docs/AssetAudit/TEXTURE_CANDIDATE_DISPOSITION_20260605.csv` | 190 | 152 | Older disposition table with known empty cells. |
+| `Docs/AssetAudit/TEXTURE_MATERIAL_USAGE_MAP_20260605.csv` | 141 | 831 | Usage-map sidecar with known sparse fields. |
 
 ## Static Hygiene Result
 
-- CSV parse hygiene: all listed files parse with zero empty cells.
-- Encoding hygiene: current touched asset docs reported `replacement_chars=0` in the latest scoped scan.
-- Diff hygiene: scoped `git diff --check` over the current asset-front docs returned clean after this integration.
-- Language hygiene: current flagged wording hits are negative caveats only, not acceptance claims.
+- CSV parse hygiene: 37 files parse with zero empty cells.
+- Encoding hygiene: scoped replacement-character scan returned `0` in the latest run.
+- Diff hygiene: scoped `git diff --check` returned no whitespace errors in the latest run; Git reported CRLF normalization warnings only.
+- Language hygiene: current proof-language hits are negative caveats, evidence-boundary phrasing, or section headings; no Unity/runtime/visual/audio acceptance claim is accepted from this static pass.
 
 ## Current Process Gate
 
 Latest sampled gate before this summary:
 
-- CPU load: `45`.
+- CPU load: `49`.
 - Active blocked processes: `mcp-for-unity`, `Unity`, `Unity.ILPP.Runner`, `UnityPackageManager`, `UnityShaderCompiler`.
 
 Unity readback, import, Addressables build, Play Mode, project-setting work, scene/prefab save, and runtime audio/visual proof remain blocked until a fresh gate is clean.
@@ -64,6 +83,6 @@ Unity readback, import, Addressables build, Play Mode, project-setting work, sce
 - GC: no runtime code changed; no GC claim.
 - Memory/VRAM: no residency proof; current data only improves owner routing.
 - Cadence: no runtime cadence changed.
-- Correctness: future asset owners now have parse-clean route documents; product acceptance remains blocked by Unity/runtime proof.
+- Correctness: future asset owners now have parse-clean route documents, a static GUID reference graph, compact active-route GUID triage, and unreferenced cleanup-review triage; product acceptance remains blocked by Unity/runtime proof.
 
 Final status: `PENDING VERIFICATION`.

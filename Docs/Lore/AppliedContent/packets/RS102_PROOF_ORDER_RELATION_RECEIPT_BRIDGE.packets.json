@@ -1,0 +1,709 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS102_PROOF_ORDER_RELATION_RECEIPT_BRIDGE",
+  "status": "canonical_source_candidate_pending_controller_review_and_downstream_wiring",
+  "evidence_class": "STATIC_SOURCE",
+  "runtime_contract": {
+    "authoring_only": true,
+    "runtime_reads_markdown": false,
+    "runtime_ready": false,
+    "native_localization_ready": false,
+    "data_monolith_ready": false,
+    "h8bin_ready": false,
+    "unity_placement_ready": false,
+    "generated_page_ready": false,
+    "publication_ready": false
+  },
+  "packets": [
+    {
+      "packet_id": "P506_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE",
+      "release_set_id": "RS102_PROOF_ORDER_RELATION_RECEIPT_BRIDGE",
+      "article_id": "applied_lore.public_archive_proof_order_bridge",
+      "title_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_TITLE",
+      "status": "source_candidate_pending_controller_review_and_downstream_wiring",
+      "canon_owner": [
+        "Docs/Lore/Canon_Locks.md",
+        "Docs/Lore/Lore_Bible.md",
+        "Docs/Lore/Lore_Content_System.md",
+        "Docs/Lore/Lore_Localization_Model.md",
+        "Docs/Lore/Website_Publication_Map.md"
+      ],
+      "runtime_contract": {
+        "authoring_only": true,
+        "runtime_reads_markdown": false,
+        "runtime_ready": false,
+        "native_localization_ready": false,
+        "data_monolith_ready": false,
+        "h8bin_ready": false,
+        "unity_placement_ready": false,
+        "generated_page_ready": false,
+        "publication_ready": false
+      },
+      "surfaces": [
+        "website_article",
+        "wiki_article",
+        "pda_codex",
+        "scanner_entry",
+        "terminal_note",
+        "evidence_caption",
+        "spoiler_policy",
+        "string_pool_key"
+      ],
+      "unlock": {
+        "primary": "future proof-order, relation-edge, and receipt-rewrite bridge after packet-specific proof gate",
+        "secondary": "future scanner, terminal, PDA, evidence-caption, website, wiki, and string-pool extraction lanes",
+        "poi_tags": [
+          "proof_order",
+          "public_archive",
+          "custody_stamp",
+          "witness_hash"
+        ],
+        "biome_tags": [
+          "not_biome_bound"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "website_article": "Public HECTON-8 archives use a proof order because packet labels are cheap to rewrite and physical damage is not. The first fact is the object: cracked tag, salt bloom, scorched adhesive, cut seal, pressure warp, tool scrape, stamped plate, or missing corner. The second fact is custody: who touched the object before the public name appeared. The third fact is witness stability: a hash, signature, terminal echo, scanner route, or black-box fragment that survives more than one office. Only after those facts does the archive read the clean labels. Receiver fields, claimant-safe summaries, quarantine notes, legal holds, and wiki categories are filing language. They can help a reader search. They can also hide a route. A good archive does not ask which label sounds official first. It asks which mark would still exist if the label were removed.",
+          "wiki_article": "Proof order is the evidence procedure used to rank packet facts before public classification. Typical order: object mark, custody sequence, witness hash, timestamp route, physical route alias, office label, claimant-safe summary, legal hold, public category. The order is not a verdict. It prevents the wiki from treating a clean category as stronger than object-level proof.",
+          "pda_codex": "Archive rule: read the object first. A receiver label is a statement by an office. A custody stamp is a scar left by handling. A witness hash is a second scar if it repeats. If the label and the scar disagree, keep both and follow the scar until another proof route fails it.",
+          "scanner_entry": "Proof order prompt. Object mark and custody stamp outrank public category. Confidence: partial. Required next evidence: witness hash, relay timestamp, route alias, or terminal receipt.",
+          "terminal_note": "PUBLIC ARCHIVE PROOF ORDER 1. Object mark. 2. Custody sequence. 3. Witness hash. 4. Route timestamp. 5. Office label. 6. Claimant-safe summary. 7. Legal hold. Do not sort by the cleanest line.",
+          "evidence_caption": "Proof-order card. The archive lists object marks before public labels so a rewritten category cannot become stronger than the evidence it names.",
+          "spoiler_policy": "Proof-order language may appear early. Final receiver, protected claimant, Atlas consequence, exact route branch, and legal result stay masked until later proof gates.",
+          "title": "Public Archive Proof Order",
+          "locale_status": "source_authority",
+          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_en_US_PRIMARY"
+        },
+        "ar_SA": {
+          "website_article": "اقرأ الجسم قبل الوسم. الختم المكسور وختم الحيازة وبصمة الشاهد ووقت الترحيل واسم المسار تحمل وزنا اكبر من فئة عامة او خانة مستلم. الوسوم العامة تساعد في البحث لكنها قد تعاد كتابتها. ابق صياغة المكتب وملخصات حماية المطالب ووسوم الحجر والحجز القانوني خلف ترتيب الدليل المادي حتى يظهر مسار دليل آخر يخالفه.",
+          "wiki_article": "اقرأ الجسم قبل الوسم. الختم المكسور وختم الحيازة وبصمة الشاهد ووقت الترحيل واسم المسار تحمل وزنا اكبر من فئة عامة او خانة مستلم. الوسوم العامة تساعد في البحث لكنها قد تعاد كتابتها. ابق صياغة المكتب وملخصات حماية المطالب ووسوم الحجر والحجز القانوني خلف ترتيب الدليل المادي حتى يظهر مسار دليل آخر يخالفه.",
+          "pda_codex": "اقرأ الجسم قبل الوسم. الختم المكسور وختم الحيازة وبصمة الشاهد ووقت الترحيل واسم المسار تحمل وزنا اكبر من فئة عامة او خانة مستلم. الوسوم العامة تساعد في البحث لكنها قد تعاد كتابتها. ابق صياغة المكتب وملخصات حماية المطالب ووسوم الحجر والحجز القانوني خلف ترتيب الدليل المادي حتى يظهر مسار دليل آخر يخالفه.",
+          "scanner_entry": "اقرأ الجسم قبل الوسم. الختم المكسور وختم الحيازة وبصمة الشاهد ووقت الترحيل واسم المسار تحمل وزنا اكبر من فئة عامة او خانة مستلم. الوسوم العامة تساعد في البحث لكنها قد تعاد كتابتها. ابق صياغة المكتب وملخصات حماية المطالب ووسوم الحجر والحجز القانوني خلف ترتيب الدليل المادي حتى يظهر مسار دليل آخر يخالفه.",
+          "terminal_note": "اقرأ الجسم قبل الوسم. الختم المكسور وختم الحيازة وبصمة الشاهد ووقت الترحيل واسم المسار تحمل وزنا اكبر من فئة عامة او خانة مستلم. الوسوم العامة تساعد في البحث لكنها قد تعاد كتابتها. ابق صياغة المكتب وملخصات حماية المطالب ووسوم الحجر والحجز القانوني خلف ترتيب الدليل المادي حتى يظهر مسار دليل آخر يخالفه.",
+          "evidence_caption": "اقرأ الجسم قبل الوسم. الختم المكسور وختم الحيازة وبصمة الشاهد ووقت الترحيل واسم المسار تحمل وزنا اكبر من فئة عامة او خانة مستلم. الوسوم العامة تساعد في البحث لكنها قد تعاد كتابتها. ابق صياغة المكتب وملخصات حماية المطالب ووسوم الحجر والحجز القانوني خلف ترتيب الدليل المادي حتى يظهر مسار دليل آخر يخالفه.",
+          "spoiler_policy": "اقرأ الجسم قبل الوسم. الختم المكسور وختم الحيازة وبصمة الشاهد ووقت الترحيل واسم المسار تحمل وزنا اكبر من فئة عامة او خانة مستلم. الوسوم العامة تساعد في البحث لكنها قد تعاد كتابتها. ابق صياغة المكتب وملخصات حماية المطالب ووسوم الحجر والحجز القانوني خلف ترتيب الدليل المادي حتى يظهر مسار دليل آخر يخالفه.",
+          "title": "Public Archive Proof Order",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_ar_SA_PRIMARY"
+        },
+        "de_DE": {
+          "website_article": "Lies das Objekt vor dem Label. Gebrochenes Siegel, Verwahrungsstempel, Zeugenhash, Relaiszeit und Routenalias wiegen mehr als oeffentliche Kategorie oder Empfaengerfeld. Oeffentliche Labels helfen beim Suchen, koennen aber umgeschrieben werden. Halte Amtswortlaut, claimant-safe Zusammenfassung, Quarantaene-Tag und Rechtsvermerk hinter der physischen Beweisfolge, bis eine andere Spur widerspricht.",
+          "wiki_article": "Lies das Objekt vor dem Label. Gebrochenes Siegel, Verwahrungsstempel, Zeugenhash, Relaiszeit und Routenalias wiegen mehr als oeffentliche Kategorie oder Empfaengerfeld. Oeffentliche Labels helfen beim Suchen, koennen aber umgeschrieben werden. Halte Amtswortlaut, claimant-safe Zusammenfassung, Quarantaene-Tag und Rechtsvermerk hinter der physischen Beweisfolge, bis eine andere Spur widerspricht.",
+          "pda_codex": "Lies das Objekt vor dem Label. Gebrochenes Siegel, Verwahrungsstempel, Zeugenhash, Relaiszeit und Routenalias wiegen mehr als oeffentliche Kategorie oder Empfaengerfeld. Oeffentliche Labels helfen beim Suchen, koennen aber umgeschrieben werden. Halte Amtswortlaut, claimant-safe Zusammenfassung, Quarantaene-Tag und Rechtsvermerk hinter der physischen Beweisfolge, bis eine andere Spur widerspricht.",
+          "scanner_entry": "Lies das Objekt vor dem Label. Gebrochenes Siegel, Verwahrungsstempel, Zeugenhash, Relaiszeit und Routenalias wiegen mehr als oeffentliche Kategorie oder Empfaengerfeld. Oeffentliche Labels helfen beim Suchen, koennen aber umgeschrieben werden. Halte Amtswortlaut, claimant-safe Zusammenfassung, Quarantaene-Tag und Rechtsvermerk hinter der physischen Beweisfolge, bis eine andere Spur widerspricht.",
+          "terminal_note": "Lies das Objekt vor dem Label. Gebrochenes Siegel, Verwahrungsstempel, Zeugenhash, Relaiszeit und Routenalias wiegen mehr als oeffentliche Kategorie oder Empfaengerfeld. Oeffentliche Labels helfen beim Suchen, koennen aber umgeschrieben werden. Halte Amtswortlaut, claimant-safe Zusammenfassung, Quarantaene-Tag und Rechtsvermerk hinter der physischen Beweisfolge, bis eine andere Spur widerspricht.",
+          "evidence_caption": "Lies das Objekt vor dem Label. Gebrochenes Siegel, Verwahrungsstempel, Zeugenhash, Relaiszeit und Routenalias wiegen mehr als oeffentliche Kategorie oder Empfaengerfeld. Oeffentliche Labels helfen beim Suchen, koennen aber umgeschrieben werden. Halte Amtswortlaut, claimant-safe Zusammenfassung, Quarantaene-Tag und Rechtsvermerk hinter der physischen Beweisfolge, bis eine andere Spur widerspricht.",
+          "spoiler_policy": "Lies das Objekt vor dem Label. Gebrochenes Siegel, Verwahrungsstempel, Zeugenhash, Relaiszeit und Routenalias wiegen mehr als oeffentliche Kategorie oder Empfaengerfeld. Oeffentliche Labels helfen beim Suchen, koennen aber umgeschrieben werden. Halte Amtswortlaut, claimant-safe Zusammenfassung, Quarantaene-Tag und Rechtsvermerk hinter der physischen Beweisfolge, bis eine andere Spur widerspricht.",
+          "title": "Public Archive Proof Order",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_de_DE_PRIMARY"
+        },
+        "es_ES": {
+          "website_article": "Lee el objeto antes de la etiqueta. Un sello roto, marca de custodia, hash testigo, hora de relevo y alias de ruta pesan mas que una categoria publica o campo receptor. Las etiquetas publicas ayudan a buscar, pero pueden reescribirse. Deja texto de oficina, resumen seguro para reclamante, cuarentena y retencion legal detras del orden fisico de prueba hasta que otra ruta lo contradiga.",
+          "wiki_article": "Lee el objeto antes de la etiqueta. Un sello roto, marca de custodia, hash testigo, hora de relevo y alias de ruta pesan mas que una categoria publica o campo receptor. Las etiquetas publicas ayudan a buscar, pero pueden reescribirse. Deja texto de oficina, resumen seguro para reclamante, cuarentena y retencion legal detras del orden fisico de prueba hasta que otra ruta lo contradiga.",
+          "pda_codex": "Lee el objeto antes de la etiqueta. Un sello roto, marca de custodia, hash testigo, hora de relevo y alias de ruta pesan mas que una categoria publica o campo receptor. Las etiquetas publicas ayudan a buscar, pero pueden reescribirse. Deja texto de oficina, resumen seguro para reclamante, cuarentena y retencion legal detras del orden fisico de prueba hasta que otra ruta lo contradiga.",
+          "scanner_entry": "Lee el objeto antes de la etiqueta. Un sello roto, marca de custodia, hash testigo, hora de relevo y alias de ruta pesan mas que una categoria publica o campo receptor. Las etiquetas publicas ayudan a buscar, pero pueden reescribirse. Deja texto de oficina, resumen seguro para reclamante, cuarentena y retencion legal detras del orden fisico de prueba hasta que otra ruta lo contradiga.",
+          "terminal_note": "Lee el objeto antes de la etiqueta. Un sello roto, marca de custodia, hash testigo, hora de relevo y alias de ruta pesan mas que una categoria publica o campo receptor. Las etiquetas publicas ayudan a buscar, pero pueden reescribirse. Deja texto de oficina, resumen seguro para reclamante, cuarentena y retencion legal detras del orden fisico de prueba hasta que otra ruta lo contradiga.",
+          "evidence_caption": "Lee el objeto antes de la etiqueta. Un sello roto, marca de custodia, hash testigo, hora de relevo y alias de ruta pesan mas que una categoria publica o campo receptor. Las etiquetas publicas ayudan a buscar, pero pueden reescribirse. Deja texto de oficina, resumen seguro para reclamante, cuarentena y retencion legal detras del orden fisico de prueba hasta que otra ruta lo contradiga.",
+          "spoiler_policy": "Lee el objeto antes de la etiqueta. Un sello roto, marca de custodia, hash testigo, hora de relevo y alias de ruta pesan mas que una categoria publica o campo receptor. Las etiquetas publicas ayudan a buscar, pero pueden reescribirse. Deja texto de oficina, resumen seguro para reclamante, cuarentena y retencion legal detras del orden fisico de prueba hasta que otra ruta lo contradiga.",
+          "title": "Public Archive Proof Order",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_es_ES_PRIMARY"
+        },
+        "fr_FR": {
+          "website_article": "Lisez l'objet avant l'etiquette. Sceau fendu, cachet de garde, hash temoin, heure de relais et alias de route pesent plus qu'une categorie publique ou un champ receveur. Les etiquettes aident la recherche, mais se reecrivent. Gardez langage d'office, resume protege, quarantaine et retenue legale derriere l'ordre de preuve physique jusqu'a contradiction.",
+          "wiki_article": "Lisez l'objet avant l'etiquette. Sceau fendu, cachet de garde, hash temoin, heure de relais et alias de route pesent plus qu'une categorie publique ou un champ receveur. Les etiquettes aident la recherche, mais se reecrivent. Gardez langage d'office, resume protege, quarantaine et retenue legale derriere l'ordre de preuve physique jusqu'a contradiction.",
+          "pda_codex": "Lisez l'objet avant l'etiquette. Sceau fendu, cachet de garde, hash temoin, heure de relais et alias de route pesent plus qu'une categorie publique ou un champ receveur. Les etiquettes aident la recherche, mais se reecrivent. Gardez langage d'office, resume protege, quarantaine et retenue legale derriere l'ordre de preuve physique jusqu'a contradiction.",
+          "scanner_entry": "Lisez l'objet avant l'etiquette. Sceau fendu, cachet de garde, hash temoin, heure de relais et alias de route pesent plus qu'une categorie publique ou un champ receveur. Les etiquettes aident la recherche, mais se reecrivent. Gardez langage d'office, resume protege, quarantaine et retenue legale derriere l'ordre de preuve physique jusqu'a contradiction.",
+          "terminal_note": "Lisez l'objet avant l'etiquette. Sceau fendu, cachet de garde, hash temoin, heure de relais et alias de route pesent plus qu'une categorie publique ou un champ receveur. Les etiquettes aident la recherche, mais se reecrivent. Gardez langage d'office, resume protege, quarantaine et retenue legale derriere l'ordre de preuve physique jusqu'a contradiction.",
+          "evidence_caption": "Lisez l'objet avant l'etiquette. Sceau fendu, cachet de garde, hash temoin, heure de relais et alias de route pesent plus qu'une categorie publique ou un champ receveur. Les etiquettes aident la recherche, mais se reecrivent. Gardez langage d'office, resume protege, quarantaine et retenue legale derriere l'ordre de preuve physique jusqu'a contradiction.",
+          "spoiler_policy": "Lisez l'objet avant l'etiquette. Sceau fendu, cachet de garde, hash temoin, heure de relais et alias de route pesent plus qu'une categorie publique ou un champ receveur. Les etiquettes aident la recherche, mais se reecrivent. Gardez langage d'office, resume protege, quarantaine et retenue legale derriere l'ordre de preuve physique jusqu'a contradiction.",
+          "title": "Public Archive Proof Order",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_fr_FR_PRIMARY"
+        },
+        "he_IL": {
+          "website_article": "קראו את החפץ לפני התווית. חותם סדוק, חותמת משמורת, גיבוב עד, זמן ממסר וכינוי מסלול שוקלים יותר מקטגוריה ציבורית או שדה מקבל. תוויות ציבוריות עוזרות לחיפוש, אבל אפשר לשכתב אותן. שמרו ניסוח משרד, תקציר מוגן, סימון הסגר ועיכוב משפטי מאחורי סדר ההוכחה הפיזי עד שמסלול ראיה אחר סותר אותו.",
+          "wiki_article": "קראו את החפץ לפני התווית. חותם סדוק, חותמת משמורת, גיבוב עד, זמן ממסר וכינוי מסלול שוקלים יותר מקטגוריה ציבורית או שדה מקבל. תוויות ציבוריות עוזרות לחיפוש, אבל אפשר לשכתב אותן. שמרו ניסוח משרד, תקציר מוגן, סימון הסגר ועיכוב משפטי מאחורי סדר ההוכחה הפיזי עד שמסלול ראיה אחר סותר אותו.",
+          "pda_codex": "קראו את החפץ לפני התווית. חותם סדוק, חותמת משמורת, גיבוב עד, זמן ממסר וכינוי מסלול שוקלים יותר מקטגוריה ציבורית או שדה מקבל. תוויות ציבוריות עוזרות לחיפוש, אבל אפשר לשכתב אותן. שמרו ניסוח משרד, תקציר מוגן, סימון הסגר ועיכוב משפטי מאחורי סדר ההוכחה הפיזי עד שמסלול ראיה אחר סותר אותו.",
+          "scanner_entry": "קראו את החפץ לפני התווית. חותם סדוק, חותמת משמורת, גיבוב עד, זמן ממסר וכינוי מסלול שוקלים יותר מקטגוריה ציבורית או שדה מקבל. תוויות ציבוריות עוזרות לחיפוש, אבל אפשר לשכתב אותן. שמרו ניסוח משרד, תקציר מוגן, סימון הסגר ועיכוב משפטי מאחורי סדר ההוכחה הפיזי עד שמסלול ראיה אחר סותר אותו.",
+          "terminal_note": "קראו את החפץ לפני התווית. חותם סדוק, חותמת משמורת, גיבוב עד, זמן ממסר וכינוי מסלול שוקלים יותר מקטגוריה ציבורית או שדה מקבל. תוויות ציבוריות עוזרות לחיפוש, אבל אפשר לשכתב אותן. שמרו ניסוח משרד, תקציר מוגן, סימון הסגר ועיכוב משפטי מאחורי סדר ההוכחה הפיזי עד שמסלול ראיה אחר סותר אותו.",
+          "evidence_caption": "קראו את החפץ לפני התווית. חותם סדוק, חותמת משמורת, גיבוב עד, זמן ממסר וכינוי מסלול שוקלים יותר מקטגוריה ציבורית או שדה מקבל. תוויות ציבוריות עוזרות לחיפוש, אבל אפשר לשכתב אותן. שמרו ניסוח משרד, תקציר מוגן, סימון הסגר ועיכוב משפטי מאחורי סדר ההוכחה הפיזי עד שמסלול ראיה אחר סותר אותו.",
+          "spoiler_policy": "קראו את החפץ לפני התווית. חותם סדוק, חותמת משמורת, גיבוב עד, זמן ממסר וכינוי מסלול שוקלים יותר מקטגוריה ציבורית או שדה מקבל. תוויות ציבוריות עוזרות לחיפוש, אבל אפשר לשכתב אותן. שמרו ניסוח משרד, תקציר מוגן, סימון הסגר ועיכוב משפטי מאחורי סדר ההוכחה הפיזי עד שמסלול ראיה אחר סותר אותו.",
+          "title": "Public Archive Proof Order",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_he_IL_PRIMARY"
+        },
+        "id_ID": {
+          "website_article": "Baca objek sebelum label. Segel retak, cap kustodi, hash saksi, waktu relai, dan alias rute lebih kuat daripada kategori publik atau kolom penerima. Label publik membantu pencarian, tetapi dapat ditulis ulang. Simpan bahasa kantor, ringkasan aman-klaiman, tag karantina, dan tahanan legal di belakang urutan bukti fisik sampai jalur bukti lain membantahnya.",
+          "wiki_article": "Baca objek sebelum label. Segel retak, cap kustodi, hash saksi, waktu relai, dan alias rute lebih kuat daripada kategori publik atau kolom penerima. Label publik membantu pencarian, tetapi dapat ditulis ulang. Simpan bahasa kantor, ringkasan aman-klaiman, tag karantina, dan tahanan legal di belakang urutan bukti fisik sampai jalur bukti lain membantahnya.",
+          "pda_codex": "Baca objek sebelum label. Segel retak, cap kustodi, hash saksi, waktu relai, dan alias rute lebih kuat daripada kategori publik atau kolom penerima. Label publik membantu pencarian, tetapi dapat ditulis ulang. Simpan bahasa kantor, ringkasan aman-klaiman, tag karantina, dan tahanan legal di belakang urutan bukti fisik sampai jalur bukti lain membantahnya.",
+          "scanner_entry": "Baca objek sebelum label. Segel retak, cap kustodi, hash saksi, waktu relai, dan alias rute lebih kuat daripada kategori publik atau kolom penerima. Label publik membantu pencarian, tetapi dapat ditulis ulang. Simpan bahasa kantor, ringkasan aman-klaiman, tag karantina, dan tahanan legal di belakang urutan bukti fisik sampai jalur bukti lain membantahnya.",
+          "terminal_note": "Baca objek sebelum label. Segel retak, cap kustodi, hash saksi, waktu relai, dan alias rute lebih kuat daripada kategori publik atau kolom penerima. Label publik membantu pencarian, tetapi dapat ditulis ulang. Simpan bahasa kantor, ringkasan aman-klaiman, tag karantina, dan tahanan legal di belakang urutan bukti fisik sampai jalur bukti lain membantahnya.",
+          "evidence_caption": "Baca objek sebelum label. Segel retak, cap kustodi, hash saksi, waktu relai, dan alias rute lebih kuat daripada kategori publik atau kolom penerima. Label publik membantu pencarian, tetapi dapat ditulis ulang. Simpan bahasa kantor, ringkasan aman-klaiman, tag karantina, dan tahanan legal di belakang urutan bukti fisik sampai jalur bukti lain membantahnya.",
+          "spoiler_policy": "Baca objek sebelum label. Segel retak, cap kustodi, hash saksi, waktu relai, dan alias rute lebih kuat daripada kategori publik atau kolom penerima. Label publik membantu pencarian, tetapi dapat ditulis ulang. Simpan bahasa kantor, ringkasan aman-klaiman, tag karantina, dan tahanan legal di belakang urutan bukti fisik sampai jalur bukti lain membantahnya.",
+          "title": "Public Archive Proof Order",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_id_ID_PRIMARY"
+        },
+        "ja_JP": {
+          "website_article": "ラベルより先に物体を読む。割れた封印、保管印、証人ハッシュ、中継時刻、ルート別名は、公開カテゴリや受信者欄より重い。公開ラベルは検索に役立つが書き換えられる。事務所文、請求者保護要約、隔離タグ、法的保留は、別の証拠ルートが否定するまで物理的な証明順の後ろに置く。",
+          "wiki_article": "ラベルより先に物体を読む。割れた封印、保管印、証人ハッシュ、中継時刻、ルート別名は、公開カテゴリや受信者欄より重い。公開ラベルは検索に役立つが書き換えられる。事務所文、請求者保護要約、隔離タグ、法的保留は、別の証拠ルートが否定するまで物理的な証明順の後ろに置く。",
+          "pda_codex": "ラベルより先に物体を読む。割れた封印、保管印、証人ハッシュ、中継時刻、ルート別名は、公開カテゴリや受信者欄より重い。公開ラベルは検索に役立つが書き換えられる。事務所文、請求者保護要約、隔離タグ、法的保留は、別の証拠ルートが否定するまで物理的な証明順の後ろに置く。",
+          "scanner_entry": "ラベルより先に物体を読む。割れた封印、保管印、証人ハッシュ、中継時刻、ルート別名は、公開カテゴリや受信者欄より重い。公開ラベルは検索に役立つが書き換えられる。事務所文、請求者保護要約、隔離タグ、法的保留は、別の証拠ルートが否定するまで物理的な証明順の後ろに置く。",
+          "terminal_note": "ラベルより先に物体を読む。割れた封印、保管印、証人ハッシュ、中継時刻、ルート別名は、公開カテゴリや受信者欄より重い。公開ラベルは検索に役立つが書き換えられる。事務所文、請求者保護要約、隔離タグ、法的保留は、別の証拠ルートが否定するまで物理的な証明順の後ろに置く。",
+          "evidence_caption": "ラベルより先に物体を読む。割れた封印、保管印、証人ハッシュ、中継時刻、ルート別名は、公開カテゴリや受信者欄より重い。公開ラベルは検索に役立つが書き換えられる。事務所文、請求者保護要約、隔離タグ、法的保留は、別の証拠ルートが否定するまで物理的な証明順の後ろに置く。",
+          "spoiler_policy": "ラベルより先に物体を読む。割れた封印、保管印、証人ハッシュ、中継時刻、ルート別名は、公開カテゴリや受信者欄より重い。公開ラベルは検索に役立つが書き換えられる。事務所文、請求者保護要約、隔離タグ、法的保留は、別の証拠ルートが否定するまで物理的な証明順の後ろに置く。",
+          "title": "Public Archive Proof Order",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_ja_JP_PRIMARY"
+        },
+        "ko_KR": {
+          "website_article": "라벨보다 물체를 먼저 읽어라. 금 간 봉인, 보관 도장, 증인 해시, 중계 시각, 경로 별칭은 공개 분류나 수신자 칸보다 무겁다. 공개 라벨은 검색에 유용하지만 다시 쓰일 수 있다. 사무실 문구, 청구인 보호 요약, 격리 표식, 법적 보류는 다른 증거 경로가 반박할 때까지 물리 증명 순서 뒤에 둔다.",
+          "wiki_article": "라벨보다 물체를 먼저 읽어라. 금 간 봉인, 보관 도장, 증인 해시, 중계 시각, 경로 별칭은 공개 분류나 수신자 칸보다 무겁다. 공개 라벨은 검색에 유용하지만 다시 쓰일 수 있다. 사무실 문구, 청구인 보호 요약, 격리 표식, 법적 보류는 다른 증거 경로가 반박할 때까지 물리 증명 순서 뒤에 둔다.",
+          "pda_codex": "라벨보다 물체를 먼저 읽어라. 금 간 봉인, 보관 도장, 증인 해시, 중계 시각, 경로 별칭은 공개 분류나 수신자 칸보다 무겁다. 공개 라벨은 검색에 유용하지만 다시 쓰일 수 있다. 사무실 문구, 청구인 보호 요약, 격리 표식, 법적 보류는 다른 증거 경로가 반박할 때까지 물리 증명 순서 뒤에 둔다.",
+          "scanner_entry": "라벨보다 물체를 먼저 읽어라. 금 간 봉인, 보관 도장, 증인 해시, 중계 시각, 경로 별칭은 공개 분류나 수신자 칸보다 무겁다. 공개 라벨은 검색에 유용하지만 다시 쓰일 수 있다. 사무실 문구, 청구인 보호 요약, 격리 표식, 법적 보류는 다른 증거 경로가 반박할 때까지 물리 증명 순서 뒤에 둔다.",
+          "terminal_note": "라벨보다 물체를 먼저 읽어라. 금 간 봉인, 보관 도장, 증인 해시, 중계 시각, 경로 별칭은 공개 분류나 수신자 칸보다 무겁다. 공개 라벨은 검색에 유용하지만 다시 쓰일 수 있다. 사무실 문구, 청구인 보호 요약, 격리 표식, 법적 보류는 다른 증거 경로가 반박할 때까지 물리 증명 순서 뒤에 둔다.",
+          "evidence_caption": "라벨보다 물체를 먼저 읽어라. 금 간 봉인, 보관 도장, 증인 해시, 중계 시각, 경로 별칭은 공개 분류나 수신자 칸보다 무겁다. 공개 라벨은 검색에 유용하지만 다시 쓰일 수 있다. 사무실 문구, 청구인 보호 요약, 격리 표식, 법적 보류는 다른 증거 경로가 반박할 때까지 물리 증명 순서 뒤에 둔다.",
+          "spoiler_policy": "라벨보다 물체를 먼저 읽어라. 금 간 봉인, 보관 도장, 증인 해시, 중계 시각, 경로 별칭은 공개 분류나 수신자 칸보다 무겁다. 공개 라벨은 검색에 유용하지만 다시 쓰일 수 있다. 사무실 문구, 청구인 보호 요약, 격리 표식, 법적 보류는 다른 증거 경로가 반박할 때까지 물리 증명 순서 뒤에 둔다.",
+          "title": "Public Archive Proof Order",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_ko_KR_PRIMARY"
+        },
+        "nl_NL": {
+          "website_article": "Lees het object voor het label. Gebroken zegel, bewaarstempel, getuigehash, relaytijd en routealias wegen zwaarder dan publieke categorie of ontvangersveld. Publieke labels helpen zoeken, maar kunnen herschreven worden. Houd kantoortaal, claimant-safe samenvatting, quarantainetag en juridische hold achter de fysieke bewijsvolgorde tot een andere bewijsroute spreekt.",
+          "wiki_article": "Lees het object voor het label. Gebroken zegel, bewaarstempel, getuigehash, relaytijd en routealias wegen zwaarder dan publieke categorie of ontvangersveld. Publieke labels helpen zoeken, maar kunnen herschreven worden. Houd kantoortaal, claimant-safe samenvatting, quarantainetag en juridische hold achter de fysieke bewijsvolgorde tot een andere bewijsroute spreekt.",
+          "pda_codex": "Lees het object voor het label. Gebroken zegel, bewaarstempel, getuigehash, relaytijd en routealias wegen zwaarder dan publieke categorie of ontvangersveld. Publieke labels helpen zoeken, maar kunnen herschreven worden. Houd kantoortaal, claimant-safe samenvatting, quarantainetag en juridische hold achter de fysieke bewijsvolgorde tot een andere bewijsroute spreekt.",
+          "scanner_entry": "Lees het object voor het label. Gebroken zegel, bewaarstempel, getuigehash, relaytijd en routealias wegen zwaarder dan publieke categorie of ontvangersveld. Publieke labels helpen zoeken, maar kunnen herschreven worden. Houd kantoortaal, claimant-safe samenvatting, quarantainetag en juridische hold achter de fysieke bewijsvolgorde tot een andere bewijsroute spreekt.",
+          "terminal_note": "Lees het object voor het label. Gebroken zegel, bewaarstempel, getuigehash, relaytijd en routealias wegen zwaarder dan publieke categorie of ontvangersveld. Publieke labels helpen zoeken, maar kunnen herschreven worden. Houd kantoortaal, claimant-safe samenvatting, quarantainetag en juridische hold achter de fysieke bewijsvolgorde tot een andere bewijsroute spreekt.",
+          "evidence_caption": "Lees het object voor het label. Gebroken zegel, bewaarstempel, getuigehash, relaytijd en routealias wegen zwaarder dan publieke categorie of ontvangersveld. Publieke labels helpen zoeken, maar kunnen herschreven worden. Houd kantoortaal, claimant-safe samenvatting, quarantainetag en juridische hold achter de fysieke bewijsvolgorde tot een andere bewijsroute spreekt.",
+          "spoiler_policy": "Lees het object voor het label. Gebroken zegel, bewaarstempel, getuigehash, relaytijd en routealias wegen zwaarder dan publieke categorie of ontvangersveld. Publieke labels helpen zoeken, maar kunnen herschreven worden. Houd kantoortaal, claimant-safe samenvatting, quarantainetag en juridische hold achter de fysieke bewijsvolgorde tot een andere bewijsroute spreekt.",
+          "title": "Public Archive Proof Order",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_nl_NL_PRIMARY"
+        },
+        "pl_PL": {
+          "website_article": "Czytaj obiekt przed etykieta. Peknieta pieczec, znak depozytu, hash swiadka, czas przekazu i alias trasy sa mocniejsze niz publiczna kategoria albo pole odbiorcy. Publiczne etykiety pomagaja szukac, ale mozna je przepisac. Trzymaj jezyk biura, bezpieczne streszczenie roszczenia, kwarantanne i blokade prawna za fizycznym porzadkiem dowodu do chwili sprzeciwu innej trasy.",
+          "wiki_article": "Czytaj obiekt przed etykieta. Peknieta pieczec, znak depozytu, hash swiadka, czas przekazu i alias trasy sa mocniejsze niz publiczna kategoria albo pole odbiorcy. Publiczne etykiety pomagaja szukac, ale mozna je przepisac. Trzymaj jezyk biura, bezpieczne streszczenie roszczenia, kwarantanne i blokade prawna za fizycznym porzadkiem dowodu do chwili sprzeciwu innej trasy.",
+          "pda_codex": "Czytaj obiekt przed etykieta. Peknieta pieczec, znak depozytu, hash swiadka, czas przekazu i alias trasy sa mocniejsze niz publiczna kategoria albo pole odbiorcy. Publiczne etykiety pomagaja szukac, ale mozna je przepisac. Trzymaj jezyk biura, bezpieczne streszczenie roszczenia, kwarantanne i blokade prawna za fizycznym porzadkiem dowodu do chwili sprzeciwu innej trasy.",
+          "scanner_entry": "Czytaj obiekt przed etykieta. Peknieta pieczec, znak depozytu, hash swiadka, czas przekazu i alias trasy sa mocniejsze niz publiczna kategoria albo pole odbiorcy. Publiczne etykiety pomagaja szukac, ale mozna je przepisac. Trzymaj jezyk biura, bezpieczne streszczenie roszczenia, kwarantanne i blokade prawna za fizycznym porzadkiem dowodu do chwili sprzeciwu innej trasy.",
+          "terminal_note": "Czytaj obiekt przed etykieta. Peknieta pieczec, znak depozytu, hash swiadka, czas przekazu i alias trasy sa mocniejsze niz publiczna kategoria albo pole odbiorcy. Publiczne etykiety pomagaja szukac, ale mozna je przepisac. Trzymaj jezyk biura, bezpieczne streszczenie roszczenia, kwarantanne i blokade prawna za fizycznym porzadkiem dowodu do chwili sprzeciwu innej trasy.",
+          "evidence_caption": "Czytaj obiekt przed etykieta. Peknieta pieczec, znak depozytu, hash swiadka, czas przekazu i alias trasy sa mocniejsze niz publiczna kategoria albo pole odbiorcy. Publiczne etykiety pomagaja szukac, ale mozna je przepisac. Trzymaj jezyk biura, bezpieczne streszczenie roszczenia, kwarantanne i blokade prawna za fizycznym porzadkiem dowodu do chwili sprzeciwu innej trasy.",
+          "spoiler_policy": "Czytaj obiekt przed etykieta. Peknieta pieczec, znak depozytu, hash swiadka, czas przekazu i alias trasy sa mocniejsze niz publiczna kategoria albo pole odbiorcy. Publiczne etykiety pomagaja szukac, ale mozna je przepisac. Trzymaj jezyk biura, bezpieczne streszczenie roszczenia, kwarantanne i blokade prawna za fizycznym porzadkiem dowodu do chwili sprzeciwu innej trasy.",
+          "title": "Public Archive Proof Order",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_pl_PL_PRIMARY"
+        },
+        "pt_BR": {
+          "website_article": "Leia o objeto antes do rotulo. Selo rachado, carimbo de custodia, hash de testemunha, horario de rele e alias de rota pesam mais que categoria publica ou campo receptor. Rotulos publicos ajudam a busca, mas podem ser reescritos. Mantenha texto de escritorio, resumo seguro de reclamante, tag de quarentena e retencao legal atras da ordem fisica de prova ate outra rota contradizer.",
+          "wiki_article": "Leia o objeto antes do rotulo. Selo rachado, carimbo de custodia, hash de testemunha, horario de rele e alias de rota pesam mais que categoria publica ou campo receptor. Rotulos publicos ajudam a busca, mas podem ser reescritos. Mantenha texto de escritorio, resumo seguro de reclamante, tag de quarentena e retencao legal atras da ordem fisica de prova ate outra rota contradizer.",
+          "pda_codex": "Leia o objeto antes do rotulo. Selo rachado, carimbo de custodia, hash de testemunha, horario de rele e alias de rota pesam mais que categoria publica ou campo receptor. Rotulos publicos ajudam a busca, mas podem ser reescritos. Mantenha texto de escritorio, resumo seguro de reclamante, tag de quarentena e retencao legal atras da ordem fisica de prova ate outra rota contradizer.",
+          "scanner_entry": "Leia o objeto antes do rotulo. Selo rachado, carimbo de custodia, hash de testemunha, horario de rele e alias de rota pesam mais que categoria publica ou campo receptor. Rotulos publicos ajudam a busca, mas podem ser reescritos. Mantenha texto de escritorio, resumo seguro de reclamante, tag de quarentena e retencao legal atras da ordem fisica de prova ate outra rota contradizer.",
+          "terminal_note": "Leia o objeto antes do rotulo. Selo rachado, carimbo de custodia, hash de testemunha, horario de rele e alias de rota pesam mais que categoria publica ou campo receptor. Rotulos publicos ajudam a busca, mas podem ser reescritos. Mantenha texto de escritorio, resumo seguro de reclamante, tag de quarentena e retencao legal atras da ordem fisica de prova ate outra rota contradizer.",
+          "evidence_caption": "Leia o objeto antes do rotulo. Selo rachado, carimbo de custodia, hash de testemunha, horario de rele e alias de rota pesam mais que categoria publica ou campo receptor. Rotulos publicos ajudam a busca, mas podem ser reescritos. Mantenha texto de escritorio, resumo seguro de reclamante, tag de quarentena e retencao legal atras da ordem fisica de prova ate outra rota contradizer.",
+          "spoiler_policy": "Leia o objeto antes do rotulo. Selo rachado, carimbo de custodia, hash de testemunha, horario de rele e alias de rota pesam mais que categoria publica ou campo receptor. Rotulos publicos ajudam a busca, mas podem ser reescritos. Mantenha texto de escritorio, resumo seguro de reclamante, tag de quarentena e retencao legal atras da ordem fisica de prova ate outra rota contradizer.",
+          "title": "Public Archive Proof Order",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_pt_BR_PRIMARY"
+        },
+        "ru_RU": {
+          "website_article": "Читай объект раньше метки. Треснувшая пломба, печать хранения, хэш свидетеля, время ретрансляции и псевдоним маршрута весят больше, чем публичная категория или поле получателя. Публичные метки помогают искать, но их можно переписать. Держи офисную формулировку, безопасное резюме заявителя, карантин и юридическое удержание позади физического порядка доказательств, пока другая цепь не спорит с ним.",
+          "wiki_article": "Читай объект раньше метки. Треснувшая пломба, печать хранения, хэш свидетеля, время ретрансляции и псевдоним маршрута весят больше, чем публичная категория или поле получателя. Публичные метки помогают искать, но их можно переписать. Держи офисную формулировку, безопасное резюме заявителя, карантин и юридическое удержание позади физического порядка доказательств, пока другая цепь не спорит с ним.",
+          "pda_codex": "Читай объект раньше метки. Треснувшая пломба, печать хранения, хэш свидетеля, время ретрансляции и псевдоним маршрута весят больше, чем публичная категория или поле получателя. Публичные метки помогают искать, но их можно переписать. Держи офисную формулировку, безопасное резюме заявителя, карантин и юридическое удержание позади физического порядка доказательств, пока другая цепь не спорит с ним.",
+          "scanner_entry": "Читай объект раньше метки. Треснувшая пломба, печать хранения, хэш свидетеля, время ретрансляции и псевдоним маршрута весят больше, чем публичная категория или поле получателя. Публичные метки помогают искать, но их можно переписать. Держи офисную формулировку, безопасное резюме заявителя, карантин и юридическое удержание позади физического порядка доказательств, пока другая цепь не спорит с ним.",
+          "terminal_note": "Читай объект раньше метки. Треснувшая пломба, печать хранения, хэш свидетеля, время ретрансляции и псевдоним маршрута весят больше, чем публичная категория или поле получателя. Публичные метки помогают искать, но их можно переписать. Держи офисную формулировку, безопасное резюме заявителя, карантин и юридическое удержание позади физического порядка доказательств, пока другая цепь не спорит с ним.",
+          "evidence_caption": "Читай объект раньше метки. Треснувшая пломба, печать хранения, хэш свидетеля, время ретрансляции и псевдоним маршрута весят больше, чем публичная категория или поле получателя. Публичные метки помогают искать, но их можно переписать. Держи офисную формулировку, безопасное резюме заявителя, карантин и юридическое удержание позади физического порядка доказательств, пока другая цепь не спорит с ним.",
+          "spoiler_policy": "Читай объект раньше метки. Треснувшая пломба, печать хранения, хэш свидетеля, время ретрансляции и псевдоним маршрута весят больше, чем публичная категория или поле получателя. Публичные метки помогают искать, но их можно переписать. Держи офисную формулировку, безопасное резюме заявителя, карантин и юридическое удержание позади физического порядка доказательств, пока другая цепь не спорит с ним.",
+          "title": "Public Archive Proof Order",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_ru_RU_PRIMARY"
+        },
+        "uk_UA": {
+          "website_article": "Читай об'єкт раніше за мітку. Тріснута пломба, печатка зберігання, хеш свідка, час ретрансляції і псевдонім маршруту важать більше, ніж публічна категорія або поле отримувача. Публічні мітки допомагають шукати, але їх можна переписати. Тримай офісну фразу, безпечне резюме заявника, карантин і юридичне утримання позаду фізичного порядку доказів, доки інший шлях не заперечить.",
+          "wiki_article": "Читай об'єкт раніше за мітку. Тріснута пломба, печатка зберігання, хеш свідка, час ретрансляції і псевдонім маршруту важать більше, ніж публічна категорія або поле отримувача. Публічні мітки допомагають шукати, але їх можна переписати. Тримай офісну фразу, безпечне резюме заявника, карантин і юридичне утримання позаду фізичного порядку доказів, доки інший шлях не заперечить.",
+          "pda_codex": "Читай об'єкт раніше за мітку. Тріснута пломба, печатка зберігання, хеш свідка, час ретрансляції і псевдонім маршруту важать більше, ніж публічна категорія або поле отримувача. Публічні мітки допомагають шукати, але їх можна переписати. Тримай офісну фразу, безпечне резюме заявника, карантин і юридичне утримання позаду фізичного порядку доказів, доки інший шлях не заперечить.",
+          "scanner_entry": "Читай об'єкт раніше за мітку. Тріснута пломба, печатка зберігання, хеш свідка, час ретрансляції і псевдонім маршруту важать більше, ніж публічна категорія або поле отримувача. Публічні мітки допомагають шукати, але їх можна переписати. Тримай офісну фразу, безпечне резюме заявника, карантин і юридичне утримання позаду фізичного порядку доказів, доки інший шлях не заперечить.",
+          "terminal_note": "Читай об'єкт раніше за мітку. Тріснута пломба, печатка зберігання, хеш свідка, час ретрансляції і псевдонім маршруту важать більше, ніж публічна категорія або поле отримувача. Публічні мітки допомагають шукати, але їх можна переписати. Тримай офісну фразу, безпечне резюме заявника, карантин і юридичне утримання позаду фізичного порядку доказів, доки інший шлях не заперечить.",
+          "evidence_caption": "Читай об'єкт раніше за мітку. Тріснута пломба, печатка зберігання, хеш свідка, час ретрансляції і псевдонім маршруту важать більше, ніж публічна категорія або поле отримувача. Публічні мітки допомагають шукати, але їх можна переписати. Тримай офісну фразу, безпечне резюме заявника, карантин і юридичне утримання позаду фізичного порядку доказів, доки інший шлях не заперечить.",
+          "spoiler_policy": "Читай об'єкт раніше за мітку. Тріснута пломба, печатка зберігання, хеш свідка, час ретрансляції і псевдонім маршруту важать більше, ніж публічна категорія або поле отримувача. Публічні мітки допомагають шукати, але їх можна переписати. Тримай офісну фразу, безпечне резюме заявника, карантин і юридичне утримання позаду фізичного порядку доказів, доки інший шлях не заперечить.",
+          "title": "Public Archive Proof Order",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_uk_UA_PRIMARY"
+        },
+        "zh_CN": {
+          "website_article": "先读物件，再读标签。破裂封签、保管印、见证哈希、中继时间和路线别名，比公开类别或接收方字段更重。公开标签有助检索，但可以被改写。办公室措辞、索赔人安全摘要、隔离标记和法律保留，都应排在实体证据顺序之后，直到另一条证据路线提出反证。",
+          "wiki_article": "先读物件，再读标签。破裂封签、保管印、见证哈希、中继时间和路线别名，比公开类别或接收方字段更重。公开标签有助检索，但可以被改写。办公室措辞、索赔人安全摘要、隔离标记和法律保留，都应排在实体证据顺序之后，直到另一条证据路线提出反证。",
+          "pda_codex": "先读物件，再读标签。破裂封签、保管印、见证哈希、中继时间和路线别名，比公开类别或接收方字段更重。公开标签有助检索，但可以被改写。办公室措辞、索赔人安全摘要、隔离标记和法律保留，都应排在实体证据顺序之后，直到另一条证据路线提出反证。",
+          "scanner_entry": "先读物件，再读标签。破裂封签、保管印、见证哈希、中继时间和路线别名，比公开类别或接收方字段更重。公开标签有助检索，但可以被改写。办公室措辞、索赔人安全摘要、隔离标记和法律保留，都应排在实体证据顺序之后，直到另一条证据路线提出反证。",
+          "terminal_note": "先读物件，再读标签。破裂封签、保管印、见证哈希、中继时间和路线别名，比公开类别或接收方字段更重。公开标签有助检索，但可以被改写。办公室措辞、索赔人安全摘要、隔离标记和法律保留，都应排在实体证据顺序之后，直到另一条证据路线提出反证。",
+          "evidence_caption": "先读物件，再读标签。破裂封签、保管印、见证哈希、中继时间和路线别名，比公开类别或接收方字段更重。公开标签有助检索，但可以被改写。办公室措辞、索赔人安全摘要、隔离标记和法律保留，都应排在实体证据顺序之后，直到另一条证据路线提出反证。",
+          "spoiler_policy": "先读物件，再读标签。破裂封签、保管印、见证哈希、中继时间和路线别名，比公开类别或接收方字段更重。公开标签有助检索，但可以被改写。办公室措辞、索赔人安全摘要、隔离标记和法律保留，都应排在实体证据顺序之后，直到另一条证据路线提出反证。",
+          "title": "Public Archive Proof Order",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_zh_CN_PRIMARY"
+        }
+      }
+    },
+    {
+      "packet_id": "P507_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE",
+      "release_set_id": "RS102_PROOF_ORDER_RELATION_RECEIPT_BRIDGE",
+      "article_id": "applied_lore.wiki_spoiler_safe_relation_edge_bridge",
+      "title_key": "LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_TITLE",
+      "status": "source_candidate_pending_controller_review_and_downstream_wiring",
+      "canon_owner": [
+        "Docs/Lore/Canon_Locks.md",
+        "Docs/Lore/Lore_Bible.md",
+        "Docs/Lore/Lore_Content_System.md",
+        "Docs/Lore/Lore_Localization_Model.md",
+        "Docs/Lore/Website_Publication_Map.md"
+      ],
+      "runtime_contract": {
+        "authoring_only": true,
+        "runtime_reads_markdown": false,
+        "runtime_ready": false,
+        "native_localization_ready": false,
+        "data_monolith_ready": false,
+        "h8bin_ready": false,
+        "unity_placement_ready": false,
+        "generated_page_ready": false,
+        "publication_ready": false
+      },
+      "surfaces": [
+        "website_article",
+        "wiki_article",
+        "pda_codex",
+        "scanner_entry",
+        "terminal_note",
+        "evidence_caption",
+        "spoiler_policy",
+        "string_pool_key"
+      ],
+      "unlock": {
+        "primary": "future proof-order, relation-edge, and receipt-rewrite bridge after packet-specific proof gate",
+        "secondary": "future scanner, terminal, PDA, evidence-caption, website, wiki, and string-pool extraction lanes",
+        "poi_tags": [
+          "relation_edge",
+          "spoiler_cap",
+          "public_archive",
+          "evidence_graph"
+        ],
+        "biome_tags": [
+          "not_biome_bound"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "website_article": "Public readers need connections, but a connection is not a confession. HECTON-8 archive relations are therefore written as edges with limits: supports, disputes, shares custody, shares route, names the same object, repeats a witness hash, or is held behind a spoiler cap. The edge tells a reader where to look next. It does not answer the route for them. This matters because a clean wiki page can accidentally spoil the evidence game by turning every hidden relation into a public conclusion. A page may say that a quarantine tag is related to a receiver ambiguity note. It should not say which receiver the route proves, who benefited from the quarantine, or whether the legal hold was a shield or a delay. The edge exists so the reader can move without being handed the ending.",
+          "wiki_article": "Spoiler-safe relation edge: a visible link between two evidence packets that describes relation type without exposing the protected fact. Common labels include related, supports, disputes, shares custody, shares route alias, repeats witness hash, contradicts public label, and held. Edge confidence must stay qualified until the proof order resolves the object, custody, and witness route.",
+          "pda_codex": "Evidence graph note: a line between two packets is a route prompt. It is not the route answer. If the edge says \"disputes,\" inspect the object and custody marks. If the edge says \"held,\" the graph is deliberately hiding a later proof. Do not treat a missing edge as innocence.",
+          "scanner_entry": "Relation edge detected. Source packet and target packet share custody or route evidence. Spoiler cap active. Confidence: partial. Required next evidence: object proof, witness hash, or terminal receipt.",
+          "terminal_note": "WIKI RELATION EDGE Edge label: related. Spoiler cap: active. Do not expand the hidden route in public copy. Action: show relation type, hide final proof field.",
+          "evidence_caption": "Spoiler-safe relation card. The edge shows that two packets touch the same evidence family while keeping the route conclusion withheld.",
+          "spoiler_policy": "Relation labels may appear early. Edge target, exact contradiction, protected claimant, final receiver, Atlas consequence, and legal result stay masked until later proof gates.",
+          "title": "Wiki Spoiler-Safe Relation Edge",
+          "locale_status": "source_authority",
+          "string_pool_key": "LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_en_US_PRIMARY"
+        },
+        "ar_SA": {
+          "website_article": "حافة العلاقة الآمنة من الحرق تقول إن حزمتين من الدليل تلتقيان من غير كشف جواب المسار. استخدم وسوما مثل مرتبط، يدعم، يعارض، يشترك في الحيازة، يشترك في اسم مسار، يكرر بصمة شاهد، او محجوب. الحافة أداة ملاحة وليست حكما. ابق المستلم النهائي والمطالب المحمي ونتيجة Atlas والحكم القانوني خلف بوابات دليل لاحقة.",
+          "wiki_article": "حافة العلاقة الآمنة من الحرق تقول إن حزمتين من الدليل تلتقيان من غير كشف جواب المسار. استخدم وسوما مثل مرتبط، يدعم، يعارض، يشترك في الحيازة، يشترك في اسم مسار، يكرر بصمة شاهد، او محجوب. الحافة أداة ملاحة وليست حكما. ابق المستلم النهائي والمطالب المحمي ونتيجة Atlas والحكم القانوني خلف بوابات دليل لاحقة.",
+          "pda_codex": "حافة العلاقة الآمنة من الحرق تقول إن حزمتين من الدليل تلتقيان من غير كشف جواب المسار. استخدم وسوما مثل مرتبط، يدعم، يعارض، يشترك في الحيازة، يشترك في اسم مسار، يكرر بصمة شاهد، او محجوب. الحافة أداة ملاحة وليست حكما. ابق المستلم النهائي والمطالب المحمي ونتيجة Atlas والحكم القانوني خلف بوابات دليل لاحقة.",
+          "scanner_entry": "حافة العلاقة الآمنة من الحرق تقول إن حزمتين من الدليل تلتقيان من غير كشف جواب المسار. استخدم وسوما مثل مرتبط، يدعم، يعارض، يشترك في الحيازة، يشترك في اسم مسار، يكرر بصمة شاهد، او محجوب. الحافة أداة ملاحة وليست حكما. ابق المستلم النهائي والمطالب المحمي ونتيجة Atlas والحكم القانوني خلف بوابات دليل لاحقة.",
+          "terminal_note": "حافة العلاقة الآمنة من الحرق تقول إن حزمتين من الدليل تلتقيان من غير كشف جواب المسار. استخدم وسوما مثل مرتبط، يدعم، يعارض، يشترك في الحيازة، يشترك في اسم مسار، يكرر بصمة شاهد، او محجوب. الحافة أداة ملاحة وليست حكما. ابق المستلم النهائي والمطالب المحمي ونتيجة Atlas والحكم القانوني خلف بوابات دليل لاحقة.",
+          "evidence_caption": "حافة العلاقة الآمنة من الحرق تقول إن حزمتين من الدليل تلتقيان من غير كشف جواب المسار. استخدم وسوما مثل مرتبط، يدعم، يعارض، يشترك في الحيازة، يشترك في اسم مسار، يكرر بصمة شاهد، او محجوب. الحافة أداة ملاحة وليست حكما. ابق المستلم النهائي والمطالب المحمي ونتيجة Atlas والحكم القانوني خلف بوابات دليل لاحقة.",
+          "spoiler_policy": "حافة العلاقة الآمنة من الحرق تقول إن حزمتين من الدليل تلتقيان من غير كشف جواب المسار. استخدم وسوما مثل مرتبط، يدعم، يعارض، يشترك في الحيازة، يشترك في اسم مسار، يكرر بصمة شاهد، او محجوب. الحافة أداة ملاحة وليست حكما. ابق المستلم النهائي والمطالب المحمي ونتيجة Atlas والحكم القانوني خلف بوابات دليل لاحقة.",
+          "title": "Wiki Spoiler-Safe Relation Edge",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_ar_SA_PRIMARY"
+        },
+        "de_DE": {
+          "website_article": "Eine spoiler-sichere Relationskante sagt, dass zwei Beweispakete sich beruehren, ohne die Routenantwort preiszugeben. Nutze Labels wie verbunden, stuetzt, bestreitet, teilt Verwahrung, teilt Routenalias, wiederholt Zeugenhash oder gehalten. Die Kante ist Navigation, kein Urteil. Finalen Empfaenger, geschuetzten Anspruch, Atlas-Folge und Rechtsresultat hinter spaeteren Beweistoren halten.",
+          "wiki_article": "Eine spoiler-sichere Relationskante sagt, dass zwei Beweispakete sich beruehren, ohne die Routenantwort preiszugeben. Nutze Labels wie verbunden, stuetzt, bestreitet, teilt Verwahrung, teilt Routenalias, wiederholt Zeugenhash oder gehalten. Die Kante ist Navigation, kein Urteil. Finalen Empfaenger, geschuetzten Anspruch, Atlas-Folge und Rechtsresultat hinter spaeteren Beweistoren halten.",
+          "pda_codex": "Eine spoiler-sichere Relationskante sagt, dass zwei Beweispakete sich beruehren, ohne die Routenantwort preiszugeben. Nutze Labels wie verbunden, stuetzt, bestreitet, teilt Verwahrung, teilt Routenalias, wiederholt Zeugenhash oder gehalten. Die Kante ist Navigation, kein Urteil. Finalen Empfaenger, geschuetzten Anspruch, Atlas-Folge und Rechtsresultat hinter spaeteren Beweistoren halten.",
+          "scanner_entry": "Eine spoiler-sichere Relationskante sagt, dass zwei Beweispakete sich beruehren, ohne die Routenantwort preiszugeben. Nutze Labels wie verbunden, stuetzt, bestreitet, teilt Verwahrung, teilt Routenalias, wiederholt Zeugenhash oder gehalten. Die Kante ist Navigation, kein Urteil. Finalen Empfaenger, geschuetzten Anspruch, Atlas-Folge und Rechtsresultat hinter spaeteren Beweistoren halten.",
+          "terminal_note": "Eine spoiler-sichere Relationskante sagt, dass zwei Beweispakete sich beruehren, ohne die Routenantwort preiszugeben. Nutze Labels wie verbunden, stuetzt, bestreitet, teilt Verwahrung, teilt Routenalias, wiederholt Zeugenhash oder gehalten. Die Kante ist Navigation, kein Urteil. Finalen Empfaenger, geschuetzten Anspruch, Atlas-Folge und Rechtsresultat hinter spaeteren Beweistoren halten.",
+          "evidence_caption": "Eine spoiler-sichere Relationskante sagt, dass zwei Beweispakete sich beruehren, ohne die Routenantwort preiszugeben. Nutze Labels wie verbunden, stuetzt, bestreitet, teilt Verwahrung, teilt Routenalias, wiederholt Zeugenhash oder gehalten. Die Kante ist Navigation, kein Urteil. Finalen Empfaenger, geschuetzten Anspruch, Atlas-Folge und Rechtsresultat hinter spaeteren Beweistoren halten.",
+          "spoiler_policy": "Eine spoiler-sichere Relationskante sagt, dass zwei Beweispakete sich beruehren, ohne die Routenantwort preiszugeben. Nutze Labels wie verbunden, stuetzt, bestreitet, teilt Verwahrung, teilt Routenalias, wiederholt Zeugenhash oder gehalten. Die Kante ist Navigation, kein Urteil. Finalen Empfaenger, geschuetzten Anspruch, Atlas-Folge und Rechtsresultat hinter spaeteren Beweistoren halten.",
+          "title": "Wiki Spoiler-Safe Relation Edge",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_de_DE_PRIMARY"
+        },
+        "es_ES": {
+          "website_article": "Una arista de relacion segura contra spoilers dice que dos paquetes de evidencia se tocan sin dar la respuesta de ruta. Usa etiquetas como relacionado, apoya, disputa, comparte custodia, comparte alias de ruta, repite hash testigo o retenido. La arista guia, no sentencia. Mantiene receptor final, reclamante protegido, consecuencia Atlas y resultado legal detras de puertas posteriores.",
+          "wiki_article": "Una arista de relacion segura contra spoilers dice que dos paquetes de evidencia se tocan sin dar la respuesta de ruta. Usa etiquetas como relacionado, apoya, disputa, comparte custodia, comparte alias de ruta, repite hash testigo o retenido. La arista guia, no sentencia. Mantiene receptor final, reclamante protegido, consecuencia Atlas y resultado legal detras de puertas posteriores.",
+          "pda_codex": "Una arista de relacion segura contra spoilers dice que dos paquetes de evidencia se tocan sin dar la respuesta de ruta. Usa etiquetas como relacionado, apoya, disputa, comparte custodia, comparte alias de ruta, repite hash testigo o retenido. La arista guia, no sentencia. Mantiene receptor final, reclamante protegido, consecuencia Atlas y resultado legal detras de puertas posteriores.",
+          "scanner_entry": "Una arista de relacion segura contra spoilers dice que dos paquetes de evidencia se tocan sin dar la respuesta de ruta. Usa etiquetas como relacionado, apoya, disputa, comparte custodia, comparte alias de ruta, repite hash testigo o retenido. La arista guia, no sentencia. Mantiene receptor final, reclamante protegido, consecuencia Atlas y resultado legal detras de puertas posteriores.",
+          "terminal_note": "Una arista de relacion segura contra spoilers dice que dos paquetes de evidencia se tocan sin dar la respuesta de ruta. Usa etiquetas como relacionado, apoya, disputa, comparte custodia, comparte alias de ruta, repite hash testigo o retenido. La arista guia, no sentencia. Mantiene receptor final, reclamante protegido, consecuencia Atlas y resultado legal detras de puertas posteriores.",
+          "evidence_caption": "Una arista de relacion segura contra spoilers dice que dos paquetes de evidencia se tocan sin dar la respuesta de ruta. Usa etiquetas como relacionado, apoya, disputa, comparte custodia, comparte alias de ruta, repite hash testigo o retenido. La arista guia, no sentencia. Mantiene receptor final, reclamante protegido, consecuencia Atlas y resultado legal detras de puertas posteriores.",
+          "spoiler_policy": "Una arista de relacion segura contra spoilers dice que dos paquetes de evidencia se tocan sin dar la respuesta de ruta. Usa etiquetas como relacionado, apoya, disputa, comparte custodia, comparte alias de ruta, repite hash testigo o retenido. La arista guia, no sentencia. Mantiene receptor final, reclamante protegido, consecuencia Atlas y resultado legal detras de puertas posteriores.",
+          "title": "Wiki Spoiler-Safe Relation Edge",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_es_ES_PRIMARY"
+        },
+        "fr_FR": {
+          "website_article": "Une arrete relationnelle sans spoiler dit que deux paquets de preuve se touchent sans donner la reponse de route. Utilisez lie, soutient, conteste, partage garde, partage alias de route, repete hash temoin ou retenu. L'arrete guide, elle ne juge pas. Gardez receveur final, reclamant protege, consequence Atlas et resultat legal derriere des preuves plus tardives.",
+          "wiki_article": "Une arrete relationnelle sans spoiler dit que deux paquets de preuve se touchent sans donner la reponse de route. Utilisez lie, soutient, conteste, partage garde, partage alias de route, repete hash temoin ou retenu. L'arrete guide, elle ne juge pas. Gardez receveur final, reclamant protege, consequence Atlas et resultat legal derriere des preuves plus tardives.",
+          "pda_codex": "Une arrete relationnelle sans spoiler dit que deux paquets de preuve se touchent sans donner la reponse de route. Utilisez lie, soutient, conteste, partage garde, partage alias de route, repete hash temoin ou retenu. L'arrete guide, elle ne juge pas. Gardez receveur final, reclamant protege, consequence Atlas et resultat legal derriere des preuves plus tardives.",
+          "scanner_entry": "Une arrete relationnelle sans spoiler dit que deux paquets de preuve se touchent sans donner la reponse de route. Utilisez lie, soutient, conteste, partage garde, partage alias de route, repete hash temoin ou retenu. L'arrete guide, elle ne juge pas. Gardez receveur final, reclamant protege, consequence Atlas et resultat legal derriere des preuves plus tardives.",
+          "terminal_note": "Une arrete relationnelle sans spoiler dit que deux paquets de preuve se touchent sans donner la reponse de route. Utilisez lie, soutient, conteste, partage garde, partage alias de route, repete hash temoin ou retenu. L'arrete guide, elle ne juge pas. Gardez receveur final, reclamant protege, consequence Atlas et resultat legal derriere des preuves plus tardives.",
+          "evidence_caption": "Une arrete relationnelle sans spoiler dit que deux paquets de preuve se touchent sans donner la reponse de route. Utilisez lie, soutient, conteste, partage garde, partage alias de route, repete hash temoin ou retenu. L'arrete guide, elle ne juge pas. Gardez receveur final, reclamant protege, consequence Atlas et resultat legal derriere des preuves plus tardives.",
+          "spoiler_policy": "Une arrete relationnelle sans spoiler dit que deux paquets de preuve se touchent sans donner la reponse de route. Utilisez lie, soutient, conteste, partage garde, partage alias de route, repete hash temoin ou retenu. L'arrete guide, elle ne juge pas. Gardez receveur final, reclamant protege, consequence Atlas et resultat legal derriere des preuves plus tardives.",
+          "title": "Wiki Spoiler-Safe Relation Edge",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_fr_FR_PRIMARY"
+        },
+        "he_IL": {
+          "website_article": "קצה קשר בטוח מספוילר אומר ששתי חבילות ראיה נוגעות זו בזו בלי למסור את תשובת המסלול. השתמשו בתוויות כמו קשור, תומך, חולק, חולק משמורת, חולק כינוי מסלול, חוזר על גיבוב עד, או מוחזק. הקצה הוא ניווט, לא פסק דין. שמרו את המקבל הסופי, התובע המוגן, תוצאת Atlas והתוצאה המשפטית לשערי הוכחה מאוחרים.",
+          "wiki_article": "קצה קשר בטוח מספוילר אומר ששתי חבילות ראיה נוגעות זו בזו בלי למסור את תשובת המסלול. השתמשו בתוויות כמו קשור, תומך, חולק, חולק משמורת, חולק כינוי מסלול, חוזר על גיבוב עד, או מוחזק. הקצה הוא ניווט, לא פסק דין. שמרו את המקבל הסופי, התובע המוגן, תוצאת Atlas והתוצאה המשפטית לשערי הוכחה מאוחרים.",
+          "pda_codex": "קצה קשר בטוח מספוילר אומר ששתי חבילות ראיה נוגעות זו בזו בלי למסור את תשובת המסלול. השתמשו בתוויות כמו קשור, תומך, חולק, חולק משמורת, חולק כינוי מסלול, חוזר על גיבוב עד, או מוחזק. הקצה הוא ניווט, לא פסק דין. שמרו את המקבל הסופי, התובע המוגן, תוצאת Atlas והתוצאה המשפטית לשערי הוכחה מאוחרים.",
+          "scanner_entry": "קצה קשר בטוח מספוילר אומר ששתי חבילות ראיה נוגעות זו בזו בלי למסור את תשובת המסלול. השתמשו בתוויות כמו קשור, תומך, חולק, חולק משמורת, חולק כינוי מסלול, חוזר על גיבוב עד, או מוחזק. הקצה הוא ניווט, לא פסק דין. שמרו את המקבל הסופי, התובע המוגן, תוצאת Atlas והתוצאה המשפטית לשערי הוכחה מאוחרים.",
+          "terminal_note": "קצה קשר בטוח מספוילר אומר ששתי חבילות ראיה נוגעות זו בזו בלי למסור את תשובת המסלול. השתמשו בתוויות כמו קשור, תומך, חולק, חולק משמורת, חולק כינוי מסלול, חוזר על גיבוב עד, או מוחזק. הקצה הוא ניווט, לא פסק דין. שמרו את המקבל הסופי, התובע המוגן, תוצאת Atlas והתוצאה המשפטית לשערי הוכחה מאוחרים.",
+          "evidence_caption": "קצה קשר בטוח מספוילר אומר ששתי חבילות ראיה נוגעות זו בזו בלי למסור את תשובת המסלול. השתמשו בתוויות כמו קשור, תומך, חולק, חולק משמורת, חולק כינוי מסלול, חוזר על גיבוב עד, או מוחזק. הקצה הוא ניווט, לא פסק דין. שמרו את המקבל הסופי, התובע המוגן, תוצאת Atlas והתוצאה המשפטית לשערי הוכחה מאוחרים.",
+          "spoiler_policy": "קצה קשר בטוח מספוילר אומר ששתי חבילות ראיה נוגעות זו בזו בלי למסור את תשובת המסלול. השתמשו בתוויות כמו קשור, תומך, חולק, חולק משמורת, חולק כינוי מסלול, חוזר על גיבוב עד, או מוחזק. הקצה הוא ניווט, לא פסק דין. שמרו את המקבל הסופי, התובע המוגן, תוצאת Atlas והתוצאה המשפטית לשערי הוכחה מאוחרים.",
+          "title": "Wiki Spoiler-Safe Relation Edge",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_he_IL_PRIMARY"
+        },
+        "id_ID": {
+          "website_article": "Tepi relasi aman-spoiler mengatakan dua paket bukti bersentuhan tanpa memberi jawaban rute. Gunakan label seperti terkait, mendukung, membantah, berbagi kustodi, berbagi alias rute, mengulang hash saksi, atau ditahan. Tepi adalah alat navigasi, bukan putusan. Simpan penerima akhir, klaiman terlindungi, konsekuensi Atlas, dan hasil legal di balik gerbang bukti berikutnya.",
+          "wiki_article": "Tepi relasi aman-spoiler mengatakan dua paket bukti bersentuhan tanpa memberi jawaban rute. Gunakan label seperti terkait, mendukung, membantah, berbagi kustodi, berbagi alias rute, mengulang hash saksi, atau ditahan. Tepi adalah alat navigasi, bukan putusan. Simpan penerima akhir, klaiman terlindungi, konsekuensi Atlas, dan hasil legal di balik gerbang bukti berikutnya.",
+          "pda_codex": "Tepi relasi aman-spoiler mengatakan dua paket bukti bersentuhan tanpa memberi jawaban rute. Gunakan label seperti terkait, mendukung, membantah, berbagi kustodi, berbagi alias rute, mengulang hash saksi, atau ditahan. Tepi adalah alat navigasi, bukan putusan. Simpan penerima akhir, klaiman terlindungi, konsekuensi Atlas, dan hasil legal di balik gerbang bukti berikutnya.",
+          "scanner_entry": "Tepi relasi aman-spoiler mengatakan dua paket bukti bersentuhan tanpa memberi jawaban rute. Gunakan label seperti terkait, mendukung, membantah, berbagi kustodi, berbagi alias rute, mengulang hash saksi, atau ditahan. Tepi adalah alat navigasi, bukan putusan. Simpan penerima akhir, klaiman terlindungi, konsekuensi Atlas, dan hasil legal di balik gerbang bukti berikutnya.",
+          "terminal_note": "Tepi relasi aman-spoiler mengatakan dua paket bukti bersentuhan tanpa memberi jawaban rute. Gunakan label seperti terkait, mendukung, membantah, berbagi kustodi, berbagi alias rute, mengulang hash saksi, atau ditahan. Tepi adalah alat navigasi, bukan putusan. Simpan penerima akhir, klaiman terlindungi, konsekuensi Atlas, dan hasil legal di balik gerbang bukti berikutnya.",
+          "evidence_caption": "Tepi relasi aman-spoiler mengatakan dua paket bukti bersentuhan tanpa memberi jawaban rute. Gunakan label seperti terkait, mendukung, membantah, berbagi kustodi, berbagi alias rute, mengulang hash saksi, atau ditahan. Tepi adalah alat navigasi, bukan putusan. Simpan penerima akhir, klaiman terlindungi, konsekuensi Atlas, dan hasil legal di balik gerbang bukti berikutnya.",
+          "spoiler_policy": "Tepi relasi aman-spoiler mengatakan dua paket bukti bersentuhan tanpa memberi jawaban rute. Gunakan label seperti terkait, mendukung, membantah, berbagi kustodi, berbagi alias rute, mengulang hash saksi, atau ditahan. Tepi adalah alat navigasi, bukan putusan. Simpan penerima akhir, klaiman terlindungi, konsekuensi Atlas, dan hasil legal di balik gerbang bukti berikutnya.",
+          "title": "Wiki Spoiler-Safe Relation Edge",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_id_ID_PRIMARY"
+        },
+        "ja_JP": {
+          "website_article": "スポイラー安全な関係エッジは、二つの証拠パケットが接していることだけを示し、ルートの答えは渡さない。関連、支持、異議、保管共有、ルート別名共有、証人ハッシュ反復、保留などのラベルを使う。エッジは案内であり判決ではない。最終受信者、保護請求者、Atlasの結果、法的結果は後の証拠ゲートに残す。",
+          "wiki_article": "スポイラー安全な関係エッジは、二つの証拠パケットが接していることだけを示し、ルートの答えは渡さない。関連、支持、異議、保管共有、ルート別名共有、証人ハッシュ反復、保留などのラベルを使う。エッジは案内であり判決ではない。最終受信者、保護請求者、Atlasの結果、法的結果は後の証拠ゲートに残す。",
+          "pda_codex": "スポイラー安全な関係エッジは、二つの証拠パケットが接していることだけを示し、ルートの答えは渡さない。関連、支持、異議、保管共有、ルート別名共有、証人ハッシュ反復、保留などのラベルを使う。エッジは案内であり判決ではない。最終受信者、保護請求者、Atlasの結果、法的結果は後の証拠ゲートに残す。",
+          "scanner_entry": "スポイラー安全な関係エッジは、二つの証拠パケットが接していることだけを示し、ルートの答えは渡さない。関連、支持、異議、保管共有、ルート別名共有、証人ハッシュ反復、保留などのラベルを使う。エッジは案内であり判決ではない。最終受信者、保護請求者、Atlasの結果、法的結果は後の証拠ゲートに残す。",
+          "terminal_note": "スポイラー安全な関係エッジは、二つの証拠パケットが接していることだけを示し、ルートの答えは渡さない。関連、支持、異議、保管共有、ルート別名共有、証人ハッシュ反復、保留などのラベルを使う。エッジは案内であり判決ではない。最終受信者、保護請求者、Atlasの結果、法的結果は後の証拠ゲートに残す。",
+          "evidence_caption": "スポイラー安全な関係エッジは、二つの証拠パケットが接していることだけを示し、ルートの答えは渡さない。関連、支持、異議、保管共有、ルート別名共有、証人ハッシュ反復、保留などのラベルを使う。エッジは案内であり判決ではない。最終受信者、保護請求者、Atlasの結果、法的結果は後の証拠ゲートに残す。",
+          "spoiler_policy": "スポイラー安全な関係エッジは、二つの証拠パケットが接していることだけを示し、ルートの答えは渡さない。関連、支持、異議、保管共有、ルート別名共有、証人ハッシュ反復、保留などのラベルを使う。エッジは案内であり判決ではない。最終受信者、保護請求者、Atlasの結果、法的結果は後の証拠ゲートに残す。",
+          "title": "Wiki Spoiler-Safe Relation Edge",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_ja_JP_PRIMARY"
+        },
+        "ko_KR": {
+          "website_article": "스포일러 안전 관계 엣지는 두 증거 패킷이 닿아 있음을 말하지만 경로의 답은 주지 않는다. 관련, 지지, 반박, 보관 공유, 경로 별칭 공유, 증인 해시 반복, 보류 같은 라벨을 쓴다. 엣지는 항법 도구이지 판결이 아니다. 최종 수신자, 보호 청구인, Atlas 결과, 법적 결과는 뒤의 증거 관문에 둔다.",
+          "wiki_article": "스포일러 안전 관계 엣지는 두 증거 패킷이 닿아 있음을 말하지만 경로의 답은 주지 않는다. 관련, 지지, 반박, 보관 공유, 경로 별칭 공유, 증인 해시 반복, 보류 같은 라벨을 쓴다. 엣지는 항법 도구이지 판결이 아니다. 최종 수신자, 보호 청구인, Atlas 결과, 법적 결과는 뒤의 증거 관문에 둔다.",
+          "pda_codex": "스포일러 안전 관계 엣지는 두 증거 패킷이 닿아 있음을 말하지만 경로의 답은 주지 않는다. 관련, 지지, 반박, 보관 공유, 경로 별칭 공유, 증인 해시 반복, 보류 같은 라벨을 쓴다. 엣지는 항법 도구이지 판결이 아니다. 최종 수신자, 보호 청구인, Atlas 결과, 법적 결과는 뒤의 증거 관문에 둔다.",
+          "scanner_entry": "스포일러 안전 관계 엣지는 두 증거 패킷이 닿아 있음을 말하지만 경로의 답은 주지 않는다. 관련, 지지, 반박, 보관 공유, 경로 별칭 공유, 증인 해시 반복, 보류 같은 라벨을 쓴다. 엣지는 항법 도구이지 판결이 아니다. 최종 수신자, 보호 청구인, Atlas 결과, 법적 결과는 뒤의 증거 관문에 둔다.",
+          "terminal_note": "스포일러 안전 관계 엣지는 두 증거 패킷이 닿아 있음을 말하지만 경로의 답은 주지 않는다. 관련, 지지, 반박, 보관 공유, 경로 별칭 공유, 증인 해시 반복, 보류 같은 라벨을 쓴다. 엣지는 항법 도구이지 판결이 아니다. 최종 수신자, 보호 청구인, Atlas 결과, 법적 결과는 뒤의 증거 관문에 둔다.",
+          "evidence_caption": "스포일러 안전 관계 엣지는 두 증거 패킷이 닿아 있음을 말하지만 경로의 답은 주지 않는다. 관련, 지지, 반박, 보관 공유, 경로 별칭 공유, 증인 해시 반복, 보류 같은 라벨을 쓴다. 엣지는 항법 도구이지 판결이 아니다. 최종 수신자, 보호 청구인, Atlas 결과, 법적 결과는 뒤의 증거 관문에 둔다.",
+          "spoiler_policy": "스포일러 안전 관계 엣지는 두 증거 패킷이 닿아 있음을 말하지만 경로의 답은 주지 않는다. 관련, 지지, 반박, 보관 공유, 경로 별칭 공유, 증인 해시 반복, 보류 같은 라벨을 쓴다. 엣지는 항법 도구이지 판결이 아니다. 최종 수신자, 보호 청구인, Atlas 결과, 법적 결과는 뒤의 증거 관문에 둔다.",
+          "title": "Wiki Spoiler-Safe Relation Edge",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_ko_KR_PRIMARY"
+        },
+        "nl_NL": {
+          "website_article": "Een spoilerveilige relatierand zegt dat twee bewijsbundels elkaar raken zonder het routeantwoord te geven. Gebruik labels als gerelateerd, steunt, betwist, deelt bewaring, deelt routealias, herhaalt getuigehash of vastgehouden. De rand is navigatie, geen vonnis. Houd finale ontvanger, beschermde claimant, Atlas-gevolg en juridisch resultaat achter latere bewijspoorten.",
+          "wiki_article": "Een spoilerveilige relatierand zegt dat twee bewijsbundels elkaar raken zonder het routeantwoord te geven. Gebruik labels als gerelateerd, steunt, betwist, deelt bewaring, deelt routealias, herhaalt getuigehash of vastgehouden. De rand is navigatie, geen vonnis. Houd finale ontvanger, beschermde claimant, Atlas-gevolg en juridisch resultaat achter latere bewijspoorten.",
+          "pda_codex": "Een spoilerveilige relatierand zegt dat twee bewijsbundels elkaar raken zonder het routeantwoord te geven. Gebruik labels als gerelateerd, steunt, betwist, deelt bewaring, deelt routealias, herhaalt getuigehash of vastgehouden. De rand is navigatie, geen vonnis. Houd finale ontvanger, beschermde claimant, Atlas-gevolg en juridisch resultaat achter latere bewijspoorten.",
+          "scanner_entry": "Een spoilerveilige relatierand zegt dat twee bewijsbundels elkaar raken zonder het routeantwoord te geven. Gebruik labels als gerelateerd, steunt, betwist, deelt bewaring, deelt routealias, herhaalt getuigehash of vastgehouden. De rand is navigatie, geen vonnis. Houd finale ontvanger, beschermde claimant, Atlas-gevolg en juridisch resultaat achter latere bewijspoorten.",
+          "terminal_note": "Een spoilerveilige relatierand zegt dat twee bewijsbundels elkaar raken zonder het routeantwoord te geven. Gebruik labels als gerelateerd, steunt, betwist, deelt bewaring, deelt routealias, herhaalt getuigehash of vastgehouden. De rand is navigatie, geen vonnis. Houd finale ontvanger, beschermde claimant, Atlas-gevolg en juridisch resultaat achter latere bewijspoorten.",
+          "evidence_caption": "Een spoilerveilige relatierand zegt dat twee bewijsbundels elkaar raken zonder het routeantwoord te geven. Gebruik labels als gerelateerd, steunt, betwist, deelt bewaring, deelt routealias, herhaalt getuigehash of vastgehouden. De rand is navigatie, geen vonnis. Houd finale ontvanger, beschermde claimant, Atlas-gevolg en juridisch resultaat achter latere bewijspoorten.",
+          "spoiler_policy": "Een spoilerveilige relatierand zegt dat twee bewijsbundels elkaar raken zonder het routeantwoord te geven. Gebruik labels als gerelateerd, steunt, betwist, deelt bewaring, deelt routealias, herhaalt getuigehash of vastgehouden. De rand is navigatie, geen vonnis. Houd finale ontvanger, beschermde claimant, Atlas-gevolg en juridisch resultaat achter latere bewijspoorten.",
+          "title": "Wiki Spoiler-Safe Relation Edge",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_nl_NL_PRIMARY"
+        },
+        "pl_PL": {
+          "website_article": "Bezpieczna od spoilerow krawedz relacji mowi, ze dwa pakiety dowodu sie stykaja, ale nie zdradza odpowiedzi trasy. Uzyj etykiet: powiazane, wspiera, spiera sie, dzieli depozyt, dzieli alias trasy, powtarza hash swiadka albo wstrzymane. Krawedz prowadzi, nie wydaje wyroku. Odbiorca finalny, chroniony roszczacy, skutek Atlas i wynik prawny zostaja za pozniejszymi bramami.",
+          "wiki_article": "Bezpieczna od spoilerow krawedz relacji mowi, ze dwa pakiety dowodu sie stykaja, ale nie zdradza odpowiedzi trasy. Uzyj etykiet: powiazane, wspiera, spiera sie, dzieli depozyt, dzieli alias trasy, powtarza hash swiadka albo wstrzymane. Krawedz prowadzi, nie wydaje wyroku. Odbiorca finalny, chroniony roszczacy, skutek Atlas i wynik prawny zostaja za pozniejszymi bramami.",
+          "pda_codex": "Bezpieczna od spoilerow krawedz relacji mowi, ze dwa pakiety dowodu sie stykaja, ale nie zdradza odpowiedzi trasy. Uzyj etykiet: powiazane, wspiera, spiera sie, dzieli depozyt, dzieli alias trasy, powtarza hash swiadka albo wstrzymane. Krawedz prowadzi, nie wydaje wyroku. Odbiorca finalny, chroniony roszczacy, skutek Atlas i wynik prawny zostaja za pozniejszymi bramami.",
+          "scanner_entry": "Bezpieczna od spoilerow krawedz relacji mowi, ze dwa pakiety dowodu sie stykaja, ale nie zdradza odpowiedzi trasy. Uzyj etykiet: powiazane, wspiera, spiera sie, dzieli depozyt, dzieli alias trasy, powtarza hash swiadka albo wstrzymane. Krawedz prowadzi, nie wydaje wyroku. Odbiorca finalny, chroniony roszczacy, skutek Atlas i wynik prawny zostaja za pozniejszymi bramami.",
+          "terminal_note": "Bezpieczna od spoilerow krawedz relacji mowi, ze dwa pakiety dowodu sie stykaja, ale nie zdradza odpowiedzi trasy. Uzyj etykiet: powiazane, wspiera, spiera sie, dzieli depozyt, dzieli alias trasy, powtarza hash swiadka albo wstrzymane. Krawedz prowadzi, nie wydaje wyroku. Odbiorca finalny, chroniony roszczacy, skutek Atlas i wynik prawny zostaja za pozniejszymi bramami.",
+          "evidence_caption": "Bezpieczna od spoilerow krawedz relacji mowi, ze dwa pakiety dowodu sie stykaja, ale nie zdradza odpowiedzi trasy. Uzyj etykiet: powiazane, wspiera, spiera sie, dzieli depozyt, dzieli alias trasy, powtarza hash swiadka albo wstrzymane. Krawedz prowadzi, nie wydaje wyroku. Odbiorca finalny, chroniony roszczacy, skutek Atlas i wynik prawny zostaja za pozniejszymi bramami.",
+          "spoiler_policy": "Bezpieczna od spoilerow krawedz relacji mowi, ze dwa pakiety dowodu sie stykaja, ale nie zdradza odpowiedzi trasy. Uzyj etykiet: powiazane, wspiera, spiera sie, dzieli depozyt, dzieli alias trasy, powtarza hash swiadka albo wstrzymane. Krawedz prowadzi, nie wydaje wyroku. Odbiorca finalny, chroniony roszczacy, skutek Atlas i wynik prawny zostaja za pozniejszymi bramami.",
+          "title": "Wiki Spoiler-Safe Relation Edge",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_pl_PL_PRIMARY"
+        },
+        "pt_BR": {
+          "website_article": "Uma aresta de relacao segura contra spoiler diz que dois pacotes de evidencia se tocam sem entregar a resposta da rota. Use rotulos como relacionado, apoia, disputa, compartilha custodia, compartilha alias de rota, repete hash de testemunha ou retido. A aresta orienta, nao julga. Mantenha receptor final, reclamante protegido, consequencia Atlas e resultado legal atras de provas futuras.",
+          "wiki_article": "Uma aresta de relacao segura contra spoiler diz que dois pacotes de evidencia se tocam sem entregar a resposta da rota. Use rotulos como relacionado, apoia, disputa, compartilha custodia, compartilha alias de rota, repete hash de testemunha ou retido. A aresta orienta, nao julga. Mantenha receptor final, reclamante protegido, consequencia Atlas e resultado legal atras de provas futuras.",
+          "pda_codex": "Uma aresta de relacao segura contra spoiler diz que dois pacotes de evidencia se tocam sem entregar a resposta da rota. Use rotulos como relacionado, apoia, disputa, compartilha custodia, compartilha alias de rota, repete hash de testemunha ou retido. A aresta orienta, nao julga. Mantenha receptor final, reclamante protegido, consequencia Atlas e resultado legal atras de provas futuras.",
+          "scanner_entry": "Uma aresta de relacao segura contra spoiler diz que dois pacotes de evidencia se tocam sem entregar a resposta da rota. Use rotulos como relacionado, apoia, disputa, compartilha custodia, compartilha alias de rota, repete hash de testemunha ou retido. A aresta orienta, nao julga. Mantenha receptor final, reclamante protegido, consequencia Atlas e resultado legal atras de provas futuras.",
+          "terminal_note": "Uma aresta de relacao segura contra spoiler diz que dois pacotes de evidencia se tocam sem entregar a resposta da rota. Use rotulos como relacionado, apoia, disputa, compartilha custodia, compartilha alias de rota, repete hash de testemunha ou retido. A aresta orienta, nao julga. Mantenha receptor final, reclamante protegido, consequencia Atlas e resultado legal atras de provas futuras.",
+          "evidence_caption": "Uma aresta de relacao segura contra spoiler diz que dois pacotes de evidencia se tocam sem entregar a resposta da rota. Use rotulos como relacionado, apoia, disputa, compartilha custodia, compartilha alias de rota, repete hash de testemunha ou retido. A aresta orienta, nao julga. Mantenha receptor final, reclamante protegido, consequencia Atlas e resultado legal atras de provas futuras.",
+          "spoiler_policy": "Uma aresta de relacao segura contra spoiler diz que dois pacotes de evidencia se tocam sem entregar a resposta da rota. Use rotulos como relacionado, apoia, disputa, compartilha custodia, compartilha alias de rota, repete hash de testemunha ou retido. A aresta orienta, nao julga. Mantenha receptor final, reclamante protegido, consequencia Atlas e resultado legal atras de provas futuras.",
+          "title": "Wiki Spoiler-Safe Relation Edge",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_pt_BR_PRIMARY"
+        },
+        "ru_RU": {
+          "website_article": "Спойлер-безопасное ребро связи говорит, что два пакета доказательств соприкасаются, но не выдает ответ маршрута. Используй метки: связано, поддерживает, спорит, делит хранение, делит псевдоним маршрута, повторяет хэш свидетеля или удержано. Ребро помогает навигации, а не выносит приговор. Финальный получатель, защищенный заявитель, последствие Atlas и правовой итог остаются за поздними воротами доказательств.",
+          "wiki_article": "Спойлер-безопасное ребро связи говорит, что два пакета доказательств соприкасаются, но не выдает ответ маршрута. Используй метки: связано, поддерживает, спорит, делит хранение, делит псевдоним маршрута, повторяет хэш свидетеля или удержано. Ребро помогает навигации, а не выносит приговор. Финальный получатель, защищенный заявитель, последствие Atlas и правовой итог остаются за поздними воротами доказательств.",
+          "pda_codex": "Спойлер-безопасное ребро связи говорит, что два пакета доказательств соприкасаются, но не выдает ответ маршрута. Используй метки: связано, поддерживает, спорит, делит хранение, делит псевдоним маршрута, повторяет хэш свидетеля или удержано. Ребро помогает навигации, а не выносит приговор. Финальный получатель, защищенный заявитель, последствие Atlas и правовой итог остаются за поздними воротами доказательств.",
+          "scanner_entry": "Спойлер-безопасное ребро связи говорит, что два пакета доказательств соприкасаются, но не выдает ответ маршрута. Используй метки: связано, поддерживает, спорит, делит хранение, делит псевдоним маршрута, повторяет хэш свидетеля или удержано. Ребро помогает навигации, а не выносит приговор. Финальный получатель, защищенный заявитель, последствие Atlas и правовой итог остаются за поздними воротами доказательств.",
+          "terminal_note": "Спойлер-безопасное ребро связи говорит, что два пакета доказательств соприкасаются, но не выдает ответ маршрута. Используй метки: связано, поддерживает, спорит, делит хранение, делит псевдоним маршрута, повторяет хэш свидетеля или удержано. Ребро помогает навигации, а не выносит приговор. Финальный получатель, защищенный заявитель, последствие Atlas и правовой итог остаются за поздними воротами доказательств.",
+          "evidence_caption": "Спойлер-безопасное ребро связи говорит, что два пакета доказательств соприкасаются, но не выдает ответ маршрута. Используй метки: связано, поддерживает, спорит, делит хранение, делит псевдоним маршрута, повторяет хэш свидетеля или удержано. Ребро помогает навигации, а не выносит приговор. Финальный получатель, защищенный заявитель, последствие Atlas и правовой итог остаются за поздними воротами доказательств.",
+          "spoiler_policy": "Спойлер-безопасное ребро связи говорит, что два пакета доказательств соприкасаются, но не выдает ответ маршрута. Используй метки: связано, поддерживает, спорит, делит хранение, делит псевдоним маршрута, повторяет хэш свидетеля или удержано. Ребро помогает навигации, а не выносит приговор. Финальный получатель, защищенный заявитель, последствие Atlas и правовой итог остаются за поздними воротами доказательств.",
+          "title": "Wiki Spoiler-Safe Relation Edge",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_ru_RU_PRIMARY"
+        },
+        "uk_UA": {
+          "website_article": "Спойлер-безпечне ребро зв'язку каже, що два пакети доказів торкаються, але не віддає відповідь маршруту. Використовуй мітки: пов'язано, підтримує, заперечує, ділить зберігання, ділить псевдонім маршруту, повторює хеш свідка або утримано. Ребро веде, а не судить. Фінальний отримувач, захищений заявник, наслідок Atlas і правовий результат лишаються за пізнішими воротами доказів.",
+          "wiki_article": "Спойлер-безпечне ребро зв'язку каже, що два пакети доказів торкаються, але не віддає відповідь маршруту. Використовуй мітки: пов'язано, підтримує, заперечує, ділить зберігання, ділить псевдонім маршруту, повторює хеш свідка або утримано. Ребро веде, а не судить. Фінальний отримувач, захищений заявник, наслідок Atlas і правовий результат лишаються за пізнішими воротами доказів.",
+          "pda_codex": "Спойлер-безпечне ребро зв'язку каже, що два пакети доказів торкаються, але не віддає відповідь маршруту. Використовуй мітки: пов'язано, підтримує, заперечує, ділить зберігання, ділить псевдонім маршруту, повторює хеш свідка або утримано. Ребро веде, а не судить. Фінальний отримувач, захищений заявник, наслідок Atlas і правовий результат лишаються за пізнішими воротами доказів.",
+          "scanner_entry": "Спойлер-безпечне ребро зв'язку каже, що два пакети доказів торкаються, але не віддає відповідь маршруту. Використовуй мітки: пов'язано, підтримує, заперечує, ділить зберігання, ділить псевдонім маршруту, повторює хеш свідка або утримано. Ребро веде, а не судить. Фінальний отримувач, захищений заявник, наслідок Atlas і правовий результат лишаються за пізнішими воротами доказів.",
+          "terminal_note": "Спойлер-безпечне ребро зв'язку каже, що два пакети доказів торкаються, але не віддає відповідь маршруту. Використовуй мітки: пов'язано, підтримує, заперечує, ділить зберігання, ділить псевдонім маршруту, повторює хеш свідка або утримано. Ребро веде, а не судить. Фінальний отримувач, захищений заявник, наслідок Atlas і правовий результат лишаються за пізнішими воротами доказів.",
+          "evidence_caption": "Спойлер-безпечне ребро зв'язку каже, що два пакети доказів торкаються, але не віддає відповідь маршруту. Використовуй мітки: пов'язано, підтримує, заперечує, ділить зберігання, ділить псевдонім маршруту, повторює хеш свідка або утримано. Ребро веде, а не судить. Фінальний отримувач, захищений заявник, наслідок Atlas і правовий результат лишаються за пізнішими воротами доказів.",
+          "spoiler_policy": "Спойлер-безпечне ребро зв'язку каже, що два пакети доказів торкаються, але не віддає відповідь маршруту. Використовуй мітки: пов'язано, підтримує, заперечує, ділить зберігання, ділить псевдонім маршруту, повторює хеш свідка або утримано. Ребро веде, а не судить. Фінальний отримувач, захищений заявник, наслідок Atlas і правовий результат лишаються за пізнішими воротами доказів.",
+          "title": "Wiki Spoiler-Safe Relation Edge",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_uk_UA_PRIMARY"
+        },
+        "zh_CN": {
+          "website_article": "防剧透关系边只说明两个证据包相互接触，不交出路线答案。可用相关、支持、争议、共享保管、共享路线别名、重复见证哈希或保留等标签。关系边是导航，不是判决。最终接收方、受保护索赔人、Atlas后果和法律结果留在后续证据门之后。",
+          "wiki_article": "防剧透关系边只说明两个证据包相互接触，不交出路线答案。可用相关、支持、争议、共享保管、共享路线别名、重复见证哈希或保留等标签。关系边是导航，不是判决。最终接收方、受保护索赔人、Atlas后果和法律结果留在后续证据门之后。",
+          "pda_codex": "防剧透关系边只说明两个证据包相互接触，不交出路线答案。可用相关、支持、争议、共享保管、共享路线别名、重复见证哈希或保留等标签。关系边是导航，不是判决。最终接收方、受保护索赔人、Atlas后果和法律结果留在后续证据门之后。",
+          "scanner_entry": "防剧透关系边只说明两个证据包相互接触，不交出路线答案。可用相关、支持、争议、共享保管、共享路线别名、重复见证哈希或保留等标签。关系边是导航，不是判决。最终接收方、受保护索赔人、Atlas后果和法律结果留在后续证据门之后。",
+          "terminal_note": "防剧透关系边只说明两个证据包相互接触，不交出路线答案。可用相关、支持、争议、共享保管、共享路线别名、重复见证哈希或保留等标签。关系边是导航，不是判决。最终接收方、受保护索赔人、Atlas后果和法律结果留在后续证据门之后。",
+          "evidence_caption": "防剧透关系边只说明两个证据包相互接触，不交出路线答案。可用相关、支持、争议、共享保管、共享路线别名、重复见证哈希或保留等标签。关系边是导航，不是判决。最终接收方、受保护索赔人、Atlas后果和法律结果留在后续证据门之后。",
+          "spoiler_policy": "防剧透关系边只说明两个证据包相互接触，不交出路线答案。可用相关、支持、争议、共享保管、共享路线别名、重复见证哈希或保留等标签。关系边是导航，不是判决。最终接收方、受保护索赔人、Atlas后果和法律结果留在后续证据门之后。",
+          "title": "Wiki Spoiler-Safe Relation Edge",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_zh_CN_PRIMARY"
+        }
+      }
+    },
+    {
+      "packet_id": "P508_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE",
+      "release_set_id": "RS102_PROOF_ORDER_RELATION_RECEIPT_BRIDGE",
+      "article_id": "applied_lore.terminal_evidence_receipt_rewrite_bridge",
+      "title_key": "LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_TITLE",
+      "status": "source_candidate_pending_controller_review_and_downstream_wiring",
+      "canon_owner": [
+        "Docs/Lore/Canon_Locks.md",
+        "Docs/Lore/Lore_Bible.md",
+        "Docs/Lore/Lore_Content_System.md",
+        "Docs/Lore/Lore_Localization_Model.md",
+        "Docs/Lore/Website_Publication_Map.md"
+      ],
+      "runtime_contract": {
+        "authoring_only": true,
+        "runtime_reads_markdown": false,
+        "runtime_ready": false,
+        "native_localization_ready": false,
+        "data_monolith_ready": false,
+        "h8bin_ready": false,
+        "unity_placement_ready": false,
+        "generated_page_ready": false,
+        "publication_ready": false
+      },
+      "surfaces": [
+        "website_article",
+        "wiki_article",
+        "pda_codex",
+        "scanner_entry",
+        "terminal_note",
+        "evidence_caption",
+        "spoiler_policy",
+        "string_pool_key"
+      ],
+      "unlock": {
+        "primary": "future proof-order, relation-edge, and receipt-rewrite bridge after packet-specific proof gate",
+        "secondary": "future scanner, terminal, PDA, evidence-caption, website, wiki, and string-pool extraction lanes",
+        "poi_tags": [
+          "terminal_receipt",
+          "receipt_rewrite",
+          "packet_hash",
+          "custody_route"
+        ],
+        "biome_tags": [
+          "not_biome_bound"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "website_article": "Terminal receipts are dangerous because they look smaller than the decisions behind them. A receipt may show only a header, a clerk mark, a timestamp, and a packet hash. That is enough to move evidence between offices. It is also enough to hide a route if the header is rewritten after the object has already traveled. Public archive editors mark these receipts as rewrite conflicts when the header and body disagree. The header may say \"claimant-safe summary.\" The body may still carry the older relay timestamp, drawer number, witness hash, or custody mark. Deep Reach procedure treats the rewrite as a safer public title. Marauder field notes treat it as pressure. Neither reading is final until the object, custody order, and witness route are compared.",
+          "wiki_article": "Terminal evidence receipt rewrite: a condition where a terminal receipt header, title, or category was changed while older body fields remained. Common surviving fields include relay timestamp, packet hash, drawer number, claimant-safe line, witness hash, and clerk override mark. A rewrite is evidence of handling conflict, not proof of final custody by itself.",
+          "pda_codex": "Terminal note: if the receipt header is cleaner than the body, keep the body. Headers answer the office that wanted to file the packet. Hashes, timestamps, drawer numbers, and custody stamps answer where the packet passed before it became safe to read.",
+          "scanner_entry": "Receipt rewrite signature detected. Header and body fields disagree. Confidence: partial. Required next evidence: original hash, relay timestamp, custody stamp, or claimant-safe line.",
+          "terminal_note": "TERMINAL RECEIPT REWRITE Header changed. Body fields retained. Do not overwrite packet hash, relay time, drawer number, or witness line. Action: preserve receipt body until custody route is resolved.",
+          "evidence_caption": "Rewritten terminal receipt. The public header changed, but the body still carries older route fields. This proves handling conflict, not final custody.",
+          "spoiler_policy": "Receipt rewrite language may appear early. Exact rewrite authority, final receiver, protected claimant, Atlas consequence, and legal result stay masked until later proof gates.",
+          "title": "Terminal Evidence Receipt Rewrite",
+          "locale_status": "source_authority",
+          "string_pool_key": "LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_en_US_PRIMARY"
+        },
+        "ar_SA": {
+          "website_article": "إيصال الطرفية المعاد كتابته ليس إيصالا نظيفا. اذا تغير العنوان وبقي هاش الحزمة او وقت الترحيل او رقم الدرج او سطر الشاهد او ختم الحيازة في المتن، فاحفظ حقول المتن. العنوان يقول كيف اراد المكتب حفظ الحزمة. المتن يقول اين تحركت قبل ان يصبح ذلك العنوان آمنا.",
+          "wiki_article": "إيصال الطرفية المعاد كتابته ليس إيصالا نظيفا. اذا تغير العنوان وبقي هاش الحزمة او وقت الترحيل او رقم الدرج او سطر الشاهد او ختم الحيازة في المتن، فاحفظ حقول المتن. العنوان يقول كيف اراد المكتب حفظ الحزمة. المتن يقول اين تحركت قبل ان يصبح ذلك العنوان آمنا.",
+          "pda_codex": "إيصال الطرفية المعاد كتابته ليس إيصالا نظيفا. اذا تغير العنوان وبقي هاش الحزمة او وقت الترحيل او رقم الدرج او سطر الشاهد او ختم الحيازة في المتن، فاحفظ حقول المتن. العنوان يقول كيف اراد المكتب حفظ الحزمة. المتن يقول اين تحركت قبل ان يصبح ذلك العنوان آمنا.",
+          "scanner_entry": "إيصال الطرفية المعاد كتابته ليس إيصالا نظيفا. اذا تغير العنوان وبقي هاش الحزمة او وقت الترحيل او رقم الدرج او سطر الشاهد او ختم الحيازة في المتن، فاحفظ حقول المتن. العنوان يقول كيف اراد المكتب حفظ الحزمة. المتن يقول اين تحركت قبل ان يصبح ذلك العنوان آمنا.",
+          "terminal_note": "إيصال الطرفية المعاد كتابته ليس إيصالا نظيفا. اذا تغير العنوان وبقي هاش الحزمة او وقت الترحيل او رقم الدرج او سطر الشاهد او ختم الحيازة في المتن، فاحفظ حقول المتن. العنوان يقول كيف اراد المكتب حفظ الحزمة. المتن يقول اين تحركت قبل ان يصبح ذلك العنوان آمنا.",
+          "evidence_caption": "إيصال الطرفية المعاد كتابته ليس إيصالا نظيفا. اذا تغير العنوان وبقي هاش الحزمة او وقت الترحيل او رقم الدرج او سطر الشاهد او ختم الحيازة في المتن، فاحفظ حقول المتن. العنوان يقول كيف اراد المكتب حفظ الحزمة. المتن يقول اين تحركت قبل ان يصبح ذلك العنوان آمنا.",
+          "spoiler_policy": "إيصال الطرفية المعاد كتابته ليس إيصالا نظيفا. اذا تغير العنوان وبقي هاش الحزمة او وقت الترحيل او رقم الدرج او سطر الشاهد او ختم الحيازة في المتن، فاحفظ حقول المتن. العنوان يقول كيف اراد المكتب حفظ الحزمة. المتن يقول اين تحركت قبل ان يصبح ذلك العنوان آمنا.",
+          "title": "Terminal Evidence Receipt Rewrite",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_ar_SA_PRIMARY"
+        },
+        "de_DE": {
+          "website_article": "Ein umgeschriebener Terminalbeleg ist kein sauberer Beleg. Wenn der Header geaendert wurde, aber Pakethash, Relaiszeit, Schubladennummer, Zeugenzeile oder Verwahrungsstempel im Koerper blieben, behalte die Koerperfelder. Der Header sagt, wie ein Amt das Paket ablegen wollte. Der Koerper sagt, wohin es sich vorher bewegte.",
+          "wiki_article": "Ein umgeschriebener Terminalbeleg ist kein sauberer Beleg. Wenn der Header geaendert wurde, aber Pakethash, Relaiszeit, Schubladennummer, Zeugenzeile oder Verwahrungsstempel im Koerper blieben, behalte die Koerperfelder. Der Header sagt, wie ein Amt das Paket ablegen wollte. Der Koerper sagt, wohin es sich vorher bewegte.",
+          "pda_codex": "Ein umgeschriebener Terminalbeleg ist kein sauberer Beleg. Wenn der Header geaendert wurde, aber Pakethash, Relaiszeit, Schubladennummer, Zeugenzeile oder Verwahrungsstempel im Koerper blieben, behalte die Koerperfelder. Der Header sagt, wie ein Amt das Paket ablegen wollte. Der Koerper sagt, wohin es sich vorher bewegte.",
+          "scanner_entry": "Ein umgeschriebener Terminalbeleg ist kein sauberer Beleg. Wenn der Header geaendert wurde, aber Pakethash, Relaiszeit, Schubladennummer, Zeugenzeile oder Verwahrungsstempel im Koerper blieben, behalte die Koerperfelder. Der Header sagt, wie ein Amt das Paket ablegen wollte. Der Koerper sagt, wohin es sich vorher bewegte.",
+          "terminal_note": "Ein umgeschriebener Terminalbeleg ist kein sauberer Beleg. Wenn der Header geaendert wurde, aber Pakethash, Relaiszeit, Schubladennummer, Zeugenzeile oder Verwahrungsstempel im Koerper blieben, behalte die Koerperfelder. Der Header sagt, wie ein Amt das Paket ablegen wollte. Der Koerper sagt, wohin es sich vorher bewegte.",
+          "evidence_caption": "Ein umgeschriebener Terminalbeleg ist kein sauberer Beleg. Wenn der Header geaendert wurde, aber Pakethash, Relaiszeit, Schubladennummer, Zeugenzeile oder Verwahrungsstempel im Koerper blieben, behalte die Koerperfelder. Der Header sagt, wie ein Amt das Paket ablegen wollte. Der Koerper sagt, wohin es sich vorher bewegte.",
+          "spoiler_policy": "Ein umgeschriebener Terminalbeleg ist kein sauberer Beleg. Wenn der Header geaendert wurde, aber Pakethash, Relaiszeit, Schubladennummer, Zeugenzeile oder Verwahrungsstempel im Koerper blieben, behalte die Koerperfelder. Der Header sagt, wie ein Amt das Paket ablegen wollte. Der Koerper sagt, wohin es sich vorher bewegte.",
+          "title": "Terminal Evidence Receipt Rewrite",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_de_DE_PRIMARY"
+        },
+        "es_ES": {
+          "website_article": "Un recibo de terminal reescrito no es un recibo limpio. Si cambio el encabezado pero quedaron hash del paquete, hora de relevo, numero de cajon, linea de testigo o sello de custodia en el cuerpo, conserva esos campos. El encabezado dice como una oficina quiso archivar el paquete. El cuerpo dice por donde se movio antes.",
+          "wiki_article": "Un recibo de terminal reescrito no es un recibo limpio. Si cambio el encabezado pero quedaron hash del paquete, hora de relevo, numero de cajon, linea de testigo o sello de custodia en el cuerpo, conserva esos campos. El encabezado dice como una oficina quiso archivar el paquete. El cuerpo dice por donde se movio antes.",
+          "pda_codex": "Un recibo de terminal reescrito no es un recibo limpio. Si cambio el encabezado pero quedaron hash del paquete, hora de relevo, numero de cajon, linea de testigo o sello de custodia en el cuerpo, conserva esos campos. El encabezado dice como una oficina quiso archivar el paquete. El cuerpo dice por donde se movio antes.",
+          "scanner_entry": "Un recibo de terminal reescrito no es un recibo limpio. Si cambio el encabezado pero quedaron hash del paquete, hora de relevo, numero de cajon, linea de testigo o sello de custodia en el cuerpo, conserva esos campos. El encabezado dice como una oficina quiso archivar el paquete. El cuerpo dice por donde se movio antes.",
+          "terminal_note": "Un recibo de terminal reescrito no es un recibo limpio. Si cambio el encabezado pero quedaron hash del paquete, hora de relevo, numero de cajon, linea de testigo o sello de custodia en el cuerpo, conserva esos campos. El encabezado dice como una oficina quiso archivar el paquete. El cuerpo dice por donde se movio antes.",
+          "evidence_caption": "Un recibo de terminal reescrito no es un recibo limpio. Si cambio el encabezado pero quedaron hash del paquete, hora de relevo, numero de cajon, linea de testigo o sello de custodia en el cuerpo, conserva esos campos. El encabezado dice como una oficina quiso archivar el paquete. El cuerpo dice por donde se movio antes.",
+          "spoiler_policy": "Un recibo de terminal reescrito no es un recibo limpio. Si cambio el encabezado pero quedaron hash del paquete, hora de relevo, numero de cajon, linea de testigo o sello de custodia en el cuerpo, conserva esos campos. El encabezado dice como una oficina quiso archivar el paquete. El cuerpo dice por donde se movio antes.",
+          "title": "Terminal Evidence Receipt Rewrite",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_es_ES_PRIMARY"
+        },
+        "fr_FR": {
+          "website_article": "Un recu terminal reecrit n'est pas un recu propre. Si l'en-tete change mais que hash de paquet, heure de relais, numero de tiroir, ligne temoin ou cachet de garde restent dans le corps, gardez ces champs. L'en-tete dit comment l'office voulait classer le paquet. Le corps dit ou il est passe avant ce titre.",
+          "wiki_article": "Un recu terminal reecrit n'est pas un recu propre. Si l'en-tete change mais que hash de paquet, heure de relais, numero de tiroir, ligne temoin ou cachet de garde restent dans le corps, gardez ces champs. L'en-tete dit comment l'office voulait classer le paquet. Le corps dit ou il est passe avant ce titre.",
+          "pda_codex": "Un recu terminal reecrit n'est pas un recu propre. Si l'en-tete change mais que hash de paquet, heure de relais, numero de tiroir, ligne temoin ou cachet de garde restent dans le corps, gardez ces champs. L'en-tete dit comment l'office voulait classer le paquet. Le corps dit ou il est passe avant ce titre.",
+          "scanner_entry": "Un recu terminal reecrit n'est pas un recu propre. Si l'en-tete change mais que hash de paquet, heure de relais, numero de tiroir, ligne temoin ou cachet de garde restent dans le corps, gardez ces champs. L'en-tete dit comment l'office voulait classer le paquet. Le corps dit ou il est passe avant ce titre.",
+          "terminal_note": "Un recu terminal reecrit n'est pas un recu propre. Si l'en-tete change mais que hash de paquet, heure de relais, numero de tiroir, ligne temoin ou cachet de garde restent dans le corps, gardez ces champs. L'en-tete dit comment l'office voulait classer le paquet. Le corps dit ou il est passe avant ce titre.",
+          "evidence_caption": "Un recu terminal reecrit n'est pas un recu propre. Si l'en-tete change mais que hash de paquet, heure de relais, numero de tiroir, ligne temoin ou cachet de garde restent dans le corps, gardez ces champs. L'en-tete dit comment l'office voulait classer le paquet. Le corps dit ou il est passe avant ce titre.",
+          "spoiler_policy": "Un recu terminal reecrit n'est pas un recu propre. Si l'en-tete change mais que hash de paquet, heure de relais, numero de tiroir, ligne temoin ou cachet de garde restent dans le corps, gardez ces champs. L'en-tete dit comment l'office voulait classer le paquet. Le corps dit ou il est passe avant ce titre.",
+          "title": "Terminal Evidence Receipt Rewrite",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_fr_FR_PRIMARY"
+        },
+        "he_IL": {
+          "website_article": "קבלת מסוף ששוכתבה אינה קבלה נקייה. אם הכותרת השתנתה אבל גיבוב החבילה, זמן הממסר, מספר המגירה, שורת העד או חותמת המשמורת שרדו בגוף, שמרו את שדות הגוף. הכותרת אומרת איך משרד רצה לתייק את החבילה. הגוף אומר איפה היא עברה לפני שהכותרת נעשתה בטוחה.",
+          "wiki_article": "קבלת מסוף ששוכתבה אינה קבלה נקייה. אם הכותרת השתנתה אבל גיבוב החבילה, זמן הממסר, מספר המגירה, שורת העד או חותמת המשמורת שרדו בגוף, שמרו את שדות הגוף. הכותרת אומרת איך משרד רצה לתייק את החבילה. הגוף אומר איפה היא עברה לפני שהכותרת נעשתה בטוחה.",
+          "pda_codex": "קבלת מסוף ששוכתבה אינה קבלה נקייה. אם הכותרת השתנתה אבל גיבוב החבילה, זמן הממסר, מספר המגירה, שורת העד או חותמת המשמורת שרדו בגוף, שמרו את שדות הגוף. הכותרת אומרת איך משרד רצה לתייק את החבילה. הגוף אומר איפה היא עברה לפני שהכותרת נעשתה בטוחה.",
+          "scanner_entry": "קבלת מסוף ששוכתבה אינה קבלה נקייה. אם הכותרת השתנתה אבל גיבוב החבילה, זמן הממסר, מספר המגירה, שורת העד או חותמת המשמורת שרדו בגוף, שמרו את שדות הגוף. הכותרת אומרת איך משרד רצה לתייק את החבילה. הגוף אומר איפה היא עברה לפני שהכותרת נעשתה בטוחה.",
+          "terminal_note": "קבלת מסוף ששוכתבה אינה קבלה נקייה. אם הכותרת השתנתה אבל גיבוב החבילה, זמן הממסר, מספר המגירה, שורת העד או חותמת המשמורת שרדו בגוף, שמרו את שדות הגוף. הכותרת אומרת איך משרד רצה לתייק את החבילה. הגוף אומר איפה היא עברה לפני שהכותרת נעשתה בטוחה.",
+          "evidence_caption": "קבלת מסוף ששוכתבה אינה קבלה נקייה. אם הכותרת השתנתה אבל גיבוב החבילה, זמן הממסר, מספר המגירה, שורת העד או חותמת המשמורת שרדו בגוף, שמרו את שדות הגוף. הכותרת אומרת איך משרד רצה לתייק את החבילה. הגוף אומר איפה היא עברה לפני שהכותרת נעשתה בטוחה.",
+          "spoiler_policy": "קבלת מסוף ששוכתבה אינה קבלה נקייה. אם הכותרת השתנתה אבל גיבוב החבילה, זמן הממסר, מספר המגירה, שורת העד או חותמת המשמורת שרדו בגוף, שמרו את שדות הגוף. הכותרת אומרת איך משרד רצה לתייק את החבילה. הגוף אומר איפה היא עברה לפני שהכותרת נעשתה בטוחה.",
+          "title": "Terminal Evidence Receipt Rewrite",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_he_IL_PRIMARY"
+        },
+        "id_ID": {
+          "website_article": "Tanda terima terminal yang ditulis ulang bukan tanda terima bersih. Jika header berubah tetapi hash paket, waktu relai, nomor laci, baris saksi, atau cap kustodi bertahan di isi, simpan bidang isi. Header mengatakan bagaimana kantor ingin mengarsipkan paket. Isi mengatakan ke mana paket bergerak sebelum judul itu aman.",
+          "wiki_article": "Tanda terima terminal yang ditulis ulang bukan tanda terima bersih. Jika header berubah tetapi hash paket, waktu relai, nomor laci, baris saksi, atau cap kustodi bertahan di isi, simpan bidang isi. Header mengatakan bagaimana kantor ingin mengarsipkan paket. Isi mengatakan ke mana paket bergerak sebelum judul itu aman.",
+          "pda_codex": "Tanda terima terminal yang ditulis ulang bukan tanda terima bersih. Jika header berubah tetapi hash paket, waktu relai, nomor laci, baris saksi, atau cap kustodi bertahan di isi, simpan bidang isi. Header mengatakan bagaimana kantor ingin mengarsipkan paket. Isi mengatakan ke mana paket bergerak sebelum judul itu aman.",
+          "scanner_entry": "Tanda terima terminal yang ditulis ulang bukan tanda terima bersih. Jika header berubah tetapi hash paket, waktu relai, nomor laci, baris saksi, atau cap kustodi bertahan di isi, simpan bidang isi. Header mengatakan bagaimana kantor ingin mengarsipkan paket. Isi mengatakan ke mana paket bergerak sebelum judul itu aman.",
+          "terminal_note": "Tanda terima terminal yang ditulis ulang bukan tanda terima bersih. Jika header berubah tetapi hash paket, waktu relai, nomor laci, baris saksi, atau cap kustodi bertahan di isi, simpan bidang isi. Header mengatakan bagaimana kantor ingin mengarsipkan paket. Isi mengatakan ke mana paket bergerak sebelum judul itu aman.",
+          "evidence_caption": "Tanda terima terminal yang ditulis ulang bukan tanda terima bersih. Jika header berubah tetapi hash paket, waktu relai, nomor laci, baris saksi, atau cap kustodi bertahan di isi, simpan bidang isi. Header mengatakan bagaimana kantor ingin mengarsipkan paket. Isi mengatakan ke mana paket bergerak sebelum judul itu aman.",
+          "spoiler_policy": "Tanda terima terminal yang ditulis ulang bukan tanda terima bersih. Jika header berubah tetapi hash paket, waktu relai, nomor laci, baris saksi, atau cap kustodi bertahan di isi, simpan bidang isi. Header mengatakan bagaimana kantor ingin mengarsipkan paket. Isi mengatakan ke mana paket bergerak sebelum judul itu aman.",
+          "title": "Terminal Evidence Receipt Rewrite",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_id_ID_PRIMARY"
+        },
+        "ja_JP": {
+          "website_article": "書き換えられた端末受領票は、きれいな受領票ではない。見出しが変わっても、パケットハッシュ、中継時刻、引き出し番号、証人行、保管印が本文に残るなら本文を残す。見出しは事務所がどう保管したかったかを示す。本文はその安全な題名の前にパケットがどこを通ったかを示す。",
+          "wiki_article": "書き換えられた端末受領票は、きれいな受領票ではない。見出しが変わっても、パケットハッシュ、中継時刻、引き出し番号、証人行、保管印が本文に残るなら本文を残す。見出しは事務所がどう保管したかったかを示す。本文はその安全な題名の前にパケットがどこを通ったかを示す。",
+          "pda_codex": "書き換えられた端末受領票は、きれいな受領票ではない。見出しが変わっても、パケットハッシュ、中継時刻、引き出し番号、証人行、保管印が本文に残るなら本文を残す。見出しは事務所がどう保管したかったかを示す。本文はその安全な題名の前にパケットがどこを通ったかを示す。",
+          "scanner_entry": "書き換えられた端末受領票は、きれいな受領票ではない。見出しが変わっても、パケットハッシュ、中継時刻、引き出し番号、証人行、保管印が本文に残るなら本文を残す。見出しは事務所がどう保管したかったかを示す。本文はその安全な題名の前にパケットがどこを通ったかを示す。",
+          "terminal_note": "書き換えられた端末受領票は、きれいな受領票ではない。見出しが変わっても、パケットハッシュ、中継時刻、引き出し番号、証人行、保管印が本文に残るなら本文を残す。見出しは事務所がどう保管したかったかを示す。本文はその安全な題名の前にパケットがどこを通ったかを示す。",
+          "evidence_caption": "書き換えられた端末受領票は、きれいな受領票ではない。見出しが変わっても、パケットハッシュ、中継時刻、引き出し番号、証人行、保管印が本文に残るなら本文を残す。見出しは事務所がどう保管したかったかを示す。本文はその安全な題名の前にパケットがどこを通ったかを示す。",
+          "spoiler_policy": "書き換えられた端末受領票は、きれいな受領票ではない。見出しが変わっても、パケットハッシュ、中継時刻、引き出し番号、証人行、保管印が本文に残るなら本文を残す。見出しは事務所がどう保管したかったかを示す。本文はその安全な題名の前にパケットがどこを通ったかを示す。",
+          "title": "Terminal Evidence Receipt Rewrite",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_ja_JP_PRIMARY"
+        },
+        "ko_KR": {
+          "website_article": "다시 쓰인 터미널 영수증은 깨끗한 영수증이 아니다. 헤더가 바뀌었어도 패킷 해시, 중계 시각, 서랍 번호, 증인 줄, 보관 도장이 본문에 남아 있으면 본문 필드를 보존한다. 헤더는 사무실이 패킷을 어떻게 분류하고 싶었는지 말한다. 본문은 그 안전한 제목 전 이동 경로를 말한다.",
+          "wiki_article": "다시 쓰인 터미널 영수증은 깨끗한 영수증이 아니다. 헤더가 바뀌었어도 패킷 해시, 중계 시각, 서랍 번호, 증인 줄, 보관 도장이 본문에 남아 있으면 본문 필드를 보존한다. 헤더는 사무실이 패킷을 어떻게 분류하고 싶었는지 말한다. 본문은 그 안전한 제목 전 이동 경로를 말한다.",
+          "pda_codex": "다시 쓰인 터미널 영수증은 깨끗한 영수증이 아니다. 헤더가 바뀌었어도 패킷 해시, 중계 시각, 서랍 번호, 증인 줄, 보관 도장이 본문에 남아 있으면 본문 필드를 보존한다. 헤더는 사무실이 패킷을 어떻게 분류하고 싶었는지 말한다. 본문은 그 안전한 제목 전 이동 경로를 말한다.",
+          "scanner_entry": "다시 쓰인 터미널 영수증은 깨끗한 영수증이 아니다. 헤더가 바뀌었어도 패킷 해시, 중계 시각, 서랍 번호, 증인 줄, 보관 도장이 본문에 남아 있으면 본문 필드를 보존한다. 헤더는 사무실이 패킷을 어떻게 분류하고 싶었는지 말한다. 본문은 그 안전한 제목 전 이동 경로를 말한다.",
+          "terminal_note": "다시 쓰인 터미널 영수증은 깨끗한 영수증이 아니다. 헤더가 바뀌었어도 패킷 해시, 중계 시각, 서랍 번호, 증인 줄, 보관 도장이 본문에 남아 있으면 본문 필드를 보존한다. 헤더는 사무실이 패킷을 어떻게 분류하고 싶었는지 말한다. 본문은 그 안전한 제목 전 이동 경로를 말한다.",
+          "evidence_caption": "다시 쓰인 터미널 영수증은 깨끗한 영수증이 아니다. 헤더가 바뀌었어도 패킷 해시, 중계 시각, 서랍 번호, 증인 줄, 보관 도장이 본문에 남아 있으면 본문 필드를 보존한다. 헤더는 사무실이 패킷을 어떻게 분류하고 싶었는지 말한다. 본문은 그 안전한 제목 전 이동 경로를 말한다.",
+          "spoiler_policy": "다시 쓰인 터미널 영수증은 깨끗한 영수증이 아니다. 헤더가 바뀌었어도 패킷 해시, 중계 시각, 서랍 번호, 증인 줄, 보관 도장이 본문에 남아 있으면 본문 필드를 보존한다. 헤더는 사무실이 패킷을 어떻게 분류하고 싶었는지 말한다. 본문은 그 안전한 제목 전 이동 경로를 말한다.",
+          "title": "Terminal Evidence Receipt Rewrite",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_ko_KR_PRIMARY"
+        },
+        "nl_NL": {
+          "website_article": "Een herschreven terminalbon is geen schone bon. Als de header veranderde maar pakkethash, relaytijd, ladenummer, getuigenregel of bewaarstempel in de body bleven, bewaar de bodyvelden. De header zegt hoe een kantoor het pakket wilde indienen. De body zegt waar het pakket bewoog voordat die titel veilig werd.",
+          "wiki_article": "Een herschreven terminalbon is geen schone bon. Als de header veranderde maar pakkethash, relaytijd, ladenummer, getuigenregel of bewaarstempel in de body bleven, bewaar de bodyvelden. De header zegt hoe een kantoor het pakket wilde indienen. De body zegt waar het pakket bewoog voordat die titel veilig werd.",
+          "pda_codex": "Een herschreven terminalbon is geen schone bon. Als de header veranderde maar pakkethash, relaytijd, ladenummer, getuigenregel of bewaarstempel in de body bleven, bewaar de bodyvelden. De header zegt hoe een kantoor het pakket wilde indienen. De body zegt waar het pakket bewoog voordat die titel veilig werd.",
+          "scanner_entry": "Een herschreven terminalbon is geen schone bon. Als de header veranderde maar pakkethash, relaytijd, ladenummer, getuigenregel of bewaarstempel in de body bleven, bewaar de bodyvelden. De header zegt hoe een kantoor het pakket wilde indienen. De body zegt waar het pakket bewoog voordat die titel veilig werd.",
+          "terminal_note": "Een herschreven terminalbon is geen schone bon. Als de header veranderde maar pakkethash, relaytijd, ladenummer, getuigenregel of bewaarstempel in de body bleven, bewaar de bodyvelden. De header zegt hoe een kantoor het pakket wilde indienen. De body zegt waar het pakket bewoog voordat die titel veilig werd.",
+          "evidence_caption": "Een herschreven terminalbon is geen schone bon. Als de header veranderde maar pakkethash, relaytijd, ladenummer, getuigenregel of bewaarstempel in de body bleven, bewaar de bodyvelden. De header zegt hoe een kantoor het pakket wilde indienen. De body zegt waar het pakket bewoog voordat die titel veilig werd.",
+          "spoiler_policy": "Een herschreven terminalbon is geen schone bon. Als de header veranderde maar pakkethash, relaytijd, ladenummer, getuigenregel of bewaarstempel in de body bleven, bewaar de bodyvelden. De header zegt hoe een kantoor het pakket wilde indienen. De body zegt waar het pakket bewoog voordat die titel veilig werd.",
+          "title": "Terminal Evidence Receipt Rewrite",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_nl_NL_PRIMARY"
+        },
+        "pl_PL": {
+          "website_article": "Przepisany paragon terminala nie jest czystym paragonem. Jesli naglowek sie zmienil, ale hash pakietu, czas przekazu, numer szuflady, linia swiadka albo pieczec depozytu zostaly w tresci, zachowaj pola tresci. Naglowek mowi, jak biuro chcialo zlozyc pakiet. Tresc mowi, gdzie pakiet przeszedl przed bezpiecznym tytulem.",
+          "wiki_article": "Przepisany paragon terminala nie jest czystym paragonem. Jesli naglowek sie zmienil, ale hash pakietu, czas przekazu, numer szuflady, linia swiadka albo pieczec depozytu zostaly w tresci, zachowaj pola tresci. Naglowek mowi, jak biuro chcialo zlozyc pakiet. Tresc mowi, gdzie pakiet przeszedl przed bezpiecznym tytulem.",
+          "pda_codex": "Przepisany paragon terminala nie jest czystym paragonem. Jesli naglowek sie zmienil, ale hash pakietu, czas przekazu, numer szuflady, linia swiadka albo pieczec depozytu zostaly w tresci, zachowaj pola tresci. Naglowek mowi, jak biuro chcialo zlozyc pakiet. Tresc mowi, gdzie pakiet przeszedl przed bezpiecznym tytulem.",
+          "scanner_entry": "Przepisany paragon terminala nie jest czystym paragonem. Jesli naglowek sie zmienil, ale hash pakietu, czas przekazu, numer szuflady, linia swiadka albo pieczec depozytu zostaly w tresci, zachowaj pola tresci. Naglowek mowi, jak biuro chcialo zlozyc pakiet. Tresc mowi, gdzie pakiet przeszedl przed bezpiecznym tytulem.",
+          "terminal_note": "Przepisany paragon terminala nie jest czystym paragonem. Jesli naglowek sie zmienil, ale hash pakietu, czas przekazu, numer szuflady, linia swiadka albo pieczec depozytu zostaly w tresci, zachowaj pola tresci. Naglowek mowi, jak biuro chcialo zlozyc pakiet. Tresc mowi, gdzie pakiet przeszedl przed bezpiecznym tytulem.",
+          "evidence_caption": "Przepisany paragon terminala nie jest czystym paragonem. Jesli naglowek sie zmienil, ale hash pakietu, czas przekazu, numer szuflady, linia swiadka albo pieczec depozytu zostaly w tresci, zachowaj pola tresci. Naglowek mowi, jak biuro chcialo zlozyc pakiet. Tresc mowi, gdzie pakiet przeszedl przed bezpiecznym tytulem.",
+          "spoiler_policy": "Przepisany paragon terminala nie jest czystym paragonem. Jesli naglowek sie zmienil, ale hash pakietu, czas przekazu, numer szuflady, linia swiadka albo pieczec depozytu zostaly w tresci, zachowaj pola tresci. Naglowek mowi, jak biuro chcialo zlozyc pakiet. Tresc mowi, gdzie pakiet przeszedl przed bezpiecznym tytulem.",
+          "title": "Terminal Evidence Receipt Rewrite",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_pl_PL_PRIMARY"
+        },
+        "pt_BR": {
+          "website_article": "Um recibo de terminal reescrito nao e um recibo limpo. Se o cabecalho mudou, mas hash do pacote, horario de rele, numero de gaveta, linha de testemunha ou carimbo de custodia ficaram no corpo, preserve esses campos. O cabecalho diz como um escritorio quis arquivar o pacote. O corpo diz por onde ele passou antes.",
+          "wiki_article": "Um recibo de terminal reescrito nao e um recibo limpo. Se o cabecalho mudou, mas hash do pacote, horario de rele, numero de gaveta, linha de testemunha ou carimbo de custodia ficaram no corpo, preserve esses campos. O cabecalho diz como um escritorio quis arquivar o pacote. O corpo diz por onde ele passou antes.",
+          "pda_codex": "Um recibo de terminal reescrito nao e um recibo limpo. Se o cabecalho mudou, mas hash do pacote, horario de rele, numero de gaveta, linha de testemunha ou carimbo de custodia ficaram no corpo, preserve esses campos. O cabecalho diz como um escritorio quis arquivar o pacote. O corpo diz por onde ele passou antes.",
+          "scanner_entry": "Um recibo de terminal reescrito nao e um recibo limpo. Se o cabecalho mudou, mas hash do pacote, horario de rele, numero de gaveta, linha de testemunha ou carimbo de custodia ficaram no corpo, preserve esses campos. O cabecalho diz como um escritorio quis arquivar o pacote. O corpo diz por onde ele passou antes.",
+          "terminal_note": "Um recibo de terminal reescrito nao e um recibo limpo. Se o cabecalho mudou, mas hash do pacote, horario de rele, numero de gaveta, linha de testemunha ou carimbo de custodia ficaram no corpo, preserve esses campos. O cabecalho diz como um escritorio quis arquivar o pacote. O corpo diz por onde ele passou antes.",
+          "evidence_caption": "Um recibo de terminal reescrito nao e um recibo limpo. Se o cabecalho mudou, mas hash do pacote, horario de rele, numero de gaveta, linha de testemunha ou carimbo de custodia ficaram no corpo, preserve esses campos. O cabecalho diz como um escritorio quis arquivar o pacote. O corpo diz por onde ele passou antes.",
+          "spoiler_policy": "Um recibo de terminal reescrito nao e um recibo limpo. Se o cabecalho mudou, mas hash do pacote, horario de rele, numero de gaveta, linha de testemunha ou carimbo de custodia ficaram no corpo, preserve esses campos. O cabecalho diz como um escritorio quis arquivar o pacote. O corpo diz por onde ele passou antes.",
+          "title": "Terminal Evidence Receipt Rewrite",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_pt_BR_PRIMARY"
+        },
+        "ru_RU": {
+          "website_article": "Переписанная терминальная квитанция не является чистой квитанцией. Если заголовок изменили, но хэш пакета, время ретрансляции, номер ящика, строка свидетеля или печать хранения остались в теле, сохрани поля тела. Заголовок говорит, как офис хотел подшить пакет. Тело говорит, где пакет прошел до безопасного названия.",
+          "wiki_article": "Переписанная терминальная квитанция не является чистой квитанцией. Если заголовок изменили, но хэш пакета, время ретрансляции, номер ящика, строка свидетеля или печать хранения остались в теле, сохрани поля тела. Заголовок говорит, как офис хотел подшить пакет. Тело говорит, где пакет прошел до безопасного названия.",
+          "pda_codex": "Переписанная терминальная квитанция не является чистой квитанцией. Если заголовок изменили, но хэш пакета, время ретрансляции, номер ящика, строка свидетеля или печать хранения остались в теле, сохрани поля тела. Заголовок говорит, как офис хотел подшить пакет. Тело говорит, где пакет прошел до безопасного названия.",
+          "scanner_entry": "Переписанная терминальная квитанция не является чистой квитанцией. Если заголовок изменили, но хэш пакета, время ретрансляции, номер ящика, строка свидетеля или печать хранения остались в теле, сохрани поля тела. Заголовок говорит, как офис хотел подшить пакет. Тело говорит, где пакет прошел до безопасного названия.",
+          "terminal_note": "Переписанная терминальная квитанция не является чистой квитанцией. Если заголовок изменили, но хэш пакета, время ретрансляции, номер ящика, строка свидетеля или печать хранения остались в теле, сохрани поля тела. Заголовок говорит, как офис хотел подшить пакет. Тело говорит, где пакет прошел до безопасного названия.",
+          "evidence_caption": "Переписанная терминальная квитанция не является чистой квитанцией. Если заголовок изменили, но хэш пакета, время ретрансляции, номер ящика, строка свидетеля или печать хранения остались в теле, сохрани поля тела. Заголовок говорит, как офис хотел подшить пакет. Тело говорит, где пакет прошел до безопасного названия.",
+          "spoiler_policy": "Переписанная терминальная квитанция не является чистой квитанцией. Если заголовок изменили, но хэш пакета, время ретрансляции, номер ящика, строка свидетеля или печать хранения остались в теле, сохрани поля тела. Заголовок говорит, как офис хотел подшить пакет. Тело говорит, где пакет прошел до безопасного названия.",
+          "title": "Terminal Evidence Receipt Rewrite",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_ru_RU_PRIMARY"
+        },
+        "uk_UA": {
+          "website_article": "Переписана термінальна квитанція не є чистою квитанцією. Якщо заголовок змінили, але хеш пакета, час ретрансляції, номер шухляди, рядок свідка або печатка зберігання лишилися в тілі, збережи поля тіла. Заголовок каже, як офіс хотів підшити пакет. Тіло каже, де пакет пройшов до безпечної назви.",
+          "wiki_article": "Переписана термінальна квитанція не є чистою квитанцією. Якщо заголовок змінили, але хеш пакета, час ретрансляції, номер шухляди, рядок свідка або печатка зберігання лишилися в тілі, збережи поля тіла. Заголовок каже, як офіс хотів підшити пакет. Тіло каже, де пакет пройшов до безпечної назви.",
+          "pda_codex": "Переписана термінальна квитанція не є чистою квитанцією. Якщо заголовок змінили, але хеш пакета, час ретрансляції, номер шухляди, рядок свідка або печатка зберігання лишилися в тілі, збережи поля тіла. Заголовок каже, як офіс хотів підшити пакет. Тіло каже, де пакет пройшов до безпечної назви.",
+          "scanner_entry": "Переписана термінальна квитанція не є чистою квитанцією. Якщо заголовок змінили, але хеш пакета, час ретрансляції, номер шухляди, рядок свідка або печатка зберігання лишилися в тілі, збережи поля тіла. Заголовок каже, як офіс хотів підшити пакет. Тіло каже, де пакет пройшов до безпечної назви.",
+          "terminal_note": "Переписана термінальна квитанція не є чистою квитанцією. Якщо заголовок змінили, але хеш пакета, час ретрансляції, номер шухляди, рядок свідка або печатка зберігання лишилися в тілі, збережи поля тіла. Заголовок каже, як офіс хотів підшити пакет. Тіло каже, де пакет пройшов до безпечної назви.",
+          "evidence_caption": "Переписана термінальна квитанція не є чистою квитанцією. Якщо заголовок змінили, але хеш пакета, час ретрансляції, номер шухляди, рядок свідка або печатка зберігання лишилися в тілі, збережи поля тіла. Заголовок каже, як офіс хотів підшити пакет. Тіло каже, де пакет пройшов до безпечної назви.",
+          "spoiler_policy": "Переписана термінальна квитанція не є чистою квитанцією. Якщо заголовок змінили, але хеш пакета, час ретрансляції, номер шухляди, рядок свідка або печатка зберігання лишилися в тілі, збережи поля тіла. Заголовок каже, як офіс хотів підшити пакет. Тіло каже, де пакет пройшов до безпечної назви.",
+          "title": "Terminal Evidence Receipt Rewrite",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_uk_UA_PRIMARY"
+        },
+        "zh_CN": {
+          "website_article": "被改写的终端收据不是干净收据。如果标题改变，但包哈希、中继时间、抽屉编号、见证行或保管印仍在正文中，就保留正文字段。标题说明办公室想怎样归档这个包。正文说明在这个安全标题出现前，包曾经经过哪里。",
+          "wiki_article": "被改写的终端收据不是干净收据。如果标题改变，但包哈希、中继时间、抽屉编号、见证行或保管印仍在正文中，就保留正文字段。标题说明办公室想怎样归档这个包。正文说明在这个安全标题出现前，包曾经经过哪里。",
+          "pda_codex": "被改写的终端收据不是干净收据。如果标题改变，但包哈希、中继时间、抽屉编号、见证行或保管印仍在正文中，就保留正文字段。标题说明办公室想怎样归档这个包。正文说明在这个安全标题出现前，包曾经经过哪里。",
+          "scanner_entry": "被改写的终端收据不是干净收据。如果标题改变，但包哈希、中继时间、抽屉编号、见证行或保管印仍在正文中，就保留正文字段。标题说明办公室想怎样归档这个包。正文说明在这个安全标题出现前，包曾经经过哪里。",
+          "terminal_note": "被改写的终端收据不是干净收据。如果标题改变，但包哈希、中继时间、抽屉编号、见证行或保管印仍在正文中，就保留正文字段。标题说明办公室想怎样归档这个包。正文说明在这个安全标题出现前，包曾经经过哪里。",
+          "evidence_caption": "被改写的终端收据不是干净收据。如果标题改变，但包哈希、中继时间、抽屉编号、见证行或保管印仍在正文中，就保留正文字段。标题说明办公室想怎样归档这个包。正文说明在这个安全标题出现前，包曾经经过哪里。",
+          "spoiler_policy": "被改写的终端收据不是干净收据。如果标题改变，但包哈希、中继时间、抽屉编号、见证行或保管印仍在正文中，就保留正文字段。标题说明办公室想怎样归档这个包。正文说明在这个安全标题出现前，包曾经经过哪里。",
+          "title": "Terminal Evidence Receipt Rewrite",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_zh_CN_PRIMARY"
+        }
+      }
+    }
+  ]
+}

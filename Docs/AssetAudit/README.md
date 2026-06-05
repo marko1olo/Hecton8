@@ -41,6 +41,11 @@ This directory is the current asset-front control surface. It is not Unity accep
 22. `taskslocal/asset_system_20260605/ASSET_OWNER_21_TEXTURE_STREAMING_MIP_STATIC_RISK_PACKET.md`
 23. `taskslocal/asset_system_20260605/ASSET_OWNER_22_PREFAB_COLLIDER_LOD_ROW_RISK_PACKET.md`
 24. `taskslocal/asset_system_20260605/ASSET_OWNER_23_AUDIO_SOURCE_TECHNICAL_REMEDIATION_PACKET.md`
+25. `taskslocal/asset_system_20260605/ASSET_OWNER_24_PRODUCT_FACE_MATERIAL_REPAIR_PACKET.md`
+26. `taskslocal/asset_system_20260605/ASSET_OWNER_25_PREFAB_PRIMITIVE_MESH_REPLACEMENT_PACKET.md`
+27. `taskslocal/asset_system_20260605/ASSET_OWNER_26_UNITY_READBACK_NO_MUTATION_PACKET.md`
+28. `taskslocal/asset_system_20260605/ASSET_OWNER_27_UNDERWATER_VFX_SOURCE_PACKET.md`
+29. `taskslocal/asset_system_20260605/ASSET_OWNER_28_AUDIO_REMEDIATION_EXECUTION_PACKET.md`
 
 ## Current P0 Blockers
 
@@ -61,6 +66,14 @@ Use these files before assigning or doing asset work:
 - Current static validation summary: `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`.
 - Cross-domain static row blocker summary: `ASSET_STATIC_ROW_BLOCKER_SUMMARY_20260605.md` and `.csv`.
 - Asset-front file map: `ASSET_FRONT_FILE_MAP_20260605.md` and `.csv`.
+- Asset GUID reference matrix: `ASSET_GUID_REFERENCE_MATRIX_20260605.md` and `.csv`.
+- Asset GUID active-route triage: `ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.md` and `.csv`.
+- Asset GUID unreferenced source triage: `ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.md` and `.csv`.
+- Product-face material P0 table: `PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.md` and `.csv`.
+- Product-face prefab P0 table: `PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.md` and `.csv`.
+- Audio P0 remediation table: `AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.md` and `.csv`.
+- No-mutation Unity readback field manifest: `H8_1475_READBACK_FIELD_MANIFEST_20260605.md` and `.csv`.
+- Visual reference capture gap table: `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.md` and `.csv`.
 - Consolidated next-action board: `ASSET_NEXT_ACTION_BOARD_20260605.md` and `.csv`.
 - Local authoring/tool inventory: `ASSET_AUTHORING_TOOL_INVENTORY_20260605.md` and `.csv`.
 - Audio taxonomy: `AUDIO_ASSET_TAXONOMY_20260605.md` and `.csv`.
@@ -124,6 +137,14 @@ If the gate is red, continue static/source documentation only.
 - Unity readback owner: `ASSET_OWNER_06_UNITY_READBACK_EXECUTION_PACKET.md`.
 - Texture authoring owner: `TEXTURE_AUTHORING_RECIPES_20260605.md`, cleanup reviews, and `TEXTURE_IMPORT_ROLE_MATRIX_20260605.csv`.
 - Texture/material route owner: `TEXTURE_MATERIAL_FAMILY_ROUTE_MATRIX_20260605.csv` before any family promotion or material-route edit.
+- Cross-asset GUID/reference owner: `ASSET_GUID_REFERENCE_MATRIX_20260605.csv` before assigning texture, audio, material, model, prefab, scene, vendor-path, or Addressables reachability work.
+- Active GUID triage owner: `ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.csv` before assigning P0/P1 active-world, direct-audio, scene-reachable, or vendor-path GUID rows.
+- Unreferenced GUID cleanup-review owner: `ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.csv` after active-route triage only; this file is not deletion authorization.
+- Product-face material P0 target owner: `PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.csv` before `ASSET_OWNER_24` repair execution.
+- Product-face prefab P0 target owner: `PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.csv` before `ASSET_OWNER_25` primitive replacement execution.
+- Audio P0 remediation target owner: `AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.csv` before `ASSET_OWNER_28` audio remediation execution.
+- Unity readback field owner: `H8_1475_READBACK_FIELD_MANIFEST_20260605.csv` before `ASSET_OWNER_26` no-mutation readback execution.
+- Visual capture gap owner: `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.csv` before any product-face screenshot acceptance attempt.
 - Audio owner: `AUDIO_SOURCE_FOLDER_ROUTE_MATRIX_20260605.csv`, `AUDIO_ROUTING_REMEDIATION_SPEC_20260605.md`, `AUDIO_IMPORT_POLICY_EXCEPTION_TABLE_20260605.csv`, `AUDIO_LISTENING_PASS_QUEUE_20260605.csv`, and `audio_remediation_matrix_20260605.csv`.
 - Audio profile owner: `AUDIO_PROFILE_ROUTE_MATRIX_20260605.csv` before any MusicDirector/profile/cue route edit.
 - Audio direct-ref owner: `ASSET_OWNER_08_AUDIO_DIRECT_REF_UNWIRING_PACKET.md` and `AUDIO_DIRECT_REF_DETAIL_20260605.csv` before touching `Player.prefab` audio refs.
@@ -142,6 +163,11 @@ If the gate is red, continue static/source documentation only.
 - Texture streaming/mip owner: `ASSET_OWNER_21_TEXTURE_STREAMING_MIP_STATIC_RISK_PACKET.md` before any streaming mip, sRGB/name-risk, large-source, or hero-scale texture import work.
 - Prefab collider/LOD owner: `ASSET_OWNER_22_PREFAB_COLLIDER_LOD_ROW_RISK_PACKET.md` before any prefab collider, LOD, built-in primitive mesh, no-renderer, or proxy/placeholder row remediation.
 - Audio source technical owner: `ASSET_OWNER_23_AUDIO_SOURCE_TECHNICAL_REMEDIATION_PACKET.md` before any source-rate, channel, long-bed, import, lifecycle, Addressables, listening, or DSP route remediation.
+- Product-face material repair owner: `ASSET_OWNER_24_PRODUCT_FACE_MATERIAL_REPAIR_PACKET.md` before repairing material routes after product-face validator failure and visual-reference rejection.
+- Product-face primitive replacement owner: `ASSET_OWNER_25_PREFAB_PRIMITIVE_MESH_REPLACEMENT_PACKET.md` before replacing visible built-in primitive meshes, adding LOD chains, collider proxies, or product-face prefab proof.
+- Unity no-mutation readback owner: `ASSET_OWNER_26_UNITY_READBACK_NO_MUTATION_PACKET.md` when the Unity process gate is clean and current product-face blockers need readback without save/mutation.
+- Underwater VFX source owner: `ASSET_OWNER_27_UNDERWATER_VFX_SOURCE_PACKET.md` before generating/prepping fish silhouette, marine snow, foam/contact, or shallow caustic source packs.
+- Audio remediation execution owner: `ASSET_OWNER_28_AUDIO_REMEDIATION_EXECUTION_PACKET.md` before P0 MusicDirector/direct-ref/import/source remediation execution.
 - Mesh/prefab owner: `PREFAB_FILE_TECHNICAL_PROPERTIES_20260605.csv`, `MESH_PREFAB_SOURCE_FOLDER_ROUTE_MATRIX_20260605.csv`, `MESH_PREFAB_REVIEW_QUEUE_20260605.csv`, and `MESH_PREFAB_PROMOTION_STATIC_TABLE_3214_20260605.md`.
 - UI sprite owner: `UI_SPRITE_ROUTE_STATIC_TABLE_3216_20260605.md`.
 

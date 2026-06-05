@@ -1,0 +1,24 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS104_DISPUTE_HOLD_CHECKLIST_BRIDGE",
+  "status": "canonical_source_candidate_pending_controller_review_and_downstream_wiring",
+  "packets": [
+    "P512_PUBLIC_ARCHIVE_DISPUTE_REASON_CODE_BRIDGE",
+    "P513_ARCHIVE_RESOLUTION_HOLD_PROMPT_BRIDGE",
+    "P514_PDA_NEXT_PROOF_CHECKLIST_BRIDGE"
+  ],
+  "authoring_packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P512_PUBLIC_ARCHIVE_DISPUTE_REASON_CODE_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P513_ARCHIVE_RESOLUTION_HOLD_PROMPT_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P514_PDA_NEXT_PROOF_CHECKLIST_BRIDGE.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false,
+  "evidence_class": "STATIC_SOURCE"
+}

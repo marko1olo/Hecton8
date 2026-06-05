@@ -41,6 +41,12 @@ Generated ledgers:
 - `Docs/AssetAudit/GENERATED_SOURCE_PACK_FILE_INVENTORY_20260605.csv`
 - `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.md`
 - `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`
+- `Docs/AssetAudit/ASSET_GUID_REFERENCE_MATRIX_20260605.md`
+- `Docs/AssetAudit/ASSET_GUID_REFERENCE_MATRIX_20260605.csv`
+- `Docs/AssetAudit/ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.md`
+- `Docs/AssetAudit/ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.csv`
+- `Docs/AssetAudit/ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.md`
+- `Docs/AssetAudit/ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.csv`
 - `Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.md`
 - `Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.csv`
 - `Docs/AssetAudit/ASSET_STATIC_ROW_BLOCKER_SUMMARY_20260605.md`
@@ -107,6 +113,17 @@ Generated ledgers:
 - `taskslocal/asset_system_20260605/ASSET_OWNER_06_UNITY_READBACK_EXECUTION_PACKET.md`: future no-mutation Unity readback order; not proof.
 - `Docs/Audio/audio_remediation_matrix_20260605.csv`: 58 rows, including 6 P0 rows, mapping mixer/direct-ref/long-bed/stinger/import risks to owner actions.
 - `Docs/AssetAudit/AUDIO_REMEDIATION_MATRIX_REVIEW_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_REJECTION_20260605.md`: controller image QA rejection against mandatory reference examples; current diagnostic MCP screenshots fail water, terrain, sky/Aegir, shoreline, underwater volume, and proof-packet requirements.
+- `taskslocal/asset_system_20260605/ASSET_OWNER_24_PRODUCT_FACE_MATERIAL_REPAIR_PACKET.md`: future product-face material/texture repair execution packet.
+- `taskslocal/asset_system_20260605/ASSET_OWNER_25_PREFAB_PRIMITIVE_MESH_REPLACEMENT_PACKET.md`: future product-face visible primitive mesh replacement, LOD, collider, material proof packet.
+- `taskslocal/asset_system_20260605/ASSET_OWNER_26_UNITY_READBACK_NO_MUTATION_PACKET.md`: future no-mutation Unity readback packet for product-face gate failures and h8_1475 readiness.
+- `taskslocal/asset_system_20260605/ASSET_OWNER_27_UNDERWATER_VFX_SOURCE_PACKET.md`: future underwater fish/marine-snow/foam/caustic source packet.
+- `taskslocal/asset_system_20260605/ASSET_OWNER_28_AUDIO_REMEDIATION_EXECUTION_PACKET.md`: future audio routing/import/source remediation execution packet.
+- `Docs/AssetAudit/PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.md/.csv`: 124 P0 material/texture target rows, all `PENDING UNITY READBACK`.
+- `Docs/AssetAudit/PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.md/.csv`: 39 P0 prefab/primitive target rows, all `PENDING UNITY PREFAB READBACK`.
+- `Docs/AssetAudit/AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.md/.csv`: 6 P0 audio remediation target rows.
+- `Docs/AssetAudit/H8_1475_READBACK_FIELD_MANIFEST_20260605.md/.csv`: 120 readback/proof fields for no-mutation Unity h8_1475 execution.
+- `Docs/AssetAudit/VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.md/.csv`: 7 visual capture gap rows; `Docs/Screenshots/HectonProofPackets/` is absent and current MCP PNGs remain diagnostic only.
 
 Manual review artifacts:
 
@@ -119,6 +136,9 @@ Manual review artifacts:
 The CSV class columns are mechanical classifiers. Treat this markdown as the disposition source.
 The texture disposition CSV is stricter than the raw ledger: it marks generated docs as source-only, Aegir/cloud candidates as readback-blocked, foam as rejected visible support, and flora/coral as material-proof blocked.
 The usage-map CSVs are serialized-reference evidence only. They prove reachability in YAML, not runtime binding, import quality, Addressables residency, visual quality, or mix behavior.
+The GUID reference matrix is the broad static reachability graph for asset-like GUIDs under `Assets`. Use it before assigning texture, audio, material, model, prefab, scene, vendor-path, or Addressables owner work; it is GUID text reachability only, not Unity/import/runtime proof.
+The active-route GUID triage condenses the GUID graph to P0/P1 owner lanes. Use it before broad cleanup so active-world, direct-audio, scene-reachable, and vendor-path blockers stay ahead of unreferenced source sorting.
+The unreferenced GUID triage is cleanup-review input only. It must not be used as delete authorization because static GUID absence does not prove code use, editor use, Addressables labels, Resources route, AssetBundle membership, or safe `.meta` deletion.
 Use the action queue for owner dispatch priority. It is stricter than this index because it orders blockers by active route reachability and proof risk.
 Use the taxonomy files for future owner orientation only. They separate source-only prototypes, hard rejects, candidate pools, and readback-blocked routes; they do not promote any asset.
 Use the authoring-tool inventory to choose existing local tools before inventing a new generator, baker, atlas packer, or scanner. Tool presence is not acceptance.
@@ -390,7 +410,7 @@ Use `Docs/AssetAudit/VISUAL_ASSET_REVIEW_QUEUE_20260605.csv` for visual target o
 
 Latest asset-front parse summary: `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`.
 
-- Current asset CSV set: 29 files, 2094 data rows, zero empty cells.
+- Current asset CSV set: 37 files, 14114 data rows, zero empty cells.
 - `GENERATED_SOURCE_PACK_FILE_INVENTORY_20260605.csv`: 26 rows, 13 columns, zero empty cells.
 - `AUDIO_SOURCE_FOLDER_ROUTE_MATRIX_20260605.csv`: 15 folders, 17 columns, zero empty cells; covers 138 audio ledger rows and 28 direct prefab refs by folder.
 - `TEXTURE_SOURCE_FOLDER_ROUTE_MATRIX_20260605.csv`: 56 folders, 20 columns, zero empty cells; covers 190 texture ledger rows, 50 generated/source-only rows, 54 active-build-scene usage rows, 70 visible-route user rows, and 43 proxy/placeholder usage rows.
@@ -402,8 +422,16 @@ Latest asset-front parse summary: `Docs/Reports/AssetSystem_20260605/ASSET_STATI
 - `MATERIAL_FILE_TECHNICAL_PROPERTIES_20260605.csv`: 392 rows, 16 columns, zero empty cells; static `WorldProceduralProxy` material token rows = 41.
 - `PREFAB_FILE_TECHNICAL_PROPERTIES_20260605.csv`: 602 rows, 18 columns, zero empty cells.
 - `MODEL_FILE_IMPORT_RISK_MATRIX_20260605.csv`: 16 rows, 18 columns, zero empty cells.
+- `ASSET_GUID_REFERENCE_MATRIX_20260605.csv`: 7420 rows, 21 columns, zero empty cells; static GUID graph counts 3932 referenced rows, 3488 unreferenced rows, 630 active-world reachable rows, 25 direct audio scene/prefab review rows, and 3090 non-first-party or legacy path rows.
+- `ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.csv`: 800 rows, 15 columns, zero empty cells; static owner triage counts 655 P0 active-route rows, 145 P1 scene-route rows, and 8 owner lanes.
+- `ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.csv`: 3488 rows, 15 columns, zero empty cells; static cleanup-review triage counts 9 action buckets and 31 rows >= 8 MB.
+- `PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.csv`: 124 rows, 10 columns, zero empty cells; all rows remain readback/remediation targets, not material acceptance.
+- `PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.csv`: 39 rows, 11 columns, zero empty cells; all rows remain prefab readback/replacement targets, not prefab acceptance.
+- `AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.csv`: 6 rows, 9 columns, zero empty cells; rows remain audio remediation targets, not runtime mix acceptance.
+- `H8_1475_READBACK_FIELD_MANIFEST_20260605.csv`: 120 rows, 7 columns, zero empty cells; manifest is readback scope only, not proof by itself.
+- `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.csv`: 7 rows, 8 columns, zero empty cells; rows remain capture gaps/rejections, not visual acceptance.
 - `ASSET_STATIC_ROW_BLOCKER_SUMMARY_20260605.csv`: 16 rows, 9 columns, zero empty cells.
-- `ASSET_FRONT_FILE_MAP_20260605.csv`: 52 rows, 7 columns, zero empty cells.
+- `ASSET_FRONT_FILE_MAP_20260605.csv`: 68 rows, 7 columns, zero empty cells.
 - Current touched asset docs reported zero replacement characters.
 - Scoped asset-front `git diff --check` reported no whitespace errors.
 - Latest process gate sample remained blocked by CPU and active Unity/dotnet/import/compiler processes.

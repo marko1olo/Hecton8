@@ -1,6 +1,7 @@
 # 3DMODEL_TEXTURES_MATERIALS
 
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
+Evidence class: STATIC_DOC / AUTHORING_STANDARD
 Scope: generated and authored textures, material assignment, PBR masks, atlas packing, UV density, texture import settings, and shader data streams for generated assets.
 
 For source creation recipes, AI-assisted texture prompts, procedural height/normal/MRAO bake rules, and visual acceptance gates, read `3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md` before authoring or generating texture families.

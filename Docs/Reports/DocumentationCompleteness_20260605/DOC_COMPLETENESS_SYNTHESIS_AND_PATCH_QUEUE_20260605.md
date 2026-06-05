@@ -1,16 +1,21 @@
 # Documentation Completeness Synthesis And Patch Queue - 2026-06-05
 
-Status: PATCH_QUEUE_EXECUTED / ARCHITECTURE_METADATA_STATIC_PASS / PENDING RUNTIME_PROOF
+Status: PATCH_QUEUE_EXECUTED / ARCHITECTURE_METADATA_STATIC_PASS / SOURCE_ROUTING_SYNTHESIS_READY / PENDING RUNTIME_PROOF
 Evidence class: STATIC_DOC / STATIC_SOURCE / FILESYSTEM
 Owner: LOCAL_ORCHESTRATOR
 
 ## Evidence Boundary
 
-This synthesis integrates three static worker reports:
+This synthesis integrates the first three static worker reports and now tracks the later source-routing family synthesis:
 
 - `Docs/Reports/DocumentationCompleteness_20260605/SOURCE_COVERAGE_REALITY_AUDIT_3223_20260605.md`
 - `Docs/Reports/DocumentationCompleteness_20260605/ROOT_BIBLE_COMPLETENESS_MATRIX_3224_20260605.md`
 - `Docs/Reports/DocumentationCompleteness_20260605/DOC_INDEX_GOVERNANCE_CONSISTENCY_3225_20260605.md`
+- `Docs/Reports/DocumentationCompleteness_20260605/SOURCE_ROUTING_PRESENTATION_FAMILY_AUDIT_20260605.md`
+- `Docs/Reports/DocumentationCompleteness_20260605/SOURCE_ROUTING_AUTHORING_DATA_FAMILY_AUDIT_20260605.md`
+- `Docs/Reports/DocumentationCompleteness_20260605/SOURCE_ROUTING_WORLD_GAMEPLAY_FAMILY_AUDIT_20260605.md`
+- `Docs/Reports/DocumentationCompleteness_20260605/SOURCE_ROUTING_CORE_SYSTEMS_FAMILY_AUDIT_20260605.md`
+- `Docs/Reports/DocumentationCompleteness_20260605/SOURCE_ROUTING_FAMILY_AUDITS_SYNTHESIS_20260605.md`
 
 Authority docs read for this synthesis:
 
@@ -38,6 +43,7 @@ No Unity, dotnet build, importer, Play Mode, profiler, GCMonitor, Frame Debugger
 - Procedural asset pipeline authority identity is resolved: root `PROCEDURAL_ASSET_PIPELINE.md` is the binding route bible; `Docs/PROCEDURAL_ASSET_PIPELINE.md` is supporting/historical context only.
 - Static script tree count from 3223: `Assets/_Project/Scripts/**/*.cs` = 2545; `Assets/_Project/**/*.asmdef` = 171.
 - Exact relative-path anchors in `SOURCE_SYSTEMS_REALITY_MAP.md` plus `DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md` cover 288 scripts. 2257 scripts do not have exact relative-path anchors in those two routing docs. This is a routing precision gap, not proof that the scripts are undocumented.
+- Four later source-routing family audits confirmed the same precision gap across presentation, authoring/data/tools, world/gameplay, and core/systems families. Counts overlap; they must not be summed globally.
 
 ## Patch Wave 0 - Governance Conflict
 
@@ -203,6 +209,47 @@ Acceptance proof:
 - Static path scan for touched refs.
 - No missing path is presented as current proof.
 
+## Patch Wave 5 - Source Routing Family Exact-Anchor Addendum
+
+Execution state: `INTEGRATED_CLOSED / STATIC_SOURCE_ROUTING_ADDENDUM_PASS`.
+
+Priority: P1
+Type: architecture-routing precision patch
+Owner docs:
+
+- `Docs/ARCHITECTURE/SOURCE_SYSTEMS_REALITY_MAP.md`
+- `Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md`
+
+Input reports:
+
+- `Docs/Reports/DocumentationCompleteness_20260605/SOURCE_ROUTING_PRESENTATION_FAMILY_AUDIT_20260605.md`
+- `Docs/Reports/DocumentationCompleteness_20260605/SOURCE_ROUTING_AUTHORING_DATA_FAMILY_AUDIT_20260605.md`
+- `Docs/Reports/DocumentationCompleteness_20260605/SOURCE_ROUTING_WORLD_GAMEPLAY_FAMILY_AUDIT_20260605.md`
+- `Docs/Reports/DocumentationCompleteness_20260605/SOURCE_ROUTING_CORE_SYSTEMS_FAMILY_AUDIT_20260605.md`
+- `Docs/Reports/DocumentationCompleteness_20260605/SOURCE_ROUTING_FAMILY_AUDITS_SYNTHESIS_20260605.md`
+
+Patch scope:
+
+- Add grouped exact-anchor route additions for high-risk families, not thousands of per-file rows.
+- Separate authoring/bake routes from runtime owner routes for Data Monolith, CSV parsers, generated assets, and tool compilers.
+- Strengthen exact source-owner routing for core execution, SignalBus/GlobalSignals, DataVault/H8Memory, persistence/save, UI/PDA/visor/sonar, audio/VFX/rendering/water, world/voxel/streaming/biome, player/physics/survival/vehicles, AI/fauna/ecosystem/narrative/quest/modding/plugins.
+- Preserve the current static/runtime boundary wording.
+
+Reject gates:
+
+- Do not claim runtime, Unity import, compile, Play Mode, profiler, GC, visual, save/load, platform, Data Monolith, or first-20 readiness from static source rows.
+- Do not edit source code, assets, root bibles, AGENTS.md, project settings, scenes, prefabs, materials, or dated worker reports.
+- Do not sum overlapping family counts into a global total.
+- Do not run parallel patch workers against the same two shared docs.
+
+Acceptance proof:
+
+- Static diff limited to the two owner docs.
+- New grouped rows name owner route/bible, evidence class, proof artifact class, and runtime-pending status.
+- `git diff --check -- Docs/ARCHITECTURE/SOURCE_SYSTEMS_REALITY_MAP.md Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md` passed with LF-to-CRLF warnings only.
+- Concrete exact-anchor check over the two owner docs found `282` concrete `Assets/_Project/Scripts/*.cs` anchors and `0` missing concrete anchors.
+- Scoped rejected-readiness phrase scan returned no hits.
+
 ## Continuous Quality Consequences
 
 `GlobalQualityWeight` does not change documentation truth. It changes proof planning breadth and scan cadence only.
@@ -222,4 +269,4 @@ Acceptance proof:
 - Cadence: no dispatcher, importer, test, scene, or Play Mode cadence touched.
 - Correctness: reduces documentation ambiguity; stable docs remain unchanged until patch waves execute.
 
-Final status: PATCH_QUEUE_EXECUTED / ARCHITECTURE_METADATA_STATIC_PASS / RUNTIME_PROOF_PENDING.
+Final status: PATCH_QUEUE_EXECUTED / ARCHITECTURE_METADATA_STATIC_PASS / SOURCE_ROUTING_SHARED_DOC_PATCH_STATIC_PASS / RUNTIME_PROOF_PENDING.

@@ -1,0 +1,128 @@
+# Visual Reference Rejection - 2026-06-05
+
+Status: `REJECTED / RUNTIME_AND_PROOF_PACKET_PENDING`.
+Evidence class: `STATIC_IMAGE_QA + UNITY_BATCHMODE_LOG + STATIC_DOC`.
+Runtime proof: absent.
+Profiler/GC/memory proof: absent.
+h8_1475 proof packet: absent.
+
+## Scope
+
+This is a controller visual comparison against the mandatory reference folder under `Docs/` whose basename is `OBYAZATELNYE PRIMERY PO KARTINKAM` in transliteration.
+
+Reference images inspected:
+
+- `photo_1_2026-06-04_11-12-33.jpg`
+- `photo_2_2026-06-04_11-12-33.jpg`
+- `photo_3_2026-06-04_11-12-33.jpg`
+- `photo_4_2026-06-04_11-12-33.jpg`
+- `SSS.jpg` / Cyrillic source basename.
+
+Compared current diagnostic screenshots:
+
+- `Docs/Screenshots/MCP/h8_1913_surface_patch_a.png`
+- `Docs/Screenshots/MCP/h8_1912_surface_after_quarantine_b.png`
+- `Docs/Screenshots/MCP/h8_1908_surface_runtime_ui_on.png`
+- `Docs/Screenshots/MCP/h8_1474_surface_coast_aegir_ui_off.png`
+- `Docs/Screenshots/MCP/h8_1474_underwater_20_50m_route.png`
+- `Docs/Screenshots/MCP/h8_1474_shoreline_close_1m.png`
+- `Docs/Screenshots/MCP/h8_1473_mainrt_underwater_0_5m.png`
+- `Docs/Screenshots/MCP/h8_1473_mainrt_crest_foam_shoreline.png`
+
+These MCP screenshots are diagnostic only. They are not accepted proof because there is no valid `Docs/Screenshots/HectonProofPackets/h8_1475_{session}/` manifest/checksum/log packet.
+
+## Reference Floor
+
+The mandatory examples demand:
+
+- readable water volume, not a flat color sheet;
+- visible water ceiling/surface interaction with believable refraction and depth;
+- shoreline terrain with material layering, wetness, foam/contact breakup, and silhouette detail;
+- underwater route density: cliffs, shelves, coral/flora, particles, fauna silhouettes, and navigable negative space;
+- Aegir/sky as a hero object with atmospheric limb and cloud-band detail, not a muddy pasted sphere;
+- bright surface/photic readability. Darkness and fog are not allowed as cover for weak art;
+- HUD/cockpit/readouts integrated into the view where first-person proof is claimed.
+
+## Current Visual Verdict
+
+Rejected.
+
+The current screenshots fail the reference floor in multiple independent ways:
+
+- Surface water reads as a green/teal procedural sheet with repetitive striping. It has no convincing water volume, contact breakup, shoreline truth, or premium photic transparency.
+- Terrain and coastline read as dark crushed silhouettes or over-slick noisy slopes. This is not geological material quality; it is a low-information blob with specular/noise artifacts.
+- Aegir is oversized but weak: the sphere has smeared bands, muddy green-black patching, poor limb atmosphere, and toy-like compositing. Size alone does not make it hero-grade.
+- Shoreline close evidence lacks believable foam/wet-rock contact. It is water adjacent to dark terrain, not a designed waterline.
+- Underwater evidence is catastrophic against the reference: `h8_1473_mainrt_underwater_0_5m.png` is basically green/yellow slab water with almost no route composition, no seabed detail, no coral/flora density, no fauna evidence, and no usable depth cue.
+- `h8_1474_underwater_20_50m_route.png` was already rejected in prior Batch31 analysis as mislabeled/invalid for true underwater route proof.
+- Current visual state cannot carry first-20 player trust. It looks like diagnostic terrain/water experiments, not a commercial underwater survival route.
+
+## Product-Face Source Gates
+
+This visual rejection is consistent with `Docs/Reports/AssetSystem_20260605/ASSET_OWNER_18_PRODUCT_FACE_VALIDATOR_SYNTHESIS_20260605.md`:
+
+- product-face material/texture gate: `FAILED`;
+- product-face prefab quality gate: `FAILED`;
+- sky/ocean source primitive gate: `FAILED`;
+- player/tool/resource/transport/sky/ocean product-face assets still contain placeholder/blockout/package-default material routes, missing PBR roles, missing channel semantics, and built-in primitive mesh risks.
+
+Static validator proof does not replace visual proof. It explains why the current visuals are not trustworthy.
+
+## Assignment
+
+Material/texture owner:
+
+- Replace placeholder, blockout, package-default, proxy, color-only, and null-mask material routes.
+- Do not raw-edit `.mat` or scene YAML.
+- Do not bind artist textures into Crest `_WD_*` wave-data slots.
+- Do not use fog, darkness, bloom, or green haze to hide weak assets.
+- Respect generated-source policy: usable Gemini/source material can remain prototype input, including small watermark debt, but final binding requires cleanup, PBR role separation, import settings proof, and screenshots.
+
+Prefab/mesh owner:
+
+- Replace visible built-in primitive mesh routes in product-face player/tool/resource/transport/sky/ocean sources.
+- Add authored/generated mesh, LOD chain, collider proxy, and material proof before promotion.
+- Do not place rocks/flora/coral as camouflage over a broken water/terrain/sky base.
+
+Sky/Aegir owner:
+
+- Prove or replace the sky dome and Aegir material route through Unity readback.
+- `Mat_HectonSky` cloud slot fixes require effective shader-property readback.
+- No second sun owner, no duplicate mesh sun, no stale backdrop beside active owner.
+
+Ocean/Crest owner:
+
+- Keep Crest canonical asset route.
+- Replace `SargassumMicroFaunaBoids.boidMesh` built-in plane route with authored/generated mesh, VAT, or designed impostor proof.
+- Prove foam/contact/caustic contribution with Frame Debugger/proof packet.
+
+Underwater VFX/source owner:
+
+- Generate or source fish silhouette cards, sparse marine snow, foam/contact masks, and shallow caustic/beam masks.
+- Do not produce full-screen noise, blue fog cover, or generic cloudy overlays.
+- Import acceptance requires compact/high screenshots and 0 B/frame hot path proof.
+
+Unity proof owner:
+
+- Produce `Docs/Screenshots/HectonProofPackets/h8_1475_{session}/manifest.json`, `manifest.sha256`, copied Unity log, and canonical screenshots.
+- Raw `Docs/Screenshots/MCP/*.png` files are not acceptance artifacts.
+
+## Low / Middle / High / Ultra Consequences
+
+- Low/Compact: must still show readable water, sky, terrain silhouette, route cue, and material identity. Current green sheet/dark terrain state fails.
+- Middle: should carry wet shoreline breakup, coherent Aegir/sky composition, and sparse underwater particles without hiding route readability.
+- High: should buy richer normals, foam/contact masks, denser route flora/geology, and stronger sky/cloud/Aegir detail.
+- Ultra: visual overkill is allowed only after low-tier readability and proof packet rules pass. It cannot add a second visual truth owner or hide failed base art.
+
+## Current Controller Decision
+
+Product-face visual promotion is rejected.
+
+Next valid moves:
+
+1. Run readback-only Unity owner after process gate is clean.
+2. Dispatch material/prefab/source owners from the AssetSystem gates.
+3. Generate/source missing VFX masks as prototype source only.
+4. Capture a valid h8_1475 packet before any visual acceptance claim.
+
+Final status: `REJECTED / PENDING UNITY PROOF`.

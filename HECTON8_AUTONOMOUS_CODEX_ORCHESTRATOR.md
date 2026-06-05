@@ -1,6 +1,7 @@
 # HECTON-8 Autonomous Codex Orchestrator
 
 Status: LOCAL GUI ORCHESTRATION LAW / AUTONOMOUS NIGHT CONTROL
+Evidence class: STATIC_DOC / LOCAL_PROCESS
 Scope: rules for a local Codex instance that directly controls VS Code Codex agents, the workstation, task dispatch, monitoring, and follow-up prompts.
 
 This document is different from `HECTON8_ORCHESTRATOR.md`.

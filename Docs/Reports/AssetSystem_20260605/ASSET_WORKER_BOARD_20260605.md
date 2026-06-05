@@ -23,6 +23,11 @@ This board is orchestration state, not Unity acceptance. It does not prove impor
 - Integrated generated source pack file inventory: `Docs/AssetAudit/GENERATED_SOURCE_PACK_FILE_INVENTORY_20260605.md/.csv`. It maps 26 files under `Docs/GeneratedAssets/AssetSystem_20260605`; 21 rows remain `NOT_IMPORT_READY`.
 - Integrated Boyle, Mill, and Averroes static packets 21/22/23. They are owner routing packets only; no Unity/import/prefab/audio runtime proof was produced.
 - Local controller completed the token-failed matrix wave: material file technical properties, model import risk matrix, texture duplicate/hash matrix, and audio loudness/source dynamics matrix. Static CSV parse after integration: 29 files, 2094 rows, zero empty cells.
+- Local controller completed the static GUID reference graph: `Docs/AssetAudit/ASSET_GUID_REFERENCE_MATRIX_20260605.md/.csv`. CSV parses as 7420 rows.
+- Local controller completed active-route GUID triage: `Docs/AssetAudit/ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.md/.csv`. CSV parses as 800 rows. Current static CSV parse after GUID and P0 target-table integration is 37 files, 14114 rows, zero empty cells.
+- Local controller completed unreferenced GUID cleanup-review triage: `Docs/AssetAudit/ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.md/.csv`. CSV parses as 3488 rows. It is not deletion authorization.
+- Integrated target-table wave for owners 24-33: product-face material P0 rows `124`, prefab P0 rows `39`, audio P0 rows `6`, `h8_1475` readback manifest rows `120`, visual capture gaps `7`.
+- Current post-compaction process gate: CPU sample `76`; active `mcp-for-unity`, `Unity`, `Unity.ILPP.Runner`, `UnityPackageManager`, and `UnityShaderCompiler`. Unity readback/import/build/Play Mode remains blocked.
 
 ## Active Workers
 
@@ -89,6 +94,9 @@ This board is orchestration state, not Unity acceptance. It does not prove impor
 - Added `Docs/AssetAudit/ASSET_AUTHORING_TOOL_INVENTORY_20260605.md/.csv`. CSV parses as 13 rows and maps existing offline/editor tools; no tool was executed.
 - Integrated local-audio-profile-matrix Harvey output and closed the worker. CSV parses as 21 rows with evidence classes limited to `STATIC_DOC`, `STATIC_SOURCE`, and `AUDIO_WAVEFORM_QA`.
 - Integrated local-texture-family-matrix Epicurus output and closed the worker. CSV parses as 10 rows with evidence classes limited to `STATIC_DOC`, `STATIC_SOURCE`, and `STATIC_IMAGE_QA`.
+- Added `Docs/AssetAudit/ASSET_GUID_REFERENCE_MATRIX_20260605.md/.csv` locally. CSV parses as 7420 rows and maps static GUID reachability for texture, audio, material, model, prefab, scene, vendor-path, and Addressables owner routing. This is not import, runtime, visual, or audio acceptance proof.
+- Added `Docs/AssetAudit/ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.md/.csv` locally. CSV parses as 800 rows and condenses the GUID graph to P0/P1 active route owner lanes. This is not import, runtime, visual, or audio acceptance proof.
+- Added `Docs/AssetAudit/ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.md/.csv` locally. CSV parses as 3488 rows and isolates unreferenced cleanup-review candidates with explicit no-deletion authority. This is not import, runtime, visual, audio, or safe-delete proof.
 
 ## Action Queue Snapshot
 

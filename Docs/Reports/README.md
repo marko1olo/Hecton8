@@ -1,6 +1,6 @@
 ﻿# Reports Index
 
-Date: 2026-05-26
+Date: 2026-06-05
 Status: STATIC POLICY
 Owner: DOCS_ACTUALIZATION
 Evidence class: STATIC_DOC
@@ -45,6 +45,16 @@ Evidence class: STATIC_DOC
 - SignalBus hot-path audits
 - project metrics dashboards and chart bundles
 - documentation structure scans
+
+## Current 2026-06-05 Fronts
+
+These folders are active evidence snapshots, not stable authority:
+
+| Folder | Use |
+|---|---|
+| `Docs/Reports/DocumentationCompleteness_20260605/` | Documentation actuality, root-bible completeness, source-routing coverage, stable-doc patch queues, and proof-language audits. Start with `Docs/Reports/DocumentationCompleteness_20260605/README.md`. |
+| `Docs/Reports/AssetSystem_20260605/` | Asset-system static inventories, source-pack maps, material/model/audio/texture risk matrices, and asset proof routing. Runtime/import/visual/audio acceptance remains separate. |
+| `Docs/Reports/Batch32/` | Lore/content packet controller evidence and static source-admission ledgers. Source CSV, generated pages, h8bin, Unity, runtime, native localization, and publication claims remain proof-gated. |
 
 ## Archived Reports
 

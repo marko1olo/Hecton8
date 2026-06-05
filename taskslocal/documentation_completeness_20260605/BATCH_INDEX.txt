@@ -10,6 +10,7 @@ Authority basis:
 - Docs/Reports/DocumentationCompleteness_20260605/SOURCE_COVERAGE_REALITY_AUDIT_3223_20260605.md
 - Docs/Reports/DocumentationCompleteness_20260605/ROOT_BIBLE_COMPLETENESS_MATRIX_3224_20260605.md
 - Docs/Reports/DocumentationCompleteness_20260605/DOC_INDEX_GOVERNANCE_CONSISTENCY_3225_20260605.md
+- Docs/Reports/DocumentationCompleteness_20260605/SOURCE_ROUTING_FAMILY_AUDITS_SYNTHESIS_20260605.md
 
 Integrated earlier workers:
 - Huygens 019e9536-8b0e-7682-9f9f-bdb9ff70c787: governance conflict patch.
@@ -23,6 +24,9 @@ Ready next-wave packets:
 - DOC_WAVE3_PRODUCT_CORE_FIRST20_HOOKS.txt
 - DOC_WAVE3_PRESENTATION_BOUNDARY_HOTPATH_GQW.txt
 - DOC_COMBINED_ROOT_BIBLES_REGENERATION_PACKET.txt
+
+Executed packets:
+- DOC_SOURCE_ROUTING_SHARED_DOC_PATCH_PACKET.txt - executed by Epicurus 019e9844-2e97-73a1-9fc7-43802da5a1f1; static pass integrated in shared architecture docs.
 
 Global forbidden actions:
 - Do not edit AGENTS.md.
