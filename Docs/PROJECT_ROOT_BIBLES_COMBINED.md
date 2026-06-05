@@ -1989,6 +1989,7 @@ Rule and bible updates must:
 - keep `Docs/AGENTS_RULE_DETAIL_LEDGER.md` as the no-loss detail source for former monolithic root-law clauses until they are promoted into narrower route bibles or mandates;
 - keep `HECTON8_ORCHESTRATOR.md` lane contracts current for explicit multi-agent, batch, controller, and task-file work;
 - keep subagent rules available in root `AGENTS.md` and `HECTON8_ORCHESTRATOR.md` so delegation improves evidence quality without weakening primary responsibility;
+- keep `.agent/rules/*.md` as short historical stubs with previous bodies preserved under `Docs/DEPRECATED/AgentRulesHistorical_20260605/`;
 - sync `.codexrules/AGENTS.md`, `.github/agents/AGENTS.md`, and `.agent/rules/AGENTS.md` by delegation or byte-intent copy;
 - keep `Docs/AGENT_AUTHORITY_ROUTING.md` current as the no-loss intake map for agents and as the required protocol before shortening or splitting rule monoliths;
 - regenerate `Docs/PROJECT_ROOT_BIBLES_COMBINED.md` with `python -B Tools/Docs/BuildProjectRootBiblesCombined.py`;
@@ -5983,6 +5984,8 @@ Examples:
 [FORBID] Guessing or inventing public APIs, manager methods, tick groups, route names, event IDs, registry accessors, scene object names, or data schemas. Inspect first.
 
 [REQ] Public API changes require dependency list and explicit approval unless preserving legacy wrappers and compile proof.
+
+[REQ] External patches, user-supplied diffs, exact instruction lists, and explicit acceptance bullets must be verified and implemented literally. If a point cannot be implemented exactly, state the deviation and reason. Do not claim "meaning already covered" when the requested literal change, check, or artifact is absent.
 
 [REQ] Before non-trivial runtime code, architecture changes, hot-path edits, serialization changes, prefab/scene mutation, or cross-domain work, output/record an analysis block in the working response or artifact: target, affected systems, zero-GC route, state lifecycle, rule/mandate source, failure modes.
 

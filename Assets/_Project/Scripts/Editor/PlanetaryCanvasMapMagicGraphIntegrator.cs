@@ -44,6 +44,7 @@ namespace Hecton8.Editor
             HectonHydraulicErosionMapMagicNode erosionNode = EnsureGenerator<HectonHydraulicErosionMapMagicNode>(graph, -260f, -80f, out bool createdErosion);
             HectonTerrainSplatmapMapMagicNode splatNode = EnsureGenerator<HectonTerrainSplatmapMapMagicNode>(graph, -80f, 150f, out bool createdSplat);
             HectonAnomalyMapMagicNode anomalyNode = EnsureGenerator<HectonAnomalyMapMagicNode>(graph, 120f, 150f, out bool createdAnomaly);
+            ConfigureRecoveryDefaults(erosionNode, anomalyNode);
 
             IOutlet<object> sourceOutlet = ResolveHeightSource(graph, heightOutput, tectonicNode, erosionNode, splatNode);
             if (sourceOutlet == null)
@@ -142,6 +143,25 @@ namespace Hecton8.Editor
             }
 
             return default;
+        }
+
+        private static void ConfigureRecoveryDefaults(
+            HectonHydraulicErosionMapMagicNode erosionNode,
+            HectonAnomalyMapMagicNode anomalyNode)
+        {
+            if (erosionNode != null)
+            {
+                erosionNode.dropletCount = Math.Max(1, Math.Min(erosionNode.dropletCount, 32000));
+                erosionNode.maxLifetime = Math.Max(1, Math.Min(erosionNode.maxLifetime, 32));
+                erosionNode.maxOperationsPerSlice = Math.Max(128, Math.Min(erosionNode.maxOperationsPerSlice, 768));
+                erosionNode.sedimentaryFlatSmoothingIterations = Math.Max(0, Math.Min(erosionNode.sedimentaryFlatSmoothingIterations, 1));
+                erosionNode.thermalIterations = Math.Max(0, Math.Min(erosionNode.thermalIterations, 1));
+                erosionNode.canyonWallStrength = Math.Min(erosionNode.canyonWallStrength, 2.0f);
+                erosionNode.canyonWallMaxLift01 = Math.Min(erosionNode.canyonWallMaxLift01, 0.012f);
+            }
+
+            if (anomalyNode != null)
+                anomalyNode.maxFloodCells = Math.Max(1024, Math.Min(anomalyNode.maxFloodCells, 8192));
         }
 
         private static IOutlet<object> ResolveHeightSource(

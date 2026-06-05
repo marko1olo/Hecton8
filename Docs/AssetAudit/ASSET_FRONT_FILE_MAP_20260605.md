@@ -101,6 +101,7 @@ CSV companion: `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`.
 | h8_1475 anti-false-proof packets | `ASSET_OWNER_37_H8_1475_ANTI_FALSE_PROOF_ALIGNMENT_PACKET.md` |
 | visual proof capture guardrail validator | `Tools/ValidateVisualProofCaptureGuardrails.py`, `Tools/test_validate_visual_proof_capture_guardrails.py` |
 | asset static summary validator | `Tools/ValidateAssetStaticSummary.py`, `Tools/test_validate_asset_static_summary.py` |
+| foam contact decision queue validator | `Tools/ValidateFoamContactDecisionQueue.py`, `Tools/test_validate_foam_contact_decision_queue.py` |
 
 ## Rule
 

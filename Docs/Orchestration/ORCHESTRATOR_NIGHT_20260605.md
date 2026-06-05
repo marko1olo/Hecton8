@@ -6521,6 +6521,52 @@ Next action:
 
 Status remains `PENDING VERIFICATION`.
 
+## 2026-06-05 Visual Queue Coverage Tightening Cursor 85
+
+Current front:
+
+- Continued static asset-front routing while process gate remained red.
+- Process sample after patching: CPU `91`; active `dotnet` process present. No Unity/build/import/readback work was attempted.
+
+Subagent audit:
+
+- Spawned read-only explorer Beauvoir for VSPQ-to-owner coverage audit.
+- Closed after completion.
+- Finding: `VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605` was reachable from README/file-map but weak from next-action dispatch; several rows missed existing anti-false-proof owner `37`, underwater VFX source owner `27`, water/terrain context owners `20/16`, or explicit VFX DataVault source-context input.
+
+Static patches:
+
+- `Docs/AssetAudit/VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.csv`
+- `Docs/AssetAudit/VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.md`
+- `Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.csv`
+- `Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.md`
+- `Docs/AssetAudit/BATCH31_CHANNEL_SEMANTICS_DECISION_QUEUE_20260605.csv`
+- `Docs/AssetAudit/BATCH31_CHANNEL_SEMANTICS_DECISION_QUEUE_20260605.md`
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`
+
+Changes:
+
+- Added `ASSET_OWNER_37` anti-false-proof coverage into VSPQ screenshot/visual acceptance routes.
+- Added `ASSET_OWNER_27` where foam/caustic/VFX source generation is part of the route.
+- Added `ASSET_OWNER_16` and `ASSET_OWNER_20` to the capsule/base medium-depth route where terrain and water context are explicit blockers.
+- Linked VSPQ into P0/P1 next-action dispatch bullets and CSV evidence fields.
+- Strengthened Batch31 channel semantics queue with Antigravity guard evidence: `Hecton_Master_Lit` ARM requires serialized `_MasterShadowParams.w = 3`; MRAO target requires serialized `_MasterShadowParams.w = 0`; filename-based `_MaskMap` promotion remains rejected.
+
+Validation:
+
+- `python Tools/ValidateAssetStaticSummary.py --summary Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returned `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14646`.
+- `VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.csv`: 10 rows, 15 columns, zero empty cells.
+- `ASSET_NEXT_ACTION_BOARD_20260605.csv`: 12 rows, 11 columns, zero empty cells.
+- `BATCH31_CHANNEL_SEMANTICS_DECISION_QUEUE_20260605.csv`: 7 rows, 13 columns, zero empty cells.
+- `ASSET_FRONT_FILE_MAP_20260605.csv`: 139 rows, 7 columns, zero empty cells.
+- Scoped diff check returned no whitespace errors; Git reported CRLF normalization warnings only.
+
+Boundary:
+
+- No owner packet execution was claimed.
+- No import/material/prefab/scene/Addressables/runtime mutation was performed.
+- Product visual status remains `PENDING VERIFICATION`.
+
 ## 2026-06-05 Biolum Black-Box Source Decision Reconciliation Cursor 84
 
 Current front:
@@ -6660,6 +6706,53 @@ Current state:
 
 - `H8VisualProofCapture1912` remains useful only to reject failures. It cannot promote visual acceptance.
 - Owner 04 packet updated with this hard blocker.
+- Runtime/Unity/product status remains `PENDING VERIFICATION`.
+
+## 2026-06-06 MarineSnow DataVault Source Reconciliation Cursor 88
+
+Current front:
+
+- Continued static VFX/DataVault reconciliation while process gate stayed red.
+- Fresh process gate: CPU sample `92.1`; active blocker `dotnet` PID `13992`.
+- No Unity readback, build, import, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, or runtime source mutation was performed.
+
+Reconciled artifacts:
+
+- `Docs/AssetAudit/VFX_DATAVAULT_REPAIR_ANCHOR_MAP_20260605.md`
+- `Docs/AssetAudit/VFX_DATAVAULT_REPAIR_ANCHOR_MAP_20260605.csv`
+- `Docs/AssetAudit/VFX_DATAVAULT_SOURCE_CONTEXT_REVIEW_20260605.md`
+- `Docs/AssetAudit/VFX_DATAVAULT_SOURCE_CONTEXT_REVIEW_20260605.csv`
+- `Docs/AssetAudit/VFX_DATAVAULT_SOVEREIGNTY_STATIC_REVIEW_20260605.md`
+- `Docs/AssetAudit/VFX_COMPUTE_PARTICLE_BUDGET_STATIC_REVIEW_20260605.md`
+- `Docs/AssetAudit/DATAVAULT_AUDIT_EXECUTION_SURFACE_RECHECK_20260605.md`
+- `taskslocal/runtime_system_20260605/RUNTIME_OWNER_08_VFX_DATAVAULT_SOVEREIGNTY_REPAIR_PACKET.md`
+- `taskslocal/runtime_system_20260605/README.md`
+- `Docs/AssetAudit/README.md`
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`
+- `Docs/Orchestration/VFX_DATAVAULT_P0_SYNTHESIS_20260605.md`
+
+Current MarineSnow facts:
+
+- Old audit JSON/source-context anchors `673`, `674`, `1347`, and `2005` are historical for the current disk route.
+- Current disk source readback shows `_mockWakeScratch`, `_propwashEventScratch`, and `EnsureRuntimeScratchBuffers()` absent.
+- Current disk source readback shows DataVault wake/propwash route anchors at `429`, `432`, `436`, `2560`, `2763`, and `2984-3021`.
+- Current editor/offline wake-profile scratch anchor is `1948`; route it as editor/offline owner debt, not gameplay runtime DataVault debt.
+- Owner 08 must preserve the DataVault rewrite and prove it. Do not reintroduce runtime scratch fields.
+
+Validation:
+
+- `VFX_DATAVAULT_REPAIR_ANCHOR_MAP_20260605.csv`: 11 rows, 14 columns, zero empty cells.
+- `VFX_DATAVAULT_SOURCE_CONTEXT_REVIEW_20260605.csv`: 7 rows, 7 columns, zero empty cells.
+- `ASSET_FRONT_FILE_MAP_20260605.csv`: 139 rows, 7 columns, zero empty cells.
+- `python Tools\ValidateAssetStaticSummary.py --summary Docs\Reports\AssetSystem_20260605\ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returned `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14646`.
+- `python -m unittest Tools.test_validate_asset_static_summary` ran 4 tests OK.
+- Stale active-anchor scan found no active `MARINE_673`, `MARINE_674`, `MARINE_1347`, `MARINE_2005`, or `MARINE_712` repair IDs in current handoff docs.
+- Scoped `git diff --check` returned CRLF normalization warnings only.
+
+Current state:
+
+- VFX DataVault proof remains static only.
+- Missing proof: scanner re-run, compile, Unity Console, Play Mode route exercise, GC/profiler, deterministic dump artifacts.
 - Runtime/Unity/product status remains `PENDING VERIFICATION`.
 
 ## 2026-06-05 Audio/Addressables Static Reaudit Cursor 88
