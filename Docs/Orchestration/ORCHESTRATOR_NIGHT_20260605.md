@@ -6408,13 +6408,13 @@ Newly linked route evidence:
 
 Validation:
 
-- `ASSET_FRONT_FILE_MAP_20260605.csv`: 134 rows, 7 columns, zero empty cells.
+- `ASSET_FRONT_FILE_MAP_20260605.csv`: 139 rows, 7 columns, zero empty cells.
 - `VFX_DATAVAULT_SOURCE_CONTEXT_REVIEW_20260605.csv`: 7 rows, 7 columns, zero empty cells.
 - `VFX_DATAVAULT_REPAIR_ANCHOR_MAP_20260605.csv`: 11 rows, 14 columns, zero empty cells.
 - `BIOLUM_BLACKBOX_ROUTE_DECISION_20260605.csv`: 4 rows, 15 columns, zero empty cells.
 - `VISUAL_HERO_SOURCE_COVERAGE_MATRIX_20260605.csv`: 10 rows, 15 columns, zero empty cells.
 - `ASSET_OWNER_PACKET_INDEX_20260605.csv`: 37 rows, 13 columns, zero empty cells, owner IDs `01-37` present.
-- `ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`: 61 listed CSV files, summed `Import-Csv` rows `14631`, mismatch count `0`.
+- `ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`: 62 listed CSV files, summed `Import-Csv` rows `14646`, mismatch count `0`.
 - Stale-token scan over current asset/task/report files found no active old owner-index row anchor and no active old front-map/total anchors.
 - Scoped `git diff --check` returned CRLF normalization warnings only.
 
@@ -6445,8 +6445,8 @@ Reconciled stale anchors:
 
 Static facts:
 
-- Current curated asset CSV set is `61` files and `14631` summed data rows.
-- `ASSET_FRONT_FILE_MAP_20260605.csv` is `134` rows, `7` columns, zero empty cells.
+- Current curated asset CSV set is `62` files and `14646` summed data rows.
+- `ASSET_FRONT_FILE_MAP_20260605.csv` is `139` rows, `7` columns, zero empty cells.
 - `ASSET_OWNER_PACKET_INDEX_20260605.csv` is `37` rows, `13` columns, zero empty cells.
 - `VISUAL_HERO_SOURCE_COVERAGE_MATRIX_20260605.csv` is `10` rows, `15` columns, zero empty cells.
 - `BIOLUM_BLACKBOX_ROUTE_DECISION_20260605.csv` is `4` rows, `15` columns, zero empty cells.
@@ -6455,7 +6455,7 @@ Static facts:
 
 Validation:
 
-- Summary-table-to-real-CSV validation: `61` files, summed rows `14631`, mismatch count `0`.
+- Summary-table-to-real-CSV validation: `62` files, summed rows `14646`, mismatch count `0`.
 - Stale-token scan over active asset-front anchors returned no current old file-count, row-count, or owner-index-count anchors.
 - Touched-file replacement-character scan returned `0`.
 - Scoped `git diff --check` returned CRLF normalization warnings only.
@@ -6498,7 +6498,7 @@ Validation:
 - `BIOLUM_BLACKBOX_ROUTE_DECISION_20260605.csv`: 4 rows, 15 columns, zero empty cells.
 - `VFX_DATAVAULT_SOURCE_CONTEXT_REVIEW_20260605.csv`: 7 rows, 7 columns, zero empty cells.
 - `VFX_DATAVAULT_REPAIR_ANCHOR_MAP_20260605.csv`: 11 rows, 14 columns, zero empty cells.
-- `ASSET_FRONT_FILE_MAP_20260605.csv`: 134 rows, 7 columns, zero empty cells.
+- `ASSET_FRONT_FILE_MAP_20260605.csv`: 139 rows, 7 columns, zero empty cells.
 - Scoped `git diff --check` returned CRLF normalization warnings only.
 
 Current state:

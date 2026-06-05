@@ -1,10 +1,10 @@
 FilePath,Domain,PrimaryUse,EvidenceClass,RowsOrScope,ReadWhen,NotProofOf
-Docs/AssetAudit/README.md,entry,Start-here guardrails P0 blockers hard rejections owner map process gate,STATIC_DOC,233_lines,Always first,Unity/runtime readiness
-Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.md,entry,Compact P0/P1 dispatch board,STATIC_DOC,106_lines,Before assigning owners,Unity/runtime readiness
+Docs/AssetAudit/README.md,entry,Start-here guardrails P0 blockers hard rejections owner map process gate,STATIC_DOC,241_lines,Always first,Unity/runtime readiness
+Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.md,entry,Compact P0/P1 dispatch board,STATIC_DOC,113_lines,Before assigning owners,Unity/runtime readiness
 Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.csv,entry,Machine-readable P0/P1 dispatch rows,STATIC_DOC,12_rows,Before assigning owners,Unity/runtime readiness
 Docs/AssetAudit/ASSET_STATIC_ROW_BLOCKER_SUMMARY_20260605.csv,entry,Cross-domain static row-risk dispatch summary,STATIC_DOC,16_rows,Before assigning packet owners,Unity/runtime readiness
-Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md,entry,Long-form asset disposition index,STATIC_DOC,475_lines,When domain context is needed,Unity/runtime readiness
-Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md,entry,Controller synthesis and static counts,STATIC_DOC,296_lines,When reporting current front,Unity/runtime readiness
+Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md,entry,Long-form asset disposition index,STATIC_DOC,494_lines,When domain context is needed,Unity/runtime readiness
+Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md,entry,Controller synthesis and static counts,STATIC_DOC,303_lines,When reporting current front,Unity/runtime readiness
 taskslocal/asset_system_20260605/README.md,entry,Local task packet and owner index,STATIC_DOC,285_lines,Before opening task packets,Unity/runtime readiness
 Docs/AssetAudit/TEXTURE_MATERIAL_FAMILY_ROUTE_MATRIX_20260605.csv,texture_material,Texture/material family route blockers,STATIC_SOURCE,10_rows,Before material-route edits,Material acceptance
 Docs/AssetAudit/TEXTURE_FILE_TECHNICAL_PROPERTIES_20260605.csv,texture_material,Texture source dimensions bytes alpha static-meta ledger matrix,STATIC_IMAGE_PROBE,140_rows,Before texture import material route or Addressables work,Unity import or visual acceptance
