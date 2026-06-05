@@ -24,7 +24,7 @@ Evidence class: STATIC_ONLY. Unity runtime, GPU profiler, Frame Debugger, Render
 1. `Tools/ValidateVfxParticleBudgetCatalog.py` was stale:
    - It pointed at missing `Assets/_Project/Scripts/Graphics/DRS/ThermalDynamicResolutionAdapter.cs`.
    - It expected old `Low/Mid/High/Ultra*` catalog constants.
-   - It required a literal DRS dump filename instead of validating the DRS black-box route.
+   - It required the legacy `DumpFileName` token instead of validating the current DRS owner/system dump prefix and binary writer route.
    - It did not accept `ParticleAdvection = MicroDebrisAdvection` as a valid alias for bit 5.
 
 2. The JSON remains an anchor table, not runtime proof:
@@ -32,10 +32,10 @@ Evidence class: STATIC_ONLY. Unity runtime, GPU profiler, Frame Debugger, Render
    - Runtime code uses continuous budget/scalability math through `smoothstep`, `GlobalQualityWeight`, pressure compression, and policy weights.
    - The JSON correctly retains `statusNote`: Unity runtime and GPU profiler verification are pending.
 
-3. Static blockers outside the catalog remain:
-   - `ThermalDynamicResolutionAdapter.cs:57` uses fixed `Dump_13KRA.bin`; no current batch ID exists, so this is not a valid no-ID dump naming route under the current black-box rule.
-   - `ThermalDynamicResolutionAdapter.cs:1560-1577` still uses coroutine repair flow.
-   - `HectonMarineSnowRenderer.cs:673`, `:674`, `:712`, `:1347`, and `:2005` show persistent local `NativeArray` scratch in a MonoBehaviour. Under the current Memory Sovereignty rule, future edits must migrate this scratch to a DataVault-owned route or explicitly reject the touch.
+3. Static blockers outside the catalog are split:
+   - `ThermalDynamicResolutionAdapter.cs` is source-patched: no `Dump_13KRA`, no `DumpFileName`, no `StartCoroutine`, no `StopAllCoroutines`, no `IEnumerator`. Current source uses `DumpFilePrefix = "Dump_THERMAL_DRS_"` and `NativeFaultDumpWriter.TryWriteAll(...)`.
+   - DRS acceptance remains blocked by compile, Unity Console, Play Mode forced-fault, binary artifact, GCMonitor, and profiler proof.
+   - `HectonMarineSnowRenderer.cs:673`, `:674`, `:712`, `:1347`, and `:2005` show persistent local `NativeArray` scratch in a MonoBehaviour. Current DataVault audit classifies `:1347` as editor/offline persistent and `:2005` as runtime persistent; future edits must not bulk-migrate both as identical runtime debt.
 
 ## What I Did
 
@@ -55,6 +55,12 @@ Evidence class: STATIC_ONLY. Unity runtime, GPU profiler, Frame Debugger, Render
   - `highDetailWeight`
   - `flowAdvectionEnabled`
   - `EvaluateShallowWaterFieldData`
+- Changed DRS validation to require current owner/system dump evidence:
+  - `DumpFilePrefix`
+  - `Dump_THERMAL_DRS_`
+  - `DumpBlackBoxOnce`
+  - `NativeFaultDumpWriter.TryWriteAll`
+- Added `Tools/test_validate_vfx_particle_budget_catalog.py` to lock current validator expectations.
 - Required the JSON to keep the pending Unity/GPU proof note.
 
 ## In-Game Result
@@ -65,11 +71,17 @@ Not verified. Process gate was red while this work ran: Unity and shader/compile
 
 - `python Tools/ValidateVfxParticleBudgetCatalog.py`
   - Result: `VFX_PARTICLE_BUDGET_CATALOG_OK`
+- `python -m unittest Tools/test_validate_vfx_particle_budget_catalog.py`
+  - Result: 4 tests, OK.
+- `python -m unittest Tools/test_validate_vfx_particle_budget_catalog.py Tools/test_data_vault_sovereignty_audit.py`
+  - Result: 22 tests, OK.
 - Static route facts:
   - `Hecton_MarineSnow.compute:166` defines `THREAD_GROUP_SIZE 64`.
   - `HectonMarineSnowRenderer.cs:3537` queries kernel thread group size.
   - `HectonMarineSnowRenderer.cs:2366`, `:2390`, `:2442` use `LockBufferForWrite` for GPU uploads.
   - Targeted scan did not find `SetData` or `GetData` in `HectonMarineSnowRenderer.cs`.
+  - `ThermalDynamicResolutionAdapter.cs:60` defines `DumpFilePrefix = "Dump_THERMAL_DRS_"`.
+  - `ThermalDynamicResolutionAdapter.cs:2235` calls `NativeFaultDumpWriter.TryWriteAll(...)`.
 
 ## Scalability Consequences
 
@@ -84,4 +96,4 @@ Catalog static parity: PASS.
 
 Runtime VFX readiness: PENDING VERIFICATION.
 
-DRS coroutine repair, DRS dump naming, VFX local persistent NativeArray ownership, and GPU profiler proof remain blockers before any runtime acceptance claim.
+DRS source repair is static-only and still needs compile, Unity Console, Play Mode, forced-fault dump artifact, GCMonitor, and profiler proof. VFX local persistent NativeArray ownership and GPU profiler proof remain blockers before any runtime acceptance claim.

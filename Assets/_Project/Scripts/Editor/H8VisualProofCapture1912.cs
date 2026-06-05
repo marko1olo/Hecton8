@@ -14,8 +14,11 @@ namespace Hecton8.Editor
     {
         private const string WorldScenePath = "Assets/_Project/Scenes/02_HECTON_WORLD.unity";
         private const string CaptureRoot = "C:/hades/Hecton8/Docs/Screenshots/MCP";
+        private const string SurfaceHorizonHazeShaderPath = "Assets/_Project/Art/Shaders/H8_SurfaceHorizonHaze_1428.shader";
+        private const string SurfaceWaterReadabilityShaderPath = "Assets/_Project/Art/Shaders/H8_SurfaceWaterReadability_1428.shader";
         private const int CaptureWidth = 1280;
         private const int CaptureHeight = 720;
+        private const float SurfaceSeaLevelY = 14.12f;
 
         public static void CaptureSurfaceAndExit()
         {
@@ -30,6 +33,11 @@ namespace Hecton8.Editor
         public static void CaptureSurfacePatchAAndExit()
         {
             CaptureSurfaceAndExit("h8_1913_surface_patch_a");
+        }
+
+        public static void CaptureSurfaceWaterRecoveryProbeAndExit()
+        {
+            CaptureSurfaceWaterRecoveryProbeAndExit("h8_1914_surface_water_recovery_probe");
         }
 
         public static void CaptureShallowUnderwaterPatchAAndExit()
@@ -68,6 +76,42 @@ namespace Hecton8.Editor
 
                 RenderCamera(mainCamera, Path.Combine(CaptureRoot, captureName + ".png"));
                 WriteMetadata(mainCamera, Path.Combine(CaptureRoot, captureName + ".txt"), "main_camera_edit_render");
+            }
+            catch (Exception ex)
+            {
+                exitCode = 1;
+                Directory.CreateDirectory(CaptureRoot);
+                File.WriteAllText(
+                    Path.Combine(CaptureRoot, captureName + "_error.txt"),
+                    ex.ToString(),
+                    Encoding.UTF8);
+                Debug.LogException(ex);
+            }
+            finally
+            {
+                EditorApplication.Exit(exitCode);
+            }
+        }
+
+        private static void CaptureSurfaceWaterRecoveryProbeAndExit(string captureName)
+        {
+            int exitCode = 0;
+            try
+            {
+                Directory.CreateDirectory(CaptureRoot);
+                Scene scene = EditorSceneManager.OpenScene(WorldScenePath, OpenSceneMode.Single);
+                if (!scene.IsValid())
+                    throw new InvalidOperationException("Failed to open " + WorldScenePath);
+
+                Camera mainCamera = Camera.main;
+                if (mainCamera == null)
+                    mainCamera = UnityEngine.Object.FindAnyObjectByType<Camera>(FindObjectsInactive.Exclude);
+                if (mainCamera == null)
+                    throw new InvalidOperationException("No camera found in " + WorldScenePath);
+
+                ApplySurfaceWaterRecoveryProbe(mainCamera);
+                RenderCamera(mainCamera, Path.Combine(CaptureRoot, captureName + ".png"));
+                WriteMetadata(mainCamera, Path.Combine(CaptureRoot, captureName + ".txt"), "surface_water_recovery_probe_editor_only_unsaved");
             }
             catch (Exception ex)
             {
@@ -137,6 +181,184 @@ namespace Hecton8.Editor
             {
                 EditorApplication.Exit(exitCode);
             }
+        }
+
+        private static void ApplySurfaceWaterRecoveryProbe(Camera camera)
+        {
+            SetSceneObjectActive("H8_LeftPhoticCanyonWall_1446", false);
+            ConfigureSurfaceHorizonHazeProbe();
+            CreateSurfaceWaterReadabilityProbe(camera);
+        }
+
+        private static void ConfigureSurfaceHorizonHazeProbe()
+        {
+            GameObject haze = FindSceneGameObject("SURFACE_HORIZON_SALT_HAZE_1428");
+            if (haze == null)
+                return;
+
+            Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(SurfaceHorizonHazeShaderPath);
+            if (shader == null)
+                return;
+
+            Material material = new Material(shader)
+            {
+                name = "H8_TEMP_SurfaceHorizonHazeProbe_1428",
+                hideFlags = HideFlags.HideAndDontSave,
+                renderQueue = 3040
+            };
+            material.SetColor("_LowerTint", new Color(0.48f, 0.86f, 0.86f, 0.36f));
+            material.SetColor("_UpperTint", new Color(0.92f, 0.98f, 0.92f, 0.22f));
+            material.SetFloat("_Alpha", 0.38f);
+            material.SetFloat("_LowerFade", 0.03f);
+            material.SetFloat("_UpperFade", 0.54f);
+            material.SetFloat("_Softness", 0.18f);
+            material.SetFloat("_EdgeFade", 0.05f);
+            material.SetFloat("_NoiseScale", 31f);
+            material.SetFloat("_NoiseStrength", 0.34f);
+            material.SetFloat("_GlobalQualityWeight", 0.78f);
+
+            haze.SetActive(true);
+            haze.transform.position = new Vector3(16f, 12.1f, 39f);
+            haze.transform.rotation = Quaternion.Euler(1.4f, 178f, 0f);
+            haze.transform.localScale = new Vector3(1.22f, 0.21f, 1.04f);
+
+            MeshRenderer renderer = haze.GetComponent<MeshRenderer>();
+            if (renderer == null)
+                return;
+
+            renderer.enabled = true;
+            renderer.sharedMaterial = material;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            renderer.sortingOrder = 34;
+        }
+
+        private static void CreateSurfaceWaterReadabilityProbe(Camera camera)
+        {
+            Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(SurfaceWaterReadabilityShaderPath);
+            if (shader == null)
+                throw new InvalidOperationException("Missing shader " + SurfaceWaterReadabilityShaderPath);
+
+            GameObject water = new GameObject("H8_TEMP_SurfaceWaterReadabilityProbe_1428")
+            {
+                hideFlags = HideFlags.HideAndDontSave
+            };
+            MeshFilter filter = water.AddComponent<MeshFilter>();
+            MeshRenderer renderer = water.AddComponent<MeshRenderer>();
+            Mesh mesh = BuildSurfaceWaterReadabilityMesh(camera);
+            mesh.hideFlags = HideFlags.HideAndDontSave;
+            filter.sharedMesh = mesh;
+
+            Material material = new Material(shader)
+            {
+                name = "H8_TEMP_SurfaceWaterReadabilityProbe_1428",
+                hideFlags = HideFlags.HideAndDontSave,
+                renderQueue = 3018
+            };
+            material.SetColor("_ShallowColor", new Color(0.30f, 0.88f, 0.90f, 0.76f));
+            material.SetColor("_DeepColor", new Color(0.02f, 0.36f, 0.58f, 0.80f));
+            material.SetColor("_FoamColor", new Color(0.94f, 1.00f, 0.94f, 0.48f));
+            material.SetColor("_SpecularTint", new Color(0.74f, 0.96f, 1.00f, 0.50f));
+            material.SetFloat("_Opacity", 0.78f);
+            material.SetFloat("_RippleScale", 0.052f);
+            material.SetFloat("_FoamScale", 0.105f);
+            material.SetFloat("_HorizonFade", 0.62f);
+            material.SetFloat("_EdgeFade", 0.06f);
+            material.SetFloat("_GlobalQualityWeight", 0.86f);
+            renderer.sharedMaterial = material;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            renderer.sortingOrder = 18;
+        }
+
+        private static Mesh BuildSurfaceWaterReadabilityMesh(Camera camera)
+        {
+            const int xSegments = 56;
+            const int zSegments = 46;
+            const float nearMeters = 4.0f;
+            const float farMeters = 205.0f;
+            const float nearHalfWidth = 54.0f;
+            const float farHalfWidth = 188.0f;
+
+            Vector3 forward = Vector3.ProjectOnPlane(camera.transform.forward, Vector3.up);
+            if (forward.sqrMagnitude < 0.0001f)
+                forward = Vector3.forward;
+            forward.Normalize();
+
+            Vector3 right = Vector3.ProjectOnPlane(camera.transform.right, Vector3.up);
+            if (right.sqrMagnitude < 0.0001f)
+                right = Vector3.right;
+            right.Normalize();
+
+            int vertexCount = (xSegments + 1) * (zSegments + 1);
+            Vector3[] vertices = new Vector3[vertexCount];
+            Vector2[] uvs = new Vector2[vertexCount];
+            Color[] colors = new Color[vertexCount];
+            int[] triangles = new int[xSegments * zSegments * 6];
+
+            Vector3 cameraPosition = camera.transform.position;
+            int vertex = 0;
+            for (int z = 0; z <= zSegments; z++)
+            {
+                float t = z / (float)zSegments;
+                float depth = Mathf.Lerp(nearMeters, farMeters, t);
+                float halfWidth = Mathf.Lerp(nearHalfWidth, farHalfWidth, Mathf.Sqrt(t));
+                Vector3 rowCenter = cameraPosition + forward * depth;
+                rowCenter.y = SurfaceSeaLevelY;
+
+                for (int x = 0; x <= xSegments; x++)
+                {
+                    float u = x / (float)xSegments;
+                    float signed = (u * 2.0f) - 1.0f;
+                    Vector3 position = rowCenter + right * (signed * halfWidth);
+                    float wave = Mathf.Sin((position.x * 0.061f) + (position.z * 0.037f)) * 0.035f;
+                    wave += Mathf.Sin((position.z * 0.088f) - (position.x * 0.021f)) * 0.022f;
+                    position.y += wave;
+                    vertices[vertex] = position;
+                    uvs[vertex] = new Vector2(u, t);
+                    colors[vertex] = new Color(1f, 1f, 1f, Mathf.Lerp(0.92f, 0.74f, t));
+                    vertex++;
+                }
+            }
+
+            int index = 0;
+            for (int z = 0; z < zSegments; z++)
+            {
+                int row = z * (xSegments + 1);
+                int nextRow = (z + 1) * (xSegments + 1);
+                for (int x = 0; x < xSegments; x++)
+                {
+                    int a = row + x;
+                    int b = row + x + 1;
+                    int c = nextRow + x;
+                    int d = nextRow + x + 1;
+                    triangles[index++] = a;
+                    triangles[index++] = c;
+                    triangles[index++] = b;
+                    triangles[index++] = b;
+                    triangles[index++] = c;
+                    triangles[index++] = d;
+                }
+            }
+
+            Mesh mesh = new Mesh
+            {
+                name = "H8_TEMP_SurfaceWaterReadabilityProbe_1428"
+            };
+            mesh.vertices = vertices;
+            mesh.uv = uvs;
+            mesh.colors = colors;
+            mesh.triangles = triangles;
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            return mesh;
+        }
+
+        private static void SetSceneObjectActive(string objectName, bool active)
+        {
+            GameObject go = FindSceneGameObject(objectName);
+            if (go != null)
+                go.SetActive(active);
         }
 
         public static void QuarantineSurfaceRejectsAndExit()
@@ -270,6 +492,9 @@ namespace Hecton8.Editor
             sb.AppendLine("sun=" + (RenderSettings.sun != null ? RenderSettings.sun.name : "NULL"));
             sb.AppendLine();
             AppendNamedObjectState(sb, "H8_ORGANIC_SHORELINE_FOAM_FINE_1469");
+            AppendNamedObjectState(sb, "H8_WORLD_CREST_OCEAN_RUNTIME_1428");
+            AppendNamedObjectState(sb, "H8_TEMP_SurfaceWaterReadabilityProbe_1428");
+            AppendNamedObjectState(sb, "SURFACE_HORIZON_SALT_HAZE_1428");
             AppendNamedObjectState(sb, "H8_FloorCausticSoft_1443");
             AppendNamedObjectState(sb, "H8_UnderwaterSurfaceSheet_1455");
             AppendNamedObjectState(sb, "H8_UnderwaterHazeCurtain_1454");

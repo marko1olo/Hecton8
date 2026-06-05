@@ -6032,6 +6032,33 @@ Current blockers:
 - No Unity Console, Play Mode, forced invalid DRS trigger, binary dump artifact, GCMonitor, or profiler proof yet.
 - Status remains `SOURCE PATCHED / PENDING FULL COMPILE AND UNITY PROOF`.
 
+## 2026-06-05 Runtime Player/HUD Static Reconfirmation Cursor 77
+
+Current front:
+
+- Runtime player/HUD/input route blockers were reconfirmed from static source and serialized asset reads only.
+- No scene, prefab, material, project setting, Unity API, Play Mode, build, profiler, or raw YAML mutation was performed.
+
+Static facts reconfirmed:
+
+- `Assets/_Project/Scenes/02_HECTON_WORLD.unity` contains a scene-local active `Player` with enabled `HectonWorldShellController1428`.
+- `Assets/_Project/Scripts/World/HectonWorldShellController1428.cs` still reads `Keyboard.current`, legacy `Input.GetKey`, `Input.GetMouseButton`, and `Input.GetAxisRaw` inside the active shell route.
+- `Assets/_Project/Prefabs/Player.prefab` contains enabled production `PlayerInteraction` and `HectonPlayerMovement`.
+- `Assets/_Project/Prefabs/HUD_Internal.prefab` contains `forceScreenSpaceOverlay: 1`; source `SuitHUDScreenCompositor` can set `RenderMode.ScreenSpaceOverlay` under that flag.
+- `SuitHUDV4CanvasOverlay` still has ScreenSpaceOverlay branches that must be classified by runtime readback before repair.
+
+Controller verdict:
+
+- Active scene shell remains an `ACTIVE ROUTE BLOCKER` candidate until Unity readback proves otherwise.
+- Production player prefab remains only a static asset candidate until the active scene/BootstrapState route is proven.
+- HUD overlay risk remains `PENDING UNITY READBACK`; do not patch raw YAML.
+- `RUNTIME_OWNER_05_MCP_GATE_AND_READBACK_RECOVERY_PACKET.md` remains the next runtime gate before packet 04 repair.
+
+Process gate:
+
+- Latest `_Total` CPU samples remained above project gate (`71.2` then `98.1`) even after Unity/dotnet/csc processes cleared.
+- Process counter showed load dominated by Codex and IDE, not Unity, but build gate still remains red by the project rule.
+
 Process recheck:
 
 - Three-sample gate after this cursor: CPU `17`, `88`, `80`; only named watched process was `mcp-for-unity`.

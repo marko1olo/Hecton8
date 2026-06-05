@@ -85,8 +85,10 @@ def validate_handoff_contract(data: dict, catalog: str, renderer: str, homeostas
     require("ThermalDynamicResolutionAdapter" in drs_adapter, "DRS adapter class missing")
     require("IDynamicResolutionRuntime" in drs_adapter, "DRS adapter runtime contract missing")
     require("TelemetryCapacity = 300" in drs_adapter, "DRS adapter must retain 300-frame telemetry ring")
-    require("DumpFileName" in drs_adapter, "DRS adapter dump file route missing")
+    require("DumpFilePrefix" in drs_adapter, "DRS adapter dump file prefix missing")
+    require("Dump_THERMAL_DRS_" in drs_adapter, "DRS adapter owner/system dump route missing")
     require("DumpBlackBoxOnce" in drs_adapter, "DRS adapter black-box dump method missing")
+    require("NativeFaultDumpWriter.TryWriteAll" in drs_adapter, "DRS adapter binary dump writer route missing")
 
     binding_rows = {str(row["name"]): row for row in data["systemBitBindings"]}
     for name, bit_index in EXPECTED_SYSTEM_BITS.items():
