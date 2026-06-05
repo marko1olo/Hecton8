@@ -5830,6 +5830,48 @@ Current state:
 - Current process gate sample after validation: CPU `76`.
 - Unity readback/import/build/Play Mode remains blocked by CPU policy.
 
+## 2026-06-05 Foam Contact Source Role Queue Cursor 75
+
+Current front:
+
+- Water/foam/contact source candidates were inspected as static image/source evidence only.
+- No Unity, import, material, shader, scene, prefab, Addressables, code, build, Play Mode, screenshot, profiler, or `Assets` mutation was performed.
+
+Integrated artifacts:
+
+- `Docs/AssetAudit/FOAM_CONTACT_SOURCE_ROLE_DECISION_QUEUE_20260605.md`
+- `Docs/AssetAudit/FOAM_CONTACT_SOURCE_ROLE_DECISION_QUEUE_20260605.csv`
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.md`
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`
+- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_WORKER_BOARD_20260605.md`
+- `Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.md`
+- `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md`
+- `Docs/AssetAudit/README.md`
+- `taskslocal/asset_system_20260605/README.md`
+
+Latest changes:
+
+- Added an 8-row foam/contact source role decision queue.
+- `Assets/_Project/Art/TEXTURES/foam.png` remains rejected as final visible waterline/shoreline art.
+- Cleanup albedo and detail normal are source-only candidates, not import-ready final maps.
+- Cleanup MRAO and RGBA masks remain blocked for direct binding because channel roles are broad/false-color/source-only.
+- Visor droplet mask and `visor unnormal.png` are marked out of scope for foam/contact material ownership unless a separate owner proves a route.
+- `ASSET_FRONT_FILE_MAP_20260605.csv` now parses as 117 rows, 7 columns, zero empty cells.
+- Static validation summary now states 55 curated zero-empty CSV files and 14553 data rows.
+
+Validation:
+
+- Summary table parser matched every listed CSV against actual rows, columns, and empty-cell counts: 55 files, 14553 rows, zero mismatches.
+- `FOAM_CONTACT_SOURCE_ROLE_DECISION_QUEUE_20260605.csv`: 8 rows, 13 columns, zero empty cells.
+- Scoped `git diff --check` passed with line-ending warning only.
+
+Current state:
+
+- Static/controller source QA only.
+- Unity readback/import/build/Play Mode remains blocked until the process gate is clean.
+
 ## 2026-06-05 H8_1475 Template Dependency Linkage Cursor 73
 
 Current front:
@@ -5933,6 +5975,7 @@ Latest changes:
 - Runtime index now states packet 07 must replace both stale filename and no-file-write black-box behavior with a deterministic owner/system binary dump route.
 - Runtime owner packet numbering corrected: MCP gate remains owner 05, DRS coroutine repair is owner 06, and DRS black-box dump route is owner 07. Duplicate owner 05 was removed from runtime packet routing.
 - Forbidden runtime API route triage now links `ThermalDynamicResolutionAdapter` repair to DRS packets 06 and 07 plus the static defect anchor report.
+- Forbidden runtime API static scan now matches the refined DRS classification: `ThermalDynamicResolutionAdapter` coroutine repair is P1 and routes to packets 06/07.
 
 Validation:
 
@@ -5941,6 +5984,7 @@ Validation:
 - Full runtime report CSV parse: 7 files, 78 rows total, zero empty cells.
 - Runtime crosswalk/packet link scan found expected h8 comparison and DRS defect references.
 - Runtime owner-number scan: owners 01, 02, 04, 05, 06, and 07 each have exactly one packet.
+- Stale DRS P2/static-proof/mojibake scan returned zero hits.
 - Runtime packet/crosswalk exact stale static-proof label and mojibake/replacement-character scan returned zero hits.
 - Scoped trailing-whitespace scan returned zero hits.
 - Scoped `git diff --check` passed with line-ending warnings only.
@@ -5978,7 +6022,7 @@ Updated artifacts:
 Validation:
 
 - Static scan on `ThermalDynamicResolutionAdapter.cs`: `StartCoroutine=0`, `StopAllCoroutines=0`, `IEnumerator=0`, `Dump_13KRA=0`.
-- Static scan on touched runtime packet docs: replacement chars `0`, `????` runs `0`.
+- Static scan on touched runtime packet docs: replacement chars `0`, four-question-marker runs `0`.
 - Scoped `git diff --check` returned only CRLF normalization warnings.
 - Editor.log tail scan after Unity import showed no `error CS`, no `Compilation failed`, and no `ThermalDynamicResolutionAdapter` compile error.
 
