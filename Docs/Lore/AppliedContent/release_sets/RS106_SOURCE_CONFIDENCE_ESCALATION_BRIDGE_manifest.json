@@ -1,0 +1,24 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS106_SOURCE_CONFIDENCE_ESCALATION_BRIDGE",
+  "status": "canonical_source_candidate_pending_controller_review_and_downstream_wiring",
+  "evidence_class": "STATIC_SOURCE",
+  "packets": [
+    "P518_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
+    "P519_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
+    "P520_PDA_PROOF_ESCALATION_WARNING_BRIDGE"
+  ],
+  "authoring_packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P518_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P519_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P520_PDA_PROOF_ESCALATION_WARNING_BRIDGE.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

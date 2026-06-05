@@ -119,9 +119,10 @@ Current start-here navigator:
 - `Docs/AssetAudit/AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.md/.csv` is the P0 audio routing/import/source remediation target table.
 - `Docs/AssetAudit/H8_1475_READBACK_FIELD_MANIFEST_20260605.md/.csv` is the no-mutation Unity readback field manifest for the next clean process gate.
 - `Docs/AssetAudit/VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.md/.csv` is the rejected/missing visual proof capture gap table.
+- `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.md/.csv` is the mandatory-reference critique checklist for future h8_1475 screenshot pass/fail review; it is not visual acceptance.
 - `Docs/AssetAudit/ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.md/.csv` is the compact crosswalk for assigning owners 24-36 from the P0 target/readback/capture tables.
 - `Docs/AssetAudit/ASSET_OWNER_PACKET_INDEX_20260605.md/.csv` maps asset owner IDs 01-36 and marks 29-33 as output-only target-table worker IDs.
-- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` records current static parse hygiene for 39 asset CSVs.
+- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` records current static parse hygiene for 40 curated CSV files, including the visual-reference critique checklist outside `Docs/AssetAudit`.
 - `Docs/AssetAudit/ASSET_AUTHORING_TOOL_INVENTORY_20260605.md/.csv` maps existing local offline/editor tools so future owners reuse known generators/scanners instead of inventing new ones.
 - `Docs/AssetAudit/AUDIO_PROFILE_ROUTE_MATRIX_20260605.md/.csv` maps MusicDirector/profile/cue-family blockers before audio owners touch route data.
 - `Docs/AssetAudit/AUDIO_SOURCE_FOLDER_ROUTE_MATRIX_20260605.md/.csv` maps audio source folders to long-bed, low-Q, direct-ref, placeholder, owner, and Addressables risks.
