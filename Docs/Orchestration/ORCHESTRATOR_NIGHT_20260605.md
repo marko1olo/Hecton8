@@ -6465,6 +6465,62 @@ Current state:
 - Asset-front control plane is internally consistent for the visual hero, VFX DataVault, Biolum black-box, h8_1475 anti-false-proof, audio, and source-routing matrices.
 - Runtime/Unity/product visual status remains `PENDING VERIFICATION`.
 
+## 2026-06-05 Visual Source Promotion Queue Cursor 84
+
+Current front:
+
+- Continued asset/static orchestration after context compression evidence refresh.
+- Latest rejected visual evidence remains `Docs/Screenshots/MCP/h8_1914_surface_crest_recovery_probe.png`: slab water, black detached shoreline underside, rectangular material patch, weak terrain material truth, and pasted/toy Aegir. It remains diagnostic rejection evidence, not acceptance.
+- Active owner front remains asset/static control. Unity readback owner is blocked by process gate.
+
+New static artifact:
+
+- `Docs/AssetAudit/VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.md`
+- `Docs/AssetAudit/VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.csv`
+
+Purpose:
+
+- Translate mandatory VREF/source coverage into exact owner actions, proof gates, and reject rules.
+- Prevent contact sheets, generated source packs, cleanup maps, or diagnostic screenshots from being treated as product visual acceptance.
+
+Integrated entry points:
+
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`
+- `Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_WORKER_BOARD_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md`
+- `taskslocal/asset_system_20260605/README.md`
+
+Static facts:
+
+- `VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.csv`: 10 rows, 15 columns, zero empty cells.
+- `ASSET_FRONT_FILE_MAP_20260605.csv`: 139 rows, 7 columns, zero empty cells.
+- Current curated static asset CSV set: 62 files, 14646 summed data rows, zero empty cells.
+- Direct `Docs/AssetAudit` root CSV count: 58 files; curated direct-root CSV count: 53 plus one `Docs/AssetAudit/AudioVisual` CSV.
+
+Validation:
+
+- `python Tools/ValidateAssetStaticSummary.py --summary Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returned `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14646`.
+- `python -m unittest Tools/test_validate_asset_static_summary.py` ran 4 tests OK.
+- Direct curated `Import-Csv` validation returned 62 files, 14646 rows, 0 errors, 0 files with empty cells.
+- Stale active-entry scan found no old `61/14631/14632/14644/134/137/57/52` anchors.
+- Scoped `git diff --check` returned no whitespace errors; Git reported CRLF normalization warnings only.
+
+Process gate:
+
+- CPU sample: 99.
+- Active blocked processes include `dotnet` PID 18356 and Unity Hub processes.
+- No Unity readback, import, build, Play Mode, scene/prefab/material mutation, Addressables build, or runtime proof work was performed.
+
+Next action:
+
+- Keep independent static fronts moving while process gate is red.
+- Next useful asset front is source-promotion conflict reduction: check whether visual queue rows are fully referenced by owner packets 11, 12, 14, 16, 17, 20, 24, 25, 27, 36, and 37 without requiring new Unity work.
+
+Status remains `PENDING VERIFICATION`.
+
 ## 2026-06-05 Biolum Black-Box Source Decision Reconciliation Cursor 84
 
 Current front:

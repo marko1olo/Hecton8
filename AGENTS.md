@@ -309,15 +309,21 @@ Tiny doc edits, narrow typo fixes, and targeted non-runtime text changes do not 
 
 [FORBID] Claiming platform readiness from `link.xml`, static source, docs, or local build text alone.
 
+## Delegation And Subagents
+
+[REQ] Any HECTON-8 agent may spawn/use subagents when they materially improve correctness, parallel evidence gathering, bounded audits, alternative design review, implementation on a disjoint scope, or report synthesis.
+
+[REQ] Give each subagent the maximum relevant authority context, exact task scope, expected output, and evidence requirements. The subagent inherits HECTON-8 law, including root authority, route bibles, mandates, no-fake-proof rules, visual floor, zero-GC hot path discipline, and no-loss rule preservation.
+
+[REQ] The primary agent remains responsible for reading the controlling docs, integrating results, resolving conflicts, verifying final claims, and reporting only evidence-backed conclusions.
+
+[FORBID] Do not use subagents to avoid reading required authority files, launder guesses, fabricate proof, create hidden dependencies, overwrite unrelated work, or spray broad unrelated audits. Subagent output is evidence input, not authority.
+
 ## Orchestration
 
 [REQ] If and only if acting as local orchestrator, batch dispatcher, controller, task-file generator, GUI operator, or multi-agent manager, read `HECTON8_ORCHESTRATOR.md`.
 
 [REQ] Explicit multi-agent, batch, controller, and task-file work must use the `HECTON8_ORCHESTRATOR.md` lane contracts. Assign `LANE_CLASS`, valid completion, invalid completion, kill switch, and evidence budget before dispatching or judging agents.
-
-[REQ] Use subagents when they materially improve correctness, parallel evidence gathering, bounded audits, alternative design review, or report synthesis. Give each subagent the maximum relevant authority context, exact task scope, expected output, and evidence requirements. The primary agent remains responsible for reading the controlling docs, integrating results, resolving conflicts, and verifying final claims.
-
-[FORBID] Do not use subagents to avoid reading the required authority files, to launder guesses, to fabricate proof, to create hidden dependencies, or to spray broad unrelated audits. Subagent output is evidence input, not authority.
 
 [REQ] For local controller/orchestrator work, use and maintain `C:\hades\.codex_ops\ORCHESTRATION_MEMORY.md`. Prefer `C:\hades\.codex_ops\AgentGuiOps.ps1` and `C:\hades\.codex_ops\ProbeAgents.ps1` before slow manual clicking.
 

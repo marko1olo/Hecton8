@@ -28,6 +28,8 @@ Small typo fixes, narrow mechanical edits, and ordinary chat answers may skip th
 
 Authority files, route bibles, mandate files, and important task documents must be read as complete documents before meaning is evaluated. Text search is a navigation and audit tool only.
 
+Subagent use by an ordinary implementation, content, QA, or docs agent is governed by root `AGENTS.md` `Delegation And Subagents`. It does not require `HECTON8_ORCHESTRATOR.md` unless the agent is acting as a local orchestrator, batch dispatcher, controller, task-file generator, GUI operator, or multi-agent manager.
+
 ## Task Classes
 
 | Task class | Mandatory authority beyond `AGENTS.md` |

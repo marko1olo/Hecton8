@@ -90,9 +90,11 @@ def main() -> int:
         assert_contains(errors, orchestrator, needle)
 
     assert_contains(errors, root_agents, "lane contracts")
-    assert_contains(errors, root_agents, "Use subagents when")
+    assert_contains(errors, root_agents, "## Delegation And Subagents")
+    assert_contains(errors, root_agents, "Any HECTON-8 agent may spawn/use subagents")
     assert_contains(errors, routing, "AGENT LANE CONTRACTS")
     assert_contains(errors, routing, "LOCAL SUBAGENT PROTOCOL")
+    assert_contains(errors, routing, "Subagent use by an ordinary implementation")
     assert_contains(errors, project_bibles, "lane contracts")
     assert_contains(errors, project_bibles, "subagent rules")
 
