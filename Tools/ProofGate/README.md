@@ -6,7 +6,7 @@ Evidence class: `STATIC_FILESYSTEM` / `STATIC_MANIFEST` / `STATIC_LOG`.
 
 This tool does not launch Unity, enter Play Mode, profile, judge visual quality, or verify player capture truth. A pass means the packet may proceed to runtime/human visual review. It is not acceptance.
 
-`mayClaimPlayerCaptureVerified` is always `false` in this static gate. Any manifest that tries to claim player-capture verification is rejected with `PLAYER_CAPTURE_CLAIM_UNSUPPORTED` until a separate runtime/player-capture proof schema exists.
+`mayClaimPlayerCaptureVerified` is always `false` in this static gate. Any manifest that tries to claim player-capture verification is rejected with `PLAYER_CAPTURE_CLAIM_UNSUPPORTED` until a separate runtime/player-capture proof schema exists. Player-capture claim fields may be absent, `null`, or JSON boolean `false`; string/number/object values are rejected, including loosely truthy values such as `"true"` and `1`.
 
 ## Required Packet Root
 
@@ -89,6 +89,6 @@ python -m unittest discover -s Tools\ProofGate -p test_*.py
 Current expected result:
 
 ```text
-Ran 24 tests
+Ran 26 tests
 OK
 ```

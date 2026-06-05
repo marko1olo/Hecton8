@@ -432,7 +432,7 @@ Reject conditions:
 
 - `_musicMixerGroup` or `_stingerMixerGroup` remains null in active `MusicDirectorConfig_Global.asset`.
 - Direct `Player.prefab` AudioClip refs remain without owner/load/release exception proof.
-- Generic constant music beds are treated as accepted first-exit audio without MusicDirector gating/listening proof.
+- Generic constant music beds would be rejected if treated as accepted first-exit audio without MusicDirector gating/listening proof.
 - UI/warning cue is inaudible or weak without warning bank/ducking/haptic/UI pairing proof.
 - VO stubs are treated as final VO duration, localization, loudness, subtitle timing, or delivery proof.
 - Managed audio callback/native DSP route is claimed without profiler/DSPGraph evidence.

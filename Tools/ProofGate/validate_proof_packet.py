@@ -325,10 +325,14 @@ def validate_manifest(
         result.reject("SCREENSHOTS_FIELD_INVALID", "screenshots must be a list")
 
 
+def is_player_capture_claim_value(value: Any) -> bool:
+    return value is not None and value is not False
+
+
 def validate_player_capture_overclaim(manifest: dict[str, Any], result: GateResult) -> None:
     """Reject manifest attempts to promote a static packet into player-capture truth."""
     for field_name in PLAYER_CAPTURE_CLAIM_FIELDS:
-        if manifest.get(field_name) is True:
+        if is_player_capture_claim_value(manifest.get(field_name)):
             result.reject("PLAYER_CAPTURE_CLAIM_UNSUPPORTED", field_name)
 
     disposition = str(manifest.get("final_disposition", "")).strip().upper()
@@ -338,7 +342,7 @@ def validate_player_capture_overclaim(manifest: dict[str, Any], result: GateResu
     checks = manifest.get("derived_checks")
     if isinstance(checks, dict):
         for field_name in PLAYER_CAPTURE_CLAIM_FIELDS:
-            if checks.get(field_name) is True:
+            if is_player_capture_claim_value(checks.get(field_name)):
                 result.reject("PLAYER_CAPTURE_CLAIM_UNSUPPORTED", f"derived_checks.{field_name}")
 
 

@@ -370,7 +370,7 @@ Reject if:
 
 - visible route uses stale `terrain.mat` or `Mat_TriplanarRock.mat` with unresolved shader/GUID slots.
 - terrain is dark, random-noise, low-poly, blurry, flat, or hiding weak material work behind water/fog.
-- material route is accepted without active terrain receiver proof.
+- material route would be rejected if accepted without active terrain receiver proof.
 
 ### 5. Proxy, Null, Blockout, Package-Default, Primitive Product-Face Routes
 
