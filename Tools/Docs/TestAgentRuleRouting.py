@@ -137,12 +137,10 @@ def main() -> int:
                 fail(errors, f"{rule_file}: historical rule must not keep active globs")
             if "HISTORICAL REFERENCE ONLY" not in text:
                 fail(errors, f"{rule_file}: missing historical-reference marker")
-            if "Docs/DEPRECATED/AgentRulesHistorical_20260605" not in text:
-                fail(errors, f"{rule_file}: missing archive pointer for old body")
-            if re.search(r"\b(Update|FixedUpdate|LateUpdate)\s*\(", text):
-                fail(errors, f"{rule_file}: active historical stub must not carry Unity lifecycle examples")
-            if re.search(r"\b(GetComponent|UnityEngine\.Pool)\b", text):
-                fail(errors, f"{rule_file}: active historical stub must not carry generic Unity examples")
+            if "HECTON-8 Authority Override" not in text:
+                fail(errors, f"{rule_file}: missing HECTON-8 override header")
+            if "not active HECTON-8 law" not in text:
+                fail(errors, f"{rule_file}: missing non-authority warning")
             archived = historical_agent_rules_archive / rule_file.name
             if not archived.exists():
                 fail(errors, f"{archived}: missing archived body for historical agent rule")
@@ -232,10 +230,8 @@ def main() -> int:
     for path, needle in (
         (routing, "C:\\Users\\danat\\.gemini\\GEMINI.md"),
         (routing, "C:\\Users\\danat\\.gemini\\antigravity-ide\\mcp\\unityMCP\\instructions.md"),
-        (routing, "Docs/DEPRECATED/AgentRulesHistorical_20260605/"),
         (governance, "C:\\Users\\danat\\.gemini\\GEMINI.md"),
         (governance, "project `GEMINI.md`"),
-        (governance, "Docs/DEPRECATED/AgentRulesHistorical_20260605/"),
         (docs_readme, "Gemini/Antigravity project entrypoint"),
     ):
         assert_contains(errors, path, needle)

@@ -58,7 +58,7 @@ Stable distilled facts belong in `Docs/PROJECT_BASELINE.md` or `Docs/ARCHITECTUR
 - Keep `C:\Users\danat\.gemini\GEMINI.md` as a global Gemini/Antigravity router, not a duplicate HECTON-8 law copy.
 - Keep project `GEMINI.md` as a tool shim that routes to root `AGENTS.md` and `Docs/AGENT_AUTHORITY_ROUTING.md`.
 - Keep `Docs/AGENTS_RULE_DETAIL_LEDGER.md` as no-loss detail/provenance, not as an always-on substitute for `PROJECT_BIBLES.md`, root route bibles, or `.agents-skills` mandates.
-- Keep `.agent/rules/*.md` as short historical stubs; previous generic Unity bodies belong under `Docs/DEPRECATED/AgentRulesHistorical_20260605/`.
+- Keep `.agent/rules/*.md` as historical/reference guidance with a strong HECTON-8 override header; they are not independent authority.
 - Keep local AGENTS derivatives delegated to or synchronized with root `AGENTS.md`; they are not independent law sources.
 - Use `Docs/AGENT_AUTHORITY_ROUTING.md` for rule-surface routing and the no-loss split protocol before shortening, splitting, or mirroring rule files.
 - Run `python -B Tools/Docs/TestAgentRuleRouting.py` after agent rule-surface edits.

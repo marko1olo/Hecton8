@@ -439,7 +439,7 @@ Use `Docs/AssetAudit/VISUAL_ASSET_REVIEW_QUEUE_20260605.csv` for visual target o
 
 Latest asset-front parse summary: `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`.
 
-- Current asset CSV set: 62 files, 14646 data rows, zero empty cells.
+- Current asset CSV set: 62 files, 14648 data rows, zero empty cells.
 - `GENERATED_SOURCE_PACK_FILE_INVENTORY_20260605.csv`: 26 rows, 13 columns, zero empty cells.
 - `AUDIO_SOURCE_FOLDER_ROUTE_MATRIX_20260605.csv`: 15 folders, 17 columns, zero empty cells; covers 138 audio ledger rows and 28 direct prefab refs by folder.
 - `TEXTURE_SOURCE_FOLDER_ROUTE_MATRIX_20260605.csv`: 56 folders, 20 columns, zero empty cells; covers 190 texture ledger rows, 50 generated/source-only rows, 54 active-build-scene usage rows, 70 visible-route user rows, and 43 proxy/placeholder usage rows.
@@ -485,7 +485,7 @@ Latest asset-front parse summary: `Docs/Reports/AssetSystem_20260605/ASSET_STATI
 - `BIOLUM_BLACKBOX_ROUTE_DECISION_20260605.csv`: 4 rows, 15 columns, zero empty cells; route decision/source-field readback only, not compile proof, Unity proof, GC/profiler proof, or runtime dump artifact acceptance.
 - `VISUAL_HERO_SOURCE_COVERAGE_MATRIX_20260605.csv`: 10 rows, 15 columns, zero empty cells; source coverage matrix only, not import, material binding, screenshot, Frame Debugger, memory, or visual acceptance.
 - `ASSET_STATIC_ROW_BLOCKER_SUMMARY_20260605.csv`: 16 rows, 9 columns, zero empty cells.
-- `ASSET_FRONT_FILE_MAP_20260605.csv`: 139 rows, 7 columns, zero empty cells.
+- `ASSET_FRONT_FILE_MAP_20260605.csv`: 141 rows, 7 columns, zero empty cells.
 - `VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.csv`: 10 rows, 15 columns, zero empty cells; visual source queue only, no import/material/screenshot/Frame Debugger/memory acceptance.
 - Current touched asset docs reported zero replacement characters.
 - Scoped asset-front `git diff --check` reported no whitespace errors.

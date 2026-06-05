@@ -86,7 +86,7 @@ class ValidateAssetStaticSummaryTests(unittest.TestCase):
         rows = validator.validate_summary()
 
         self.assertEqual(62, len(rows))
-        self.assertEqual(14646, sum(row.rows for row in rows))
+        self.assertEqual(14648, sum(row.rows for row in rows))
 
     @staticmethod
     def _write_csv(path: Path, headers: list[str], rows: list[list[str]]) -> None:

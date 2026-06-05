@@ -77,7 +77,7 @@ If the folder or needed image proof is unavailable, report visual status as `PEN
 
 [REQ] Existing editor/offline generation systems for meshes, textures, rocks, flora, fauna, materials, and procedural families must be searched before inventing new asset-generation routes.
 
-[RULE] Until `Docs\ARCHITECTURE\FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md` is proven, every task must state which first-20-minutes route moment it improves or which route blocker it removes.
+[RULE] Until `Docs\ARCHITECTURE\FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md` is proven, gameplay, runtime, player-visible visual, UI, audio, world, asset, system, and in-world content tasks must state which first-20-minutes route moment they improve or which route blocker they remove. Pure rule routing, tool-shim upkeep, generated snapshot sync, narrow typo fixes, and read-only governance checks may instead state `FIRST_20_NOT_APPLICABLE: <reason>`.
 
 ## Evidence Law
 

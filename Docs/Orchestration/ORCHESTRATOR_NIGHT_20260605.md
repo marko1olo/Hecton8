@@ -6710,7 +6710,37 @@ Current state:
 - Owner 04 packet updated with this hard blocker.
 - Runtime/Unity/product status remains `PENDING VERIFICATION`.
 
-## 2026-06-06 MarineSnow DataVault Source Reconciliation Cursor 88
+## 2026-06-05 Audio/Addressables Static Reaudit Cursor 88
+
+Current front:
+
+- Integrated Einstein static audio/Addressables reaudit.
+- Process gate remained red during controller work: CPU samples were ~99.6, ~99.8, and 100; active blockers included Unity Hub/licensing and Unity Roslyn `dotnet`/`VBCSCompiler`.
+- No Unity, build, import, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, runtime source, or raw YAML mutation was performed.
+
+Integrated artifacts:
+
+- `Docs/Orchestration/AUDIO_ADDRESSABLES_P0_SYNTHESIS_20260605.md`
+- `taskslocal/night_controller_20260605/NIGHT_OWNER_06_AUDIO_ADDRESSABLES_ROUTE.txt`
+- `taskslocal/night_controller_20260605/BATCH_INDEX.txt`
+
+Current Owner06 facts:
+
+- Addressables package exists, but `Assets/AddressableAssetsData` has no settings/groups/schemas/entries. Audio residency route is absent.
+- `MusicDirectorConfig_Global.asset` still has null music/stinger mixer refs.
+- `PFB_HectonMusicDirectorRoot.prefab` still has null output mixer groups on music/stinger sources.
+- `PFB_SpatialAudioManagerRoot.prefab` also has null SFX/interface/ambient/threat/bed/routing mixer refs.
+- `Player.prefab` still has direct `Underwater Ambient.wav` and `dive_splash.wav` refs.
+- Current audio residency gate scans `AudioSource.clip` only; serialized `AudioClip` fields can bypass it.
+- `DynamicMusicGranularSynthesizer.OnAudioFilterRead` is statically transfer-only, but release still needs DSP profiler, underrun, no-blocking, no-GC, and listening proof.
+
+Current state:
+
+- Owner06 remains `P0 BLOCKED / STATIC ONLY`.
+- Next Unity-safe action remains no-mutation readback after process gate is green.
+- Runtime/Unity/product status remains `PENDING VERIFICATION`.
+
+## 2026-06-06 MarineSnow DataVault Source Reconciliation Cursor 89
 
 Current front:
 
@@ -6755,34 +6785,4 @@ Current state:
 
 - VFX DataVault proof remains static only.
 - Missing proof: scanner re-run, compile, Unity Console, Play Mode route exercise, GC/profiler, deterministic dump artifacts.
-- Runtime/Unity/product status remains `PENDING VERIFICATION`.
-
-## 2026-06-05 Audio/Addressables Static Reaudit Cursor 88
-
-Current front:
-
-- Integrated Einstein static audio/Addressables reaudit.
-- Process gate remained red during controller work: CPU samples were ~99.6, ~99.8, and 100; active blockers included Unity Hub/licensing and Unity Roslyn `dotnet`/`VBCSCompiler`.
-- No Unity, build, import, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, runtime source, or raw YAML mutation was performed.
-
-Integrated artifacts:
-
-- `Docs/Orchestration/AUDIO_ADDRESSABLES_P0_SYNTHESIS_20260605.md`
-- `taskslocal/night_controller_20260605/NIGHT_OWNER_06_AUDIO_ADDRESSABLES_ROUTE.txt`
-- `taskslocal/night_controller_20260605/BATCH_INDEX.txt`
-
-Current Owner06 facts:
-
-- Addressables package exists, but `Assets/AddressableAssetsData` has no settings/groups/schemas/entries. Audio residency route is absent.
-- `MusicDirectorConfig_Global.asset` still has null music/stinger mixer refs.
-- `PFB_HectonMusicDirectorRoot.prefab` still has null output mixer groups on music/stinger sources.
-- `PFB_SpatialAudioManagerRoot.prefab` also has null SFX/interface/ambient/threat/bed/routing mixer refs.
-- `Player.prefab` still has direct `Underwater Ambient.wav` and `dive_splash.wav` refs.
-- Current audio residency gate scans `AudioSource.clip` only; serialized `AudioClip` fields can bypass it.
-- `DynamicMusicGranularSynthesizer.OnAudioFilterRead` is statically transfer-only, but release still needs DSP profiler, underrun, no-blocking, no-GC, and listening proof.
-
-Current state:
-
-- Owner06 remains `P0 BLOCKED / STATIC ONLY`.
-- Next Unity-safe action remains no-mutation readback after process gate is green.
 - Runtime/Unity/product status remains `PENDING VERIFICATION`.
