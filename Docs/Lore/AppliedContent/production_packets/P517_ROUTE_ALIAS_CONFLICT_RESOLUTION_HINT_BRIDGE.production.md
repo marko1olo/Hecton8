@@ -12,19 +12,21 @@ Canonical title: Route Alias Conflict Resolution Hint
 
 Evidence class: STATIC_DOC only
 
-Layer: Narrative authoring source
+Runtime layer: Narrative authoring source
 
-Spoiler level: 1 route-alias comparison hint / 3 route proof held / 4 final consequence held
+Spoiler level: 1 route alias conflict / 3 exact route held / 4 final consequence held
 
-Canon owner: writing.md, narrative.md, localization.md, P512-P514 packet format
+Canon owner: Canon_Locks.md, Lore_Bible.md, Lore_Content_System.md, Lore_Localization_Model.md, Website_Publication_Map.md
 
-Surface targets: future website article seed, future wiki procedure note, future PDA evidence hint, future scanner confidence hint, future terminal receipt note, future evidence caption, future string-pool rows
+Surface targets: future public archive article, future wiki route-alias note, future PDA route hint, future scanner alias tag, future terminal route note, future evidence caption
 
-Connected packets: P512_PUBLIC_ARCHIVE_DISPUTE_REASON_CODE_BRIDGE, P513_ARCHIVE_RESOLUTION_HOLD_PROMPT_BRIDGE, P514_PDA_NEXT_PROOF_CHECKLIST_BRIDGE
+Connected packets: P504_PAYLOAD_ROUTE_ALIAS_REGISTER_BRIDGE, P508_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE, P510_SCANNER_CONFIDENCE_DOWNGRADE_REASON_BRIDGE, P514_PDA_NEXT_PROOF_CHECKLIST_BRIDGE
 
-First-20 route boundary: lets the opening route show why two route names can be compared without selecting the final route truth before the player has the object mark, receipt path, scanner confidence, and custody route in hand.
+First-20 route boundary: lets the opening route show route alias conflict without confirming the final route branch.
 
-Proof boundary: this packet is markdown authoring text with STATIC_DOC evidence only. It is not an implementation artifact, deployment artifact, imported data payload, review stamp, or final proof state.
+Mandates followed: QA_Evidence_Text_Filter_Audit; UI_Localization_Babel_RTL_FontSwap_ZeroAlloc; DATA_Runtime_Struct_Layout_ARM64; TOOL_Designer_Facades_CSV_Binary_Bridge.
+
+Proof boundary: this packet is markdown authoring text. It creates no website page, wiki page, route card, graph, binding map, source CSV row, generated asset, Unity object, runtime script, importer output, h8bin payload, DataMonolith payload, public deployment, native localization review, or acceptance state.
 
 ## Source Brief
 
@@ -34,87 +36,83 @@ Article ID: ROUTE_ALIAS_CONFLICT_RESOLUTION_HINT_BRIDGE
 
 Loc namespace: LORE_EVIDENCE_ROUTE_ALIAS_CONFLICT_RESOLUTION_HINT_BRIDGE
 
-Layer: Narrative
+Runtime layer: Narrative
 
-Surface targets: website article seed, wiki procedure note, PDA evidence hint, scanner confidence hint, terminal receipt note, evidence caption, string-pool rows
+Surface targets: public archive article, wiki route-alias note, PDA route hint, scanner alias tag, terminal route note, evidence caption
 
-Spoiler level: route-alias comparison visible at level 1; exact receiver, protected claimant, final consequence, legal result, and branch outcome held until later proof gates.
+Spoiler level: conflict hint visible at level 1; exact route and final consequence held until later gates.
 
-Canon sources: writing.md, narrative.md, localization.md, P512_PUBLIC_ARCHIVE_DISPUTE_REASON_CODE_BRIDGE, P513_ARCHIVE_RESOLUTION_HOLD_PROMPT_BRIDGE, P514_PDA_NEXT_PROOF_CHECKLIST_BRIDGE.
+Canon sources: AGENTS.md, VISION_LOCKS.md, TASTE.md, writing.md, narrative.md, localization.md, data.md, authoring.md, quality.md, Docs/Lore/Canon_Locks.md, Docs/Lore/Lore_Bible.md, Docs/Lore/Lore_Content_System.md, Docs/Lore/Lore_Localization_Model.md, Docs/Lore/Website_Publication_Map.md.
 
-Speaker/source: public archive route clerk, PDA evidence reviewer, scanner confidence interpreter, terminal receipt reviewer.
+Speaker/source: public archive route editor, PDA route reviewer, scanner confidence interpreter, Marauder field annotator.
 
-Audience: public readers, wiki readers, player reviewing disputed evidence, future language reviewer, future string-pool owner.
+Audience: public readers, wiki readers, player reviewing route hints, future localization reviewer, future source-table owner.
 
-Date/era: 2190 archive reconstruction window after route labels from HECTON-8 salvage records became searchable outside Deep Reach office routes.
+Date/era: 2190 archive reconstruction window after route aliases became public-safe but still evidence-sensitive.
 
-Location/depth/route: public archive route-alias note, PDA evidence family panel, scanner downgrade label, terminal receipt screen, evidence caption.
+Location/depth/route: public archive route page, PDA route hint, scanner alias label, terminal receipt path.
 
-Unlock context: the reader sees an old route mark that does not match the safe public label and needs to know how the alias is tested before the evidence family receives a conclusion.
+Unlock context: the reader sees an old route mark and a safer public route label. The hint explains what to compare before trusting either.
 
-Evidence object: route-alias hint card with old route mark, safe public label, terminal receipt path, scanner confidence state, custody route, and unresolved conclusion flag.
+Evidence object: route-alias conflict card with old mark, public label, terminal path, scanner confidence, and custody route target.
 
-What this source knows: alias comparison can name the fields that disagree. It can lower confidence and point to the next proof target without deciding which route name becomes final truth.
+What this source knows: aliases can be protective, clerical, or evasive. Resolution starts by comparing old route mark, terminal path, scanner confidence, and custody route.
 
-What this source does not know: final receiver, protected claimant, Atlas consequence, legal result, route branch, source admission, review outcome, or implementation state.
+What this source does not know: final route, final receiver, final legal result, protected claimant, Atlas consequence, rescue state, native review status, source import state, runtime placement, or publication state.
 
-What this source hides or gets wrong: safe public labels travel better than old marks. A clean label can make a damaged route plate look obsolete even when the receipt path and custody route still need comparison.
+What this source hides or gets wrong: public route labels make aliases sound tidy. Marauder notes often treat tidy labels as a purchase order for doubt.
 
-Player use: tells the player to compare the old mark, public label, receipt path, scanner confidence, and custody route before trusting a route alias.
+Player use: tells the player to compare route evidence without deciding the final branch too early.
 
-Forbidden facts: no final receiver, no protected claimant, no Atlas consequence, no legal result, no route branch, no source admission, no implementation state, no external release state, no binary payload state, no final language-review state.
+Forbidden facts: no final route branch, no final receiver, no protected claimant identity, no Atlas consequence, no legal verdict, no rescue promise, no native review, no source insertion, no h8bin state, no DataMonolith state, no public deployment state.
 
-Required proper nouns/terms: HECTON-8, Deep Reach, Marauder, public archive, route alias, old route mark, safe public label, terminal receipt path, scanner confidence, custody route.
+Required proper nouns/terms: HECTON-8, Deep Reach, Atlas, Marauder, public archive, route alias, terminal receipt, scanner confidence, custody route.
 
 LocIDs: proposed in Future Integration Notes.
 
-Localization note: English authority row; non-English rows are draft text requiring later human review and layout checks.
+Localization status: English authority row; non-English draft rows require future native review and layout checks.
 
 ## Surface Texts
 
 **Website article seed:**
 
-A route alias conflict begins with a small problem: the old mark on the object does not match the label clean enough for public use. On HECTON-8 records, the old mark may be a stamped route plate, a scratched locker tag, a receipt header, or a salvage note from a Marauder who copied what the hull still carried. The safe public label is easier to print, but it is not allowed to erase the older mark by itself.
+A route alias conflict starts when the old mark and the safe public label do not point cleanly at the same path. That does not make the alias false. HECTON-8 routes were renamed for claimant protection, office liability, salvage secrecy, and simple relay cleanup. The useful question is not which name sounds safer. The useful question is which name still matches the terminal path, scanner confidence, object custody, and receipt body.
 
-The comparison stays procedural. Match the old route mark against the safe public label. Check the terminal receipt path without naming the final receiver. Read scanner confidence as a confidence state, not a verdict. Keep the custody route separate from the public route name. If the fields still disagree, the hint lowers confidence and points to the next proof target instead of closing the route.
+The archive keeps the hint short because route names can spoil more than geography. An alias can reveal who moved a packet, who wanted the public name softened, or which route branch stayed alive after an office called it closed. The hint tells the reader what to compare and leaves the final route behind proof gates.
 
 **Wiki article seed:**
 
-Route alias conflict resolution hint: a procedure note for evidence families where an old route mark and safe public label disagree. The hint compares old route mark, terminal receipt path, scanner confidence, and custody route before allowing any route conclusion. It should preserve the alias conflict as an unresolved state until the named proof target is recovered.
+Route alias conflict: a condition where an old route mark and a public-safe route label disagree. Resolution should compare terminal receipt path, scanner confidence, custody route, route timestamp, and object mark. The conflict is not proof that either route is final.
 
 **PDA / codex entry:**
 
-PDA hint: do not choose the clean label first. Read the old route mark. Compare the terminal receipt path. Check scanner confidence. Separate custody route from public route name. If the alias still splits, keep the evidence family unresolved and follow the named proof target.
+PDA route hint: do not pick the safe label first. Compare old route mark, public route label, terminal receipt path, scanner downgrade reason, and custody route. If two names point to different proof targets, keep the family unresolved and follow the next-proof checklist.
 
 **Scanner entry:**
 
-Route alias conflict detected. Old route mark and public label diverge. Confidence: partial. Required comparison: terminal receipt path, scanner confidence state, custody route.
+Route alias conflict detected. Public label and old route mark disagree. Confidence: partial. Required next proof: terminal path, custody route, receipt body, or scanner downgrade reason.
 
 **Terminal note:**
 
-ROUTE ALIAS CONFLICT HINT
+ROUTE ALIAS CONFLICT
 
-Old mark present.
+Old mark retained.
 
-Public label present.
+Public label retained.
 
-Receipt path present.
-
-Custody route not final.
-
-Do not promote safe label to conclusion.
+Compare terminal path, custody route, and scanner confidence before resolving route text.
 
 **Evidence caption:**
 
-Route-alias hint card. The archive compares the old mark, public label, receipt path, scanner confidence, and custody route without selecting the final route answer.
+Route-alias conflict card. The archive keeps the old route mark and public label separate until route proof narrows the conflict.
 
 **Spoiler policy:**
 
-Route alias hints may appear early. Final receiver, protected claimant, Atlas consequence, legal result, route branch, and source admission stay masked until later proof gates.
+Route-alias conflict language may appear early. Exact final route, final receiver, protected claimant, Atlas consequence, legal result, and ending branch stay masked until later proof gates.
 
 **String-pool key plan:**
 
-Use stable LocIDs for title, article seed, wiki note, PDA hint, scanner hint, terminal note, evidence caption, and spoiler policy. Keep scanner and PDA lines compact. Visible text must not become route authority.
+Use hashed LocIDs in the Narrative layer. Keep scanner route-conflict strings short and action-focused. Runtime must not parse this Markdown.
 
 ## Future Integration Notes
 
@@ -123,80 +121,82 @@ Proposed LocID rows:
 | LocID | Layer | Category | Purpose |
 |---|---|---|---|
 | LORE_EVIDENCE_ROUTE_ALIAS_CONFLICT_RESOLUTION_HINT_BRIDGE_TITLE | Narrative | codex_title | Canonical title string |
-| LORE_EVIDENCE_ROUTE_ALIAS_CONFLICT_RESOLUTION_HINT_BRIDGE_WEBSITE | Narrative | website_article | Website article seed |
-| LORE_EVIDENCE_ROUTE_ALIAS_CONFLICT_RESOLUTION_HINT_BRIDGE_WIKI | Narrative | wiki_article | Wiki procedure note |
-| LORE_EVIDENCE_ROUTE_ALIAS_CONFLICT_RESOLUTION_HINT_BRIDGE_PDA | Narrative | pda_codex | PDA route-alias hint |
-| LORE_EVIDENCE_ROUTE_ALIAS_CONFLICT_RESOLUTION_HINT_BRIDGE_SCANNER | Narrative | scanner_entry | Scanner confidence hint |
-| LORE_EVIDENCE_ROUTE_ALIAS_CONFLICT_RESOLUTION_HINT_BRIDGE_TERMINAL | Narrative | terminal_note | Terminal receipt note |
+| LORE_EVIDENCE_ROUTE_ALIAS_CONFLICT_RESOLUTION_HINT_BRIDGE_WEBSITE | Narrative | website_article | Public article seed |
+| LORE_EVIDENCE_ROUTE_ALIAS_CONFLICT_RESOLUTION_HINT_BRIDGE_WIKI | Narrative | wiki_article | Wiki note |
+| LORE_EVIDENCE_ROUTE_ALIAS_CONFLICT_RESOLUTION_HINT_BRIDGE_PDA | Narrative | pda_codex | PDA hint |
+| LORE_EVIDENCE_ROUTE_ALIAS_CONFLICT_RESOLUTION_HINT_BRIDGE_SCANNER | Narrative | scanner_entry | Scanner alias tag |
+| LORE_EVIDENCE_ROUTE_ALIAS_CONFLICT_RESOLUTION_HINT_BRIDGE_TERMINAL | Narrative | terminal_note | Terminal route note |
 | LORE_EVIDENCE_ROUTE_ALIAS_CONFLICT_RESOLUTION_HINT_BRIDGE_CAPTION | Narrative | evidence_caption | Evidence caption |
 | LORE_EVIDENCE_ROUTE_ALIAS_CONFLICT_RESOLUTION_HINT_BRIDGE_SPOILER | Narrative | spoiler_policy | Spoiler policy |
 
-P512 relation: route alias conflict is one dispute reason family and should lower confidence through a named reason.
+P504 relation: payload route alias register keeps old and safe labels beside each other.
 
-P513 relation: the route conclusion remains held while the alias comparison is incomplete.
+P508 relation: terminal receipt rewrite can preserve old path under a new header.
 
-P514 relation: PDA next-proof prompts can turn the alias conflict into one concrete action: check old mark, receipt path, scanner confidence, or custody route.
+P510 relation: scanner downgrade can explain why route confidence dropped.
 
-String-pool boundary: future row owners should preserve packet ID, LocID, surface category, spoiler level, speaker/source, and held-fact list.
+P514 relation: PDA checklist points the player to the next route proof target.
+
+Runtime boundary: future runtime systems must consume baked string-pool rows or binary source data only, never this Markdown.
 
 ## Locale Rows
 
 ### en_US
 Status: source_authority
-Text: A route alias conflict hint compares the old route mark against the safe public label without choosing the final route truth. Check the terminal receipt path, scanner confidence, and custody route first. If those fields still split, keep the evidence family unresolved and follow the named proof target instead of trusting the clean label.
+Text: A route alias conflict means the old route mark and safe public label do not match cleanly. Do not choose the safer name first. Compare terminal receipt path, scanner confidence, custody route, route timestamp, and object mark. The alias may protect a person, hide an office, or only clean a relay. Keep final route text locked.
 
 ### ar_SA
 Status: draft_machine_or_llm
-Text: تقارن تلميحة تعارض اسم المسار علامة المسار القديمة بالتسمية العامة الآمنة من دون اختيار حقيقة المسار النهائية. افحص مسار إيصال الطرفية، وثقة الماسح، ومسار الحيازة أولا. إذا بقيت هذه الحقول منقسمة، أبق عائلة الأدلة غير محسومة واتبع هدف الإثبات المسمى بدلا من الثقة بالتسمية النظيفة.
+Text: يعني تعارض اسم المسار أن العلامة القديمة والوسم العام الآمن لا يتطابقان بوضوح. لا تختر الاسم الاكثر امانا اولا. قارن مسار ايصال الطرفية، وثقة الماسح، ومسار الحيازة، ووقت المسار، وعلامة الجسم. قد يحمي الاسم شخصا، او يخفي مكتبا، او ينظف مرحلا فقط. ابق نص المسار النهائي مقفلا.
 
 ### de_DE
 Status: draft_machine_or_llm
-Text: Ein Hinweis zum Routenalias-Konflikt vergleicht die alte Routenmarke mit dem sicheren oeffentlichen Label, ohne die endgueltige Routenwahrheit zu waehlen. Pruefe zuerst Terminal-Belegpfad, Scannervertrauen und Verwahrungsroute. Wenn diese Felder weiter auseinanderlaufen, bleibt die Beweisfamilie offen und folgt dem genannten Beweisziel statt dem sauberen Label.
+Text: Ein Routenalias-Konflikt bedeutet, dass alte Routenmarke und sicheres oeffentliches Label nicht sauber passen. Waehle nicht zuerst den sichereren Namen. Vergleiche Terminalbelegpfad, Scannervertrauen, Verwahrungsroute, Routenzeit und Objektmarke. Der Alias kann eine Person schuetzen, ein Amt verstecken oder nur ein Relais saeubern. Finalen Routentext sperren.
 
 ### es_ES
 Status: draft_machine_or_llm
-Text: Una pista de conflicto de alias de ruta compara la marca de ruta antigua con la etiqueta publica segura sin elegir la verdad final de la ruta. Revisa primero la ruta del recibo de terminal, la confianza del escaner y la ruta de custodia. Si esos campos siguen divididos, deja la familia de pruebas sin resolver y sigue la prueba nombrada en vez de confiar en la etiqueta limpia.
+Text: Un conflicto de alias de ruta significa que la marca vieja y la etiqueta publica segura no encajan limpio. No elijas primero el nombre mas seguro. Compara ruta del recibo terminal, confianza del escaner, ruta de custodia, hora de ruta y marca de objeto. El alias puede proteger a alguien, ocultar una oficina o limpiar un relevo. Mantén bloqueado el texto final.
 
 ### fr_FR
 Status: draft_machine_or_llm
-Text: Un indice de conflit d'alias de route compare l'ancienne marque de route avec l'etiquette publique sure sans choisir la verite finale de la route. Verifie d'abord le chemin du recu terminal, la confiance du scanner et la route de garde. Si ces champs restent separes, garde la famille de preuves non resolue et suis la preuve nommee au lieu de croire l'etiquette propre.
+Text: Un conflit d'alias de route signifie que l'ancienne marque et l'etiquette publique sure ne correspondent pas proprement. Ne choisissez pas d'abord le nom plus sur. Comparez chemin du recu terminal, confiance scanner, route de garde, heure de route et marque d'objet. L'alias peut proteger une personne, cacher un office ou nettoyer un relais. Gardez la route finale verrouillee.
 
 ### he_IL
 Status: draft_machine_or_llm
-Text: רמז התנגשות כינוי מסלול משווה את סימן המסלול הישן לתווית הציבורית הבטוחה בלי לבחור את אמת המסלול הסופית. בדקו קודם את נתיב קבלת המסוף, את אמון הסורק ואת נתיב המשמורת. אם השדות האלה עדיין מתפצלים, השאירו את משפחת הראיות לא פתורה ופעלו לפי יעד ההוכחה הנקוב במקום לסמוך על התווית הנקייה.
+Text: עימות כינוי מסלול אומר שסימן המסלול הישן והתווית הציבורית הבטוחה אינם מתאימים נקי. אל תבחרו קודם בשם הבטוח יותר. השוו נתיב קבלת מסוף, אמון סורק, מסלול משמורת, זמן מסלול וסימן חפץ. הכינוי עשוי להגן על אדם, להסתיר משרד או רק לנקות ממסר. שמרו את טקסט המסלול הסופי נעול.
 
 ### id_ID
 Status: draft_machine_or_llm
-Text: Petunjuk konflik alias rute membandingkan tanda rute lama dengan label publik aman tanpa memilih kebenaran rute akhir. Periksa dulu jalur tanda terima terminal, keyakinan pemindai, dan rute kustodi. Jika bidang itu masih terbelah, biarkan keluarga bukti belum selesai dan ikuti target bukti bernama, bukan label bersih.
+Text: Konflik alias rute berarti tanda rute lama dan label publik aman tidak cocok bersih. Jangan pilih nama yang lebih aman lebih dulu. Bandingkan jalur tanda terima terminal, kepercayaan pemindai, rute kustodi, waktu rute, dan tanda objek. Alias dapat melindungi orang, menyembunyikan kantor, atau hanya membersihkan relai. Kunci teks rute akhir.
 
 ### ja_JP
 Status: draft_machine_or_llm
-Text: ルート別名衝突のヒントは、古いルート印と安全な公開ラベルを比較するが、最終的なルート真実は選ばない。先に端末受領経路、スキャナー信頼度、保管ルートを確認する。それでも項目が割れるなら、証拠ファミリーは未解決のままにし、きれいなラベルではなく指定された証拠目標を追う。
+Text: ルート別名衝突は、古いルート印と安全な公開ラベルがきれいに一致しない状態を示す。安全そうな名前を先に選ばない。端末受領票の経路、スキャナー信頼度、保管ルート、ルート時刻、物体印を比較する。別名は人を守るか、事務所を隠すか、中継を整えるだけかもしれない。最終ルート文はロックする。
 
 ### ko_KR
 Status: draft_machine_or_llm
-Text: 경로 별칭 충돌 힌트는 오래된 경로 표식과 안전한 공개 라벨을 비교하지만 최종 경로 진실을 선택하지 않는다. 먼저 단말 영수증 경로, 스캐너 신뢰도, 보관 경로를 확인한다. 그 필드들이 계속 갈라지면 증거 묶음을 미해결로 두고 깔끔한 라벨이 아니라 지정된 증거 목표를 따른다.
+Text: 경로 별칭 충돌은 오래된 경로 표식과 안전한 공개 라벨이 깔끔하게 맞지 않는다는 뜻이다. 더 안전한 이름을 먼저 고르지 말라. 터미널 영수증 경로, 스캐너 신뢰도, 보관 경로, 경로 시각, 물체 표식을 비교한다. 별칭은 사람을 보호하거나 사무실을 숨기거나 중계를 정리할 뿐일 수 있다. 최종 경로 문구는 잠근다.
 
 ### nl_NL
 Status: draft_machine_or_llm
-Text: Een hint voor routealiasconflict vergelijkt het oude routemerk met het veilige publieke label zonder de uiteindelijke routewaarheid te kiezen. Controleer eerst het terminalbonpad, scannervertrouwen en bewaringsroute. Als die velden verdeeld blijven, houd de bewijsfamilie onopgelost en volg het genoemde bewijsdoel in plaats van het schone label.
+Text: Een routealiasconflict betekent dat oud routemerk en veilig publiek label niet schoon overeenkomen. Kies niet eerst de veiligere naam. Vergelijk terminalbonpad, scannervertrouwen, bewaringsroute, routetijd en objectmerk. De alias kan een persoon beschermen, een kantoor verbergen of alleen een relay opschonen. Houd finale routetekst vergrendeld.
 
 ### pl_PL
 Status: draft_machine_or_llm
-Text: Wskazowka konfliktu aliasu trasy porownuje stary znak trasy z bezpieczna etykieta publiczna, ale nie wybiera koncowej prawdy trasy. Najpierw sprawdz sciezke paragonu terminala, zaufanie skanera i trase depozytu. Jesli te pola nadal sie rozchodza, zostaw rodzine dowodow nierozstrzygnieta i podazaj za nazwanym celem dowodu zamiast za czysta etykieta.
+Text: Konflikt aliasu trasy znaczy, ze stary znak trasy i bezpieczna publiczna etykieta nie pasuja czysto. Nie wybieraj najpierw bezpieczniejszej nazwy. Porownaj sciezke paragonu terminala, zaufanie skanera, trase depozytu, czas trasy i znak obiektu. Alias moze chronic osobe, ukryc biuro albo tylko wyczyscic przekaznik. Zablokuj finalny tekst trasy.
 
 ### pt_BR
 Status: draft_machine_or_llm
-Text: Uma dica de conflito de alias de rota compara a marca antiga da rota com o rotulo publico seguro sem escolher a verdade final da rota. Verifique primeiro o caminho do recibo do terminal, a confianca do scanner e a rota de custodia. Se esses campos ainda se dividirem, mantenha a familia de provas sem resolver e siga o alvo de prova nomeado em vez do rotulo limpo.
+Text: Um conflito de alias de rota significa que a marca antiga e o rotulo publico seguro nao combinam de forma limpa. Nao escolha primeiro o nome mais seguro. Compare caminho do recibo terminal, confianca do scanner, rota de custodia, horario da rota e marca do objeto. O alias pode proteger uma pessoa, ocultar um escritorio ou apenas limpar um rele. Trave o texto final.
 
 ### ru_RU
 Status: draft_machine_or_llm
-Text: Подсказка конфликта псевдонима маршрута сравнивает старую метку маршрута с безопасной публичной меткой, не выбирая окончательную правду маршрута. Сначала проверь путь терминальной квитанции, доверие сканера и маршрут хранения. Если эти поля все еще расходятся, оставь семью доказательств нерешенной и следуй названной цели проверки, а не чистой метке.
+Text: Конфликт псевдонима маршрута значит, что старая метка маршрута и безопасная публичная метка не совпадают чисто. Не выбирай сначала более безопасное имя. Сравни путь терминальной квитанции, доверие сканера, маршрут хранения, время маршрута и отметку объекта. Псевдоним может защищать человека, скрывать офис или лишь чистить ретранслятор. Финальный текст маршрута держи закрытым.
 
 ### uk_UA
 Status: draft_machine_or_llm
-Text: Підказка конфлікту псевдоніма маршруту порівнює стару мітку маршруту з безпечною публічною міткою, не вибираючи остаточну правду маршруту. Спершу перевір шлях термінальної квитанції, довіру сканера і маршрут зберігання. Якщо ці поля все ще розходяться, залиш родину доказів нерозв'язаною і йди за названою ціллю доказу, а не за чистою міткою.
+Text: Конфлікт псевдоніма маршруту означає, що стара мітка маршруту і безпечна публічна мітка не збігаються чисто. Не вибирай спершу безпечніше ім'я. Порівняй шлях термінальної квитанції, довіру сканера, маршрут зберігання, час маршруту і позначку об'єкта. Псевдонім може захищати людину, ховати офіс або лише чистити ретранслятор. Фінальний текст маршруту тримай замкненим.
 
 ### zh_CN
 Status: draft_machine_or_llm
-Text: 路线别名冲突提示会比较旧路线标记和安全公开标签，但不选择最终路线真相。先检查终端收据路径、扫描器置信度和保管路线。如果这些字段仍然分裂，就让证据族保持未解决，并追踪指定证明目标，而不是相信干净标签。
+Text: 路线别名冲突表示旧路线标记和安全公开标签并不干净吻合。不要先选择更安全的名字。对比终端收据路径、扫描器信任度、保管路线、路线时间和物件标记。别名可能保护一个人，隐藏一个办公室，或只是清理中继。最终路线文本保持锁定。

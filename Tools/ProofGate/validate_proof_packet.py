@@ -29,6 +29,19 @@ MIN_WIDTH = 1280
 MIN_HEIGHT = 720
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 BINARY_QUALITY_LABELS = {"low", "medium", "high", "ultra"}
+PLAYER_CAPTURE_CLAIM_FIELDS = (
+    "mayClaimPlayerCaptureVerified",
+    "may_claim_player_capture_verified",
+    "playerCaptureVerified",
+    "player_capture_verified",
+    "playerCaptureVerification",
+    "player_capture_verification",
+)
+PLAYER_CAPTURE_DISPOSITIONS = {
+    "PLAYER_CAPTURE_VERIFIED",
+    "PLAYER-CAPTURE VERIFIED",
+    "PLAYER_CAPTURE_ACCEPTED",
+}
 
 REQUIRED_VIEWS: tuple[tuple[int, str, str], ...] = (
     (1, "surface_coast_aegir_ui_off", "01_surface_coast_aegir_ui_off.png"),
@@ -293,6 +306,8 @@ def validate_manifest(
     if manifest.get("final_disposition") == "ACCEPTED_BY_HARNESS" and manifest.get("may_submit_as_runtime_proof") is not True:
         result.reject("MANIFEST_ACCEPTANCE_CONFLICT", "accepted disposition without runtime-proof flag")
 
+    validate_player_capture_overclaim(manifest, result)
+
     checks = manifest.get("derived_checks", {})
     if not isinstance(checks, dict):
         result.reject("DERIVED_CHECKS_MISSING", "derived_checks must be an object")
@@ -308,6 +323,23 @@ def validate_manifest(
     screenshots = manifest.get("screenshots")
     if not isinstance(screenshots, list):
         result.reject("SCREENSHOTS_FIELD_INVALID", "screenshots must be a list")
+
+
+def validate_player_capture_overclaim(manifest: dict[str, Any], result: GateResult) -> None:
+    """Reject manifest attempts to promote a static packet into player-capture truth."""
+    for field_name in PLAYER_CAPTURE_CLAIM_FIELDS:
+        if manifest.get(field_name) is True:
+            result.reject("PLAYER_CAPTURE_CLAIM_UNSUPPORTED", field_name)
+
+    disposition = str(manifest.get("final_disposition", "")).strip().upper()
+    if disposition in PLAYER_CAPTURE_DISPOSITIONS:
+        result.reject("PLAYER_CAPTURE_CLAIM_UNSUPPORTED", "final_disposition")
+
+    checks = manifest.get("derived_checks")
+    if isinstance(checks, dict):
+        for field_name in PLAYER_CAPTURE_CLAIM_FIELDS:
+            if checks.get(field_name) is True:
+                result.reject("PLAYER_CAPTURE_CLAIM_UNSUPPORTED", f"derived_checks.{field_name}")
 
 
 def validate_manifest_checksum(manifest_path: Path, result: GateResult) -> None:
@@ -572,6 +604,7 @@ def build_payload(
         "evidenceClass": "STATIC_FILESYSTEM",
         "maySubmitForHumanVisualReview": status == PASS_STATUS,
         "mayClaimPlayerCaptureVerified": False,
+        "playerCaptureClaimPolicy": "STATIC_GATE_NEVER_VERIFIES_PLAYER_CAPTURE",
         "packetRoot": normalize_path(packet_root),
         "packetId": packet_id,
         "sessionId": session_id,

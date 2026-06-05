@@ -24,9 +24,10 @@ This board is orchestration state, not Unity acceptance. It does not prove impor
 - Integrated Boyle, Mill, and Averroes static packets 21/22/23. They are owner routing packets only; no Unity/import/prefab/audio runtime proof was produced.
 - Local controller completed the token-failed matrix wave: material file technical properties, model import risk matrix, texture duplicate/hash matrix, and audio loudness/source dynamics matrix. Static CSV parse after integration: 29 files, 2094 rows, zero empty cells.
 - Local controller completed the static GUID reference graph: `Docs/AssetAudit/ASSET_GUID_REFERENCE_MATRIX_20260605.md/.csv`. CSV parses as 7420 rows.
-- Local controller completed active-route GUID triage: `Docs/AssetAudit/ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.md/.csv`. CSV parses as 800 rows. Current static CSV parse after GUID and P0 target-table integration is 37 files, 14114 rows, zero empty cells.
+- Local controller completed active-route GUID triage: `Docs/AssetAudit/ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.md/.csv`. CSV parses as 800 rows. Current curated static CSV parse after GUID, P0 target-table, file-map, and routing-synthesis integration is 38 files, 14124 rows, zero empty cells.
 - Local controller completed unreferenced GUID cleanup-review triage: `Docs/AssetAudit/ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.md/.csv`. CSV parses as 3488 rows. It is not deletion authorization.
 - Integrated target-table wave for owners 24-33: product-face material P0 rows `124`, prefab P0 rows `39`, audio P0 rows `6`, `h8_1475` readback manifest rows `120`, visual capture gaps `7`.
+- Integrated owner packets 34-36 and P0 target-table routing synthesis: active route triage packet, unreferenced cleanup-review packet, h8_1475 proof execution packet, and `ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.md/.csv`.
 - Current post-compaction process gate: CPU sample `76`; active `mcp-for-unity`, `Unity`, `Unity.ILPP.Runner`, `UnityPackageManager`, and `UnityShaderCompiler`. Unity readback/import/build/Play Mode remains blocked.
 
 ## Active Workers

@@ -46,6 +46,10 @@ This directory is the current asset-front control surface. It is not Unity accep
 27. `taskslocal/asset_system_20260605/ASSET_OWNER_26_UNITY_READBACK_NO_MUTATION_PACKET.md`
 28. `taskslocal/asset_system_20260605/ASSET_OWNER_27_UNDERWATER_VFX_SOURCE_PACKET.md`
 29. `taskslocal/asset_system_20260605/ASSET_OWNER_28_AUDIO_REMEDIATION_EXECUTION_PACKET.md`
+30. `Docs/AssetAudit/ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.md`
+31. `taskslocal/asset_system_20260605/ASSET_OWNER_34_ACTIVE_ROUTE_TRIAGE_PACKET.md`
+32. `taskslocal/asset_system_20260605/ASSET_OWNER_35_UNREFERENCED_SOURCE_CLEANUP_REVIEW_PACKET.md`
+33. `taskslocal/asset_system_20260605/ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md`
 
 ## Current P0 Blockers
 
@@ -74,6 +78,7 @@ Use these files before assigning or doing asset work:
 - Audio P0 remediation table: `AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.md` and `.csv`.
 - No-mutation Unity readback field manifest: `H8_1475_READBACK_FIELD_MANIFEST_20260605.md` and `.csv`.
 - Visual reference capture gap table: `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.md` and `.csv`.
+- P0 target-table routing synthesis: `ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.md` and `.csv`.
 - Consolidated next-action board: `ASSET_NEXT_ACTION_BOARD_20260605.md` and `.csv`.
 - Local authoring/tool inventory: `ASSET_AUTHORING_TOOL_INVENTORY_20260605.md` and `.csv`.
 - Audio taxonomy: `AUDIO_ASSET_TAXONOMY_20260605.md` and `.csv`.
@@ -145,6 +150,7 @@ If the gate is red, continue static/source documentation only.
 - Audio P0 remediation target owner: `AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.csv` before `ASSET_OWNER_28` audio remediation execution.
 - Unity readback field owner: `H8_1475_READBACK_FIELD_MANIFEST_20260605.csv` before `ASSET_OWNER_26` no-mutation readback execution.
 - Visual capture gap owner: `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.csv` before any product-face screenshot acceptance attempt.
+- P0 target routing synthesis owner: `ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.csv` before choosing between material, prefab, audio, h8_1475, or visual-gap owner routes.
 - Audio owner: `AUDIO_SOURCE_FOLDER_ROUTE_MATRIX_20260605.csv`, `AUDIO_ROUTING_REMEDIATION_SPEC_20260605.md`, `AUDIO_IMPORT_POLICY_EXCEPTION_TABLE_20260605.csv`, `AUDIO_LISTENING_PASS_QUEUE_20260605.csv`, and `audio_remediation_matrix_20260605.csv`.
 - Audio profile owner: `AUDIO_PROFILE_ROUTE_MATRIX_20260605.csv` before any MusicDirector/profile/cue route edit.
 - Audio direct-ref owner: `ASSET_OWNER_08_AUDIO_DIRECT_REF_UNWIRING_PACKET.md` and `AUDIO_DIRECT_REF_DETAIL_20260605.csv` before touching `Player.prefab` audio refs.
@@ -168,6 +174,9 @@ If the gate is red, continue static/source documentation only.
 - Unity no-mutation readback owner: `ASSET_OWNER_26_UNITY_READBACK_NO_MUTATION_PACKET.md` when the Unity process gate is clean and current product-face blockers need readback without save/mutation.
 - Underwater VFX source owner: `ASSET_OWNER_27_UNDERWATER_VFX_SOURCE_PACKET.md` before generating/prepping fish silhouette, marine snow, foam/contact, or shallow caustic source packs.
 - Audio remediation execution owner: `ASSET_OWNER_28_AUDIO_REMEDIATION_EXECUTION_PACKET.md` before P0 MusicDirector/direct-ref/import/source remediation execution.
+- Active-route execution owner: `ASSET_OWNER_34_ACTIVE_ROUTE_TRIAGE_PACKET.md` before converting active GUID triage rows into owner execution.
+- Unreferenced cleanup-review owner: `ASSET_OWNER_35_UNREFERENCED_SOURCE_CLEANUP_REVIEW_PACKET.md` before any quarantine or deletion-review planning; it is not deletion authorization.
+- h8_1475 proof execution owner: `ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md` when the Unity process gate is clean and canonical no-mutation visual/readback proof is needed.
 - Mesh/prefab owner: `PREFAB_FILE_TECHNICAL_PROPERTIES_20260605.csv`, `MESH_PREFAB_SOURCE_FOLDER_ROUTE_MATRIX_20260605.csv`, `MESH_PREFAB_REVIEW_QUEUE_20260605.csv`, and `MESH_PREFAB_PROMOTION_STATIC_TABLE_3214_20260605.md`.
 - UI sprite owner: `UI_SPRITE_ROUTE_STATIC_TABLE_3216_20260605.md`.
 

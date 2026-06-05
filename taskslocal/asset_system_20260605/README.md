@@ -119,7 +119,8 @@ Current start-here navigator:
 - `Docs/AssetAudit/AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.md/.csv` is the P0 audio routing/import/source remediation target table.
 - `Docs/AssetAudit/H8_1475_READBACK_FIELD_MANIFEST_20260605.md/.csv` is the no-mutation Unity readback field manifest for the next clean process gate.
 - `Docs/AssetAudit/VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.md/.csv` is the rejected/missing visual proof capture gap table.
-- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` records current static parse hygiene for 37 asset CSVs.
+- `Docs/AssetAudit/ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.md/.csv` is the compact crosswalk for assigning owners 24-36 from the P0 target/readback/capture tables.
+- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` records current static parse hygiene for 38 asset CSVs.
 - `Docs/AssetAudit/ASSET_AUTHORING_TOOL_INVENTORY_20260605.md/.csv` maps existing local offline/editor tools so future owners reuse known generators/scanners instead of inventing new ones.
 - `Docs/AssetAudit/AUDIO_PROFILE_ROUTE_MATRIX_20260605.md/.csv` maps MusicDirector/profile/cue-family blockers before audio owners touch route data.
 - `Docs/AssetAudit/AUDIO_SOURCE_FOLDER_ROUTE_MATRIX_20260605.md/.csv` maps audio source folders to long-bed, low-Q, direct-ref, placeholder, owner, and Addressables risks.
@@ -147,6 +148,9 @@ Current start-here navigator:
 - `taskslocal/asset_system_20260605/ASSET_OWNER_21_TEXTURE_STREAMING_MIP_STATIC_RISK_PACKET.md` is the exact packet for texture streaming mip, hero-scale source, large-source, and sRGB/name-risk remediation.
 - `taskslocal/asset_system_20260605/ASSET_OWNER_22_PREFAB_COLLIDER_LOD_ROW_RISK_PACKET.md` is the exact packet for prefab collider, LOD, primitive mesh, proxy/placeholder, and no-renderer row risk remediation.
 - `taskslocal/asset_system_20260605/ASSET_OWNER_23_AUDIO_SOURCE_TECHNICAL_REMEDIATION_PACKET.md` is the exact packet for long-bed, multichannel, source-rate, import, listening, lifecycle, and DSP route remediation.
+- `taskslocal/asset_system_20260605/ASSET_OWNER_34_ACTIVE_ROUTE_TRIAGE_PACKET.md` is the exact packet for converting active GUID triage rows into owner execution without static-to-runtime promotion.
+- `taskslocal/asset_system_20260605/ASSET_OWNER_35_UNREFERENCED_SOURCE_CLEANUP_REVIEW_PACKET.md` is the exact packet for unreferenced source cleanup review; it is not deletion authorization.
+- `taskslocal/asset_system_20260605/ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md` is the exact packet for canonical h8_1475 no-mutation Unity proof execution after a clean process gate.
 
 Do not:
 
@@ -186,6 +190,9 @@ Task files:
 - `ASSET_OWNER_26_UNITY_READBACK_NO_MUTATION_PACKET.md`
 - `ASSET_OWNER_27_UNDERWATER_VFX_SOURCE_PACKET.md`
 - `ASSET_OWNER_28_AUDIO_REMEDIATION_EXECUTION_PACKET.md`
+- `ASSET_OWNER_34_ACTIVE_ROUTE_TRIAGE_PACKET.md`
+- `ASSET_OWNER_35_UNREFERENCED_SOURCE_CLEANUP_REVIEW_PACKET.md`
+- `ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md`
 
 Active follow-up workers:
 
@@ -230,6 +237,9 @@ Latest owner packets:
 - For no-mutation Unity readback of active product-face blockers and h8_1475 readiness, use `ASSET_OWNER_26_UNITY_READBACK_NO_MUTATION_PACKET.md`.
 - For missing underwater fish/marine-snow/foam/caustic source generation and QA specs, use `ASSET_OWNER_27_UNDERWATER_VFX_SOURCE_PACKET.md`.
 - For P0 audio routing/import/source remediation execution planning, use `ASSET_OWNER_28_AUDIO_REMEDIATION_EXECUTION_PACKET.md`.
+- For active GUID route triage execution, use `ASSET_OWNER_34_ACTIVE_ROUTE_TRIAGE_PACKET.md`.
+- For unreferenced source cleanup review, use `ASSET_OWNER_35_UNREFERENCED_SOURCE_CLEANUP_REVIEW_PACKET.md`; never delete from the triage table alone.
+- For canonical h8_1475 proof execution, use `ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md`.
 
 Recipe/spec handoff:
 

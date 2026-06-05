@@ -3225,6 +3225,78 @@ Next valid orchestration move:
 
 - Create another isolated STATIC_DOC packet wave, or plan source admission only under a clean process gate with explicit source/bake owner. Source CSV, route-card, generated-page, h8bin, Unity, runtime, native localization, and publication claims remain forbidden from static bundles alone.
 
+## 2026-06-05 Asset / Runtime Controller Continuation 48
+
+User directive:
+
+- Continue without using the Goal tool.
+- Keep orchestrating autonomously.
+- Do not stop on one active Unity lane; keep independent static/runtime fronts moving while Unity is blocked.
+
+Evidence refresh:
+
+- Active controller front is asset/product-face proof plus runtime player/UI/movement baseline.
+- Latest process gate: CPU `73`.
+- Active blockers: `dotnet`, `Unity`, `Unity.ILPP.Runner`, `UnityPackageManager`, and multiple `UnityShaderCompiler` processes.
+- Unity readback/import/build/Play Mode remains blocked.
+
+Integrated asset packets:
+
+- `taskslocal/asset_system_20260605/ASSET_OWNER_34_ACTIVE_ROUTE_TRIAGE_PACKET.md`
+  - 25 tasks.
+  - Active GUID route execution packet.
+  - Keeps active-route rows `STATIC/PENDING UNITY READBACK`.
+  - Requires h8_1475 proof and clean Unity gate before any Unity work.
+- `taskslocal/asset_system_20260605/ASSET_OWNER_35_UNREFERENCED_SOURCE_CLEANUP_REVIEW_PACKET.md`
+  - 25 tasks.
+  - Cleanup-review packet only.
+  - Explicitly not deletion authorization.
+  - Protects generated textures and Gemini-watermark sources until QA/proof rejects them.
+- `taskslocal/asset_system_20260605/ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md`
+  - 30 tasks.
+  - Canonical no-mutation h8_1475 proof execution packet.
+  - Proof folder convention: `Docs/Screenshots/HectonProofPackets/h8_1475_<YYYYMMDD_HHMMSS>/`.
+  - Raw MCP PNGs remain rejected as acceptance proof.
+
+Integrated runtime packet:
+
+- `taskslocal/runtime_system_20260605/RUNTIME_OWNER_01_PLAYER_UI_MOVEMENT_VERTICAL_SLICE_PACKET.md`
+  - 30 tasks.
+  - Covers full playable baseline: walking/interior or shoreline movement, swimming, ascend/descend, camera feel, interaction affordance, HUD/visor essentials, PDA/pause/rebinding, zero-GC HUD updates, black-box telemetry, save/load proof.
+  - Static only; no Unity, Play Mode, profiler, GC, save/load, or runtime acceptance produced.
+- Added `taskslocal/runtime_system_20260605/README.md`.
+
+New/updated asset routing:
+
+- `Docs/AssetAudit/ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.md/.csv` is present.
+  - CSV parses as 5 rows, 14 columns, 0 empty cells.
+  - Dispatch crosswalk only; no Unity/runtime/visual/audio acceptance.
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv` now parses as 73 rows.
+- Curated asset CSV parse set now states 38 files, 14124 data rows, 0 empty cells.
+- Whole `Docs/AssetAudit/*.csv` folder currently has 42 CSV files, 14783 rows, and 1185 empty cells because older/sidecar sparse texture ledgers remain outside the curated zero-empty set.
+
+Updated navigation:
+
+- `Docs/AssetAudit/README.md`
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.md/.csv`
+- `taskslocal/asset_system_20260605/README.md`
+- `taskslocal/runtime_system_20260605/README.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md`
+
+Validation:
+
+- Scoped `git diff --check` clean for the touched routing/memory files.
+- Scoped mojibake scan clean for the touched routing/memory files.
+
+Current stance:
+
+- Product-face visual promotion remains rejected.
+- h8_1475 proof is still absent.
+- Full UI/movement/swim baseline is only packeted, not implemented or verified.
+- Next Unity owner must start from `ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md` only after a clean process gate.
+- Next runtime owner must start from `RUNTIME_OWNER_01_PLAYER_UI_MOVEMENT_VERTICAL_SLICE_PACKET.md` only after process/build gate clears and codebase signatures are verified.
+
 ## 2026-06-05 Documentation Completeness Continuation 48
 
 Integrated:
@@ -3283,6 +3355,54 @@ Boundary:
 - Non-English rows remain `draft_machine_or_llm`, not native-reviewed.
 - No source CSV admission, route-card generation, generated page, h8bin/DataMonolith bake, Unity placement, runtime string-pool extraction, public website/wiki export, or publication readiness is proven.
 
+## 2026-06-05 Documentation Completeness Continuation 50
+
+Integrated:
+
+- `Docs/Reports/DocumentationCompleteness_20260605/LORE_RS104_STATIC_RECHECK_20260605.md`.
+
+Validation:
+
+- RS104 manifest JSON parse: PASS.
+- RS104 bundle JSON parse: PASS.
+- Manifest/bundle packet counts: 3 / 3.
+- Missing localized surface keys: 0.
+- True readiness flags: 0.
+- P512-P514 static production packets: each has 15 locale headings, 1 source-authority row, and 14 draft rows.
+- UTF-8 BOM hits: 0.
+- U+FFFD hits: 0.
+- C1 mojibake codepoint hits: 0.
+- Latin-1 codepoint hits in RS104 bundle: 0.
+- Arabic/Hebrew/CJK codepoint ranges are present.
+
+Boundary:
+
+- RS104 remains static-source candidate evidence for P512-P514 only.
+- This is not native localization review, source CSV admission, route-card generation, h8bin/DataMonolith proof, Unity proof, runtime proof, website/wiki export proof, or publication readiness.
+
+## 2026-06-05 Lore System Continuation 51
+
+Integrated:
+
+- `Docs/Reports/Batch32/CONTROLLER_P515_P517_STATIC_PACKET_RECHECK_20260605.md`.
+- Updated Batch32 live board, source-admission ledger, and packet/source-state audit.
+
+Validation:
+
+- P515-P517 each have 15 locale headings.
+- P515-P517 each have 1 `source_authority` row and 14 `draft_machine_or_llm` rows.
+- UTF-8 BOM absent.
+- U+FFFD=0.
+- C1 mojibake codepoint hits=0.
+- Positive runtime/source-admission/native/DataMonolith/h8bin/publication readiness claims absent.
+- Proof boundary text present.
+- First-20 route boundary text present.
+
+Boundary:
+
+- P515-P517 are accepted STATIC_DOC packets only.
+- No RS105 release set, manifest, packet bundle, source CSV row, route card, generated page, h8bin/DataMonolith bake, Unity placement, runtime string-pool extraction, native localization review, public website/wiki publication, or player-build proof exists for P515-P517.
+
 ## 2026-06-05 Asset Controller Continuation 48
 
 Current front:
@@ -3293,7 +3413,7 @@ Current front:
 
 Last accepted evidence:
 
-- Static asset CSV parse hygiene only: 37 files, 14114 data rows, zero empty cells.
+- Static asset CSV parse hygiene only: 38 files, 14124 data rows, zero empty cells.
 - `ASSET_FRONT_FILE_MAP_20260605.csv` now parses as 68 rows.
 - Integrated target-table wave:
   - `PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.csv`: 124 rows.
@@ -3326,6 +3446,50 @@ Next valid action:
 
 - Run scoped static hygiene validation over touched asset docs.
 - Continue asset-only static/systematization while Unity gate is red.
+
+## 2026-06-05 Asset Controller Continuation 49
+
+Current front:
+
+- Asset-only controller pass continues: textures, audio/music, meshes, materials, prefabs, source packs, proof routing.
+- Active owner: controller-local asset front.
+
+Integrated:
+
+- `Docs/AssetAudit/ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.md`
+- `Docs/AssetAudit/ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.csv`
+- Existing packet rows now routed in the file map:
+  - `taskslocal/asset_system_20260605/ASSET_OWNER_34_ACTIVE_ROUTE_TRIAGE_PACKET.md`
+  - `taskslocal/asset_system_20260605/ASSET_OWNER_35_UNREFERENCED_SOURCE_CLEANUP_REVIEW_PACKET.md`
+  - `taskslocal/asset_system_20260605/ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md`
+
+Updated:
+
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.md/.csv`
+- `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md`
+- `Docs/AssetAudit/README.md`
+- `taskslocal/asset_system_20260605/README.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_WORKER_BOARD_20260605.md`
+
+Static validation target:
+
+- Curated asset CSV parse set: 38 files, 14124 rows, zero empty cells.
+- File-map CSV: 73 rows.
+- Whole-folder `Docs/AssetAudit/*.csv` hygiene is not claimed because older/sidecar sparse CSVs exist.
+
+Boundary:
+
+- No Unity readback/import/build/Play Mode.
+- No `Assets/` mutation.
+- No material, prefab, scene, Addressables, audio mixer, or project-setting edit.
+- No runtime, visual, audio, memory, profiler, or `0 B/frame` acceptance claim.
+
+Next valid action:
+
+- Run scoped hygiene validation again after synthesis integration.
+- If Unity gate remains red, continue static asset owner routing instead of waiting on Unity.
 
 ## 2026-06-05 Lore System Continuation 48
 
@@ -3545,7 +3709,7 @@ Local controller output:
 Controller updates:
 
 - Updated `Docs/AssetAudit/README.md`, `taskslocal/asset_system_20260605/README.md`, `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.md/.csv`, `Docs/Reports/AssetSystem_20260605/ASSET_WORKER_BOARD_20260605.md`, `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`, `Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md`, and `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md`.
-- Current static CSV parse after integration and later P0 target-table wave: 37 files, 14114 data rows, zero empty cells.
+- Current static CSV parse after integration, later P0 target-table wave, and routing synthesis: 38 files, 14124 data rows, zero empty cells.
 
 Boundary:
 
@@ -3828,7 +3992,7 @@ Static validation:
   - audio P0: 6 rows, 9 columns, 0 empty cells.
   - h8_1475 field manifest: 120 rows, 7 columns, 0 empty cells.
   - visual gap: 7 rows, 8 columns, 0 empty cells.
-- Asset static validation summary now states 37 CSV files, 14114 rows, 0 empty cells.
+- Asset static validation summary now states 38 CSV files, 14124 rows, 0 empty cells.
 
 Current process gate:
 

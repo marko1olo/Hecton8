@@ -47,7 +47,7 @@ This file proves only static parse hygiene for the curated current asset-front p
 | `Docs/AssetAudit/AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.csv` | 6 | 9 | 0 |
 | `Docs/AssetAudit/H8_1475_READBACK_FIELD_MANIFEST_20260605.csv` | 120 | 7 | 0 |
 | `Docs/AssetAudit/VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.csv` | 7 | 8 | 0 |
-| `Docs/AssetAudit/ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.csv` | 5 | 9 | 0 |
+| `Docs/AssetAudit/ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.csv` | 5 | 14 | 0 |
 
 Total current rows: `14124`.
 
@@ -73,8 +73,8 @@ The whole `Docs/AssetAudit/*.csv` folder currently contains `42` CSV files, not 
 
 Latest sampled gate before this summary:
 
-- CPU load: `49`.
-- Active blocked processes: `mcp-for-unity`, `Unity`, `Unity.ILPP.Runner`, `UnityPackageManager`, `UnityShaderCompiler`.
+- CPU load: `73`.
+- Active blocked processes: `dotnet`, `Unity`, `Unity.ILPP.Runner`, `UnityPackageManager`, `UnityShaderCompiler`.
 
 Unity readback, import, Addressables build, Play Mode, project-setting work, scene/prefab save, and runtime audio/visual proof remain blocked until a fresh gate is clean.
 
@@ -84,6 +84,6 @@ Unity readback, import, Addressables build, Play Mode, project-setting work, sce
 - GC: no runtime code changed; no GC claim.
 - Memory/VRAM: no residency proof; current data only improves owner routing.
 - Cadence: no runtime cadence changed.
-- Correctness: future asset owners now have parse-clean route documents, a static GUID reference graph, compact active-route GUID triage, and unreferenced cleanup-review triage; product acceptance remains blocked by Unity/runtime proof.
+- Correctness: future asset owners now have parse-clean route documents, a static GUID reference graph, compact active-route GUID triage, unreferenced cleanup-review triage, and compact P0 target-table routing synthesis; product acceptance remains blocked by Unity/runtime proof.
 
 Final status: `PENDING VERIFICATION`.

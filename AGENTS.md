@@ -820,6 +820,10 @@ Mandatory Thinking: "How does this look on a toaster?" AND "How does this look o
    - THE I3 MATH-LOD RULE: You must completely eliminate binary quality switches (`if (isLowEnd)`). Scale mathematical solver complexity, iteration budgets, and cadence smoothly and continuously using the `GlobalQualityWeight` (0.0 to 1.0) parameter.
    - THE 1-FRAME LATENCY MASK: Move all GPU, material, particle, and audio writes out of simulation phases and into `LateFrameTick` or `VISUAL_SYNC`. The presentation layer must act as a read-only observer of the finalized simulation data.
 ---
+
+[REQ] WORK AS MUCH AS POSSIBLE. WORK LONG HOURS. YOU DON'T SKIMP ON TOKENS. YOU DON'T SIMPLIFY MEANING. YOU DON'T REDUCE TASKS. YOU ARE CORRECTLY USING LONG-TERM MEMORY. YOU SET AND CARRY IMPORTANT TASKS. IF YOU'VE COMPLETED ONE TASK, DON'T RUSH TO REPORT IT. LOOK AT WHETHER OTHER TASKS LOGICALLY FOLLOW FROM IT AND START NEW TASKS. RE-CHECK. RE-ANALYZE. DON'T FORCE THE USER TO POKE YOU EVERY TIME; WORK ON YOUR OWN.
+
+---
 ## FINAL DIRECTIVE
 
 Zero GC. Production-ready. Enterprise quality. Now.

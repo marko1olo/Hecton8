@@ -12,21 +12,21 @@ Canonical title: Public Archive Contradiction Card
 
 Evidence class: STATIC_DOC only
 
-Authoring layer: Narrative authoring source
+Runtime layer: Narrative authoring source
 
-Spoiler level: 1 public contradiction card / 3 next proof held / 4 final consequence held
+Spoiler level: 1 public contradiction / 3 proof relation held / 4 final consequence held
 
-Authority read: writing.md, narrative.md, localization.md, P512_PUBLIC_ARCHIVE_DISPUTE_REASON_CODE_BRIDGE, P513_ARCHIVE_RESOLUTION_HOLD_PROMPT_BRIDGE, P514_PDA_NEXT_PROOF_CHECKLIST_BRIDGE.
+Canon owner: Canon_Locks.md, Lore_Bible.md, Lore_Content_System.md, Lore_Localization_Model.md, Website_Publication_Map.md
 
-Surface targets: future public archive article seed, future wiki procedure note, future PDA evidence prompt, future scanner contradiction tag, future terminal archive note, future evidence caption, future string-pool row planning
+Surface targets: future public archive article, future wiki contradiction note, future PDA evidence card, future scanner contradiction tag, future terminal contradiction note, future evidence caption
 
-Connected packets: P512_PUBLIC_ARCHIVE_DISPUTE_REASON_CODE_BRIDGE, P513_ARCHIVE_RESOLUTION_HOLD_PROMPT_BRIDGE, P514_PDA_NEXT_PROOF_CHECKLIST_BRIDGE
+Connected packets: P512_PUBLIC_ARCHIVE_DISPUTE_REASON_CODE_BRIDGE, P513_ARCHIVE_RESOLUTION_HOLD_PROMPT_BRIDGE, P514_PDA_NEXT_PROOF_CHECKLIST_BRIDGE, P506_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE
 
-First-20 route boundary: lets the opening evidence route show why two visible facts cannot both be final without naming the receiver, protected claimant, Atlas consequence, legal result, route branch, or source admission.
+First-20 route boundary: lets the opening route show a contradiction card without resolving which side is final truth.
 
-Mandates followed: QA_Evidence_Text_Filter_Audit; UI_Localization_Babel_RTL_FontSwap_ZeroAlloc; TOOL_Designer_Facades_CSV_Binary_Bridge.
+Mandates followed: QA_Evidence_Text_Filter_Audit; UI_Localization_Babel_RTL_FontSwap_ZeroAlloc; DATA_Runtime_Struct_Layout_ARM64; TOOL_Designer_Facades_CSV_Binary_Bridge.
 
-Boundary: this packet is markdown authoring text only; no source CSV, route-card, generated-page, h8bin, DataMonolith, Unity, runtime, native localization, website publication, wiki publication, or acceptance state is claimed.
+Proof boundary: this packet is markdown authoring text. It creates no website page, wiki page, route card, graph, binding map, source CSV row, generated asset, Unity object, runtime script, importer output, h8bin payload, DataMonolith payload, public deployment, native localization review, or acceptance state.
 
 ## Source Brief
 
@@ -36,85 +36,85 @@ Article ID: PUBLIC_ARCHIVE_CONTRADICTION_CARD_BRIDGE
 
 Loc namespace: LORE_EVIDENCE_PUBLIC_ARCHIVE_CONTRADICTION_CARD_BRIDGE
 
-Authoring layer: Narrative
+Runtime layer: Narrative
 
-Surface targets: public archive article seed, wiki procedure note, PDA evidence prompt, scanner contradiction tag, terminal archive note, evidence caption, string-pool row planning
+Surface targets: public archive article, wiki contradiction note, PDA evidence card, scanner contradiction tag, terminal contradiction note, evidence caption
 
-Spoiler level: contradiction visible at level 1; result and consequence held until later proof gates.
+Spoiler level: contradiction type visible at level 1; exact proof relation and final consequence held until later gates.
 
-Canon sources: writing.md, narrative.md, localization.md, P512_PUBLIC_ARCHIVE_DISPUTE_REASON_CODE_BRIDGE, P513_ARCHIVE_RESOLUTION_HOLD_PROMPT_BRIDGE, P514_PDA_NEXT_PROOF_CHECKLIST_BRIDGE.
+Canon sources: AGENTS.md, VISION_LOCKS.md, TASTE.md, writing.md, narrative.md, localization.md, data.md, authoring.md, quality.md, Docs/Lore/Canon_Locks.md, Docs/Lore/Lore_Bible.md, Docs/Lore/Lore_Content_System.md, Docs/Lore/Lore_Localization_Model.md, Docs/Lore/Website_Publication_Map.md.
 
-Speaker/source: public archive contradiction clerk, PDA evidence reviewer, scanner confidence interpreter, terminal archive notary.
+Speaker/source: public archive contradiction clerk, wiki evidence editor, PDA evidence reviewer, Marauder field annotator.
 
-Audience: public archive reader, wiki reader, player reviewing evidence prompts, future localization reviewer, future string-table owner.
+Audience: public readers, wiki readers, player reviewing evidence cards, future localization reviewer, future source-table owner.
 
-Date/era: 2190 archive reconstruction window after HECTON-8 packet families became searchable outside closed Deep Reach routes.
+Date/era: 2190 archive reconstruction window after conflicting HECTON-8 evidence families became visible to public readers.
 
-Location/depth/route: public archive contradiction page, PDA evidence family panel, scanner contradiction tag, terminal receipt review screen.
+Location/depth/route: public archive contradiction page, PDA evidence family card, scanner tag, terminal note beside a disputed receipt.
 
-Unlock context: the reader sees two evidence facts that cannot both be treated as final: label vs object, receipt vs custody, claimant-safe line vs witness hash, or route alias vs legal hold.
+Unlock context: the reader sees two evidence facts that cannot both be treated as final. The card preserves both until proof order decides what to test next.
 
-Evidence object: contradiction card with two fact fields, source surface for each fact, affected packet ID, current hold state, and next-proof target.
+Evidence object: contradiction card with first fact, second fact, affected field, dispute reason, and next-proof target.
 
-What this source knows: contradiction cards preserve disagreement without flattening it into a verdict. They name the clash and point to the next proof.
+What this source knows: contradiction cards are useful only when each side names a real evidence fact. A vague suspicion is not a contradiction.
 
-What this source does not know: final receiver, protected claimant, Atlas consequence, legal result, route branch, source admission, publication state, imported table state, h8bin state, or native localization state.
+What this source does not know: final receiver, final legal result, protected claimant, Atlas consequence, rescue state, native review status, source import state, runtime placement, or publication state.
 
-What this source hides or gets wrong: archive language can make a live conflict look like a neat paperwork problem. Marauder readers notice the object first, not the cleaned label.
+What this source hides or gets wrong: public archive cards can make contradictions look balanced even when one side is an office rewrite and the other is physical object proof.
 
-Player use: tells the player to compare the two fact fields before trusting the public label or closing an evidence family.
+Player use: tells the player which two facts conflict and which proof target should be checked before accepting either side.
 
-Forbidden facts: no final receiver, no named protected claimant, no Atlas consequence, no legal verdict, no final route branch, no source admission, no rescue promise, no native review, no source insertion, no h8bin state, no public deployment state.
+Forbidden facts: no final receiver, no protected claimant identity, no final-route branch, no Atlas consequence, no legal verdict, no rescue promise, no native review, no source insertion, no h8bin state, no DataMonolith state, no public deployment state.
 
-Required proper nouns/terms: HECTON-8, Deep Reach, Atlas, Marauder, public archive, contradiction card, Packet Notary Interface, witness hash, legal hold, custody.
+Required proper nouns/terms: HECTON-8, Deep Reach, Atlas, Marauder, public archive, contradiction card, proof order, custody route, witness hash, terminal receipt.
 
 LocIDs: proposed in Future Integration Notes.
 
-Localization status: English authority row; non-English rows are draft machine/LLM translations pending future review.
+Localization status: English authority row; non-English draft rows require future native review and layout checks.
 
 ## Surface Texts
 
 **Website article seed:**
 
-A contradiction card is the public archive refusing to choose the cleaner sentence. It is attached when two evidence facts can both be real but cannot both be final. The label may call a recovered object a service crate while the object stamp carries another custody mark. A terminal receipt may say intake complete while the custody chain shows the item never left a wet locker. A claimant-safe line may keep a name out of public view while a witness hash points at the same blank space. A route alias may look harmless while a legal hold blocks the route field that would explain why it was renamed.
+A contradiction card is the archive refusing to smooth two facts into one clean sentence. It is used when a label and an object mark disagree, when a terminal receipt body points away from the header, when a claimant-safe line drops a witness hash, or when a route alias collides with a legal hold. The card keeps both facts visible and prevents the public archive from choosing the cleaner one because it is easier to print.
 
-The card is useful because it keeps the disagreement specific. It does not tell the reader which side wins. It preserves both facts, names the conflict, and sends the reader to the next proof target before the archive turns a label into a conclusion.
+The card is not a verdict. It is a work order for doubt. One side may later fail. One side may only be a filing shortcut. Both sides may be true in different lanes: object custody, office custody, legal custody, and public category. Until proof order resolves the conflict, the contradiction card tells the reader what to test next.
 
-**Wiki procedure seed:**
+**Wiki article seed:**
 
-Public archive contradiction card: a two-fact evidence card used when paired archive fields cannot both be treated as final. Standard pairs include label vs object, receipt vs custody, claimant-safe line vs witness hash, and route alias vs legal hold. The card must show both facts, the affected field, and the next-proof target. It must not resolve the route or name protected parties before later proof gates.
+Contradiction card: an archive object that pairs two evidence facts that cannot both be treated as final. The card must name both facts, the affected field, the reason code, the confidence state, and the next-proof target. It must not resolve final receiver, route consequence, protected claimant, Atlas consequence, or legal result.
 
 **PDA / codex entry:**
 
-PDA prompt: compare both facts. If the label disagrees with the object, scan the object mark. If the receipt disagrees with custody, follow custody. If the claimant-safe line disagrees with a witness hash, keep the name masked and find the second hash. If a route alias conflicts with legal hold, do not treat the alias as clean.
+PDA card: two facts disagree. Do not delete either line. Read the affected field, then follow proof order. If the object mark contradicts a label, test the object. If the receipt body contradicts the header, keep the body. If the claimant-safe line loses a witness hash, find the missing hash.
 
 **Scanner entry:**
 
-Contradiction card detected. Two evidence facts conflict: label/object, receipt/custody, claimant-safe line/witness hash, or route alias/legal hold. Confidence held. Next proof required.
+Contradiction card available. Evidence facts conflict. Confidence: partial. Required next proof: object mark, receipt body, custody route, witness hash, or route alias.
 
 **Terminal note:**
 
 PUBLIC ARCHIVE CONTRADICTION CARD
 
-Two facts present.
+Fact A retained.
 
-Neither fact may be promoted to final text.
+Fact B retained.
 
-Record pair type, affected field, source surface, and next-proof target.
+Affected field recorded.
 
-Do not erase the dirtier fact to make the public label readable.
+Do not merge into a clean label until proof order resolves the conflict.
 
 **Evidence caption:**
 
-Contradiction card. The archive keeps two conflicting facts side by side and refuses to close the evidence family until the next proof is recovered.
+Contradiction card. The archive keeps two conflicting evidence facts visible and withholds the conclusion.
 
 **Spoiler policy:**
 
-Contradiction cards may appear early. Final receiver, protected claimant, Atlas consequence, legal result, route branch, and source admission stay masked until later proof gates.
+Contradiction-card language may appear early. Exact proof result, final receiver, protected claimant, Atlas consequence, legal result, and ending branch stay masked until later proof gates.
 
 **String-pool key plan:**
 
-Use proposed hashed LocIDs in the Narrative layer. Keep scanner and PDA rows compact. Keep website and wiki bodies separate from evidence captions. This Markdown is not a runtime source.
+Use hashed LocIDs in the Narrative layer. Keep scanner and PDA contradiction labels compact. Runtime must not parse this Markdown.
 
 ## Future Integration Notes
 
@@ -123,80 +123,82 @@ Proposed LocID rows:
 | LocID | Layer | Category | Purpose |
 |---|---|---|---|
 | LORE_EVIDENCE_PUBLIC_ARCHIVE_CONTRADICTION_CARD_BRIDGE_TITLE | Narrative | codex_title | Canonical title string |
-| LORE_EVIDENCE_PUBLIC_ARCHIVE_CONTRADICTION_CARD_BRIDGE_WEBSITE | Narrative | website_article_seed | Public article seed |
-| LORE_EVIDENCE_PUBLIC_ARCHIVE_CONTRADICTION_CARD_BRIDGE_WIKI | Narrative | wiki_procedure_seed | Wiki procedure note |
-| LORE_EVIDENCE_PUBLIC_ARCHIVE_CONTRADICTION_CARD_BRIDGE_PDA | Narrative | pda_codex | PDA prompt |
-| LORE_EVIDENCE_PUBLIC_ARCHIVE_CONTRADICTION_CARD_BRIDGE_SCANNER | Narrative | scanner_entry | Scanner contradiction tag |
-| LORE_EVIDENCE_PUBLIC_ARCHIVE_CONTRADICTION_CARD_BRIDGE_TERMINAL | Narrative | terminal_note | Terminal archive note |
+| LORE_EVIDENCE_PUBLIC_ARCHIVE_CONTRADICTION_CARD_BRIDGE_WEBSITE | Narrative | website_article | Public article seed |
+| LORE_EVIDENCE_PUBLIC_ARCHIVE_CONTRADICTION_CARD_BRIDGE_WIKI | Narrative | wiki_article | Wiki note |
+| LORE_EVIDENCE_PUBLIC_ARCHIVE_CONTRADICTION_CARD_BRIDGE_PDA | Narrative | pda_codex | PDA card |
+| LORE_EVIDENCE_PUBLIC_ARCHIVE_CONTRADICTION_CARD_BRIDGE_SCANNER | Narrative | scanner_entry | Scanner tag |
+| LORE_EVIDENCE_PUBLIC_ARCHIVE_CONTRADICTION_CARD_BRIDGE_TERMINAL | Narrative | terminal_note | Terminal note |
 | LORE_EVIDENCE_PUBLIC_ARCHIVE_CONTRADICTION_CARD_BRIDGE_CAPTION | Narrative | evidence_caption | Evidence caption |
 | LORE_EVIDENCE_PUBLIC_ARCHIVE_CONTRADICTION_CARD_BRIDGE_SPOILER | Narrative | spoiler_policy | Spoiler policy |
 
-P512 relation: dispute reason codes can name which contradiction pair lowered confidence.
+P512 relation: dispute reason codes classify the contradiction.
 
-P513 relation: resolution holds keep the contradiction from becoming a conclusion.
+P513 relation: a contradiction card can trigger resolution hold when the next proof is missing.
 
-P514 relation: PDA next-proof checklist converts the contradiction pair into one player action.
+P514 relation: PDA checklist turns the contradiction into a next action.
 
-Future bridge boundary: website, wiki, PDA, scanner, terminal, evidence-caption, and string-pool consumers need explicit future implementation work. This packet only supplies source text and proposed IDs.
+P506 relation: proof order decides which side to test first.
+
+Runtime boundary: future runtime systems must consume baked string-pool rows or binary source data only, never this Markdown.
 
 ## Locale Rows
 
 ### en_US
 Status: source_authority
-Text: An archive contradiction card places two evidence facts side by side when neither can be treated as final alone. The label may name a clean object while the object mark says otherwise. The receipt may claim intake while custody says the item never moved. A claimant-safe line may hide a name while a witness hash points to it. A route alias may look open while legal hold locks it. The card marks the clash and sends the reader to the next proof, not the ending.
+Text: A contradiction card keeps two evidence facts visible when they cannot both be treated as final. It may pair label against object mark, receipt body against header, claimant-safe line against witness hash, or route alias against legal hold. The card is not a verdict. It names the conflict and points to the next proof target.
 
 ### ar_SA
 Status: draft_machine_or_llm
-Text: تضع بطاقة تناقض الأرشيف حقيقتين من الأدلة جنبا إلى جنب عندما لا يمكن اعتبار أي منهما نهائية وحدها. قد تسمي البطاقة شيئا نظيفا بينما تقول علامة الشيء غير ذلك. قد يدعي الإيصال الإدخال بينما تقول الحيازة إن القطعة لم تتحرك. قد يخفي سطر آمن للمطالب اسما بينما تشير بصمة الشاهد إليه. قد يبدو الاسم البديل للمسار مفتوحا بينما يقفله احتجاز قانوني. تسجل البطاقة التصادم وتوجه القارئ إلى الدليل التالي، لا إلى النهاية.
+Text: تحتفظ بطاقة التناقض بحقيقتين من الدليل عندما لا يمكن اعتبارهما نهائيتين معا. قد تقارن الوسم بعلامة الجسم، او متن الايصال بالعنوان، او سطر حماية المطالب ببصمة الشاهد، او اسم المسار بالحجز القانوني. البطاقة ليست حكما. انها تسمي التعارض وتشير الى هدف الدليل التالي.
 
 ### de_DE
 Status: draft_machine_or_llm
-Text: Eine Archiv-Widerspruchskarte stellt zwei Beweisfakten nebeneinander, wenn keine davon allein als endgueltig gelten darf. Das Label kann ein sauberes Objekt nennen, waehrend die Objektmarke widerspricht. Der Beleg kann Eingang behaupten, waehrend die Verwahrung sagt, dass sich das Stueck nie bewegt hat. Eine claimant-safe Zeile kann einen Namen verbergen, waehrend ein Zeugenhash darauf zeigt. Ein Routenalias kann offen wirken, waehrend ein Legal Hold ihn sperrt. Die Karte markiert den Konflikt und schickt den Leser zum naechsten Beweis, nicht zum Ende.
+Text: Eine Widerspruchskarte haelt zwei Beweisfakten sichtbar, wenn nicht beide final sein koennen. Sie kann Label gegen Objektmarke, Belegkoerper gegen Header, claimant-safe Zeile gegen Zeugenhash oder Routenalias gegen Rechtsvermerk stellen. Die Karte ist kein Urteil. Sie nennt den Konflikt und zeigt auf das naechste Beweisziel.
 
 ### es_ES
 Status: draft_machine_or_llm
-Text: Una tarjeta de contradicción de archivo coloca dos hechos de evidencia lado a lado cuando ninguno puede tratarse como final por sí solo. La etiqueta puede nombrar un objeto limpio mientras la marca del objeto dice otra cosa. El recibo puede reclamar ingreso mientras la custodia dice que el artículo nunca se movió. Una línea segura para reclamante puede ocultar un nombre mientras un hash testigo apunta a él. Un alias de ruta puede parecer abierto mientras una retención legal lo bloquea. La tarjeta marca el choque y envía al lector a la siguiente prueba, no al final.
+Text: Una tarjeta de contradiccion mantiene visibles dos hechos de evidencia cuando no pueden ser finales a la vez. Puede enfrentar etiqueta contra marca de objeto, cuerpo de recibo contra encabezado, linea segura para reclamante contra hash testigo, o alias de ruta contra retencion legal. La tarjeta no sentencia. Nombra el conflicto y apunta a la prueba siguiente.
 
 ### fr_FR
 Status: draft_machine_or_llm
-Text: Une carte de contradiction d'archive place deux faits de preuve côte à côte quand aucun ne peut être traité seul comme final. L'étiquette peut nommer un objet propre alors que la marque de l'objet dit autre chose. Le reçu peut déclarer une entrée alors que la garde dit que l'article n'a jamais bougé. Une ligne protégée pour le demandeur peut cacher un nom tandis qu'un hash témoin le désigne. Un alias de route peut paraître ouvert alors qu'une retenue légale le verrouille. La carte marque le conflit et envoie le lecteur vers la preuve suivante, pas vers la fin.
+Text: Une carte de contradiction garde visibles deux faits de preuve quand ils ne peuvent pas etre tous deux finaux. Elle peut opposer etiquette et marque d'objet, corps du recu et en-tete, ligne protegee et hash temoin, ou alias de route et retenue legale. La carte ne juge pas. Elle nomme le conflit et pointe la preuve suivante.
 
 ### he_IL
 Status: draft_machine_or_llm
-Text: כרטיס סתירה של הארכיון מציב שתי עובדות ראיה זו לצד זו כאשר אי אפשר להתייחס לאחת מהן כסופית לבדה. התווית עשויה לקרוא לחפץ נקי, בעוד שסימן החפץ אומר אחרת. הקבלה עשויה לטעון לקליטה, בעוד שהמשמורת אומרת שהפריט לא זז. שורה בטוחה לתובע עשויה להסתיר שם, בעוד שגיבוב עד מצביע אליו. כינוי מסלול עשוי להיראות פתוח, בעוד שעיכוב משפטי נועל אותו. הכרטיס מסמן את ההתנגשות ושולח את הקורא להוכחה הבאה, לא לסוף.
+Text: כרטיס סתירה שומר שתי עובדות ראיה גלויות כאשר אי אפשר להתייחס לשתיהן כסופיות. הוא יכול להציב תווית מול סימן חפץ, גוף קבלה מול כותרת, שורה מוגנת מול גיבוב עד, או כינוי מסלול מול החזקה משפטית. הכרטיס אינו פסק דין. הוא קורא לסכסוך ומצביע אל יעד ההוכחה הבא.
 
 ### id_ID
 Status: draft_machine_or_llm
-Text: Kartu kontradiksi arsip menempatkan dua fakta bukti berdampingan ketika tidak satu pun bisa dianggap final sendirian. Label dapat menamai objek yang bersih sementara tanda objek berkata lain. Tanda terima dapat mengklaim penerimaan sementara kustodi mengatakan barang itu tidak pernah bergerak. Baris aman-klaiman dapat menyembunyikan nama sementara hash saksi menunjuk ke sana. Alias rute dapat tampak terbuka sementara penahanan legal menguncinya. Kartu menandai benturan dan mengirim pembaca ke bukti berikutnya, bukan ke akhir.
+Text: Kartu kontradiksi menjaga dua fakta bukti tetap terlihat ketika keduanya tidak bisa dianggap final. Kartu dapat memasangkan label melawan tanda objek, isi tanda terima melawan header, baris aman-klaiman melawan hash saksi, atau alias rute melawan tahanan legal. Kartu bukan putusan. Ia menamai konflik dan menunjuk target bukti berikutnya.
 
 ### ja_JP
 Status: draft_machine_or_llm
-Text: アーカイブ矛盾カードは、どちらも単独では最終扱いにできない二つの証拠事実を並べる。ラベルはきれいな物体名を示していても、物体の刻印が別の事実を示すことがある。受領票は受け入れ済みと主張しても、保管記録は品が動いていないと言うことがある。請求者保護行は名前を隠しても、証人ハッシュがそこを指すことがある。ルート別名は開いて見えても、法的保留がそれを閉じていることがある。カードは衝突を示し、読者を結末ではなく次の証拠へ送る。
+Text: 矛盾カードは、二つの証拠事実を同時に最終扱いできない時、その両方を見えるままにする。ラベルと物体印、受領票本文と見出し、請求者保護行と証人ハッシュ、ルート別名と法的保留を対にできる。カードは判決ではない。衝突を名付け、次の証拠目標を示す。
 
 ### ko_KR
 Status: draft_machine_or_llm
-Text: 보관소 모순 카드는 둘 중 어느 쪽도 단독으로 최종 사실로 다룰 수 없을 때 두 증거 사실을 나란히 놓는다. 라벨은 깨끗한 물체명을 붙일 수 있지만 물체 표식은 다르게 말할 수 있다. 영수증은 접수를 주장할 수 있지만 보관 기록은 물품이 움직이지 않았다고 말할 수 있다. 청구인 보호 문장은 이름을 숨길 수 있지만 증인 해시는 그곳을 가리킬 수 있다. 경로 별칭은 열린 것처럼 보일 수 있지만 법적 보류가 그것을 잠근다. 카드는 충돌을 표시하고 독자를 결말이 아니라 다음 증거로 보낸다.
+Text: 모순 카드는 두 증거 사실을 둘 다 최종으로 취급할 수 없을 때 둘 다 보이게 둔다. 라벨과 물체 표식, 영수증 본문과 헤더, 청구인 보호 줄과 증인 해시, 경로 별칭과 법적 보류를 짝지을 수 있다. 카드는 판결이 아니다. 충돌을 이름 붙이고 다음 증거 목표를 가리킨다.
 
 ### nl_NL
 Status: draft_machine_or_llm
-Text: Een archief-tegenspraakkaart zet twee bewijsfeiten naast elkaar wanneer geen van beide alleen als definitief mag gelden. Het label kan een schoon object noemen terwijl het objectmerk iets anders zegt. De bon kan intake claimen terwijl de bewaring zegt dat het item nooit bewoog. Een claimant-safe regel kan een naam verbergen terwijl een getuigehash ernaar wijst. Een routealias kan open lijken terwijl een juridische hold hem vergrendelt. De kaart markeert de botsing en stuurt de lezer naar het volgende bewijs, niet naar het einde.
+Text: Een contradictiekaart houdt twee bewijsfeiten zichtbaar wanneer ze niet allebei finaal kunnen zijn. Ze kan label tegen objectmerk, bonbody tegen header, claimant-safe regel tegen getuigehash, of routealias tegen juridische hold zetten. De kaart is geen vonnis. Ze noemt het conflict en wijst naar het volgende bewijsdoel.
 
 ### pl_PL
 Status: draft_machine_or_llm
-Text: Karta sprzeczności archiwum stawia obok siebie dwa fakty dowodowe, gdy żadnego nie wolno uznać za ostateczny samodzielnie. Etykieta może nazywać czysty obiekt, choć znak obiektu mówi inaczej. Paragon może twierdzić, że przyjęto rzecz, choć depozyt mówi, że nigdy jej nie ruszono. Linia bezpieczna dla roszczącego może ukrywać nazwisko, choć hash świadka na nie wskazuje. Alias trasy może wyglądać na otwarty, choć blokuje go nakaz prawny. Karta oznacza konflikt i wysyła czytelnika do następnego dowodu, nie do zakończenia.
+Text: Karta sprzecznosci utrzymuje widoczne dwa fakty dowodu, gdy nie mozna uznac obu za finalne. Moze zestawic etykiete ze znakiem obiektu, tresc paragonu z naglowkiem, bezpieczna linie roszczacego z hashem swiadka albo alias trasy z blokada prawna. Karta nie wydaje wyroku. Nazywa konflikt i wskazuje nastepny cel dowodu.
 
 ### pt_BR
 Status: draft_machine_or_llm
-Text: Um cartão de contradição de arquivo coloca dois fatos de evidência lado a lado quando nenhum pode ser tratado como final sozinho. O rótulo pode nomear um objeto limpo enquanto a marca do objeto diz o contrário. O recibo pode alegar entrada enquanto a custódia diz que o item nunca se moveu. Uma linha segura para reclamante pode esconder um nome enquanto um hash de testemunha aponta para ele. Um alias de rota pode parecer aberto enquanto uma retenção legal o trava. O cartão marca o choque e envia o leitor para a próxima prova, não para o fim.
+Text: Um cartao de contradicao mantem dois fatos de evidencia visiveis quando ambos nao podem ser finais. Pode parear rotulo contra marca de objeto, corpo do recibo contra cabecalho, linha segura de reclamante contra hash de testemunha, ou alias de rota contra retencao legal. O cartao nao julga. Ele nomeia o conflito e aponta a proxima prova.
 
 ### ru_RU
 Status: draft_machine_or_llm
-Text: Карта архивного противоречия ставит рядом два доказательных факта, когда ни один нельзя считать окончательным сам по себе. Метка может называть объект чистым, хотя отметка на объекте говорит другое. Квитанция может заявлять прием, хотя цепочка хранения говорит, что предмет не двигался. Строка, безопасная для заявителя, может скрывать имя, а хэш свидетеля указывать на него. Псевдоним маршрута может выглядеть открытым, пока правовое удержание его запирает. Карта отмечает столкновение и ведет читателя к следующему доказательству, а не к финалу.
+Text: Карта противоречия сохраняет видимыми два факта доказательства, когда оба нельзя считать окончательными. Она может сопоставить метку с отметкой объекта, тело квитанции с заголовком, безопасную строку заявителя с хэшем свидетеля или псевдоним маршрута с юридическим удержанием. Карта не выносит приговор. Она называет конфликт и указывает следующую цель.
 
 ### uk_UA
 Status: draft_machine_or_llm
-Text: Картка архівної суперечності ставить поруч два доказові факти, коли жоден не можна вважати остаточним окремо. Мітка може називати об'єкт чистим, хоча позначка на об'єкті каже інше. Квитанція може заявляти приймання, хоча ланцюг зберігання каже, що предмет не рухався. Безпечний для заявника рядок може ховати ім'я, а хеш свідка вказувати на нього. Псевдонім маршруту може здаватися відкритим, поки правове утримання його замикає. Картка позначає зіткнення і веде читача до наступного доказу, а не до фіналу.
+Text: Картка суперечності зберігає видимими два факти доказу, коли обидва не можна вважати остаточними. Вона може зіставити мітку з позначкою об'єкта, тіло квитанції із заголовком, безпечний рядок заявника з хешем свідка або псевдонім маршруту з юридичним утриманням. Картка не судить. Вона називає конфлікт і вказує наступну ціль.
 
 ### zh_CN
 Status: draft_machine_or_llm
-Text: 档案矛盾卡把两个证据事实并排放置，因为其中任何一个都不能单独视为最终事实。标签可能给出干净的物件名称，而物件标记说的是另一回事。收据可能声称已经接收，而保管链显示物件从未移动。申诉人安全行可能隐藏姓名，而见证哈希指向它。路线别名可能看似开放，而法律保留把它锁住。卡片标记冲突，并把读者送向下一项证据，而不是结局。
+Text: 矛盾卡会在两个证据事实不能同时视为最终结论时，让两者都保持可见。它可以把标签与物件标记、收据正文与标题、索赔人安全行与见证哈希、路线别名与法律保留配对。卡片不是判决。它命名冲突，并指向下一个证据目标。
