@@ -41,23 +41,28 @@ This file proves only static parse hygiene for the curated current asset-front p
 | `Docs/AssetAudit/ASSET_GUID_REFERENCE_MATRIX_20260605.csv` | 7420 | 21 | 0 |
 | `Docs/AssetAudit/ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.csv` | 800 | 15 | 0 |
 | `Docs/AssetAudit/ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.csv` | 3488 | 15 | 0 |
-| `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv` | 81 | 7 | 0 |
+| `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv` | 92 | 7 | 0 |
 | `Docs/AssetAudit/PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.csv` | 124 | 10 | 0 |
 | `Docs/AssetAudit/PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.csv` | 39 | 11 | 0 |
 | `Docs/AssetAudit/AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.csv` | 6 | 9 | 0 |
 | `Docs/Reports/AssetSystem_20260605/AUDIO_P0_STATIC_EXECUTION_REFINEMENT_20260605.csv` | 6 | 8 | 0 |
+| `Docs/Reports/AssetSystem_20260605/PRODUCT_FACE_STATIC_EXECUTION_REFINEMENT_20260605.csv` | 14 | 10 | 0 |
+| `Docs/AssetAudit/AudioVisual/audio_preview_waveform_stats_20260605.csv` | 11 | 5 | 0 |
+| `Docs/Audio/audio_asset_ledger.csv` | 138 | 13 | 0 |
+| `Docs/Audio/audio_remediation_matrix_20260605.csv` | 58 | 9 | 0 |
 | `Docs/AssetAudit/H8_1475_READBACK_FIELD_MANIFEST_20260605.csv` | 120 | 7 | 0 |
 | `Docs/AssetAudit/VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.csv` | 7 | 8 | 0 |
 | `Docs/AssetAudit/ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.csv` | 5 | 14 | 0 |
 | `Docs/AssetAudit/ASSET_OWNER_PACKET_INDEX_20260605.csv` | 36 | 13 | 0 |
 | `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.csv` | 7 | 7 | 0 |
 | `Docs/AssetAudit/H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.csv` | 14 | 10 | 0 |
+| `Docs/AssetAudit/LARGE_SOURCE_OWNER_REVIEW_20260605.csv` | 5 | 10 | 0 |
 
-Total current rows: `14195`.
+Total current rows: `14432`.
 
 ## Excluded Older/Sidecar CSV Boundary
 
-The whole `Docs/AssetAudit/*.csv` folder currently contains `44` CSV files; `40` of those are in this curated zero-empty set. The visual critique checklist CSV and audio P0 execution refinement CSV live under `Docs/Reports/AssetSystem_20260605/` and are also included above. The following older/sidecar CSVs are outside the curated zero-empty set and must not be treated as covered by the result above:
+The whole `Docs/AssetAudit/*.csv` folder currently contains `45` CSV files; `41` of those are in this curated zero-empty set. The visual critique checklist, audio P0 execution refinement, product-face execution refinement, and clean scoped audio CSVs outside `Docs/AssetAudit` are also included above. The following older/sidecar CSVs are outside the curated zero-empty set and must not be treated as covered by the result above:
 
 | File | Rows | Empty cells | Boundary |
 |---|---:|---:|---|
@@ -65,10 +70,11 @@ The whole `Docs/AssetAudit/*.csv` folder currently contains `44` CSV files; `40`
 | `Docs/AssetAudit/TEXTURE_ASSET_STATIC_LEDGER_20260605.csv` | 190 | 202 | Older/source ledger with known empty cells. |
 | `Docs/AssetAudit/TEXTURE_CANDIDATE_DISPOSITION_20260605.csv` | 190 | 152 | Older disposition table with known empty cells. |
 | `Docs/AssetAudit/TEXTURE_MATERIAL_USAGE_MAP_20260605.csv` | 141 | 831 | Usage-map sidecar with known sparse fields. |
+| `Docs/Audio/audio_profile_usage_20260605.csv` | 227 | 1919 | Sparse profile/direct-ref source scan sidecar. |
 
 ## Static Hygiene Result
 
-- CSV parse hygiene: 42 files parse with zero empty cells.
+- CSV parse hygiene: 47 files parse with zero empty cells.
 - Encoding hygiene: scoped replacement-character scan returned `0` in the latest run.
 - Diff hygiene: scoped `git diff --check` returned no whitespace errors in the latest run; Git reported CRLF normalization warnings only.
 - Language hygiene: current proof-language hits are negative caveats, evidence-boundary phrasing, or section headings; no Unity/runtime/visual/audio acceptance claim is accepted from this static pass.

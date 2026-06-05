@@ -54,6 +54,8 @@ This directory is the current asset-front control surface. It is not Unity accep
 35. `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.md`
 36. `Docs/AssetAudit/H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.md`
 37. `Docs/Reports/AssetSystem_20260605/AUDIO_P0_STATIC_EXECUTION_REFINEMENT_20260605.md`
+38. `Docs/AssetAudit/LARGE_SOURCE_OWNER_REVIEW_20260605.md`
+39. `Docs/Reports/AssetSystem_20260605/PRODUCT_FACE_STATIC_EXECUTION_REFINEMENT_20260605.md`
 
 ## Current P0 Blockers
 
@@ -77,8 +79,10 @@ Use these files before assigning or doing asset work:
 - Asset GUID reference matrix: `ASSET_GUID_REFERENCE_MATRIX_20260605.md` and `.csv`.
 - Asset GUID active-route triage: `ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.md` and `.csv`.
 - Asset GUID unreferenced source triage: `ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.md` and `.csv`.
+- Large source owner review: `LARGE_SOURCE_OWNER_REVIEW_20260605.md` and `.csv`.
 - Product-face material P0 table: `PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.md` and `.csv`.
 - Product-face prefab P0 table: `PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.md` and `.csv`.
+- Product-face static execution refinement: `Docs/Reports/AssetSystem_20260605/PRODUCT_FACE_STATIC_EXECUTION_REFINEMENT_20260605.md` and `.csv`.
 - Audio P0 remediation table: `AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.md` and `.csv`.
 - Audio P0 static execution refinement: `Docs/Reports/AssetSystem_20260605/AUDIO_P0_STATIC_EXECUTION_REFINEMENT_20260605.md` and `.csv`.
 - No-mutation Unity readback field manifest: `H8_1475_READBACK_FIELD_MANIFEST_20260605.md` and `.csv`.
@@ -153,8 +157,10 @@ If the gate is red, continue static/source documentation only.
 - Cross-asset GUID/reference owner: `ASSET_GUID_REFERENCE_MATRIX_20260605.csv` before assigning texture, audio, material, model, prefab, scene, vendor-path, or Addressables reachability work.
 - Active GUID triage owner: `ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.csv` before assigning P0/P1 active-world, direct-audio, scene-reachable, or vendor-path GUID rows.
 - Unreferenced GUID cleanup-review owner: `ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.csv` after active-route triage only; this file is not deletion authorization.
+- Large source owner review: `LARGE_SOURCE_OWNER_REVIEW_20260605.csv` before cleanup, import, retention, or residency decisions for large texture/audio rows.
 - Product-face material P0 target owner: `PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.csv` before `ASSET_OWNER_24` repair execution.
 - Product-face prefab P0 target owner: `PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.csv` before `ASSET_OWNER_25` primitive replacement execution.
+- Product-face execution refinement owner: `PRODUCT_FACE_STATIC_EXECUTION_REFINEMENT_20260605.csv` before any material/prefab repair owner mutates product-face routes.
 - Audio P0 remediation target owner: `AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.csv` before `ASSET_OWNER_28` audio remediation execution.
 - Audio P0 execution refinement owner: `AUDIO_P0_STATIC_EXECUTION_REFINEMENT_20260605.csv` before row-level MusicDirector or Player direct-ref audio P0 execution.
 - Unity readback field owner: `H8_1475_READBACK_FIELD_MANIFEST_20260605.csv` before `ASSET_OWNER_26` no-mutation readback execution.

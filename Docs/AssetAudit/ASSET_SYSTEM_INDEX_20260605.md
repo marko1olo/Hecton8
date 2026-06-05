@@ -128,6 +128,11 @@ Generated ledgers:
 - `Docs/AssetAudit/ASSET_OWNER_PACKET_INDEX_20260605.md/.csv`: 36-row owner packet index; IDs 29-33 are target-table worker outputs, not missing task packet files.
 - `Docs/AssetAudit/H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.md/.csv`: 14-row dependency graph for future no-mutation h8_1475 proof execution; order/risk only, not Unity proof.
 - `Docs/Reports/AssetSystem_20260605/AUDIO_P0_STATIC_EXECUTION_REFINEMENT_20260605.md/.csv`: 6-row static execution refinement for the six audio P0 blockers; not runtime mix or listening proof.
+- `Docs/AssetAudit/LARGE_SOURCE_OWNER_REVIEW_20260605.md/.csv`: 5-bucket large texture/audio source owner review; not deletion/import/residency proof.
+- `Docs/Reports/AssetSystem_20260605/PRODUCT_FACE_STATIC_EXECUTION_REFINEMENT_20260605.md/.csv`: 14-row product-face material/prefab execution refinement; not Unity readback, prefab mutation approval, or visual acceptance.
+- `Docs/AssetAudit/AudioVisual/audio_preview_waveform_stats_20260605.csv`: 11-row waveform preview stats; proof-adjacent only, not runtime mix/listening acceptance.
+- `Docs/Audio/audio_asset_ledger.csv`: 138-row production-facing static audio ledger; not runtime/import/Addressables acceptance.
+- `Docs/Audio/audio_remediation_matrix_20260605.csv`: 58-row audio remediation matrix; not runtime/import/Addressables acceptance.
 - `taskslocal/asset_system_20260605/ASSET_OWNER_34_ACTIVE_ROUTE_TRIAGE_PACKET.md`: future active GUID route triage packet.
 - `taskslocal/asset_system_20260605/ASSET_OWNER_35_UNREFERENCED_SOURCE_CLEANUP_REVIEW_PACKET.md`: future unreferenced source cleanup-review packet; no deletion authority.
 - `taskslocal/asset_system_20260605/ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md`: future no-mutation h8_1475 proof execution packet for clean Unity gate only.
@@ -419,7 +424,7 @@ Use `Docs/AssetAudit/VISUAL_ASSET_REVIEW_QUEUE_20260605.csv` for visual target o
 
 Latest asset-front parse summary: `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`.
 
-- Current asset CSV set: 42 files, 14195 data rows, zero empty cells.
+- Current asset CSV set: 47 files, 14432 data rows, zero empty cells.
 - `GENERATED_SOURCE_PACK_FILE_INVENTORY_20260605.csv`: 26 rows, 13 columns, zero empty cells.
 - `AUDIO_SOURCE_FOLDER_ROUTE_MATRIX_20260605.csv`: 15 folders, 17 columns, zero empty cells; covers 138 audio ledger rows and 28 direct prefab refs by folder.
 - `TEXTURE_SOURCE_FOLDER_ROUTE_MATRIX_20260605.csv`: 56 folders, 20 columns, zero empty cells; covers 190 texture ledger rows, 50 generated/source-only rows, 54 active-build-scene usage rows, 70 visible-route user rows, and 43 proxy/placeholder usage rows.
@@ -438,14 +443,19 @@ Latest asset-front parse summary: `Docs/Reports/AssetSystem_20260605/ASSET_STATI
 - `PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.csv`: 39 rows, 11 columns, zero empty cells; all rows remain prefab readback/replacement targets, not prefab acceptance.
 - `AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.csv`: 6 rows, 9 columns, zero empty cells; rows remain audio remediation targets, not runtime mix acceptance.
 - `AUDIO_P0_STATIC_EXECUTION_REFINEMENT_20260605.csv`: 6 rows, 8 columns, zero empty cells; row-level execution refinement only, not runtime mix or listening acceptance.
+- `PRODUCT_FACE_STATIC_EXECUTION_REFINEMENT_20260605.csv`: 14 rows, 10 columns, zero empty cells; product-face material/prefab execution refinement only, not Unity proof.
+- `audio_preview_waveform_stats_20260605.csv`: 11 rows, 5 columns, zero empty cells; waveform preview stats only, not listening proof.
+- `audio_asset_ledger.csv`: 138 rows, 13 columns, zero empty cells; static audio ledger only, not import/runtime proof.
+- `audio_remediation_matrix_20260605.csv`: 58 rows, 9 columns, zero empty cells; audio remediation queue only, not runtime proof.
 - `H8_1475_READBACK_FIELD_MANIFEST_20260605.csv`: 120 rows, 7 columns, zero empty cells; manifest is readback scope only, not proof by itself.
 - `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.csv`: 7 rows, 8 columns, zero empty cells; rows remain capture gaps/rejections, not visual acceptance.
 - `ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.csv`: 5 rows, 14 columns, zero empty cells; synthesis is dispatch routing only, not Unity/runtime/visual/audio acceptance.
 - `ASSET_OWNER_PACKET_INDEX_20260605.csv`: 36 rows, 13 columns, zero empty cells; index maps owner packet files and output-only target-table IDs, not execution completion.
 - `VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.csv`: 7 rows, 7 columns, zero empty cells; critique checklist maps mandatory references to h8_1475 reject gates, not visual acceptance.
 - `H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.csv`: 14 rows, 10 columns, zero empty cells; dependency graph orders future h8_1475 proof execution and triage, not acceptance.
+- `LARGE_SOURCE_OWNER_REVIEW_20260605.csv`: 5 rows, 10 columns, zero empty cells; large texture/audio source owner buckets only, not delete/import/residency acceptance.
 - `ASSET_STATIC_ROW_BLOCKER_SUMMARY_20260605.csv`: 16 rows, 9 columns, zero empty cells.
-- `ASSET_FRONT_FILE_MAP_20260605.csv`: 81 rows, 7 columns, zero empty cells.
+- `ASSET_FRONT_FILE_MAP_20260605.csv`: 92 rows, 7 columns, zero empty cells.
 - Current touched asset docs reported zero replacement characters.
 - Scoped asset-front `git diff --check` reported no whitespace errors.
 - Latest process gate sample remained blocked by CPU and active Unity/dotnet/import/compiler processes.

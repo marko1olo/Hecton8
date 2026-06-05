@@ -1,0 +1,24 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS107_NAVIGATION_LINK_SUPPRESSION_BRIDGE",
+  "status": "canonical_source_candidate_pending_controller_review_and_downstream_wiring",
+  "evidence_class": "STATIC_SOURCE",
+  "packets": [
+    "P521_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
+    "P522_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
+    "P523_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE"
+  ],
+  "authoring_packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P521_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P522_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P523_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

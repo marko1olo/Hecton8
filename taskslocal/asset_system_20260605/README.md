@@ -114,8 +114,10 @@ Current start-here navigator:
 - `Docs/AssetAudit/ASSET_GUID_REFERENCE_MATRIX_20260605.md/.csv` maps static GUID reachability for texture, audio, material, model, prefab, scene, vendor-path, and Addressables owner routing.
 - `Docs/AssetAudit/ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.md/.csv` condenses the GUID graph to P0/P1 active route owner lanes.
 - `Docs/AssetAudit/ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.md/.csv` isolates unreferenced cleanup-review rows after active-route work; it is not deletion authorization.
+- `Docs/AssetAudit/LARGE_SOURCE_OWNER_REVIEW_20260605.md/.csv` buckets large texture/audio source rows for owner review; it is not deletion, import, or residency proof.
 - `Docs/AssetAudit/PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.md/.csv` is the P0 material/texture target table for product-face repair owners.
 - `Docs/AssetAudit/PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.md/.csv` is the P0 prefab primitive/LOD/collider target table for product-face replacement owners.
+- `Docs/Reports/AssetSystem_20260605/PRODUCT_FACE_STATIC_EXECUTION_REFINEMENT_20260605.md/.csv` is the row-level execution refinement for product-face material/prefab P0 blockers; it is not Unity proof or visual acceptance.
 - `Docs/AssetAudit/AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.md/.csv` is the P0 audio routing/import/source remediation target table.
 - `Docs/Reports/AssetSystem_20260605/AUDIO_P0_STATIC_EXECUTION_REFINEMENT_20260605.md/.csv` is the row-level execution refinement for the six audio P0 blockers; it is not runtime mix or listening proof.
 - `Docs/AssetAudit/H8_1475_READBACK_FIELD_MANIFEST_20260605.md/.csv` is the no-mutation Unity readback field manifest for the next clean process gate.
@@ -124,7 +126,7 @@ Current start-here navigator:
 - `Docs/AssetAudit/H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.md/.csv` orders the future no-mutation h8_1475 proof packet dependencies; it is not execution proof.
 - `Docs/AssetAudit/ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.md/.csv` is the compact crosswalk for assigning owners 24-36 from the P0 target/readback/capture tables.
 - `Docs/AssetAudit/ASSET_OWNER_PACKET_INDEX_20260605.md/.csv` maps asset owner IDs 01-36 and marks 29-33 as output-only target-table worker IDs.
-- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` records current static parse hygiene for 42 curated CSV files, including the visual-reference critique checklist and audio P0 execution refinement outside `Docs/AssetAudit`.
+- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` records current static parse hygiene for 47 curated CSV files, including visual-reference critique, audio P0 execution refinement, product-face execution refinement, and clean scoped audio CSVs outside `Docs/AssetAudit`.
 - `Docs/AssetAudit/ASSET_AUTHORING_TOOL_INVENTORY_20260605.md/.csv` maps existing local offline/editor tools so future owners reuse known generators/scanners instead of inventing new ones.
 - `Docs/AssetAudit/AUDIO_PROFILE_ROUTE_MATRIX_20260605.md/.csv` maps MusicDirector/profile/cue-family blockers before audio owners touch route data.
 - `Docs/AssetAudit/AUDIO_SOURCE_FOLDER_ROUTE_MATRIX_20260605.md/.csv` maps audio source folders to long-bed, low-Q, direct-ref, placeholder, owner, and Addressables risks.

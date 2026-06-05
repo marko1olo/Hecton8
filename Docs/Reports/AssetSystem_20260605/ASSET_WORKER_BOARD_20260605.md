@@ -24,7 +24,7 @@ This board is orchestration state, not Unity acceptance. It does not prove impor
 - Integrated Boyle, Mill, and Averroes static packets 21/22/23. They are owner routing packets only; no Unity/import/prefab/audio runtime proof was produced.
 - Local controller completed the token-failed matrix wave: material file technical properties, model import risk matrix, texture duplicate/hash matrix, and audio loudness/source dynamics matrix. Static CSV parse after integration: 29 files, 2094 rows, zero empty cells.
 - Local controller completed the static GUID reference graph: `Docs/AssetAudit/ASSET_GUID_REFERENCE_MATRIX_20260605.md/.csv`. CSV parses as 7420 rows.
-- Local controller completed active-route GUID triage: `Docs/AssetAudit/ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.md/.csv`. CSV parses as 800 rows. Current curated static CSV parse after GUID, P0 target-table, file-map, routing-synthesis, owner-packet-index, visual-reference critique, h8_1475 proof dependency graph, and audio P0 execution refinement integration is 42 files, 14195 rows, zero empty cells.
+- Local controller completed active-route GUID triage: `Docs/AssetAudit/ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.md/.csv`. CSV parses as 800 rows. Current curated static CSV parse after GUID, P0 target-table, file-map, routing-synthesis, owner-packet-index, visual-reference critique, h8_1475 proof dependency graph, audio P0 execution refinement, and large source owner review integration is 43 files, 14202 rows, zero empty cells.
 - Local controller completed unreferenced GUID cleanup-review triage: `Docs/AssetAudit/ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.md/.csv`. CSV parses as 3488 rows. It is not deletion authorization.
 - Integrated target-table wave for owners 24-33: product-face material P0 rows `124`, prefab P0 rows `39`, audio P0 rows `6`, `h8_1475` readback manifest rows `120`, visual capture gaps `7`.
 - Integrated owner packets 34-36 and P0 target-table routing synthesis: active route triage packet, unreferenced cleanup-review packet, h8_1475 proof execution packet, and `ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.md/.csv`.
@@ -34,6 +34,9 @@ This board is orchestration state, not Unity acceptance. It does not prove impor
 - Integrated visual-reference critique checklist: `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.md/.csv`, 7 rows, mandatory h8_1475 screenshot reject gates only. It is not visual acceptance.
 - Integrated h8_1475 proof dependency graph: `Docs/AssetAudit/H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.md/.csv`, 14 rows, no-mutation proof execution order only. It is not Unity proof.
 - Integrated audio P0 static execution refinement: `Docs/Reports/AssetSystem_20260605/AUDIO_P0_STATIC_EXECUTION_REFINEMENT_20260605.md/.csv`, 6 rows, row-level execution order only. It is not runtime mix or listening proof.
+- Integrated large source owner review: `Docs/AssetAudit/LARGE_SOURCE_OWNER_REVIEW_20260605.md/.csv`, 5 buckets for large texture/audio source risk. It is not deletion, import, or runtime residency proof.
+- Spawned Planck `019e988f-aa0f-7d10-a626-cc6f57db3548` for product-face static execution refinement. Write scope: `Docs/Reports/AssetSystem_20260605/PRODUCT_FACE_STATIC_EXECUTION_REFINEMENT_20260605.md/.csv`.
+- Spawned Pauli `019e9890-0a11-72e1-9e42-ca8163629f82` for read-only asset-output integration gap scan. Write scope: none.
 - Current post-resume process gate: CPU sample `83`; active `mcp-for-unity`, `Unity`, `Unity.ILPP.Runner`, `UnityPackageManager`, and `UnityShaderCompiler`. Unity readback/import/build/Play Mode remains blocked.
 
 ## Active Workers
