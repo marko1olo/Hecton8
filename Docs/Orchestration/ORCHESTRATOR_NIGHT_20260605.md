@@ -3323,6 +3323,72 @@ Next valid orchestration move:
 
 - Create another isolated STATIC_DOC packet wave, or plan source admission only under a clean process gate with explicit source/bake owner.
 
+## 2026-06-05 Lore System Continuation 53
+
+Current front:
+
+- Active scope remains lore-system AppliedContent and future website/wiki/PDA/scanner/terminal/caption/string-pool integration metadata.
+- Active owner: controller-local.
+- Unity/build/source-bake/runtime work remains out of scope for this continuation.
+
+Integrated:
+
+- Controller-local STATIC_DOC wave completed P521-P523:
+  - `P521_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE.production.md`
+  - `P522_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE.production.md`
+  - `P523_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE.production.md`
+- Controller-local source prep completed RS107 `RS107_NAVIGATION_LINK_SUPPRESSION_BRIDGE` for P521-P523 only.
+- Output:
+  - `Docs/Lore/AppliedContent/release_sets/RS107_NAVIGATION_LINK_SUPPRESSION_BRIDGE.md`
+  - `Docs/Lore/AppliedContent/release_sets/RS107_NAVIGATION_LINK_SUPPRESSION_BRIDGE_manifest.json`
+  - `Docs/Lore/AppliedContent/packets/RS107_NAVIGATION_LINK_SUPPRESSION_BRIDGE.packets.json`
+  - `Docs/Reports/Batch32/CONTROLLER_RS107_NAVIGATION_LINK_SUPPRESSION_20260605.md`
+
+Validation:
+
+- P521-P523: 15 exact locale headings each; 1 source_authority row each; 14 draft_machine_or_llm rows each.
+- RS107 strict JSON parse PASS.
+- Manifest packet count 3.
+- Bundle packet count 3.
+- 15 locales per packet.
+- Required localized surface keys present.
+- UTF-8 BOM absent.
+- U+FFFD=0.
+- Explicit mojibake marker/codepoint hits=0.
+- Readiness flags false.
+
+Localization caveat:
+
+- P521-P523 non-English rows are ASCII-safe machine draft coverage only. They require native replacement/review before any player-facing non-English release.
+
+Updated:
+
+- `Docs/Reports/Batch32/BATCH32_LORE_SYSTEM_LIVE_BOARD.md`
+- `Docs/Reports/Batch32/CONTROLLER_SOURCE_ADMISSION_LEDGER_P461_P491_20260605.md`
+- `Docs/Reports/Batch32/CONTROLLER_PACKET_AND_SOURCE_STATE_AUDIT_P461_P495_20260605.md`
+
+Current state:
+
+- P461-P464 are source-admitted static-audited rows.
+- RS094 covers P467-P474 as STATIC_SOURCE candidate.
+- RS095 covers P465, P466, P475-P479 as STATIC_SOURCE candidate.
+- RS096 covers P480-P487 as STATIC_SOURCE candidate.
+- RS097 covers P488-P491 as STATIC_SOURCE candidate.
+- RS098 covers P492-P495 as STATIC_SOURCE candidate.
+- RS099 covers P496-P499 as STATIC_SOURCE candidate.
+- RS100 covers P500-P502 as STATIC_SOURCE candidate.
+- RS101 covers P503-P505 as STATIC_SOURCE candidate.
+- RS102 covers P506-P508 as STATIC_SOURCE candidate.
+- RS103 covers P509-P511 as STATIC_SOURCE candidate.
+- RS104 covers P512-P514 as STATIC_SOURCE candidate.
+- RS105 covers P515-P517 as STATIC_SOURCE candidate.
+- RS106 covers P518-P520 as STATIC_SOURCE candidate.
+- RS107 covers P521-P523 as STATIC_SOURCE candidate.
+
+Next valid orchestration move:
+
+- Create another isolated STATIC_DOC packet wave, update the public/wiki surface map through P523, or plan source admission only under a clean process gate with explicit source/bake owner. Source CSV, route-card, generated-page, h8bin, Unity, runtime, native localization, and publication claims remain forbidden from static bundles alone.
+
 ## 2026-06-05 Lore System Continuation 51
 
 Current front:
