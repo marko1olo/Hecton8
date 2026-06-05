@@ -3242,7 +3242,7 @@ Latest integrated asset/audio artifact:
 
 Latest validation:
 
-- Curated current asset CSV set: 42 files, 14195 rows, zero empty cells.
+- Curated current asset CSV set: 47 files, 14432 rows, zero empty cells.
 - Scoped touched-doc replacement-character scan: zero for current asset/audio docs. The orchestration memory still contains older mojibake markers from earlier history and is not a clean encoding artifact.
 - Scoped touched-doc `git diff --check`: clean.
 
@@ -3291,8 +3291,8 @@ Updated:
 
 Static validation after integration:
 
-- Curated current asset CSV set is now 42 files, 14195 rows, zero empty cells.
-- `ASSET_FRONT_FILE_MAP_20260605.csv` is now 81 rows.
+- Curated current asset CSV set is now 47 files, 14432 rows, zero empty cells.
+- `ASSET_FRONT_FILE_MAP_20260605.csv` is now 92 rows.
 - Whole `Docs/AssetAudit/*.csv` folder hygiene is still not claimed; older sparse texture sidecars remain outside the curated zero-empty set.
 
 Current stance:
@@ -3388,6 +3388,26 @@ Current state:
 Next valid orchestration move:
 
 - Create another isolated STATIC_DOC packet wave, update the public/wiki surface map through P523, or plan source admission only under a clean process gate with explicit source/bake owner. Source CSV, route-card, generated-page, h8bin, Unity, runtime, native localization, and publication claims remain forbidden from static bundles alone.
+
+## 2026-06-05 Lore System Continuation 54
+
+Current front:
+
+- Active scope remains lore-system AppliedContent surface-routing metadata.
+- Active owner: controller-local.
+
+Integrated:
+
+- Added `Docs/Reports/Batch32/CONTROLLER_PUBLIC_WIKI_SURFACE_MAP_P500_P523_20260605.md`.
+- Registered the map in `Docs/Reports/Batch32/BATCH32_LORE_SYSTEM_LIVE_BOARD.md`.
+
+Boundary:
+
+- Surface map only. No source CSV admission, route-card wiring, generated-page export, h8bin bake, DataMonolith payload, Unity placement, runtime string-pool extraction, native localization review, public website publication, wiki publication, or player-build proof.
+
+Next valid orchestration move:
+
+- Create another isolated STATIC_DOC packet wave, or plan source admission only under a clean process gate with explicit source/bake owner.
 
 ## 2026-06-05 Lore System Continuation 51
 
@@ -3502,10 +3522,10 @@ Integrated after continuation 51:
 
 Current static parse:
 
-- 42 curated CSV files.
-- 14195 data rows.
+- 47 curated CSV files.
+- 14432 data rows.
 - 0 empty cells.
-- `ASSET_FRONT_FILE_MAP_20260605.csv`: 81 rows.
+- `ASSET_FRONT_FILE_MAP_20260605.csv`: 92 rows.
 
 Side agents:
 
@@ -3623,7 +3643,7 @@ New/updated asset routing:
   - Dispatch crosswalk only; no Unity/runtime/visual/audio acceptance.
 - `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv` now parses as 92 rows after visual-reference critique, h8 proof dependency graph, audio P0 execution refinement, product-face refinement, large-source review, and Pauli clean CSV integration.
 - Curated asset CSV parse set now states 47 files, 14432 data rows, 0 empty cells after visual-reference critique, h8 proof dependency graph, audio P0 execution refinement, product-face refinement, large-source review, and clean scoped audio CSV integration.
-- Whole `Docs/AssetAudit/*.csv` folder currently has 42 CSV files, 14783 rows, and 1185 empty cells because older/sidecar sparse texture ledgers remain outside the curated zero-empty set.
+- Whole `Docs/AssetAudit/*.csv` folder currently has 45 CSV files, 14857 rows, and 1185 empty cells because older/sidecar sparse texture ledgers remain outside the curated zero-empty set.
 
 Updated navigation:
 
@@ -4552,7 +4572,7 @@ Latest integrated asset/audio artifact:
 
 Latest validation:
 
-- Curated current asset CSV set: 42 files, 14195 rows, zero empty cells.
+- Curated current asset CSV set: 47 files, 14432 rows, zero empty cells.
 - Scoped touched-doc replacement-character scan: zero for current asset/audio docs. The orchestration memory still contains older mojibake markers from earlier history and is not a clean encoding artifact.
 - Scoped touched-doc `git diff --check`: clean.
 
