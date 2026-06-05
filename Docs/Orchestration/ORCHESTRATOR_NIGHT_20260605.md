@@ -3297,6 +3297,70 @@ Current stance:
 - Next Unity owner must start from `ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md` only after a clean process gate.
 - Next runtime owner must start from `RUNTIME_OWNER_01_PLAYER_UI_MOVEMENT_VERTICAL_SLICE_PACKET.md` only after process/build gate clears and codebase signatures are verified.
 
+## 2026-06-05 World Placement Controller Continuation 49
+
+Integrated:
+
+- `taskslocal/world_system_20260605/WORLD_OWNER_01_ROCK_FLORA_CORAL_PLACEMENT_STAGING_PACKET.md`
+  - 26 tasks.
+  - Future staging only for rocks, flora, coral, and debris.
+  - Placement is explicitly deferred until base proof passes for water, sky/Aegir/moons, terrain, player/HUD, lighting, route materials, and h8_1475 screenshots.
+  - Accepted candidate pools: `Nature/Rocks/ProceduralFinals`, `Nature/Flora/Baked`, `Nature/Flora/BioForge/Shallows`, cleaned/generated source packs as source-only, and approved terrain/geology PBR families.
+  - Rejected visible route pools: `WorldProceduralProxy`, `WorldRuntime/ProceduralPlaceholders`, proxy/default/null/material routes, primitive visible meshes, and source-only generated images.
+  - Hard rule: placement is the last amplifier, not camouflage.
+- Added `taskslocal/world_system_20260605/README.md`.
+
+Boundary:
+
+- No Unity, import, Play Mode, scene/prefab/material mutation, screenshot, profiler, GC, memory, or visual acceptance produced.
+- This satisfies only staging/owner-route preparation for the user's requested later rock/flora/coral placement pass.
+
+## 2026-06-05 Runtime Controller Continuation 50
+
+Integrated:
+
+- `Docs/Reports/RuntimeSystem_20260605/PLAYER_UI_MOVEMENT_STATIC_ANCHOR_AUDIT_20260605.md/.csv`
+  - 28 rows.
+  - All rows `PENDING VERIFICATION`.
+  - All candidate anchors named in `RUNTIME_OWNER_01_PLAYER_UI_MOVEMENT_VERTICAL_SLICE_PACKET.md` exist.
+
+Static hard blockers:
+
+- `Assets/_Project/Scripts/World/HectonWorldShellController1428.cs`
+  - Static source risk: implements `IUpdatable`, writes transform/camera state in `Tick`, polls `Keyboard.current`/`Mouse.current`, and has legacy `Input.GetKey`, `Input.GetMouseButton`, and `Input.GetAxisRaw` fallbacks.
+  - Must be proven inactive or replaced by production player owner in later Unity/runtime task.
+- `Assets/_Project/Prefabs/HUD_Internal.prefab`
+  - Static YAML risk: `NASAPunk.Visor.SuitHUDScreenCompositor` with `forceScreenSpaceOverlay: 1`.
+  - Must be proven non-production or safely replaced if it drives gameplay HUD.
+
+Static favorable signals:
+
+- `Player.prefab` contains candidate production bindings for `PlayerInteraction`, `HectonPlayerMovement`, visor HUD, and suit HUD presentation.
+- `Suit_HUD_Canvas.prefab` contains candidate `SuitHUDV4CanvasOverlay` and `Hecton8.Interaction.InteractionUI`.
+- `HectonPlayerMovement`, `InputDispatcher`, and HUD text anchors show production-looking dispatcher, SignalBus, GlobalQualityWeight, black-box, and `SetCharArray` paths.
+
+Boundary:
+
+- No Unity, Play Mode, build, profiler, GCMonitor, screenshot, save/load, or scene readback produced.
+- Runtime route remains `PENDING VERIFICATION`.
+
+## 2026-06-05 Unity Tooling Controller Continuation 51
+
+Integrated:
+
+- `taskslocal/unity_system_20260605/UNITY_OWNER_00_MCP_GATE_AND_TOOLING_READINESS_PACKET.md`
+  - 25 tasks.
+  - Future no-mutation packet for proving process gate plus Unity MCP resource/tool availability.
+  - Explicit blocker line: no Unity readback/proof is possible without clean process gate and exposed MCP resources/tools.
+  - Does not allow blind process kill, Unity restart, package-manager reset, or destructive stop without controller/user confirmation.
+  - Handoff to `ASSET_OWNER_36` allowed only after clean readiness proof.
+- Added `taskslocal/unity_system_20260605/README.md`.
+
+Boundary:
+
+- No Unity mutation, Play Mode, build, package change, readback, screenshot, runtime proof, or h8_1475 execution produced.
+- Current h8_1475 remains blocked until `UNITY_OWNER_00` is executed under clean conditions and MCP resources/tools are exposed.
+
 ## 2026-06-05 Documentation Completeness Continuation 48
 
 Integrated:
@@ -3414,7 +3478,7 @@ Current front:
 Last accepted evidence:
 
 - Static asset CSV parse hygiene only: 38 files, 14124 data rows, zero empty cells.
-- `ASSET_FRONT_FILE_MAP_20260605.csv` now parses as 68 rows.
+- `ASSET_FRONT_FILE_MAP_20260605.csv` now parses as 73 rows.
 - Integrated target-table wave:
   - `PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.csv`: 124 rows.
   - `PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.csv`: 39 rows.
@@ -3458,6 +3522,8 @@ Integrated:
 
 - `Docs/AssetAudit/ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.md`
 - `Docs/AssetAudit/ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.csv`
+- `Docs/AssetAudit/ASSET_OWNER_PACKET_INDEX_20260605.md`
+- `Docs/AssetAudit/ASSET_OWNER_PACKET_INDEX_20260605.csv`
 - Existing packet rows now routed in the file map:
   - `taskslocal/asset_system_20260605/ASSET_OWNER_34_ACTIVE_ROUTE_TRIAGE_PACKET.md`
   - `taskslocal/asset_system_20260605/ASSET_OWNER_35_UNREFERENCED_SOURCE_CLEANUP_REVIEW_PACKET.md`
@@ -3475,9 +3541,15 @@ Updated:
 
 Static validation target:
 
-- Curated asset CSV parse set: 38 files, 14124 rows, zero empty cells.
-- File-map CSV: 73 rows.
+- Curated asset CSV parse set: 39 files, 14162 rows, zero empty cells.
+- File-map CSV: 75 rows.
 - Whole-folder `Docs/AssetAudit/*.csv` hygiene is not claimed because older/sidecar sparse CSVs exist.
+
+Latest process gate:
+
+- CPU sample `8`.
+- Active blockers: `dotnet`, `mcp-for-unity`, `Unity`, `Unity.ILPP.Runner`, `UnityPackageManager`, `UnityShaderCompiler`.
+- Unity readback/import/build/Play Mode remains blocked.
 
 Boundary:
 

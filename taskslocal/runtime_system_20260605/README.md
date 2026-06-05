@@ -10,6 +10,10 @@ This folder does not prove runtime behavior, Play Mode, player build, profiler, 
 
 - `RUNTIME_OWNER_01_PLAYER_UI_MOVEMENT_VERTICAL_SLICE_PACKET.md` - future implementation packet for walking/interior or shoreline movement, swimming, ascend/descend, camera feel, interaction affordance, HUD/visor essentials, PDA/pause/rebinding, zero-GC HUD updates, black-box telemetry, save/load proof, and first-20 route acceptance.
 
+## Current Reports
+
+- `Docs/Reports/RuntimeSystem_20260605/PLAYER_UI_MOVEMENT_STATIC_ANCHOR_AUDIT_20260605.md/.csv` - static anchor audit for 28 player/UI/movement candidates. All rows are `PENDING VERIFICATION`. Hard blockers: `HectonWorldShellController1428` direct input/transform shell risk and `HUD_Internal.prefab` `forceScreenSpaceOverlay: 1`.
+
 ## Hard Boundaries
 
 - Do not claim movement, swimming, UI, input, camera, HUD, PDA, pause, save/load, or first-20 route readiness from this packet alone.
@@ -22,6 +26,6 @@ This folder does not prove runtime behavior, Play Mode, player build, profiler, 
 
 Start with `RUNTIME_OWNER_01_PLAYER_UI_MOVEMENT_VERTICAL_SLICE_PACKET.md`.
 
-First required proof is no-mutation Unity readback of active player, movement owner, HUD owner, input owner, interaction prompt, camera graph, and whether `HectonWorldShellController1428` is still winning over production `Player.prefab`.
+First required proof is no-mutation Unity readback of active player, movement owner, HUD owner, input owner, interaction prompt, camera graph, `HUD_Internal` production status, and whether `HectonWorldShellController1428` is still winning over production `Player.prefab`.
 
 Final status remains `PENDING VERIFICATION`.

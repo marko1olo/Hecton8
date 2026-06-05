@@ -1,0 +1,26 @@
+{
+    "schema":  "H8.APPLIED_LORE_RELEASE_SET.V0",
+    "release_set_id":  "RS105_CONTRADICTION_REDACTION_ALIAS_BRIDGE",
+    "status":  "canonical_source_candidate_pending_controller_review_and_downstream_wiring",
+    "packets":  [
+                    "P515_PUBLIC_ARCHIVE_CONTRADICTION_CARD_BRIDGE",
+                    "P516_CLAIMANT_SAFE_REDACTION_AUDIT_PROMPT_BRIDGE",
+                    "P517_ROUTE_ALIAS_CONFLICT_RESOLUTION_HINT_BRIDGE"
+                ],
+    "authoring_packet_sources":  [
+                                     "Docs/Lore/AppliedContent/production_packets/P515_PUBLIC_ARCHIVE_CONTRADICTION_CARD_BRIDGE.production.md",
+                                     "Docs/Lore/AppliedContent/production_packets/P516_CLAIMANT_SAFE_REDACTION_AUDIT_PROMPT_BRIDGE.production.md",
+                                     "Docs/Lore/AppliedContent/production_packets/P517_ROUTE_ALIAS_CONFLICT_RESOLUTION_HINT_BRIDGE.production.md"
+                                 ],
+    "canonical_importer_ready":  false,
+    "runtime_ready":  false,
+    "native_localization_ready":  false,
+    "data_monolith_ready":  false,
+    "h8bin_ready":  false,
+    "unity_placement_ready":  false,
+    "generated_page_ready":  false,
+    "publication_ready":  false,
+    "runtime_reads_markdown":  false,
+    "authoring_only":  true,
+    "evidence_class":  "STATIC_SOURCE"
+}

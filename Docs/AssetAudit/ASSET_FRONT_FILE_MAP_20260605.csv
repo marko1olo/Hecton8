@@ -1,11 +1,11 @@
 FilePath,Domain,PrimaryUse,EvidenceClass,RowsOrScope,ReadWhen,NotProofOf
-Docs/AssetAudit/README.md,entry,Start-here guardrails P0 blockers hard rejections owner map process gate,STATIC_DOC,189_lines,Always first,Unity/runtime readiness
-Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.md,entry,Compact P0/P1 dispatch board,STATIC_DOC,61_lines,Before assigning owners,Unity/runtime readiness
+Docs/AssetAudit/README.md,entry,Start-here guardrails P0 blockers hard rejections owner map process gate,STATIC_DOC,201_lines,Always first,Unity/runtime readiness
+Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.md,entry,Compact P0/P1 dispatch board,STATIC_DOC,75_lines,Before assigning owners,Unity/runtime readiness
 Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.csv,entry,Machine-readable P0/P1 dispatch rows,STATIC_DOC,11_rows,Before assigning owners,Unity/runtime readiness
 Docs/AssetAudit/ASSET_STATIC_ROW_BLOCKER_SUMMARY_20260605.csv,entry,Cross-domain static row-risk dispatch summary,STATIC_DOC,16_rows,Before assigning packet owners,Unity/runtime readiness
-Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md,entry,Long-form asset disposition index,STATIC_DOC,439_lines,When domain context is needed,Unity/runtime readiness
-Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md,entry,Controller synthesis and static counts,STATIC_DOC,233_lines,When reporting current front,Unity/runtime readiness
-taskslocal/asset_system_20260605/README.md,entry,Local task packet and owner index,STATIC_DOC,249_lines,Before opening task packets,Unity/runtime readiness
+Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md,entry,Long-form asset disposition index,STATIC_DOC,448_lines,When domain context is needed,Unity/runtime readiness
+Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md,entry,Controller synthesis and static counts,STATIC_DOC,235_lines,When reporting current front,Unity/runtime readiness
+taskslocal/asset_system_20260605/README.md,entry,Local task packet and owner index,STATIC_DOC,260_lines,Before opening task packets,Unity/runtime readiness
 Docs/AssetAudit/TEXTURE_MATERIAL_FAMILY_ROUTE_MATRIX_20260605.csv,texture_material,Texture/material family route blockers,STATIC_SOURCE,10_rows,Before material-route edits,Material acceptance
 Docs/AssetAudit/TEXTURE_FILE_TECHNICAL_PROPERTIES_20260605.csv,texture_material,Texture source dimensions bytes alpha static-meta ledger matrix,STATIC_IMAGE_PROBE,140_rows,Before texture import material route or Addressables work,Unity import or visual acceptance
 Docs/AssetAudit/TEXTURE_SOURCE_FOLDER_ROUTE_MATRIX_20260605.csv,texture_material,Folder-level texture source route risk matrix,STATIC_SOURCE,56_rows,Before texture source/folder owner work,Material acceptance
@@ -72,3 +72,5 @@ taskslocal/asset_system_20260605/ASSET_OWNER_35_UNREFERENCED_SOURCE_CLEANUP_REVI
 taskslocal/asset_system_20260605/ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md,h8_1475_proof_owner_packet,h8_1475 no-mutation proof execution packet,STATIC_DOC,384_lines,When Unity process gate is clean and product-face proof is needed,Unity runtime or visual acceptance
 Docs/AssetAudit/ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.md,target_table_synthesis,Compact P0 target/readback/capture routing synthesis,STATIC_DOC,86_lines,Before assigning owners 24-33 from P0 target tables,Unity runtime visual audio acceptance
 Docs/AssetAudit/ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.csv,target_table_synthesis,Machine-readable P0 target/readback/capture routing synthesis,STATIC_SOURCE,5_rows,Before assigning owners 24-33 from P0 target tables,Unity runtime visual audio acceptance
+Docs/AssetAudit/ASSET_OWNER_PACKET_INDEX_20260605.md,owner_packet_index,Asset owner packet and output-only ID index,STATIC_DOC,79_lines,Before assigning or recreating asset owner packet IDs,Unity runtime visual audio acceptance
+Docs/AssetAudit/ASSET_OWNER_PACKET_INDEX_20260605.csv,owner_packet_index,Machine-readable asset owner packet and output-only ID index,STATIC_DOC,36_rows,Before assigning or recreating asset owner packet IDs,Unity runtime visual audio acceptance

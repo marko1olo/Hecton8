@@ -159,6 +159,39 @@ class ProofPacketGateTests(unittest.TestCase):
             self.assertEqual(code, 0, payload.get("rejectCodes"))
             self.assertEqual(payload["status"], gate.PASS_STATUS)
             self.assertFalse(payload["mayClaimPlayerCaptureVerified"])
+            self.assertEqual(payload["playerCaptureClaimPolicy"], "STATIC_GATE_NEVER_VERIFIES_PLAYER_CAPTURE")
+
+    def test_rejects_manifest_player_capture_claim_boolean(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="h8_proof_gate_") as tmp:
+            packet, manifest = self.build_valid_packet(Path(tmp))
+            manifest["mayClaimPlayerCaptureVerified"] = True
+            self.rewrite_manifest(packet, manifest)
+            code, payload = self.validate(packet)
+            self.assertEqual(code, 1)
+            self.assertFalse(payload["mayClaimPlayerCaptureVerified"])
+            self.assertIn("PLAYER_CAPTURE_CLAIM_UNSUPPORTED", payload["rejectCodes"])
+
+    def test_rejects_manifest_player_capture_claim_disposition(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="h8_proof_gate_") as tmp:
+            packet, manifest = self.build_valid_packet(Path(tmp))
+            manifest["final_disposition"] = "PLAYER_CAPTURE_VERIFIED"
+            self.rewrite_manifest(packet, manifest)
+            code, payload = self.validate(packet)
+            self.assertEqual(code, 1)
+            self.assertFalse(payload["mayClaimPlayerCaptureVerified"])
+            self.assertIn("PLAYER_CAPTURE_CLAIM_UNSUPPORTED", payload["rejectCodes"])
+
+    def test_rejects_derived_check_player_capture_claim(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="h8_proof_gate_") as tmp:
+            packet, manifest = self.build_valid_packet(Path(tmp))
+            checks = manifest["derived_checks"]
+            assert isinstance(checks, dict)
+            checks["playerCaptureVerified"] = True
+            self.rewrite_manifest(packet, manifest)
+            code, payload = self.validate(packet)
+            self.assertEqual(code, 1)
+            self.assertFalse(payload["mayClaimPlayerCaptureVerified"])
+            self.assertIn("PLAYER_CAPTURE_CLAIM_UNSUPPORTED", payload["rejectCodes"])
 
     def test_rejects_raw_png_set_without_manifest(self) -> None:
         with tempfile.TemporaryDirectory(prefix="h8_proof_gate_") as tmp:

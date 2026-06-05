@@ -51,11 +51,25 @@ New target tables:
 - `AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.md/.csv`: 6 P0 rows.
 - `H8_1475_READBACK_FIELD_MANIFEST_20260605.md/.csv`: 120 readback/proof rows.
 - `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.md/.csv`: 7 gap rows; `Docs/Screenshots/HectonProofPackets/` absent.
+- `ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.md/.csv`: 5-row routing crosswalk across material, prefab, audio, h8_1475 readback, and visual capture-gap target tables.
+- `ASSET_OWNER_PACKET_INDEX_20260605.md/.csv`: 36 owner-id rows; 31 present packet files, 5 output-only IDs for target-table workers 29-33.
+
+New execution packets:
+
+- `ASSET_OWNER_34_ACTIVE_ROUTE_TRIAGE_PACKET.md`: active GUID route triage execution packet.
+- `ASSET_OWNER_35_UNREFERENCED_SOURCE_CLEANUP_REVIEW_PACKET.md`: unreferenced source cleanup-review packet; no deletion authority.
+- `ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md`: h8_1475 no-mutation proof execution packet; clean Unity gate required.
 
 Current gate at dispatch:
 
 - CPU: `99`.
 - Active blockers: `Unity`, `Unity.ILPP.Runner`, `UnityPackageManager`, `UnityShaderCompiler`, `mcp-for-unity`.
+- Unity readback/import/build/Play Mode remains blocked.
+
+Latest gate after routing synthesis:
+
+- CPU: `8`.
+- Active blockers: `dotnet`, `Unity`, `Unity.ILPP.Runner`, `UnityPackageManager`, `UnityShaderCompiler`, `mcp-for-unity`.
 - Unity readback/import/build/Play Mode remains blocked.
 
 Final status: `PENDING VERIFICATION`.

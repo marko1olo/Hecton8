@@ -21,6 +21,7 @@ namespace Hecton8.EditorTools
         private const string LocalMcpUrl = "http://127.0.0.1:8088";
         private const string StartOnceFlagRelativePath = "Library/MCPForUnity/RunState/H8_MCP_HTTP_START_ONCE.flag";
         private const int BridgeStartTimeoutMilliseconds = 10000;
+        private const int ServerStartSettleMilliseconds = 3500;
         private const double StartFlagPollIntervalSeconds = 2.0;
 
         private static bool _isStartingBridge;
@@ -116,6 +117,10 @@ namespace Hecton8.EditorTools
 
             try
             {
+                bool serverReady = EnsureLocalHttpServerReady();
+                if (serverReady)
+                    await Task.Delay(ServerStartSettleMilliseconds);
+
                 object transport = ResolveStaticProperty("MCPForUnity.Editor.Services.MCPServiceLocator, MCPForUnity.Editor", "TransportManager");
                 Type modeType = Type.GetType("MCPForUnity.Editor.Services.Transport.TransportMode, MCPForUnity.Editor", false);
                 object httpMode = modeType != null ? Enum.Parse(modeType, "Http") : null;
@@ -168,6 +173,49 @@ namespace Hecton8.EditorTools
             }
         }
 
+        private static bool EnsureLocalHttpServerReady()
+        {
+            object server = ResolveStaticProperty("MCPForUnity.Editor.Services.MCPServiceLocator, MCPForUnity.Editor", "Server");
+            if (server == null)
+            {
+                Debug.LogWarning("[HectonMcpHttpBridge1428] MCP Server service not found.");
+                return false;
+            }
+
+            try
+            {
+                MethodInfo reachableMethod = server.GetType().GetMethod("IsLocalHttpServerReachable", BindingFlags.Instance | BindingFlags.Public);
+                if (reachableMethod != null && reachableMethod.Invoke(server, null) is bool reachable && reachable)
+                {
+                    Debug.Log("[HectonMcpHttpBridge1428] Local MCP HTTP server reachable before bridge start.");
+                    return true;
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("[HectonMcpHttpBridge1428] MCP HTTP reachability check failed: " + exception.Message);
+            }
+
+            try
+            {
+                MethodInfo startServerMethod = server.GetType().GetMethod("StartLocalHttpServer", BindingFlags.Instance | BindingFlags.Public, null, new[] { typeof(bool) }, null);
+                if (startServerMethod == null)
+                {
+                    Debug.LogWarning("[HectonMcpHttpBridge1428] MCP local HTTP server StartLocalHttpServer not found.");
+                    return false;
+                }
+
+                bool launched = startServerMethod.Invoke(server, new object[] { true }) is bool result && result;
+                Debug.Log("[HectonMcpHttpBridge1428] Local MCP HTTP server launch requested: " + launched);
+                return launched;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("[HectonMcpHttpBridge1428] MCP local HTTP server launch failed: " + exception.Message);
+                return false;
+            }
+        }
+
         private static void PollStartOnceFlag()
         {
             if (Application.isBatchMode)
@@ -183,7 +231,7 @@ namespace Hecton8.EditorTools
 
             Debug.Log("[HectonMcpHttpBridge1428] Polled MCP HTTP bridge start flag consumed.");
             EditorApplication.delayCall -= StartBridgeOnce;
-            EditorApplication.delayCall += StartBridgeOnce;
+            _ = StartBridgeOnceAsync();
         }
     }
 }

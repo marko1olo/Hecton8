@@ -388,6 +388,7 @@ def build_status(args: argparse.Namespace) -> dict[str, Any]:
         "warnings": warnings,
         "mayClaimRuntimeProof": False,
         "mayClaimVisualAccepted": False,
+        "mayClaimPlayerCaptureVerified": False,
     }
     return payload
 
@@ -417,6 +418,7 @@ def write_markdown_report(path: Path, payload: dict[str, Any]) -> None:
         "## ProofGate",
         f"- Candidate found: `{payload['proofPacketCandidateFound']}`",
         f"- Gate status: `{payload.get('latestProofGateResult', {}).get('status', '')}`",
+        "- May claim PLAYER-CAPTURE VERIFIED: `False`",
         "",
         "## Blockers",
     ]

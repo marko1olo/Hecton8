@@ -178,6 +178,8 @@ class UnityProcessProofWatchdogTests(unittest.TestCase):
             self.build_valid_packet(root)
             payload = watchdog.build_status(self.args(root, sample))
             self.assertEqual(payload["latestProofGateResult"]["status"], gate.PASS_STATUS)
+            self.assertFalse(payload["latestProofGateResult"]["mayClaimPlayerCaptureVerified"])
+            self.assertFalse(payload["mayClaimPlayerCaptureVerified"])
             self.assertFalse(payload["mayClaimVisualAccepted"])
             self.assertFalse(payload["mayClaimRuntimeProof"])
 
