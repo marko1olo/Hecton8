@@ -6672,9 +6672,11 @@ Current Owner08 facts:
 - `WorldProceduralProxy`, `WorldRuntime/ProceduralPlaceholders`, and primitive/product-face pools remain rejected for visible route placement.
 - Flora/geology/coral placement must not be used to mask broken surface water, black terrain, weak sky/Aegir, missing HUD, or absent player route proof.
 
-Validation pending:
+Validation:
 
-- New orchestration/index docs require replacement-character scan, question-run scan, and scoped `git diff --check`.
+- Corrected Python replacement-character scan over `FLORA_GEOLOGY_PLACEMENT_PREP_SYNTHESIS_20260605.md`, `H8_1475_PROOF_TOOL_INTEGRITY_SYNTHESIS_20260605.md`, and `taskslocal/night_controller_20260605/*` returned `0`.
+- Corrected Python question-run scan over the same scope returned `0`.
+- Scoped `git diff --check` returned CRLF normalization warning only.
 
 Current state:
 
