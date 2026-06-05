@@ -1,7 +1,7 @@
 # Runtime Owner 07 - Thermal DRS Black-Box Dump Route Packet
 
-Status: `PENDING VERIFICATION`
-Evidence class: `STATIC_DOC + STATIC_SOURCE_ANCHOR`
+Status: `SOURCE PATCHED / PENDING COMPILE AND UNITY PROOF`
+Evidence class: `STATIC_SOURCE_PATCH + EDITOR_LOG_TAIL_READ`
 Route moment: first-20 stability proof. Dynamic resolution failure must leave bounded evidence instead of a stale agent-owned artifact name.
 
 ## Mandates
@@ -21,7 +21,7 @@ Route moment: first-20 stability proof. Dynamic resolution failure must leave bo
 - `Docs/Reports/RuntimeSystem_20260605/THERMAL_DRS_STATIC_DEFECT_ANCHORS_20260605.md/.csv`
 - `taskslocal/runtime_system_20260605/RUNTIME_OWNER_06_THERMAL_DRS_COROUTINE_REPAIR_PACKET.md`
 
-## Static Facts
+## Original Static Facts
 
 - `ThermalDynamicResolutionAdapter.cs:35` defines `TelemetryCapacity = 300`.
 - `ThermalDynamicResolutionAdapter.cs:57` defines `DumpFileName = "Dump_13KRA.bin"`.
@@ -29,6 +29,18 @@ Route moment: first-20 stability proof. Dynamic resolution failure must leave bo
 - `ThermalDynamicResolutionAdapter.cs:2174-2209` builds a 20-byte header and fixed 64-byte telemetry row span only to compute `_blackBoxDumpHash`.
 - `ThermalDynamicResolutionAdapter.cs:2213` resolves the dump path through `ResolveBlackBoxDumpPathCold()`, but that method currently sets `_blackBoxDumpPath = null`.
 - Current static source sets `_blackBoxDumped = true` after hash calculation, not after a binary artifact is written.
+
+## Current Patched Facts
+
+- `Dump_13KRA` scan count in `ThermalDynamicResolutionAdapter.cs`: zero.
+- The dump route now resolves a cold owner/system filename with prefix `Dump_THERMAL_DRS_` under `Docs/AgentLogs`.
+- `ResolveBlackBoxDumpPathCold()` now assigns `_blackBoxDumpPath` instead of null.
+- `DumpBlackBoxOnceLocked(...)` now creates a bounded transient payload, writes the 20-byte header plus 300 fixed 64-byte DRS telemetry rows, hashes the emitted bytes, and calls `NativeFaultDumpWriter.TryWriteAll(...)`.
+- `_blackBoxDumped` is now set only when `NativeFaultDumpWriter.TryWriteAll(...)` returns true. Failed write paths publish `DumpIoFailureHash` to `GlobalTelemetryBus`.
+- `TelemetryCapacity = 300` and `DrsTelemetryEntryBytes = 64` are preserved.
+- `BinaryWriter`, `JsonUtility`, and `Dump_13KRA` scan count in the touched file: zero.
+- `git diff --check` on the touched C# file returned only a CRLF normalization warning.
+- Editor.log tail scan after Unity import showed no `error CS`, no `Compilation failed`, and no `ThermalDynamicResolutionAdapter` compile error, but this is log-tail evidence only, not full compile proof.
 
 ## Problem
 
@@ -73,4 +85,4 @@ Static source review shows a second defect: the DRS path marks the black box as 
 
 ## Acceptance State
 
-PENDING VERIFICATION. Static defect identified only. No runtime file was edited in this packet.
+SOURCE PATCHED. Full acceptance is still blocked until clean compile, Unity Console, Play Mode forced invalid DRS trigger, binary artifact proof, GCMonitor, and profiler proof exist.

@@ -32,10 +32,10 @@ materialSnapshot Assets/_Project/Art/Materials/World/Photic1469/MAT_H8_Shoreline
 
 visibleRendererSummary=
   H8_LeftPhoticCanyonWall_1446 material=MAT_H8_PhoticWetBasalt_1446 shader=Universal Render Pipeline/Lit center=(-25.73, 9.37, 89.00) size=(16.86, 8.90, 78.00)
-  H8_ORGANIC_SHORELINE_BREAKUP_1469 material=MAT_H8SurfaceWetBasaltReal_1428 shader=Universal Render Pipeline/Lit center=(22.36, 14.87, 90.54) size=(97.84, 4.46, 15.13)
-  H8_SURFACE_AEGIR_GAS_GIANT_REAL_1428 material=MAT_AegirGasGiant_Impostor_1428 shader=HECTON/Celestial/H8_AegirGasGiantImpostor_1428 center=(1624.85, 6707.97, -49397.27) size=(34586.31, 34586.31, 34586.31)
-  H8_SURFACE_CLOUD_DECK_LOW_1428 material=MAT_H8SurfaceCloudDeck_1428 shader=HECTON/Sky/Hecton_SurfaceCloudDeck_1428 center=(-60.00, 140.65, -304.00) size=(1420.00, 285.00, 0.00)
   H8_ORGANIC_SHORELINE_FOAM_FINE_1469 material=MAT_H8_ShorelineFoamFine_1469 shader=HECTON/World/H8_ShorelineFoamRibbon_1428 center=(24.00, 14.18, 91.50) size=(100.00, 0.00, 7.12)
-  Sphere material=MAT_SurfaceCloudPanorama_1428 shader=HECTON/Sky/H8_SurfaceCloudPanorama_1428 center=(-18.00, 18.65, 126.00) size=(8000.00, 8000.00, 8000.00)
-  H8_SURFACE_CLOUD_DECK_HIGH_1428 material=MAT_H8SurfaceCloudDeck_1428 shader=HECTON/Sky/Hecton_SurfaceCloudDeck_1428 center=(167.00, 190.65, -429.00) size=(860.00, 215.00, 0.00)
   H8_SURFACE_COASTAL_ISLAND_1428 material=MAT_H8_WetBasaltDetail_1464 shader=Universal Render Pipeline/Lit center=(25.00, 18.38, 58.00) size=(115.58, 11.13, 76.43)
+  Sphere material=MAT_SurfaceCloudPanorama_1428 shader=HECTON/Sky/H8_SurfaceCloudPanorama_1428 center=(-18.00, 18.65, 126.00) size=(8000.00, 8000.00, 8000.00)
+  H8_ORGANIC_SHORELINE_BREAKUP_1469 material=MAT_H8SurfaceWetBasaltReal_1428 shader=Universal Render Pipeline/Lit center=(22.36, 14.87, 90.54) size=(97.84, 4.46, 15.13)
+  H8_SURFACE_CLOUD_DECK_LOW_1428 material=MAT_H8SurfaceCloudDeck_1428 shader=HECTON/Sky/Hecton_SurfaceCloudDeck_1428 center=(-60.00, 140.65, -304.00) size=(1420.00, 285.00, 0.00)
+  H8_SURFACE_AEGIR_GAS_GIANT_REAL_1428 material=MAT_AegirGasGiant_Impostor_1428 shader=HECTON/Celestial/H8_AegirGasGiantImpostor_1428 center=(1624.85, 6707.97, -49397.27) size=(34586.31, 34586.31, 34586.31)
+  H8_SURFACE_CLOUD_DECK_HIGH_1428 material=MAT_H8SurfaceCloudDeck_1428 shader=HECTON/Sky/Hecton_SurfaceCloudDeck_1428 center=(167.00, 190.65, -429.00) size=(860.00, 215.00, 0.00)

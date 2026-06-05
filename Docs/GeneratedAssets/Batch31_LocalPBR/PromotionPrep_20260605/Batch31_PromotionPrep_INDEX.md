@@ -9,7 +9,7 @@
 This index lists all prepped packages in Batch 31 Promotion Prep (`PromotionPrep_20260605`).
 
 ## MRAO Preview Note
-The contact sheet and MRAO 2x2 previews are RGB inspection views that ignore alpha so packed channels are visible. Candidate alpha is not shader-target proof and must not be treated as emission-ready for every target.
+The contact sheet and MRAO 2x2 previews are RGB inspection views that ignore alpha so packed channels are visible. Candidate alpha is not shader-target proof and must not be treated as universal shader alpha proof.
 
 ## Channel Semantics Block
 Batch31 source masks remain blocked because generated MRAO-style candidates are not production `_MaskMap` inputs by filename. Promotion requires a shader target plus serialized material layout proof: repack to ARM and set the target layout, or deliberately target an MRAO decoder.

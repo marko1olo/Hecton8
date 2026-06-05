@@ -89,5 +89,5 @@
   "channel_semantics_blocker": "Candidate PNGs exist for inspection only. Promotion requires an explicit shader target plus material layout proof: repack to production ARM and serialize the target layout, or target a shader/material that decodes MRAO.",
   "source_channel_contract_risk": "Batch31 source maps are MRAO-style candidates. Production _MaskMap is ARM R=AO/G=Roughness/B=Metallic; Hecton_Master_Lit requires serialized _MasterShadowParams.w=3 for ARM, or w=0 only if the material deliberately targets true MRAO.",
   "required_owner_decision": "Choose shader target and serialized mask layout. For Hecton_Master_Lit, prove _MasterShadowParams.w=3 for ARM or w=0 for true MRAO before Unity import.",
-  "mrao_preview_note": "MRAO Candidate PNG alpha is candidate data only. RGB inspection previews ignore alpha so visible channels can be inspected; alpha must not be advertised as emission-ready for every shader target."
+  "mrao_preview_note": "MRAO Candidate PNG alpha is candidate data only. RGB inspection previews ignore alpha so visible channels can be inspected; alpha must not be advertised as universal shader alpha proof."
 }

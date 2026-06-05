@@ -5937,7 +5937,7 @@ Validation:
 
 - `PLAYER_UI_TOOL_PRODUCT_FACE_CROSSWALK_20260605.csv`: 10 rows, 9 columns, zero empty cells.
 - `THERMAL_DRS_STATIC_DEFECT_ANCHORS_20260605.csv`: 7 rows, 7 columns, zero empty cells.
-- Full runtime report CSV parse: 7 files, 72 rows total, zero empty cells.
+- Full runtime report CSV parse: 7 files, 78 rows total, zero empty cells.
 - Runtime crosswalk/packet link scan found expected h8 comparison and DRS defect references.
 - Runtime owner-number scan: owners 01, 02, 04, 05, 06, and 07 each have exactly one packet.
 - Runtime packet/crosswalk exact stale static-proof label and mojibake/replacement-character scan returned zero hits.
