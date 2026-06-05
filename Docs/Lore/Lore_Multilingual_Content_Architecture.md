@@ -1,7 +1,14 @@
 # HECTON-8 Multilingual Lore Architecture
 
 Status: working architecture.
+Evidence class: STATIC_DOC / CONTENT_CORPUS.
 Purpose: make the whole lore base translation-ready without turning writing into spreadsheet sludge.
+
+## Authority And Proof Boundary
+
+Use `narrative.md` for canon truth, evidence order, scene packet, unlock route, and mission/text placement. Use `writing.md` for artifact prose, voice, source knowledge, and multilingual packet shape. Use `localization.md` for accepted locale statuses, stable string IDs, RTL/CJK/fallback, and runtime text proof. Use `textes.md` for real-world public copy, store copy, social posts, creator outreach, captions, and publication-facing claims.
+
+This architecture is STATIC_DOC / CONTENT_CORPUS evidence only. It does not prove Unity placement, player-visible runtime delivery, h8bin/Data Monolith bake readiness, public website publication, native review, profiler/GC status, or platform readiness.
 
 ## Working Rule
 
@@ -120,7 +127,7 @@ Legal/insurance/corporate systems remain background pressure unless they become 
 6. QA checks scanner/PDA/terminal/subtitle/web layouts.
 7. Approved text bakes into runtime data.
 
-No runtime translation generation. No source-voice rewriting during localization. No translated keys.
+No runtime translation generation. No source-voice rewriting during localization. No translated keys. Do not claim `runtime_ready` until the assigned surface has its proof artifact; do not claim public publication readiness from exported markdown or generated pages alone.
 
 ## Runtime Boundary
 
@@ -138,6 +145,8 @@ Human-readable lore files are cold authoring sources. Build tools can parse them
 - optional seed tags for placement/discovery order.
 
 The runtime does not read markdown, parse prose, search article links, translate strings, or infer source voice.
+
+The runtime boundary is not satisfied by this document or by markdown count. It requires baked static data, current h8bin/Data Monolith evidence where applicable, ownership/wiring proof, and runtime/profiler/GC evidence for changed delivery systems.
 
 ## Data-Oriented Delivery
 

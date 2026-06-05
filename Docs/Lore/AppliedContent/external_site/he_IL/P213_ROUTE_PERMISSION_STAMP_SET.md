@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
 # Route Permission Stamp Set
 
-Route Permission Stamp Set provides visual vocabulary for HECTON-8 access props.
+Route Permission Stamp Set gives access props a visual vocabulary: worker, door or vehicle, job family, and later contradiction.
 
 ## Scanner
 

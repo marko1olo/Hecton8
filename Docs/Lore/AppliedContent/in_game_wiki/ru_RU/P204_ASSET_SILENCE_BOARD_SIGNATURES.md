@@ -10,13 +10,13 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
 # Подписи Asset Silence Board
 
-Подписи Asset Silence Board показывают, как бюрократия превращает людей в missing load.
+Asset Silence Board signatures let the player trace how bureaucracy converts people into missing load categories.
 
 ## Scanner
 

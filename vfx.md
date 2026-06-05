@@ -1,7 +1,14 @@
 # HECTON-8 VFX, Particles, And Visual Consequences Bible
 
 Status: AUTHORING LAW / STATIC DOC / RUNTIME PROOF NOT IMPLIED
+Evidence class: STATIC_DOC
 Scope: particles, GPU VFX, leaks, sparks, silt, bubbles, caustic response, tool effects, impact effects, damage feedback, pooling, and VFX proof gates.
+
+## First-20 Route Hook
+
+- First-20 moment: first exit, swim, resource pickup, tool interaction, and first hazard response need owned visual consequences: silt wake, bubbles, leaks, tool heat, sonar pulses, damage feedback, and biolum route/danger cues.
+- Route blocker removed: prevents the opening route from using decorative particles, unowned glow, or full-screen noise instead of cause-readable effects tied to survival, tools, water, machinery, or threats.
+- Proof class: STATIC_DOC only; route acceptance still requires compact/normal captures, effect owner and pool proof, spam prevention, memory/VRAM notes for textures, and profiler/GPU evidence when runtime effects change.
 
 ## Prime Law
 
@@ -28,6 +35,8 @@ Production families:
 - narrative/evidence: black-box corruption, archive static, ghosted sensor replay.
 
 Each family has event id, owner, lifetime, pool, tier scaling, and rejection screenshot.
+
+Biolum VFX may carry beauty, navigation, and danger at the same time. A pulse can make a route readable, sell alien ecology, mark a resource or creature state, and also create attraction/noise/risk through an owner system. Random always-on glow that only hides weak lighting or empty art is rejected.
 
 ## Pooling And Runtime Law
 

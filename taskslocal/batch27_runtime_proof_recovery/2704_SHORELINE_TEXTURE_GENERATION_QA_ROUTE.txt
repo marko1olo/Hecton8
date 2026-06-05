@@ -1,0 +1,51 @@
+ID: 2704
+Role: Shoreline Texture Generation QA Route Auditor
+Mode: report-only, no browser/image generation/import. Do not edit project files except the required report.
+
+Objective:
+Turn the Batch26 generated-asset findings into an executable, QA-gated generation and staging route for wet basalt, shell/sand, foam/salt, caustics, and algae/biofilm sources.
+
+Evidence basis:
+- Active photic terrain uses rejected `TX_H8_WetBasaltShoreline_Albedo_1428`.
+- Batch26 2605 found no generated source ready for derivation or Unity import.
+- User permits browser/Gemini generation, but no source may enter `Assets/**` without QA and controlled import.
+
+Read first:
+- `AGENTS.md`
+- `TASTE.md`
+- `VISION_LOCKS.md`
+- `3DMODEL_TEXTURES_MATERIALS.md`
+- `3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md`
+- `PROCEDURAL_ASSET_PIPELINE.md`
+- `terrain.md`
+- `water.md`
+- `Docs/Reports/Batch26/2603_SHORELINE_TERRAIN_ART_ROUTE_AUDIT.md`
+- `Docs/Reports/Batch26/2605_GENERATED_ASSET_INTAKE_STAGING_AUDIT.md`
+
+Owned inspection scope:
+- `Docs/GeneratedAssets/Gemini/**`
+- `Tools/GeminiTextureIntakeAudit.py`
+- existing prompt packs under `Docs/GeneratedAssets/Gemini/Prompts/**`
+- no new image files unless the user separately assigns generation
+
+Tasks:
+1. Define final Batch27 output folders for generated sources, manifests, QA, and previews.
+2. Convert 2605 prompts into an ordered generation runbook with stop conditions.
+3. Define exact sidecar manifest template.
+4. Define QA commands, 2x2/3x3 preview requirements, pass/reject thresholds, and manual visual checks.
+5. Define derivation gates for normal/MRAO/wetness/foam/caustic channels.
+6. Define Unity import gate, target material family names, and rollback requirements without writing Assets now.
+7. Define how route owner should replace broad rejected basalt input after accepted sources exist.
+8. Include Low/Mid/High/Ultra texture residency consequences.
+
+Required report:
+`Docs/Reports/Batch27/2704_SHORELINE_TEXTURE_GENERATION_QA_ROUTE.md`
+
+Report must include:
+- generation queue;
+- prompt IDs;
+- sidecar manifest template;
+- QA commands;
+- pass/reject labels;
+- import gate;
+- no-Assets staging law.

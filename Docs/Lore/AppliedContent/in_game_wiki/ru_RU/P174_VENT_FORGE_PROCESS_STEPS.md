@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Шаги vent forge процесса
+# Vent Forge Process Steps
 
-Шаги vent forge превращают hard-sci-fi resource lore в будущие crafting beats без симуляции химии.
+Vent forge steps turn hard-sci-fi resource lore into future crafting beats without simulating chemistry.
 
 ## Scanner
 
-Vent forging должен ощущаться как использование планеты против нее самой.
+Vent forging should feel like using the planet against itself.
 
 ## Terminal
 
-FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Неверный timing делает useful scrap.
+FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.
 
 ## Audio
 
-Луна - печь. Игроку только разрешают ее занять.
+The moon is the furnace. The player is only allowed to borrow it.
 
 ## Field Note
 
-Шаги forge должны читаться как heat, pressure, wait и risk.
+Make forge steps readable as heat, pressure, wait and risk.
 
 <!-- In-Game Wiki; generated from P174_VENT_FORGE_PROCESS_STEPS/ru_RU. -->

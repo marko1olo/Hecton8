@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Terminal Slot Proof Card
+# Terminal Slot Chain
 
-HECTON-8 terminals should feel like damaged instruments, not pages of floating lore.
+Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.
 
 ## Scanner
 
-Terminal proof: limited slots, packet hash, operator surface, no live markdown.
+Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.
 
 ## Terminal
 
-TERMINAL PROOF: terminal entries consume baked packet hashes and string-pool rows; runtime must not parse markdown or JSON.
+Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.
 
 ## Audio
 
-A terminal slot is not a filing cabinet.
+A station terminal remembers what the crew typed there, not a distant narrator's explanation.
 
 ## Field Note
 
-TerminalOS expansion remains a Unity placement task, not this source pass.
+Terminal rows bind to authored slot IDs, preserved text rows, and POI context.
 
 <!-- External Site; generated from P308_TERMINAL_SLOT_PROOF_CARD/nl_NL. -->

@@ -219,6 +219,13 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 float4 waterlineDistortion = HectonFinite4(_InternalWaterlineDistortion, float4(0.0, 0.0, 0.01, 1.0));
                 float2 safeUv = all(isfinite(uv)) ? saturate(uv) : float2(0.5, 0.5);
                 float active = HectonFinite01(waterlineParams.y);
+                float submerged01 = HectonFinite01(waterlineParams.z);
+                [branch]
+                if (active <= 0.001)
+                    return 0.0;
+                [branch]
+                if (submerged01 >= 0.999)
+                    return active;
                 float softness = max(0.001, abs(waterlineDistortion.z));
             #if defined(SHADER_API_MOBILE)
                 float farDepth = HectonInvalidSceneRawDepth();
@@ -233,8 +240,19 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 float planeInFront = saturate((yDelta * cameraRay.y + softness) * invSoftRange);
                 return active * saturate(max(cameraSubmerged, planeInFront));
             #else
-                float splitLine = HectonFinite01(waterlineParams.x);
-                return active * (1.0 - ResolveLinearRamp01(safeUv.y, splitLine - softness, splitLine + softness));
+                float splitLine = clamp(HectonFiniteValue(waterlineParams.x, 0.5), -0.1, 1.1);
+                float screenSplitMask = 1.0 - ResolveLinearRamp01(safeUv.y, splitLine - softness, splitLine + softness);
+                float2 depthUv = ResolveFoveatedSourceUV(safeUv);
+                float rawDepth = HectonFiniteSceneRawDepth(SampleSceneDepth(depthUv));
+                float depthValid = HectonSceneDepthValid01(rawDepth);
+                float3 sceneWorld = ComputeWorldSpacePosition(depthUv, rawDepth, UNITY_MATRIX_I_VP);
+                float3 cameraPosition = HectonFinite3(_WorldSpaceCameraPos.xyz, float3(0.0, 0.0, 0.0));
+                float waterlineY = HectonFiniteValue(_InternalWaterlineY, cameraPosition.y - 1.0);
+                sceneWorld = HectonFinite3(sceneWorld, float3(cameraPosition.x, waterlineY + 1.0, cameraPosition.z));
+                float yDelta = sceneWorld.y - waterlineY;
+                float derivative = max(fwidth(yDelta), 0.002);
+                float worldMask = 1.0 - smoothstep(-derivative, derivative, yDelta);
+                return active * lerp(screenSplitMask, worldMask, depthValid);
             #endif
             }
 

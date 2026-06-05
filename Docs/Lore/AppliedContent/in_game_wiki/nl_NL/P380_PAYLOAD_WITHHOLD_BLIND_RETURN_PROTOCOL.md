@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ Sometimes not sending is the only thing that still belongs to you.
 
 ## Field Note
 
-Use for no-clean ending dossier and refusal branch.
+Receiver record: withholding keeps Deep Reach blind while risking proof, payout, and clean extraction.
 
 <!-- In-Game Wiki; generated from P380_PAYLOAD_WITHHOLD_BLIND_RETURN_PROTOCOL/nl_NL. -->

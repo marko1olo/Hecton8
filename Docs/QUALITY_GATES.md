@@ -9,6 +9,7 @@ Purpose: acceptance gates. This file defines what proof is required; it is not p
 ## Authority Boundary
 
 - Read `Docs/PROJECT_BASELINE.md`, `Docs/DOC_GOVERNANCE.md`, `Docs/ARCHITECTURE/README.md`, and current source before using these gates.
+- Root `quality.md` owns cross-domain proof language and screenshot/profiler review doctrine. This file owns executable hard gates and acceptance checklists.
 - Current proof snapshots live in `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
 - Dated reports and archives are historical evidence only.
 - A filled checklist is not proof without a current artifact path.
@@ -87,6 +88,8 @@ Rules:
 
 Compact 2GB-VRAM / 8GB-RAM class hardware is the minimum supported proof lane.
 
+Root `AGENTS.md` guardrails are the target standard: main thread `<= 12ms`, GC `0 B/frame`, SetPass `<= 600`, batches `<= 1800`, total memory `<= 4096MB`, compact VRAM hard ceiling `<= 1800MB`, texture memory `<= 900MB`, and render targets plus depth `<= 320MB`. Any temporary emergency threshold below must be named as a blocker ceiling, not a success target.
+
 | Metric | Limit | Blocks merge | Evidence |
 |---|---:|---|---|
 | Total frame time | `<= 16.67ms p95` | Yes | 60s player/profiler capture |
@@ -98,7 +101,10 @@ Compact 2GB-VRAM / 8GB-RAM class hardware is the minimum supported proof lane.
 | VRAM hard ceiling | `<= 1.8GB` | Yes | Memory Profiler / platform counter |
 | Texture memory | `<= 900MB` | Yes | Memory Profiler |
 | Render targets + depth | `<= 320MB` | Yes | Memory Profiler / RenderDoc |
-| SetPass | `<= 800` hard | Yes | Frame Debugger / Stats |
+| SetPass target | `<= 600` | Yes above emergency ceiling; otherwise route risk | Frame Debugger / Stats |
+| SetPass emergency ceiling | `<= 800` hard blocker ceiling | Yes | Frame Debugger / Stats |
+| Batches target | `<= 1800` | Yes above target without owner route and profiler proof | Frame Debugger / Stats |
+| Total memory target | `<= 4096MB` | Yes above target without memory owner proof | Memory Profiler / platform counter |
 | Native persistent memory | flat over 10 min idle | Yes | NativeMemorySentinel / Memory Profiler |
 
 Load shed:

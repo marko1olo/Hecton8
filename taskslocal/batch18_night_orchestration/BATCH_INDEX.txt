@@ -1,0 +1,306 @@
+Batch: batch18_night_orchestration
+Created: 2026-06-04
+Mode: local Codex GUI orchestration, rolling independent concurrent agents.
+
+Prime authorities:
+- C:\hades\Hecton8\AGENTS.md
+- C:\hades\Hecton8\PROJECT_BIBLES.md
+- C:\hades\Hecton8\VISION_LOCKS.md
+- C:\hades\Hecton8\TASTE.md
+- C:\hades\Hecton8\quality.md
+- route bibles named in each task file
+
+Unity contention:
+- The existing Codex thread `Verify HECTON-8 refactor safety` is currently allowed to own slow Unity/editor verification.
+- Batch 18 Wave 01 agents must avoid live Unity control unless their task explicitly reaches a proof gate, no build/import is running, CPU is safe, and the editor is not busy.
+- Static evidence, file manifests, reports, source/data fixes, and task preparation are allowed.
+
+Parallel wave law:
+- Agents in the same wave are simultaneous and independent.
+- If a batch is small, treat the whole batch as one parallel wave unless a task file explicitly says otherwise.
+- Do not depend on sibling output from this batch.
+- If sibling output would help but is absent, mark BLOCKED BY DEPENDENCY or write a handoff and continue with verified local scope.
+
+Task files:
+- 1801_WORLD_SURFACE_ROUTE_EVIDENCE_ARCHITECT.txt
+- 1802_SURFACE_SHALLOW_VISUAL_ASSET_INVENTORY.txt
+- 1803_FIRST20_GAMEPLAY_ROUTE_BLOCKER_AUDITOR.txt
+- 1804_APPLIED_LORE_DATAMONOLITH_RECONCILER.txt
+- 1805_AGENT_OUTPUT_TRIAGE_AND_NEXT_WAVE_CONTROLLER.txt
+- 1806_SURFACE_ROUTE_ACTION_MANIFEST_BUILDER.txt
+- 1807_SHORELINE_WATERLINE_OFFLINE_BAKE_SPEC.txt
+- 1808_AEGIR_SKY_ACTIVE_PATH_AUDITOR.txt
+- 1809_PHOTIC_SHALLOWS_BIOTA_PLACEMENT_MANIFEST.txt
+- 1810_RUNTIME_PROOF_HARNESS_PREP.txt
+- 1811_P456_PUBLIC_SOURCE_REPAIR.txt
+- 1812_P151_STATUS_EXPORTER_DRIFT_FIX.txt
+- 1813_STALE_BLOCKER_ERRATA_PACKET.txt
+- 1814_COPPER_CATALOG_COLLISION_AUDITOR.txt
+- 1815_STARTER_TOOL_AND_ROUTE_CRAFT_AUTHORITY_AUDITOR.txt
+- 1816_SURFACE_ROUTE_UNITY_SLOT_PACKET_BUILDER.txt
+- 1817_MANAGED_AUDIO_CALLBACK_ZERO_ALLOC_REPAIR.txt
+- 1818_MISSION_MARKER_ASSIGNMENT_VISIBILITY_AUDITOR.txt
+- 1819_SDF_SUBSTRATE_PROOF_PACKET.txt
+- 1820_LORE_LOCALIZATION_RELEASE_TRIAGE.txt
+- 1821_SHORELINE_WATERLINE_BAKE_SPEC_REPLACEMENT.txt
+- 1822_P456_CURRENT_DIRTY_DIFF_AUDITOR_NO_EDIT.txt
+- 1823_AUDIO_CALLBACK_ZERO_ALLOC_AUDIT_PACKET.txt
+- 1824_FIRST_ROUTE_MISSION_MARKER_POLICY_PACKET.txt
+- 1825_TERMINAL_SCANNER_AUDIOLOG_PLACEMENT_MANIFEST.txt
+- 1826_COPPER_ROUTE_DATA_OWNER_PATCH_PACKET.txt
+- 1854_WORLD_SUPPORT_VISIBLE_CARRIER_REPLACEMENT_PACKET.txt
+- 1855_CONSTRUCTION_FINAL_MESH_REBUILD_PACKET.txt
+- 1856_ORGANIC_MISC_FINAL_MESH_REBUILD_PACKET.txt
+- 1857_SARGASSUM_COLLAPSE_FINAL_CLASSIFICATION_PACKET.txt
+- 1858_GENERATED_FLORA_GEOLOGY_MANIFEST_PROOF_PACKET.txt
+- 1859_NON_PROXY_PRIMITIVE_PREFAB_CLASSIFICATION_PACKET.txt
+- 1860_PRIMITIVE_FACTORY_RISK_CLASSIFICATION_PACKET.txt
+
+Wave 02 rules:
+- Agents 1806-1810 may read completed 1801/1802 reports, because those are already available static packets.
+- Agents 1806-1810 must not wait for 1803-1805.
+- Agents 1806-1810 must not claim Unity/runtime proof. They prepare manifests, validators, proof routes, and scoped implementation packets for a later Unity slot.
+- If they write source/data files, the edits must be narrow, evidence-based, and conflict-aware.
+
+Wave 03 launch law:
+- `1811` and `1812` must not run in parallel because both can touch AppliedLore source/generated publication/index/exporter routes.
+- `1813`, `1814`, and `1815` are independent no-Unity/static-source tasks and may run alongside Wave 02.
+- Unity-slot tasks remain parked until a single Unity owner is available.
+
+Wave 04 launch law:
+- `1816`, `1818`, and `1819` are static packet/audit tasks and may run in parallel with anything except direct Unity ownership.
+- `1817` is source repair in audio hot paths; it may run in parallel with static packet tasks but must not start dotnet/build work under CPU/build contention.
+- `1820` is lore/localization triage. It must not edit AppliedLore source while `1811` or `1812` is active; queue findings instead.
+- `1812` remains serialized after `1811` and before any new AppliedLore exporter/bake task.
+
+Replacement law:
+- `1821` replaces stalled `1807` and must not wait for it.
+- `1822` is no-edit only because AppliedLore source/generated pages are already dirty and `1811` may still be active/stalled.
+- Do not launch any additional AppliedLore writer/exporter/bake task until `1811`/`1822` state is understood.
+
+Wave 05 launch law:
+- `1823` is no-edit audio callback audit/patch packet only. It must not touch C# while Unity/import/compiler contention is active.
+- `1824` is no-edit first-route marker policy. It must not edit scene, quest, UI, marker, prefab, or source assets.
+- `1825` is no-edit content placement manifest. It must not edit AppliedLore while `1820`/`1822`/P151 work is active.
+- `1826` is no-mutation copper data-owner patch packet. It must not edit `.asset`, `.meta`, source, scene, binary, or DataMonolith files.
+- Wave 05 agents may run in parallel because they produce reports/packets only and do not depend on sibling output.
+
+Wave 06 primitive-final replacement law:
+- `1854`, `1855`, `1856`, `1857`, and `1858` are no-mutation static packet tasks.
+- They may run in parallel because they own separate report outputs and must not edit prefabs, family assets, scenes, source, `.meta`, or binaries.
+- `1854` owns WorldSupport visible carrier replacement planning.
+- `1855` owns Construction final mesh rebuild planning.
+- `1856` owns OrganicMisc final mesh rebuild planning.
+- `1857` owns Sargassum collapse chunk classification.
+- `1858` owns generated flora/geology manifest/proof priority planning.
+- `1859` owns broader non-WorldProceduralProxy primitive-prefab classification after the first 21 production Final blockers.
+- `1860` owns editor primitive-factory/source-route classification and should launch only after a worker/thread slot is free.
+- These agents must read `Docs/Reports/Batch18/1853_PRIMITIVE_FINAL_REPLACEMENT_PLAN.md`.
+- They must not relink to nearby primitive proxies, mark primitive finals accepted, delete families, or claim runtime/render proof.
+- `1859` must not convert classification into edits; it is a queue-builder for the next replacement wave.
+
+Wave 07 primitive-source containment and product-face queue law:
+- `1862` owns only `SargassumGlobalDragManager` primitive relink/fallback containment. It may edit that source and owned 1862 logs/reports only.
+- `1863` owns high-conditional primitive repair/fallback gates for diagnostic repair and applied-lore terminal authoring. It may edit only those scoped source files and owned 1863 logs/reports.
+- `1864` owns player/tools/items/resources/transport primitive replacement queue design. It must not edit source, prefabs, assets, scenes, `.meta`, or binaries.
+- `1865` owns sky/ocean primitive risk and visual proof packet. It must not edit source, prefabs, assets, scenes, `.meta`, or binaries.
+- `1866` owns real source mesh requirements for blocked power/resource factories. It must not edit source, prefabs, assets, scenes, `.meta`, or binaries.
+- Wave 07 agents are simultaneous and independent. Do not wait for sibling output. If sibling output would help, write a handoff and continue with verified local scope.
+- Code-patch agents must run static source checks and `git diff --check`; they must not run Unity, dotnet build, importer, bake, PlayMode, screenshots, or profiler while Unity/editor/compiler contention exists.
+- Packet agents must label every claim by evidence class and must not claim visual acceptance from YAML/source text.
+
+Wave 07 task files:
+- 1862_SARGASSUM_PRIMITIVE_RELINK_GUARD_PATCH.txt
+- 1863_HIGH_CONDITIONAL_PRIMITIVE_FALLBACK_GATES.txt
+- 1864_PRODUCT_FACE_PRIMITIVE_REPLACEMENT_QUEUE.txt
+- 1865_SKY_OCEAN_PRIMITIVE_RISK_PROOF_PACKET.txt
+- 1866_POWER_RESOURCE_REAL_SOURCE_MESH_REQUIREMENTS.txt
+
+Wave 07 local orchestrator output:
+- Docs/Reports/Batch18/1867_PRODUCT_FACE_PREFAB_AUDIT_GATE.md
+- Docs/Reports/Batch18/1868_PRODUCT_FACE_UNITY_VALIDATOR_GATE.md
+
+Wave 08 launch law:
+- Wave 08 agents must use the 1867 audit gate as current product-face red-state evidence.
+- Agents in Wave 08 are simultaneous and independent; do not depend on sibling output.
+- Do not run Unity/import/build/profiler while Unity/editor/compiler contention exists.
+- No task may hide product-face primitive meshes behind "low quality", fog, darkness, storms, or placeholder/proxy language.
+- `GeneratedAssetProductionAudit.py --fail-on-error` is expected to fail until all current 83 audit errors are cleared. Treat failure as evidence, not as a broken script.
+- Visual replacements need real mesh/material/collider/LOD/proof routes; packet-only tasks must not claim acceptance.
+
+Wave 08 task files:
+- 1869_TOOL_VISUAL_SOURCE_PACKAGE_PACKET.txt
+- 1870_RESOURCE_PICKUP_VISUAL_SOURCE_PACKAGE_PACKET.txt
+- 1871_TRANSPORT_VISUAL_SOURCE_PACKAGE_PACKET.txt
+- 1872_PLAYER_BODY_VISUAL_SOURCE_PACKAGE_PACKET.txt
+- 1873_SKY_OCEAN_SOURCE_CLEANUP_AND_PROOF_SLOT_PACKET.txt
+
+Wave 08 task ownership:
+- `1869` owns held/world tool visual source package only.
+- `1870` owns resource pickup visual source package only.
+- `1871` owns transport visual source package only.
+- `1872` owns player body visual source package only.
+- `1873` owns sky/ocean source cleanup and future Unity proof-slot packet only.
+
+Acceptance:
+- Use proof labels from quality.md.
+- No fake runtime proof.
+- No fabricated paths, methods, line numbers, hashes, profiler numbers, or Unity claims.
+- No visual downgrade below Subnautica-level surface/shallow/mid-depth floor.
+- No destructive cleanup without scoped proof, .meta handling, and rollback.
+
+Wave 09 implementation launch law:
+- `1874`, `1875`, and `1876` are source-authoring implementation tasks with disjoint write scopes.
+- They may run in parallel.
+- They must create editor-only mesh source authoring routes only; they must not run Unity or generate mesh assets in this wave.
+- They must create stable `.meta` files for any new C# scripts under `Assets`.
+- They must not modify prefabs, scenes, `.asset` data, generated binary assets, or current product-face prefab YAML.
+- They must not use `GameObject.CreatePrimitive`.
+- They must not claim visual acceptance.
+
+Wave 09 task files:
+- 1874_TOOL_MESH_SOURCE_AUTHORING_IMPLEMENTATION.txt
+- 1875_RESOURCE_PICKUP_MESH_SOURCE_AUTHORING_IMPLEMENTATION.txt
+- 1876_TRANSPORT_MESH_SOURCE_AUTHORING_IMPLEMENTATION.txt
+
+Wave 10 launch law:
+- `1877`, `1878`, and `1879` are independent and may run in parallel with Wave 09.
+- `1877` owns only player suit mesh-source authoring code and its own reports/logs.
+- `1878` owns only sky/ocean source-validator code and its own reports/logs.
+- `1879` is no-mutation architecture/report work for future serialized Unity relink/proof.
+- No Wave 10 task may run Unity, import, bake, PlayMode, profiler, dotnet build, prefab relink, scene edits, generated mesh asset creation, or binary/DataMonolith work.
+- No task may claim visual acceptance from static source. Screenshot/runtime/profiler proof remains a future single-Unity-owner step.
+
+Wave 10 task files:
+- 1877_PLAYER_SUIT_MESH_SOURCE_AUTHORING_IMPLEMENTATION.txt
+- 1878_SKY_OCEAN_SOURCE_VALIDATOR_IMPLEMENTATION.txt
+- 1879_PRODUCT_FACE_RELINK_AND_PROOF_CONTRACT.txt
+
+Wave 11 launch law:
+- `1880`, `1881`, `1882`, and `1883` are report-only material/texture role package tasks.
+- They may run in parallel with active source-authoring agents because they own only reports/logs/status/CSV.
+- They must inspect actual project-owned materials/textures/shaders and mark missing roles as `MISSING_SOURCE_REQUIRED`.
+- They must not edit source, prefabs, assets, scenes, `.meta`, binaries, generated mesh assets, or DataMonolith.
+- They must not claim visual acceptance from static materials. Unity import, assignment, screenshots, Frame Debugger, profiler, and GC proof remain future serialized Unity-owner work.
+
+Wave 11 task files:
+- 1880_TOOL_MATERIAL_TEXTURE_ROLE_PACKAGE.txt
+- 1881_RESOURCE_MATERIAL_TEXTURE_ROLE_PACKAGE.txt
+- 1882_TRANSPORT_PLAYER_MATERIAL_TEXTURE_ROLE_PACKAGE.txt
+- 1883_SKY_OCEAN_MATERIAL_TEXTURE_ROLE_PACKAGE.txt
+
+Wave 12 static source-risk launch law:
+- `1884` is a report-only static compile/API/path/ownership audit for the new product-face editor source routes from `1874` through `1878`.
+- It may run in parallel with Wave 11 because it owns only report/log/status/CSV outputs and must not edit source, prefabs, assets, scenes, `.meta`, binaries, generated mesh assets, or DataMonolith.
+- It must not run Unity, dotnet build, menu items, import, PlayMode, screenshots, or profiler.
+- It must treat output-folder mismatches, unsupported Unity/C# APIs, duplicated GUIDs, hidden primitive promotion, and stale report claims as explicit findings for the future Unity owner.
+
+Wave 12 task files:
+- 1884_PRODUCT_FACE_EDITOR_SOURCE_STATIC_COMPILE_RISK_AUDIT.txt
+
+Wave 13 static preservation snapshot launch law:
+- `1885` is a report-only static prefab anchor/reference snapshot for product-face relink preparation.
+- It may run in parallel with material/source audits because it owns only report/log/status/CSV outputs and must not edit prefabs, source, assets, scenes, `.meta`, binaries, generated mesh assets, or DataMonolith.
+- It must not run Unity, MCP, dotnet build, menu items, import, PlayMode, screenshots, profiler, or DataMonolith.
+- It must preserve exact evidence boundaries: YAML/static names are not runtime proof, and current primitive visuals remain red until future Unity relink plus screenshots/profiler gates.
+
+Wave 13 task files:
+- 1885_PRODUCT_FACE_PREFAB_ANCHOR_REFERENCE_STATIC_SNAPSHOT.txt
+
+Wave 14 pipeline discovery launch law:
+- `1886` is a report-only discovery task for existing product-face texture/material authoring pipeline reuse.
+- It may run in parallel with material/source audits because it owns only report/log/status/CSV outputs and must not edit source, assets, prefabs, scenes, `.meta`, binaries, generated mesh assets, or DataMonolith.
+- It must not run Unity, MCP, dotnet build, menu items, import, PlayMode, screenshots, profiler, or DataMonolith.
+- It must produce future implementation task proposals only; it must not create those future task files.
+
+Wave 14 task files:
+- 1886_PRODUCT_FACE_TEXTURE_AUTHORING_PIPELINE_DISCOVERY.txt
+
+Wave 15 legacy/quarantine decision launch law:
+- `1887` is a report-only static reference/quarantine decision packet for legacy product-face roots and default/package material contamination.
+- It may run in parallel with 1886 because it owns only report/log/status/CSV outputs and must not edit source, assets, prefabs, scenes, `.meta`, binaries, generated mesh assets, task files, or DataMonolith.
+- It must not run Unity, MCP, dotnet build, menu items, import, PlayMode, screenshots, profiler, or DataMonolith.
+- It must not delete, move, quarantine, relink, or alter any asset. It only prepares exact future-owner decisions and proof gates.
+
+Wave 15 task files:
+- 1887_PRODUCT_FACE_LEGACY_REFERENCE_QUARANTINE_DECISION_PACKET.txt
+
+Wave 16 material/texture hardening launch law:
+- `1888`, `1889`, and `1891` are report-only static audit/packet tasks with disjoint outputs.
+- `1890` is editor-source implementation only for a read-only product-face material/texture validator. It must not run Unity or mutate assets/prefabs/materials.
+- These agents may run in parallel because write scopes are disjoint and none requires Unity/import/build/profiler.
+- No task may claim runtime or visual acceptance.
+
+Wave 16 task files:
+- 1888_PRODUCT_FACE_TEXTURE_CHANNEL_MANIFEST_AND_SHADER_AUDIT.txt
+- 1889_PRODUCT_FACE_ENVIRONMENT_SOURCE_EXCLUSION_MANIFEST.txt
+- 1890_PRODUCT_FACE_MATERIAL_TEXTURE_VALIDATOR_IMPLEMENTATION.txt
+- 1891_AITEXTURE_PRODUCT_FACE_HARDENING_PACKET.txt
+
+Wave 17 Unity-slot serialization launch law:
+- `1892` is a report-only static runbook for the future single Unity owner.
+- It may run in parallel with `1890` because it owns only report/log/status/CSV outputs and must not edit source, assets, prefabs, scenes, `.meta`, binaries, generated meshes, task files, or DataMonolith.
+- It must not run Unity, MCP, menu items, import, PlayMode, screenshots, profiler, dotnet build, exporters, or DataMonolith.
+- It must serialize all future Unity/editor mutations into one owner sequence and define what other agents may still do in parallel while Unity is occupied.
+- It must preserve current ProductFace generated route roots and must not resurrect stale non-ProductFace folder paths.
+- It must treat all screenshot/runtime/profiler/import acceptance as `PENDING UNITY SLOT`.
+
+Wave 17 task files:
+- 1892_PRODUCT_FACE_SINGLE_UNITY_OWNER_RUNBOOK.txt
+
+Wave 18 static hardening launch law:
+- `1893`, `1894`, `1896`, and `1897` are report-only static tasks with disjoint outputs.
+- `1895` is a source implementation task for one standalone Python static audit tool plus its own report/log/status outputs.
+- Wave 18 agents may run in parallel because they do not require Unity and their write scopes do not overlap.
+- No Wave 18 task may run Unity, MCP, menu items, import, PlayMode, screenshots, profiler, dotnet build, exporters, or DataMonolith.
+- No Wave 18 task may edit prefabs, materials, scenes, `.meta`, generated meshes, binaries, or sibling outputs.
+- `1895` must not edit C# source; its only implementation file is `Tools/ProductFaceStaticRouteAudit.py`.
+- Report-only tasks must label runtime/visual/import/profiler claims as `PENDING UNITY SLOT`.
+
+Wave 18 task files:
+- 1893_PRODUCT_FACE_ACTUAL_MATERIAL_ASSIGNMENT_MATRIX.txt
+- 1894_PRODUCT_FACE_TEXTURE_SOURCE_MANIFEST_SCHEMA.txt
+- 1895_PRODUCT_FACE_STATIC_ROUTE_AUDIT_TOOL.txt
+- 1896_TOOLSCREEN_DIEGETIC_SHADER_CHANNEL_AUDIT.txt
+- 1897_TITANIUM_CANONICAL_RESOURCE_ROUTE_DECISION_PACKET.txt
+
+Wave 19 generated-asset red-cluster launch law:
+- `1898`, `1899`, `1900`, and `1901` are report-only static contract/runbook tasks with disjoint outputs.
+- They may run in parallel with Wave 18 because they do not edit source/assets/prefabs/scenes and do not require Unity.
+- No Wave 19 task may run Unity, MCP, menu items, import, PlayMode, screenshots, profiler, dotnet build, exporters, or DataMonolith.
+- No Wave 19 task may claim warnings/errors cleared; they prepare exact future implementation/proof contracts only.
+- Runtime/visual/import/profiler acceptance remains `PENDING UNITY SLOT`.
+
+Wave 19 task files:
+- 1898_CONSTRUCTION_FINAL_AUTHORING_SOURCE_RISK_PACKET.txt
+- 1899_ORGANIC_MISC_PRODUCTION_GENERATOR_CONTRACT.txt
+- 1900_WORLD_SUPPORT_CARRIER_PRODUCTION_CONTRACT.txt
+- 1901_SHALLOW_PROOF_ARTIFACT_PRIORITY_RUNBOOK.txt
+
+Wave 20 ProductFace relink dry-run launch law:
+- `1902` is a report-only static dry-run packet for the 17 default/package `Lit.mat` ProductFace assignments found by 1893.
+- It may run in parallel with other report-only agents because it owns only report/log/status/CSV outputs and must not edit source/assets/prefabs/materials/scenes.
+- It must use 1893 CSV as input truth and must not run Unity, import, PlayMode, screenshots, profiler, dotnet build, exporters, or DataMonolith.
+- It must not claim relink is allowed now; every row remains future single-Unity-owner work.
+
+Wave 20 task files:
+- 1902_PRODUCT_FACE_DEFAULT_LIT_RELINK_DRY_RUN_PACKET.txt
+
+Wave 21 ProductFace tool placeholder dry-run launch law:
+- `1903` is a report-only static dry-run packet for the 23 tool placeholder material assignments found by 1893.
+- It may run in parallel with other report-only agents because it owns only report/log/status/CSV outputs and must not edit source/assets/prefabs/materials/scenes.
+- It must use 1893 CSV as input truth and must not run Unity, import, PlayMode, screenshots, profiler, dotnet build, exporters, or DataMonolith.
+- It must preserve held/world pairing and must not claim relink is allowed now.
+
+Wave 21 task files:
+- 1903_PRODUCT_FACE_TOOL_PLACEHOLDER_RELINK_DRY_RUN_PACKET.txt
+
+Wave 22 ProductFace resource flat-material dry-run launch law:
+- `1904` is a report-only static dry-run packet for the 8 resource flat-color/empty-texture material assignments found by 1893.
+- It may run in parallel with other report-only agents because it owns only report/log/status/CSV outputs and must not edit source/assets/prefabs/materials/scenes.
+- It must use 1893 CSV as input truth and must cross-check canonical data ownership from 1881/1897 where present.
+- It must not run Unity, import, PlayMode, screenshots, profiler, dotnet build, exporters, or DataMonolith.
+- It must not claim relink is allowed now.
+
+Wave 22 task files:
+- 1904_PRODUCT_FACE_RESOURCE_FLAT_MATERIAL_RELINK_DRY_RUN_PACKET.txt

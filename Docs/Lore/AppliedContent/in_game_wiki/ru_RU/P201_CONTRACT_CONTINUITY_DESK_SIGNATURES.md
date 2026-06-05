@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Подписи Contract Continuity Desk
+# Contract Continuity Desk Signatures
 
-Подписи Contract Continuity Desk показывают, как salvage job превращается в юридическое давление без нового главного злодея.
+Contract Continuity Desk signatures show how a salvage job becomes legal pressure without inventing a new villain.
 
 ## Scanner
 
-Контрактная ловушка собрана из фрагментов условий, а не из одного злодейского приказа.
+The contract trap is assembled from clause fragments, not one villain order.
 
 ## Terminal
 
-SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Функция: сшивает условия Aegir Reclamation Pool с Black Keel recovery clauses. Не mastermind.
+SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.
 
 ## Audio
 
-Никто не пишет ловушка. Пишут continuity.
+Nobody says trap. They say continuity.
 
 ## Field Note
 
-Нижние подписи работают как следы процедуры: слияние долга, кислородное приложение, риск blacklist и payload hold.
+Lower signatures act as procedure stamps: lien merge, oxygen addendum, blacklist risk, and payload hold.
 
 <!-- In-Game Wiki; generated from P201_CONTRACT_CONTINUITY_DESK_SIGNATURES/ru_RU. -->

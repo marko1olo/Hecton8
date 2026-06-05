@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Пакет Сато-Рен
+# Sato-Ren Return Packet
 
-Возвращение Deep Reach к HECTON-8 начинается как бумага: координаты, custody, доступ, потом, возможно, спасение.
+Deep Reach returns to HECTON-8 as paperwork moving through rare signal windows: coordinates, custody, access, then maybe rescue.
 
 ## Scanner
 
-Артефакт Deep Reach: пакет действия возврата. Координаты требуют раньше языка спасения.
+Recovery Compliance packet. Coordinates requested before rescue language.
 
 ## Terminal
 
-ПАКЕТ САТО-РЕН. Координаты, доступ Atlas и образец - до эвакуации.
+RECOVERY COMPLIANCE / SATO-REN / RETURN ACTION: transmit coordinates, Atlas access state, XO sample custody and contractor silence acknowledgement before extraction language is issued.
 
 ## Audio
 
-Пакет знает, где актив. Он менее уверен, где ты.
+The packet knows where the asset is. It is less certain where you are.
 
 ## Field Note
 
-Использовать как мост между present comms, финальными payload choices и public spoiler gates.
+Sato-Ren asks for position, access state and custody before she uses the word extraction. That order is the threat.
 
 <!-- External Site; generated from P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT/ru_RU. -->

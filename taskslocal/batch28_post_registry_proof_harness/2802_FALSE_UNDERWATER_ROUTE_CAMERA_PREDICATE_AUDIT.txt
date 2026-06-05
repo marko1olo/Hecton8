@@ -1,0 +1,30 @@
+ID: 2802_FALSE_UNDERWATER_ROUTE_CAMERA_PREDICATE_AUDIT
+Role: underwater route/camera predicate auditor
+
+Read:
+- `C:\hades\Hecton8\AGENTS.md`
+- `C:\hades\Hecton8\PROJECT_BIBLES.md`
+- `C:\hades\Hecton8\TASTE.md`
+- `C:\hades\Hecton8\water.md`
+- relevant `.agents-skills`: `REND_VFX_Fluid_Aesthetics_Compute_Particles.txt`, `REND_Shader_Noir_Aesthetics_Dithering_Fog.txt`, `ARCH_Execution_Phases.txt`
+- `Docs/Reports/Batch26/BATCH26_SYNTHESIS_FOR_UNITY_OWNER.md`
+- `Docs/Reports/Batch27/BATCH27_SYNTHESIS_FOR_UNITY_OWNER.md`
+
+Mission:
+Find why prior `underwater_0_5m` and `underwater_20_50m_route` views were false surface-looking views, and define static route predicates that would reject them before a PNG is accepted.
+
+Do:
+1. Inspect underwater depth/current-depth owners: `HectonUnderwaterVisuals`, depth zone systems, camera/player route helpers, and capture scripts.
+2. Identify whether water level, camera Y, depth calculation, underwater material state, or capture rig route can cause surface-looking underwater filenames.
+3. Define route predicates for 0-5 m and 20-50 m captures.
+4. Define required public read-only proof snapshots from underwater/depth owners.
+5. List exact screenshot rejection criteria for false underwater views.
+
+Do not:
+- Run Unity.
+- Modify source.
+- Hide issues with fog/darkness.
+
+Deliver:
+- `Docs/Reports/Batch28/2802_FALSE_UNDERWATER_ROUTE_CAMERA_PREDICATE_AUDIT.md`
+with exact source paths and predicate plan.

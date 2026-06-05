@@ -4,6 +4,11 @@ Status: pre-posting tracker
 Owner lane: Marketing / community operations
 Runtime impact: none
 
+## Authority Boundary
+
+Static documentation only. Public Reddit/community, Steam, wishlist, demo, performance, platform, release, publication, moderation, creator, and CTA claims require root `textes.md` for voice plus `quality.md`, `release.md`, and `platform.md` with current proof artifacts, same-day community rules, and the local permission gates.
+No public post, Steam news, trailer/capsule approval, creator send, community launch, platform/release claim, demo claim, subreddit post, CTA link, or signal claim is authorized by drafts, examples, candidate spaces, tracker rows, or plan rows in this file.
+
 ## Source Boundary
 
 Primary sitewide source:

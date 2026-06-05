@@ -10,8 +10,8 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
 # Leben des Lichtschelfs
@@ -24,7 +24,7 @@ Die Biologie des flachen Schelfs ist hell, laut und kaum verändert. An der Ober
 
 ## Terminal
 
-Schelfsurvey: lebende Matten, transparente Weider, pressureweed und Routenalgen liegen noch außerhalb der Atlas-Reparaturdominanz.
+SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.
 
 ## Audio
 

@@ -1,0 +1,74 @@
+<AGENT_PROMPT id="1871">
+ROLE: Transport visual source package architect.
+
+READ FIRST:
+- C:\hades\Hecton8\AGENTS.md
+- C:\hades\Hecton8\PROJECT_BIBLES.md
+- C:\hades\Hecton8\VISION_LOCKS.md
+- C:\hades\Hecton8\TASTE.md
+- C:\hades\Hecton8\quality.md
+- C:\hades\Hecton8\vehicles.md
+- C:\hades\Hecton8\water.md
+- C:\hades\Hecton8\3dmodel.md
+- C:\hades\Hecton8\3DMODEL_TEXTURES_MATERIALS.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1864_PRODUCT_FACE_PRIMITIVE_REPLACEMENT_QUEUE.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1864_PRODUCT_FACE_REPLACEMENT_MATRIX.csv
+- C:\hades\Hecton8\Docs\Reports\Batch18\1867_PRODUCT_FACE_PREFAB_AUDIT_GATE.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1868_PRODUCT_FACE_UNITY_VALIDATOR_GATE.md
+- Relevant .agents-skills only: QA_Evidence_Text_Filter_Audit, CORE_Submarine_Vehicles_Kinematics_AUP, PHYS_Physics_Integrity_Determinism_ForceMode, REND_URP_Graphics_HotPath_Optimization_HLOD.
+
+OWNED WRITE SCOPE:
+- Docs/Tasks/Status_1871.md
+- Docs/AgentLogs/Rationale_1871.md
+- Docs/AgentLogs/LOG_1871.md
+- Docs/Reports/Batch18/1871_TRANSPORT_VISUAL_SOURCE_PACKAGE.md
+- Docs/Reports/Batch18/1871_TRANSPORT_VISUAL_SOURCE_MATRIX.csv
+
+NO SOURCE/PREFAB/ASSET/SCENE/META/BINARY EDITS.
+NO UNITY MENU, IMPORT, BAKE, PLAYMODE, PROFILER, DOTNET BUILD, OR DATA MONOLITH RUN.
+
+PARALLEL LAW:
+- You are running simultaneously with 1869, 1870, 1872, and 1873.
+- Do not wait for sibling output.
+- Do not modify files outside your owned write scope.
+
+TASK:
+Build a concrete source package for replacing primitive transport visuals:
+- `PFB_CargoSled_Transport`
+- `PFB_Exosuit_Frame_Transport`
+- `PFB_MicroSub_Transport`
+- `PFB_ScoutGlider_Transport`
+
+Required work:
+1. Verify current primitive mesh refs and current material references in each prefab.
+2. Resolve transport preset data assets and any script/component owners.
+3. Verify rider/dismount/anchor transforms that must be preserved.
+4. Search for existing non-primitive meshes, materials, vehicle/submarine assets, or authoring/generator routes.
+5. Distinguish real candidates from primitives, proxies, placeholders, diagnostics, or unrelated shell assets.
+6. Define required silhouette for each transport: cargo sled, exosuit frame, micro-sub, scout glider.
+7. Define material/texture identity: pressure hull, glass, rubber seals, hazard paint, wetness, grime, corrosion, panels, clamps.
+8. Define collider/proxy split: visual hull/frame separate from vehicle collision, triggers, ride/dismount anchors.
+9. Define LOD/HLOD expectations and distance readability.
+10. Define Low/Middle/High/Ultra consequences using continuous `GlobalQualityWeight`; no ugly low mode.
+11. Define proof artifacts: prefab YAML, mesh/material paths, anchor preservation proof, screenshot/player capture, profiler if runtime vehicle path changes.
+12. Identify first transport that matters most for first-hour gameplay and why.
+13. Identify any unresolved material GUIDs or missing source meshes.
+14. Identify any transport prefab that should be quarantined rather than replaced.
+15. Do not alter physics, kinematic truth, AUP, seats, anchors, or presets.
+16. Do not propose one generic cube-replacement shell for all vehicles.
+17. Do not relink to WorldProceduralProxy.
+18. Do not claim visual acceptance without screenshots.
+19. Do not claim Unity/runtime proof.
+20. Do not edit YAML/assets/source.
+
+OUTPUTS:
+- Markdown packet with exact findings, owner route, anchor preservation contract, material/mesh requirements, priority, and proof ladder.
+- CSV with columns:
+  `transport_id,prefab_path,current_primitive_evidence,current_material_paths,preset_owner_paths,anchors_to_preserve,reusable_source_candidates,required_mesh_parts,required_material_slots,collider_proxy_split,lod_hlod_expectation,quality_scaling,proof_needed,status,next_owner`
+
+VERIFY:
+- Use static file reads/searches only.
+- Run `git diff --check` only on your owned outputs.
+- Final answer must list outputs and the no-edit/no-Unity guarantee.
+</AGENT_PROMPT>
+

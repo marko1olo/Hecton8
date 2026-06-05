@@ -1,6 +1,7 @@
 ﻿# SHINOBU_319 Status Effects FSM Route Card
 
 Date: 2026-05-22
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
 Owner: `SHINOBU_319 / STATUS_EFFECTS_FSM_ENGINE`
 Domain: Echelon 5 Combat & Physiology
 Evidence: STATIC_SOURCE / STATIC_DOC. Unity import, Burst Inspector, profiler, GCMonitor, and player-build proof remain pending under CPU/compiler guard. Agent 1417 amended the ingress lane on 2026-05-28 to remove the residual persistent `NativeQueue` owner alias.

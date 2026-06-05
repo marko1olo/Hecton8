@@ -1,0 +1,140 @@
+ID: 1907
+ROLE: TERRAIN_COASTLINE_MATERIAL_PACKAGE_PREP
+LANE: Terrain, coastline, wet basalt, foam, waterline, and shallow material source package prep
+UNITY OWNER: NO
+BUILD OWNER: NO
+SCENE OWNER: NO
+
+MISSION
+Prepare a static, Unity-owner-ready material source package for surface terrain, coastline, wet basalt, shoreline foam, waterline masks, and photic-shallow transitions. This is source/package planning and static evidence only. It must not edit terrain, scenes, materials, importers, shaders, textures under Assets, or Unity asset files.
+
+MANDATORY FIRST LINE IN CHAT WHEN LAUNCHED
+PROMPT IDENTIFIED: 1907 TERRAIN_COASTLINE_MATERIAL_PACKAGE_PREP
+
+AUTHORITY TO READ BEFORE WORK
+- AGENTS.md
+- PROJECT_BIBLES.md
+- TASTE.md
+- VISION_LOCKS.md
+- terrain.md
+- world.md
+- water.md
+- rendering.md
+- performance.md
+- quality.md
+- 3DMODEL_TEXTURES_MATERIALS.md
+- 3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md
+- PROCEDURAL_ASSET_PIPELINE.md
+- Docs/Reports/Batch18/1802_SURFACE_SHALLOW_ASSET_INVENTORY.md
+- Docs/Reports/Batch18/1821_SHORELINE_WATERLINE_OFFLINE_BAKE_SPEC.md
+- Docs/Reports/Batch18/1883_SKY_OCEAN_MATERIAL_TEXTURE_ROLE_PACKAGE.md
+- Docs/Reports/Batch18/1901_SHALLOW_PROOF_ARTIFACT_PRIORITY_RUNBOOK.md
+
+MANDATES TO READ
+- .agents-skills/REND_Terrain_VirtualTexturing.txt
+- .agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt
+- .agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt
+- .agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt
+- .agents-skills/QA_Evidence_Text_Filter_Audit.txt
+
+OWNED OUTPUT SCOPE WHEN LAUNCHED
+- Docs/Reports/Batch19/1907_TERRAIN_COASTLINE_MATERIAL_PACKAGE.md
+- Docs/Reports/Batch19/1907_TERRAIN_COASTLINE_MATERIAL_PACKAGE.csv
+- Docs/Reports/Batch19/1907_TERRAIN_COASTLINE_UNITY_OWNER_HANDOFF.md
+- Docs/GeneratedAssets/Gemini/Prompts/1907/**
+- Docs/Tasks/Status_1907.md
+- Docs/AgentLogs/Rationale_1907.md
+- Docs/AgentLogs/LOG_1907.md
+
+FORBIDDEN OUTPUTS AND ACTIONS
+- Do not write under Assets/**.
+- Do not edit terrain data, scenes, materials, shaders, prefabs, import settings, scripts, or packages.
+- Do not create or modify .terrainlayer, .mat, .asset, .prefab, .unity, .shader, .cs, .meta, or DataMonolith files.
+- Do not open Unity.
+- Do not call Unity MCP tools.
+- Do not run dotnet build, Unity build, player build, package restore, or editor validation.
+- Do not claim shoreline/water/terrain runtime visuals are fixed.
+- Do not claim visual pass from old screenshots unless the exact screenshot path is cited and the claim remains STATIC INSPECTED OLD EVIDENCE.
+- Do not use darkness, storm, fog, depth, or noir as a workaround for surface/coastline weakness.
+- Do not require another Batch19 agent to finish first. Missing source candidates are PENDING SOURCE.
+
+KNOWN STATIC EVIDENCE BASELINE
+- Batch18 1802 found surface/shallow readability but coastline grey/procedural-looking, waterline sparse, and Aegir integration harsh.
+- Batch18 1821 identified `MAT_H8SurfaceShoreFoam_1428`, `MAT_H8_SurfaceFoamRibbons_1428`, `MAT_H8SurfaceWetBasaltReal_1428`, and `MAT_H8TerrainLit_BasaltSediment_1428` as relevant static material evidence, with several inactive or empty texture-slot states.
+- Batch18 1883 identified sky/ocean/foam/sargassum candidates and unresolved moon/source issues.
+- Batch18 1901 tracked missing manifests, named proof, and surface/shallow visual proof gaps. Static text can reduce manifest debt only; visual proof remains PENDING UNITY OWNER.
+
+PHASE 0 - AUTHORITY AND SCOPE LOCK
+1. Read the authority files and mandates listed above. Record exact files read in Status_1907.md.
+2. Create only owned output folders and files.
+3. Copy the no-Unity/no-build/no-scene-edit/no-asset-edit gate into Status_1907.md.
+4. Build a material package scope table from Batch18 evidence with rows for shoreline foam, foam ribbons, wet basalt, basalt sediment, waterline grime, biome weight, caustic mask, shallow transition, and Aegir/ocean reference.
+5. Mark each row as STATIC VERIFIED, PENDING SOURCE, PENDING CHANNEL_QA, PENDING UNITY OWNER, or STATIC REJECTED.
+
+CHECKPOINT A AFTER TASK 5
+- Scope table exists.
+- No Unity or Assets path is edited.
+- Every row cites an authority file or Batch18 report.
+
+PHASE 1 - COASTLINE MATERIAL ROLE PACKAGE
+6. Define required source roles for shoreline foam: albedo/source shape, foam opacity mask, wet edge breakup, sediment contamination mask, and optional caustic interference mask.
+7. Define required source roles for wet basalt: albedo, normal/height source, roughness/wetness logic, AO crevice logic, salt/mineral mask, and waterline transition mask.
+8. Define required source roles for basalt sediment/black sand: albedo, roughness, normal/height, shell/mineral flecks, and slope/traversal readability notes.
+9. Define required source roles for waterline grime: vertical gradient mask, tide stain, foam residue, algae/salt bands, and non-dark surface readability.
+10. Define required source roles for shallow transition: seabed sediment, coral rubble, photic caustic mask, wet/dry blend, and route readability.
+11. For every role, write compact/middle/high/ultra consequences using GlobalQualityWeight ranges.
+
+CHECKPOINT B AFTER TASK 11
+- The material role package includes all required source roles.
+- Source roles avoid Unity import and material assignment work.
+- Low-end consequences preserve premium visual floor instead of reducing to flat muddy textures.
+
+PHASE 2 - STATIC PATH AND GAP AUDIT
+12. Inspect relevant Batch18-cited material/source paths by static file search only. Do not edit them.
+13. For each cited material or source path, record existence, role, known empty texture-slot debt if reported, and required owner action.
+14. Identify source candidates already present under Docs/GeneratedAssets/** or reports that could feed the package. Do not move or import them.
+15. Mark missing foam ribbon textures, missing moon/source candidates, and inactive shoreline elements as PENDING UNITY OWNER or PENDING SOURCE according to evidence.
+16. Do not treat any third-party package asset, default material, primitive plane, or placeholder as acceptable product-face source without explicit rejection notes.
+17. Write 1907_TERRAIN_COASTLINE_MATERIAL_PACKAGE.csv with columns: package_row_id, domain, needed_role, evidence_path, candidate_source_path, status, rejection_gate, shader_contract_needed, quality_weight_consequence, unity_owner_needed.
+
+CHECKPOINT C AFTER TASK 17
+- Static path audit is factual and scoped.
+- Third-party/default/placeholder debts are named as debt, not accepted finals.
+- Visual proof remains PENDING UNITY OWNER.
+
+PHASE 3 - GEMINI PROMPT AND SOURCE REQUEST PACK
+18. Write prompt request files under Docs/GeneratedAssets/Gemini/Prompts/1907/** only. Do not generate browser images unless explicitly asked by the controller; this lane is package prep.
+19. Create at least 12 prompt rows: foam lace, foam ribbon breakup, wet basalt albedo, wet basalt height, salt/mineral mask, waterline grime, basalt sediment, black sand/shell fleck, shallow coral rubble, photic caustic mask, wet/dry transition, Aegir/ocean reference panel.
+20. Every prompt must enforce square tileable source, orthographic top-down, no perspective/horizon/text/logo/UI/watermark, diffuse even light, no baked cast shadows, no muddy/noir hiding, and Subnautica-level or better surface/photic readability.
+21. Mark which prompts are suitable for albedo source, height source, roughness/AO derivation, mask source, or reference-only.
+22. Add a rejection checklist for source operators and PBR QA agents.
+23. Add a "not an import manifest" warning to the prompt pack.
+
+CHECKPOINT D AFTER TASK 23
+- Prompt pack exists and is extraction-free.
+- It cannot be mistaken for Unity import instructions.
+- Every prompt references a material role and source QA gate.
+
+PHASE 4 - UNITY OWNER HANDOFF WITHOUT UNITY WORK
+24. Write 1907_TERRAIN_COASTLINE_MATERIAL_PACKAGE.md summarizing package needs, static evidence, missing source, risk, and acceptance gates.
+25. Write 1907_TERRAIN_COASTLINE_UNITY_OWNER_HANDOFF.md with future Unity-owner tasks only as PENDING UNITY OWNER: import settings, material assignment, shader channel contract, scene placement, screenshots, profiler, player capture.
+26. Include four visual-quality consequences: compact, middle, high, ultra. Compact must still preserve readable coast silhouette, foam breakup, wetness, material identity, and photic brightness.
+27. Include a visual fake decision section: which components should be masks, flipbooks, triplanar blends, or source textures instead of simulated water/foam particles.
+28. Update Status_1907.md, LOG_1907.md, and Rationale_1907.md with factual outcomes and no fake metrics.
+
+FINAL PROOF PACKET REQUIRED
+- Status_1907.md
+- LOG_1907.md
+- Rationale_1907.md for material package decisions
+- 1907_TERRAIN_COASTLINE_MATERIAL_PACKAGE.md
+- 1907_TERRAIN_COASTLINE_MATERIAL_PACKAGE.csv
+- 1907_TERRAIN_COASTLINE_UNITY_OWNER_HANDOFF.md
+- Prompt pack under Docs/GeneratedAssets/Gemini/Prompts/1907/** if created
+
+REJECTION GATES
+- Any Assets/** write is failure.
+- Any Unity launch or Unity MCP call is failure.
+- Any build command is failure.
+- Any scene/material/importer/shader/code edit is failure.
+- Any runtime or visual proof claim from static data is failure.
+- Any low-tier plan that makes surface/coastline flat, muddy, blurry, or primitive is failure.

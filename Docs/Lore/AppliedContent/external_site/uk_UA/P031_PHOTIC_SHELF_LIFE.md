@@ -10,8 +10,8 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
 # Життя світлового шельфу
@@ -24,7 +24,7 @@ localization_flags: 0
 
 ## Terminal
 
-Огляд шельфу: живі мати, прозорі пасовищники, pressureweed і маршрутні водорості ще поза домінуванням ремонту Atlas.
+SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.
 
 ## Audio
 

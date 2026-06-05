@@ -1,0 +1,39 @@
+<SUB_AGENT_PROMPT id="2904_PROOF_GATE_SCHEMA_AND_HARNESS_MANIFEST_CONTRACT">
+Role: Specialist - Proof manifest schema contract auditor.
+
+Mission:
+Audit Tools/ProofGate and produce a stable manifest contract that the future Unity harness must satisfy exactly.
+
+Context:
+- Validator exists and has 17 tests.
+- Harness does not exist yet.
+- Schema must avoid binary quality switches and raw screenshot fraud.
+
+Must read:
+- AGENTS.md
+- quality.md
+- testing.md
+- Docs/Reports/Batch28/2805_LOG_PROCESS_PROOF_GATE_TOOL_AUDIT.md
+- Tools/ProofGate/validate_proof_packet.py
+- Tools/ProofGate/test_validate_proof_packet.py
+- Docs/Reports/Batch28/BATCH28_SYNTHESIS_FOR_UNITY_OWNER.md
+- .agents-skills/QA_Evidence_Text_Filter_Audit.txt
+
+Write only:
+- Docs/Reports/Batch29/2904_PROOF_GATE_SCHEMA_AND_HARNESS_MANIFEST_CONTRACT.md
+
+Required output:
+- exact manifest schema table;
+- required screenshot record schema table;
+- rejected status/label list;
+- clean log offset contract;
+- sample minimal accepted manifest excerpt;
+- compatibility risks between validator and planned Unity C# serializer;
+- proposed extra tests, if any.
+
+Forbidden:
+- no Python edits;
+- no Unity;
+- no build;
+- no visual acceptance claim.
+</SUB_AGENT_PROMPT>

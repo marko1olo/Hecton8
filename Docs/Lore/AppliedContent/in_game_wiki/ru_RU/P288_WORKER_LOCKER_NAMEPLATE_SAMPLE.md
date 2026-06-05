@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Пример nameplate рабочего locker
+# Worker Locker Nameplate Sample
 
-Пример locker nameplate задает, как отдельные колонисты появляются через work evidence.
+Worker locker plates preserve people through work permissions, tool checks and erasure scars.
 
 ## Scanner
 
-Nameplate: route tag, clamp certification, erased payroll stripe.
+Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.
 
 ## Terminal
 
-LOCKER CROSSCHECK: route B permission valid; payroll status overwritten by loss desk.
+LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.
 
 ## Audio
 
-Имя сохранено. Payline erased.
+Name retained. Payline erased.
 
 ## Field Note
 
-Пример prop copy: REN OKOYE / Clamp route B / cutter cert active / payroll stripe sanded.
+REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.
 
 <!-- In-Game Wiki; generated from P288_WORKER_LOCKER_NAMEPLATE_SAMPLE/ru_RU. -->

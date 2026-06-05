@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -24,7 +24,7 @@ A public primer is allowed to be beautiful. It is not allowed to lie.
 
 ## Terminal
 
-PUBLIC ARTICLE TIER: safe for pre-release site and in-game non-spoiler index.
+PUBLIC PRIMER: spoiler-safe summary approved: ocean moon, dead colony, salvage return, no final payload route.
 
 ## Audio
 
@@ -32,6 +32,6 @@ First sell the ocean. Then earn the crime.
 
 ## Field Note
 
-This is the site-facing entry point: ocean moon, dead colony, salvage return, no final payload spoilers.
+The first public record sells the ocean, then earns the crime: HECTON-8 is beautiful before it becomes incriminating.
 
 <!-- External Site; generated from P251_HECTON8_PUBLIC_PRIMER_ARTICLE/pl_PL. -->

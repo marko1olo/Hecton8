@@ -3,6 +3,9 @@
 Date: 2026-05-07
 
 Status: PENDING VERIFICATION
+Evidence class: STATIC_DOC
+Owner domain: Echelon 5 Survival / trauma presentation routing
+Review disposition: YELLOW / STATIC_DOC_ONLY until compile/import/runtime/profiler/player proof exists.
 
 ## Source Anchors
 

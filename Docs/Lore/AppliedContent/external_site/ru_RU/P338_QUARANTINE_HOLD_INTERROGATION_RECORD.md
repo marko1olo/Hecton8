@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Record quarantine hold interrogation
+# Quarantine Hold Interrogation Record
 
-Выход из HECTON-8 может быть физически успешным и политически катастрофическим.
+A HECTON-8 exit can be physically successful and politically catastrophic.
 
 ## Scanner
 
@@ -28,10 +28,10 @@ QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload i
 
 ## Audio
 
-Они спасли тело первым, потому что тело знало маршрут.
+They saved the body first because the body knew the route.
 
 ## Field Note
 
-Для bitter partial ending и post-exit dossier item.
+Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom.
 
 <!-- External Site; generated from P338_QUARANTINE_HOLD_INTERROGATION_RECORD/ru_RU. -->

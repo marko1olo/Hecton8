@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
 # След языка отозванного доступа
 
-Прошлое протагониста дает HECTON-8 точную investigative texture: old procedure language одновременно clue и barrier.
+The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.
 
 ## Scanner
 
@@ -32,6 +32,6 @@ LOCKOUT: requester no longer certified for evacuation continuity materials. Rout
 
 ## Field Note
 
-Ставить на locks, которые намекают на liability без free access.
+Lockout language hints at hidden liability without granting free access.
 
 <!-- External Site; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/ru_RU. -->

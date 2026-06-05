@@ -1,0 +1,113 @@
+TASK 2008: PRODUCTFACE RELINK AND CHANNEL CONTRACT UNITY HANDOFF
+
+Role:
+ProductFace material, prefab, and texture-channel debt handoff author.
+
+Unity status:
+NO UNITY. Static analysis and handoff only. Do not open Unity or edit active Assets.
+
+Primary objective:
+Consolidate ProductFace debt into a repair-grade handoff: primitive prefabs, package/default materials, missing texture manifests, missing channel contracts, and unsafe relink routes. The output must let a later Unity-slot or editor-owner agent fix ProductFace assets without guessing.
+
+Authority files to read first:
+1. AGENTS.md
+2. TASTE.md
+3. VISION_LOCKS.md
+4. PROJECT_BIBLES.md
+5. quality.md
+6. presentation.md
+7. 3DMODEL_TEXTURES_MATERIALS.md
+8. 3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md
+9. PROCEDURAL_ASSET_PIPELINE.md
+10. performance.md
+
+Relevant mandates to load:
+1. .agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt
+2. .agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt
+3. .agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+
+Exact project files and tools to inspect:
+1. Assets/_Project/Scripts/Editor/ProductFaceToolMeshSourceAuthoring.cs
+2. Assets/_Project/Scripts/Editor/ProductFaceResourcePickupMeshSourceAuthoring.cs
+3. Assets/_Project/Scripts/Editor/ProductFaceTransportMeshSourceAuthoring.cs
+4. Assets/_Project/Scripts/Editor/ProductFacePlayerSuitMeshSourceAuthoring.cs
+5. Assets/_Project/Scripts/Editor/ProductFaceSkyOceanSourceValidator.cs
+6. Assets/_Project/Scripts/Editor/ProductFacePrefabQualityValidator.cs
+7. Assets/_Project/Scripts/Editor/ProductFaceMaterialTextureValidator.cs
+8. Tools/ProductFaceStaticRouteAudit.py
+9. Tools/MaterialAudit.py
+10. Tools/TextureAuditAndBakeDirector_SHINOBU_361.py
+11. taskslocal/batch18_night_orchestration/1892_PRODUCT_FACE_SINGLE_UNITY_OWNER_RUNBOOK.txt
+12. taskslocal/batch18_night_orchestration/1902_PRODUCT_FACE_DEFAULT_LIT_RELINK_DRY_RUN_PACKET.txt
+13. taskslocal/batch18_night_orchestration/1903_PRODUCT_FACE_TOOL_PLACEHOLDER_RELINK_DRY_RUN_PACKET.txt
+14. taskslocal/batch18_night_orchestration/1904_PRODUCT_FACE_RESOURCE_FLAT_MATERIAL_RELINK_DRY_RUN_PACKET.txt
+15. taskslocal/batch19_art_source_and_static_proof/1906_PBR_CHANNEL_DERIVATION_QA_PACKET.txt
+16. rg -n "31321ba15b8f8eb4c954353edc038b1d|Lit.mat|Default|Placeholder|ai_texture_prefab_bindings|ProductFace|m_Texture|m_Materials"
+
+Forbidden actions:
+1. Do not run Unity.
+2. Do not edit prefabs/materials/textures.
+3. Do not perform blind relinks.
+4. Do not use ai_texture_prefab_bindings.csv as ProductFace truth if route docs reject it.
+5. Do not infer ORM/MRAO/ARM channel roles from filenames alone.
+6. Do not delete package/default materials without scoped proof and replacement.
+7. Do not mark static relink plans as applied.
+
+Ownership boundaries:
+1. You own ProductFace static debt consolidation and handoff.
+2. You may create reports, CSVs, candidate relink tables, and validation checklists.
+3. You do not own applying prefab/material edits or Unity validation.
+4. You do not own generating new source art except prompt/intake notes.
+
+Deliverables:
+1. Docs/Reports/Batch20/2008_PRODUCTFACE_RELINK_HANDOFF.md
+2. Docs/Reports/Batch20/2008_PRODUCTFACE_DEBT_MATRIX.csv
+3. Docs/Reports/Batch20/2008_TEXTURE_CHANNEL_CONTRACT_GAPS.csv
+4. Docs/Reports/Batch20/2008_CANDIDATE_RELINKS_DO_NOT_APPLY.csv
+5. Docs/Reports/Batch20/2008_VALIDATION_CHECKLIST.md
+6. Docs/Tasks/Status_2008.md
+7. Docs/AgentLogs/Rationale_2008.md
+8. Docs/AgentLogs/LOG_2008.md
+
+Required baseline debt to incorporate:
+1. ProductFace debt exists: primitive prefabs, package/default materials, and missing texture manifests/channel contracts.
+2. Prior static packets identified default/package URP Lit material route debt.
+3. Prior static packets identified ProductFace tool placeholder material assignments.
+4. Prior static packets identified resource flat-color/empty-texture assignments.
+5. These prior packets are static context, not current Unity proof.
+
+Work plan:
+1. Read authority and mandates.
+2. Inspect ProductFace editor authoring and validator scripts.
+3. Run static searches for ProductFace references, default/package material GUIDs, placeholder material names, flat material patterns, and texture binding manifests.
+4. Inspect relevant Batch18/Batch19 files for known debt categories and exact prior evidence.
+5. Build a current static debt matrix. Include exact file path and reference evidence.
+6. Separate primitive prefab debt from material assignment debt and texture channel contract debt.
+7. Identify assets that have no safe replacement source.
+8. Identify assets with potential safe replacements but missing channel manifests.
+9. Identify assets where manual/art source generation is required before relink.
+10. Define exact texture channel contract requirements before any material is considered valid.
+11. Define material import and compression expectations by asset class.
+12. Define ProductFace validator extensions needed, if any, as future work. Do not implement unless explicitly in scope.
+13. Create candidate relink table with DO NOT APPLY in filename and report header.
+14. Create Unity-slot validation checklist: Console, prefab inspector, material inspector, Game/Scene capture, profiler, validator run.
+15. Add low/middle/high/ultra consequences for texture resolution, material features, LOD visibility, and shader keyword use.
+16. Add gameplay readability checks for tools/resources/suits/transport if touched by ProductFace visuals.
+17. Mark every unapplied fix as PENDING EDITOR VERIFICATION.
+18. Write concise rationale against blind relinks and filename-inferred channels.
+19. Finalize status with counts by debt class.
+20. Handoff exact first files to inspect in Unity.
+
+Three-pillar acceptance:
+1. Graphics: ProductFace assets cannot remain primitive/default/package-looking.
+2. Optimization: material fixes must avoid shader keyword explosion, texture bloat, and runtime allocation.
+3. Gameplay: ProductFace objects must remain readable as tools/resources/transport/suit functions.
+
+GlobalQualityWeight consequences:
+1. Low: smaller textures and simpler material features while preserving authored look.
+2. Middle: default material/texture target.
+3. High: richer normal/roughness/detail where visible.
+4. Ultra: overkill close-inspection texture/material quality without changing item identity or gameplay truth.
+
+Closeout standard:
+The report must prevent the next agent from doing a blind material relink.

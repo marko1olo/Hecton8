@@ -1,4 +1,5 @@
 using System;
+using Hecton.Localization;
 using UnityEngine;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
@@ -30,6 +31,8 @@ namespace Hecton8.Gameplay
         private static uint s_loreTitleLookupHash;
         private static int s_loreTitleLookupIndex = -1;
         private static int s_loreTitleLookupVersion;
+        private static int s_loreTitleLocaleLanguage = int.MinValue;
+        private static uint s_loreTitleLocaleHash = H8AppliedLoreRuntime.DefaultLocaleHash;
         private int _spatialHandle;
         private int _loreRegistryIndex = -1;
         private string _resolvedEntryId;
@@ -230,7 +233,9 @@ namespace Hecton8.Gameplay
             loreEntityHashes = default;
             count = s_loreEntityCount;
             if (count <= 0 ||
-                !TryReadLoreEntityVaultBuffers(out NativeArray<AbsoluteUniversePosition> aups, out NativeArray<uint> hashes) ||
+                !TryReadOnlyLoreEntityVaultBuffers(
+                    out NativeArray<AbsoluteUniversePosition>.ReadOnly aups,
+                    out NativeArray<uint>.ReadOnly hashes) ||
                 !aups.IsCreated ||
                 !hashes.IsCreated ||
                 aups.Length < count ||
@@ -239,8 +244,8 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            loreEntityAups = aups.AsReadOnly();
-            loreEntityHashes = hashes.AsReadOnly();
+            loreEntityAups = aups;
+            loreEntityHashes = hashes;
             return true;
         }
 
@@ -280,7 +285,8 @@ namespace Hecton8.Gameplay
                 return true;
             }
 
-            return H8AppliedLoreRuntime.TryWriteTitleUtf16(hash, H8AppliedLoreRuntime.DefaultLocaleHash, destination, out written);
+            uint localeHash = ResolveLoreTitleLocaleHash();
+            return H8AppliedLoreRuntime.TryWriteTitleUtf16(hash, localeHash, destination, out written);
         }
 
         private static bool TryCopyLoreEntityTitle(
@@ -313,6 +319,19 @@ namespace Hecton8.Gameplay
                 if (s_loreTitleLookupVersion == 0)
                     s_loreTitleLookupVersion = 1;
             }
+        }
+
+        private static uint ResolveLoreTitleLocaleHash()
+        {
+            GameLanguage language = LocRegistry.ActiveLanguage;
+            int languageId = (int)language;
+            if (s_loreTitleLocaleLanguage == languageId)
+                return s_loreTitleLocaleHash;
+
+            uint localeHash = H8AppliedLoreRuntime.ResolveLocaleHash(language);
+            s_loreTitleLocaleLanguage = languageId;
+            s_loreTitleLocaleHash = localeHash;
+            return localeHash;
         }
 
         private static int RegisterLoreEntity(ScannableTarget target)
@@ -417,21 +436,23 @@ namespace Hecton8.Gameplay
             if ((uint)index >= MaxLoreEntityCount ||
                 target == null ||
                 !EnsureLoreEntityVaultBuffers() ||
-                !TryReadLoreEntityVaultBuffers(out NativeArray<AbsoluteUniversePosition> aups, out NativeArray<uint> hashes))
+                !IsLoreEntityHandleCreated(in s_loreEntityAupsHandle) ||
+                !IsLoreEntityHandleCreated(in s_loreEntityHashesHandle))
             {
                 return;
             }
 
             if (!target.TryReadLoreEntityAupFromSpatialOwner(out AbsoluteUniversePosition entityAup))
             {
-                aups[index] = default;
-                hashes[index] = 0u;
+                ClearLoreEntitySlot(index);
                 return;
             }
 
             target.EnsureResolvedStrings();
-            aups[index] = entityAup;
-            hashes[index] = target._entityHash;
+            if (!TryWriteLoreEntityAup(index, in entityAup))
+                return;
+
+            TryWriteLoreEntityHash(index, target._entityHash);
         }
 
         private bool TryReadLoreEntityAupFromSpatialOwner(out AbsoluteUniversePosition entityAup)
@@ -450,14 +471,14 @@ namespace Hecton8.Gameplay
         private static void ClearLoreEntitySlot(int index)
         {
             if ((uint)index >= MaxLoreEntityCount ||
-                !EnsureLoreEntityVaultBuffers() ||
-                !TryReadLoreEntityVaultBuffers(out NativeArray<AbsoluteUniversePosition> aups, out NativeArray<uint> hashes))
+                !EnsureLoreEntityVaultBuffers())
             {
                 return;
             }
 
-            aups[index] = default;
-            hashes[index] = 0u;
+            AbsoluteUniversePosition emptyAup = default;
+            TryWriteLoreEntityHash(index, 0u);
+            TryWriteLoreEntityAup(index, in emptyAup);
         }
 
         private static bool EnsureLoreEntityVaultBuffers()
@@ -471,7 +492,9 @@ namespace Hecton8.Gameplay
             }
 
             if (vault != null &&
-                TryReadLoreEntityVaultBuffers(out NativeArray<AbsoluteUniversePosition> existingAups, out NativeArray<uint> existingHashes))
+                TryReadOnlyLoreEntityVaultBuffers(
+                    out NativeArray<AbsoluteUniversePosition>.ReadOnly existingAups,
+                    out NativeArray<uint>.ReadOnly existingHashes))
             {
                 return existingAups.Length >= MaxLoreEntityCount &&
                        existingHashes.Length >= MaxLoreEntityCount;
@@ -493,14 +516,68 @@ namespace Hecton8.Gameplay
                 MaxLoreEntityCount,
                 SystemID.UI,
                 NativeArrayOptions.ClearMemory);
-            return TryReadLoreEntityVaultBuffers(out NativeArray<AbsoluteUniversePosition> aups, out NativeArray<uint> hashes) &&
+            return TryReadOnlyLoreEntityVaultBuffers(
+                       out NativeArray<AbsoluteUniversePosition>.ReadOnly aups,
+                       out NativeArray<uint>.ReadOnly hashes) &&
                    aups.Length >= MaxLoreEntityCount &&
                    hashes.Length >= MaxLoreEntityCount;
         }
 
-        private static bool TryReadLoreEntityVaultBuffers(
-            out NativeArray<AbsoluteUniversePosition> aups,
-            out NativeArray<uint> hashes)
+        private static bool TryWriteLoreEntityAup(int index, in AbsoluteUniversePosition entityAup)
+        {
+            IDataVault vault = s_loreEntityVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !IsLoreEntityHandleCreated(in s_loreEntityAupsHandle) ||
+                !vault.TryAcquireWriteLock(in s_loreEntityAupsHandle, SystemID.UI, out NativeArray<AbsoluteUniversePosition> aups))
+            {
+                InvalidateLoreEntityVaultViews(resetHandles: false);
+                return false;
+            }
+
+            try
+            {
+                if (!aups.IsCreated || (uint)index >= (uint)aups.Length)
+                    return false;
+
+                aups[index] = entityAup;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in s_loreEntityAupsHandle, SystemID.UI);
+            }
+        }
+
+        private static bool TryWriteLoreEntityHash(int index, uint hash)
+        {
+            IDataVault vault = s_loreEntityVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !IsLoreEntityHandleCreated(in s_loreEntityHashesHandle) ||
+                !vault.TryAcquireWriteLock(in s_loreEntityHashesHandle, SystemID.UI, out NativeArray<uint> hashes))
+            {
+                InvalidateLoreEntityVaultViews(resetHandles: false);
+                return false;
+            }
+
+            try
+            {
+                if (!hashes.IsCreated || (uint)index >= (uint)hashes.Length)
+                    return false;
+
+                hashes[index] = hash;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in s_loreEntityHashesHandle, SystemID.UI);
+            }
+        }
+
+        private static bool TryReadOnlyLoreEntityVaultBuffers(
+            out NativeArray<AbsoluteUniversePosition>.ReadOnly aups,
+            out NativeArray<uint>.ReadOnly hashes)
         {
             aups = default;
             hashes = default;
@@ -508,8 +585,8 @@ namespace Hecton8.Gameplay
             if (vault == null ||
                 !IsLoreEntityHandleCreated(in s_loreEntityAupsHandle) ||
                 !IsLoreEntityHandleCreated(in s_loreEntityHashesHandle) ||
-                !vault.TryResolveHandle(in s_loreEntityAupsHandle, out aups) ||
-                !vault.TryResolveHandle(in s_loreEntityHashesHandle, out hashes) ||
+                !vault.TryReadOnlyHandle(in s_loreEntityAupsHandle, out aups) ||
+                !vault.TryReadOnlyHandle(in s_loreEntityHashesHandle, out hashes) ||
                 !aups.IsCreated ||
                 !hashes.IsCreated)
             {

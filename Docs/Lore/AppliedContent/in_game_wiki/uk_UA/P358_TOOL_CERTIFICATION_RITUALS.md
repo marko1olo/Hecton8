@@ -10,21 +10,21 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Tool Certification Rituals
+# Tool Certification Board
 
-Tool certification rituals give the colony culture without mysticism: trust is built through repeated technical checks.
+Tool certification boards show colony culture without mysticism: trust came from repeated technical checks and custody marks.
 
 ## Scanner
 
-Tool cert board. Workers marked trust with stamped tools and repeated checks.
+Tool certification board. Trust was stamped into cutters, gloves and pump keys.
 
 ## Terminal
 
-CERT BOARD: cutter head checked, sealant cartridge weighed, pressure glove signed, pump key returned. No ceremony, just survival discipline.
+CERT BOARD: cutter head checked; sealant cartridge weighed; pressure glove dual-signed; pump key returned late; descent tools held until recheck.
 
 ## Audio
 
@@ -32,6 +32,6 @@ They did not pray before descent. They checked each other's tools.
 
 ## Field Note
 
-Use for workshop, pump-room and fabricator evidence props.
+Cutter head checked. Sealant cartridge weighed. Pressure glove signed by two hands. Pump key returned late and nobody erased the warning.
 
 <!-- In-Game Wiki; generated from P358_TOOL_CERTIFICATION_RITUALS/uk_UA. -->

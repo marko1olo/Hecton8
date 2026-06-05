@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Акт: выживание на фотической полке
+# Photic Shelf Survival Act
 
-Акт фотической полки учит красоте и опасности одновременно: насосные, первые ремонты, кислородные карманы, полезная жизнь и первый неправильный ремонт.
+The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.
 
 ## Scanner
 
-Гейт акта: мелководье. Яркая жизнь, первые инструменты, первый полезный след ремонта Atlas.
+Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
 
 ## Terminal
 
-АКТ ВЫЖИВАНИЯ: качать, герметизировать, резать и пинговать. Мгновенный побег невозможен: ascent hardware потрачен на выживание.
+SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
 
 ## Audio
 
-Мелкая вода не безопасна. Она просто читаемая.
+The shallow water is not safe. It is only readable.
 
 ## Field Note
 
-Для first-hour маршрута, темпа shallow ecology и ранних scanner/wiki unlocks.
+Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
 
 <!-- In-Game Wiki; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/ru_RU. -->

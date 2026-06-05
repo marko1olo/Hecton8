@@ -4,6 +4,12 @@ Status: future / after English and RU assets are stable
 Public stance: single-player-first scope / proof-first campaign copy
 Runtime impact: none
 
+## Authority Boundary
+
+Static marketing plan only. Public voice routes to root `textes.md`.
+Claims about quality, release, platform support, Steam, wishlist, demo/playtest state, performance, spend, audience size, localization quality, campaign readiness, or publication-readiness route through `quality.md`, `release.md`, `platform.md`, current proof artifacts, and the local permission gates named in this file.
+Rows, regional priorities, localized pitch drafts, outreach notes, schedules, or gate names in this file do not approve public send, paid spend, Steam page/demo/wishlist claims, platform claims, localization publication, or release claims.
+
 ## Objective
 
 Use regional creators and press without machine-translated spam. Regional push matters because a few thousand dollars cannot buy global reach, but localized creator trust can outperform broad ads.

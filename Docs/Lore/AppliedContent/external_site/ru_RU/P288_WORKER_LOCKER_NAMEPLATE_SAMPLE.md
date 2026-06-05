@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Пример nameplate рабочего locker
+# Worker Locker Nameplate Sample
 
-HECTON-8 пишет колонистов как работников: не anonymous victims, не family hooks, а людей, чьи имена выживают в permissions, tools и damaged ledgers.
+HECTON-8 remembers colonists through objects that had jobs: lockers, route tags, gloves, meal tokens and damaged ledgers.
 
 ## Scanner
 
-Nameplate: route tag, clamp certification, erased payroll stripe.
+Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.
 
 ## Terminal
 
-LOCKER CROSSCHECK: route B permission valid; payroll status overwritten by loss desk.
+LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.
 
 ## Audio
 
-Имя сохранено. Payline erased.
+Name retained. Payline erased.
 
 ## Field Note
 
-Пример prop copy: REN OKOYE / Clamp route B / cutter cert active / payroll stripe sanded.
+REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.
 
 <!-- External Site; generated from P288_WORKER_LOCKER_NAMEPLATE_SAMPLE/ru_RU. -->

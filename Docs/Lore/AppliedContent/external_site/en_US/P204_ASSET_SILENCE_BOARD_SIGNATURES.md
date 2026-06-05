@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Asset Silence Board Signatures
 
-Asset Silence Board Signatures defines a publication-safe way to show Deep Reach erasure.
+Asset Silence Board signatures show a public-safe layer of Deep Reach erasure: muted packets, erased names, and accounting categories.
 
 ## Scanner
 

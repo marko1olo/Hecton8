@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# JA LOC: Mara Venn/Pump Chief
+# Mara Venn/Pump Chief
 
-JA LOC HOLD: Mara Venn is one of HECTON-8's worker anchors: a pump chief remembered through procedure, not melodrama.
+Mara Venn is one of HECTON-8's worker anchors: a pump chief remembered through procedure, not melodrama.
 
 ## Scanner
 
-JA LOC: Dossier: Mara Venn. Pump rhythm and water ledger agree.
+Dossier: Mara Venn. Pump rhythm and water ledger agree.
 
 ## Terminal
 
-JA LOC: MARA VENN/PUMPS. Held bypass; water stayed a machine load, not scenery.
+MARA VENN/PUMPS. Held bypass; water stayed a machine load, not scenery.
 
 ## Audio
 
-JA LOC HOLD: Venn did not leave a speech. She left the pump rhythm everyone else used to breathe.
+Venn did not leave a speech. She left the pump rhythm everyone else used to breathe.
 
 ## Field Note
 
-JA LOC HOLD: Place as a pump-room prop cluster; avoid family relation hooks.
+Pump-room evidence cluster: badge, cadence board, ledger correction, and polished bypass handle keep Mara Venn procedural, not melodramatic.
 
 <!-- External Site; generated from P401_MARA_VENN_PUMP_CHIEF_DOSSIER/ja_JP. -->

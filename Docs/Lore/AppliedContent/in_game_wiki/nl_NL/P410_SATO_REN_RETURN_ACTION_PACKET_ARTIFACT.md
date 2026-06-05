@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# NL LOC: Sato-Ren Return Packet
+# Sato-Ren Return Packet
 
-NL LOC HOLD: The Sato-Ren packet proves Deep Reach is active in 2190. Their present-tense pressure is not a warship; it is compliance language moving through rare signal windows.
+The Sato-Ren packet proves Deep Reach is active in 2190 through compliance traffic, not a warship: coordinates, custody, access and silence first.
 
 ## Scanner
 
-NL LOC HOLD: Deep Reach artifact: return-action packet. Coordinates requested before rescue language.
+Recovery Compliance packet. Coordinates requested before rescue language.
 
 ## Terminal
 
-NL LOC: SATO-REN PACKET. Send coords, Atlas access and sample custody before extraction.
+RECOVERY COMPLIANCE / SATO-REN / RETURN ACTION: transmit coordinates, Atlas access state, XO sample custody and contractor silence acknowledgement before extraction language is issued.
 
 ## Audio
 
-NL LOC HOLD: The packet knows where the asset is. It is less certain where you are.
+The packet knows where the asset is. It is less certain where you are.
 
 ## Field Note
 
-NL LOC HOLD: Use as bridge between present comms, final payload choices and public spoiler gates.
+Sato-Ren asks for position, access state and custody before she uses the word extraction. That order is the threat.
 
 <!-- In-Game Wiki; generated from P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT/nl_NL. -->

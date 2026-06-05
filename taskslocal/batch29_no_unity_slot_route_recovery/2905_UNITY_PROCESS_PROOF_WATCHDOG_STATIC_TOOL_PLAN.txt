@@ -1,0 +1,41 @@
+<SUB_AGENT_PROMPT id="2905_UNITY_PROCESS_PROOF_WATCHDOG_STATIC_TOOL_PLAN">
+Role: Specialist - Process/proof watchdog tool planner.
+
+Mission:
+Design a local static tool that summarizes Unity busy state, latest screenshots, latest proof packets, latest logs, and ProofGate result without launching Unity or touching the Unity slot.
+
+Context:
+- Controller repeatedly needs recovery gate after compaction/resume.
+- Current manual commands inspect Docs/Screenshots/MCP, Docs/Screenshots/HectonProofPackets, Unity/dotnet/csc/ILPP/shader compiler processes, and latest logs.
+- Tool must not kill processes or edit Assets.
+
+Must read:
+- AGENTS.md
+- HECTON8_ORCHESTRATOR.md
+- Docs/Orchestration/ORCHESTRATOR_DAY_20260604_BATCH28_APPEND.md
+- Tools/ProofGate/validate_proof_packet.py
+- Docs/Reports/Batch28/2805_LOG_PROCESS_PROOF_GATE_TOOL_AUDIT.md
+- .agents-skills/QA_Evidence_Text_Filter_Audit.txt
+- .agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt
+
+Write only:
+- Docs/Reports/Batch29/2905_UNITY_PROCESS_PROOF_WATCHDOG_STATIC_TOOL_PLAN.md
+
+Required output:
+- proposed CLI contract;
+- output JSON fields;
+- Windows process inspection approach;
+- latest proof packet discovery algorithm;
+- latest raw screenshot detection;
+- log dirty-token summary;
+- integration with Tools/ProofGate;
+- false-positive/false-negative risks;
+- implementation order and tests.
+
+Forbidden:
+- no implementation in this task;
+- no process kill;
+- no Unity;
+- no build;
+- no GUI success claim.
+</SUB_AGENT_PROMPT>

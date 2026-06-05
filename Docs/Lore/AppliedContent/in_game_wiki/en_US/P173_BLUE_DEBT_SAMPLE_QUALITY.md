@@ -10,13 +10,13 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Blue Debt Sample Quality
 
-Blue debt quality lets material endings, scanner warnings and site articles treat resources as moral pressure.
+Blue debt sample quality lets endings, scanner warnings, and material records treat resources as moral pressure rather than generic loot.
 
 ## Scanner
 

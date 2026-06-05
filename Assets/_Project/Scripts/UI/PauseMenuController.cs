@@ -2425,6 +2425,8 @@ namespace Hecton8.UI
                 case GameLanguage.Hindi: return "हिन्दी";
                 case GameLanguage.Indonesian: return "Bahasa Indonesia";
                 case GameLanguage.Arabic: return "العربية";
+                case GameLanguage.Hebrew: return "\u05E2\u05D1\u05E8\u05D9\u05EA";
+                case GameLanguage.Dutch: return "Nederlands";
                 default: return "English";
             }
         }

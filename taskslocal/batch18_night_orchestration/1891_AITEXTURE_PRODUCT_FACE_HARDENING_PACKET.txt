@@ -1,0 +1,69 @@
+ID: 1891
+TITLE: AITEXTURE_PRODUCT_FACE_HARDENING_PACKET
+MODE: REPORT_ONLY_STATIC_PIPELINE_PACKET
+
+You are HECTON-8 batch agent 1891.
+Do not edit source, assets, prefabs, scenes, binaries, generated meshes, `.meta`, DataMonolith, or task files.
+
+PRIMARY GOAL
+
+Create a hardening packet for reusing `AITextureControlMapBaker/Shinobu269` as a product-face texture ingestion route without letting it broadly bind materials into product prefabs or confuse channel contracts.
+
+READ
+
+- `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `VISION_LOCKS.md`
+- `TASTE.md`
+- `quality.md`
+- `3dmodel.md`
+- `3DMODEL_TEXTURES_MATERIALS.md`
+- `3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md`
+- `Docs/Reports/Batch18/1886_PRODUCT_FACE_TEXTURE_AUTHORING_PIPELINE_DISCOVERY.md`
+- AITextureControlMapBaker/Shinobu269 `.cs` files by targeted reading.
+
+Mandates:
+
+- `.agents-skills/QA_Evidence_Text_Filter_Audit.txt`
+- `.agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt`
+- `.agents-skills/DATA_Inventory_Resources_Items_SOA_Layout.txt` if present; if absent, state it.
+
+OUTPUTS YOU OWN
+
+- `Docs/Reports/Batch18/1891_AITEXTURE_PRODUCT_FACE_HARDENING_PACKET.md`
+- `Docs/Reports/Batch18/1891_AITEXTURE_PRODUCT_FACE_HARDENING_MATRIX.csv`
+- `Docs/Tasks/Status_1891.md`
+- `Docs/AgentLogs/Rationale_1891.md`
+- `Docs/AgentLogs/LOG_1891.md`
+
+CSV COLUMNS
+
+- `pipeline_component`
+- `current_behavior`
+- `product_face_risk`
+- `required_guard`
+- `future_write_scope`
+- `forbidden_behavior`
+- `verification_required`
+- `status`
+
+REQUIRED CONTENT
+
+- identify file paths and methods/classes that import textures, set import settings, create materials, bind material slots, bind prefabs, write reports, and record black-box telemetry;
+- propose a product-face manifest format and folder layout;
+- define how product-face assets can be imported without editing prefabs;
+- define how validators should reject broad prefab binding until relink owner slot;
+- identify exact code files future implementation may touch and exact files it must not touch;
+- do not create the implementation.
+
+VERIFICATION
+
+Run and record:
+
+- `git diff --check -- Docs/Reports/Batch18/1891_AITEXTURE_PRODUCT_FACE_HARDENING_PACKET.md Docs/Reports/Batch18/1891_AITEXTURE_PRODUCT_FACE_HARDENING_MATRIX.csv Docs/Tasks/Status_1891.md Docs/AgentLogs/Rationale_1891.md Docs/AgentLogs/LOG_1891.md`
+- `Import-Csv Docs/Reports/Batch18/1891_AITEXTURE_PRODUCT_FACE_HARDENING_MATRIX.csv | Measure-Object`
+- static term cross-check for `AITextureControlMapBaker`, `ProductFace`, `manifest`, `import`, `material`, `prefab`, `black-box`, `MRAO`, `ARM`.
+
+FINAL RESPONSE
+
+List changed files, CSV row count, exact future guardrails, and the highest code-risk before implementation.

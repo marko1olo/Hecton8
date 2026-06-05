@@ -4,6 +4,8 @@ Date: 2026-05-07
 
 Status: PENDING VERIFICATION
 
+Owner domain: inventory / crafting reactive economy
+
 Verification: PENDING VERIFICATION
 
 ## 2026-05-11 Historical Override + 2026-05-17 Actuality Pointer

@@ -1,0 +1,94 @@
+HECTON-8 LOCAL TASK BATCH INDEX
+Batch: batch17_lore_content_1770_1779
+Purpose: make the lore corpus production-facing, sorted by canon, surface, unlock route, localization state, and runtime integration path.
+Dispatch mode: ONE PARALLEL WAVE.
+
+PARALLEL WAVE LAW
+Agents 1770-1779 start at the same time.
+No agent may depend on another agent in this batch producing a file, API, asset, article, route card, localization row, or website feature.
+Only artifacts that already exist before dispatch may be treated as available.
+If a sibling result would be useful, write a handoff note under Docs/AgentLogs and continue with verified local scope.
+If sequential execution becomes required, mark it as NEXT_WAVE_REQUIRED and do not fabricate the missing prerequisite.
+
+PRIMARY AUTHORITIES FOR THE WHOLE BATCH
+- AGENTS.md
+- PROJECT_BIBLES.md
+- TASTE.md
+- writing.md
+- narrative.md
+- localization.md
+- textes.md when text bounds or UI text are touched
+- Docs/Lore/Lore_Bible.md
+- Docs/Lore/Canon_Locks.md
+- Docs/Lore/Lore_Content_System.md
+- Docs/Lore/Lore_Localization_Model.md
+- Docs/Lore/Lore_Multilingual_Content_Architecture.md
+- Docs/Lore/AppliedContent/README.md
+- Docs/Lore/Website_Publication_Map.md
+- Docs/Lore/Codex_Delivery_Map.md when in-game delivery is touched
+- Docs/Lore/Lore_Crosslink_Graph.md when links, facts, or clusters are touched
+
+KNOWN EXISTING PRODUCTION BASIS
+- Docs/Lore/AppliedContent/packets/*.packets.json
+- Docs/Lore/AppliedContent/in_game_wiki/<locale>/
+- Docs/Lore/AppliedContent/external_site/<locale>/
+- Docs/Lore/AppliedContent/release_sets/
+- Docs/Lore/AppliedContent/binding_maps/
+- Docs/Lore/AppliedContent/route_cards/
+- Docs/Lore/AppliedContent/Publication_Surface_Index.csv
+- Docs/Lore/AppliedContent/Publication_Cluster_Index.csv
+- Docs/Lore/AppliedContent/Localization_Status_Index.md
+- Docs/Lore/AppliedContent/reader.html
+- Tools/AppliedLoreImporter.py
+- Tools/AppliedLorePageExporter.py
+- Tools/AppliedLoreRouteCardExporter.py
+- Tools/AppliedLoreRuntimeAudit.py
+- Assets/_SourceData/DataMonolith/Narrative/applied_lore_packets.csv
+- Assets/_Project/Scripts/Core/Generated/H8AppliedLoreHashes.cs
+
+LOCALE ROSTER
+Every content-producing task must preserve the 15-locale contract:
+en_US, ru_RU, ja_JP, zh_CN, fr_FR, es_ES, de_DE, pl_PL, uk_UA, ar_SA, id_ID, ko_KR, he_IL, pt_BR, nl_NL.
+RTL locales: ar_SA, he_IL.
+Do not claim native localization unless native review proof exists.
+Use explicit status flags, not player-visible draft disclaimers.
+
+RUNTIME CONTRACT
+Runtime does not parse Markdown, JSON lore packets, ad hoc translation dictionaries, or website files.
+Authoring data must be importable/exportable through the Applied Lore pipeline and must be ready for DataMonolith/static-data packaging.
+When modifying content, keep Article IDs, packet IDs, unlock IDs, LocIDs, route cards, and publication indexes consistent.
+
+TASK FILES
+- 1770_CANON_RELEASE_SET_SORTING_ARCHIVIST.txt
+  Canon conflict audit, release-set sorting, surface ownership, spoiler/unlock matrix.
+- 1771_EXTERNAL_SITE_PUBLIC_WIKI_EDITOR.txt
+  Spoiler-safe public site/wiki longform content and navigation-ready public modules.
+- 1772_INGAME_WIKI_PDA_ENCYCLOPEDIA_EDITOR.txt
+  In-game wiki/PDA/codex entries that are useful after unlock and not omniscient.
+- 1773_SCANNER_FIELDNOTE_SPECIMEN_WRITER.txt
+  Scanner short text, field notes, resource/specimen cards, hazard/action snippets.
+- 1774_TERMINAL_SURVIVOR_CORPORATE_WRITER.txt
+  Terminal documents, survivor notes, colony artifacts, Deep Reach memos.
+- 1775_AUDIO_BLACKBOX_TRANSCRIPT_SCREENWRITER.txt
+  Audio logs, black-box fragments, subtitle-ready transcripts, interruption grammar.
+- 1776_FACT_CROSSLINK_PLAYER_NOTES_CURATOR.txt
+  Fact taxonomy, player notes, crosslinks, clusters, related article graph.
+- 1777_LOCALIZATION_TEXT_BOUNDS_QA_COORDINATOR.txt
+  Fifteen-locale QA, status index, RTL/CJK/expansion/text-bound validation.
+- 1778_APPLIED_LORE_DATAMONOLITH_INTEGRATOR.txt
+  Import/export/audit route, DataMonolith readiness, runtime binding proof.
+- 1779_LORE_READER_PROTOSITE_BUILDER.txt
+  Static multilingual reader/protosite for all surfaces, languages, clusters, and status filters.
+
+GLOBAL REJECTION GATES
+- Surface, sky, moons, coast, ocean skin, and photic shallows must remain bright, beautiful, alien, and readable. Darkness belongs to depth, caves, interiors, storms, and temporary eclipse windows.
+- No "AI design note" prose in player-facing text.
+- No unsupported claim that all 15 locales are native-final.
+- No new runtime interpreter.
+- No fabricated paths, IDs, route cards, APIs, scenes, or profiler numbers.
+- No sibling dependency inside this wave.
+- No lore contradiction with Lore_Bible.md or Canon_Locks.md.
+
+FINAL PROOF FOR THIS BATCH
+Each agent must append a final report to Docs/AgentLogs/LOG_[ID].md and maintain Docs/Tasks/Status_[ID].md plus Docs/AgentLogs/Rationale_[ID].md.
+Reports must include exact edited files, generated/updated packets/pages/indexes, validation commands, failures, blockers, and next-wave handoff notes.

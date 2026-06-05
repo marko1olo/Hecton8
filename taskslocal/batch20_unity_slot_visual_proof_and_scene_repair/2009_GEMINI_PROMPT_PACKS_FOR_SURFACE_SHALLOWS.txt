@@ -1,0 +1,115 @@
+TASK 2009: GEMINI PROMPT PACKS FOR SURFACE SHALLOWS
+
+Role:
+Offline prompt pack and candidate intake author for surface/shallow source textures and visual references.
+
+Unity status:
+NO UNITY. No GUI/browser generation unless explicitly supplied by an orchestrator with Gemini access.
+
+Primary objective:
+Write production-grade Gemini prompt packs and intake QA rules for surface, sky, Aegir, clouds, moons, coastline, ocean surface, photic shallows, kelp/coral/flora, and geology textures. This task may produce prompts and manifests only. It may not fake generated candidates.
+
+Authority files to read first:
+1. AGENTS.md
+2. TASTE.md
+3. VISION_LOCKS.md
+4. PROJECT_BIBLES.md
+5. 3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md
+6. 3DMODEL_TEXTURES_MATERIALS.md
+7. 3DMODEL_GEOLOGY_ROCKS.md
+8. 3DMODEL_FLORA_CORAL.md
+9. celestial.md
+10. atmosphere.md
+11. water.md
+12. terrain.md
+13. presentation.md
+
+Relevant mandates to load:
+1. .agents-skills/REND_Shader_Noir_Aesthetics_Dithering_Fog.txt
+2. .agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt
+3. .agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt
+
+Exact project files and tools to inspect:
+1. Assets/_Project/Editor/GeminiWorldBuilder.cs
+2. taskslocal/batch19_art_source_and_static_proof/1905_GEMINI_TEXTURE_SOURCE_GENERATION_PACKET.txt
+3. taskslocal/batch19_art_source_and_static_proof/1906_PBR_CHANNEL_DERIVATION_QA_PACKET.txt
+4. taskslocal/batch19_art_source_and_static_proof/1907_TERRAIN_COASTLINE_MATERIAL_PACKAGE_PREP.txt
+5. taskslocal/batch19_art_source_and_static_proof/1908_FLORA_CORAL_KELP_SOURCE_ATLAS_PREP.txt
+6. Assets/_Project/_PROLOGUE_CONTENT/Textures/Planets/Clouds/GASgIANT/Aegir_storms.png
+7. Assets/Crest/Crest/Textures/WaveNormals/WaveNormals.png
+8. Assets/Crest/Crest/Textures/Foam2.png
+9. Assets/Crest/Crest/Textures/foam.png
+10. Assets/Crest/Crest/Textures/Caustics/Caustics_tex_color.png
+11. rg --files Assets/_Project | rg "Texture|Material|Aegir|Cloud|Moon|Kelp|Coral|Rock|Shore|Coast|Foam|Caustic"
+
+Forbidden actions:
+1. Do not claim images were generated unless actual files are present and traceable.
+2. Do not use copyrighted reference copying or style plagiarism.
+3. Do not generate dark/noir surface prompt variants as default.
+4. Do not generate flat, primitive, crayon, muddy, or stock-like prompts.
+5. Do not leave packed texture channels undefined.
+6. Do not edit Assets.
+7. Do not run Unity.
+
+Ownership boundaries:
+1. You own prompt packs, candidate intake manifests, and QA rules.
+2. You do not own actual image generation unless Gemini access is explicitly available.
+3. You do not own importing generated images into Unity.
+4. You may reference existing project assets only as local source paths and constraints.
+
+Deliverables:
+1. Docs/Reports/Batch20/2009_GEMINI_SURFACE_SHALLOWS_PROMPT_PACKS.md
+2. Docs/Reports/Batch20/2009_CANDIDATE_INTAKE_MANIFEST_TEMPLATE.csv
+3. Docs/Reports/Batch20/2009_TEXTURE_DERIVATION_QA_RULES.md
+4. Docs/Reports/Batch20/2009_PROMPT_INDEX.csv
+5. Docs/Tasks/Status_2009.md
+6. Docs/AgentLogs/Rationale_2009.md
+7. Docs/AgentLogs/LOG_2009.md
+
+Required prompt pack categories:
+1. Aegir gas giant cloud/storm texture source.
+2. Moon surface texture source.
+3. Bright premium cloud atlas source.
+4. Horizon haze and sky color reference.
+5. Shoreline wet/dry rock albedo/height/roughness source.
+6. Beach cobble/coast cliff geology source.
+7. Kelp blade/stem material source.
+8. Coral branching/massive/plate material source.
+9. Reef sponge/fan material source.
+10. Ocean foam/caustic/detail reference source.
+11. Terrain coastline blend source.
+12. ProductFace material source categories if needed.
+
+Work plan:
+1. Read authority and mandates.
+2. Inspect GeminiWorldBuilder for expected prompt/intake patterns.
+3. Inspect Batch19 prompt/source packets for route constraints. Do not copy stale output blindly.
+4. Inventory existing texture source paths that prompts must respect.
+5. Define global style constraints: NASA-punk/deep sea noir identity, but bright premium surface/shallows.
+6. Define negative constraints: no darkness cover, no primitive scatter, no stock-photo blur, no muddy palette, no flat color.
+7. Write prompt packs by category with purpose, resolution target, tileability need, channel derivation needs, and rejection criteria.
+8. For PBR-derived prompts, specify what maps must be derivable and which cannot be guessed.
+9. Create candidate intake manifest template with source prompt ID, generator, date, license/rights status, base image path, derivative maps, channel contracts, reviewer, rejection reason.
+10. Create QA rules for deriving albedo, normal, roughness/smoothness, AO, height, masks, translucency, emission, packed maps.
+11. Create exact rule that packed ARM/MRAO/ORM channels require manifest proof before use.
+12. Create prompt variants for low/middle/high/ultra asset use where texture sizes/material richness change, not gameplay identity.
+13. Create manual/orchestrator instructions for candidate generation. State GUI/browser/manual access is required.
+14. Create rejection rubric for generated candidates.
+15. Define how candidates hand off to BioForge, GeologyForge, sky/Aegir, ocean, and ProductFace owners.
+16. Mark all generated candidate fields as PENDING until actual files exist.
+17. Add three-pillar checks to each prompt category.
+18. Finalize status with prompt counts by category.
+
+Three-pillar acceptance:
+1. Graphics: prompts demand premium source material that can meet the visual floor.
+2. Optimization: prompts and QA rules lead to texture sets that can be compressed, atlased, and LOD-scaled.
+3. Gameplay: generated visuals must not confuse affordances, hazards, item identity, or navigation.
+
+GlobalQualityWeight consequences:
+1. Low: source derivatives support smaller textures and simpler maps without ugly collapse.
+2. Middle: default texture/material set.
+3. High: extra detail maps and higher source resolution where visible.
+4. Ultra: overkill close-up source detail with no gameplay identity changes.
+
+Closeout standard:
+The packet must be ready for a human/orchestrator with Gemini access to run without inventing prompts.

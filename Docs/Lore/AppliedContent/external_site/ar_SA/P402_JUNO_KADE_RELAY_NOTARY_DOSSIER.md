@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# AR LOC: Juno Kade/Relay
+# Juno Kade/Relay
 
-AR LOC HOLD: Juno Kade turns communication delay into a human job: preserving evidence when help is physically absent.
+Juno Kade turns communication delay into a human job: preserving evidence when help is physically absent.
 
 ## Scanner
 
-AR LOC: Dossier: Juno Kade. Seal, packet tray and witness tape agree.
+Dossier: Juno Kade. Seal, packet tray and witness tape agree.
 
 ## Terminal
 
-AR LOC: JUNO KADE/RELAY. Stamped witness trays after each comm window; custody stayed evidence.
+JUNO KADE/RELAY. Stamped witness trays after each comm window; custody stayed evidence.
 
 ## Audio
 
-AR LOC HOLD: Kade certified facts that would arrive late and still have to matter.
+Kade certified facts that would arrive late and still have to matter.
 
 ## Field Note
 
-AR LOC HOLD: Use on relay-yard objects and site/wiki law-of-distance sections.
+Relay-yard objects and law-of-distance records should stay paired: seal, tray, packet ladder, and the late fact that still matters.
 
 <!-- External Site; generated from P402_JUNO_KADE_RELAY_NOTARY_DOSSIER/ar_SA. -->

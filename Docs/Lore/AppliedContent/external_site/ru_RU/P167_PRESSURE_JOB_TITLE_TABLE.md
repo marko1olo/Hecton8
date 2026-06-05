@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Таблица должностей под давлением
+# Pressure Job Title Table
 
-Таблица должностей под давлением дает авторам и UI устойчивый словарь труда колонии.
+Pressure job titles give the colony a stable labor vocabulary: pump chief, brine cartographer, vent-forge operator, relay notary, and the roles that make evidence physical.
 
 ## Scanner
 
-Должности должны объяснять, что держало колонию живой.
+Job titles should explain what kept the colony alive.
 
 ## Terminal
 
-JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader и shift supervisor.
+JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.
 
 ## Audio
 
-Никто не умер как Employee 438. Они умерли, делая работу.
+Nobody died as Employee 438. They died doing a job.
 
 ## Field Note
 
-Каждая должность должна подразумевать инструмент, маршрут или отказ.
+Every title should imply a tool, route or failure.
 
 <!-- External Site; generated from P167_PRESSURE_JOB_TITLE_TABLE/ru_RU. -->

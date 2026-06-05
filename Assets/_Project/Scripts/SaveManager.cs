@@ -70,13 +70,14 @@ namespace Hecton8.SaveSystem
         private const int MaxWfcSectorHydrationProbesPerTick = 4;
         private const int MaxWfcDirtySectorStackEntries = 256;
         private const int WfcOutpostSnapshotCacheCapacity = 256;
+        private const int WfcOutpostGridSnapshotScratchBytes = (WfcOutpostPersistenceConstants.CellCount + 7) & ~7;
         private const int MaxWfcDirtyAppendRetriesPerSlowTick = 2;
         private const float SafeAupSnapGroundPaddingMeters = 0.28f;
         private const float SafeAupSnapMinimumLiftMeters = 0.35f;
         private const string CriticalSectorCorruptionMessage = "CRITICAL ERROR: LOCALIZED DATA CORRUPTION. TERRAIN RE-INITIALIZED.";
         private const string GeologicalAnomalyDetectedMessage = "UNSTABLE REALITY";
-        private const string WfcOutpostBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_1403_WFC_PERSISTENCE_SYNC.bin";
-        private const string AsyncPersistenceBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_1403_ASYNC_PERSISTENCE.bin";
+        private const string WfcOutpostBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_SAVE_MANAGER_WFC_PERSISTENCE_SYNC.bin";
+        private const string AsyncPersistenceBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_SAVE_MANAGER_ASYNC_PERSISTENCE.bin";
         private const int MaxRegisteredSaveables = 256;
         private const int MaxSaveSlotNameLength = 48;
         private const int SaveSlotScratchCapacity = 8;
@@ -99,6 +100,7 @@ namespace Hecton8.SaveSystem
         private const uint WfcOutpostBlackBoxOperationAppend = 0x41504E44u; // APND
         private const uint WfcOutpostBlackBoxOperationFrame = 0x4652414Du; // FRAM
         private const uint WfcOutpostBlackBoxAppendFlagException = 1u << 0;
+        private const uint WfcOutpostBlackBoxSignalFlagOverflow = 1u << 1;
         private const uint WfcOutpostSnapshotCacheFlagAppendPending = 1u << 0;
         private const uint WfcOutpostSnapshotCacheFlagAppendInFlight = 1u << 1;
         private const uint WfcOutpostSnapshotCacheFlagAppendAny =
@@ -147,6 +149,8 @@ namespace Hecton8.SaveSystem
         private const int DefaultManualBackupGenerations = 3;
         private const int DefaultAutoBackupGenerations = 2;
         private const int DefaultQuickBackupGenerations = 2;
+        private const int MaxBackupGenerations = 8;
+        public const int MaxKnownArtifactPathCount = 3 + MaxBackupGenerations;
 
         // ----------------------------------------------------------
         //  INSPECTOR
@@ -229,6 +233,7 @@ namespace Hecton8.SaveSystem
             public VaultGenerationHandle<byte> WfcOutpostGridHandle;
             public NativeArray<ulong> WfcOutpostPackedWords;
             public NativeArray<ulong> WfcOutpostRestoreWords;
+            public NativeArray<byte> WfcOutpostGridSnapshotScratch;
             public NativeArray<byte> WfcOutpostPayloadBuffer;
             public NativeArray<WfcOutpostSnapshotCacheEntry> WfcOutpostSnapshotCache;
             public NativeArray<AsyncPersistenceTelemetryEntry> SaveTelemetryRing;
@@ -318,6 +323,15 @@ namespace Hecton8.SaveSystem
                         nameof(WfcOutpostPayloadBuffer));
                 }
 
+                if (!WfcOutpostGridSnapshotScratch.IsCreated)
+                {
+                    // COLD ALLOC: NativeArray<byte>[504] - 8-byte-padded WFC mutable-cell grid snapshot copied under DataVault lock before payload packing - owner: SaveManagerNativeBufferSet
+                    WfcOutpostGridSnapshotScratch = CreatePersistentNativeArray<byte>(
+                        WfcOutpostGridSnapshotScratchBytes,
+                        NativeArrayOptions.UninitializedMemory,
+                        nameof(WfcOutpostGridSnapshotScratch));
+                }
+
                 if (!WfcOutpostSnapshotCache.IsCreated)
                 {
                     // COLD ALLOC: NativeArray<WfcOutpostSnapshotCacheEntry>[256] - WFC per-sector payload-hash dedupe cache - owner: SaveManagerNativeBufferSet
@@ -382,6 +396,7 @@ namespace Hecton8.SaveSystem
                 WfcOutpostGridHandle = default;
                 DisposeNativeArrayBestEffort(ref WfcOutpostPackedWords, ref firstException, sentinelLabel: nameof(WfcOutpostPackedWords));
                 DisposeNativeArrayBestEffort(ref WfcOutpostRestoreWords, ref firstException, sentinelLabel: nameof(WfcOutpostRestoreWords));
+                DisposeNativeArrayBestEffort(ref WfcOutpostGridSnapshotScratch, ref firstException, sentinelLabel: nameof(WfcOutpostGridSnapshotScratch));
                 DisposeNativeArrayBestEffort(ref WfcOutpostPayloadBuffer, ref firstException, sentinelLabel: nameof(WfcOutpostPayloadBuffer));
                 DisposeNativeArrayBestEffort(ref WfcOutpostSnapshotCache, ref firstException, sentinelLabel: nameof(WfcOutpostSnapshotCache));
                 DisposeNativeArrayBestEffort(ref SaveTelemetryRing, ref firstException, sentinelLabel: nameof(SaveTelemetryRing));
@@ -599,6 +614,7 @@ namespace Hecton8.SaveSystem
         private ref VaultGenerationHandle<byte> _wfcOutpostGridHandle => ref _nativeBuffers.WfcOutpostGridHandle;
         private ref NativeArray<ulong> _wfcOutpostPackedWords => ref _nativeBuffers.WfcOutpostPackedWords;
         private ref NativeArray<ulong> _wfcOutpostRestoreWords => ref _nativeBuffers.WfcOutpostRestoreWords;
+        private ref NativeArray<byte> _wfcOutpostGridSnapshotScratch => ref _nativeBuffers.WfcOutpostGridSnapshotScratch;
         private ref NativeArray<byte> _wfcOutpostPayloadBuffer => ref _nativeBuffers.WfcOutpostPayloadBuffer;
         private ref NativeArray<WfcOutpostSnapshotCacheEntry> _wfcOutpostSnapshotCache => ref _nativeBuffers.WfcOutpostSnapshotCache;
         private ref NativeArray<AsyncPersistenceTelemetryEntry> _saveTelemetryRing => ref _nativeBuffers.SaveTelemetryRing;
@@ -872,7 +888,7 @@ namespace Hecton8.SaveSystem
                 return math.clamp(
                     math.max(manager.manualBackupGenerations, math.max(manager.autoBackupGenerations, manager.quickBackupGenerations)),
                     1,
-                    8);
+                    MaxBackupGenerations);
             }
 
             return math.max(DefaultManualBackupGenerations, math.max(DefaultAutoBackupGenerations, DefaultQuickBackupGenerations));
@@ -1239,7 +1255,7 @@ namespace Hecton8.SaveSystem
         {
             EnsureWfcOutpostBlackBoxRing();
             EnsureWfcOutpostNativeBuffers();
-            RefreshWfcOutpostDependencies();
+            RefreshWfcOutpostDependenciesForExternalRequest();
             return TryPersistWfcOutpostStateSnapshotInternal(sectorHash, wfcGrid, frame, out status);
         }
 
@@ -1340,6 +1356,21 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
+        private bool TryCopyWfcOutpostGridToSnapshotScratch(NativeArray<byte> wfcGrid)
+        {
+            if (!IsValidWfcOutpostGrid(wfcGrid) ||
+                !IsValidWfcOutpostGrid(_wfcOutpostGridSnapshotScratch))
+            {
+                return false;
+            }
+
+            NativeArray<byte>.Copy(
+                wfcGrid,
+                _wfcOutpostGridSnapshotScratch,
+                WfcOutpostPersistenceConstants.CellCount);
+            return true;
+        }
+
         private bool TryCommitWfcOutpostStateSnapshotPayload(
             ulong sectorHash,
             uint frame,
@@ -1386,7 +1417,7 @@ namespace Hecton8.SaveSystem
         {
             EnsureWfcOutpostBlackBoxRing();
             EnsureWfcOutpostNativeBuffers();
-            RefreshWfcOutpostDependencies();
+            RefreshWfcOutpostDependenciesForExternalRequest();
             status = WfcOutpostPersistenceStatus.None;
             if (sectorHash == 0UL)
             {
@@ -1614,6 +1645,17 @@ namespace Hecton8.SaveSystem
             RefreshWfcOutpostDependencies(GlobalRegistry.MacroDatabase, GlobalRegistry.DataVault);
         }
 
+        private void RefreshWfcOutpostDependenciesForExternalRequest()
+        {
+            if (_macroDatabaseService == null || _dataVault == null)
+            {
+                RefreshWfcOutpostDependencies();
+                return;
+            }
+
+            RefreshWfcOutpostDependencyReadiness();
+        }
+
         private void RefreshWfcOutpostDependencies(IMacroDatabaseService macroDatabase, IDataVault dataVault)
         {
             bool macroDatabaseChanged = !ReferenceEquals(_macroDatabaseService, macroDatabase);
@@ -1730,16 +1772,6 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        private static void ReleaseWfcOutpostGridWrite(
-            IDataVault acquiredVault,
-            in VaultGenerationHandle<byte> acquiredHandle)
-        {
-            if (acquiredVault == null || !IsWfcOutpostGridHandleCreated(in acquiredHandle))
-                return;
-
-            acquiredVault.ReleaseWriteLock(in acquiredHandle, SystemID.CoreDataVault);
-        }
-
         private static bool IsWfcOutpostGridHandleCreated(in VaultGenerationHandle<byte> handle)
         {
             return handle.BufferID == unchecked((uint)(int)BufferID.WfcOutpostGrid) &&
@@ -1758,6 +1790,8 @@ namespace Hecton8.SaveSystem
                    _wfcOutpostPackedWords.Length >= WfcOutpostPersistenceConstants.PackedWordCount &&
                    _wfcOutpostRestoreWords.IsCreated &&
                    _wfcOutpostRestoreWords.Length >= WfcOutpostPersistenceConstants.PackedWordCount &&
+                   _wfcOutpostGridSnapshotScratch.IsCreated &&
+                   _wfcOutpostGridSnapshotScratch.Length >= WfcOutpostPersistenceConstants.CellCount &&
                    _wfcOutpostPayloadBuffer.IsCreated &&
                    _wfcOutpostPayloadBuffer.Length >= WfcOutpostPersistenceConstants.PayloadMaxBytes &&
                    _wfcOutpostSnapshotCache.IsCreated &&
@@ -1791,7 +1825,7 @@ namespace Hecton8.SaveSystem
             if (pager == null)
                 return false;
 
-            IDataVault dataVault = GlobalRegistry.DataVault;
+            IDataVault dataVault = _dataVault;
             if (dataVault == null || dataVault.IsCompactionFenceActive || dataVault.IsAllocationLocked)
                 return false;
 
@@ -1920,6 +1954,8 @@ namespace Hecton8.SaveSystem
             }
 
             Span<ulong> dirtySectors = stackalloc ulong[signals.Length];
+            Span<ushort> dirtyCellIndices = stackalloc ushort[signals.Length];
+            Span<byte> dirtyCellFlags = stackalloc byte[signals.Length];
             int dirtySectorCount = 0;
 
             for (int i = 0; i < signals.Length; i++)
@@ -1952,6 +1988,16 @@ namespace Hecton8.SaveSystem
                         out hydratedCacheFrame);
                 }
 
+                int dirtyCellWriteCount = CollectWfcOutpostSignalWrites(
+                    signals,
+                    dirtySectorHash,
+                    dirtyCellIndices,
+                    dirtyCellFlags,
+                    out uint dirtyFrame,
+                    out _);
+                if (dirtyCellWriteCount <= 0)
+                    continue;
+
                 if (!TryAcquireWfcOutpostGridWrite(
                         out NativeArray<byte> wfcGrid,
                         out VaultGenerationHandle<byte> wfcGridHandle,
@@ -1964,17 +2010,17 @@ namespace Hecton8.SaveSystem
                     return;
                 }
 
-                uint dirtyFrame = 0u;
-                bool hasDirtySignal = false;
                 bool stageSucceeded = false;
                 bool needsCommit = false;
                 bool publishWriteFailure = false;
                 ulong packedHash = 0UL;
                 int payloadBytes = 0;
                 WfcOutpostPersistenceStatus status = WfcOutpostPersistenceStatus.None;
+                bool copiedGridSnapshot = false;
+                bool appliedHydration = false;
                 try
                 {
-                    PrepareWfcOutpostMutableGridForSector(
+                    appliedHydration = PrepareWfcOutpostMutableGridForSector(
                         dirtySectorHash,
                         wfcGrid,
                         hasHydration,
@@ -1983,42 +2029,59 @@ namespace Hecton8.SaveSystem
                         hydratedCacheFlags,
                         hydratedCacheFrame);
 
-                    for (int signalIndex = 0; signalIndex < signals.Length; signalIndex++)
-                    {
-                        WfcOutpostStateChangedSignal signal = signals[signalIndex];
-                        if (signal.SectorHash != dirtySectorHash ||
-                            !IsPersistableWfcOutpostStateSignal(in signal))
-                        {
-                            continue;
-                        }
+                    for (int writeIndex = 0; writeIndex < dirtyCellWriteCount; writeIndex++)
+                        wfcGrid[dirtyCellIndices[writeIndex]] = dirtyCellFlags[writeIndex];
 
-                        wfcGrid[signal.CellIndex] = (byte)(signal.CurrentFlags & WfcOutpostPersistenceConstants.MutableFlagMask);
-                        dirtyFrame = signal.Frame;
-                        hasDirtySignal = true;
+                    if (!TryCopyWfcOutpostGridToSnapshotScratch(wfcGrid))
+                    {
+                        status = WfcOutpostPersistenceStatus.InvalidGrid;
+                        publishWriteFailure = true;
                     }
-
-                    if (hasDirtySignal)
+                    else
                     {
-                        stageSucceeded = TryStageWfcOutpostStateSnapshotPayload(
-                            dirtySectorHash,
-                            wfcGrid,
-                            dirtyFrame,
-                            out status,
-                            out packedHash,
-                            out payloadBytes,
-                            out needsCommit,
-                            out publishWriteFailure);
+                        copiedGridSnapshot = true;
                     }
                 }
                 finally
                 {
-                    ReleaseWfcOutpostGridWrite(wfcGridVault, in wfcGridHandle);
+                    wfcGridVault.ReleaseWriteLock(in wfcGridHandle, SystemID.CoreDataVault);
+                }
+
+                if (appliedHydration)
+                {
+                    RecordWfcOutpostEventBlackBox(
+                        WfcOutpostBlackBoxOperationHydration,
+                        WfcOutpostPersistenceStatus.Ready,
+                        dirtySectorHash,
+                        hydratedPayloadHash,
+                        hydratedPayloadBytes);
+                }
+
+                if (copiedGridSnapshot)
+                {
+                    stageSucceeded = TryStageWfcOutpostStateSnapshotPayload(
+                        dirtySectorHash,
+                        _wfcOutpostGridSnapshotScratch,
+                        dirtyFrame,
+                        out status,
+                        out packedHash,
+                        out payloadBytes,
+                        out needsCommit,
+                        out publishWriteFailure);
+                }
+                else if (status != WfcOutpostPersistenceStatus.None)
+                {
+                    RecordWfcOutpostEventBlackBox(
+                        WfcOutpostBlackBoxOperationPersist,
+                        status,
+                        dirtySectorHash,
+                        frame: dirtyFrame);
                 }
 
                 if (publishWriteFailure)
                     PublishWfcWriteFailureWarning();
 
-                if (hasDirtySignal && stageSucceeded && needsCommit)
+                if (stageSucceeded && needsCommit)
                 {
                     TryCommitWfcOutpostStateSnapshotPayload(
                         dirtySectorHash,
@@ -2032,35 +2095,83 @@ namespace Hecton8.SaveSystem
 
         private void DrainWfcOutpostStateChangedSignalsStorm(ReadOnlySpan<WfcOutpostStateChangedSignal> signals)
         {
-            for (int i = 0; i < signals.Length; i++)
-            {
-                WfcOutpostStateChangedSignal signal = signals[i];
-                if (IsPersistableWfcOutpostStateSignal(in signal))
-                    RecordWfcOutpostStateChangedSignalEvent(in signal);
-            }
+            Span<ulong> dirtySectors = stackalloc ulong[MaxWfcDirtySectorStackEntries];
+            Span<ushort> dirtyCellIndices = stackalloc ushort[MaxWfcDirtySectorStackEntries];
+            Span<byte> dirtyCellFlags = stackalloc byte[MaxWfcDirtySectorStackEntries];
+            int dirtySectorCount = 0;
+            bool sectorOverflow = false;
+            uint overflowFrame = 0u;
 
             for (int i = 0; i < signals.Length; i++)
             {
-                WfcOutpostStateChangedSignal firstSignal = signals[i];
-                if (!IsPersistableWfcOutpostStateSignal(in firstSignal) ||
-                    HasEarlierWfcOutpostSectorSignal(signals, i, firstSignal.SectorHash))
+                WfcOutpostStateChangedSignal signal = signals[i];
+                if (!IsPersistableWfcOutpostStateSignal(in signal))
+                    continue;
+
+                RecordWfcOutpostStateChangedSignalEvent(in signal);
+
+                if (ContainsWfcOutpostSector(dirtySectors, dirtySectorCount, signal.SectorHash))
+                    continue;
+
+                if (dirtySectorCount >= dirtySectors.Length)
                 {
+                    sectorOverflow = true;
+                    overflowFrame = signal.Frame;
                     continue;
                 }
+
+                dirtySectors[dirtySectorCount++] = signal.SectorHash;
+            }
+
+            if (sectorOverflow)
+            {
+                RecordWfcOutpostEventBlackBox(
+                    WfcOutpostBlackBoxOperationSignal,
+                    WfcOutpostPersistenceStatus.Rejected,
+                    0UL,
+                    signalSourceHash: WfcOutpostPersistenceSourceHash,
+                    flags: WfcOutpostBlackBoxSignalFlagOverflow,
+                    frame: overflowFrame);
+            }
+
+            for (int sectorIndex = 0; sectorIndex < dirtySectorCount; sectorIndex++)
+            {
+                ulong dirtySectorHash = dirtySectors[sectorIndex];
 
                 bool hasHydration = false;
                 ulong hydratedPayloadHash = 0UL;
                 int hydratedPayloadBytes = 0;
                 uint hydratedCacheFlags = 0u;
                 uint hydratedCacheFrame = 0u;
-                if (_wfcOutpostMutableGridSectorHash != firstSignal.SectorHash)
+                if (_wfcOutpostMutableGridSectorHash != dirtySectorHash)
                 {
                     hasHydration = TryStageWfcOutpostStateOverrideFromHydration(
-                        firstSignal.SectorHash,
+                        dirtySectorHash,
                         out hydratedPayloadHash,
                         out hydratedPayloadBytes,
                         out hydratedCacheFlags,
                         out hydratedCacheFrame);
+                }
+
+                int dirtyCellWriteCount = CollectWfcOutpostSignalWrites(
+                    signals,
+                    dirtySectorHash,
+                    dirtyCellIndices,
+                    dirtyCellFlags,
+                    out uint dirtyFrame,
+                    out bool writeOverflow);
+                if (dirtyCellWriteCount <= 0)
+                    continue;
+
+                if (writeOverflow)
+                {
+                    RecordWfcOutpostEventBlackBox(
+                        WfcOutpostBlackBoxOperationSignal,
+                        WfcOutpostPersistenceStatus.Rejected,
+                        dirtySectorHash,
+                        signalSourceHash: WfcOutpostPersistenceSourceHash,
+                        flags: WfcOutpostBlackBoxSignalFlagOverflow,
+                        frame: dirtyFrame);
                 }
 
                 if (!TryAcquireWfcOutpostGridWrite(
@@ -2071,22 +2182,22 @@ namespace Hecton8.SaveSystem
                     RecordWfcOutpostEventBlackBox(
                         WfcOutpostBlackBoxOperationPersist,
                         WfcOutpostPersistenceStatus.InvalidGrid,
-                        firstSignal.SectorHash);
+                        dirtySectorHash);
                     return;
                 }
 
-                uint dirtyFrame = 0u;
-                bool hasDirtySignal = false;
                 bool stageSucceeded = false;
                 bool needsCommit = false;
                 bool publishWriteFailure = false;
                 ulong packedHash = 0UL;
                 int payloadBytes = 0;
                 WfcOutpostPersistenceStatus status = WfcOutpostPersistenceStatus.None;
+                bool copiedGridSnapshot = false;
+                bool appliedHydration = false;
                 try
                 {
-                    PrepareWfcOutpostMutableGridForSector(
-                        firstSignal.SectorHash,
+                    appliedHydration = PrepareWfcOutpostMutableGridForSector(
+                        dirtySectorHash,
                         wfcGrid,
                         hasHydration,
                         hydratedPayloadHash,
@@ -2094,45 +2205,62 @@ namespace Hecton8.SaveSystem
                         hydratedCacheFlags,
                         hydratedCacheFrame);
 
-                    for (int signalIndex = i; signalIndex < signals.Length; signalIndex++)
-                    {
-                        WfcOutpostStateChangedSignal signal = signals[signalIndex];
-                        if (signal.SectorHash != firstSignal.SectorHash ||
-                            !IsPersistableWfcOutpostStateSignal(in signal))
-                        {
-                            continue;
-                        }
+                    for (int writeIndex = 0; writeIndex < dirtyCellWriteCount; writeIndex++)
+                        wfcGrid[dirtyCellIndices[writeIndex]] = dirtyCellFlags[writeIndex];
 
-                        wfcGrid[signal.CellIndex] = (byte)(signal.CurrentFlags & WfcOutpostPersistenceConstants.MutableFlagMask);
-                        dirtyFrame = signal.Frame;
-                        hasDirtySignal = true;
+                    if (!TryCopyWfcOutpostGridToSnapshotScratch(wfcGrid))
+                    {
+                        status = WfcOutpostPersistenceStatus.InvalidGrid;
+                        publishWriteFailure = true;
                     }
-
-                    if (hasDirtySignal)
+                    else
                     {
-                        stageSucceeded = TryStageWfcOutpostStateSnapshotPayload(
-                            firstSignal.SectorHash,
-                            wfcGrid,
-                            dirtyFrame,
-                            out status,
-                            out packedHash,
-                            out payloadBytes,
-                            out needsCommit,
-                            out publishWriteFailure);
+                        copiedGridSnapshot = true;
                     }
                 }
                 finally
                 {
-                    ReleaseWfcOutpostGridWrite(wfcGridVault, in wfcGridHandle);
+                    wfcGridVault.ReleaseWriteLock(in wfcGridHandle, SystemID.CoreDataVault);
+                }
+
+                if (appliedHydration)
+                {
+                    RecordWfcOutpostEventBlackBox(
+                        WfcOutpostBlackBoxOperationHydration,
+                        WfcOutpostPersistenceStatus.Ready,
+                        dirtySectorHash,
+                        hydratedPayloadHash,
+                        hydratedPayloadBytes);
+                }
+
+                if (copiedGridSnapshot)
+                {
+                    stageSucceeded = TryStageWfcOutpostStateSnapshotPayload(
+                        dirtySectorHash,
+                        _wfcOutpostGridSnapshotScratch,
+                        dirtyFrame,
+                        out status,
+                        out packedHash,
+                        out payloadBytes,
+                        out needsCommit,
+                        out publishWriteFailure);
+                }
+                else if (status != WfcOutpostPersistenceStatus.None)
+                {
+                    RecordWfcOutpostEventBlackBox(
+                        WfcOutpostBlackBoxOperationPersist,
+                        status,
+                        dirtySectorHash,
+                        frame: dirtyFrame);
                 }
 
                 if (publishWriteFailure)
                     PublishWfcWriteFailureWarning();
 
-                if (hasDirtySignal && stageSucceeded && needsCommit)
+                if (stageSucceeded && needsCommit)
                 {
                     TryCommitWfcOutpostStateSnapshotPayload(
-                        firstSignal.SectorHash,
+                        dirtySectorHash,
                         dirtyFrame,
                         packedHash,
                         payloadBytes,
@@ -2155,6 +2283,42 @@ namespace Hecton8.SaveSystem
                 frame: signal.Frame);
         }
 
+        private static int CollectWfcOutpostSignalWrites(
+            ReadOnlySpan<WfcOutpostStateChangedSignal> signals,
+            ulong sectorHash,
+            Span<ushort> cellIndices,
+            Span<byte> cellFlags,
+            out uint dirtyFrame,
+            out bool overflow)
+        {
+            dirtyFrame = 0u;
+            overflow = false;
+            int writeCount = 0;
+            int writeCapacity = math.min(cellIndices.Length, cellFlags.Length);
+            for (int signalIndex = 0; signalIndex < signals.Length; signalIndex++)
+            {
+                WfcOutpostStateChangedSignal signal = signals[signalIndex];
+                if (signal.SectorHash != sectorHash ||
+                    !IsPersistableWfcOutpostStateSignal(in signal))
+                {
+                    continue;
+                }
+
+                dirtyFrame = signal.Frame;
+                if (writeCount >= writeCapacity)
+                {
+                    overflow = true;
+                    continue;
+                }
+
+                cellIndices[writeCount] = signal.CellIndex;
+                cellFlags[writeCount] = (byte)(signal.CurrentFlags & WfcOutpostPersistenceConstants.MutableFlagMask);
+                writeCount++;
+            }
+
+            return writeCount;
+        }
+
         private static bool IsPersistableWfcOutpostStateSignal(in WfcOutpostStateChangedSignal signal)
         {
             return signal.SectorHash != 0UL &&
@@ -2168,24 +2332,6 @@ namespace Hecton8.SaveSystem
             {
                 if (sectors[i] == sectorHash)
                     return true;
-            }
-
-            return false;
-        }
-
-        private static bool HasEarlierWfcOutpostSectorSignal(
-            ReadOnlySpan<WfcOutpostStateChangedSignal> signals,
-            int currentIndex,
-            ulong sectorHash)
-        {
-            for (int i = 0; i < currentIndex; i++)
-            {
-                WfcOutpostStateChangedSignal signal = signals[i];
-                if (signal.SectorHash == sectorHash &&
-                    IsPersistableWfcOutpostStateSignal(in signal))
-                {
-                    return true;
-                }
             }
 
             return false;
@@ -2242,9 +2388,10 @@ namespace Hecton8.SaveSystem
                     return;
                 }
 
+                bool appliedHydration = false;
                 try
                 {
-                    PrepareWfcOutpostMutableGridForSector(
+                    appliedHydration = PrepareWfcOutpostMutableGridForSector(
                         sectorHash,
                         wfcGrid,
                         true,
@@ -2255,7 +2402,17 @@ namespace Hecton8.SaveSystem
                 }
                 finally
                 {
-                    ReleaseWfcOutpostGridWrite(wfcGridVault, in wfcGridHandle);
+                    wfcGridVault.ReleaseWriteLock(in wfcGridHandle, SystemID.CoreDataVault);
+                }
+
+                if (appliedHydration)
+                {
+                    RecordWfcOutpostEventBlackBox(
+                        WfcOutpostBlackBoxOperationHydration,
+                        WfcOutpostPersistenceStatus.Ready,
+                        sectorHash,
+                        hydratedPayloadHash,
+                        hydratedPayloadBytes);
                 }
             }
         }
@@ -2435,7 +2592,7 @@ namespace Hecton8.SaveSystem
                 }
                 finally
                 {
-                    ReleaseWfcOutpostGridWrite(wfcGridVault, in wfcGridHandle);
+                    wfcGridVault.ReleaseWriteLock(in wfcGridHandle, SystemID.CoreDataVault);
                 }
             }
 
@@ -2584,7 +2741,7 @@ namespace Hecton8.SaveSystem
             _lastWfcOutpostPayloadHash = payloadHash;
         }
 
-        private void PrepareWfcOutpostMutableGridForSector(
+        private bool PrepareWfcOutpostMutableGridForSector(
             ulong sectorHash,
             NativeArray<byte> wfcGrid,
             bool hasHydration,
@@ -2594,7 +2751,7 @@ namespace Hecton8.SaveSystem
             uint hydratedCacheFrame)
         {
             if (_wfcOutpostMutableGridSectorHash == sectorHash && !hasHydration)
-                return;
+                return false;
 
             ClearWfcOutpostMutableStateGrid(wfcGrid);
             if (hasHydration)
@@ -2605,15 +2762,10 @@ namespace Hecton8.SaveSystem
                     hydratedPayloadHash,
                     hydratedCacheFlags,
                     hydratedCacheFrame);
-                RecordWfcOutpostEventBlackBox(
-                    WfcOutpostBlackBoxOperationHydration,
-                    WfcOutpostPersistenceStatus.Ready,
-                    sectorHash,
-                    hydratedPayloadHash,
-                    hydratedPayloadBytes);
             }
 
             _wfcOutpostMutableGridSectorHash = sectorHash;
+            return hasHydration;
         }
 
         private static unsafe void ClearWfcOutpostMutableStateGrid(NativeArray<byte> wfcGrid)
@@ -5220,16 +5372,39 @@ namespace Hecton8.SaveSystem
         public static string[] GetAllKnownArtifactPaths(string slotName)
         {
             int maxGeneration = GetMaxBackupGenerationCount();
-            string[] paths = new string[3 + maxGeneration];
-            paths[0] = GetPrimarySaveFilePath(slotName);
-            paths[1] = GetTempSaveFilePath(slotName);
-            paths[2] = SaveSlotMaintenanceRecord.GetPath(slotName);
+            string[] paths = new string[3 + maxGeneration]; // COLD COMPAT ALLOC: string[][artifact count] - legacy editor/API return buffer - owner: SaveManager
+            CollectAllKnownArtifactPaths(slotName, paths);
+            return paths;
+        }
+
+        public static int CollectAllKnownArtifactPaths(string slotName, string[] paths)
+        {
+            if (paths == null || paths.Length == 0)
+                return 0;
+
+            int count = 0;
+            paths[count++] = GetPrimarySaveFilePath(slotName);
+            if (count >= paths.Length)
+                return count;
+
+            paths[count++] = GetTempSaveFilePath(slotName);
+            if (count >= paths.Length)
+                return count;
+
+            paths[count++] = SaveSlotMaintenanceRecord.GetPath(slotName);
+            if (count >= paths.Length)
+                return count;
+
+            int maxGeneration = GetMaxBackupGenerationCount();
             for (int generation = 1; generation <= maxGeneration; generation++)
             {
-                paths[2 + generation] = GetBackupSaveFilePath(slotName, generation);
+                if (count >= paths.Length)
+                    return count;
+
+                paths[count++] = GetBackupSaveFilePath(slotName, generation);
             }
 
-            return paths;
+            return count;
         }
 
         private static void RotateBackupChain(string primaryPath, Func<int, string> backupPathFactory, int retentionCount)

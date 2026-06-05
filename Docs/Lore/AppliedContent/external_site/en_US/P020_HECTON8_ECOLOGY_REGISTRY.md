@@ -10,25 +10,25 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Ecology Registry
 
-The Ecology Registry protects the tone: beauty first, then pressure, then category collapse.
+The ecology registry separates native life, colony-adapted biota and Atlas-routed repair organisms so beauty, pressure and damage remain legible.
 
 ## Scanner
 
-Bright shallow ecology confirmed. Deeper traces show cable flora, filter bodies and Atlas repair intrusion.
+Ecology split confirmed: native shelf life, cable-adapted biota and Atlas-routed repair organisms. Identify category before harvesting.
 
 ## Terminal
 
-Registry split: native pressure ecology, colony-adapted biota, Atlas-altered repair organisms. Do not merge categories.
+REGISTRY SPLIT: native pressure ecology; colony-adapted cable biota; Atlas-altered repair organisms. Mislabeling can destroy working seals.
 
 ## Audio
 
-If everything is monster, nothing is violation.
+If everything is a monster, you will cut the thing holding pressure.
 
 ## Field Note
 

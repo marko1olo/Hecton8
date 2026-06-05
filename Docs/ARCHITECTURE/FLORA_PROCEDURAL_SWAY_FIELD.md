@@ -4,6 +4,8 @@
 
 Owner: `SHINOBU_124` / `FloraInteractionManager`.
 
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
+
 Source anchor: `Assets/_Project/Scripts/World/FloraInteractionManager.cs`.
 
 

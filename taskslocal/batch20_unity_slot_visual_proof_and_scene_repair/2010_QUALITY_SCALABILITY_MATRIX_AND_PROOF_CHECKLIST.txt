@@ -1,0 +1,114 @@
+TASK 2010: QUALITY SCALABILITY MATRIX AND PROOF CHECKLIST
+
+Role:
+GlobalQualityWeight acceptance matrix owner for Batch20 visual proof and scene repair.
+
+Unity status:
+NO UNITY. Static planning and proof checklist only.
+
+Primary objective:
+Create a concrete low/middle/high/ultra quality consequence matrix for surface/sky/Aegir/moons/clouds/coast/ocean/photic shallows/medium-depth proof. The matrix must use continuous GlobalQualityWeight behavior and preserve graphics, optimization, and gameplay.
+
+Authority files to read first:
+1. AGENTS.md
+2. TASTE.md
+3. VISION_LOCKS.md
+4. PROJECT_BIBLES.md
+5. quality.md
+6. performance.md
+7. rendering.md
+8. water.md
+9. terrain.md
+10. world.md
+11. celestial.md
+12. atmosphere.md
+13. lighting.md
+14. presentation.md
+
+Relevant mandates to load:
+1. .agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt
+2. .agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt
+3. .agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt
+4. .agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+5. .agents-skills/DBG_Telemetry_Crash_Reporting_PostMortem.txt
+
+Exact project files and tools to inspect:
+1. rg -n "GlobalQualityWeight|QualityWeight|Quality|LOD|HLOD|Scalability|VisualLod|FrameTime|GC"
+2. Tools/VisualLodMatrixBaker.py
+3. Tools/VerifyVisualLodMatrix.py
+4. Tools/VisualStressSim.py
+5. Assets/_Project/Scripts/Rendering/OceanSinglePass/*.cs
+6. Assets/_Project/Scripts/Atmosphere/*.cs
+7. Assets/_Project/Scripts/Editor/ProceduralGen/*.cs
+8. Assets/_Project/Scripts/Editor/GeologyForge/*.cs
+9. Assets/_Project/Scripts/Editor/WorldProcedural*.*cs
+10. Docs/ARCHITECTURE/SHINOBU_277_CREST_SHORELINE_FOAM_GRAFT.md
+
+Forbidden actions:
+1. Do not create binary quality switches.
+2. Do not allow quality to change gameplay truth ownership, DTO layout, save identity, route authority, or collision truth.
+3. Do not run Unity.
+4. Do not run builds.
+5. Do not invent profiler metrics.
+6. Do not call a weak low tier acceptable if it becomes flat, muddy, blurry, or primitive.
+
+Ownership boundaries:
+1. You own the matrix and proof checklist.
+2. You may create reports and validation templates.
+3. You do not own applying code or asset changes.
+4. You do not own actual profiler captures.
+
+Deliverables:
+1. Docs/Reports/Batch20/2010_GLOBAL_QUALITY_WEIGHT_MATRIX.md
+2. Docs/Reports/Batch20/2010_PROOF_CHECKLIST.csv
+3. Docs/Reports/Batch20/2010_THREE_PILLAR_ACCEPTANCE.md
+4. Docs/Reports/Batch20/2010_BLACK_BOX_AND_PROFILER_REQUIREMENTS.md
+5. Docs/Tasks/Status_2010.md
+6. Docs/AgentLogs/Rationale_2010.md
+7. Docs/AgentLogs/LOG_2010.md
+
+Required matrix domains:
+1. Sky and clouds.
+2. Aegir and moons.
+3. Ocean surface.
+4. Shoreline foam/waterline.
+5. Photic shallows 0-5m.
+6. Medium depth 20-50m.
+7. Coastline terrain and rocks.
+8. Kelp/coral/flora.
+9. ProductFace visible objects.
+10. Screenshot/proof capture and telemetry.
+
+Work plan:
+1. Read authority and mandates.
+2. Search current project for GlobalQualityWeight and quality routes.
+3. Inspect visual LOD tools if present.
+4. Define continuous ranges: Low, Middle, High, Ultra as documentation labels over a float, not separate authority routes.
+5. For each domain, define what GlobalQualityWeight may scale: fidelity, density, cadence, distance, texture resolution, optional telemetry, shader loop limits.
+6. For each domain, define what GlobalQualityWeight must not scale: gameplay truth, save identity, collision truth, DTO layout, authoritative route ownership.
+7. For each domain, define graphics floor at Low. Low is minimum survival, not placeholder mode.
+8. For each domain, define Middle target.
+9. For each domain, define High additions.
+10. For each domain, define Ultra visual overkill.
+11. Add optimization proof requirements: profiler, GC, frame time, RenderGraph, memory, texture residency, batches/triangles where relevant.
+12. Add gameplay proof requirements: route readability, hazard visibility, item identity, player navigation, depth cues.
+13. Add screenshot proof checklist matching required Batch20 shots.
+14. Add Black Box expectations for critical systems touched by later repairs. If a repair touches critical Physics/Voxel/AI, last-300-frame telemetry applies.
+15. Add "visual fake first" notes for water, fog, light, deformation, clouds, and caustics.
+16. Add rejection examples: dark cover, flat water, primitive scatter, cheap cards, default materials, fake async screenshot stalls.
+17. Add proof labels for each checklist item.
+18. Write concise final acceptance section.
+
+Three-pillar acceptance:
+1. Graphics: matrix preserves the visual floor at every quality point.
+2. Optimization: every expensive option has a cheaper premium fallback and proof requirement.
+3. Gameplay: quality cannot move or hide gameplay truth.
+
+GlobalQualityWeight consequences:
+1. Low: minimum survival visuals that still look authored.
+2. Middle: stable default.
+3. High: additional fidelity bought with measured budget.
+4. Ultra: visual overkill with unchanged authority and identity.
+
+Closeout standard:
+Future agents must be unable to use "quality tier" as an excuse for a binary cheap/pretty split.

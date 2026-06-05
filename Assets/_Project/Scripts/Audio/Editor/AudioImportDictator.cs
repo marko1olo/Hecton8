@@ -32,13 +32,14 @@ namespace Hecton8.Audio.Editor
         internal const string ProjectAudioRoot = "Assets/_Project/Audio";
         internal const long PreloadRamBudgetBytes = 50L * 1024L * 1024L;
 
+        private const float DecompressedSfxClipSeconds = 0.5f;
         private const float ShortClipSeconds = 2.0f;
         private const float StreamingClipSeconds = 5.0f;
         private const int MusicSampleRate = 44100;
         private const int RuntimeSampleRate = 22050;
         private const int DialogueSampleRate = 16000;
         private const float MusicVorbisQuality = 0.70f;
-        private const float AmbientVorbisQuality = 0.45f;
+        private const float AmbientVorbisQuality = 0.70f;
         private const float DialogueVorbisQuality = 0.22f;
         private const string ReimportGuardPrefix = "AudioImportDictator.ReimportGuard.";
         private const string LogUnstable = "[AudioImportDictator:0xA1D10001] Import policy remained unstable after reimport.";
@@ -478,14 +479,13 @@ namespace Hecton8.Audio.Editor
 
         private static AudioClipLoadType ResolveLoadType(AudioResidencyDomain domain, float clipLengthSeconds)
         {
-            if (clipLengthSeconds > StreamingClipSeconds)
-                return AudioClipLoadType.Streaming;
-
-            if (clipLengthSeconds >= 0f && clipLengthSeconds < ShortClipSeconds)
-                return AudioClipLoadType.DecompressOnLoad;
-
             if (domain == AudioResidencyDomain.Music)
-                return AudioClipLoadType.Streaming;
+                return clipLengthSeconds > StreamingClipSeconds
+                    ? AudioClipLoadType.Streaming
+                    : AudioClipLoadType.CompressedInMemory;
+
+            if (clipLengthSeconds >= 0f && clipLengthSeconds < DecompressedSfxClipSeconds)
+                return AudioClipLoadType.DecompressOnLoad;
 
             return AudioClipLoadType.CompressedInMemory;
         }
@@ -496,11 +496,14 @@ namespace Hecton8.Audio.Editor
             float clipLengthSeconds,
             AudioClipLoadType loadType)
         {
+            if (domain == AudioResidencyDomain.Music)
+                return AudioCompressionFormat.Vorbis;
+
             // Task 2 is absolute: every sub-2s one-shot stays ADPCM, including VO stubs.
             if (clipLengthSeconds >= 0f && clipLengthSeconds < ShortClipSeconds)
                 return AudioCompressionFormat.ADPCM;
 
-            if (dialogue || domain == AudioResidencyDomain.Music || domain == AudioResidencyDomain.Environment)
+            if (dialogue || domain == AudioResidencyDomain.Environment)
                 return AudioCompressionFormat.Vorbis;
 
             if (loadType == AudioClipLoadType.Streaming || clipLengthSeconds >= ShortClipSeconds)
@@ -533,12 +536,8 @@ namespace Hecton8.Audio.Editor
 
         private static bool ShouldPreloadAudio(AudioResidencyDomain domain, AudioClipLoadType loadType)
         {
-            if (loadType != AudioClipLoadType.DecompressOnLoad)
-                return false;
-
-            return domain == AudioResidencyDomain.Player ||
-                   domain == AudioResidencyDomain.Creatures ||
-                   domain == AudioResidencyDomain.Interface;
+            return loadType == AudioClipLoadType.DecompressOnLoad &&
+                   domain != AudioResidencyDomain.Music;
         }
 
         private static bool IsSpatialized3DPath(string normalizedPath, AudioResidencyDomain domain, bool dialogue)

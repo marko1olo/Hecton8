@@ -10,17 +10,17 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Офис непрерывности Atlas
+# Atlas Continuity Office
 
-Atlas Continuity Office - место, где публичное обещание worker safety стало classified weighting. Оно дает сценаристам узкого owner для Atlas liability.
+Atlas Continuity Office is where the public worker-safety promise became classified weighting. It owns the liability path between maintenance logic, evacuation priority, and the damaged Atlas route.
 
 ## Scanner
 
-Офис, который вписал worker safety в machine priority stack.
+The office that wrote worker safety into a machine priority stack.
 
 ## Terminal
 
@@ -28,10 +28,10 @@ ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, in
 
 ## Audio
 
-Они не приказали смерть. Они приказали compatibility.
+They did not order death. They ordered compatibility.
 
 ## Field Note
 
-Мемо может убить, не используя слово kill.
+A memo can kill without using the word kill.
 
 <!-- In-Game Wiki; generated from P148_ATLAS_CONTINUITY_OFFICE/ru_RU. -->

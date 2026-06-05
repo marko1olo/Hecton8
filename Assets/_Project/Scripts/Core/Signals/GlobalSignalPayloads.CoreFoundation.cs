@@ -933,15 +933,26 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct CameraJuiceImpactSignal : ISignal
     {
+        public const uint ProfileHighFreqToolVibrationHash = 3014650645u; // FNV1A("HighFreqToolVibration")
+        public const uint ProfileLowFreqSeismicHeaveHash = 335997281u; // FNV1A("LowFreqSeismicHeave")
+        public const uint ProfileSharpKineticImpactHash = 1680791348u; // FNV1A("SharpKineticImpact")
+        public const uint ProfileContinuousPressureStressHash = 3689851005u; // FNV1A("ContinuousPressureStress")
+
         [FieldOffset(0)] public ImpactSignal Impact;
         [FieldOffset(64)] public float3 Direction;
         [FieldOffset(76)] public float Severity;
-        [FieldOffset(80)] public ulong Reserved0;
-        [FieldOffset(88)] public ulong Reserved1;
-        [FieldOffset(96)] public ulong Reserved2;
-        [FieldOffset(104)] public ulong Reserved3;
-        [FieldOffset(112)] public ulong Reserved4;
-        [FieldOffset(120)] public ulong Reserved5;
+        [FieldOffset(80)] public uint ProfileHash;
+        [FieldOffset(84)] public uint SourceHash;
+        [FieldOffset(88)] public float AmplitudeScale;
+        [FieldOffset(92)] public float RadiusOverrideMeters;
+        [FieldOffset(96)] public float TranslationGain;
+        [FieldOffset(100)] public float RotationGain;
+        [FieldOffset(104)] public byte Priority;
+        [FieldOffset(105)] public byte Flags;
+        [FieldOffset(106)] public ushort Reserved0;
+        [FieldOffset(108)] public uint Reserved1;
+        [FieldOffset(112)] public ulong Reserved2;
+        [FieldOffset(120)] public ulong Reserved3;
     }
 
     /// <summary>

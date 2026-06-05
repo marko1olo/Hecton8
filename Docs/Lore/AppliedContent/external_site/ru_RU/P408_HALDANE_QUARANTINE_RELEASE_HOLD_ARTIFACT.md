@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Карантин Халдейна
+# Haldane Quarantine Hold
 
-Ужас HECTON-8 административен так же, как механичен: правильный язык тоже может прийти слишком поздно.
+HECTON-8 horror is administrative as much as mechanical: correct language can still arrive too late.
 
 ## Scanner
 
-Артефакт Deep Reach: карантинное удержание. Файлы эвакуации были правильными и поздними.
+Quarantine release hold. Evacuation files stayed correct and late.
 
 ## Terminal
 
-ХОЛД ХАЛДЕЙНА. Счет выживших временный, пока Atlas не решит.
+QUARANTINE HOLD DESK / HALDANE / RELEASE HOLD: survivor counts remain provisional. External extraction waits on contamination review, custody chain and Atlas log reconciliation.
 
 ## Audio
 
-Папка была в порядке. В этом и была проблема.
+The folder was orderly. That was the problem.
 
 ## Field Note
 
-Привязать к терминалам очереди и разделам статьи про карантинный выпуск.
+Haldane kept the folder clean. Survivor count provisional. Release pending. Door clocks kept moving while certification waited.
 
 <!-- External Site; generated from P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT/ru_RU. -->

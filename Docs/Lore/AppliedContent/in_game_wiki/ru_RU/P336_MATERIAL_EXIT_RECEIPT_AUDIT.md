@@ -10,13 +10,13 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Audit receipt material exit
+# Material Exit Receipt Audit
 
-Audit receipt material exit делает денежную концовку настоящей и горькой. Игрок может выиграть материально и оставить ложь Deep Reach почти целой.
+Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.
 
 ## Scanner
 
@@ -28,10 +28,10 @@ AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. D
 
 ## Audio
 
-Тебе заплатили. Это не то же самое, что выйти чистым.
+You got paid. That is not the same as getting out clean.
 
 ## Field Note
 
-Для material ending record и replay dossier.
+After-action record: payout and recovery can close while evidence custody and worker names remain unresolved.
 
 <!-- In-Game Wiki; generated from P336_MATERIAL_EXIT_RECEIPT_AUDIT/ru_RU. -->

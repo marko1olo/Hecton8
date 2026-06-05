@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ The ending is who owns the proof afterward.
 
 ## Field Note
 
-Use for spoiler-gated site pages and unlocked in-game ending dossier.
+Navigation cluster record: endings stay spoiler-gated and organized by receiver and custody consequence, not moral labels.
 
 <!-- In-Game Wiki; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/en_US. -->

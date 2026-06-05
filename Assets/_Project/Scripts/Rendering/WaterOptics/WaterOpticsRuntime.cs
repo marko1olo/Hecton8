@@ -105,7 +105,9 @@ namespace Hecton8.Rendering.WaterOptics
         public const int OpticsSizeBytes = WaterOpticsNativeLayout.OpticsSizeBytes;
         public const int ProfileCapacity = 64;
         public const int TelemetryCapacity = 300;
+#if UNITY_EDITOR
         public const int CsvScratchBytes = 64 * 1024;
+#endif
         public const uint SystemHash = 0x53323635u;
         public const uint VisualSystemHash = 0x56323635u;
 
@@ -119,6 +121,7 @@ namespace Hecton8.Rendering.WaterOptics
         private const uint TelemetryFlagUploadUnchanged = 1u << 7;
         private const uint TelemetrySourceHash = 0x574F5054u;
         private const uint TelemetryDumpVersion = 1u;
+        private const SystemID VaultOwnerSystemId = SystemID.Vfx;
         private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_13KRA.bin";
 
         [SerializeField, Range(0f, 4f)] private float _absorptionR = 0.42f;
@@ -148,12 +151,14 @@ namespace Hecton8.Rendering.WaterOptics
         private VaultGenerationHandle<WaterOpticsProfileDTO> _profileHandle;
         private VaultGenerationHandle<WaterOpticsTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<int> _telemetryCursorHandle;
-        private VaultGenerationHandle<byte> _csvScratchHandle;
         private GraphicsBuffer _shaderParamsBufferA;
         private GraphicsBuffer _shaderParamsBufferB;
         private GraphicsBuffer _activeShaderParamsBuffer;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private VisualSyncUploadSystem _visualSyncSystem;
+#if UNITY_EDITOR
+        private byte[] _editorCsvScratch;
+#endif
         private int _shaderWriteIndex;
         private uint _loadedProfileCount;
         private bool _cameraRuntimeResolved;
@@ -261,6 +266,9 @@ namespace Hecton8.Rendering.WaterOptics
             _hasUploadedDto = false;
             _lastUploadedDto = default;
             _playerRuntimeContext = null;
+#if UNITY_EDITOR
+            _editorCsvScratch = null;
+#endif
             if (_cameraRuntimeResolved)
                 _camera = null;
             _cameraRuntimeResolved = false;
@@ -315,11 +323,19 @@ namespace Hecton8.Rendering.WaterOptics
         {
             IDataVault vault = _vault;
             if (vault == null ||
-                !_vaultBootstrapped ||
-                !TryResolve(vault, in _paramsHandle, out NativeArray<WaterOpticsDTO> parameters) ||
-                !parameters.IsCreated ||
-                parameters.Length == 0 ||
-                !TryResolve(vault, in _tuningHandle, out NativeArray<WaterOpticsTuningDTO> tuning) ||
+                !_vaultBootstrapped)
+            {
+                RecordTelemetry(timing.FrameId, TelemetryFlagVaultMissing, default);
+                return;
+            }
+
+            if (_tuningDirty && !WriteTuningToVault(force: false))
+            {
+                RecordTelemetry(timing.FrameId, TelemetryFlagVaultMissing, default);
+                return;
+            }
+
+            if (!TryReadOnly(vault, in _tuningHandle, out NativeArray<WaterOpticsTuningDTO>.ReadOnly tuning) ||
                 !tuning.IsCreated ||
                 tuning.Length == 0)
             {
@@ -327,10 +343,32 @@ namespace Hecton8.Rendering.WaterOptics
                 return;
             }
 
-            if (_tuningDirty)
-                WriteTuningToVault(force: false);
+            WaterOpticsDTO dto = BuildMockOpticsParams(tuning);
+            if (!vault.TryAcquireWriteLock(in _paramsHandle, VaultOwnerSystemId, out NativeArray<WaterOpticsDTO> parameters))
+            {
+                RecordTelemetry(timing.FrameId, TelemetryFlagVaultMissing, in dto);
+                return;
+            }
 
-            WriteMockOpticsParams(parameters, tuning);
+            bool paramsBufferMissing = false;
+            try
+            {
+                if (!parameters.IsCreated || parameters.Length == 0)
+                {
+                    paramsBufferMissing = true;
+                }
+                else
+                {
+                    WriteFirstWaterOpticsDto(parameters, in dto);
+                }
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _paramsHandle, VaultOwnerSystemId);
+            }
+
+            if (paramsBufferMissing)
+                RecordTelemetry(timing.FrameId, TelemetryFlagVaultMissing, in dto);
         }
 
         public JobHandle ScheduleSimulation(in DispatcherTimingDTO timing, in DispatcherJobContext context, JobHandle dependsOn)
@@ -348,7 +386,7 @@ namespace Hecton8.Rendering.WaterOptics
             uint frameIndex = timing.FrameId;
             IDataVault vault = _vault;
             if (vault == null ||
-                !TryResolve(vault, in _paramsHandle, out NativeArray<WaterOpticsDTO> parameters) ||
+                !TryReadOnly(vault, in _paramsHandle, out NativeArray<WaterOpticsDTO>.ReadOnly parameters) ||
                 !parameters.IsCreated ||
                 parameters.Length == 0)
             {
@@ -525,7 +563,7 @@ namespace Hecton8.Rendering.WaterOptics
             IDataVault vault = _vault;
             if (profileHash == 0u ||
                 vault == null ||
-                !TryResolve(vault, in _profileHandle, out NativeArray<WaterOpticsProfileDTO> profiles) ||
+                !TryReadOnly(vault, in _profileHandle, out NativeArray<WaterOpticsProfileDTO>.ReadOnly profiles) ||
                 !profiles.IsCreated)
             {
                 return false;
@@ -534,7 +572,7 @@ namespace Hecton8.Rendering.WaterOptics
             int count = math.min((int)_loadedProfileCount, profiles.Length);
             for (int i = 0; i < count; i++)
             {
-                WaterOpticsProfileDTO profile = ReadProfileAt(profiles, i);
+                WaterOpticsProfileDTO profile = profiles[i];
                 if (profile.ProfileHash != profileHash)
                     continue;
 
@@ -581,9 +619,24 @@ namespace Hecton8.Rendering.WaterOptics
             if (!profiles.IsCreated || profiles.Length == 0)
                 return false;
 
+            Span<WaterOpticsProfileDTO> parsedProfiles = stackalloc WaterOpticsProfileDTO[ProfileCapacity];
+            if (!TryParseProfiles(csvBytes, parsedProfiles.Slice(0, math.min(ProfileCapacity, profiles.Length)), out count))
+                return false;
+
+            for (int i = 0; i < count; i++)
+                profiles[i] = parsedProfiles[i];
+
+            return true;
+        }
+
+        private static bool TryParseProfiles(ReadOnlySpan<byte> csvBytes, Span<WaterOpticsProfileDTO> profiles, out int count)
+        {
+            count = 0;
+            if (profiles.Length == 0)
+                return false;
+
             int cursor = 0;
             bool any = false;
-            byte* profilePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(profiles);
             while (cursor < csvBytes.Length && count < profiles.Length)
             {
                 ReadOnlySpan<byte> line = ReadLine(csvBytes, ref cursor);
@@ -595,9 +648,7 @@ namespace Hecton8.Rendering.WaterOptics
 
                 if (TryParseProfileRow(line, out WaterOpticsProfileDTO profile))
                 {
-                    ref WaterOpticsProfileDTO target = ref UnsafeUtility.AsRef<WaterOpticsProfileDTO>(
-                        profilePtr + count * WaterOpticsNativeLayout.ProfileSizeBytes);
-                    target = profile;
+                    profiles[count] = profile;
                     count++;
                     any = true;
                 }
@@ -672,11 +723,6 @@ namespace Hecton8.Rendering.WaterOptics
                 1,
                 SystemID.Vfx,
                 options);
-            _csvScratchHandle = vault.EnsureGenerationHandle<byte>(
-                BufferID.ShinobuWaterOpticsCsvScratch,
-                CsvScratchBytes,
-                SystemID.Vfx,
-                options);
 
             if (clearExisting || !hadResolvedBuffers)
             {
@@ -701,40 +747,32 @@ namespace Hecton8.Rendering.WaterOptics
             ReleaseVaultBuffer(vault, in _profileHandle);
             ReleaseVaultBuffer(vault, in _telemetryHandle);
             ReleaseVaultBuffer(vault, in _telemetryCursorHandle);
-            ReleaseVaultBuffer(vault, in _csvScratchHandle);
 
             _paramsHandle = default;
             _tuningHandle = default;
             _profileHandle = default;
             _telemetryHandle = default;
             _telemetryCursorHandle = default;
-            _csvScratchHandle = default;
         }
 
         private bool HasResolvedVaultBuffers(IDataVault vault)
         {
-            return TryResolve(vault, in _paramsHandle, out NativeArray<WaterOpticsDTO> parameters) &&
+            return TryReadOnly(vault, in _paramsHandle, out NativeArray<WaterOpticsDTO>.ReadOnly parameters) &&
                    parameters.Length >= 1 &&
-                   TryResolve(vault, in _tuningHandle, out NativeArray<WaterOpticsTuningDTO> tuning) &&
+                   TryReadOnly(vault, in _tuningHandle, out NativeArray<WaterOpticsTuningDTO>.ReadOnly tuning) &&
                    tuning.Length >= 1 &&
-                   TryResolve(vault, in _profileHandle, out NativeArray<WaterOpticsProfileDTO> profiles) &&
+                   TryReadOnly(vault, in _profileHandle, out NativeArray<WaterOpticsProfileDTO>.ReadOnly profiles) &&
                    profiles.Length >= ProfileCapacity &&
-                   TryResolve(vault, in _telemetryHandle, out NativeArray<WaterOpticsTelemetryEntry> telemetry) &&
+                   TryReadOnly(vault, in _telemetryHandle, out NativeArray<WaterOpticsTelemetryEntry>.ReadOnly telemetry) &&
                    telemetry.Length >= TelemetryCapacity &&
-                   TryResolve(vault, in _telemetryCursorHandle, out NativeArray<int> cursor) &&
-                   cursor.Length >= 1 &&
-                   TryResolve(vault, in _csvScratchHandle, out NativeArray<byte> scratch) &&
-                   scratch.Length >= CsvScratchBytes;
+                   TryReadOnly(vault, in _telemetryCursorHandle, out NativeArray<int>.ReadOnly cursor) &&
+                   cursor.Length >= 1;
         }
 
-        private void WriteMockOpticsParams(NativeArray<WaterOpticsDTO> parameters, NativeArray<WaterOpticsTuningDTO> tuning)
+        private WaterOpticsDTO BuildMockOpticsParams(NativeArray<WaterOpticsTuningDTO>.ReadOnly tuning)
         {
-            if (!parameters.IsCreated || parameters.Length == 0)
-                return;
-
-            WaterOpticsTuningDTO tuningDto = tuning.IsCreated && tuning.Length > 0 ? ReadFirstTuningDto(tuning) : DefaultTuning();
-            WaterOpticsDTO dto = BuildWaterOpticsDto(in tuningDto, ResolveGlobalQualityWeight(), ResolveLocalSurfaceY());
-            WriteFirstWaterOpticsDto(parameters, in dto);
+            WaterOpticsTuningDTO tuningDto = tuning.IsCreated && tuning.Length > 0 ? tuning[0] : DefaultTuning();
+            return BuildWaterOpticsDto(in tuningDto, ResolveGlobalQualityWeight(), ResolveLocalSurfaceY());
         }
 
         private static WaterOpticsDTO BuildWaterOpticsDto(in WaterOpticsTuningDTO tuning, float globalQualityWeight, float localSurfaceY)
@@ -787,9 +825,7 @@ namespace Hecton8.Rendering.WaterOptics
 
         private void InitializeParams(IDataVault vault)
         {
-            if (!TryResolve(vault, in _paramsHandle, out NativeArray<WaterOpticsDTO> parameters) ||
-                !parameters.IsCreated ||
-                parameters.Length == 0)
+            if (vault == null)
             {
                 return;
             }
@@ -802,7 +838,18 @@ namespace Hecton8.Rendering.WaterOptics
                 MaxDistanceQualityFlagsProfile = new float4(_maxDistanceMeters, _qualityBias, _active ? 1f : 0f, 0f)
             };
             WaterOpticsDTO dto = BuildWaterOpticsDto(in tuning, ResolveGlobalQualityWeight(), ResolveLocalSurfaceY());
-            WriteFirstWaterOpticsDto(parameters, in dto);
+            if (!vault.TryAcquireWriteLock(in _paramsHandle, VaultOwnerSystemId, out NativeArray<WaterOpticsDTO> parameters))
+                return;
+
+            try
+            {
+                if (parameters.IsCreated && parameters.Length > 0)
+                    WriteFirstWaterOpticsDto(parameters, in dto);
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _paramsHandle, VaultOwnerSystemId);
+            }
         }
 
         private bool WriteTuningToVault(bool force)
@@ -810,18 +857,7 @@ namespace Hecton8.Rendering.WaterOptics
             if (!force && !_tuningDirty)
                 return true;
 
-            IDataVault vault = _vault;
-            if (vault == null ||
-                !TryResolve(vault, in _tuningHandle, out NativeArray<WaterOpticsTuningDTO> tuning) ||
-                !tuning.IsCreated ||
-                tuning.Length == 0)
-            {
-                return false;
-            }
-
-            void* ptr = NativeArrayUnsafeUtility.GetUnsafePtr(tuning);
-            ref WaterOpticsTuningDTO target = ref UnsafeUtility.AsRef<WaterOpticsTuningDTO>(ptr);
-            target = new WaterOpticsTuningDTO
+            WaterOpticsTuningDTO tuningDto = new WaterOpticsTuningDTO
             {
                 AbsorptionCoefficientsRGB = new float4(
                     math.max(0f, _absorptionR),
@@ -845,6 +881,26 @@ namespace Hecton8.Rendering.WaterOptics
                     0f)
             };
 
+            IDataVault vault = _vault;
+            if (vault == null || !vault.TryAcquireWriteLock(in _tuningHandle, VaultOwnerSystemId, out NativeArray<WaterOpticsTuningDTO> tuning))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!tuning.IsCreated || tuning.Length == 0)
+                    return false;
+
+                void* ptr = NativeArrayUnsafeUtility.GetUnsafePtr(tuning);
+                ref WaterOpticsTuningDTO target = ref UnsafeUtility.AsRef<WaterOpticsTuningDTO>(ptr);
+                target = tuningDto;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _tuningHandle, VaultOwnerSystemId);
+            }
+
             _tuningDirty = false;
             return true;
         }
@@ -852,11 +908,7 @@ namespace Hecton8.Rendering.WaterOptics
         private bool TryLoadProfilesCsv(IDataVault vault)
         {
 #if UNITY_EDITOR
-            if (vault == null ||
-                !TryResolve(vault, in _csvScratchHandle, out NativeArray<byte> scratch) ||
-                !TryResolve(vault, in _profileHandle, out NativeArray<WaterOpticsProfileDTO> profiles) ||
-                !scratch.IsCreated ||
-                !profiles.IsCreated)
+            if (vault == null)
             {
                 return false;
             }
@@ -865,6 +917,7 @@ namespace Hecton8.Rendering.WaterOptics
             if (!File.Exists(path))
                 return false;
 
+            byte[] scratch = EnsureEditorCsvScratchCold();
             int bytesRead;
             try
             {
@@ -873,8 +926,7 @@ namespace Hecton8.Rendering.WaterOptics
                     int limit = scratch.Length;
                     if (stream.Length < limit)
                         limit = (int)stream.Length;
-                    void* ptr = NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
-                    bytesRead = stream.Read(new Span<byte>(ptr, limit));
+                    bytesRead = stream.Read(scratch, 0, limit);
                 }
             }
             catch (IOException)
@@ -889,14 +941,56 @@ namespace Hecton8.Rendering.WaterOptics
             if (bytesRead <= 0)
                 return false;
 
-            void* readPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch);
-            bool parsed = TryParseProfiles(new ReadOnlySpan<byte>(readPtr, bytesRead), profiles, out int count);
-            _loadedProfileCount = parsed ? (uint)count : 0u;
-            return parsed;
+            Span<WaterOpticsProfileDTO> parsedProfiles = stackalloc WaterOpticsProfileDTO[ProfileCapacity];
+            if (!TryParseProfiles(new ReadOnlySpan<byte>(scratch, 0, bytesRead), parsedProfiles, out int count))
+            {
+                _loadedProfileCount = 0u;
+                return false;
+            }
+
+            if (!vault.TryAcquireWriteLock(in _profileHandle, VaultOwnerSystemId, out NativeArray<WaterOpticsProfileDTO> profiles))
+            {
+                _loadedProfileCount = 0u;
+                return false;
+            }
+
+            try
+            {
+                if (!profiles.IsCreated || profiles.Length == 0)
+                {
+                    _loadedProfileCount = 0u;
+                    return false;
+                }
+
+                int writeCount = math.min(count, math.min(ProfileCapacity, profiles.Length));
+                for (int i = 0; i < writeCount; i++)
+                    profiles[i] = parsedProfiles[i];
+
+                _loadedProfileCount = (uint)writeCount;
+                return writeCount > 0;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _profileHandle, VaultOwnerSystemId);
+            }
 #else
             return false;
 #endif
         }
+
+#if UNITY_EDITOR
+        private byte[] EnsureEditorCsvScratchCold()
+        {
+            byte[] scratch = _editorCsvScratch;
+            if (scratch == null || scratch.Length != CsvScratchBytes)
+            {
+                scratch = new byte[CsvScratchBytes]; // EDITOR COLD ALLOC: prewarmed local CSV scratch, not DataVault ownership.
+                _editorCsvScratch = scratch;
+            }
+
+            return scratch;
+        }
+#endif
 
         private void ApplyProfile(in WaterOpticsProfileDTO profile)
         {
@@ -1012,20 +1106,19 @@ namespace Hecton8.Rendering.WaterOptics
         {
             IDataVault vault = _vault;
             if (vault == null ||
-                !TryResolve(vault, in _telemetryHandle, out NativeArray<WaterOpticsTelemetryEntry> ring) ||
-                !TryResolve(vault, in _telemetryCursorHandle, out NativeArray<int> cursorArray) ||
-                !ring.IsCreated ||
-                ring.Length == 0 ||
-                !cursorArray.IsCreated ||
-                cursorArray.Length == 0)
+                !TryReadOnly(vault, in _telemetryHandle, out NativeArray<WaterOpticsTelemetryEntry>.ReadOnly ringRead) ||
+                !TryReadOnly(vault, in _telemetryCursorHandle, out NativeArray<int>.ReadOnly cursorRead) ||
+                !ringRead.IsCreated ||
+                ringRead.Length == 0 ||
+                !cursorRead.IsCreated ||
+                cursorRead.Length == 0)
             {
                 return flags;
             }
 
-            void* cursorPtr = NativeArrayUnsafeUtility.GetUnsafePtr(cursorArray);
-            ref int cursorRef = ref UnsafeUtility.AsRef<int>(cursorPtr);
-            int cursor = cursorRef;
-            if ((uint)cursor >= (uint)ring.Length)
+            int ringLength = ringRead.Length;
+            int cursor = cursorRead[0];
+            if ((uint)cursor >= (uint)ringLength)
                 cursor = 0;
 
             float quality = math.saturate(dto.QualityAndDepthLimits.x);
@@ -1034,10 +1127,7 @@ namespace Hecton8.Rendering.WaterOptics
             if (math.isfinite(_opaqueGpuBudgetMicroseconds) && estimatedGpuUsec > math.max(1f, _opaqueGpuBudgetMicroseconds))
                 flags |= TelemetryFlagEstimatedGpuBudgetBreach;
 
-            byte* ringPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(ring);
-            ref WaterOpticsTelemetryEntry telemetry = ref UnsafeUtility.AsRef<WaterOpticsTelemetryEntry>(
-                ringPtr + cursor * WaterOpticsNativeLayout.TelemetrySizeBytes);
-            telemetry = new WaterOpticsTelemetryEntry
+            WaterOpticsTelemetryEntry telemetry = new WaterOpticsTelemetryEntry
             {
                 FrameIndex = frame,
                 Flags = flags,
@@ -1048,10 +1138,49 @@ namespace Hecton8.Rendering.WaterOptics
                 QualityAndDepthLimits = dto.QualityAndDepthLimits
             };
 
+            if (!vault.TryAcquireWriteLock(in _telemetryHandle, VaultOwnerSystemId, out NativeArray<WaterOpticsTelemetryEntry> ring))
+                return flags;
+
+            try
+            {
+                if (!ring.IsCreated || ring.Length == 0)
+                    return flags;
+
+                if ((uint)cursor >= (uint)ring.Length)
+                    cursor = 0;
+
+                byte* ringPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(ring);
+                ref WaterOpticsTelemetryEntry target = ref UnsafeUtility.AsRef<WaterOpticsTelemetryEntry>(
+                    ringPtr + cursor * WaterOpticsNativeLayout.TelemetrySizeBytes);
+                target = telemetry;
+                ringLength = ring.Length;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _telemetryHandle, VaultOwnerSystemId);
+            }
+
             cursor++;
-            if (cursor >= ring.Length)
+            if (cursor >= ringLength)
                 cursor = 0;
-            cursorRef = cursor;
+
+            if (!vault.TryAcquireWriteLock(in _telemetryCursorHandle, VaultOwnerSystemId, out NativeArray<int> cursorArray))
+                return flags;
+
+            try
+            {
+                if (!cursorArray.IsCreated || cursorArray.Length == 0)
+                    return flags;
+
+                void* cursorPtr = NativeArrayUnsafeUtility.GetUnsafePtr(cursorArray);
+                ref int cursorRef = ref UnsafeUtility.AsRef<int>(cursorPtr);
+                cursorRef = cursor;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _telemetryCursorHandle, VaultOwnerSystemId);
+            }
+
             return flags;
         }
 
@@ -1086,14 +1215,14 @@ namespace Hecton8.Rendering.WaterOptics
 
             IDataVault vault = _vault;
             if (vault == null ||
-                !TryResolve(vault, in _telemetryHandle, out NativeArray<WaterOpticsTelemetryEntry> ring) ||
-                !TryResolve(vault, in _telemetryCursorHandle, out NativeArray<int> cursorArray) ||
+                !TryReadOnly(vault, in _telemetryHandle, out NativeArray<WaterOpticsTelemetryEntry>.ReadOnly ring) ||
+                !TryReadOnly(vault, in _telemetryCursorHandle, out NativeArray<int>.ReadOnly cursorArray) ||
                 !ring.IsCreated)
             {
                 return;
             }
 
-            int cursor = cursorArray.IsCreated && cursorArray.Length > 0 ? ReadFirstInt(cursorArray) : 0;
+            int cursor = cursorArray.IsCreated && cursorArray.Length > 0 ? cursorArray[0] : 0;
             if ((uint)cursor >= (uint)ring.Length)
                 cursor = 0;
 
@@ -1382,15 +1511,32 @@ namespace Hecton8.Rendering.WaterOptics
 
         private static void ClearBuffer<T>(IDataVault vault, in VaultGenerationHandle<T> handle) where T : struct
         {
-            if (vault == null || !TryResolve(vault, in handle, out NativeArray<T> buffer) || !buffer.IsCreated)
+            if (vault == null || handle.BufferID == 0u || handle.Generation == 0u)
                 return;
-            UnsafeUtility.MemClear(NativeArrayUnsafeUtility.GetUnsafePtr(buffer), UnsafeUtility.SizeOf<T>() * buffer.Length);
+
+            if (!vault.TryAcquireWriteLock(in handle, VaultOwnerSystemId, out NativeArray<T> buffer))
+                return;
+
+            try
+            {
+                if (buffer.IsCreated)
+                    UnsafeUtility.MemClear(NativeArrayUnsafeUtility.GetUnsafePtr(buffer), UnsafeUtility.SizeOf<T>() * buffer.Length);
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, VaultOwnerSystemId);
+            }
         }
 
         private static WaterOpticsDTO ReadFirstWaterOpticsDto(NativeArray<WaterOpticsDTO> buffer)
         {
             void* ptr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(buffer);
             return UnsafeUtility.AsRef<WaterOpticsDTO>(ptr);
+        }
+
+        private static WaterOpticsDTO ReadFirstWaterOpticsDto(NativeArray<WaterOpticsDTO>.ReadOnly buffer)
+        {
+            return buffer[0];
         }
 
         private static void WriteFirstWaterOpticsDto(NativeArray<WaterOpticsDTO> buffer, in WaterOpticsDTO dto)
@@ -1418,18 +1564,6 @@ namespace Hecton8.Rendering.WaterOptics
             byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(buffer);
             return UnsafeUtility.AsRef<WaterOpticsTelemetryEntry>(
                 ptr + index * WaterOpticsNativeLayout.TelemetrySizeBytes);
-        }
-
-        private static int ReadFirstInt(NativeArray<int> buffer)
-        {
-            void* ptr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(buffer);
-            return UnsafeUtility.AsRef<int>(ptr);
-        }
-
-        private static bool TryResolve<T>(IDataVault vault, in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
-        {
-            buffer = default;
-            return vault != null && handle.BufferID != 0u && handle.Generation != 0u && vault.TryResolveHandle(in handle, out buffer) && buffer.IsCreated;
         }
 
         private static bool TryReadOnly<T>(IDataVault vault, in VaultGenerationHandle<T> handle, out NativeArray<T>.ReadOnly buffer) where T : struct

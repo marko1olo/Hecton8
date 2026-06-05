@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ The ocean did not lie. The timetable did.
 
 ## Field Note
 
-Use for midgame evidence ordering and brine POI placement.
+Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
 
 <!-- External Site; generated from P383_BRINE_CANYON_LIABILITY_ACT/en_US. -->

@@ -1,0 +1,45 @@
+ID: 3002_PROOF_HARNESS_REPLACEMENT_SPEC
+Role: Manifest-Bound Proof Harness Auditor
+
+Objective:
+Design the replacement route for `H8VisualProofCapture1912.cs`: a reusable manifest-bound proof harness that does not save diagnostic scene mutations and produces accepted packet structure under `Docs/Screenshots/HectonProofPackets/...`.
+
+Authority docs:
+- `AGENTS.md`
+- `quality.md`
+- `camera.md`
+- `presentation.md`
+- `rendering.md`
+- `water.md`
+
+Evidence basis:
+- `Tools/ProofGate/validate_proof_packet.py`
+- `Tools/ProofGate/unity_process_proof_watchdog.py`
+- `Tools/ProofGate/README.md`
+- `Docs/Reports/Batch29/2902_OWNED_PROOF_HARNESS_IMPLEMENTATION_PATCH_PLAN.md`
+- `Docs/Reports/Batch29/2904_PROOF_GATE_SCHEMA_AND_HARNESS_MANIFEST_CONTRACT.md`
+- `Assets/_Project/Scripts/Editor/H8VisualProofCapture1912.cs`
+
+Owned scope:
+- Read-only: files above.
+- Write: `Docs/Reports/Batch30/3002_PROOF_HARNESS_REPLACEMENT_SPEC.md`.
+
+Tasks:
+1. Read authority docs and listed evidence files.
+2. Identify why `H8VisualProofCapture1912.cs` is not acceptable as proof harness.
+3. Specify required output tree for `h8_1475_{session}`.
+4. Specify six required views with route predicates and camera/depth metadata.
+5. Specify manifest fields: screenshots, checksums, timestamps, camera, depth, quality, toggles, scene, log path, clean log window.
+6. Specify clean log requirements and dirty token rejection.
+7. Specify how a quarantine/diagnostic pass may be run without saving production scene.
+8. Specify where reusable harness code may live if Unity owner implements it.
+9. State how ProofGate should validate raw-vs-manifest packets.
+10. State compact/middle/high/ultra capture expectations without binary quality switches.
+11. Do not edit code.
+12. Create the report.
+
+Rejection gates:
+- No runtime proof claims.
+- No new acceptance criteria weaker than Batch25/29.
+- No capture path under `Assets`.
+

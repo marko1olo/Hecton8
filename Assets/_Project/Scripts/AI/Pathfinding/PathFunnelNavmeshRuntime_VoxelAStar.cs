@@ -20,10 +20,6 @@ namespace Hecton8.AI.Pathfinding
         private static readonly double StopwatchTicksToMicros = System.Diagnostics.Stopwatch.Frequency > 0L
             ? 1000000.0d / System.Diagnostics.Stopwatch.Frequency
             : 0.0d;
-        private static readonly ulong VoxelPathProfileMutationGuardMask =
-            PathFunnelMutationGuardBit(BufferID.ShinobuVoxelPathSpeciesProfiles) |
-            PathFunnelMutationGuardBit(BufferID.ShinobuVoxelPathSpeciesProfileCount);
-
         [Header("Voxel SDF A* Runtime")]
         [SerializeField, Min(2), Tooltip("Bounded native request ring for SHINOBU_304 voxel route requests.")]
         private int _voxelPathRequestCapacity = VoxelAStarConstants.DefaultRequestCapacity;
@@ -283,39 +279,69 @@ namespace Hecton8.AI.Pathfinding
             if (!parsed || written <= 0)
                 return false;
 
-            if (!TryAcquirePathFunnelMutationGuard(VoxelPathProfileMutationGuardMask, out IDataVault guardVault))
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !IsOwnedVaultHandle(in _voxelPathSpeciesProfilesHandle, BufferID.ShinobuVoxelPathSpeciesProfiles) ||
+                !IsOwnedVaultHandle(in _voxelPathSpeciesProfileCountHandle, BufferID.ShinobuVoxelPathSpeciesProfileCount))
+            {
+                return false;
+            }
+
+            if (!vault.TryAcquireWriteLock(in _voxelPathSpeciesProfileCountHandle, SystemID.AIPathfinding, out NativeArray<int> profileCount))
+                return false;
+
+            try
+            {
+                if (!profileCount.IsCreated || profileCount.Length < 1)
+                {
+                    return false;
+                }
+
+                profileCount[0] = 0;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _voxelPathSpeciesProfileCountHandle, SystemID.AIPathfinding);
+            }
+
+            if (!vault.TryAcquireWriteLock(in _voxelPathSpeciesProfilesHandle, SystemID.AIPathfinding, out NativeArray<VoxelPathingProfileDTO> profiles))
+                return false;
+
+            int copyCount;
+            try
+            {
+                if (!profiles.IsCreated || profiles.Length <= 0)
+                    return false;
+
+                copyCount = math.min(written, profiles.Length);
+                for (int i = 0; i < copyCount; i++)
+                    profiles[i] = stagedProfiles[i];
+                for (int i = copyCount; i < profiles.Length; i++)
+                    profiles[i] = default;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _voxelPathSpeciesProfilesHandle, SystemID.AIPathfinding);
+            }
+
+            if (copyCount <= 0 ||
+                !vault.TryAcquireWriteLock(in _voxelPathSpeciesProfileCountHandle, SystemID.AIPathfinding, out profileCount))
             {
                 return false;
             }
 
             try
             {
-                IDataVault vault = guardVault;
-                if (vault == null ||
-                    vault.IsCompactionFenceActive ||
-                    !IsOwnedVaultHandle(in _voxelPathSpeciesProfilesHandle, BufferID.ShinobuVoxelPathSpeciesProfiles) ||
-                    !IsOwnedVaultHandle(in _voxelPathSpeciesProfileCountHandle, BufferID.ShinobuVoxelPathSpeciesProfileCount) ||
-                    !vault.TryResolveHandle(in _voxelPathSpeciesProfilesHandle, out NativeArray<VoxelPathingProfileDTO> profiles) ||
-                    !vault.TryResolveHandle(in _voxelPathSpeciesProfileCountHandle, out NativeArray<int> profileCount) ||
-                    !profiles.IsCreated ||
-                    !profileCount.IsCreated ||
-                    profileCount.Length < 1)
-                {
+                if (!profileCount.IsCreated || profileCount.Length < 1)
                     return false;
-                }
-
-                int copyCount = math.min(written, profiles.Length);
-                for (int i = 0; i < copyCount; i++)
-                    profiles[i] = stagedProfiles[i];
-                for (int i = copyCount; i < profiles.Length; i++)
-                    profiles[i] = default;
 
                 profileCount[0] = copyCount;
-                return copyCount > 0;
+                return true;
             }
             finally
             {
-                ReleasePathFunnelMutationGuard(guardVault, VoxelPathProfileMutationGuardMask);
+                vault.ReleaseWriteLock(in _voxelPathSpeciesProfileCountHandle, SystemID.AIPathfinding);
             }
         }
 #endif

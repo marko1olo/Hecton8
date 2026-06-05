@@ -1,0 +1,109 @@
+HECTON-8 LOCAL TASK FILE
+Batch: batch17_lore_content_1770_1779
+Agent ID: 1778
+Role: Applied Lore DataMonolith and Runtime Export Integrator
+Distribution: give this whole file to one agent. No XML extraction is required.
+Wave mode: PARALLEL. Agents 1770-1779 work simultaneously. Do not wait for them, do not depend on their future output.
+
+IDENTIFICATION LINE
+First response must begin exactly:
+PROMPT IDENTIFIED: 1778 | DOMAIN: Applied Lore Import/Export / DataMonolith / Runtime Binding | TASK COUNT: 20
+
+OBJECTIVE
+Verify and improve the route from AppliedContent authoring data into runtime-ready static data.
+The result must make lore easy to insert into the game, scanner, PDA, terminal, message systems, route cards, and DataMonolith without runtime parsing or invented bindings.
+
+AUTHORITY DOCS
+Read fully before editing:
+- AGENTS.md
+- PROJECT_BIBLES.md
+- writing.md
+- narrative.md
+- localization.md
+- Docs/Lore/Lore_Content_System.md
+- Docs/Lore/Lore_Localization_Model.md
+- Docs/Lore/Lore_Multilingual_Content_Architecture.md
+- Docs/Lore/AppliedContent/README.md
+- Docs/ARCHITECTURE relevant DataMonolith docs if present
+- data.md or data monolith root bible if present
+
+OWNED SCOPE
+Primary inspect/edit scope:
+- Tools/AppliedLoreImporter.py
+- Tools/AppliedLorePageExporter.py
+- Tools/AppliedLoreRouteCardExporter.py
+- Tools/AppliedLoreRuntimeAudit.py
+- Assets/_SourceData/DataMonolith/Narrative/applied_lore_packets.csv
+- Assets/_Project/Scripts/Core/Generated/H8AppliedLoreHashes.cs
+- Docs/Lore/AppliedContent/binding_maps/
+- Docs/Lore/AppliedContent/route_cards/
+- Docs/Lore/AppliedContent/README.md
+- Docs/Lore/AppliedContent/production_audits/1778/
+
+Do not edit creative prose except to repair broken IDs/metadata required for import.
+Do not depend on agents 1770-1777 or 1779.
+
+RUNTIME LAW
+Runtime must not parse Markdown, lore JSON, website pages, translation dictionaries, or authoring-only docs.
+Runtime reads baked static records, IDs, hashes, route cards, unlock flags, and localized string references.
+No hidden scene search, no hot GlobalRegistry polling, no new managed heap route for lore content.
+
+15-LOCALE CONTRACT
+Integration must preserve the 15-locale roster:
+en_US, ru_RU, ja_JP, zh_CN, fr_FR, es_ES, de_DE, pl_PL, uk_UA, ar_SA, id_ID, ko_KR, he_IL, pt_BR, nl_NL.
+Locale status can block runtime inclusion for a locale, but the roster must remain stable.
+
+TASKS
+Task 01: Create/update Docs/Tasks/Status_1778.md with all 20 tasks and checkpoints after Tasks 05, 10, 15, and 20.
+
+Task 02: Create/update Docs/AgentLogs/Rationale_1778.md with exact import/export/runtime decisions.
+
+Task 03: Inspect Applied Lore tools. Output production_audits/1778/tool_route_inventory.md with each tool, input files, output files, required args, safe dry-run/source-only command if available.
+
+Task 04: Inspect applied_lore_packets.csv and H8AppliedLoreHashes.cs. Output current_runtime_artifact_inventory.csv with row counts, hash count, packet count if safely measurable.
+
+Task 05: Checkpoint. Decide which validation/import/export commands can be run safely without breaking other agents. Do not run expensive Unity builds unless required.
+
+Task 06: Run Tools/AppliedLoreRuntimeAudit.py --root . --source-only if safe. Capture exact output to production_audits/1778/runtime_audit_source_only.txt.
+
+Task 07: If importer/exporter tools support help mode, inspect help and document exact commands for rebuilding source CSV, pages, route cards, and hashes.
+
+Task 08: Validate route_cards directory against packet IDs and applied_lore_packets.csv if possible. Output route_card_runtime_matrix.csv.
+
+Task 09: Validate binding_maps directory against packet IDs and known authoring hooks listed in AppliedContent README. Output binding_map_runtime_matrix.csv.
+
+Task 10: Checkpoint. Reopen generated audit matrices and verify they use existing paths/IDs only.
+
+Task 11: Identify packets/pages that cannot enter runtime due missing route card, missing hash, missing locale status, missing unlock route, invalid JSON, or unsupported surface. Output runtime_blockers.md.
+
+Task 12: Patch small metadata/export documentation errors only when verified. Do not invent runtime fields or Unity APIs.
+
+Task 13: If safe, run page/export/route-card tooling in dry-run or normal mode as intended by existing docs. Capture exact command/output and changed files.
+
+Task 14: If tooling produces generated files, inspect diffs manually. Keep generated updates only if they are coherent, parseable, and do not erase sibling work.
+
+Task 15: Checkpoint. If any generated artifact changed, run a second source-only audit. Capture output.
+
+Task 16: Create production_audits/1778/datamonolith_integration_recipe.md with precise current steps from packets to static_data.h8bin, marking which steps are verified, candidate, or blocked.
+
+Task 17: Create production_audits/1778/runtime_surface_binding_map.md covering PDA encyclopedia, scanner title route, MessageTerminal, TerminalOS preview line, NarrativeDiscovery, ScannableFragment, and NarrativeSpatialTriggerAuthoring only where existing docs/code prove them.
+
+Task 18: Write Docs/AgentLogs/HANDOFF_1778.md with exact runtime blockers and next-wave integration tasks. No sibling dependency.
+
+Task 19: Search edited files for invented method/class names. Remove or mark CANDIDATE if not verified.
+
+Task 20: Final verification. Reopen edited files, update Status_1778.md, append final report to Docs/AgentLogs/LOG_1778.md.
+
+ACCEPTANCE PROOF
+- tool_route_inventory.md exists.
+- runtime audit output or exact blocker exists.
+- route/binding/runtime matrices exist.
+- DataMonolith integration recipe exists and separates verified/candidate/blocked.
+- Final LOG_1778.md lists exact commands, outputs, edited files.
+
+REJECTION CONDITIONS
+- Runtime markdown/JSON interpreter is proposed.
+- Future sibling output is required.
+- Invented Unity APIs, fields, scene refs, or hashes.
+- Generated files are accepted without diff inspection.
+- Locale roster is truncated.

@@ -107,6 +107,7 @@ Shader "Hecton8/Flora/ProceduralBio"
             float4 _HectonFloraBiomeTintParams;
             float4x4 _GlobalBiolumDearLieGroups;
             float4 _GlobalBiolumParams;
+            float4 _GlobalBiolumClock;
             float _H8GlobalQualityWeight;
 
             struct Attributes
@@ -152,6 +153,11 @@ Shader "Hecton8/Flora/ProceduralBio"
                 return (half)(isfinite(_H8GlobalQualityWeight) ? saturate(_H8GlobalQualityWeight) : 0.0);
             }
 
+            float HectonProceduralBioWrappedVisualTime()
+            {
+                return isfinite(_GlobalBiolumClock.x) ? max(_GlobalBiolumClock.x, 0.0) : 0.0;
+            }
+
             half HectonProceduralBioSmoothRange01(half low, half high, half value)
             {
                 half t = saturate((value - low) * rcp(max(high - low, 0.0001h)));
@@ -161,7 +167,7 @@ Shader "Hecton8/Flora/ProceduralBio"
             float3 ResolveProceduralBioSwayedPositionOS(float3 positionOS, float seed, half vertexSway01)
             {
                 half qualityWeight = HectonProceduralBioGlobalQualityWeight();
-                float timeSeconds = isfinite(_TimeParameters.x) ? _TimeParameters.x : 0.0;
+                float timeSeconds = HectonProceduralBioWrappedVisualTime();
                 float phase = (float)_BiolumPhase + seed * 6.2831853;
                 float primary = sin(timeSeconds * 0.43 + phase);
                 float detail = sin(timeSeconds * 1.21 + positionOS.y * 2.7 + phase * 1.79);

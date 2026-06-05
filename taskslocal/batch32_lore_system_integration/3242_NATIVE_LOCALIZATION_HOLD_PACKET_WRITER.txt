@@ -1,0 +1,67 @@
+ID: 3242
+Role: STATIC_DOC lore packet writer.
+Task: Create P491 native localization hold production packet.
+
+Write exactly:
+- Docs/Lore/AppliedContent/production_packets/P491_NATIVE_LOCALIZATION_HOLD_BRIDGE.production.md
+- Docs/Tasks/Status_3242.md
+- Docs/AgentLogs/LOG_3242.md
+- Docs/AgentLogs/Rationale_3242.md
+
+Authority to read:
+- AGENTS.md
+- VISION_LOCKS.md
+- TASTE.md
+- writing.md
+- narrative.md
+- localization.md
+- data.md
+- authoring.md
+- quality.md
+- Docs/Lore/Canon_Locks.md
+- Docs/Lore/Lore_Bible.md
+- Docs/Lore/Lore_Content_System.md
+- Docs/Lore/Lore_Localization_Model.md
+- Docs/Lore/Lore_Multilingual_Content_Architecture.md
+- .agents-skills/QA_Evidence_Text_Filter_Audit.txt
+- .agents-skills/UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt
+- .agents-skills/DATA_Runtime_Struct_Layout_ARM64.txt
+- .agents-skills/TOOL_Designer_Facades_CSV_Binary_Bridge.txt
+- .agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+
+Packet content:
+- Packet ID: P491_NATIVE_LOCALIZATION_HOLD_BRIDGE.
+- Article ID: NATIVE_LOCALIZATION_HOLD_BRIDGE.
+- Loc namespace: LORE_EVIDENCE_NATIVE_LOCALIZATION_HOLD_BRIDGE.
+- Topic: in-world/public/wiki disclaimer surface explaining why draft multilingual packet text is marked as pending native review and layout proof, without reducing it to a developer note.
+- Must support 15-language future delivery, RTL/CJK/font/layout truth, and player-facing transparency.
+- Must not claim native review happened.
+- Must connect witness language risk, corporate translation laundering, claimant wording, and future public archive captioning.
+
+Required packet shape:
+- Header metadata.
+- Source Brief.
+- Surface Texts: public archive disclaimer, in-game codex disclaimer, terminal translation stamp, Marauder annotation.
+- Future Integration Notes with proposed LocIDs.
+- GlobalQualityWeight presentation density with Low/Compact, Middle, High, Ultra consequences.
+- Localization section with exactly 15 locale headings:
+  en_US, ar_SA, de_DE, es_ES, fr_FR, he_IL, id_ID, ja_JP, ko_KR, nl_NL, pl_PL, pt_BR, ru_RU, uk_UA, zh_CN.
+- `en_US` must be `Status: source_authority`.
+- All non-English rows must be `Status: draft_machine_or_llm`.
+- Write natural language, not placeholders. Non-English may be machine/LLM draft but must be coherent draft text, not empty boilerplate.
+
+Forbidden:
+- Do not edit P461-P490.
+- Do not edit localization source tables, source CSV, route cards, graphs, binding maps, generated pages, h8bin, Unity assets, runtime scripts, or BATCH_INDEX.
+- Do not run dotnet build, Unity, h8bin bake, source importer/exporter.
+- Do not claim any positive native/runtime/DataMonolith/h8bin/Unity/publication/acceptance/import/font/layout proof state.
+- Do not use the forbidden static-proof phrase.
+
+Validation before final:
+- UTF-8 strict read passes.
+- Exactly 15 unique exact `### locale` headings.
+- Exactly 1 source_authority row and 14 draft_machine_or_llm rows.
+- U+FFFD = 0.
+- Explicit mojibake marker/codepoint scan = 0.
+- Bracketed locale/status headings = 0.
+- Positive readiness claim scan = 0.

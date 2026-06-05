@@ -10,17 +10,17 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Протокол приемника: публичный ledger
+# Payload Public Ledger Receiver Protocol
 
-Public ledger route раскрывает proof через delayed external custody. Он мешает erasure, но создает новое political/corporate pressure.
+The public ledger route exposes proof through delayed external custody. It can stop erasure while creating new political and corporate pressure.
 
 ## Scanner
 
-Ledger route. Public proof уходит из океана раньше, чем кто-то сможет cleanly own the story.
+Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.
 
 ## Terminal
 
@@ -28,10 +28,10 @@ PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordina
 
 ## Audio
 
-Когда это уйдет, это уже не твоя truth. В этом смысл и цена.
+Once it leaves, it is no longer your truth. That is the point and the cost.
 
 ## Field Note
 
-Для spoiler-gated article и late-game uplink record.
+Receiver record: public ledger release moves proof outside Deep Reach custody and outside player control.
 
 <!-- In-Game Wiki; generated from P379_PAYLOAD_PUBLIC_LEDGER_RECEIVER_PROTOCOL/ru_RU. -->

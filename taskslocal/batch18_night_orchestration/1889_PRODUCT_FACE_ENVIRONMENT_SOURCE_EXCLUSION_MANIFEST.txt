@@ -1,0 +1,85 @@
+ID: 1889
+TITLE: PRODUCT_FACE_ENVIRONMENT_SOURCE_EXCLUSION_MANIFEST
+MODE: REPORT_ONLY_STATIC_BOUNDARY_AUDIT
+
+You are HECTON-8 batch agent 1889.
+Do not edit source, assets, prefabs, scenes, binaries, generated meshes, `.meta`, DataMonolith, or task files.
+
+PRIMARY GOAL
+
+Prevent product-face agents from stealing or mutating sky/ocean/terrain/coast route-owned assets as shortcut texture sources for tools, pickups, vehicles, or player suit.
+
+The surface, Aegir, ocean, waterline, photic shallows, and coastline are visual pillars. They are reference targets and route-owned systems, not a free texture heap.
+
+READ
+
+- `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `VISION_LOCKS.md`
+- `TASTE.md`
+- `quality.md`
+- `water.md`
+- `terrain.md`
+- `world.md`
+- `lighting.md`
+- `vfx.md`
+- `3dmodel.md`
+- `3DMODEL_TEXTURES_MATERIALS.md`
+- `Docs/Reports/Batch18/1883_SKY_OCEAN_MATERIAL_TEXTURE_ROLE_PACKAGE.md`
+- `Docs/Reports/Batch18/1886_PRODUCT_FACE_TEXTURE_AUTHORING_PIPELINE_DISCOVERY.md`
+- relevant sky/ocean/terrain material/texture inventories under `Assets/_Project/Art/Materials`, `Assets/_Project/Art/TEXTURES`, and `Assets/Crest` by targeted search only.
+
+Mandates:
+
+- `.agents-skills/QA_Evidence_Text_Filter_Audit.txt`
+- `.agents-skills/REND_Terrain_VirtualTexturing.txt`
+- `.agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt`
+
+OUTPUTS YOU OWN
+
+- `Docs/Reports/Batch18/1889_PRODUCT_FACE_ENVIRONMENT_SOURCE_EXCLUSION_MANIFEST.md`
+- `Docs/Reports/Batch18/1889_PRODUCT_FACE_ENVIRONMENT_SOURCE_EXCLUSION_MATRIX.csv`
+- `Docs/Tasks/Status_1889.md`
+- `Docs/AgentLogs/Rationale_1889.md`
+- `Docs/AgentLogs/LOG_1889.md`
+
+CSV COLUMNS
+
+- `asset_or_family`
+- `route_owner`
+- `allowed_as_visual_reference`
+- `allowed_as_product_face_source`
+- `conditions`
+- `forbidden_use`
+- `risk_if_misused`
+- `status`
+
+REQUIRED CLASSIFICATIONS
+
+- sky/cloud/Aegir/moons
+- Crest ocean package materials/textures
+- first-party surface ocean/waterline/foam
+- basalt/terrain/rock textures
+- kelp/coral/flora atlases
+- sargassum hidden input masks/materials
+- depth/noir/fog/storm materials
+- visor glass droplet/runoff textures
+
+RULES
+
+- Normal surface state is bright/beautiful/readable. Depth/noir/fog/storm materials are not allowed to hide weak surface art.
+- Product-face materials may use environment assets as reference only unless owner approval and channel/import manifest exist.
+- Crest package assets must not be cloned or mutated as shortcut product-face materials.
+- Do not claim runtime/visual acceptance.
+
+VERIFICATION
+
+Run and record:
+
+- `git diff --check -- Docs/Reports/Batch18/1889_PRODUCT_FACE_ENVIRONMENT_SOURCE_EXCLUSION_MANIFEST.md Docs/Reports/Batch18/1889_PRODUCT_FACE_ENVIRONMENT_SOURCE_EXCLUSION_MATRIX.csv Docs/Tasks/Status_1889.md Docs/AgentLogs/Rationale_1889.md Docs/AgentLogs/LOG_1889.md`
+- `Import-Csv Docs/Reports/Batch18/1889_PRODUCT_FACE_ENVIRONMENT_SOURCE_EXCLUSION_MATRIX.csv | Measure-Object`
+- static term cross-check for `sky`, `Aegir`, `Crest`, `ocean`, `foam`, `basalt`, `terrain`, `kelp`, `sargassum`, `noir`, `storm`, `depth`.
+
+FINAL RESPONSE
+
+List changed files, CSV row count, highest misuse risks, and hard exclusions for future agents.

@@ -1,0 +1,51 @@
+ID: 3101
+Role: UNITY_SCENE_DIFF_OWNER
+Objective: classify and control the dirty 02_HECTON_WORLD scene diff so future visual proof is not built on diagnostic quarantine corruption.
+
+Why this exists:
+- Assets/_Project/Scenes/02_HECTON_WORLD.unity has a huge dirty diff after 1912 capture/quarantine work.
+- Assets/_Project/Scripts/Editor/H8VisualProofCapture1912.cs contains a scene-saving quarantine route.
+- Current visual proof is rejected and scene state is not trusted.
+
+Authority docs:
+- AGENTS.md
+- HECTON8_ORCHESTRATOR.md
+- TASTE.md
+- VISION_LOCKS.md
+- quality.md
+- terrain.md
+- rendering.md
+- water.md
+- .agents-skills/QA_Evidence_Text_Filter_Audit.txt
+- .agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt
+
+Owned scope:
+- Assets/_Project/Scenes/02_HECTON_WORLD.unity
+- Assets/_Project/Scripts/Editor/H8VisualProofCapture1912.cs
+- Docs/Screenshots/MCP/h8_1912_surface_quarantine.txt
+- Docs/Reports/Batch30/3001_SCENE_DIFF_MUTATION_AUDIT.md
+- Report output: Docs/Reports/Batch31/3101_UNITY_SCENE_DIFF_OWNER.md
+
+Tasks:
+1. Read the authority and Batch30 3001 report.
+2. Inspect current Unity/dotnet/csc/shader compiler/process state before any Unity action.
+3. Do not run dotnet build while CPU > 50 percent or compiler/import processes are active.
+4. Run static diff commands for 02_HECTON_WORLD.unity and record exact outputs.
+5. Classify diff categories: renderer enabled, GameObject active state, camera, light/sun, material refs, prefab/fileID churn, transform churn, object additions/removals.
+6. Compare quarantine list objects against HEAD/current state.
+7. Produce per-object action matrix: restore, keep disabled, replace, delete candidate, needs Unity visual review, unknown.
+8. Identify which changes are directly tied to 1912 disabledCount=3 and which are broader scene churn.
+9. If Unity is safely available, use Unity API/readback for inspection only; do not save scene.
+10. Do not revert or delete anything unless explicitly approved by controller/user.
+11. Write Status_3101.md, concise Rationale_3101.md, LOG_3101.md, and the Batch31 report.
+
+Proof packet:
+- STATIC VERIFIED for diff/source/YAML only.
+- EDITOR VERIFIED only if Unity Editor readback actually runs and artifact/log path is recorded.
+- No PLAYMODE/PROFILER/visual acceptance claim.
+
+Reject if:
+- You call SaveScene for diagnostics.
+- You accept a huge YAML diff as cleanup without per-object proof.
+- You hide ugly objects instead of classifying restore/replace/delete.
+

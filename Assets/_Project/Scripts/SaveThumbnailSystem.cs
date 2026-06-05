@@ -159,11 +159,11 @@ namespace Hecton8.SaveSystem
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            bool deferReadbackDisposal = _hasInflightRequest || _thumbnailWriteInProgress;
             AdvanceLifetimeGeneration();
-            AsyncGPUReadback.WaitAllRequests();
             ClearCache();
             DisposeFallbackNoise();
-            if (_thumbnailWriteInProgress)
+            if (deferReadbackDisposal)
                 _disposeReadbackBufferWhenIdle = true;
             else
                 DisposeReadbackBuffer();
@@ -643,14 +643,20 @@ namespace Hecton8.SaveSystem
         private static void HandleReadbackCompleted(AsyncGPUReadbackRequest request)
         {
             if (!_hasInflightRequest)
+            {
+                DisposeDeferredReadbackBufferIfIdle();
                 return;
+            }
 
             CaptureRequest inflightRequest = _inflightRequest;
             _inflightRequest = default;
             _hasInflightRequest = false;
 
             if (!IsCurrentGeneration(inflightRequest.Generation))
+            {
+                DisposeDeferredReadbackBufferIfIdle();
                 return;
+            }
 
             if (!Application.isPlaying || inflightRequest.Camera == null)
             {
@@ -803,11 +809,16 @@ namespace Hecton8.SaveSystem
         private static void ReleaseWriteInProgress()
         {
             _thumbnailWriteInProgress = false;
-            if (_disposeReadbackBufferWhenIdle)
-            {
-                _disposeReadbackBufferWhenIdle = false;
-                DisposeReadbackBuffer();
-            }
+            DisposeDeferredReadbackBufferIfIdle();
+        }
+
+        private static void DisposeDeferredReadbackBufferIfIdle()
+        {
+            if (!_disposeReadbackBufferWhenIdle || _thumbnailWriteInProgress || _hasInflightRequest)
+                return;
+
+            _disposeReadbackBufferWhenIdle = false;
+            DisposeReadbackBuffer();
         }
 
         private static bool HasReadbackBufferReady(int byteLength)

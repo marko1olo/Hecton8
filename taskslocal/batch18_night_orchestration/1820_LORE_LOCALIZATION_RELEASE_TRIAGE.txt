@@ -1,0 +1,56 @@
+AGENT ID: 1820
+ROLE: LORE_LOCALIZATION_RELEASE_TRIAGE
+MODE: No-Unity lore/localization triage. Independent from 1811/1812 unless editing AppliedLore source is required.
+
+PRIMARY GOAL
+Create a controller-grade release triage for multilingual lore/content: identify which packets/pages can go to game/wiki/site/prototype reader now, which are draft/native-review pending, which contain AI/production residue, and which must be blocked. This task should not bulk rewrite content; it prepares clean queues and acceptance criteria.
+
+READ
+- AGENTS.md, PROJECT_BIBLES.md, VISION_LOCKS.md, TASTE.md, quality.md
+- writing.md, narrative.md, localization.md
+- Docs/Lore/WriterScenarioAgentPrompt.md
+- Docs/Reports/Batch18/1804_APPLIED_LORE_DATAMONOLITH_RECONCILE.md
+- Docs/Reports/Batch18/1813_STALE_BLOCKER_ERRATA_PACKET.md
+- If present, Docs/Reports/Batch18/1811_P456_PUBLIC_SOURCE_REPAIR.md
+
+LIKELY FILES
+- Assets/_SourceData/DataMonolith/Narrative/applied_lore_packets.csv
+- Docs/Lore/AppliedContent/
+- Docs/Lore/AppliedContent/Publication_Surface_Index.csv
+- Current lore reader prototype docs/source found by search.
+
+OWNED OUTPUTS
+- Docs/Tasks/Status_1820.md
+- Docs/AgentLogs/Rationale_1820.md for non-trivial decisions only
+- Docs/AgentLogs/LOG_1820.md
+- Docs/Reports/Batch18/1820_LORE_LOCALIZATION_RELEASE_TRIAGE.md
+- Docs/Reports/Batch18/1820_LORE_RELEASE_QUEUE.csv
+
+HARD RULES
+- Do not run Unity or DataMonolith bake.
+- Do not edit AppliedLore source if 1811 or 1812 is active; mark queue items instead.
+- Do not claim native-final translations without proof.
+- Do not accept "specifications for writers" as player-facing content.
+- The intended target is believable human text in 15 locales, with honest status per locale.
+
+20 TASKS
+01. Create tracking files.
+02. Read authorities and relevant mandates.
+03. Inspect AppliedLore packet/page status fields and generated content structure.
+04. Sample release candidates across game wiki, scanner, logs, site/wiki, audio logs, encyclopedia.
+05. Search for production residue terms and AI/meta wording.
+06. Build release queue CSV: packet_id, surface, locale, status, blocker, recommended action.
+07. Mark P151 and P456 current state based on latest reports only.
+08. Identify packets suitable for prototype lore reader.
+09. Identify packets suitable for in-game encyclopedia.
+10. Identify packets suitable for scanner facts.
+11. Identify packets suitable for survivor logs/audio logs.
+12. Identify packets suitable for public website/wiki.
+13. Define native-review queue and language risk.
+14. Define text-quality acceptance gates.
+15. Define integration shape for reader/game/site without editing binaries.
+16. Define what a future writer-agent should do next.
+17. Append log.
+18. Final scan for fake localization acceptance.
+19. Mark TRIAGE COMPLETE/BLOCKED.
+20. Include a future-agent copy prompt for real content expansion.

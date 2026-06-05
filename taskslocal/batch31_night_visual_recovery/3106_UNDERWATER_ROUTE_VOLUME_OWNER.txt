@@ -1,0 +1,49 @@
+ID: 3106
+Role: UNDERWATER_ROUTE_VOLUME_OWNER
+Objective: define and recover real underwater 0-5m and 20-50m proof routes with water volume, route cues, particles, and return readability.
+
+Why this exists:
+- Existing h8_1474 underwater filenames are false surface views.
+- h8_1473 underwater 0-5m reads as flat green fill.
+- Mandatory references require underwater volume, depth, foreground/mid/background separation, particles, and route silhouette.
+
+Authority docs:
+- AGENTS.md
+- TASTE.md
+- VISION_LOCKS.md
+- quality.md
+- water.md
+- rendering.md
+- terrain.md
+- world.md
+- vfx.md
+- Docs/Reports/Batch31/MATERIAL_TEXTURE_CRITICALS_20260605.md
+- .agents-skills/REND_VFX_Fluid_Aesthetics_Compute_Particles.txt
+- .agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt
+
+Owned scope:
+- Assets/_Project/Scripts/HectonUnderwaterVisuals.cs
+- current scene route/anchor metadata by static inspection
+- underwater particle/volume candidate references
+- Report output: Docs/Reports/Batch31/3106_UNDERWATER_ROUTE_VOLUME_OWNER.md
+
+Tasks:
+1. Read authority and inspect mandatory example traits from memory file.
+2. Define hard acceptance for true 0-5m underwater view.
+3. Define hard acceptance for true 20-50m route view.
+4. Inspect current underwater owner refs: motes, snow, bubbles, beams, haze, surface sheet, route anchors.
+5. Classify missing/null motes, fish silhouette, foam ring, and visible foam masks before accepting any underwater readability claim.
+6. Identify why current captures are false or flat.
+7. Propose actual camera/anchor route with depth predicates and return cue.
+8. Define particle/volume/silt route as visual fake, not gameplay truth.
+9. Define compact/middle/high/ultra scaling through GlobalQualityWeight.
+10. Do not edit scene unless assigned Unity slot and process state is safe.
+11. Write Status_3106.md, Rationale_3106.md, LOG_3106.md, and Batch31 report.
+
+Proof packet:
+- STATIC VERIFIED for route plan.
+- PLAYER-CAPTURE required for visual acceptance.
+
+Reject if:
+- Underwater proof shows sky/horizon as dominant surface capture.
+- Underwater is a flat color fill with no depth, particles, route, or return cue.

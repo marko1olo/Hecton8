@@ -3737,8 +3737,7 @@ namespace Hecton8.Core.Memory
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void TryCompleteOwnerJobHandle(ref JobHandle ownerHandle)
         {
-            ownerHandle.Complete();
-            ownerHandle = default;
+            Hecton8.Core.DispatcherJobFence.TryComplete(ref ownerHandle, forceComplete: true);
         }
 
         private static void RemoveOwnerJobKey(ushort ownerKey)

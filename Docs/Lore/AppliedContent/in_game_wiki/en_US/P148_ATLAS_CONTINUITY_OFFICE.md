@@ -10,13 +10,13 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Atlas Continuity Office
 
-Atlas Continuity Office is where the public worker-safety promise became classified weighting. It gives writers a narrow owner for Atlas liability.
+Atlas Continuity Office is where the public worker-safety promise became classified weighting. It owns the liability path between maintenance logic, evacuation priority, and the damaged Atlas route.
 
 ## Scanner
 

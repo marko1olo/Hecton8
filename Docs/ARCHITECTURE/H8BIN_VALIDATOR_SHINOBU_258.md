@@ -4,6 +4,8 @@
 
 Date: 2026-05-28
 
+Owner domain: data/static Data Monolith validation tooling
+
 Status: ACTIVE TOOLING; CURRENT PAYLOAD PRESENT; SCOPED PAYLOAD VALIDATOR PASS; FULL DEFAULT RERUN PENDING
 
 

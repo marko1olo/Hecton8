@@ -4,6 +4,10 @@ Status: pre-spend plan
 Owner lane: Marketing / low-budget paid tests
 Runtime impact: none
 
+## Authority Boundary
+
+Public voice routes through root `textes.md`. Quality, release, platform, Steam, wishlist, demo, performance, and paid-spend claims require `quality.md`, `release.md`, `platform.md`, and current proof artifacts. This file is a planning matrix only; no row, CTA, budget, or draft copy grants public send, ad launch, Steam page, demo, or wishlist claim permission.
+
 ## Rule
 
 Paid ads are last-mile tests, not a rescue strategy. If the Steam page, capsule, screenshot, or demo is weak organically, paid traffic burns money faster.

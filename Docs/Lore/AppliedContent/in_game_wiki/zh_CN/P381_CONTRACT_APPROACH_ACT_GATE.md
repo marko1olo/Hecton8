@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ You came for work. The paperwork already knows you worked for Deep Reach.
 
 ## Field Note
 
-Use for opening contract board, start UI, Black Keel audio and spoiler-light website premise.
+Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears.
 
 <!-- In-Game Wiki; generated from P381_CONTRACT_APPROACH_ACT_GATE/zh_CN. -->

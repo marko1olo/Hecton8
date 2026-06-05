@@ -10,17 +10,17 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Replay seed: evidence-first charter
+# Evidence First Charter Contract Seed
 
-Evidence-first contracts - replay routes для игроков, которые хотят public-ledger axis раньше и дороже.
+Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.
 
 ## Scanner
 
-Contract seed: evidence first. Меньше payout, сильнее custody и опаснее route decisions.
+Contract seed: evidence first. Lower payout, stronger custody and more dangerous route decisions.
 
 ## Terminal
 
@@ -28,10 +28,10 @@ SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation con
 
 ## Audio
 
-У правды ниже listed value, пока кто-то не пытается ее похоронить.
+Truth has a lower listed value until someone tries to bury it.
 
 ## Field Note
 
-Для public-ledger replay runs и legal/notary UI.
+Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
 
 <!-- In-Game Wiki; generated from P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED/ru_RU. -->

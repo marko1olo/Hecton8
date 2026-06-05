@@ -6,6 +6,8 @@ Status: PENDING VERIFICATION
 
 Evidence class: STATIC_DOC / STATIC_SOURCE. Runtime proof remains absent.
 
+Owner domain: Hydrodynamic Drag & Buoyancy / Physics Culling Overseer
+
 Route ID: `SHINOBU_249_BUOYANCY_SLEEP_STATE`
 
 | Field | Value |

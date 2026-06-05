@@ -20,7 +20,7 @@ Parents:
 
 - `GLOBAL_AUTHORITY_MIGRATION_LEDGER.md`
 
-- `QUALITY_GATES.md`
+- `Docs/QUALITY_GATES.md`
 
 ## Purpose
 

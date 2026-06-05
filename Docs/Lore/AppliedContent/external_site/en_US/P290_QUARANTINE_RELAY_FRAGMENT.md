@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Quarantine Relay Fragment
 
-HECTON-8 endings can save the player's body while preserving the systems that made the descent necessary.
+HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there.
 
 ## Scanner
 
@@ -24,14 +24,14 @@ Relay fragment approves extraction and denies clean release in the same packet.
 
 ## Terminal
 
-RELAY HOLD: extraction accepted. Release denied pending sample custody, air review and claimant dispute.
+RELAY HOLD QRF-17: extraction accepted; release denied pending sample custody, air review and claimant dispute.
 
 ## Audio
 
-You are out of the water. You are not out of custody.
+Relay hold. Extraction accepted. Release denied: sample custody, air review, claimant dispute. You are dry, not free.
 
 ## Field Note
 
-Use after partial exit/corporate rescue routes; keep it legal, cold and bitter.
+Stamped twice: body recovered, person retained. Legal acceptance and release denial share one packet.
 
 <!-- External Site; generated from P290_QUARANTINE_RELAY_FRAGMENT/en_US. -->

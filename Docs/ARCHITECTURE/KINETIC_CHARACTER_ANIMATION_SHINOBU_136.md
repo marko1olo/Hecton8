@@ -1,5 +1,9 @@
 ﻿# Kinetic Character Animation - SHINOBU_136
 
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
+
+Owner domain: animation/player procedural kinematics
+
 Evidence class: STATIC_SOURCE. Unity import, Play Mode, profiler, GCMonitor, and player-build proof remain pending until a fresh artifact is linked.
 
 ## Source Anchors

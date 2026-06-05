@@ -10,13 +10,13 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Glass Grazer Codex Card
 
-Glass Grazer Codex Card turns a benign animal into a readable safety instrument.
+Glass grazers are non-hostile, but their movement is useful evidence. Active feeding usually means low immediate predator pressure. A frozen or vanished school means the clearing has changed faster than the scanner can explain.
 
 ## Scanner
 
@@ -32,6 +32,6 @@ When they stop eating, you stop moving.
 
 ## Field Note
 
-Use as tutorial for absence-as-warning without UI exposition.
+When the school locks still, stop treating the clearing as safe. Something is reading the same water you are.
 
 <!-- In-Game Wiki; generated from P292_GLASS_GRAZER_CODEX_CARD/en_US. -->

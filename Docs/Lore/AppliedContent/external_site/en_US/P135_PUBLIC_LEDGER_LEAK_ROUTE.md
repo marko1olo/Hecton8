@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Public Ledger Leak Route
 
-Public Ledger Leak Route gives HECTON-8 a truth-forward ending that still respects delay, custody and unintended consequence.
+The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood.
 
 ## Scanner
 

@@ -1,0 +1,75 @@
+ID: 3233
+Role: STATIC_SOURCE candidate builder.
+Task: Create RS095 canonical packet JSON candidate for validated corporate pressure-chain packets.
+
+Scope:
+- Write exactly these files:
+  Docs/Lore/AppliedContent/release_sets/RS095_CORPORATE_PRESSURE_CHAIN_BRIDGE.md
+  Docs/Lore/AppliedContent/release_sets/RS095_CORPORATE_PRESSURE_CHAIN_BRIDGE_manifest.json
+  Docs/Lore/AppliedContent/packets/RS095_CORPORATE_PRESSURE_CHAIN_BRIDGE.packets.json
+  Docs/Tasks/Status_3233.md
+  Docs/AgentLogs/LOG_3233.md
+  Docs/AgentLogs/Rationale_3233.md
+  Docs/Reports/Batch32/3233_RS095_CANONICAL_PACKET_JSON.md
+
+Input packets:
+- Docs/Lore/AppliedContent/production_packets/P465_DEEP_REACH_MANAGED_VARIANCE_BRIDGE.production.md
+- Docs/Lore/AppliedContent/production_packets/P466_WORKER_TAG_EVIDENCE_BRIDGE.production.md
+- Docs/Lore/AppliedContent/production_packets/P475_CENTAURI_CHARTER_LEGITIMACY_BRIDGE.production.md
+- Docs/Lore/AppliedContent/production_packets/P476_AEGIR_CONTINUITY_HOLDINGS_SHELL_CHAIN_BRIDGE.production.md
+- Docs/Lore/AppliedContent/production_packets/P477_RECOVERY_COMPLIANCE_RETURN_ACTION_QUEUE_BRIDGE.production.md
+- Docs/Lore/AppliedContent/production_packets/P478_ATLAS_CONTINUITY_OFFICE_WORKER_SAFETY_WAIVER_BRIDGE.production.md
+- Docs/Lore/AppliedContent/production_packets/P479_KEELMARK_LOSS_DESK_CONVERSION_BRIDGE.production.md
+
+Authority to read:
+- AGENTS.md
+- writing.md
+- narrative.md
+- localization.md
+- data.md
+- authoring.md
+- quality.md
+- Docs/Lore/Canon_Locks.md
+- Docs/Lore/Lore_Bible.md
+- Docs/Lore/Lore_Content_System.md
+- Docs/Lore/Lore_Localization_Model.md
+- Docs/Lore/AppliedContent/packets/RS094_PUBLIC_AUTHORITY_BRIDGE_EXPANSION.packets.json
+- Docs/Lore/AppliedContent/release_sets/RS094_PUBLIC_AUTHORITY_BRIDGE_EXPANSION_manifest.json
+- .agents-skills/QA_Evidence_Text_Filter_Audit.txt
+- .agents-skills/UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt
+- .agents-skills/DATA_Runtime_Struct_Layout_ARM64.txt
+- .agents-skills/TOOL_Designer_Facades_CSV_Binary_Bridge.txt
+- .agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+
+JSON shape:
+- Use RS094 packet JSON as schema reference.
+- Top-level packet JSON keys: schema, release_set_id, status, evidence_class, runtime_contract, packets.
+- Each packet object must use `localized` dict with 15 locale keys, not `localization`.
+- Required localized surface keys per locale: title, scanner, terminal, audio, in_game_wiki, external_site, field_note.
+- Runtime flags must remain false:
+  authoring_only=true
+  runtime_reads_json=false
+  runtime_reads_markdown=false
+  runtime_ready=false
+  native_localization_ready=false
+  data_monolith_ready=false
+- Manifest must include `authoring_packet_sources`, `canonical_importer_ready=false`, `runtime_ready=false`, `evidence_class=STATIC_SOURCE`.
+- Manifest must NOT include `packet_sources` or `canonical_importer_sources`.
+
+Forbidden:
+- Do not edit P461-P483 production packets.
+- Do not include active P480-P483 in RS095 until controller validates them.
+- Do not edit source CSV, route cards, graphs, binding maps, generated pages/hashes, h8bin, Unity assets, runtime scripts, or BATCH_INDEX.
+- Do not run dotnet build, Unity, h8bin bake, source importer/exporter.
+- Do not claim importer-ready, runtime-ready, DataMonolith-ready, native-reviewed, published, Unity-verified, accepted, or h8bin-ready.
+
+Validation before final:
+- JSON parses.
+- Packet count = 7.
+- Manifest packet count = 7 or packets list length = 7.
+- Locale count = 15 per packet.
+- Required localized surface keys present.
+- U+FFFD = 0.
+- Bracketed locale/status headings are irrelevant to JSON but source packet files must already be controller-validated.
+- Positive runtime/native/DataMonolith/importer/publication readiness claim scan must remain false/absent.
+- Protected source/runtime/generated paths must remain untouched by this agent.

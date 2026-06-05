@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
-# Atlas Repair Trace Transcript Seed
+# Atlas Repair Trace Transcript
 
-Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.
+Atlas does not explain itself. Its repair traces reveal what it has stopped distinguishing.
 
 ## Scanner
 
-Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.
+Atlas trace logs a repair that treats cable, tissue and route as one service surface.
 
 ## Terminal
 
-TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.
+MAINTENANCE TRACE ATLAS-6: leak class accepted; membrane/cable growth authorized; fauna route marked serviceable; human-use object category unresolved.
 
 ## Audio
 
-Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.
+ATLAS-6 maintenance trace. Leak closed. Cable growth accepted. Warm-body route serviceable. Human-use category unresolved.
 
 ## Field Note
 
-Use for scanner captions, deep audio layers and Atlas article spoiler gate.
+Damaged maintenance telemetry. No villain speech; the clue is category collapse.
 
 <!-- External Site; generated from P439_ATLAS_REPAIR_TRACE_TRANSCRIPT_SEED/en_US. -->

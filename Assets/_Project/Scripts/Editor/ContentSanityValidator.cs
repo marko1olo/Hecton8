@@ -31,8 +31,11 @@ namespace Hecton8.Editor.Validation
         private const string MenuPath = "Hecton-8/Validate Content";
         private const string DataRoot = "Assets/_Project/Data";
         private const string PrefabRoot = "Assets/_Project/Prefabs";
+        private const string CopperVeinTemplatePath = DataRoot + "/Scavenging/ResourceNodes/ResourceNodeTemplate_CopperVein.asset";
         private const string PlayerPrefabPath = "Assets/_Project/Prefabs/Player.prefab";
         private const string ToolHeldPrefabRoot = "Assets/_Project/Prefabs/Tools/Held";
+        private const string SeafloorDrillItemId = "Item_Tool_SeafloorDrill";
+        private const string EmergencyO2CanisterItemId = "Data_EmergencyO2Canister";
         private const string ItemCatalogPath = DataRoot + "/Items/ItemCatalog.asset";
         private const string GeneratedRoot = DataRoot + "/Diagnostics/Generated/ContentSanity";
         private const string GeneratedMeshPath = GeneratedRoot + "/MESH_ContentSanityWireCube.asset";
@@ -40,6 +43,14 @@ namespace Hecton8.Editor.Validation
         private const string FloraProxyFolder = GeneratedRoot + "/FloraGhostProxies";
         private const string InjectedProxyName = "__ContentSanityWireProxy";
         private static readonly string[] DataRoots = { DataRoot };
+        private static readonly string[] FirstHourCraftMilestoneItemIds =
+        {
+            "Comp_CopperWire",
+            EmergencyO2CanisterItemId,
+            "Item_Tool_BeaconDeployer",
+            "Item_Tool_Repair",
+            "Comp_PressureSeal"
+        };
 
         private sealed class ValidationResult
         {
@@ -79,9 +90,14 @@ namespace Hecton8.Editor.Validation
             public int ResourceNodeYieldMissingWorldPrefabCount;
             public int ResourceNodeYieldNotCatalogedCount;
             public int ResourceNodeYieldInvalidWorldPrefabContractCount;
+            public int ResourceNodeToolGateErrorCount;
+            public int FirstHourCraftGateErrorCount;
+            public int FirstHourDrillRouteErrorCount;
+            public int FirstHourOxygenRouteErrorCount;
             public int PlayerPdaHeadlessOpenRiskCount;
             public int PlayerPdaBridgeWarningCount;
             public int PlayerDevProvisionerStartupRiskCount;
+            public int PlayerStarterLoadoutErrorCount;
         }
 
         [MenuItem(MenuPath, priority = 141)]
@@ -104,9 +120,11 @@ namespace Hecton8.Editor.Validation
             ValidateFloraTemplates(result, wireMesh, wireMaterial);
             ValidateFaunaTemplates(result, wireMesh, wireMaterial);
             ValidateResourceNodeTemplates(result);
+            ValidateFirstHourDrillRoute(result);
             ValidateBaseModuleTemplates(result);
             ValidatePlayerPdaShell(result);
             ValidatePlayerDevProvisioning(result);
+            ValidatePlayerStarterLoadout(result);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -272,7 +290,112 @@ namespace Hecton8.Editor.Validation
                 ValidateRecipeScanGate(result, recipe, assetPath, knownScanEntryIds);
             }
 
+            ValidateFirstHourCraftGate(result, itemCatalog, craftableItemIds);
+            ValidateFirstHourOxygenRoute(result, itemCatalog, craftableItemIds);
+
             return craftableItemIds;
+        }
+
+        private static void ValidateFirstHourOxygenRoute(
+            ValidationResult result,
+            ItemCatalog itemCatalog,
+            HashSet<string> craftableItemIds)
+        {
+            ItemData oxygenItem = FindItemDataByPersistentId(EmergencyO2CanisterItemId);
+            if (oxygenItem == null)
+            {
+                result.FirstHourOxygenRouteErrorCount++;
+                result.Errors.Add($"FirstHourOxygenRoute: '{EmergencyO2CanisterItemId}' ItemData is missing.");
+                return;
+            }
+
+            if (!oxygenItem.isConsumable)
+            {
+                result.FirstHourOxygenRouteErrorCount++;
+                result.Errors.Add($"FirstHourOxygenRoute: '{EmergencyO2CanisterItemId}' must stay consumable; early oxygen failsafe cannot be a dead inventory item.");
+            }
+
+            if (oxygenItem.oxygenRestore <= 0f)
+            {
+                result.FirstHourOxygenRouteErrorCount++;
+                result.Errors.Add($"FirstHourOxygenRoute: '{EmergencyO2CanisterItemId}' must restore oxygen; authored oxygenRestore={oxygenItem.oxygenRestore}.");
+            }
+
+            if (!oxygenItem.stackable || oxygenItem.maxStack < 2)
+            {
+                result.FirstHourOxygenRouteErrorCount++;
+                result.Errors.Add($"FirstHourOxygenRoute: '{EmergencyO2CanisterItemId}' must remain stackable with maxStack >= 2 for first-hour route safety.");
+            }
+
+            if (craftableItemIds == null || !craftableItemIds.Contains(EmergencyO2CanisterItemId))
+            {
+                result.FirstHourOxygenRouteErrorCount++;
+                result.Errors.Add($"FirstHourOxygenRoute: '{EmergencyO2CanisterItemId}' is not produced by any valid RecipeData.resultItem.");
+            }
+
+            int itemHash = LocHash.Compute(EmergencyO2CanisterItemId);
+            if (itemHash == 0)
+            {
+                result.FirstHourOxygenRouteErrorCount++;
+                result.Errors.Add($"FirstHourOxygenRoute: '{EmergencyO2CanisterItemId}' hashes to 0.");
+                return;
+            }
+
+            if (itemCatalog == null ||
+                !itemCatalog.TryGetRuntimeDescriptor(itemHash, out ItemCatalog.ItemRuntimeDescriptor descriptor) ||
+                !ItemCatalog.IsValidDescriptor(in descriptor))
+            {
+                result.FirstHourOxygenRouteErrorCount++;
+                result.Errors.Add($"FirstHourOxygenRoute: '{EmergencyO2CanisterItemId}' has no valid ItemCatalog runtime descriptor.");
+                return;
+            }
+
+            if (descriptor.IsConsumable == 0 || descriptor.OxygenRestore <= 0f)
+            {
+                result.FirstHourOxygenRouteErrorCount++;
+                result.Errors.Add(
+                    $"FirstHourOxygenRoute: '{EmergencyO2CanisterItemId}' catalog descriptor must be consumable and restore oxygen; " +
+                    $"IsConsumable={descriptor.IsConsumable}, OxygenRestore={descriptor.OxygenRestore}.");
+            }
+        }
+
+        private static void ValidateFirstHourCraftGate(
+            ValidationResult result,
+            ItemCatalog itemCatalog,
+            HashSet<string> craftableItemIds)
+        {
+            for (int i = 0; i < FirstHourCraftMilestoneItemIds.Length; i++)
+            {
+                string itemId = FirstHourCraftMilestoneItemIds[i];
+                if (string.IsNullOrWhiteSpace(itemId))
+                {
+                    result.FirstHourCraftGateErrorCount++;
+                    result.Errors.Add($"FirstHourCraftGate[{i}]: item id is empty.");
+                    continue;
+                }
+
+                int itemHash = LocHash.Compute(itemId);
+                if (itemHash == 0)
+                {
+                    result.FirstHourCraftGateErrorCount++;
+                    result.Errors.Add($"FirstHourCraftGate[{i}] '{itemId}' hashes to 0.");
+                    continue;
+                }
+
+                if (itemCatalog == null ||
+                    !itemCatalog.TryGetRuntimeDescriptor(itemHash, out ItemCatalog.ItemRuntimeDescriptor descriptor) ||
+                    !ItemCatalog.IsValidDescriptor(in descriptor))
+                {
+                    result.FirstHourCraftGateErrorCount++;
+                    result.Errors.Add($"FirstHourCraftGate[{i}] '{itemId}' has no valid ItemCatalog runtime descriptor.");
+                }
+
+                if (craftableItemIds == null || !craftableItemIds.Contains(itemId))
+                {
+                    result.FirstHourCraftGateErrorCount++;
+                    result.Errors.Add($"FirstHourCraftGate[{i}] '{itemId}' is not produced by any RecipeData.resultItem.");
+                }
+            }
         }
 
         private static HashSet<string> CollectKnownScanEntryIds(ValidationResult result)
@@ -962,12 +1085,53 @@ namespace Hecton8.Editor.Validation
                 if (template.StableHashId == 0)
                     result.Errors.Add($"{assetPath}: ResourceNodeTemplate.StableHashId resolves to 0.");
 
+                ValidateFirstHourResourceNodeToolGate(result, template, assetPath);
+
                 if (template.NodeMesh == null)
                     result.Warnings.Add($"{assetPath}: nodeMesh is null. Runtime ghost-box standard remains active.");
 
                 ValidateResourceNodeYieldArray(result, itemCatalog, template, assetPath, "harvestYield", "harvestYield");
                 ValidateResourceNodeYieldArray(result, itemCatalog, template, assetPath, "rarityDrops", "rarityDrops");
             }
+        }
+
+        private static void ValidateFirstHourResourceNodeToolGate(
+            ValidationResult result,
+            ResourceNodeTemplate template,
+            string assetPath)
+        {
+            if (!string.Equals(assetPath, CopperVeinTemplatePath, StringComparison.OrdinalIgnoreCase))
+                return;
+
+            if (template.RequiredToolClass == ResourceNodeTemplate.HarvestToolClass.Drill)
+                return;
+
+            result.ResourceNodeToolGateErrorCount++;
+            result.Errors.Add(
+                $"{assetPath}: first-hour copper vein must be Drill-gated. " +
+                $"Current RequiredToolClass={template.RequiredToolClass}; Knife/Salvage/Any would cheapen early tool progression.");
+        }
+
+        private static void ValidateFirstHourDrillRoute(ValidationResult result)
+        {
+            ResourceNodeTemplate copperTemplate = AssetDatabase.LoadAssetAtPath<ResourceNodeTemplate>(CopperVeinTemplatePath);
+            if (copperTemplate == null || copperTemplate.RequiredToolClass != ResourceNodeTemplate.HarvestToolClass.Drill)
+                return;
+
+            ItemData drillItem = FindItemDataByPersistentId(SeafloorDrillItemId);
+            bool hasHeldPrefab = HasHeldToolPrefabForItemId(SeafloorDrillItemId);
+            if (drillItem != null && hasHeldPrefab)
+                return;
+
+            result.FirstHourDrillRouteErrorCount++;
+            string missing = drillItem == null && !hasHeldPrefab
+                ? "ItemData and held prefab"
+                : drillItem == null
+                    ? "ItemData"
+                    : "held prefab";
+            result.Errors.Add(
+                $"{CopperVeinTemplatePath}: copper is Drill-gated, but first-hour seafloor drill route is incomplete; " +
+                $"missing {missing} for PersistentId='{SeafloorDrillItemId}'. Do not fall back to Knife/Any; author the tool route or an explicit validated alternative.");
         }
 
         private static void ValidateResourceNodeYieldArray(
@@ -1193,6 +1357,143 @@ namespace Hecton8.Editor.Validation
             {
                 PrefabUtility.UnloadPrefabContents(prefabRoot);
             }
+        }
+
+        private static void ValidatePlayerStarterLoadout(ValidationResult result)
+        {
+            GameObject prefabRoot = PrefabUtility.LoadPrefabContents(PlayerPrefabPath);
+            if (prefabRoot == null)
+            {
+                result.PlayerStarterLoadoutErrorCount++;
+                result.Errors.Add($"{PlayerPrefabPath}: failed to load prefab contents for production starter loadout validation.");
+                return;
+            }
+
+            try
+            {
+                PlayerToolManager toolManager = prefabRoot.GetComponentInChildren<PlayerToolManager>(true);
+                if (toolManager == null)
+                {
+                    result.PlayerStarterLoadoutErrorCount++;
+                    result.Errors.Add($"{PlayerPrefabPath}: canonical player prefab is missing PlayerToolManager; starter tools cannot be validated.");
+                    return;
+                }
+
+                SerializedObject serializedToolManager = new SerializedObject(toolManager);
+                SerializedProperty grantProperty = serializedToolManager.FindProperty("grantAssignedToolItemsOnRuntimeStart");
+                SerializedProperty budgetProperty = serializedToolManager.FindProperty("runtimeStartToolGrantBudget");
+                SerializedProperty toolPrefabsProperty = serializedToolManager.FindProperty("toolPrefabs");
+                if (grantProperty == null || !grantProperty.boolValue)
+                {
+                    result.PlayerStarterLoadoutErrorCount++;
+                    result.Errors.Add($"{PlayerPrefabPath}: PlayerToolManager.grantAssignedToolItemsOnRuntimeStart must exist and stay enabled for production starter tools.");
+                }
+
+                if (budgetProperty == null)
+                {
+                    result.PlayerStarterLoadoutErrorCount++;
+                    result.Errors.Add($"{PlayerPrefabPath}: PlayerToolManager.runtimeStartToolGrantBudget is missing.");
+                }
+
+                if (toolPrefabsProperty == null || !toolPrefabsProperty.isArray)
+                {
+                    result.PlayerStarterLoadoutErrorCount++;
+                    result.Errors.Add($"{PlayerPrefabPath}: PlayerToolManager.toolPrefabs array is missing; starter quick slots cannot be validated.");
+                    return;
+                }
+
+                ItemCatalog itemCatalog = AssetDatabase.LoadAssetAtPath<ItemCatalog>(ItemCatalogPath);
+                int assignedCount = 0;
+                int validItemCount = 0;
+                for (int i = 0; i < toolPrefabsProperty.arraySize; i++)
+                {
+                    SerializedProperty slotProperty = toolPrefabsProperty.GetArrayElementAtIndex(i);
+                    GameObject prefab = slotProperty != null ? slotProperty.objectReferenceValue as GameObject : null;
+                    if (prefab == null)
+                        continue;
+
+                    assignedCount++;
+                    if (!prefab.TryGetComponent(out PlayerTool tool) || tool == null)
+                    {
+                        result.PlayerStarterLoadoutErrorCount++;
+                        result.Errors.Add($"{PlayerPrefabPath}: starter tool slot {i} prefab '{prefab.name}' is missing PlayerTool on prefab root.");
+                        continue;
+                    }
+
+                    ItemData item = tool.ToolData;
+                    if (item == null || string.IsNullOrWhiteSpace(item.PersistentId))
+                    {
+                        result.PlayerStarterLoadoutErrorCount++;
+                        result.Errors.Add($"{PlayerPrefabPath}: starter tool slot {i} prefab '{prefab.name}' has no valid ToolData PersistentId.");
+                        continue;
+                    }
+
+                    int itemHash = LocHash.Compute(item.PersistentId);
+                    if (itemHash == 0 || itemCatalog == null || !ReferenceEquals(itemCatalog.FindByHash(itemHash), item))
+                    {
+                        result.PlayerStarterLoadoutErrorCount++;
+                        result.Errors.Add($"{PlayerPrefabPath}: starter tool slot {i} item '{item.PersistentId}' is not the active ItemCatalog entry.");
+                        continue;
+                    }
+
+                    validItemCount++;
+                }
+
+                if (assignedCount < 3 || validItemCount < assignedCount)
+                {
+                    result.PlayerStarterLoadoutErrorCount++;
+                    result.Errors.Add($"{PlayerPrefabPath}: production starter loadout requires at least three valid authored quick-slot tools; assigned={assignedCount}, valid={validItemCount}.");
+                }
+
+                int grantBudget = budgetProperty != null ? budgetProperty.intValue : 0;
+                if (grantBudget < assignedCount)
+                {
+                    result.PlayerStarterLoadoutErrorCount++;
+                    result.Errors.Add($"{PlayerPrefabPath}: runtimeStartToolGrantBudget={grantBudget} is lower than authored starter tool count={assignedCount}.");
+                }
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
+        }
+
+        private static ItemData FindItemDataByPersistentId(string persistentId)
+        {
+            if (string.IsNullOrWhiteSpace(persistentId))
+                return null;
+
+            string[] itemGuids = AssetDatabase.FindAssets("t:ItemData", DataRoots);
+            for (int i = 0; i < itemGuids.Length; i++)
+            {
+                string assetPath = AssetDatabase.GUIDToAssetPath(itemGuids[i]);
+                ItemData item = AssetDatabase.LoadAssetAtPath<ItemData>(assetPath);
+                if (item != null && string.Equals(item.PersistentId, persistentId, StringComparison.Ordinal))
+                    return item;
+            }
+
+            return null;
+        }
+
+        private static bool HasHeldToolPrefabForItemId(string persistentId)
+        {
+            if (string.IsNullOrWhiteSpace(persistentId))
+                return false;
+
+            string[] prefabGuids = AssetDatabase.FindAssets("t:Prefab", new[] { ToolHeldPrefabRoot });
+            for (int i = 0; i < prefabGuids.Length; i++)
+            {
+                string prefabPath = AssetDatabase.GUIDToAssetPath(prefabGuids[i]);
+                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+                if (prefab == null || !prefab.TryGetComponent(out PlayerTool tool) || tool == null)
+                    continue;
+
+                ItemData item = tool.ToolData;
+                if (item != null && string.Equals(item.PersistentId, persistentId, StringComparison.Ordinal))
+                    return true;
+            }
+
+            return false;
         }
 
         private static void ErrorIfSerializedBoolTrue(
@@ -1773,9 +2074,14 @@ namespace Hecton8.Editor.Validation
                 $"ResourceNodeYieldMissingWorldPrefab={result.ResourceNodeYieldMissingWorldPrefabCount}, " +
                 $"ResourceNodeYieldNotCataloged={result.ResourceNodeYieldNotCatalogedCount}, " +
                 $"ResourceNodeYieldInvalidWorldPrefabContract={result.ResourceNodeYieldInvalidWorldPrefabContractCount}, " +
+                $"ResourceNodeToolGateErrors={result.ResourceNodeToolGateErrorCount}, " +
+                $"FirstHourCraftGateErrors={result.FirstHourCraftGateErrorCount}, " +
+                $"FirstHourDrillRouteErrors={result.FirstHourDrillRouteErrorCount}, " +
+                $"FirstHourOxygenRouteErrors={result.FirstHourOxygenRouteErrorCount}, " +
                 $"PlayerPdaHeadlessOpenRisk={result.PlayerPdaHeadlessOpenRiskCount}, " +
                 $"PlayerPdaBridgeWarnings={result.PlayerPdaBridgeWarningCount}, " +
                 $"PlayerDevProvisionerStartupRisk={result.PlayerDevProvisionerStartupRiskCount}, " +
+                $"PlayerStarterLoadoutErrors={result.PlayerStarterLoadoutErrorCount}, " +
                 $"Errors={result.Errors.Count}, Warnings={result.Warnings.Count}.";
 
             if (result.Errors.Count > 0)

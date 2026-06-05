@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Proof card ending record dossier
+# Dossier Ending Record
 
-Концовка HECTON-8 - запись в ledger: что продано, спасено, раскрыто или оставлено sealed.
+The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.
 
 ## Scanner
 
-Dossier proof: ending family, receiver, evidence state, route warning, unresolved cost.
+Dossier record: route warnings, unresolved costs, receiver authority, ending trace.
 
 ## Terminal
 
-DOSSIER PROOF: ending records show payload route, receiver authority, evidence state, material result and unresolved cost.
+The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.
 
 ## Audio
 
-Dossier помнит сделку.
+Knowledge survives the route. Equipment does not.
 
 ## Field Note
 
-Для ending record UI and save-profile knowledge flags.
+Keep dossier persistence limited to knowledge records, route warnings, and ending evidence.
 
 <!-- External Site; generated from P309_DOSSIER_ENDING_RECORD_PROOF_CARD/ru_RU. -->

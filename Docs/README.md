@@ -7,17 +7,26 @@ Evidence class: STATIC_DOC / STATIC_SOURCE
 
 Purpose: stable read map for active documentation. This is not a current-work digest.
 
-## Authority Order
+## Read Order
+
+This index is a read map, not an alternate authority hierarchy. The standing authority spine is defined in root `AGENTS.md`.
+
+Use this order when gathering documentation context:
 
 1. `AGENTS.md`
-2. `TASTE.md`
-3. `textes.md` for public copy only
-4. task-relevant files under `.agents-skills/`
-5. current C# source under `Assets/_Project`
-6. `Docs/PROJECT_BASELINE.md`
-7. active architecture contracts under `Docs/ARCHITECTURE`
-8. fresh proof artifacts under `Docs/Reports`
-9. archives under `Docs/DEPRECATED`, `Docs/_Archive`, and `Docs/Archive`
+2. `.agents-skills/README.md`
+3. task-relevant files under `.agents-skills/`
+4. `PROJECT_BIBLES.md`
+5. `VISION_LOCKS.md` when product vision or ambiguity is involved
+6. `TASTE.md` when player-facing, plus the matching root route bible for the current domain
+7. this index plus the active stable files listed below
+8. current C# source under `Assets/_Project` for source reality checks
+9. fresh proof artifacts under `Docs/Reports`
+10. archives under `Docs/DEPRECATED`, `Docs/_Archive`, and `Docs/Archive`
+
+`PROJECT_BIBLES.md`, `VISION_LOCKS.md`, and the standing root route bibles listed by `PROJECT_BIBLES.md` are explicit root authorities. Other root reports, prompts, status/log files, generated evidence, and task-progress prose are not.
+
+Current source can disprove stale documentation, but source presence alone does not prove Unity import, Play Mode, profiler, GC, visual, save/load, or player-build readiness.
 
 Dated reports and archived files are evidence snapshots. They are not active system contracts.
 
@@ -25,6 +34,9 @@ Dated reports and archived files are evidence snapshots. They are not active sys
 
 | Need | Read |
 |---|---|
+| Root bible routing and domain bible selection | `PROJECT_BIBLES.md` |
+| User product vision locks and ambiguity resolution | `VISION_LOCKS.md` |
+| Procedural asset package pipeline binding route bible | `PROCEDURAL_ASSET_PIPELINE.md` |
 | Project baseline and documentation boundaries | `Docs/PROJECT_BASELINE.md` |
 | Source-backed runtime reality, scene spine, and source owner map | `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md` |
 | Real-script systems map: source owners, implemented surfaces, missing proof | `Docs/ARCHITECTURE/SOURCE_SYSTEMS_REALITY_MAP.md` |
@@ -86,7 +98,7 @@ Architecture spine:
 
 Domain contracts:
 
-- `Docs/PROCEDURAL_ASSET_PIPELINE.md`
+- `PROCEDURAL_ASSET_PIPELINE.md` - binding procedural asset package pipeline route bible. `Docs/PROCEDURAL_ASSET_PIPELINE.md` is a non-binding supporting/historical duplicate and must not be treated as equal authority.
 - `Docs/ARCHITECTURE/FLOODED_TERRESTRIAL_GEOGRAPHY.md`
 - `Docs/ARCHITECTURE/MESH_STATE_SWAP_DESTRUCTION_PIPELINE.md`
 - `Docs/ARCHITECTURE/EQUIPMENT_SOA_LAYOUT.md`

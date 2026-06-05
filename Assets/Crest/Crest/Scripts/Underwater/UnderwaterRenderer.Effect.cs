@@ -387,9 +387,9 @@ namespace Crest
                 float seaLevel = OceanRenderer.Instance.SeaLevel;
                 var heightAboveWater = renderer != null ? renderer.HeightAboveWater : OceanRenderer.Instance.ViewerHeightAboveWater;
 
-                // We don't both setting the horizon value if we know we are going to be having to apply the effect
-                // full-screen anyway.
-                var forceFullShader = heightAboveWater < -2f;
+                // HECTON-8 photic shallows: switch to full-screen underwater just below the surface.
+                // The stock -2m threshold leaves a hard white air/water split in near-surface gameplay cameras.
+                var forceFullShader = heightAboveWater < -0.18f;
                 if (!forceFullShader)
                 {
                     float maxOceanVerticalDisplacement = OceanRenderer.Instance.MaxVertDisplacement * 0.5f;

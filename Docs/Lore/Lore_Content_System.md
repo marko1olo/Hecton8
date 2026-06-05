@@ -1,7 +1,14 @@
 # HECTON-8 Lore Content System
 
 Status: working structure.
+Evidence class: STATIC_DOC / CONTENT_CORPUS.
 Purpose: keep massive lore usable for game codex, terminals, PDA entries, website articles, and writer reference.
+
+## Authority And Proof Boundary
+
+Use `narrative.md` for narrative truth, evidence order, mission state, and text placement. Use `writing.md` for actual in-world prose, encyclopedia pages, scanner/codex text, survivor diaries, terminal notes, technical articles, and AppliedContent packets. Use `localization.md` for LocID status, locale rows, RTL/CJK/fallback, and runtime text proof gates. Use `textes.md` before any real-world marketing, store, social, creator, community, or public-copy use.
+
+This document and the lore markdown corpus are STATIC_DOC / CONTENT_CORPUS evidence only. They do not prove Unity placement, runtime loading, h8bin/Data Monolith bake readiness, localization native review, public website publication, player build behavior, profiler/GC status, or platform readiness.
 
 ## Content Rule
 
@@ -10,6 +17,8 @@ We are not producing documentation for its own sake.
 Every mature lore file is a future content packet. It must be suitable for at least one real delivery target: in-game codex, scanner note, terminal document, audio transcript, website article, wiki page, contract dossier, or writer-side canon reference.
 
 If a lore unit cannot define Article ID, source voice, spoiler level, unlock route, related articles, and localization path, it remains a draft note.
+
+Mature content must not stop at a specification for future writers. When the task requests content, the packet should contain actual player/public-facing prose for its target surface: encyclopedia entry, scanner fact, survivor diary, terminal note, audio transcript, website article, wiki page, technical note, mineral note, or dossier. Author notes can accompany it, but they do not replace the artifact text.
 
 ## Content Layers
 
@@ -165,6 +174,8 @@ See `Lore_Localization_Model.md` for LocID shape, website export rules, and QA n
 Lore docs are authoring input. The game should consume baked data.
 
 Runtime should receive numeric IDs, enums, offsets, and localized string hashes, not free-form markdown. Content can be rich in the editor, website, wiki, and writer docs, but gameplay delivery must remain event-driven and static-data based.
+
+Markdown presence, article count, or localization packet text is not runtime readiness. Runtime readiness requires the baked static-data route, current h8bin/Data Monolith evidence where applicable, Unity placement or unlock wiring proof, and the matching runtime/profiler/GC evidence for changed systems.
 
 Required separation:
 

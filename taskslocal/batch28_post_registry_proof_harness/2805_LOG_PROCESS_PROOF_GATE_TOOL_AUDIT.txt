@@ -1,0 +1,28 @@
+ID: 2805_LOG_PROCESS_PROOF_GATE_TOOL_AUDIT
+Role: process/log/proof gate auditor
+
+Read:
+- `C:\hades\Hecton8\AGENTS.md`
+- `C:\hades\Hecton8\quality.md`
+- relevant `.agents-skills`: `QA_Evidence_Text_Filter_Audit.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
+- `Docs/Reports/Batch25/2505_VISUAL_PROOF_WATCHDOG_GATE.md`
+- `Docs/Reports/Batch27/2703_OWNED_CAPTURE_MANIFEST_HARNESS_SPEC.md`
+
+Mission:
+Design a local proof-gate validator that rejects raw PNG sets, dirty logs, stale logs, false route labels, and compile/import capture contamination before humans waste review time.
+
+Do:
+1. Inspect existing `Tools/` validators and screenshot/log conventions.
+2. Define a CLI/static tool contract for validating proof packet folder structure.
+3. Define log dirty-pattern gates: compile/import/domain reload, ILPP, MCP transport warnings, ready-lock, leak stacks, exceptions/errors, stale timestamp.
+4. Define screenshot manifest gates: six route views, dimensions, SHA256, timestamps, camera/depth/quality/toggles/log path, post-capture clean window.
+5. Decide whether implementation should be a Python or PowerShell tool, but do not implement unless clearly safe and useful.
+
+Do not:
+- Run Unity.
+- Kill processes.
+- Delete proof artifacts.
+
+Deliver:
+- `Docs/Reports/Batch28/2805_LOG_PROCESS_PROOF_GATE_TOOL_AUDIT.md`
+with exact tool contract, candidate paths, and implementation recommendation.

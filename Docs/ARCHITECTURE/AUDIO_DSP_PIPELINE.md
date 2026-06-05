@@ -322,7 +322,13 @@ This keeps interior-base acoustics from sounding fully submerged.
 
 ## OnAudioFilterRead Contract
 
-`OnAudioFilterRead(float[] data, int channels)` remains a transfer bridge only.
+`OnAudioFilterRead(float[] data, int channels)` is not an approved synthesis/decode route.
+
+Current owner status:
+
+- `PlayerCriticalProceduralAudioRenderer`: no managed `OnAudioFilterRead`; native bridge route only.
+- `DynamicMusicGranularSynthesizer`: transitional managed transfer bridge. The callback may only copy from `_audioThreadCopyA/B` into Unity's buffer or zero-fill underruns. Synthesis, DataVault locks, job scheduling, `Stopwatch`, and `AudioSettings` queries must stay outside the callback.
+- `VocalBankPlaybackRuntime`: release player callback is fail-closed and silent. Editor/Development legacy decode exists only as a temporary authoring/debug seam. Release vocal playback requires native/DSPGraph/native audio-kernel output before acceptance.
 
 Rules:
 
@@ -334,4 +340,10 @@ Rules:
 
 - no synthesis work inside the managed callback
 
-The callback only pulls interleaved frames from the prebuilt SPSC ring buffer into Unity's output buffer.
+- no decode work inside the managed callback
+
+- no DataVault lock/mutation guard acquisition inside the managed callback
+
+- no `Stopwatch`, `AudioSettings`, scene lookup, or gameplay query inside the managed callback
+
+Any remaining managed callback only pulls interleaved frames from a prebuilt ring/copy buffer into Unity's output buffer, or fail-closes to silence.

@@ -1,0 +1,42 @@
+Batch: batch30_1912_scene_visual_recovery
+Date: 2026-06-04
+Mode: no-Unity/no-build static audit and task execution
+
+Current front:
+- `1474` six-view raw packet is rejected.
+- `1912` raw surface capture is rejected.
+- `Assets/_Project/Scenes/02_HECTON_WORLD.unity` has a huge post-quarantine diff.
+- `Assets/_Project/Scripts/Editor/H8VisualProofCapture1912.cs` is an untracked one-off editor script that mutates and saves the scene.
+- Watchdog: `STATIC_BLOCKED`, `DIRTY_LOG_TOKENS_FOUND`, `RAW_PNG_SET_NO_MANIFEST`.
+- ProofGate unit tests: 21 OK.
+
+Authority docs:
+- `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `TASTE.md`
+- `VISION_LOCKS.md`
+- `quality.md`
+- `water.md`
+- `rendering.md`
+- `terrain.md`
+- `celestial.md`
+- relevant `.agents-skills` mandates for rendering/VFX/evidence.
+
+Task files:
+- `3001_SCENE_DIFF_MUTATION_AUDIT.txt`
+- `3002_PROOF_HARNESS_REPLACEMENT_SPEC.txt`
+- `3003_VISUAL_REFERENCE_MATRIX_AND_REJECT_GATE.txt`
+- `3004_WATER_FOAM_CAUSTIC_ROUTE_AUDIT.txt`
+- `3005_SHORELINE_TERRAIN_ASSET_RECOVERY_AUDIT.txt`
+- `3006_AEGIR_SKY_ASSET_ROUTE_AUDIT.txt`
+
+Common hard rules:
+- Do not open or control Unity.
+- Do not launch dotnet/build.
+- Do not edit `Assets/**`.
+- Do not revert scene changes.
+- Do not claim runtime, Play Mode, profiler, or visual acceptance from static evidence.
+- Write only the assigned report under `Docs/Reports/Batch30/`.
+- Evidence class must be explicit.
+- If a hard target is absent, mark `BLOCKED/NOT APPLICABLE`; do not fabricate.
+

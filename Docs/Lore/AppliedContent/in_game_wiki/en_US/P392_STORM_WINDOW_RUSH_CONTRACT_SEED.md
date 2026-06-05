@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ This contract pays because it hates waiting.
 
 ## Field Note
 
-Use for high-pressure replay contract and route warning UI.
+Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour.
 
 <!-- In-Game Wiki; generated from P392_STORM_WINDOW_RUSH_CONTRACT_SEED/en_US. -->

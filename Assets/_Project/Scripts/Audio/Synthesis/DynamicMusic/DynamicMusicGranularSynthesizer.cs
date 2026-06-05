@@ -326,7 +326,12 @@ namespace Hecton8.Audio.Synthesis
         private int _jobChannels = DefaultAudioChannels;
         private int _readyBufferIndex = -1;
         private int _readySampleCount;
+        private int _readyPublishSequence;
         private int _audioCopyBufferIndex = -1;
+        private int _audioThreadPublishedBufferIndex = -1;
+        private int _audioThreadCopiedPublishSequence;
+        private int _audioThreadCopyASampleCount;
+        private int _audioThreadCopyBSampleCount;
         private int _lastAudioRequestSamples = DefaultScheduleSamples;
         private int _lastAudioChannels = DefaultAudioChannels;
         private int _audioUnderrunCount;
@@ -338,6 +343,8 @@ namespace Hecton8.Audio.Synthesis
         private uint _simulationFrameCounter;
         private long _synthJobStartTicks;
         private JobHandle _synthJobHandle;
+        private NativeArray<float> _audioThreadCopyA;
+        private NativeArray<float> _audioThreadCopyB;
         private int _synthJobLockedBufferMask;
         private int _synthJobLockedTargetBuffer = -1;
 
@@ -729,6 +736,7 @@ namespace Hecton8.Audio.Synthesis
                 return;
 
             TryFlushCompletedSynthJob();
+            PublishAudioThreadCopyBufferLateFrame();
             if (Interlocked.Exchange(ref _audioHostConfigDirty, 0) != 0)
                 ConfigureAudioHostCached();
         }
@@ -781,20 +789,18 @@ namespace Hecton8.Audio.Synthesis
                 return;
 
             int readyIndex = Volatile.Read(ref _readyBufferIndex);
-            int readySamples = Volatile.Read(ref _readySampleCount);
-            if (readyIndex < 0 || readySamples <= 0)
+            if (readyIndex < 0)
             {
                 Interlocked.Increment(ref _audioUnderrunCount);
                 ZeroManagedAudioBuffer(data, 0, data.Length);
                 return;
             }
 
-            ulong mutationMask = 0UL;
-            IDataVault guardedVault = null;
+            Interlocked.Exchange(ref _audioCopyBufferIndex, readyIndex);
             try
             {
-                if (!TryAcquireAudioCopyBuffer(readyIndex, out NativeArray<float> sourceBuffer, out mutationMask, out guardedVault) ||
-                    !sourceBuffer.IsCreated)
+                if (!TryResolvePublishedAudioThreadCopyBuffer(out NativeArray<float> sourceBuffer, out int readySamples) ||
+                    readySamples <= 0)
                 {
                     Interlocked.Increment(ref _audioUnderrunCount);
                     ZeroManagedAudioBuffer(data, 0, data.Length);
@@ -802,8 +808,6 @@ namespace Hecton8.Audio.Synthesis
                 }
 
                 void* source = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(sourceBuffer);
-
-                Interlocked.Exchange(ref _audioCopyBufferIndex, readyIndex);
                 int copySamples = math.min(math.min(data.Length, readySamples), sourceBuffer.Length);
                 fixed (float* destination = data)
                 {
@@ -819,7 +823,6 @@ namespace Hecton8.Audio.Synthesis
             finally
             {
                 Volatile.Write(ref _audioCopyBufferIndex, -1);
-                ReleaseDynamicMusicMutationGuard(guardedVault, mutationMask);
             }
         }
 
@@ -890,9 +893,20 @@ namespace Hecton8.Audio.Synthesis
                 return;
             }
 
+            if (!EnsureAudioThreadCopyBuffersCold())
+            {
+                DisposeVaultStorage();
+                return;
+            }
+
             Volatile.Write(ref _readyBufferIndex, -1);
             Volatile.Write(ref _readySampleCount, 0);
+            Volatile.Write(ref _readyPublishSequence, 0);
             Volatile.Write(ref _audioCopyBufferIndex, -1);
+            Volatile.Write(ref _audioThreadPublishedBufferIndex, -1);
+            Volatile.Write(ref _audioThreadCopiedPublishSequence, 0);
+            Volatile.Write(ref _audioThreadCopyASampleCount, 0);
+            Volatile.Write(ref _audioThreadCopyBSampleCount, 0);
             TryRefreshScalabilityStateHandleCold();
             RefreshGlobalQualitySnapshotCold();
             Volatile.Write(ref _nativeAllocated, 1);
@@ -928,6 +942,7 @@ namespace Hecton8.Audio.Synthesis
             ReleaseVaultBuffer(vault, ref _presetRulesHandle, BufferID.AudioDynamicSynthPresetRules);
             ReleaseVaultBuffer(vault, ref _grainBankHandle, BufferID.AudioDynamicSynthGrainBank);
             ReleaseVaultBuffer(vault, ref _sharedStateHandle, BufferID.AudioDynamicSynthSharedState);
+            DisposeAudioThreadCopyBuffers();
             _scalabilityStateHandle = default;
             _dataVault = null;
 #if UNITY_EDITOR
@@ -935,6 +950,36 @@ namespace Hecton8.Audio.Synthesis
             _lastResolvedCsvRelativePath = null;
 #endif
             Volatile.Write(ref _nativeAllocated, 0);
+        }
+
+        private bool EnsureAudioThreadCopyBuffersCold()
+        {
+            if (_audioThreadCopyA.IsCreated &&
+                _audioThreadCopyB.IsCreated &&
+                _audioThreadCopyA.Length >= OutputSampleCapacity &&
+                _audioThreadCopyB.Length >= OutputSampleCapacity)
+            {
+                return true;
+            }
+
+            DisposeAudioThreadCopyBuffers();
+            _audioThreadCopyA = new NativeArray<float>(OutputSampleCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _audioThreadCopyB = new NativeArray<float>(OutputSampleCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            Volatile.Write(ref _audioThreadPublishedBufferIndex, -1);
+            Volatile.Write(ref _audioThreadCopiedPublishSequence, 0);
+            return _audioThreadCopyA.IsCreated && _audioThreadCopyB.IsCreated;
+        }
+
+        private void DisposeAudioThreadCopyBuffers()
+        {
+            Volatile.Write(ref _audioThreadPublishedBufferIndex, -1);
+            Volatile.Write(ref _audioThreadCopiedPublishSequence, 0);
+            Volatile.Write(ref _audioThreadCopyASampleCount, 0);
+            Volatile.Write(ref _audioThreadCopyBSampleCount, 0);
+            if (_audioThreadCopyA.IsCreated)
+                _audioThreadCopyA.Dispose();
+            if (_audioThreadCopyB.IsCreated)
+                _audioThreadCopyB.Dispose();
         }
 
         private static void ReleaseVaultBuffer<T>(
@@ -1102,7 +1147,7 @@ namespace Hecton8.Audio.Synthesis
             return true;
         }
 
-        private bool TryAcquireAudioCopyBuffer(int readyIndex, out NativeArray<float> buffer, out ulong mutationMask, out IDataVault guardedVault)
+        private bool TryAcquireReadyOutputBuffer(int readyIndex, out NativeArray<float> buffer, out ulong mutationMask, out IDataVault guardedVault)
         {
             buffer = default;
             mutationMask = ResolveOutputMutationMask(readyIndex);
@@ -1690,6 +1735,10 @@ namespace Hecton8.Audio.Synthesis
 
                 Volatile.Write(ref _readySampleCount, sampleCount);
                 Volatile.Write(ref _readyBufferIndex, publishedBuffer);
+                int nextSequence = Volatile.Read(ref _readyPublishSequence) + 1;
+                if (nextSequence <= 0)
+                    nextSequence = 1;
+                Volatile.Write(ref _readyPublishSequence, nextSequence);
 
                 float decaySeconds = views.Tuning.IsCreated && views.Tuning.Length > 0
                     ? math.max(0.0001f, views.Tuning[0].StingerDecaySeconds)
@@ -1700,6 +1749,84 @@ namespace Hecton8.Audio.Synthesis
             {
                 ReleaseDynamicMusicMutationGuard(guardedVault, mutationMask);
             }
+        }
+
+        private void PublishAudioThreadCopyBufferLateFrame()
+        {
+            int readySequence = Volatile.Read(ref _readyPublishSequence);
+            if (readySequence <= 0 || readySequence == Volatile.Read(ref _audioThreadCopiedPublishSequence))
+                return;
+
+            if (!_audioThreadCopyA.IsCreated || !_audioThreadCopyB.IsCreated)
+                return;
+
+            int readyIndex = Volatile.Read(ref _readyBufferIndex);
+            int readySamples = Volatile.Read(ref _readySampleCount);
+            if (readyIndex < 0 || readySamples <= 0)
+                return;
+
+            int publishedCopyIndex = Volatile.Read(ref _audioThreadPublishedBufferIndex);
+            int writeCopyIndex = publishedCopyIndex == 0 ? 1 : 0;
+            NativeArray<float> targetBuffer = writeCopyIndex == 0 ? _audioThreadCopyA : _audioThreadCopyB;
+            if (!targetBuffer.IsCreated)
+                return;
+
+            ulong mutationMask = 0UL;
+            IDataVault guardedVault = null;
+            try
+            {
+                if (!TryAcquireReadyOutputBuffer(readyIndex, out NativeArray<float> sourceBuffer, out mutationMask, out guardedVault) ||
+                    !sourceBuffer.IsCreated)
+                {
+                    return;
+                }
+
+                int copySamples = math.min(math.min(readySamples, sourceBuffer.Length), targetBuffer.Length);
+                if (copySamples <= 0)
+                    return;
+
+                void* source = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(sourceBuffer);
+                void* destination = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(targetBuffer);
+                UnsafeUtility.MemCpy(destination, source, (long)copySamples * sizeof(float));
+
+                if (writeCopyIndex == 0)
+                {
+                    Volatile.Write(ref _audioThreadCopyASampleCount, copySamples);
+                }
+                else
+                {
+                    Volatile.Write(ref _audioThreadCopyBSampleCount, copySamples);
+                }
+
+                Volatile.Write(ref _audioThreadCopiedPublishSequence, readySequence);
+                Volatile.Write(ref _audioThreadPublishedBufferIndex, writeCopyIndex);
+            }
+            finally
+            {
+                ReleaseDynamicMusicMutationGuard(guardedVault, mutationMask);
+            }
+        }
+
+        private bool TryResolvePublishedAudioThreadCopyBuffer(out NativeArray<float> buffer, out int sampleCount)
+        {
+            int publishedIndex = Volatile.Read(ref _audioThreadPublishedBufferIndex);
+            if (publishedIndex == 0)
+            {
+                buffer = _audioThreadCopyA;
+                sampleCount = Volatile.Read(ref _audioThreadCopyASampleCount);
+                return buffer.IsCreated;
+            }
+
+            if (publishedIndex == 1)
+            {
+                buffer = _audioThreadCopyB;
+                sampleCount = Volatile.Read(ref _audioThreadCopyBSampleCount);
+                return buffer.IsCreated;
+            }
+
+            buffer = default;
+            sampleCount = 0;
+            return false;
         }
 
         private void WriteSharedState(ref DynamicMusicVaultViews views, int readyBuffer, int sampleCount, int channels, float elapsedMicroseconds, uint flags)

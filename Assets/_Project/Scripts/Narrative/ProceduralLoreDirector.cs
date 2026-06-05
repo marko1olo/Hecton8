@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.PDA;
+using Hecton8.Quest;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using UnityEngine;
@@ -19,6 +20,7 @@ namespace Hecton8.Narrative
         {
             public string discoveryId;
             public string logId;
+            public uint logHash;
             public long chunkKey;
             public Vector3 position;
             public GameObject instance;
@@ -248,6 +250,7 @@ namespace Hecton8.Narrative
                 {
                     discoveryId = string.IsNullOrWhiteSpace(dto.discoveryId) ? dto.logId : dto.discoveryId,
                     logId = dto.logId,
+                    logHash = ComputeAudioLogHash(dto.logId),
                     chunkKey = dto.chunkKey,
                     position = dto.GetPosition(),
                     instance = null
@@ -280,6 +283,7 @@ namespace Hecton8.Narrative
             {
                 discoveryId = logData.SafeLogId,
                 logId = logData.SafeLogId,
+                logHash = ComputeAudioLogHash(logData.SafeLogId),
                 chunkKey = chunkKey,
                 position = spawnPosition,
                 instance = null
@@ -298,7 +302,13 @@ namespace Hecton8.Narrative
             for (int i = _activePlacements.Count - 1; i >= 0; i--)
             {
                 ActiveLorePlacement placement = _activePlacements[i];
-                bool discovered = _audioLogSystem != null && _audioLogSystem.IsDiscovered(placement.logId);
+                if (placement.logHash == 0u)
+                {
+                    placement.logHash = ComputeAudioLogHash(placement.logId);
+                    _activePlacements[i] = placement;
+                }
+
+                bool discovered = _audioLogSystem != null && _audioLogSystem.IsDiscovered(placement.logHash);
 
                 if (discovered)
                 {
@@ -510,10 +520,14 @@ namespace Hecton8.Narrative
                 if (candidate == null || string.IsNullOrWhiteSpace(candidate.SafeLogId))
                     continue;
 
-                if (_audioLogSystem != null && _audioLogSystem.IsDiscovered(candidate.SafeLogId))
+                uint candidateHash = ComputeAudioLogHash(candidate.SafeLogId);
+                if (candidateHash == 0u)
                     continue;
 
-                if (IsAlreadyActive(candidate.SafeLogId))
+                if (_audioLogSystem != null && _audioLogSystem.IsDiscovered(candidateHash))
+                    continue;
+
+                if (IsAlreadyActive(candidateHash))
                     continue;
 
                 _nextCatalogIndex = candidateIndex + 1;
@@ -524,15 +538,23 @@ namespace Hecton8.Narrative
             return false;
         }
 
-        private bool IsAlreadyActive(string logId)
+        private bool IsAlreadyActive(uint logHash)
         {
+            if (logHash == 0u)
+                return false;
+
             for (int i = 0; i < _activePlacements.Count; i++)
             {
-                if (string.Equals(_activePlacements[i].logId, logId, StringComparison.Ordinal))
+                if (_activePlacements[i].logHash == logHash)
                     return true;
             }
 
             return false;
+        }
+
+        private static uint ComputeAudioLogHash(string logId)
+        {
+            return QuestFlagHashKernel.ComputeStableHash(logId);
         }
 
         private AudioLogData FindCatalogEntry(string logId)

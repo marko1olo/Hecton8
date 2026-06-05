@@ -10,21 +10,21 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ran Aegir Ephemeris Tuning Rule
+# RAN Aegir Ephemeris Bands
 
-Ran Aegir Ephemeris Tuning Rule separates stable lore bands from future numeric celestial tables.
+RAN Aegir ephemeris bands separate stable route lore from exact celestial data.
 
 ## Scanner
 
-Exact ephemeris numbers are table work; current lore locks route bands and hazard causes.
+Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.
 
 ## Terminal
 
-EPHEMERIS RULE: publication text may say window band, hazard class and relation to Aegir. Exact orbital periods, inclinations and resonance values belong to the future celestial data table.
+EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.
 
 ## Audio
 

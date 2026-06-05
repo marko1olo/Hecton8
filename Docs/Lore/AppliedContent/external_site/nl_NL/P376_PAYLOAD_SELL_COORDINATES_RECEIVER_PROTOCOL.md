@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ This is the cleanest way out if you stop reading after the amount.
 
 ## Field Note
 
-Use for material ending UI and spoiler-gated site pages.
+Receiver record: material recovery pays out by handing Deep Reach the basin vector and leaving worker truth contested.
 
 <!-- External Site; generated from P376_PAYLOAD_SELL_COORDINATES_RECEIVER_PROTOCOL/nl_NL. -->

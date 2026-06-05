@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Программа игольчатых зондов
+# Needleprobe Precursor Program
 
-HECTON-8 существует в будущем без FTL. Aegir сначала появился как телеметрия долгих зондов.
+HECTON-8 sits in a no-FTL future. First contact with the Aegir route came through long-duration survey hardware, not instant travel.
 
 ## Scanner
 
-Архив дальних зондов. Люди узнали об Aegir до пилотируемых грузовых рейсов.
+Long-baseline probe archive. Human survey reached Aegir before crewed freight did.
 
 ## Terminal
 
-АРХИВ RAN: Aegir картировали игольчатые зонды, телеметрия pellet-lane и запоздалые relay-пинги. Deep Reach купила уверенность до того, как экипаж увидел HECTON-8.
+RAN ARCHIVE: Aegir was mapped by needleprobes, pellet-lane telemetry and delayed relay pings. Deep Reach bought confidence before any crew saw HECTON-8 with human eyes.
 
 ## Audio
 
-Первыми туда добрались не люди. Железо пришло, подождало и продало нам маршрут обратно.
+Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.
 
 ## Field Note
 
-Для энциклопедии маршрута и публичного hard-sci-fi вступления.
+Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived.
 
 <!-- External Site; generated from P341_NEEDLEPROBE_PRECURSOR_PROGRAM/ru_RU. -->

@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Реестр подофисов Deep Reach
+# Deep Reach Suboffice Registry
 
-Реестр подофисов Deep Reach делает legal terminals и статьи сайта согласованными.
+Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences.
 
 ## Scanner
 
-Цепочке shell нужны малые офисы для миссий и штампов терминалов.
+Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.
 
 ## Terminal
 
-SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Review Gate, Asset Silence Board и Return Action Queue - допустимые нижние поверхности Deep Reach.
+SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.
 
 ## Audio
 
-Маленький desk может убить тише, чем директор.
+A small desk can kill more quietly than a director.
 
 ## Field Note
 
-Использовать скучные имена. В скучных именах прячется liability.
+Use dull names. Dull names are where liability hides.
 
 <!-- External Site; generated from P165_DEEP_REACH_SUBOFFICE_REGISTRY/ru_RU. -->

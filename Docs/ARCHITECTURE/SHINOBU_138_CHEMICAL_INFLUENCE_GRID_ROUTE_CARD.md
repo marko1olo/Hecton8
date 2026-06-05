@@ -1,5 +1,7 @@
 ﻿# SHINOBU_138 Chemical Influence Grid Route Card
 
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
+
 Owner: `SHINOBU_138`
 
 Domain: `CHEMICAL_INFLUENCE_GRID_TRACKER`

@@ -1,5 +1,9 @@
 ﻿# PDA Encyclopedia Streamer
 
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
+
+Evidence class: STATIC_DOC
+
 Owner: `PDAEncyclopediaStreamer` / Echelon 8 Presentation & UX.
 
 Source anchors: `Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs`, `Assets/_Project/Scripts/UI/Editor/PDAEncyclopediaTunerWindow.cs`.

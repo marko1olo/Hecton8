@@ -137,6 +137,8 @@ namespace Hecton8.World
         {
             TryUnregister();
             TryUnregisterHotSwapListener();
+            ClearPendingVisualState();
+            ReleaseBuffers();
         }
 
         private void OnDestroy()
@@ -146,6 +148,16 @@ namespace Hecton8.World
             ReleaseBuffers();
             ReleaseRuntimeMaterial();
             ReleaseQuadMesh();
+        }
+
+        private void ClearPendingVisualState()
+        {
+            _pendingVisualDrawDirty = false;
+            _pendingVisualInstanceCount = 0;
+            _debugReady = false;
+            _debugRenderedInstances = 0;
+            _debugSourceSeams = 0;
+            _debugDrawBounds = default;
         }
 
         public void Tick(float deltaTime)
@@ -406,21 +418,15 @@ namespace Hecton8.World
                    _matrixUpload.Length == requiredCapacity &&
                    _colorUpload != null &&
                    _colorUpload.Length == requiredCapacity &&
-                   _activeMatrixBuffer != null &&
-                   _activeMatrixBuffer.count == requiredCapacity &&
-                   _activeColorBuffer != null &&
-                   _activeColorBuffer.count == requiredCapacity &&
-                   _activeArgsBuffer != null &&
-                   _matrixBufferA != null &&
-                   _matrixBufferA.count == requiredCapacity &&
-                   _matrixBufferB != null &&
-                   _matrixBufferB.count == requiredCapacity &&
-                   _colorBufferA != null &&
-                   _colorBufferA.count == requiredCapacity &&
-                   _colorBufferB != null &&
-                   _colorBufferB.count == requiredCapacity &&
-                   _argsBufferA != null &&
-                   _argsBufferB != null;
+                   IsBufferReady(_activeMatrixBuffer, requiredCapacity) &&
+                   IsBufferReady(_activeColorBuffer, requiredCapacity) &&
+                   IsBufferReady(_activeArgsBuffer, 1) &&
+                   IsBufferReady(_matrixBufferA, requiredCapacity) &&
+                   IsBufferReady(_matrixBufferB, requiredCapacity) &&
+                   IsBufferReady(_colorBufferA, requiredCapacity) &&
+                   IsBufferReady(_colorBufferB, requiredCapacity) &&
+                   IsBufferReady(_argsBufferA, 1) &&
+                   IsBufferReady(_argsBufferB, 1);
         }
 
         private void EnsureCpuCapacity()
@@ -447,45 +453,36 @@ namespace Hecton8.World
         private void EnsureBuffers()
         {
             int requiredCapacity = _matrixUpload != null ? _matrixUpload.Length : Mathf.Clamp(maxInstances, 8, MaxMotesPerChunk);
-            if (_matrixBufferA == null || _matrixBufferA.count != requiredCapacity ||
-                _matrixBufferB == null || _matrixBufferB.count != requiredCapacity)
-            {
-                ReleaseBuffer(ref _matrixBufferA);
-                ReleaseBuffer(ref _matrixBufferB);
-                _matrixBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[MaxMotesPerChunk] - seam dither matrix upload buffer A - owner: SeamGapDitherRenderer
-                _matrixBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[MaxMotesPerChunk] - seam dither matrix upload buffer B - owner: SeamGapDitherRenderer
-                _activeMatrixBuffer = _matrixBufferA;
-                _visualUploadBufferIndex = 0;
-            }
+            if (IsBufferReady(_matrixBufferA, requiredCapacity) &&
+                IsBufferReady(_matrixBufferB, requiredCapacity) &&
+                IsBufferReady(_colorBufferA, requiredCapacity) &&
+                IsBufferReady(_colorBufferB, requiredCapacity) &&
+                IsBufferReady(_argsBufferA, 1) &&
+                IsBufferReady(_argsBufferB, 1) &&
+                IsBufferReady(_activeMatrixBuffer, requiredCapacity) &&
+                IsBufferReady(_activeColorBuffer, requiredCapacity) &&
+                IsBufferReady(_activeArgsBuffer, 1))
+                return;
 
-            if (_colorBufferA == null || _colorBufferA.count != requiredCapacity ||
-                _colorBufferB == null || _colorBufferB.count != requiredCapacity)
-            {
-                ReleaseBuffer(ref _colorBufferA);
-                ReleaseBuffer(ref _colorBufferB);
-                _colorBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[MaxMotesPerChunk] - seam dither tint upload buffer A - owner: SeamGapDitherRenderer
-                _colorBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[MaxMotesPerChunk] - seam dither tint upload buffer B - owner: SeamGapDitherRenderer
-                _activeColorBuffer = _colorBufferA;
-                _visualUploadBufferIndex = 0;
-            }
-
-            if (_argsBufferA == null || _argsBufferB == null)
-            {
-                ReleaseBuffer(ref _argsBufferA);
-                ReleaseBuffer(ref _argsBufferB);
-                _argsBufferA = new GraphicsBuffer(
-                    GraphicsBuffer.Target.IndirectArguments,
-                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
-                    1,
-                    GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - seam dither indirect indexed draw arguments A - owner: SeamGapDitherRenderer
-                _argsBufferB = new GraphicsBuffer(
-                    GraphicsBuffer.Target.IndirectArguments,
-                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
-                    1,
-                    GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - seam dither indirect indexed draw arguments B - owner: SeamGapDitherRenderer
-                _activeArgsBuffer = _argsBufferA;
-                _visualUploadBufferIndex = 0;
-            }
+            ReleaseBuffers();
+            _matrixBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[MaxMotesPerChunk] - seam dither matrix upload buffer A - owner: SeamGapDitherRenderer
+            _matrixBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[MaxMotesPerChunk] - seam dither matrix upload buffer B - owner: SeamGapDitherRenderer
+            _colorBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[MaxMotesPerChunk] - seam dither tint upload buffer A - owner: SeamGapDitherRenderer
+            _colorBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[MaxMotesPerChunk] - seam dither tint upload buffer B - owner: SeamGapDitherRenderer
+            _argsBufferA = new GraphicsBuffer(
+                GraphicsBuffer.Target.IndirectArguments,
+                GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                1,
+                GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - seam dither indirect indexed draw arguments A - owner: SeamGapDitherRenderer
+            _argsBufferB = new GraphicsBuffer(
+                GraphicsBuffer.Target.IndirectArguments,
+                GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                1,
+                GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - seam dither indirect indexed draw arguments B - owner: SeamGapDitherRenderer
+            _activeMatrixBuffer = _matrixBufferA;
+            _activeColorBuffer = _colorBufferA;
+            _activeArgsBuffer = _argsBufferA;
+            _visualUploadBufferIndex = 0;
         }
 
         private GraphicsBuffer ResolveMatrixWriteBuffer()
@@ -851,8 +848,14 @@ namespace Hecton8.World
             if (buffer == null)
                 return;
 
-            buffer.Release();
+            if (buffer.IsValid())
+                buffer.Release();
             buffer = null;
+        }
+
+        private static bool IsBufferReady(GraphicsBuffer buffer, int expectedCount)
+        {
+            return buffer != null && buffer.IsValid() && buffer.count == expectedCount;
         }
 
         private static float Hash01(long runtimeKey, int index, int salt)

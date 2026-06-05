@@ -10,6 +10,7 @@ using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Modding;
 using Hecton8.Narrative;
+using Hecton8.Quest;
 using Hecton8.World;
 using System;
 using UnityEngine;
@@ -85,6 +86,7 @@ namespace Hecton8.Interaction
         private uint _cachedBiomeHash;
         private uint _cachedSoundscapeHash;
         private uint _cachedLoreHash;
+        private uint _cachedAudioLogHash;
         private NarrativeSpatialTriggerFlags _cachedSpatialFlags;
         private bool _registeredLifecycle;
         private bool _hotSwapRegistered;
@@ -239,8 +241,7 @@ namespace Hecton8.Interaction
             {
                 PublishAppliedLorePacketUnlock();
 
-                if (linkedAudioLog != null && _audioLogs != null)
-                    _audioLogs.TryPlayAudioLog(linkedAudioLog.logId);
+                TryPlayLinkedAudioLog();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 H8Debug.Log("[Narrative] Discovery already registered.");
@@ -254,8 +255,7 @@ namespace Hecton8.Interaction
             if (loreUnlockSink != null && _cachedLoreHash != 0u)
                 loreUnlockSink.TryUnlockByHash(_cachedLoreHash);
 
-            if (linkedAudioLog != null && _audioLogs != null)
-                _audioLogs.TryPlayAudioLog(linkedAudioLog.logId);
+            TryPlayLinkedAudioLog();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             H8Debug.Log("[Narrative] Discovery made.");
@@ -478,9 +478,19 @@ namespace Hecton8.Interaction
             _cachedBiomeHash = ComputeStableHash(biomeSignalId);
             _cachedSoundscapeHash = ComputeStableHash(soundscapeProfileId);
             _cachedLoreHash = ComputeLoreHash(discoveryId);
+            _cachedAudioLogHash = linkedAudioLog != null ? QuestFlagHashKernel.ComputeStableHash(linkedAudioLog.logId) : 0u;
             _cachedSpatialFlags = publishHudBreadcrumb
                 ? NarrativeSpatialTriggerFlags.HudBreadcrumb
                 : NarrativeSpatialTriggerFlags.None;
+        }
+
+        private bool TryPlayLinkedAudioLog()
+        {
+            IAudioLogRuntime audioLogs = _audioLogs;
+            uint logHash = _cachedAudioLogHash;
+            return audioLogs != null &&
+                   logHash != 0u &&
+                   audioLogs.TryPlayAudioLogByHash(logHash);
         }
 
         private static bool TryResolveAupFromRuntimeOrigin(

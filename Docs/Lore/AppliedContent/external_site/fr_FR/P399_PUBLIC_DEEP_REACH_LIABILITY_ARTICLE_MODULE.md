@@ -10,21 +10,21 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Public Deep Reach Liability Article Module
+# Deep Reach Liability Evidence
 
-Deep Reach did not need to invent the ocean to be culpable. HECTON-8 flooded through real physics; the company made the system cheaper, slower and easier to erase.
+Deep Reach is culpable because the HECTON-8 disaster can be both natural and managed badly. The ocean supplied real force. The company supplied thin margins, late authorization, quarantine delays, Atlas priority rules and paperwork clean enough to outlive the workers it described. The strongest evidence is physical: doors, clocks, sensor tolerances, route holds and loss ledgers.
 
 ## Scanner
 
-Publication module: Deep Reach. Physics caused the flood; corporate procedure shaped the loss.
+Liability record. Real tide physics, accepted margin risk, evacuation delay and sanitized loss language converge in the same evidence chain.
 
 ## Terminal
 
-PUBLIC MODULE LIABILITY: pair sanitized accident language with physical proof chain. Do not write villain monologues.
+PUBLIC ARCHIVE NODE // LIABILITY EVIDENCE. Great Tide accepted. Review remains open for sensor margins, evacuation queue delay, quarantine hold, Atlas weighting and loss conversion.
 
 ## Audio
 
@@ -32,6 +32,6 @@ A disaster can be natural and still have signatures on it.
 
 ## Field Note
 
-Use for public evidence article, press kit lore and spoiler-tiered liability summary.
+Marauder note: never argue with the tide. Argue with the signatures beside it.
 
 <!-- External Site; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/fr_FR. -->

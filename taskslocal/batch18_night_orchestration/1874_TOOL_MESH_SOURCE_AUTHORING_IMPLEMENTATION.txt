@@ -1,0 +1,68 @@
+<AGENT_PROMPT id="1874">
+ROLE: Tool mesh source authoring implementation agent.
+
+READ FIRST:
+- C:\hades\Hecton8\AGENTS.md
+- C:\hades\Hecton8\PROJECT_BIBLES.md
+- C:\hades\Hecton8\VISION_LOCKS.md
+- C:\hades\Hecton8\TASTE.md
+- C:\hades\Hecton8\quality.md
+- C:\hades\Hecton8\tools.md
+- C:\hades\Hecton8\3dmodel.md
+- C:\hades\Hecton8\3DMODEL_TEXTURES_MATERIALS.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1869_TOOL_VISUAL_SOURCE_PACKAGE.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1869_TOOL_VISUAL_SOURCE_MATRIX.csv
+- C:\hades\Hecton8\Docs\Reports\Batch18\1867_PRODUCT_FACE_PREFAB_AUDIT_GATE.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1868_PRODUCT_FACE_UNITY_VALIDATOR_GATE.md
+- Existing source patterns: `Assets/_Project/Editor/Generators/Interiors/EquipmentPropBaker1715.cs`, `Assets/_Project/Editor/Assembly/EquipmentPrefabFactory.cs`, and `Assets/_Project/Editor/HectonMeshGenerator.cs`.
+- Relevant .agents-skills only: QA_Evidence_Text_Filter_Audit, CORE_Tools_Equipment_Interaction_Raycast_Heat, REND_URP_Graphics_HotPath_Optimization_HLOD.
+
+OWNED WRITE SCOPE:
+- Assets/_Project/Scripts/Editor/ProductFaceToolMeshSourceAuthoring.cs
+- Assets/_Project/Scripts/Editor/ProductFaceToolMeshSourceAuthoring.cs.meta
+- Docs/Tasks/Status_1874.md
+- Docs/AgentLogs/Rationale_1874.md
+- Docs/AgentLogs/LOG_1874.md
+- Docs/Reports/Batch18/1874_TOOL_MESH_SOURCE_AUTHORING_IMPLEMENTATION.md
+
+NO PREFAB/ASSET/SCENE/BINARY EDITS.
+NO UNITY MENU, IMPORT, BAKE, PLAYMODE, PROFILER, DOTNET BUILD, OR DATA MONOLITH RUN.
+
+PARALLEL LAW:
+- You may run alongside 1875 and 1876.
+- Do not touch their files.
+- Do not depend on sibling output.
+
+TASK:
+Implement an editor-only source authoring script that can later generate non-primitive custom Mesh assets for the 12 tool bodies without running it now.
+
+Requirements:
+1. Create `ProductFaceToolMeshSourceAuthoring.cs` under `Assets/_Project/Scripts/Editor`.
+2. Include a stable `.meta` file for the new script.
+3. The script must be editor-only and not affect runtime.
+4. It must not call `GameObject.CreatePrimitive`.
+5. It must generate Mesh vertex/index data manually when run in Unity later.
+6. It must include a menu item or callable method for a future Unity owner, but DO NOT execute it.
+7. It must define specs for all 12 tools from 1869, with distinct silhouettes and names.
+8. It must build mesh assets under a future output folder like `Assets/_Project/Art/Generated/ProductFace/Tools`.
+9. It must write only Mesh assets when run later; no prefab replacement in this task.
+10. It must include geometry helpers for beveled boxes, cylinders/rails/nozzles, lenses/screens, and simple fins/spools.
+11. It must validate no empty mesh, finite vertices, triangle count, submesh/material slot count where practical.
+12. It must use continuous quality input for segment/detail counts, not binary low/ultra.
+13. It must include no runtime allocations or hot-path code because it is editor-only.
+14. It must preserve future anchor intent by naming mesh parts or comments, but not change gameplay anchors.
+15. It must fail closed if required material/source assumptions are missing.
+16. It must not claim visual acceptance; it is only a mesh-source authoring route.
+17. Keep code conservative, compile-oriented, and scoped. Prefer simple deterministic mesh generation over clever giant frameworks.
+18. Use existing local style where reasonable.
+
+VERIFY:
+- `git diff --check` on owned source/report/log/status files.
+- Static source scan proving no `GameObject.CreatePrimitive` in the new script.
+- Static source scan proving all 12 tool ids exist in the spec table.
+- Do not run Unity or dotnet.
+
+REPORT:
+- Report what source route now exists, what it does not do, and exact pending Unity proof.
+</AGENT_PROMPT>
+

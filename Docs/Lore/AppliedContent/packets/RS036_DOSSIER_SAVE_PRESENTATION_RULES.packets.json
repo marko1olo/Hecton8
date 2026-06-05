@@ -647,139 +647,139 @@
       },
       "localized": {
         "en_US": {
-          "title": "Website And Wiki Spoiler Tiering",
-          "scanner": "Public articles need spoiler pressure like in-game evidence does.",
+          "title": "Public Spoiler Tiering Protocol",
+          "scanner": "Public records need pressure doors like field evidence does.",
           "field_note": "Split what sells the world from what solves the crime.",
-          "terminal": "SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Site and in-game wiki use the same packet IDs.",
-          "audio": "A wiki can ruin a game if it has no pressure doors.",
-          "in_game_wiki": "Spoiler tiering makes the external site publishable without flattening the player's evidence journey.",
-          "external_site": "Website And Wiki Spoiler Tiering defines publication gates for AppliedLore."
+          "terminal": "SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+          "audio": "A public archive can ruin a case if it has no pressure doors.",
+          "in_game_wiki": "Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+          "external_site": "Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
         },
         "ru_RU": {
-          "title": "Уровни спойлеров сайта и wiki",
-          "scanner": "Публичным статьям нужен spoiler pressure так же, как внутриигровым evidence.",
+          "title": "Draft RU localization pending native pass. Public Spoiler Tiering Protocol",
+          "scanner": "Draft RU localization pending native pass. Public records need pressure doors like field evidence does.",
           "field_note": "Разделять то, что продает мир, и то, что решает преступление.",
-          "terminal": "SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Сайт и внутриигровая wiki используют те же packet IDs.",
-          "audio": "Wiki может испортить игру, если в ней нет pressure doors.",
-          "in_game_wiki": "Уровни спойлеров делают внешний сайт publishable без сплющивания пути evidence игрока.",
-          "external_site": "Уровни спойлеров сайта и wiki задают publication gates для AppliedLore."
+          "terminal": "Draft RU localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+          "audio": "Draft RU localization pending native pass. A public archive can ruin a case if it has no pressure doors.",
+          "in_game_wiki": "Draft RU localization pending native pass. Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+          "external_site": "Draft RU localization pending native pass. Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
         },
         "ja_JP": {
-          "title": "Website And Wiki Spoiler Tiering",
-          "scanner": "Draft JP localization pending native pass. Public articles need spoiler pressure like in-game evidence does.",
+          "title": "Draft JP localization pending native pass. Public Spoiler Tiering Protocol",
+          "scanner": "Draft JP localization pending native pass. Public records need pressure doors like field evidence does.",
           "field_note": "Draft JP localization pending native pass. Split what sells the world from what solves the crime.",
-          "terminal": "Draft JP localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Site and in-game wiki use the same packet IDs.",
-          "audio": "Draft JP localization pending native pass. A wiki can ruin a game if it has no pressure doors.",
-          "in_game_wiki": "Draft JP localization pending native pass. Spoiler tiering makes the external site publishable without flattening the player's evidence journey.",
-          "external_site": "Draft JP localization pending native pass. Website And Wiki Spoiler Tiering defines publication gates for AppliedLore."
+          "terminal": "Draft JP localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+          "audio": "Draft JP localization pending native pass. A public archive can ruin a case if it has no pressure doors.",
+          "in_game_wiki": "Draft JP localization pending native pass. Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+          "external_site": "Draft JP localization pending native pass. Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
         },
         "zh_CN": {
-          "title": "Website And Wiki Spoiler Tiering",
-          "scanner": "Draft CN localization pending native pass. Public articles need spoiler pressure like in-game evidence does.",
+          "title": "Draft CN localization pending native pass. Public Spoiler Tiering Protocol",
+          "scanner": "Draft CN localization pending native pass. Public records need pressure doors like field evidence does.",
           "field_note": "Draft CN localization pending native pass. Split what sells the world from what solves the crime.",
-          "terminal": "Draft CN localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Site and in-game wiki use the same packet IDs.",
-          "audio": "Draft CN localization pending native pass. A wiki can ruin a game if it has no pressure doors.",
-          "in_game_wiki": "Draft CN localization pending native pass. Spoiler tiering makes the external site publishable without flattening the player's evidence journey.",
-          "external_site": "Draft CN localization pending native pass. Website And Wiki Spoiler Tiering defines publication gates for AppliedLore."
+          "terminal": "Draft CN localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+          "audio": "Draft CN localization pending native pass. A public archive can ruin a case if it has no pressure doors.",
+          "in_game_wiki": "Draft CN localization pending native pass. Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+          "external_site": "Draft CN localization pending native pass. Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
         },
         "fr_FR": {
-          "title": "Website And Wiki Spoiler Tiering",
-          "scanner": "Draft FR localization pending native pass. Public articles need spoiler pressure like in-game evidence does.",
+          "title": "Draft FR localization pending native pass. Public Spoiler Tiering Protocol",
+          "scanner": "Draft FR localization pending native pass. Public records need pressure doors like field evidence does.",
           "field_note": "Draft FR localization pending native pass. Split what sells the world from what solves the crime.",
-          "terminal": "Draft FR localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Site and in-game wiki use the same packet IDs.",
-          "audio": "Draft FR localization pending native pass. A wiki can ruin a game if it has no pressure doors.",
-          "in_game_wiki": "Draft FR localization pending native pass. Spoiler tiering makes the external site publishable without flattening the player's evidence journey.",
-          "external_site": "Draft FR localization pending native pass. Website And Wiki Spoiler Tiering defines publication gates for AppliedLore."
+          "terminal": "Draft FR localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+          "audio": "Draft FR localization pending native pass. A public archive can ruin a case if it has no pressure doors.",
+          "in_game_wiki": "Draft FR localization pending native pass. Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+          "external_site": "Draft FR localization pending native pass. Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
         },
         "es_ES": {
-          "title": "Website And Wiki Spoiler Tiering",
-          "scanner": "Draft ES localization pending native pass. Public articles need spoiler pressure like in-game evidence does.",
+          "title": "Draft ES localization pending native pass. Public Spoiler Tiering Protocol",
+          "scanner": "Draft ES localization pending native pass. Public records need pressure doors like field evidence does.",
           "field_note": "Draft ES localization pending native pass. Split what sells the world from what solves the crime.",
-          "terminal": "Draft ES localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Site and in-game wiki use the same packet IDs.",
-          "audio": "Draft ES localization pending native pass. A wiki can ruin a game if it has no pressure doors.",
-          "in_game_wiki": "Draft ES localization pending native pass. Spoiler tiering makes the external site publishable without flattening the player's evidence journey.",
-          "external_site": "Draft ES localization pending native pass. Website And Wiki Spoiler Tiering defines publication gates for AppliedLore."
+          "terminal": "Draft ES localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+          "audio": "Draft ES localization pending native pass. A public archive can ruin a case if it has no pressure doors.",
+          "in_game_wiki": "Draft ES localization pending native pass. Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+          "external_site": "Draft ES localization pending native pass. Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
         },
         "de_DE": {
-          "title": "Website And Wiki Spoiler Tiering",
-          "scanner": "Draft DE localization pending native pass. Public articles need spoiler pressure like in-game evidence does.",
+          "title": "Draft DE localization pending native pass. Public Spoiler Tiering Protocol",
+          "scanner": "Draft DE localization pending native pass. Public records need pressure doors like field evidence does.",
           "field_note": "Draft DE localization pending native pass. Split what sells the world from what solves the crime.",
-          "terminal": "Draft DE localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Site and in-game wiki use the same packet IDs.",
-          "audio": "Draft DE localization pending native pass. A wiki can ruin a game if it has no pressure doors.",
-          "in_game_wiki": "Draft DE localization pending native pass. Spoiler tiering makes the external site publishable without flattening the player's evidence journey.",
-          "external_site": "Draft DE localization pending native pass. Website And Wiki Spoiler Tiering defines publication gates for AppliedLore."
+          "terminal": "Draft DE localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+          "audio": "Draft DE localization pending native pass. A public archive can ruin a case if it has no pressure doors.",
+          "in_game_wiki": "Draft DE localization pending native pass. Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+          "external_site": "Draft DE localization pending native pass. Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
         },
         "pl_PL": {
-          "title": "Website And Wiki Spoiler Tiering",
-          "scanner": "Draft PL localization pending native pass. Public articles need spoiler pressure like in-game evidence does.",
+          "title": "Draft PL localization pending native pass. Public Spoiler Tiering Protocol",
+          "scanner": "Draft PL localization pending native pass. Public records need pressure doors like field evidence does.",
           "field_note": "Draft PL localization pending native pass. Split what sells the world from what solves the crime.",
-          "terminal": "Draft PL localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Site and in-game wiki use the same packet IDs.",
-          "audio": "Draft PL localization pending native pass. A wiki can ruin a game if it has no pressure doors.",
-          "in_game_wiki": "Draft PL localization pending native pass. Spoiler tiering makes the external site publishable without flattening the player's evidence journey.",
-          "external_site": "Draft PL localization pending native pass. Website And Wiki Spoiler Tiering defines publication gates for AppliedLore."
+          "terminal": "Draft PL localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+          "audio": "Draft PL localization pending native pass. A public archive can ruin a case if it has no pressure doors.",
+          "in_game_wiki": "Draft PL localization pending native pass. Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+          "external_site": "Draft PL localization pending native pass. Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
         },
         "uk_UA": {
-          "title": "Website And Wiki Spoiler Tiering",
-          "scanner": "Draft UA localization pending native pass. Public articles need spoiler pressure like in-game evidence does.",
+          "title": "Draft UA localization pending native pass. Public Spoiler Tiering Protocol",
+          "scanner": "Draft UA localization pending native pass. Public records need pressure doors like field evidence does.",
           "field_note": "Draft UA localization pending native pass. Split what sells the world from what solves the crime.",
-          "terminal": "Draft UA localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Site and in-game wiki use the same packet IDs.",
-          "audio": "Draft UA localization pending native pass. A wiki can ruin a game if it has no pressure doors.",
-          "in_game_wiki": "Draft UA localization pending native pass. Spoiler tiering makes the external site publishable without flattening the player's evidence journey.",
-          "external_site": "Draft UA localization pending native pass. Website And Wiki Spoiler Tiering defines publication gates for AppliedLore."
+          "terminal": "Draft UA localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+          "audio": "Draft UA localization pending native pass. A public archive can ruin a case if it has no pressure doors.",
+          "in_game_wiki": "Draft UA localization pending native pass. Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+          "external_site": "Draft UA localization pending native pass. Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
         },
         "ar_SA": {
-          "title": "Website And Wiki Spoiler Tiering",
-          "scanner": "Draft AR localization pending native pass. Public articles need spoiler pressure like in-game evidence does.",
+          "title": "Draft AR localization pending native pass. Public Spoiler Tiering Protocol",
+          "scanner": "Draft AR localization pending native pass. Public records need pressure doors like field evidence does.",
           "field_note": "Draft AR localization pending native pass. Split what sells the world from what solves the crime.",
-          "terminal": "Draft AR localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Site and in-game wiki use the same packet IDs.",
-          "audio": "Draft AR localization pending native pass. A wiki can ruin a game if it has no pressure doors.",
-          "in_game_wiki": "Draft AR localization pending native pass. Spoiler tiering makes the external site publishable without flattening the player's evidence journey.",
-          "external_site": "Draft AR localization pending native pass. Website And Wiki Spoiler Tiering defines publication gates for AppliedLore."
+          "terminal": "Draft AR localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+          "audio": "Draft AR localization pending native pass. A public archive can ruin a case if it has no pressure doors.",
+          "in_game_wiki": "Draft AR localization pending native pass. Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+          "external_site": "Draft AR localization pending native pass. Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
         },
         "id_ID": {
-          "title": "Website And Wiki Spoiler Tiering",
-          "scanner": "Draft ID localization pending native pass. Public articles need spoiler pressure like in-game evidence does.",
+          "title": "Draft ID localization pending native pass. Public Spoiler Tiering Protocol",
+          "scanner": "Draft ID localization pending native pass. Public records need pressure doors like field evidence does.",
           "field_note": "Draft ID localization pending native pass. Split what sells the world from what solves the crime.",
-          "terminal": "Draft ID localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Site and in-game wiki use the same packet IDs.",
-          "audio": "Draft ID localization pending native pass. A wiki can ruin a game if it has no pressure doors.",
-          "in_game_wiki": "Draft ID localization pending native pass. Spoiler tiering makes the external site publishable without flattening the player's evidence journey.",
-          "external_site": "Draft ID localization pending native pass. Website And Wiki Spoiler Tiering defines publication gates for AppliedLore."
+          "terminal": "Draft ID localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+          "audio": "Draft ID localization pending native pass. A public archive can ruin a case if it has no pressure doors.",
+          "in_game_wiki": "Draft ID localization pending native pass. Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+          "external_site": "Draft ID localization pending native pass. Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
         },
         "ko_KR": {
-          "title": "Website And Wiki Spoiler Tiering",
-          "scanner": "Draft KO localization pending native pass. Public articles need spoiler pressure like in-game evidence does.",
+          "title": "Draft KO localization pending native pass. Public Spoiler Tiering Protocol",
+          "scanner": "Draft KO localization pending native pass. Public records need pressure doors like field evidence does.",
           "field_note": "Draft KO localization pending native pass. Split what sells the world from what solves the crime.",
-          "terminal": "Draft KO localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Site and in-game wiki use the same packet IDs.",
-          "audio": "Draft KO localization pending native pass. A wiki can ruin a game if it has no pressure doors.",
-          "in_game_wiki": "Draft KO localization pending native pass. Spoiler tiering makes the external site publishable without flattening the player's evidence journey.",
-          "external_site": "Draft KO localization pending native pass. Website And Wiki Spoiler Tiering defines publication gates for AppliedLore."
+          "terminal": "Draft KO localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+          "audio": "Draft KO localization pending native pass. A public archive can ruin a case if it has no pressure doors.",
+          "in_game_wiki": "Draft KO localization pending native pass. Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+          "external_site": "Draft KO localization pending native pass. Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
         },
         "he_IL": {
-          "title": "Website And Wiki Spoiler Tiering",
-          "scanner": "Draft HE localization pending native pass. Public articles need spoiler pressure like in-game evidence does.",
+          "title": "Draft HE localization pending native pass. Public Spoiler Tiering Protocol",
+          "scanner": "Draft HE localization pending native pass. Public records need pressure doors like field evidence does.",
           "field_note": "Draft HE localization pending native pass. Split what sells the world from what solves the crime.",
-          "terminal": "Draft HE localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Site and in-game wiki use the same packet IDs.",
-          "audio": "Draft HE localization pending native pass. A wiki can ruin a game if it has no pressure doors.",
-          "in_game_wiki": "Draft HE localization pending native pass. Spoiler tiering makes the external site publishable without flattening the player's evidence journey.",
-          "external_site": "Draft HE localization pending native pass. Website And Wiki Spoiler Tiering defines publication gates for AppliedLore."
+          "terminal": "Draft HE localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+          "audio": "Draft HE localization pending native pass. A public archive can ruin a case if it has no pressure doors.",
+          "in_game_wiki": "Draft HE localization pending native pass. Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+          "external_site": "Draft HE localization pending native pass. Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
         },
         "pt_BR": {
-          "title": "Website And Wiki Spoiler Tiering",
-          "scanner": "Draft PT localization pending native pass. Public articles need spoiler pressure like in-game evidence does.",
+          "title": "Draft PT localization pending native pass. Public Spoiler Tiering Protocol",
+          "scanner": "Draft PT localization pending native pass. Public records need pressure doors like field evidence does.",
           "field_note": "Draft PT localization pending native pass. Split what sells the world from what solves the crime.",
-          "terminal": "Draft PT localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Site and in-game wiki use the same packet IDs.",
-          "audio": "Draft PT localization pending native pass. A wiki can ruin a game if it has no pressure doors.",
-          "in_game_wiki": "Draft PT localization pending native pass. Spoiler tiering makes the external site publishable without flattening the player's evidence journey.",
-          "external_site": "Draft PT localization pending native pass. Website And Wiki Spoiler Tiering defines publication gates for AppliedLore."
+          "terminal": "Draft PT localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+          "audio": "Draft PT localization pending native pass. A public archive can ruin a case if it has no pressure doors.",
+          "in_game_wiki": "Draft PT localization pending native pass. Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+          "external_site": "Draft PT localization pending native pass. Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
         },
         "nl_NL": {
-          "title": "Website And Wiki Spoiler Tiering",
-          "scanner": "Draft NL localization pending native pass. Public articles need spoiler pressure like in-game evidence does.",
+          "title": "Draft NL localization pending native pass. Public Spoiler Tiering Protocol",
+          "scanner": "Draft NL localization pending native pass. Public records need pressure doors like field evidence does.",
           "field_note": "Draft NL localization pending native pass. Split what sells the world from what solves the crime.",
-          "terminal": "Draft NL localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Site and in-game wiki use the same packet IDs.",
-          "audio": "Draft NL localization pending native pass. A wiki can ruin a game if it has no pressure doors.",
-          "in_game_wiki": "Draft NL localization pending native pass. Spoiler tiering makes the external site publishable without flattening the player's evidence journey.",
-          "external_site": "Draft NL localization pending native pass. Website And Wiki Spoiler Tiering defines publication gates for AppliedLore."
+          "terminal": "Draft NL localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+          "audio": "Draft NL localization pending native pass. A public archive can ruin a case if it has no pressure doors.",
+          "in_game_wiki": "Draft NL localization pending native pass. Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+          "external_site": "Draft NL localization pending native pass. Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
         }
       }
     }

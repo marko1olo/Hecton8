@@ -484,7 +484,7 @@ namespace Hecton8.Construction
             }
             finally
             {
-                ReleasePayloadWrite(vault, in _pendingEventsHandle);
+                vault.ReleaseWriteLock(in _pendingEventsHandle, SystemID.Construction);
             }
         }
 
@@ -541,7 +541,7 @@ namespace Hecton8.Construction
             }
             finally
             {
-                ReleasePayloadWrite(vault, in handle);
+                vault.ReleaseWriteLock(in handle, SystemID.Construction);
             }
         }
 
@@ -571,14 +571,6 @@ namespace Hecton8.Construction
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
-        }
-
-        private static void ReleasePayloadWrite(
-            IDataVault vault,
-            in VaultGenerationHandle<RepairDroneTorchAcousticPayload> handle)
-        {
-            if (vault != null && IsPayloadVaultHandle(in handle))
-                vault.ReleaseWriteLock(in handle, SystemID.Construction);
         }
 
         private static BufferID ResolvePayloadBufferId(

@@ -11,10 +11,8 @@ using Hecton8.Optimization;
 using Hecton8.VFX;
 using Hecton8.VFX.Wakes;
 using Hecton8.World;
-using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -211,134 +209,6 @@ namespace Hecton8.Environment
             public uint CommandSequence;
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct BuildVehicleWakeSignalJob : IJob
-        {
-            public float4 WashSphere;
-            public float4 WashVelocity;
-            public float Throttle;
-            public float WakeRadius;
-            public float WakeLifetime;
-            public float WakeStrength;
-            [NoAlias] public NativeArray<VehicleWakeJobResult> Result;
-
-            public void Execute()
-            {
-                VehicleWakeJobResult output = default;
-                float safeThrottle = math.clamp(Throttle, -1f, 1f);
-                float throttleAbs = math.abs(safeThrottle);
-                float radius = math.max(0.5f, WakeRadius);
-                float lifetime = math.max(0.1f, WakeLifetime);
-                float3 position = WashSphere.xyz;
-                float3 velocity = WashVelocity.xyz;
-                float speedSq = math.lengthsq(velocity);
-                bool valid =
-                    throttleAbs > VehicleWakeThrottleDeadZone &&
-                    math.all(math.isfinite(position)) &&
-                    math.all(math.isfinite(velocity)) &&
-                    math.isfinite(radius) &&
-                    math.isfinite(lifetime) &&
-                    speedSq > 0.0001f;
-
-                if (valid)
-                {
-                    float speed = speedSq * math.rsqrt(math.max(speedSq, 0.000001f));
-                    float3 wakeAxis = velocity * math.rsqrt(math.max(speedSq, 0.000001f));
-                    output.PositionWS = position - wakeAxis * math.min(radius * 0.35f, 4f);
-                    output.VectorWS = wakeAxis * (math.max(0.01f, WakeStrength) * throttleAbs * math.min(speed, 16f));
-                    output.Radius = radius;
-                    output.Lifetime = lifetime;
-                    output.Intensity = throttleAbs;
-                    output.Flags = 1u;
-                }
-
-                Result[0] = output;
-            }
-        }
-
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct BuildMockWakeSignalJob : IJob
-        {
-            [NoAlias] public NativeArray<DynamicWakeDTO> Wakes;
-            public float3 CameraPositionWS;
-            public float3 CameraRightWS;
-            public float3 CameraUpWS;
-            public float TimeSeconds;
-            public int ActiveCount;
-
-            public void Execute()
-            {
-                float3 cameraForward = math.normalizesafe(math.cross(CameraRightWS, CameraUpWS), new float3(0f, 0f, 1f));
-                int length = Wakes.IsCreated ? Wakes.Length : 0;
-                int active = math.clamp(ActiveCount, 0, math.min(length, MockWakeCapacity));
-                for (int i = 0; i < length; i++)
-                {
-                    if (i >= active)
-                    {
-                        Wakes[i] = default;
-                        continue;
-                    }
-
-                    float lane = i + 1f;
-                    float phase = TimeSeconds * (0.73f + lane * 0.19f) + lane * 1.6180339f;
-                    float lateral = TriangleSigned(phase * InvTau) * (1.2f + lane * 0.35f);
-                    float vertical = TriangleSigned((phase * 0.71f * InvTau) + 0.25f) * 0.42f;
-                    float radius = 4.75f + lane * 1.15f;
-                    float3 force =
-                        cameraForward * (0.42f + lane * 0.08f) +
-                        CameraRightWS * (TriangleSigned((phase * 1.37f * InvTau) + 0.25f) * 0.22f) +
-                        CameraUpWS * (TriangleSigned(phase * 0.53f * InvTau) * 0.08f);
-                    Wakes[i] = new DynamicWakeDTO
-                    {
-                        Position = CameraPositionWS - cameraForward * (3.5f + lane * 2.0f) + CameraRightWS * lateral + CameraUpWS * vertical,
-                        Radius = radius,
-                        Force = force,
-                        Falloff = math.saturate(1.0f - i * 0.18f)
-                    };
-                }
-            }
-
-            private static float TriangleSigned(float phaseTurns)
-            {
-                float t = math.frac(phaseTurns);
-                return (math.abs(t * 2f - 1f) * 2f) - 1f;
-            }
-        }
-
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct BuildMockFlowFieldJob : IJob
-        {
-            [NoAlias] public NativeArray<MockFlowField> FlowField;
-            public float3 CameraPositionWS;
-            public float TimeSeconds;
-            public float CurlStrength;
-
-            public void Execute()
-            {
-                if (!FlowField.IsCreated || FlowField.Length <= 0)
-                    return;
-
-                float phaseA = TimeSeconds * 0.17f;
-                float phaseB = TimeSeconds * 0.113f + 1.37f;
-                FlowField[0] = new MockFlowField
-                {
-                    GlobalFlow = new float3(
-                        TriangleSigned(phaseA * InvTau) * 0.035f,
-                        0f,
-                        TriangleSigned((phaseB * InvTau) + 0.25f) * 0.035f),
-                    CurlStrength = math.max(0f, CurlStrength),
-                    NoiseAnchor = CameraPositionWS,
-                    DensityScale = 1f
-                };
-            }
-
-            private static float TriangleSigned(float phaseTurns)
-            {
-                float t = math.frac(phaseTurns);
-                return (math.abs(t * 2f - 1f) * 2f) - 1f;
-            }
-        }
-
         private static class ShaderIds
         {
             internal static readonly int ParticlesReadId = Shader.PropertyToID("_MarineSnowParticlesRead");
@@ -480,10 +350,10 @@ namespace Hecton8.Environment
         [SerializeField, Range(0.1f, 8f)] private float vehicleWakeLifetime = 2.4f;
         [Tooltip("Meters-per-second multiplier for throttle-authored wake impulse vectors.")]
         [SerializeField, Range(0.01f, 2f)] private float vehicleWakeStrength = 0.18f;
-        [Tooltip("Local GPU wake proof path used while submarine wake producers are absent or disconnected.")]
-        [SerializeField] private bool enableMockWakeSignals = true;
-        [Tooltip("Local GPU acoustic pulse proof path used while sonar/acoustic signal producers are absent or disconnected.")]
-        [SerializeField] private bool enableMockAcousticSignals = true;
+        [Tooltip("Editor/development-only GPU wake proof path used while submarine wake producers are absent or disconnected.")]
+        [SerializeField] private bool enableMockWakeSignals;
+        [Tooltip("Editor/development-only GPU acoustic pulse proof path used while sonar/acoustic signal producers are absent or disconnected.")]
+        [SerializeField] private bool enableMockAcousticSignals;
         [Tooltip("Emission response multiplier for particles inside the active flashlight cone.")]
         [SerializeField, Range(0f, 4f)] private float headlightEmissionMultiplier = 1.65f;
 
@@ -554,7 +424,6 @@ namespace Hecton8.Environment
         [SerializeField, Range(0.1f, 0.5f)] private float fogDensityRenderScale = 0.25f;
 
         private IDataVault _dataVault;
-        private VaultGenerationHandle<VehicleWakeJobResult> _vehicleWakeJobResultHandle;
         private VaultGenerationHandle<MarineSnowTelemetryEntry> _telemetryRingHandle;
         private VaultGenerationHandle<VfxConfigurationDTO> _siltTuningHandle;
         private VaultGenerationHandle<DynamicWakeDTO> _dynamicWakeDtoHandle;
@@ -801,12 +670,15 @@ namespace Hecton8.Environment
         private PropwashGpuTuningDTO _cachedPropwashTuning;
         private MockFlowField _cachedMockFlowField;
         private MockAcousticSignal _mockAcousticSignal;
+        private NativeArray<DynamicWakeDTO> _mockWakeScratch;
+        private NativeArray<PropwashEventDTO> _propwashEventScratch;
         private Vector3 _pendingAupShiftOffset;
         private bool _vehicleCommandListenerRegistered;
         private bool _nativeStateReady;
         private bool _blackBoxDumped;
         private bool _hotSwapRegistered;
         private bool _dispatcherReady;
+        private bool _mockWakeBuffersCleared = true;
         private bool _particleBuffersNeedGpuBootstrap;
         private bool _externalGpuBindingsDirty = true;
         private bool _materialAtlasFallbackResolved;
@@ -837,6 +709,7 @@ namespace Hecton8.Environment
         private readonly byte[] _wakeProfileBackgroundBuffer = new byte[CsvProfileReadBufferBytes]; // COLD ALLOC: byte[4096] - wake profile background staging buffer - owner: HectonMarineSnowRenderer
         private readonly byte[] _wakeProfileStagedBuffer = new byte[CsvProfileReadBufferBytes]; // COLD ALLOC: byte[4096] - wake profile main-thread parse staging buffer - owner: HectonMarineSnowRenderer
         private readonly object _wakeProfileSync = new object(); // COLD ALLOC: object[1] - wake profile staging lock shared with background reader - owner: HectonMarineSnowRenderer
+        private NativeArray<PropwashWakeProfileDTO> _wakeProfileParseScratch;
 #endif
         /// <summary>
         /// True when the compute path has all required resources and can replace the fallback particle system.
@@ -898,14 +771,42 @@ namespace Hecton8.Environment
 
         private void OnDisable()
         {
+            ReleaseRuntimeState();
+        }
+
+        private void OnDestroy()
+        {
+            ReleaseRuntimeState();
+        }
+
+        private void ReleaseRuntimeState()
+        {
             HectonFloatingOrigin.UnregisterListener(this);
             UnregisterVehicleCommandListener();
             TryUnregisterHotSwapListener();
 #if UNITY_EDITOR
             StopCsvProfileBackgroundReader();
+            DisposeWakeProfileParseScratch();
 #endif
             SetUnderwaterState(false, 0f, 0f, 1f, 0f);
             SetBubbleTrailState(0f, 0f);
+            UnregisterRuntimeTickables();
+            ReleaseBuffers();
+            DisposeRuntimeScratchBuffers();
+            ClearNativeStateLease();
+            _abyssalFlowGpuReadModel = null;
+            _weatherService = null;
+            _dynamicResolutionScaler = null;
+            _vramMonitor = null;
+            _tickDispatcher = null;
+            _dispatcherReady = false;
+            _nextFluidRebindFrame = 0;
+            _nextDataVaultRebindFrame = 0;
+            _nextProceduralWakeSourceProbeFrame = 0;
+        }
+
+        private void UnregisterRuntimeTickables()
+        {
             if (_registeredLateFrame)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
@@ -923,41 +824,6 @@ namespace Hecton8.Environment
                 GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
                 _registeredColdTick = false;
             }
-
-            ReleaseBuffers();
-            ClearNativeStateLease();
-            _abyssalFlowGpuReadModel = null;
-            _weatherService = null;
-            _dynamicResolutionScaler = null;
-            _vramMonitor = null;
-            _tickDispatcher = null;
-            _dispatcherReady = false;
-            _nextFluidRebindFrame = 0;
-            _nextDataVaultRebindFrame = 0;
-            _nextProceduralWakeSourceProbeFrame = 0;
-        }
-
-        private void OnDestroy()
-        {
-            HectonFloatingOrigin.UnregisterListener(this);
-            UnregisterVehicleCommandListener();
-            TryUnregisterHotSwapListener();
-#if UNITY_EDITOR
-            StopCsvProfileBackgroundReader();
-#endif
-            if (_registeredSlowTick)
-            {
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredSlowTick = false;
-            }
-
-            if (_registeredColdTick)
-            {
-                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
-                _registeredColdTick = false;
-            }
-
-            ClearNativeStateLease();
         }
 
         /// <summary>
@@ -1157,7 +1023,6 @@ namespace Hecton8.Environment
 
         private void ClearVaultHandleCache()
         {
-            _vehicleWakeJobResultHandle = default;
             _telemetryRingHandle = default;
             _siltTuningHandle = default;
             _dynamicWakeDtoHandle = default;
@@ -1272,6 +1137,7 @@ namespace Hecton8.Environment
             {
                 _activeParticleCount = 0;
                 _debugActiveParticleCount = 0;
+                ClearInactiveVisualWakeState();
                 PublishSonarGlowGlobals(Vector4.zero, Vector4.zero, null);
                 PublishFogDensityGlobals(Vector4.zero, Vector4.zero, null);
                 return;
@@ -1288,6 +1154,7 @@ namespace Hecton8.Environment
             _activeParticleCount = ResolveActiveParticleCount(effectiveDensityScale);
             if (_activeParticleCount <= 0)
             {
+                ClearInactiveVisualWakeState();
                 PublishSonarGlowGlobals(Vector4.zero, Vector4.zero, null);
                 PublishFogDensityGlobals(Vector4.zero, Vector4.zero, null);
                 return;
@@ -1306,6 +1173,22 @@ namespace Hecton8.Environment
             RenderMarineSnow();
             RecordTelemetry();
             _frameParity ^= 1;
+        }
+
+        private void ClearInactiveVisualWakeState()
+        {
+            _debugMockWakeCount = 0;
+            _cachedMockFlowField = default;
+            ResetPropwashDebugState();
+
+            if (_mockWakeBuffersCleared)
+                return;
+
+            MockFlowField emptyFlowField = default;
+            TryWriteMockFlowFieldToVault(in emptyFlowField);
+            ClearMockWakeGpuBuffers();
+            ClearMockOnlyPropwashCursor();
+            _mockWakeBuffersCleared = true;
         }
 
         private float ResolveEffectiveDensityScale()
@@ -1382,65 +1265,50 @@ namespace Hecton8.Environment
 
             _nativeStateReady =
                 EnsureOwnedVaultBuffer(
-                    ref _vehicleWakeJobResultHandle,
-                    BufferID.MarineSnowWakeJobResult,
-                    1,
-                    NativeArrayOptions.ClearMemory,
-                    out NativeArray<VehicleWakeJobResult> _) &&
-                EnsureOwnedVaultBuffer(
                     ref _telemetryRingHandle,
                     BufferID.MarineSnowTelemetryRing,
                     TelemetryCapacity,
-                    NativeArrayOptions.ClearMemory,
-                    out NativeArray<MarineSnowTelemetryEntry> _) &&
+                    NativeArrayOptions.ClearMemory) &&
                 EnsureOwnedVaultBuffer(
                     ref _siltTuningHandle,
                     BufferID.MarineSnowTuningConstants,
                     1,
-                    NativeArrayOptions.ClearMemory,
-                    out NativeArray<VfxConfigurationDTO> _) &&
+                    NativeArrayOptions.ClearMemory) &&
                 EnsureOwnedVaultBuffer(
                     ref _dynamicWakeDtoHandle,
                     BufferID.MarineSnowDynamicWakes,
                     DynamicWakeDtoCapacity,
-                    NativeArrayOptions.ClearMemory,
-                    out NativeArray<DynamicWakeDTO> _) &&
+                    NativeArrayOptions.ClearMemory) &&
                 EnsureOwnedVaultBuffer(
                     ref _mockFlowFieldHandle,
                     BufferID.MarineSnowMockFlowField,
                     1,
-                    NativeArrayOptions.ClearMemory,
-                    out NativeArray<MockFlowField> _) &&
+                    NativeArrayOptions.ClearMemory) &&
                 EnsureOwnedVaultBuffer(
                     ref _propwashEventHandle,
                     BufferID.PropwashGpuEventRing,
                     PropwashEventRingCapacity,
-                    NativeArrayOptions.ClearMemory,
-                    out NativeArray<PropwashEventDTO> _) &&
+                    NativeArrayOptions.ClearMemory) &&
                 EnsureOwnedVaultBuffer(
                     ref _propwashCursorHandle,
                     BufferID.PropwashGpuRingCursor,
                     1,
-                    NativeArrayOptions.ClearMemory,
-                    out NativeArray<PropwashRingCursorDTO> _) &&
+                    NativeArrayOptions.ClearMemory) &&
                 EnsureOwnedVaultBuffer(
                     ref _propwashTelemetryHandle,
                     BufferID.PropwashGpuTelemetryRing,
                     PropwashGpuContracts.TelemetryCapacity,
-                    NativeArrayOptions.ClearMemory,
-                    out NativeArray<PropwashTelemetryEntry> _) &&
+                    NativeArrayOptions.ClearMemory) &&
                 EnsureOwnedVaultBuffer(
                     ref _propwashTuningHandle,
                     BufferID.PropwashGpuTuning,
                     1,
-                    NativeArrayOptions.ClearMemory,
-                    out NativeArray<PropwashGpuTuningDTO> _) &&
+                    NativeArrayOptions.ClearMemory) &&
                 EnsureOwnedVaultBuffer(
                     ref _propwashWakeProfileHandle,
                     BufferID.PropwashGpuWakeProfiles,
                     PropwashWakeProfileCapacity,
-                    NativeArrayOptions.ClearMemory,
-                    out NativeArray<PropwashWakeProfileDTO> _);
+                    NativeArrayOptions.ClearMemory);
 
             if (!_nativeStateReady)
                 return false;
@@ -1449,7 +1317,89 @@ namespace Hecton8.Environment
             InitializeDefaultSiltTuning(vault);
             InitializeDefaultPropwashTuning(vault);
             InitializeDefaultPropwashWakeProfiles(vault);
-            return _nativeStateReady;
+            return EnsureRuntimeScratchBuffers();
+        }
+
+        private bool EnsureRuntimeScratchBuffers()
+        {
+            return EnsureNativeArrayScratch(
+                    ref _mockWakeScratch,
+                    DynamicWakeDtoCapacity,
+                    "_mockWakeScratch") &&
+                EnsureNativeArrayScratch(
+                    ref _propwashEventScratch,
+                    PropwashEventRingCapacity,
+                    "_propwashEventScratch");
+        }
+
+        private static bool EnsureNativeArrayScratch<T>(
+            ref NativeArray<T> scratch,
+            int requiredLength,
+            string label) where T : struct
+        {
+            if (scratch.IsCreated && scratch.Length >= requiredLength)
+                return true;
+
+            DisposeNativeArrayScratch(ref scratch);
+            if (requiredLength <= 0)
+                return false;
+
+            scratch = new NativeArray<T>(
+                requiredLength,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: owner-local VFX staging scratch; hot paths reuse fixed capacity.
+            NativeMemorySentinel.RegisterNativeArray(scratch, nameof(HectonMarineSnowRenderer), label, NativeAllocationLifetime.Scene);
+            return true;
+        }
+
+        private void DisposeRuntimeScratchBuffers()
+        {
+            DisposeNativeArrayScratch(ref _mockWakeScratch);
+            DisposeNativeArrayScratch(ref _propwashEventScratch);
+        }
+
+        private static void DisposeNativeArrayScratch<T>(ref NativeArray<T> scratch) where T : struct
+        {
+            if (!scratch.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(scratch);
+            scratch.Dispose();
+            scratch = default;
+        }
+
+        private static unsafe void CopyNativeArrayPrefix<T>(
+            NativeArray<T> source,
+            NativeArray<T> destination,
+            int count) where T : struct
+        {
+            if (!source.IsCreated || !destination.IsCreated || count <= 0)
+                return;
+
+            int safeCount = math.min(count, math.min(source.Length, destination.Length));
+            if (safeCount <= 0)
+                return;
+
+            void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
+            void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafePtr(destination);
+            UnsafeUtility.MemCpy(destinationPtr, sourcePtr, safeCount * UnsafeUtility.SizeOf<T>());
+        }
+
+        private static unsafe void CopyNativeArrayPrefix<T>(
+            NativeArray<T>.ReadOnly source,
+            NativeArray<T> destination,
+            int count) where T : struct
+        {
+            if (!source.IsCreated || !destination.IsCreated || count <= 0)
+                return;
+
+            int safeCount = math.min(count, math.min(source.Length, destination.Length));
+            if (safeCount <= 0)
+                return;
+
+            void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
+            void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafePtr(destination);
+            UnsafeUtility.MemCpy(destinationPtr, sourcePtr, safeCount * UnsafeUtility.SizeOf<T>());
         }
 
         private bool AreMarineSnowRuntimeResourcesReady()
@@ -1488,126 +1438,109 @@ namespace Hecton8.Environment
             }
         }
 
-        private bool TryResolveVehicleWakeJobResultBuffer(out NativeArray<VehicleWakeJobResult> result)
-        {
-            result = default;
-            return _nativeStateReady &&
-                   TryResolveVaultBuffer(ref _vehicleWakeJobResultHandle, BufferID.MarineSnowWakeJobResult, 1, out result);
-        }
-
-        private bool TryResolveTelemetryRing(out NativeArray<MarineSnowTelemetryEntry> telemetryRing)
+        private bool TryReadTelemetryRing(out NativeArray<MarineSnowTelemetryEntry>.ReadOnly telemetryRing)
         {
             telemetryRing = default;
             return _nativeStateReady &&
-                   TryResolveVaultBuffer(ref _telemetryRingHandle, BufferID.MarineSnowTelemetryRing, TelemetryCapacity, out telemetryRing);
+                   TryReadOnlyVaultBuffer(ref _telemetryRingHandle, BufferID.MarineSnowTelemetryRing, TelemetryCapacity, out telemetryRing);
         }
 
-        private bool TryResolveSiltTuning(out NativeArray<VfxConfigurationDTO> tuning)
+        private bool TryReadSiltTuning(out NativeArray<VfxConfigurationDTO>.ReadOnly tuning)
         {
             tuning = default;
             return _nativeStateReady &&
-                   TryResolveVaultBuffer(ref _siltTuningHandle, BufferID.MarineSnowTuningConstants, 1, out tuning);
+                   TryReadOnlyVaultBuffer(ref _siltTuningHandle, BufferID.MarineSnowTuningConstants, 1, out tuning);
         }
 
-        private bool TryResolveDynamicWakeDtos(out NativeArray<DynamicWakeDTO> wakes)
-        {
-            wakes = default;
-            return _nativeStateReady &&
-                   TryResolveVaultBuffer(ref _dynamicWakeDtoHandle, BufferID.MarineSnowDynamicWakes, MockWakeCapacity, out wakes);
-        }
-
-        private bool TryResolveMockFlowField(out NativeArray<MockFlowField> flowField)
-        {
-            flowField = default;
-            return _nativeStateReady &&
-                   TryResolveVaultBuffer(ref _mockFlowFieldHandle, BufferID.MarineSnowMockFlowField, 1, out flowField);
-        }
-
-        private bool TryAcquireReadyProceduralWakeSources(out NativeArray<WakeSource> wakeSources)
+        private bool TryReadReadyProceduralWakeSources(out NativeArray<WakeSource>.ReadOnly wakeSources)
         {
             wakeSources = default;
             if (!_nativeStateReady)
                 return false;
 
             RefreshProceduralWakeSourcesHandle(_dataVault, force: false);
-            return TryResolveVaultBuffer(ref _proceduralWakeSourcesHandle, BufferID.WakeSources, 1, out wakeSources);
+            return TryReadOnlyVaultBuffer(ref _proceduralWakeSourcesHandle, BufferID.WakeSources, 1, out wakeSources);
         }
 
-        private bool TryAcquireReadyPropwashEvents(out NativeArray<PropwashEventDTO> events)
+        private bool TryReadReadyPropwashEvents(out NativeArray<PropwashEventDTO>.ReadOnly events)
         {
             events = default;
             return _nativeStateReady &&
-                   TryResolveVaultBuffer(ref _propwashEventHandle, BufferID.PropwashGpuEventRing, PropwashEventRingCapacity, out events);
+                   TryReadOnlyVaultBuffer(ref _propwashEventHandle, BufferID.PropwashGpuEventRing, PropwashEventRingCapacity, out events);
         }
 
-        private bool TryAcquireReadyPropwashCursor(out NativeArray<PropwashRingCursorDTO> cursor)
+        private bool TryReadReadyPropwashCursor(out NativeArray<PropwashRingCursorDTO>.ReadOnly cursor)
         {
             cursor = default;
             return _nativeStateReady &&
-                   TryResolveVaultBuffer(ref _propwashCursorHandle, BufferID.PropwashGpuRingCursor, 1, out cursor);
+                   TryReadOnlyVaultBuffer(ref _propwashCursorHandle, BufferID.PropwashGpuRingCursor, 1, out cursor);
         }
 
-        private bool TryAcquireReadyPropwashTelemetry(out NativeArray<PropwashTelemetryEntry> telemetry)
+        private bool TryReadReadyPropwashTelemetry(out NativeArray<PropwashTelemetryEntry>.ReadOnly telemetry)
         {
             telemetry = default;
             return _nativeStateReady &&
-                   TryResolveVaultBuffer(ref _propwashTelemetryHandle, BufferID.PropwashGpuTelemetryRing, PropwashGpuContracts.TelemetryCapacity, out telemetry);
+                   TryReadOnlyVaultBuffer(ref _propwashTelemetryHandle, BufferID.PropwashGpuTelemetryRing, PropwashGpuContracts.TelemetryCapacity, out telemetry);
         }
 
-        private bool TryAcquireReadyPropwashTuning(out NativeArray<PropwashGpuTuningDTO> tuning)
+        private bool TryReadReadyPropwashTuning(out NativeArray<PropwashGpuTuningDTO>.ReadOnly tuning)
         {
             tuning = default;
             return _nativeStateReady &&
-                   TryResolveVaultBuffer(ref _propwashTuningHandle, BufferID.PropwashGpuTuning, 1, out tuning);
-        }
-
-        private bool TryAcquireReadyPropwashWakeProfiles(out NativeArray<PropwashWakeProfileDTO> profiles)
-        {
-            profiles = default;
-            return _nativeStateReady &&
-                   TryResolveVaultBuffer(ref _propwashWakeProfileHandle, BufferID.PropwashGpuWakeProfiles, PropwashWakeProfileCapacity, out profiles);
+                   TryReadOnlyVaultBuffer(ref _propwashTuningHandle, BufferID.PropwashGpuTuning, 1, out tuning);
         }
 
         private void InitializeDefaultSiltTuning(IDataVault vault)
         {
-            if (vault == null ||
-                !TryResolveVaultBuffer(vault, ref _siltTuningHandle, BufferID.MarineSnowTuningConstants, 1, out NativeArray<VfxConfigurationDTO> tuning))
+            VfxConfigurationDTO fallback = CreateDefaultSiltTuning();
+            if (!TryAcquireOwnedVaultWriteBuffer(vault, in _siltTuningHandle, BufferID.MarineSnowTuningConstants, 1, out NativeArray<VfxConfigurationDTO> tuning))
             {
                 return;
             }
 
-            VfxConfigurationDTO current = tuning[0];
-            if (current.Version != 0u)
-            {
-                _cachedSiltTuning = current;
-                return;
-            }
-
-            current = GenerateEmergencyMockSilt();
-            tuning[0] = current;
-            _cachedSiltTuning = current;
-        }
-
-        private static VfxConfigurationDTO GenerateEmergencyMockSilt()
-        {
-            return VolumetricSiltConfigurationAccess.CreateDefault(MaxMarineSnowParticleCapacity);
-        }
-
-        private VfxConfigurationDTO CaptureSiltTuningSnapshot()
-        {
-            if (TryResolveSiltTuning(out NativeArray<VfxConfigurationDTO> tuning))
+            try
             {
                 VfxConfigurationDTO current = tuning[0];
                 if (current.Version == 0u)
                 {
-                    current = VolumetricSiltConfigurationAccess.CreateDefault(MaxMarineSnowParticleCapacity);
+                    current = fallback;
+                    tuning[0] = current;
+                }
+
+                _cachedSiltTuning = current;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _siltTuningHandle, VaultOwnerSystem);
+            }
+        }
+
+        private VfxConfigurationDTO CreateDefaultSiltTuning()
+        {
+            return VolumetricSiltConfigurationAccess.CreateDefault(ResolveDefaultSiltParticleCapacity());
+        }
+
+        private int ResolveDefaultSiltParticleCapacity()
+        {
+            RefreshScalabilityProfile();
+            return math.clamp(_resolvedParticleCapacity, 64, MaxMarineSnowParticleCapacity);
+        }
+
+        private VfxConfigurationDTO CaptureSiltTuningSnapshot()
+        {
+            if (TryReadSiltTuning(out NativeArray<VfxConfigurationDTO>.ReadOnly tuning))
+            {
+                VfxConfigurationDTO current = tuning[0];
+                if (current.Version == 0u)
+                {
+                    current = CreateDefaultSiltTuning();
                 }
 
                 _cachedSiltTuning = current;
             }
             else if (_cachedSiltTuning.Version == 0u)
             {
-                _cachedSiltTuning = VolumetricSiltConfigurationAccess.CreateDefault(MaxMarineSnowParticleCapacity);
+                _cachedSiltTuning = CreateDefaultSiltTuning();
             }
 
             return _cachedSiltTuning;
@@ -1615,42 +1548,51 @@ namespace Hecton8.Environment
 
         private void InitializeDefaultPropwashTuning(IDataVault vault)
         {
-            if (vault == null ||
-                !TryResolveVaultBuffer(vault, ref _propwashTuningHandle, BufferID.PropwashGpuTuning, 1, out NativeArray<PropwashGpuTuningDTO> tuning))
+            PropwashGpuTuningDTO fallback = PropwashGpuContracts.CreateDefaultTuning();
+            if (!TryAcquireOwnedVaultWriteBuffer(vault, in _propwashTuningHandle, BufferID.PropwashGpuTuning, 1, out NativeArray<PropwashGpuTuningDTO> tuning))
             {
                 return;
             }
 
-            PropwashGpuTuningDTO current = tuning[0];
-            if (current.Version != 0u)
+            try
             {
+                PropwashGpuTuningDTO current = tuning[0];
+                if (current.Version == 0u)
+                {
+                    current = fallback;
+                    tuning[0] = current;
+                }
+
                 _cachedPropwashTuning = current;
-                return;
             }
-
-            current = PropwashGpuContracts.CreateDefaultTuning();
-            tuning[0] = current;
-            _cachedPropwashTuning = current;
+            finally
+            {
+                vault.ReleaseWriteLock(in _propwashTuningHandle, VaultOwnerSystem);
+            }
         }
 
         private void InitializeDefaultPropwashWakeProfiles(IDataVault vault)
         {
-            if (vault == null ||
-                !TryResolveVaultBuffer(vault, ref _propwashWakeProfileHandle, BufferID.PropwashGpuWakeProfiles, PropwashWakeProfileCapacity, out NativeArray<PropwashWakeProfileDTO> profiles))
+            PropwashWakeProfileDTO fallback = PropwashGpuContracts.CreateDefaultWakeProfile();
+            if (!TryAcquireOwnedVaultWriteBuffer(vault, in _propwashWakeProfileHandle, BufferID.PropwashGpuWakeProfiles, PropwashWakeProfileCapacity, out NativeArray<PropwashWakeProfileDTO> profiles))
             {
                 return;
             }
 
-            PropwashWakeProfileDTO current = profiles[0];
-            if (current.Version != 0u)
-                return;
-
-            profiles[0] = PropwashGpuContracts.CreateDefaultWakeProfile();
+            try
+            {
+                if (profiles[0].Version == 0u)
+                    profiles[0] = fallback;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _propwashWakeProfileHandle, VaultOwnerSystem);
+            }
         }
 
         private PropwashGpuTuningDTO CapturePropwashTuningSnapshot()
         {
-            if (TryAcquireReadyPropwashTuning(out NativeArray<PropwashGpuTuningDTO> tuning))
+            if (TryReadReadyPropwashTuning(out NativeArray<PropwashGpuTuningDTO>.ReadOnly tuning))
             {
                 PropwashGpuTuningDTO current = tuning[0];
                 if (current.Version != 0u)
@@ -1665,19 +1607,25 @@ namespace Hecton8.Environment
             return _cachedPropwashTuning;
         }
 
+        private float ResolvePropwashQualityWeight()
+        {
+            PropwashGpuTuningDTO tuning = CapturePropwashTuningSnapshot();
+            return tuning.GlobalQualityWeightOverride >= 0f
+                ? tuning.GlobalQualityWeightOverride
+                : HomeostasisBrain.GlobalQualityWeight;
+        }
+
         private bool EnsureOwnedVaultBuffer<T>(
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
-            NativeArrayOptions options,
-            out NativeArray<T> buffer) where T : struct
+            NativeArrayOptions options) where T : struct
         {
-            buffer = default;
             IDataVault vault = _dataVault;
             if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
                 return false;
 
-            if (TryResolveVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
+            if (HasVaultBuffer(vault, in handle, bufferId, requiredLength))
                 return true;
 
             if (vault.IsAllocationLocked)
@@ -1685,18 +1633,16 @@ namespace Hecton8.Environment
 
             ReleaseOwnedVaultHandle(vault, ref handle, bufferId);
             handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystem, options);
-            if (TryResolveVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
+            if (HasVaultBuffer(vault, in handle, bufferId, requiredLength))
                 return true;
 
             ReleaseOwnedVaultHandle(vault, ref handle, bufferId);
-            buffer = default;
             return false;
         }
 
         private bool AreOwnedVaultBuffersReady(IDataVault vault)
         {
-            return HasVaultBuffer(vault, in _vehicleWakeJobResultHandle, BufferID.MarineSnowWakeJobResult, 1) &&
-                   HasVaultBuffer(vault, in _telemetryRingHandle, BufferID.MarineSnowTelemetryRing, TelemetryCapacity) &&
+            return HasVaultBuffer(vault, in _telemetryRingHandle, BufferID.MarineSnowTelemetryRing, TelemetryCapacity) &&
                    HasVaultBuffer(vault, in _siltTuningHandle, BufferID.MarineSnowTuningConstants, 1) &&
                    HasVaultBuffer(vault, in _dynamicWakeDtoHandle, BufferID.MarineSnowDynamicWakes, DynamicWakeDtoCapacity) &&
                    HasVaultBuffer(vault, in _mockFlowFieldHandle, BufferID.MarineSnowMockFlowField, 1) &&
@@ -1705,32 +1651,6 @@ namespace Hecton8.Environment
                    HasVaultBuffer(vault, in _propwashTelemetryHandle, BufferID.PropwashGpuTelemetryRing, PropwashGpuContracts.TelemetryCapacity) &&
                    HasVaultBuffer(vault, in _propwashTuningHandle, BufferID.PropwashGpuTuning, 1) &&
                    HasVaultBuffer(vault, in _propwashWakeProfileHandle, BufferID.PropwashGpuWakeProfiles, PropwashWakeProfileCapacity);
-        }
-
-        private bool TryResolveVaultBuffer<T>(
-            ref VaultGenerationHandle<T> handle,
-            BufferID bufferId,
-            int requiredLength,
-            out NativeArray<T> buffer) where T : struct
-        {
-            return TryResolveVaultBuffer(_dataVault, ref handle, bufferId, requiredLength, out buffer);
-        }
-
-        private static bool TryResolveVaultBuffer<T>(
-            IDataVault vault,
-            ref VaultGenerationHandle<T> handle,
-            BufferID bufferId,
-            int requiredLength,
-            out NativeArray<T> buffer) where T : struct
-        {
-            buffer = default;
-            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
-                return false;
-
-            return IsVfxVaultHandle(in handle, bufferId) &&
-                   vault.TryResolveHandle(in handle, out buffer) &&
-                   buffer.IsCreated &&
-                   buffer.Length >= requiredLength;
         }
 
         private static bool HasVaultBuffer<T>(
@@ -1743,9 +1663,69 @@ namespace Hecton8.Environment
                    !vault.IsCompactionFenceActive &&
                    requiredLength > 0 &&
                    IsVfxVaultHandle(in handle, bufferId) &&
-                   vault.TryReadHandle(in handle, out NativeArray<T> buffer) &&
+                   vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
+        }
+
+        private bool TryReadOnlyVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T>.ReadOnly buffer) where T : struct
+        {
+            return TryReadOnlyVaultBuffer(_dataVault, ref handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool TryReadOnlyVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T>.ReadOnly buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
+                return false;
+
+            return IsVfxVaultHandle(in handle, bufferId) &&
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool TryAcquireOwnedVaultWriteBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                requiredLength <= 0 ||
+                !IsVfxVaultHandle(in handle, bufferId) ||
+                !vault.TryAcquireWriteLock(in handle, VaultOwnerSystem, out buffer))
+            {
+                return false;
+            }
+
+            bool handoffToCaller = false;
+            try
+            {
+                handoffToCaller = buffer.IsCreated && buffer.Length >= requiredLength;
+                if (handoffToCaller)
+                    return true;
+            }
+            finally
+            {
+                if (!handoffToCaller)
+                    vault.ReleaseWriteLock(in handle, VaultOwnerSystem);
+            }
+
+            buffer = default;
+            return false;
         }
 
         private static bool IsVfxVaultHandle<T>(
@@ -1759,7 +1739,6 @@ namespace Hecton8.Environment
 
         private void ReleaseOwnedVaultHandles(IDataVault vault)
         {
-            ReleaseOwnedVaultHandle(vault, ref _vehicleWakeJobResultHandle, BufferID.MarineSnowWakeJobResult);
             ReleaseOwnedVaultHandle(vault, ref _telemetryRingHandle, BufferID.MarineSnowTelemetryRing);
             ReleaseOwnedVaultHandle(vault, ref _siltTuningHandle, BufferID.MarineSnowTuningConstants);
             ReleaseOwnedVaultHandle(vault, ref _dynamicWakeDtoHandle, BufferID.MarineSnowDynamicWakes);
@@ -1797,28 +1776,33 @@ namespace Hecton8.Environment
 
         private static bool ValidateNativeStructLayouts()
         {
-            return UnsafeUtility.SizeOf<ParticleDataDTO>() == ParticleDataStride &&
-                UnsafeUtility.SizeOf<ParticleRenderMetaDTO>() == ParticleRenderMetaStride &&
-                UnsafeUtility.SizeOf<DynamicWakeDTO>() == DynamicWakeDtoStride &&
-                UnsafeUtility.SizeOf<VfxConfigurationDTO>() == SiltConfigurationStride &&
-                UnsafeUtility.SizeOf<MockFlowField>() == SiltConfigurationStride &&
-                UnsafeUtility.SizeOf<MockAcousticSignal>() == SiltConfigurationStride &&
-                UnsafeUtility.SizeOf<FrameConstantsData>() == FrameConstantsStride &&
-                UnsafeUtility.SizeOf<VehicleWakeJobResult>() == VehicleWakeJobResultStride &&
-                UnsafeUtility.SizeOf<MarineSnowTelemetryEntry>() == TelemetryEntrySizeBytes &&
-                UnsafeUtility.SizeOf<PropwashEventDTO>() == PropwashEventStride &&
-                UnsafeUtility.SizeOf<PropwashRingCursorDTO>() == PropwashRingCursorStride &&
-                UnsafeUtility.SizeOf<PropwashTelemetryEntry>() == PropwashTelemetryEntryStride &&
-                UnsafeUtility.SizeOf<PropwashGpuTuningDTO>() == PropwashTuningStride &&
-                UnsafeUtility.SizeOf<PropwashWakeProfileDTO>() == PropwashWakeProfileStride &&
+            return HasExpectedNativeStride<ParticleDataDTO>(ParticleDataStride) &&
+                HasExpectedNativeStride<ParticleRenderMetaDTO>(ParticleRenderMetaStride) &&
+                HasExpectedNativeStride<DynamicWakeDTO>(DynamicWakeDtoStride) &&
+                HasExpectedNativeStride<VfxConfigurationDTO>(SiltConfigurationStride) &&
+                HasExpectedNativeStride<MockFlowField>(SiltConfigurationStride) &&
+                HasExpectedNativeStride<MockAcousticSignal>(SiltConfigurationStride) &&
+                HasExpectedNativeStride<FrameConstantsData>(FrameConstantsStride) &&
+                HasExpectedNativeStride<VehicleWakeJobResult>(VehicleWakeJobResultStride) &&
+                HasExpectedNativeStride<MarineSnowTelemetryEntry>(TelemetryEntrySizeBytes) &&
+                HasExpectedNativeStride<PropwashEventDTO>(PropwashEventStride) &&
+                HasExpectedNativeStride<PropwashRingCursorDTO>(PropwashRingCursorStride) &&
+                HasExpectedNativeStride<PropwashTelemetryEntry>(PropwashTelemetryEntryStride) &&
+                HasExpectedNativeStride<PropwashGpuTuningDTO>(PropwashTuningStride) &&
+                HasExpectedNativeStride<PropwashWakeProfileDTO>(PropwashWakeProfileStride) &&
                 PropwashGpuContracts.ValidateRuntimeLayouts();
+        }
+
+        private static bool HasExpectedNativeStride<T>(int expectedStride) where T : struct
+        {
+            int actualStride = UnsafeUtility.SizeOf<T>();
+            return actualStride == expectedStride && (actualStride & 7) == 0;
         }
 
         private void PublishVehicleWakeImpulse(float dt)
         {
             _vehicleWakePublishCooldown = math.max(0f, _vehicleWakePublishCooldown - dt);
             if (_vehicleWakePublishCooldown > 0f ||
-                !TryResolveVehicleWakeJobResultBuffer(out var vehicleWakeJobResult) ||
                 math.abs(_lastVehicleThrottle) <= VehicleWakeThrottleDeadZone)
             {
                 return;
@@ -1826,20 +1810,13 @@ namespace Hecton8.Environment
 
             Vector4 washSphere = _cachedSubmarineWashSphere;
             Vector4 washVelocity = _cachedSubmarineWashVelocity;
-            BuildVehicleWakeSignalJob job = new BuildVehicleWakeSignalJob
-            {
-                WashSphere = new float4(washSphere.x, washSphere.y, washSphere.z, washSphere.w),
-                WashVelocity = new float4(washVelocity.x, washVelocity.y, washVelocity.z, washVelocity.w),
-                Throttle = _lastVehicleThrottle,
-                WakeRadius = math.max(0.5f, vehicleWakeRadius),
-                WakeLifetime = math.max(0.1f, vehicleWakeLifetime),
-                WakeStrength = math.max(0.01f, vehicleWakeStrength),
-                Result = vehicleWakeJobResult
-            };
-            // One-row presentation result is consumed immediately; direct Execute avoids a synchronous Job API wrapper in visual sync.
-            job.Execute();
-
-            VehicleWakeJobResult result = vehicleWakeJobResult[0];
+            VehicleWakeJobResult result = BuildVehicleWakeSignal(
+                new float4(washSphere.x, washSphere.y, washSphere.z, washSphere.w),
+                new float4(washVelocity.x, washVelocity.y, washVelocity.z, washVelocity.w),
+                _lastVehicleThrottle,
+                math.max(0.5f, vehicleWakeRadius),
+                math.max(0.1f, vehicleWakeLifetime),
+                math.max(0.01f, vehicleWakeStrength));
             if ((result.Flags & 1u) == 0u)
                 return;
 
@@ -1863,10 +1840,50 @@ namespace Hecton8.Environment
             _vehicleWakePublishCooldown = VehicleWakePublishCooldownSeconds;
         }
 
+        private static VehicleWakeJobResult BuildVehicleWakeSignal(
+            float4 washSphere,
+            float4 washVelocity,
+            float throttle,
+            float wakeRadius,
+            float wakeLifetime,
+            float wakeStrength)
+        {
+            VehicleWakeJobResult output = default;
+            float safeThrottle = math.clamp(throttle, -1f, 1f);
+            float throttleAbs = math.abs(safeThrottle);
+            float radius = math.max(0.5f, wakeRadius);
+            float lifetime = math.max(0.1f, wakeLifetime);
+            float3 position = washSphere.xyz;
+            float3 velocity = washVelocity.xyz;
+            float speedSq = math.lengthsq(velocity);
+            bool valid =
+                throttleAbs > VehicleWakeThrottleDeadZone &&
+                math.all(math.isfinite(position)) &&
+                math.all(math.isfinite(velocity)) &&
+                math.isfinite(radius) &&
+                math.isfinite(lifetime) &&
+                speedSq > 0.0001f;
+
+            if (!valid)
+                return output;
+
+            float invSpeed = math.rsqrt(math.max(speedSq, 0.000001f));
+            float speed = speedSq * invSpeed;
+            float3 wakeAxis = velocity * invSpeed;
+            output.PositionWS = position - wakeAxis * math.min(radius * 0.35f, 4f);
+            output.VectorWS = wakeAxis * (math.max(0.01f, wakeStrength) * throttleAbs * math.min(speed, 16f));
+            output.Radius = radius;
+            output.Lifetime = lifetime;
+            output.Intensity = throttleAbs;
+            output.Flags = 1u;
+            return output;
+        }
+
         private void CommitVehicleWakePropwashEvent(in VehicleWakeJobResult result)
         {
-            if (!TryAcquireReadyPropwashEvents(out NativeArray<PropwashEventDTO> propwashEvents) ||
-                !TryAcquireReadyPropwashCursor(out NativeArray<PropwashRingCursorDTO> propwashCursor) ||
+            if (!_propwashEventScratch.IsCreated ||
+                !TryReadPropwashCursorSnapshot(out PropwashRingCursorDTO cursor) ||
+                !TryCopyPropwashEventsToScratch() ||
                 !TryBuildPropwashLocalPosition(result.PositionWS, out float3 localPosition))
             {
                 return;
@@ -1877,21 +1894,18 @@ namespace Hecton8.Environment
                 ? tuning.GlobalQualityWeightOverride
                 : HomeostasisBrain.GlobalQualityWeight;
             float radiusLimit = tuning.Version != 0u ? math.max(0.25f, tuning.MaxEventRadius) : 32f;
-            CommitVehicleWakePropwashEventJob job = new CommitVehicleWakePropwashEventJob
+            if (TryAppendVehicleWakePropwashEventToScratch(
+                    localPosition,
+                    result.VectorWS,
+                    result.Intensity,
+                    math.min(result.Radius, radiusLimit),
+                    unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
+                    quality,
+                    PropwashGpuContracts.DefaultWakeProfileHash,
+                    ref cursor))
             {
-                Events = propwashEvents,
-                Cursor = propwashCursor,
-                LocalPosition = localPosition,
-                ThrustVector = result.VectorWS,
-                Intensity = result.Intensity,
-                Radius = math.min(result.Radius, radiusLimit),
-                Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
-                GlobalQualityWeight = quality,
-                ProfileHash = PropwashGpuContracts.DefaultWakeProfileHash
-            };
-            job.Execute();
-
-            UploadPropwashEventGpuBuffer(propwashEvents, propwashCursor[0]);
+                TryPublishPropwashScratch(in cursor, copyEvents: true);
+            }
         }
 
         private bool TryBuildPropwashLocalPosition(float3 runtimePosition, out float3 localPosition)
@@ -1976,6 +1990,34 @@ namespace Hecton8.Environment
                 reader.Join(CsvProfilePollSliceMilliseconds + 10);
             if (!reader.IsAlive)
                 _csvProfileThread = null;
+        }
+
+        private bool EnsureWakeProfileParseScratch()
+        {
+            if (_wakeProfileParseScratch.IsCreated &&
+                _wakeProfileParseScratch.Length >= PropwashWakeProfileCapacity)
+            {
+                return true;
+            }
+
+            DisposeWakeProfileParseScratch();
+
+            _wakeProfileParseScratch = new NativeArray<PropwashWakeProfileDTO>(
+                PropwashWakeProfileCapacity,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<PropwashWakeProfileDTO>[capacity] - editor CSV parse scratch outside DataVault locks - owner: HectonMarineSnowRenderer
+            NativeMemorySentinel.RegisterNativeArray(_wakeProfileParseScratch, nameof(HectonMarineSnowRenderer), "_wakeProfileParseScratch", NativeAllocationLifetime.Scene);
+            return true;
+        }
+
+        private void DisposeWakeProfileParseScratch()
+        {
+            if (!_wakeProfileParseScratch.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(_wakeProfileParseScratch);
+            _wakeProfileParseScratch.Dispose();
+            _wakeProfileParseScratch = default;
         }
 
         private void CsvProfileBackgroundReadLoop()
@@ -2100,19 +2142,36 @@ namespace Hecton8.Environment
 
             if (ticks == _csvProfileAppliedTicks)
                 return;
-            if (bytesRead <= 0 || !TryResolveSiltTuning(out NativeArray<VfxConfigurationDTO> tuning))
+            if (bytesRead <= 0)
                 return;
 
-            VfxConfigurationDTO current = tuning[0];
-            if (current.Version == 0u)
-                current = VolumetricSiltConfigurationAccess.CreateDefault(MaxMarineSnowParticleCapacity);
+            VfxConfigurationDTO current = _cachedSiltTuning.Version != 0u
+                ? _cachedSiltTuning
+                : CreateDefaultSiltTuning();
+            if (TryReadSiltTuning(out NativeArray<VfxConfigurationDTO>.ReadOnly readOnlyTuning))
+            {
+                VfxConfigurationDTO published = readOnlyTuning[0];
+                if (published.Version != 0u)
+                    current = published;
+            }
 
-            if (VolumetricSiltCsvParser.TryParse(_csvProfileReadBuffer, bytesRead, ref current, out _))
+            IDataVault vault = _dataVault;
+            if (!VolumetricSiltCsvParser.TryParse(_csvProfileReadBuffer, bytesRead, ref current, out _) ||
+                !TryAcquireOwnedVaultWriteBuffer(vault, in _siltTuningHandle, BufferID.MarineSnowTuningConstants, 1, out NativeArray<VfxConfigurationDTO> tuning))
+            {
+                return;
+            }
+
+            try
             {
                 tuning[0] = current;
                 _cachedSiltTuning = current;
                 _csvProfileAppliedTicks = ticks;
                 _staticBindingsDirty = _buffersReady;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _siltTuningHandle, VaultOwnerSystem);
             }
         }
 
@@ -2144,25 +2203,42 @@ namespace Hecton8.Environment
 
             if (ticks == _wakeProfileAppliedTicks)
                 return;
-            if (bytesRead <= 0 || !TryAcquireReadyPropwashWakeProfiles(out NativeArray<PropwashWakeProfileDTO> profiles))
+            if (bytesRead <= 0 || !EnsureWakeProfileParseScratch())
                 return;
 
+            NativeArray<PropwashWakeProfileDTO> scratch = _wakeProfileParseScratch;
             if (!PropwashGpuProfileCsvParser.TryParseWakeProfiles(
                 new ReadOnlySpan<byte>(_wakeProfileReadBuffer, 0, bytesRead),
-                profiles,
+                scratch,
                 out int profileCount,
                 out uint fileHash))
             {
                 return;
             }
 
-            for (int i = profileCount; i < profiles.Length; i++)
-                profiles[i] = default;
+            int safeProfileCount = math.clamp(profileCount, 0, scratch.Length);
+            for (int i = safeProfileCount; i < scratch.Length; i++)
+                scratch[i] = default;
 
-            PropwashWakeProfileDTO first = profiles[0];
+            PropwashWakeProfileDTO first = scratch[0];
             first.Reserved0 = fileHash;
-            profiles[0] = first;
-            _wakeProfileAppliedTicks = ticks;
+            scratch[0] = first;
+
+            IDataVault vault = _dataVault;
+            if (!TryAcquireOwnedVaultWriteBuffer(vault, in _propwashWakeProfileHandle, BufferID.PropwashGpuWakeProfiles, PropwashWakeProfileCapacity, out NativeArray<PropwashWakeProfileDTO> profiles))
+                return;
+
+            try
+            {
+                int copyCount = math.min(profiles.Length, scratch.Length);
+                for (int i = 0; i < copyCount; i++)
+                    profiles[i] = scratch[i];
+                _wakeProfileAppliedTicks = ticks;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _propwashWakeProfileHandle, VaultOwnerSystem);
+            }
         }
 #endif
 
@@ -2259,78 +2335,79 @@ namespace Hecton8.Environment
             if (!GraphicsBufferUploadUtility.TryBeginManualUpload(uploadBytes))
                 return;
 
-            bool dtoLocked = false;
-            bool wakeLocked = false;
-            bool vectorLocked = false;
             bool uploadAccepted = false;
-            bool dtoUnlockSucceeded = false;
-            bool wakeUnlockSucceeded = false;
-            bool vectorUnlockSucceeded = false;
-            NativeArray<DynamicWakeDTO> dtoMap = default;
-            NativeArray<Vector4> wakeMap = default;
-            NativeArray<Vector4> vectorMap = default;
             try
             {
-                dtoMap = _mockWakeDtoBuffer.LockBufferForWrite<DynamicWakeDTO>(0, safeCount);
-                dtoLocked = true;
-                wakeMap = _mockWakeBuffer.LockBufferForWrite<Vector4>(0, safeCount);
-                wakeLocked = true;
-                vectorMap = _mockWakeVectorBuffer.LockBufferForWrite<Vector4>(0, safeCount);
-                vectorLocked = true;
-
                 int sourceCount = wakes.IsCreated ? wakes.Length : 0;
                 int enabledCount = math.min(math.max(0, activeCount), sourceCount);
-                for (int i = 0; i < safeCount; i++)
-                {
-                    if (i >= enabledCount)
-                    {
-                        dtoMap[i] = default;
-                        wakeMap[i] = Vector4.zero;
-                        vectorMap[i] = Vector4.zero;
-                        continue;
-                    }
-
-                    DynamicWakeDTO wake = SanitizeDynamicWake(wakes[i]);
-                    dtoMap[i] = wake;
-                    float intensity = math.length(wake.Force) * wake.Falloff;
-                    wakeMap[i] = new Vector4(wake.Position.x, wake.Position.y, wake.Position.z, intensity);
-                    vectorMap[i] = new Vector4(wake.Force.x, wake.Force.y, wake.Force.z, math.max(0.001f, wake.Radius));
-                }
+                if (!TryWriteMockWakeDtoGpuBuffer(wakes, safeCount, enabledCount))
+                    return;
+                if (!TryWriteMockWakePackedGpuBuffer(_mockWakeBuffer, wakes, safeCount, enabledCount, false))
+                    return;
+                if (!TryWriteMockWakePackedGpuBuffer(_mockWakeVectorBuffer, wakes, safeCount, enabledCount, true))
+                    return;
                 uploadAccepted = true;
             }
             finally
             {
-                try
+                if (uploadAccepted)
+                    GraphicsBufferUploadUtility.CompleteManualUpload(uploadBytes);
+                else
+                    GraphicsBufferUploadUtility.CancelManualUpload(uploadBytes);
+            }
+        }
+
+        private bool TryWriteMockWakeDtoGpuBuffer(NativeArray<DynamicWakeDTO> wakes, int safeCount, int enabledCount)
+        {
+            bool locked = false;
+            NativeArray<DynamicWakeDTO> map = default;
+            try
+            {
+                map = _mockWakeDtoBuffer.LockBufferForWrite<DynamicWakeDTO>(0, safeCount);
+                locked = true;
+                for (int i = 0; i < safeCount; i++)
+                    map[i] = i < enabledCount ? SanitizeDynamicWake(wakes[i]) : default;
+                return true;
+            }
+            finally
+            {
+                if (locked)
+                    _mockWakeDtoBuffer.UnlockBufferAfterWrite<DynamicWakeDTO>(safeCount);
+            }
+        }
+
+        private bool TryWriteMockWakePackedGpuBuffer(
+            GraphicsBuffer buffer,
+            NativeArray<DynamicWakeDTO> wakes,
+            int safeCount,
+            int enabledCount,
+            bool writeForceVector)
+        {
+            bool locked = false;
+            NativeArray<Vector4> map = default;
+            try
+            {
+                map = buffer.LockBufferForWrite<Vector4>(0, safeCount);
+                locked = true;
+                for (int i = 0; i < safeCount; i++)
                 {
-                    try
+                    if (i >= enabledCount)
                     {
-                        if (dtoLocked)
-                            _mockWakeDtoBuffer.UnlockBufferAfterWrite<DynamicWakeDTO>(safeCount);
-                        dtoUnlockSucceeded = true;
+                        map[i] = Vector4.zero;
+                        continue;
                     }
-                    finally
-                    {
-                        try
-                        {
-                            if (wakeLocked)
-                                _mockWakeBuffer.UnlockBufferAfterWrite<Vector4>(safeCount);
-                            wakeUnlockSucceeded = true;
-                        }
-                        finally
-                        {
-                            if (vectorLocked)
-                                _mockWakeVectorBuffer.UnlockBufferAfterWrite<Vector4>(safeCount);
-                            vectorUnlockSucceeded = true;
-                        }
-                    }
+
+                    DynamicWakeDTO wake = SanitizeDynamicWake(wakes[i]);
+                    map[i] = writeForceVector
+                        ? new Vector4(wake.Force.x, wake.Force.y, wake.Force.z, math.max(0.001f, wake.Radius))
+                        : new Vector4(wake.Position.x, wake.Position.y, wake.Position.z, math.length(wake.Force) * wake.Falloff);
                 }
-                finally
-                {
-                    if (uploadAccepted && dtoUnlockSucceeded && wakeUnlockSucceeded && vectorUnlockSucceeded)
-                        GraphicsBufferUploadUtility.CompleteManualUpload(uploadBytes);
-                    else
-                        GraphicsBufferUploadUtility.CancelManualUpload(uploadBytes);
-                }
+                return true;
+            }
+            finally
+            {
+                if (locked)
+                    buffer.UnlockBufferAfterWrite<Vector4>(safeCount);
             }
         }
 
@@ -2341,7 +2418,7 @@ namespace Hecton8.Environment
             int sourceCount = events.IsCreated ? events.Length : 0;
             int enabledCount = math.min(math.max(0, cursor.EventCount), math.min(sourceCount, safeCount));
             int sourceStart = ComputePropwashUploadStart(cursor.WriteCursor, enabledCount, sourceCount);
-            if (safeCount <= 0)
+            if (safeCount <= 0 || enabledCount <= 0)
             {
                 _debugPropwashEventCount = 0;
                 _debugPropwashGpuEventCount = 0;
@@ -2456,6 +2533,401 @@ namespace Hecton8.Environment
             return evt;
         }
 
+        private static float TriangleSignedTurns(float phaseTurns)
+        {
+            float t = math.frac(phaseTurns);
+            return (math.abs(t * 2f - 1f) * 2f) - 1f;
+        }
+
+        private static MockFlowField BuildMockFlowFieldSnapshot(Vector3 cameraPosition, float timeSeconds, float curlStrength)
+        {
+            float phaseA = timeSeconds * 0.17f;
+            float phaseB = timeSeconds * 0.113f + 1.37f;
+            return new MockFlowField
+            {
+                GlobalFlow = new float3(
+                    TriangleSignedTurns(phaseA * InvTau) * 0.035f,
+                    0f,
+                    TriangleSignedTurns((phaseB * InvTau) + 0.25f) * 0.035f),
+                CurlStrength = math.max(0f, curlStrength),
+                NoiseAnchor = cameraPosition,
+                DensityScale = 1f
+            };
+        }
+
+        private bool TryWriteMockFlowFieldToVault(in MockFlowField flowField)
+        {
+            IDataVault vault = _dataVault;
+            if (!TryAcquireOwnedVaultWriteBuffer(vault, in _mockFlowFieldHandle, BufferID.MarineSnowMockFlowField, 1, out NativeArray<MockFlowField> buffer))
+                return false;
+
+            try
+            {
+                buffer[0] = flowField;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _mockFlowFieldHandle, VaultOwnerSystem);
+            }
+        }
+
+        private void BuildMockWakeScratch(int activeCount)
+        {
+            if (!_mockWakeScratch.IsCreated)
+                return;
+
+            Vector3 cameraPosition = targetCamera != null ? targetCamera.position : Vector3.zero;
+            Vector3 cameraRightVector = targetCamera != null ? targetCamera.right : Vector3.right;
+            Vector3 cameraUpVector = targetCamera != null ? targetCamera.up : Vector3.up;
+            float3 cameraRight = new float3(cameraRightVector.x, cameraRightVector.y, cameraRightVector.z);
+            float3 cameraUp = new float3(cameraUpVector.x, cameraUpVector.y, cameraUpVector.z);
+            float3 cameraForward = math.normalizesafe(math.cross(cameraRight, cameraUp), new float3(0f, 0f, 1f));
+            int length = _mockWakeScratch.Length;
+            int active = math.clamp(activeCount, 0, math.min(length, MockWakeCapacity));
+            for (int i = 0; i < length; i++)
+            {
+                if (i >= active)
+                {
+                    _mockWakeScratch[i] = default;
+                    continue;
+                }
+
+                float lane = i + 1f;
+                float phase = _simulationTime * (0.73f + lane * 0.19f) + lane * 1.6180339f;
+                float lateral = TriangleSignedTurns(phase * InvTau) * (1.2f + lane * 0.35f);
+                float vertical = TriangleSignedTurns((phase * 0.71f * InvTau) + 0.25f) * 0.42f;
+                float radius = 4.75f + lane * 1.15f;
+                float3 force =
+                    cameraForward * (0.42f + lane * 0.08f) +
+                    cameraRight * (TriangleSignedTurns((phase * 1.37f * InvTau) + 0.25f) * 0.22f) +
+                    cameraUp * (TriangleSignedTurns(phase * 0.53f * InvTau) * 0.08f);
+                _mockWakeScratch[i] = new DynamicWakeDTO
+                {
+                    Position = new float3(cameraPosition.x, cameraPosition.y, cameraPosition.z) - cameraForward * (3.5f + lane * 2.0f) + cameraRight * lateral + cameraUp * vertical,
+                    Radius = radius,
+                    Force = force,
+                    Falloff = math.saturate(1.0f - i * 0.18f)
+                };
+            }
+        }
+
+        private bool TryCopyMockWakeScratchToVault()
+        {
+            if (!_mockWakeScratch.IsCreated)
+                return false;
+
+            IDataVault vault = _dataVault;
+            if (!TryAcquireOwnedVaultWriteBuffer(vault, in _dynamicWakeDtoHandle, BufferID.MarineSnowDynamicWakes, DynamicWakeDtoCapacity, out NativeArray<DynamicWakeDTO> wakes))
+                return false;
+
+            try
+            {
+                int copyCount = math.min(wakes.Length, _mockWakeScratch.Length);
+                CopyNativeArrayPrefix(_mockWakeScratch, wakes, copyCount);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _dynamicWakeDtoHandle, VaultOwnerSystem);
+            }
+        }
+
+        private bool TryCopyPropwashEventsToScratch()
+        {
+            if (!_propwashEventScratch.IsCreated ||
+                !TryReadReadyPropwashEvents(out NativeArray<PropwashEventDTO>.ReadOnly events))
+            {
+                return false;
+            }
+
+            int copyCount = math.min(events.Length, _propwashEventScratch.Length);
+            CopyNativeArrayPrefix(events, _propwashEventScratch, copyCount);
+            for (int i = copyCount; i < _propwashEventScratch.Length; i++)
+                _propwashEventScratch[i] = default;
+            return copyCount > 0;
+        }
+
+        private bool TryReadPropwashCursorSnapshot(out PropwashRingCursorDTO cursor)
+        {
+            cursor = default;
+            if (!TryReadReadyPropwashCursor(out NativeArray<PropwashRingCursorDTO>.ReadOnly cursorRing) ||
+                cursorRing.Length <= 0)
+            {
+                return false;
+            }
+
+            cursor = cursorRing[0];
+            return true;
+        }
+
+        private bool TryCopyPropwashScratchToVault()
+        {
+            if (!_propwashEventScratch.IsCreated)
+                return false;
+
+            IDataVault vault = _dataVault;
+            if (!TryAcquireOwnedVaultWriteBuffer(
+                    vault,
+                    in _propwashEventHandle,
+                    BufferID.PropwashGpuEventRing,
+                    PropwashEventRingCapacity,
+                    out NativeArray<PropwashEventDTO> events))
+            {
+                return false;
+            }
+
+            try
+            {
+                int copyCount = math.min(events.Length, _propwashEventScratch.Length);
+                CopyNativeArrayPrefix(_propwashEventScratch, events, copyCount);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _propwashEventHandle, VaultOwnerSystem);
+            }
+        }
+
+        private bool TryWritePropwashCursorToVault(in PropwashRingCursorDTO cursor)
+        {
+            IDataVault vault = _dataVault;
+            if (!TryAcquireOwnedVaultWriteBuffer(
+                    vault,
+                    in _propwashCursorHandle,
+                    BufferID.PropwashGpuRingCursor,
+                    1,
+                    out NativeArray<PropwashRingCursorDTO> cursorRing))
+            {
+                return false;
+            }
+
+            try
+            {
+                cursorRing[0] = cursor;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _propwashCursorHandle, VaultOwnerSystem);
+            }
+        }
+
+        private bool TryPublishPropwashScratch(in PropwashRingCursorDTO cursor, bool copyEvents)
+        {
+            if (copyEvents && !TryCopyPropwashScratchToVault())
+                return false;
+
+            // Cursor is published after event bytes so readers never observe a new count before payload visibility.
+            if (!TryWritePropwashCursorToVault(in cursor))
+                return false;
+
+            UploadPropwashEventGpuBuffer(_propwashEventScratch, cursor);
+            return true;
+        }
+
+        private void ResetPropwashDebugState()
+        {
+            _debugPropwashEventCount = 0;
+            _debugPropwashGpuEventCount = 0;
+            _debugPropwashMaxIntensity = 0f;
+            _debugPropwashStrongestLocalPosition = default;
+        }
+
+        private bool TryAppendVehicleWakePropwashEventToScratch(
+            float3 localPosition,
+            float3 thrustVector,
+            float intensity,
+            float radius,
+            int frame,
+            float globalQualityWeight,
+            uint profileHash,
+            ref PropwashRingCursorDTO cursor)
+        {
+            int capacity = _propwashEventScratch.IsCreated ? _propwashEventScratch.Length : 0;
+            if (capacity <= 0)
+                return false;
+
+            float safeIntensity = math.max(0f, intensity);
+            float safeRadius = math.clamp(radius, 0.25f, 32f);
+            if (safeIntensity <= 0.0001f ||
+                !math.all(math.isfinite(localPosition)) ||
+                !math.all(math.isfinite(thrustVector)) ||
+                !math.isfinite(safeRadius))
+            {
+                return false;
+            }
+
+            int previousCount = math.clamp(cursor.EventCount, 0, capacity);
+            int write = WrapPropwashUploadIndex(cursor.WriteCursor, capacity);
+            _propwashEventScratch[write] = new PropwashEventDTO
+            {
+                LocalPosition = localPosition,
+                ThrustVector = thrustVector,
+                Intensity = safeIntensity,
+                Radius = safeRadius
+            };
+
+            int nextCount = math.min(capacity, previousCount + 1);
+            cursor.WriteCursor = WrapPropwashUploadIndex(write + 1, capacity);
+            cursor.EventCount = nextCount;
+            if (previousCount >= capacity && cursor.DroppedCount < int.MaxValue)
+                cursor.DroppedCount++;
+            cursor.LastFrame = frame;
+            cursor.GlobalQualityWeight = math.saturate(globalQualityWeight);
+            cursor.StateHash = PropwashGpuContracts.HashState(frame, nextCount, cursor.GlobalQualityWeight, profileHash);
+            cursor.Flags = nextCount > 0 ? (cursor.Flags | PropwashGpuContracts.VehicleWakeSourceFlag) : 0u;
+            return true;
+        }
+
+        private bool TryBuildMockPropwashScratch(
+            int requestedCount,
+            float timeSeconds,
+            float globalQualityWeight,
+            int frame,
+            out PropwashRingCursorDTO cursor)
+        {
+            cursor = default;
+            if (!_propwashEventScratch.IsCreated ||
+                !TryReadPropwashCursorSnapshot(out cursor))
+            {
+                return false;
+            }
+
+            int capacity = _propwashEventScratch.Length;
+            int eventCount = math.clamp(requestedCount, 0, math.min(capacity, PropwashGpuContracts.MockEventCount));
+            int baseCursor = WrapPropwashUploadIndex(cursor.WriteCursor, capacity);
+            float quality = math.saturate(globalQualityWeight);
+            float radiusScale = math.lerp(0.62f, 1.35f, quality);
+            float forceScale = math.lerp(0.45f, 1.85f, quality);
+
+            for (int i = 0; i < eventCount; i++)
+            {
+                float lane = i + 1f;
+                float lane01 = lane * math.rcp(math.max(1f, eventCount));
+                float phase = timeSeconds * (0.23f + lane01 * 0.41f) + lane * 0.013671875f;
+                float side = TriangleSignedTurns(phase) * (0.35f + 7.5f * lane01);
+                float lift = TriangleSignedTurns(phase * 0.37f + 0.25f) * (0.18f + 0.75f * lane01);
+                float range = 1.5f + lane01 * 18f;
+                float swirl = TriangleSignedTurns(phase * 0.71f + 0.5f);
+                float safeIntensity = math.saturate(0.18f + lane01 * 0.82f) * forceScale;
+                float safeRadius = (1.15f + 5.25f * lane01) * radiusScale;
+                int slot = WrapPropwashUploadIndex(baseCursor + i, capacity);
+
+                _propwashEventScratch[slot] = new PropwashEventDTO
+                {
+                    LocalPosition = new float3(side, lift - 0.35f, -range),
+                    ThrustVector = new float3(swirl * 0.28f, math.max(0.02f, safeIntensity * 0.11f), -safeIntensity),
+                    Intensity = safeIntensity,
+                    Radius = safeRadius
+                };
+            }
+
+            cursor.WriteCursor = WrapPropwashUploadIndex(baseCursor + eventCount, capacity);
+            cursor.EventCount = eventCount;
+            cursor.DroppedCount = math.max(0, requestedCount - eventCount);
+            cursor.LastFrame = frame;
+            cursor.GlobalQualityWeight = quality;
+            cursor.StateHash = PropwashGpuContracts.HashState(frame, eventCount, quality, 0u);
+            cursor.Flags = eventCount > 0 ? PropwashGpuContracts.MockSourceFlag : 0u;
+            return true;
+        }
+
+        private bool TryAppendWakeSourcePropwashToScratch(
+            NativeArray<WakeSource>.ReadOnly wakeSources,
+            double3 cameraAup,
+            int sourceScanLimit,
+            int writeLimit,
+            int frame,
+            float globalQualityWeight,
+            uint profileHash,
+            ref PropwashRingCursorDTO cursor)
+        {
+            int capacity = _propwashEventScratch.IsCreated ? _propwashEventScratch.Length : 0;
+            if (capacity <= 0 || !wakeSources.IsCreated || wakeSources.Length <= 0)
+                return false;
+
+            int scanLimit = math.clamp(sourceScanLimit, 0, wakeSources.Length);
+            int safeWriteLimit = math.clamp(writeLimit, 0, math.min(capacity, scanLimit));
+            if (scanLimit <= 0 || safeWriteLimit <= 0)
+                return false;
+
+            int previousCount = math.clamp(cursor.EventCount, 0, capacity);
+            int writeCursor = WrapPropwashUploadIndex(cursor.WriteCursor, capacity);
+            int dropped = math.max(0, cursor.DroppedCount);
+            int written = 0;
+            float quality = math.saturate(globalQualityWeight);
+            float forceScale = math.lerp(0.55f, 1.45f, quality);
+            float radiusScale = math.lerp(0.75f, 1.65f, quality);
+
+            for (int i = 0; i < scanLimit && written < safeWriteLimit; i++)
+            {
+                WakeSource source = wakeSources[i];
+                byte sourceKind = source.SourceKind != 0
+                    ? source.SourceKind
+                    : (byte)(source.SourceFlags & 0xFFu);
+                if (source.Active == 0 ||
+                    (sourceKind != PropwashGpuContracts.WakeSourceVehicle &&
+                     sourceKind != PropwashGpuContracts.WakeSourceApexPredator))
+                {
+                    continue;
+                }
+
+                float3 velocity = source.VelocityWS;
+                float sourceIntensity = math.max(0f, source.Intensity);
+                float sourceRadius = math.max(0.05f, source.Radius);
+                double3 localDouble = source.PositionAup.ToAbsoluteDouble3() - cameraAup;
+                float3 localPosition = new float3((float)localDouble.x, (float)localDouble.y, (float)localDouble.z);
+                float speedSq = math.lengthsq(velocity);
+                if (sourceIntensity <= 0.0001f ||
+                    sourceRadius <= 0.05f ||
+                    speedSq <= 0.0001f ||
+                    !math.all(math.isfinite(localPosition)) ||
+                    !math.all(math.isfinite(velocity)))
+                {
+                    continue;
+                }
+
+                float invSpeed = math.rsqrt(math.max(speedSq, 0.0001f));
+                float3 direction = velocity * invSpeed;
+                float faunaWeight = sourceKind == PropwashGpuContracts.WakeSourceApexPredator ? 0.72f : 1f;
+                int slot = WrapPropwashUploadIndex(writeCursor + written, capacity);
+                _propwashEventScratch[slot] = new PropwashEventDTO
+                {
+                    LocalPosition = localPosition,
+                    ThrustVector = direction * (sourceIntensity * forceScale * faunaWeight),
+                    Intensity = math.saturate(sourceIntensity * faunaWeight),
+                    Radius = math.clamp(sourceRadius * radiusScale, 0.25f, 32f)
+                };
+
+                if (previousCount >= capacity)
+                {
+                    if (dropped < int.MaxValue)
+                        dropped++;
+                }
+                else
+                {
+                    previousCount = math.min(capacity, previousCount + 1);
+                }
+
+                written++;
+            }
+
+            if (written <= 0)
+                return false;
+
+            cursor.WriteCursor = WrapPropwashUploadIndex(writeCursor + written, capacity);
+            cursor.EventCount = previousCount;
+            cursor.DroppedCount = dropped;
+            cursor.LastFrame = frame;
+            cursor.GlobalQualityWeight = quality;
+            cursor.StateHash = PropwashGpuContracts.HashState(frame, previousCount, quality, profileHash);
+            cursor.Flags = cursor.EventCount > 0
+                ? (cursor.Flags | PropwashGpuContracts.WakeSourceBridgeFlag)
+                : cursor.Flags;
+            return true;
+        }
+
         private void RefreshMockWakeSignals(float dt)
         {
             _mockWakeUploadTimer = math.max(0f, _mockWakeUploadTimer - dt);
@@ -2469,66 +2941,45 @@ namespace Hecton8.Environment
                 return;
             }
 
-            int activeCount = enableMockWakeSignals && _underwaterActive && targetCamera != null ? MockWakeCapacity : 0;
-            if (TryResolveMockFlowField(out NativeArray<MockFlowField> mockFlowField))
+            bool mockWakeActive = AreMockWakeSignalsAllowed() && _underwaterActive && targetCamera != null;
+            if (!mockWakeActive)
             {
-                BuildMockFlowFieldJob mockFlowJob = new BuildMockFlowFieldJob
-                {
-                    FlowField = mockFlowField,
-                    CameraPositionWS = targetCamera != null ? targetCamera.position : Vector3.zero,
-                    TimeSeconds = _simulationTime,
-                    CurlStrength = ResolveFlowParams().z
-                };
-                // Dear Lie flow proxy: one DTO row feeds shader globals immediately.
-                mockFlowJob.Execute();
-                _cachedMockFlowField = mockFlowField[0];
+                ClearInactiveVisualWakeState();
+                return;
             }
 
-            int activePropwashCount = enableMockWakeSignals && _underwaterActive && targetCamera != null ? PropwashMockEventCount : 0;
-            if (TryAcquireReadyPropwashEvents(out NativeArray<PropwashEventDTO> propwashEvents) &&
-                TryAcquireReadyPropwashCursor(out NativeArray<PropwashRingCursorDTO> propwashCursor))
+            _mockWakeBuffersCleared = false;
+            int activeCount = MockWakeCapacity;
+            MockFlowField flowField = BuildMockFlowFieldSnapshot(
+                targetCamera != null ? targetCamera.position : Vector3.zero,
+                _simulationTime,
+                ResolveFlowParams().z);
+            if (TryWriteMockFlowFieldToVault(in flowField))
+                _cachedMockFlowField = flowField;
+
+            float propwashQuality = ResolvePropwashQualityWeight();
+            int activePropwashCount = mockWakeActive ? ResolveMockPropwashEventCount(propwashQuality) : 0;
+            if (TryBuildMockPropwashScratch(
+                    activePropwashCount,
+                    _simulationTime,
+                    propwashQuality,
+                    unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
+                    out PropwashRingCursorDTO propwashCursor))
             {
-                PropwashGpuTuningDTO tuning = CapturePropwashTuningSnapshot();
-                float quality = tuning.GlobalQualityWeightOverride >= 0f
-                    ? tuning.GlobalQualityWeightOverride
-                    : HomeostasisBrain.GlobalQualityWeight;
-                GenerateMockPropwashEventsJob propwashJob = new GenerateMockPropwashEventsJob
-                {
-                    Events = propwashEvents,
-                    Cursor = propwashCursor,
-                    TimeSeconds = _simulationTime,
-                    GlobalQualityWeight = quality,
-                    RequestedCount = activePropwashCount,
-                    Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId)
-                };
-                // Emergency mock is a tiny immediate ring write; scheduling would require a same-frame fence.
-                propwashJob.Execute();
-                UploadPropwashEventGpuBuffer(propwashEvents, propwashCursor[0]);
+                if (!TryPublishPropwashScratch(in propwashCursor, copyEvents: activePropwashCount > 0))
+                    ResetPropwashDebugState();
             }
             else
             {
                 activePropwashCount = 0;
-                _debugPropwashEventCount = 0;
-                _debugPropwashGpuEventCount = 0;
-                _debugPropwashMaxIntensity = 0f;
-                _debugPropwashStrongestLocalPosition = default;
+                ResetPropwashDebugState();
             }
 
-            if (TryResolveDynamicWakeDtos(out NativeArray<DynamicWakeDTO> wakes))
+            if (_mockWakeScratch.IsCreated)
             {
-                BuildMockWakeSignalJob mockWakeJob = new BuildMockWakeSignalJob
-                {
-                    Wakes = wakes,
-                    CameraPositionWS = targetCamera != null ? targetCamera.position : Vector3.zero,
-                    CameraRightWS = targetCamera != null ? targetCamera.right : Vector3.right,
-                    CameraUpWS = targetCamera != null ? targetCamera.up : Vector3.up,
-                    TimeSeconds = _simulationTime,
-                    ActiveCount = activeCount
-                };
-                // Mock wake field is a visual fake uploaded immediately; keep it off the Job System.
-                mockWakeJob.Execute();
-
-                UploadMockWakeGpuBuffers(wakes, activeCount);
+                BuildMockWakeScratch(activeCount);
+                TryCopyMockWakeScratchToVault();
+                UploadMockWakeGpuBuffers(_mockWakeScratch, activeCount);
             }
             else
             {
@@ -2539,12 +2990,32 @@ namespace Hecton8.Environment
             _debugMockWakeCount = activeCount;
         }
 
+        private void ClearMockOnlyPropwashCursor()
+        {
+            if (!TryReadPropwashCursorSnapshot(out PropwashRingCursorDTO cursor) ||
+                (cursor.Flags & PropwashGpuContracts.MockSourceFlag) == 0u ||
+                (cursor.Flags & ~PropwashGpuContracts.MockSourceFlag) != 0u)
+            {
+                return;
+            }
+
+            cursor.WriteCursor = 0;
+            cursor.EventCount = 0;
+            cursor.DroppedCount = 0;
+            cursor.LastFrame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId);
+            cursor.StateHash = PropwashGpuContracts.HashState(cursor.LastFrame, 0, 0f, 0u);
+            cursor.GlobalQualityWeight = 0f;
+            cursor.Flags = 0u;
+            TryPublishPropwashScratch(in cursor, copyEvents: false);
+        }
+
         private void HarvestProceduralWakeSourcesIntoPropwash()
         {
             if (targetCamera == null ||
-                !TryAcquireReadyProceduralWakeSources(out NativeArray<WakeSource> wakeSources) ||
-                !TryAcquireReadyPropwashEvents(out NativeArray<PropwashEventDTO> propwashEvents) ||
-                !TryAcquireReadyPropwashCursor(out NativeArray<PropwashRingCursorDTO> propwashCursor) ||
+                !TryReadReadyProceduralWakeSources(out NativeArray<WakeSource>.ReadOnly wakeSources) ||
+                !_propwashEventScratch.IsCreated ||
+                !TryReadPropwashCursorSnapshot(out PropwashRingCursorDTO propwashCursor) ||
+                !TryCopyPropwashEventsToScratch() ||
                 !TryResolveRuntimeAup(targetCamera.position, out AbsoluteUniversePosition cameraAup))
             {
                 return;
@@ -2562,28 +3033,22 @@ namespace Hecton8.Environment
             if (writeLimit <= 0)
                 return;
 
-            PropwashRingCursorDTO before = propwashCursor[0];
-            HarvestWakeSourcePropwashJob job = new HarvestWakeSourcePropwashJob
+            PropwashRingCursorDTO before = propwashCursor;
+            if (TryAppendWakeSourcePropwashToScratch(
+                    wakeSources,
+                    cameraAup.ToAbsoluteDouble3(),
+                    scanLimit,
+                    writeLimit,
+                    unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
+                    quality,
+                    PropwashGpuContracts.DefaultWakeProfileHash,
+                    ref propwashCursor) &&
+                (propwashCursor.WriteCursor != before.WriteCursor ||
+                 propwashCursor.EventCount != before.EventCount ||
+                 (propwashCursor.LastFrame == SystemDispatcher.CurrentFrameIndex &&
+                  (propwashCursor.Flags & PropwashGpuContracts.WakeSourceBridgeFlag) != 0u)))
             {
-                WakeSources = wakeSources,
-                Events = propwashEvents,
-                Cursor = propwashCursor,
-                CameraAup = cameraAup.ToAbsoluteDouble3(),
-                SourceScanLimit = scanLimit,
-                WriteLimit = writeLimit,
-                Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
-                GlobalQualityWeight = quality,
-                ProfileHash = PropwashGpuContracts.DefaultWakeProfileHash
-            };
-            // Consumes the existing VFX WakeSources route; no Physics/KCC sibling dependency is introduced.
-            job.Execute();
-
-            PropwashRingCursorDTO after = propwashCursor[0];
-            if (after.WriteCursor != before.WriteCursor ||
-                after.EventCount != before.EventCount ||
-                (after.LastFrame == SystemDispatcher.CurrentFrameIndex && (after.Flags & 4u) != 0u))
-            {
-                UploadPropwashEventGpuBuffer(propwashEvents, after);
+                TryPublishPropwashScratch(in propwashCursor, copyEvents: true);
             }
         }
 
@@ -2604,7 +3069,7 @@ namespace Hecton8.Environment
 
         private void RefreshMockAcousticSignal(float dt)
         {
-            if (!enableMockAcousticSignals || !_underwaterActive || targetCamera == null)
+            if (!AreMockAcousticSignalsAllowed() || !_underwaterActive || targetCamera == null)
             {
                 _mockAcousticPulseTimer = 0f;
                 _mockAcousticSignal = default;
@@ -2635,6 +3100,36 @@ namespace Hecton8.Environment
                 Duration = MockAcousticPulseDuration,
                 WaveSpeed = MockAcousticPulseSpeed
             };
+        }
+
+        private bool AreMockWakeSignalsAllowed()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            return enableMockWakeSignals;
+#else
+            return false;
+#endif
+        }
+
+        private bool AreMockAcousticSignalsAllowed()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            return enableMockAcousticSignals;
+#else
+            return false;
+#endif
+        }
+
+        private static int ResolveMockPropwashEventCount(float globalQualityWeight)
+        {
+            int safeMax = math.min(PropwashMockEventCount, PropwashEventRingCapacity);
+            if (safeMax <= 0)
+                return 0;
+
+            float q = math.saturate(globalQualityWeight);
+            float curved = q * q * (3f - 2f * q);
+            int resolved = (int)math.round(math.lerp(PropwashEventMinSampleCapacity, safeMax, curved));
+            return math.clamp(resolved, 0, safeMax);
         }
 
         private void UpdateBiolumeSurgeState(float dt)
@@ -2778,9 +3273,9 @@ namespace Hecton8.Environment
                 return;
             }
 
-            // COLD ALLOC: GraphicsBuffer[clampedParticleCount] - 100000 * 32B persistent 16-byte aligned silt state ping-pong buffer A - owner: HectonMarineSnowRenderer
+            // COLD ALLOC: GraphicsBuffer[clampedParticleCount] - catalog-capped 32B persistent 16-byte aligned silt state ping-pong buffer A - owner: HectonMarineSnowRenderer
             _particleBufferA = GraphicsBufferUploadUtility.CreateStructuredBuffer<ParticleDataDTO>(clampedParticleCount);
-            // COLD ALLOC: GraphicsBuffer[clampedParticleCount] - 100000 * 32B persistent 16-byte aligned silt state ping-pong buffer B - owner: HectonMarineSnowRenderer
+            // COLD ALLOC: GraphicsBuffer[clampedParticleCount] - catalog-capped 32B persistent 16-byte aligned silt state ping-pong buffer B - owner: HectonMarineSnowRenderer
             _particleBufferB = GraphicsBufferUploadUtility.CreateStructuredBuffer<ParticleDataDTO>(clampedParticleCount);
             _particleMetaBufferA = GraphicsBufferUploadUtility.CreateStructuredBuffer<ParticleRenderMetaDTO>(clampedParticleCount); // COLD ALLOC: GraphicsBuffer[clampedParticleCount] - 32B render metadata ping-pong A - owner: HectonMarineSnowRenderer
             _particleMetaBufferB = GraphicsBufferUploadUtility.CreateStructuredBuffer<ParticleRenderMetaDTO>(clampedParticleCount); // COLD ALLOC: GraphicsBuffer[clampedParticleCount] - 32B render metadata ping-pong B - owner: HectonMarineSnowRenderer
@@ -4684,8 +5179,8 @@ namespace Hecton8.Environment
         private void OnDrawGizmosSelected()
         {
             if (targetCamera == null ||
-                !TryAcquireReadyPropwashEvents(out NativeArray<PropwashEventDTO> events) ||
-                !TryAcquireReadyPropwashCursor(out NativeArray<PropwashRingCursorDTO> cursorRing))
+                !TryReadReadyPropwashEvents(out NativeArray<PropwashEventDTO>.ReadOnly events) ||
+                !TryReadReadyPropwashCursor(out NativeArray<PropwashRingCursorDTO>.ReadOnly cursorRing))
             {
                 return;
             }
@@ -4939,9 +5434,6 @@ namespace Hecton8.Environment
 
         private void RecordTelemetry()
         {
-            if (!TryResolveTelemetryRing(out var telemetryRing))
-                return;
-
             Vector3 cameraPosition = targetCamera != null ? targetCamera.position : Vector3.zero;
             float systemStress01 = ResolveSystemStress01();
             float maxSpeed = math.max(0.1f, maxSiltSpeed);
@@ -4969,7 +5461,7 @@ namespace Hecton8.Environment
             if (mockGpuMicroseconds > 1500)
                 flags |= 2u;
 
-            telemetryRing[_telemetryWriteIndex] = new MarineSnowTelemetryEntry
+            MarineSnowTelemetryEntry telemetryEntry = new MarineSnowTelemetryEntry
             {
                 Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
                 DispatchedParticleCount = math.max(0, _activeParticleCount),
@@ -4987,10 +5479,23 @@ namespace Hecton8.Environment
                 CommandSequence = _lastVehicleCommandSequence
             };
 
-            _telemetryWriteIndex++;
-            if (_telemetryWriteIndex >= TelemetryCapacity)
-                _telemetryWriteIndex = 0;
-            _telemetryWrittenCount = math.min(_telemetryWrittenCount + 1, TelemetryCapacity);
+            IDataVault vault = _dataVault;
+            if (!TryAcquireOwnedVaultWriteBuffer(vault, in _telemetryRingHandle, BufferID.MarineSnowTelemetryRing, TelemetryCapacity, out NativeArray<MarineSnowTelemetryEntry> telemetryRing))
+                return;
+
+            try
+            {
+                telemetryRing[_telemetryWriteIndex] = telemetryEntry;
+                _telemetryWriteIndex++;
+                if (_telemetryWriteIndex >= TelemetryCapacity)
+                    _telemetryWriteIndex = 0;
+                _telemetryWrittenCount = math.min(_telemetryWrittenCount + 1, TelemetryCapacity);
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _telemetryRingHandle, VaultOwnerSystem);
+            }
+
             RecordPropwashTelemetry(mockGpuMicroseconds, flags);
 
             int frame = SystemDispatcher.CurrentFrameIndex;
@@ -5009,9 +5514,6 @@ namespace Hecton8.Environment
 
         private void RecordPropwashTelemetry(int estimatedGpuMicroseconds, uint flags)
         {
-            if (!TryAcquireReadyPropwashTelemetry(out NativeArray<PropwashTelemetryEntry> telemetryRing))
-                return;
-
             PropwashGpuTuningDTO tuning = CapturePropwashTuningSnapshot();
             float quality = tuning.GlobalQualityWeightOverride >= 0f
                 ? tuning.GlobalQualityWeightOverride
@@ -5019,7 +5521,7 @@ namespace Hecton8.Environment
             int eventCount = math.max(0, _debugPropwashEventCount);
             int overflowCount = 0;
             int cursorValue = eventCount;
-            if (TryAcquireReadyPropwashCursor(out NativeArray<PropwashRingCursorDTO> cursorRing) &&
+            if (TryReadReadyPropwashCursor(out NativeArray<PropwashRingCursorDTO>.ReadOnly cursorRing) &&
                 cursorRing.Length > 0)
             {
                 PropwashRingCursorDTO cursor = cursorRing[0];
@@ -5029,7 +5531,7 @@ namespace Hecton8.Environment
 
             uint stateHash = PropwashGpuContracts.HashState(unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId), eventCount, quality, tuning.Version);
 
-            telemetryRing[_propwashTelemetryWriteIndex] = new PropwashTelemetryEntry
+            PropwashTelemetryEntry telemetryEntry = new PropwashTelemetryEntry
             {
                 Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
                 EventCount = eventCount,
@@ -5046,24 +5548,37 @@ namespace Hecton8.Environment
                 ProfileHash = tuning.Version
             };
 
-            _propwashTelemetryWriteIndex++;
-            if (_propwashTelemetryWriteIndex >= PropwashGpuContracts.TelemetryCapacity)
-                _propwashTelemetryWriteIndex = 0;
-            _propwashTelemetryWrittenCount = math.min(_propwashTelemetryWrittenCount + 1, PropwashGpuContracts.TelemetryCapacity);
+            IDataVault vault = _dataVault;
+            if (!TryAcquireOwnedVaultWriteBuffer(vault, in _propwashTelemetryHandle, BufferID.PropwashGpuTelemetryRing, PropwashGpuContracts.TelemetryCapacity, out NativeArray<PropwashTelemetryEntry> telemetryRing))
+                return;
+
+            try
+            {
+                telemetryRing[_propwashTelemetryWriteIndex] = telemetryEntry;
+                _propwashTelemetryWriteIndex++;
+                if (_propwashTelemetryWriteIndex >= PropwashGpuContracts.TelemetryCapacity)
+                    _propwashTelemetryWriteIndex = 0;
+                _propwashTelemetryWrittenCount = math.min(_propwashTelemetryWrittenCount + 1, PropwashGpuContracts.TelemetryCapacity);
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _propwashTelemetryHandle, VaultOwnerSystem);
+            }
+
             if (overflowCount > 0 || estimatedGpuMicroseconds > 1500)
                 DumpBlackBoxOnce();
         }
 
         private void DumpBlackBoxOnce()
         {
-            if (_blackBoxDumped || !TryResolveTelemetryRing(out var telemetryRing))
+            if (_blackBoxDumped || !TryReadTelemetryRing(out var telemetryRing))
                 return;
 
             string path = ResolveBlackBoxDumpPath();
             bool wrotePrimary = TryWriteBlackBoxDump(path, telemetryRing);
             bool wroteLegacy = TryWriteBlackBoxDump(ResolveLegacyBlackBoxDumpPath(), telemetryRing);
             _blackBoxDumped = wrotePrimary || wroteLegacy;
-            if (TryAcquireReadyPropwashTelemetry(out NativeArray<PropwashTelemetryEntry> propwashTelemetry))
+            if (TryReadReadyPropwashTelemetry(out NativeArray<PropwashTelemetryEntry>.ReadOnly propwashTelemetry))
             {
                 string root = Application.isPlaying || !string.IsNullOrEmpty(Application.dataPath)
                     ? Path.GetFullPath(Path.Combine(Application.dataPath, ".."))
@@ -5074,7 +5589,7 @@ namespace Hecton8.Environment
             GlobalTelemetryBus.PublishPerformanceWarning(0x44554D50u, MarineSnowTelemetryContextHash, _telemetryWrittenCount);
         }
 
-        private unsafe bool TryWriteBlackBoxDump(string path, NativeArray<MarineSnowTelemetryEntry> telemetryRing)
+        private unsafe bool TryWriteBlackBoxDump(string path, NativeArray<MarineSnowTelemetryEntry>.ReadOnly telemetryRing)
         {
             NativeArray<byte> payload = default;
             try
@@ -5183,8 +5698,16 @@ namespace Hecton8.Environment
         private int ComputeConfiguredAllocationCapacity()
         {
             VfxConfigurationDTO tuning = CaptureSiltTuningSnapshot();
-            int tuningCap = tuning.Version != 0u && tuning.ParticleCount > 0 ? tuning.ParticleCount : MaxMarineSnowParticleCapacity;
-            return math.clamp(tuningCap, 64, MaxMarineSnowParticleCapacity);
+            int qualityCap = math.clamp(_resolvedParticleCapacity, 64, MaxMarineSnowParticleCapacity);
+            if (tuning.Version == 0u ||
+                tuning.ParticleCount <= 0 ||
+                tuning.CsvProfileHash == 0u)
+            {
+                return qualityCap;
+            }
+
+            int authoredCap = math.clamp(tuning.ParticleCount, 64, MaxMarineSnowParticleCapacity);
+            return math.min(authoredCap, qualityCap);
         }
 
         private void RefreshScalabilityProfile()

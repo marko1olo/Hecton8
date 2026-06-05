@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
 # Transit Duration Bands
 
-Transit Duration Bands locks a usable timing grammar for route cards and articles.
+Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock.
 
 ## Scanner
 
@@ -32,6 +32,6 @@ Cargo can arrive before mercy. That is the doctrine.
 
 ## Field Note
 
-Use bands and custody terms until exact systems tuning exists.
+Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.
 
 <!-- External Site; generated from P164_TRANSIT_DURATION_BANDS/zh_CN. -->

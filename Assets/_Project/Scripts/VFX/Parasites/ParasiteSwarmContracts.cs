@@ -217,15 +217,6 @@ namespace Hecton8.VFX.Parasites
         }
 
 #if UNITY_EDITOR
-        private static readonly ulong ProfileImportMutationGuardMask =
-            MutationGuardBit(BufferID.ShinobuParasiteProfiles) |
-            MutationGuardBit(BufferID.ShinobuParasiteProfileCount);
-
-        private static ulong MutationGuardBit(BufferID bufferId)
-        {
-            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
-        }
-
         public static int LoadProfilesFromCsv(IDataVault vault, ReadOnlySpan<byte> bytes)
         {
             if (vault == null || bytes.Length <= 0)
@@ -235,17 +226,7 @@ namespace Hecton8.VFX.Parasites
             int stagedCount = ParseProfilesFromCsv(bytes, staged);
 
             EnsureVaultBuffers(vault);
-            if (!vault.TryAcquireMutationGuard(ProfileImportMutationGuardMask))
-                return 0;
-
-            try
-            {
-                return CommitProfilesWithMutationGuardHeld(vault, staged.Slice(0, stagedCount));
-            }
-            finally
-            {
-                vault.ReleaseMutationGuard(ProfileImportMutationGuardMask);
-            }
+            return CommitProfilesOneLockAtATime(vault, staged.Slice(0, stagedCount));
         }
 
         private static int ParseProfilesFromCsv(ReadOnlySpan<byte> bytes, Span<ParasiteBehaviorProfileDTO> staged)
@@ -288,7 +269,7 @@ namespace Hecton8.VFX.Parasites
             return written;
         }
 
-        private static int CommitProfilesWithMutationGuardHeld(IDataVault vault, ReadOnlySpan<ParasiteBehaviorProfileDTO> staged)
+        private static int CommitProfilesOneLockAtATime(IDataVault vault, ReadOnlySpan<ParasiteBehaviorProfileDTO> staged)
         {
             if (vault == null)
                 return 0;
@@ -299,22 +280,61 @@ namespace Hecton8.VFX.Parasites
                 return 0;
             }
 
-            if (!vault.TryResolveHandle(in profileHandle, out NativeArray<ParasiteBehaviorProfileDTO> profiles) ||
-                !vault.TryResolveHandle(in countHandle, out NativeArray<int> profileCount) ||
-                !profiles.IsCreated ||
-                !profileCount.IsCreated)
+            if (!vault.TryAcquireWriteLock(in countHandle, SystemID.Vfx, out NativeArray<int> profileCount))
             {
                 return 0;
             }
 
-            int written = math.min(staged.Length, math.min(ProfileCapacity, profiles.Length));
-            for (int i = 0; i < written; i++)
-                profiles[i] = staged[i];
+            try
+            {
+                if (!profileCount.IsCreated || profileCount.Length <= 0)
+                    return 0;
 
-            if (profileCount.Length > 0)
+                profileCount[0] = 0;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in countHandle, SystemID.Vfx);
+            }
+
+            if (!vault.TryAcquireWriteLock(in profileHandle, SystemID.Vfx, out NativeArray<ParasiteBehaviorProfileDTO> profiles))
+                return 0;
+
+            int written;
+            try
+            {
+                if (!profiles.IsCreated || profiles.Length <= 0)
+                    return 0;
+
+                written = math.min(staged.Length, math.min(ProfileCapacity, profiles.Length));
+                for (int i = 0; i < written; i++)
+                    profiles[i] = staged[i];
+                for (int i = written; i < profiles.Length; i++)
+                    profiles[i] = default;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in profileHandle, SystemID.Vfx);
+            }
+
+            if (written <= 0 ||
+                !vault.TryAcquireWriteLock(in countHandle, SystemID.Vfx, out profileCount))
+            {
+                return 0;
+            }
+
+            try
+            {
+                if (!profileCount.IsCreated || profileCount.Length <= 0)
+                    return 0;
+
                 profileCount[0] = written;
-
-            return written;
+                return written;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in countHandle, SystemID.Vfx);
+            }
         }
 
         public static bool TryWriteTelemetryDump(string projectRoot, SwarmTelemetryEntry[] ring, int count, int cursor)

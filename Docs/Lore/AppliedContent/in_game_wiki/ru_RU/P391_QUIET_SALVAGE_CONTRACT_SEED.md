@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Replay seed: тихий salvage-контракт
+# Quiet Salvage Contract Seed
 
-Quiet salvage - replay seed для медленного discovery. Он все равно должен нести моральную цену через custody clauses.
+Quiet salvage is a replay seed for players who want slower discovery. It should still carry moral cost through custody clauses.
 
 ## Scanner
 
-Contract seed: quiet salvage. Меньше ранних hazards, чище payout, грязнее custody.
+Contract seed: quiet salvage. Fewer early hazards, cleaner payout, dirtier custody.
 
 ## Terminal
 
-SEED QUIET: reduced storm risk, reduced early hostility, increased claim-custody restriction и evidence ambiguity.
+SEED QUIET: reduced storm risk, reduced early hostility, increased claim-custody restriction and evidence ambiguity.
 
 ## Audio
 
-Низкие storm windows никогда не бесплатны. Их покупают где-то еще.
+Low storm windows are never free. They are bought somewhere else.
 
 ## Field Note
 
-Для contract selection и dossier rumor card.
+Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise.
 
 <!-- In-Game Wiki; generated from P391_QUIET_SALVAGE_CONTRACT_SEED/ru_RU. -->

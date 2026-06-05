@@ -1,0 +1,44 @@
+ID: 3006_AEGIR_SKY_ASSET_ROUTE_AUDIT
+Role: Aegir / Sky / Celestial Asset Route Auditor
+
+Objective:
+Audit the current Aegir/sky/celestial visual route and identify the safest path to replace muddy impostor output with authored or controlled generated texture quality. No Unity, no build, no Assets edits.
+
+Authority docs:
+- `AGENTS.md`
+- `TASTE.md`
+- `VISION_LOCKS.md`
+- `celestial.md`
+- `atmosphere.md`
+- `rendering.md`
+- `shaders.md`
+- `quality.md`
+
+Evidence basis:
+- `Docs/Reports/Batch25/2503_UNDERWATER_VISUALS_OWNER_PHASE_AUDIT.md`
+- `Docs/Reports/Batch27/2705_AEGIR_SKY_OWNER_VISUAL_POLISH_ROUTE_AUDIT.md`
+- `Docs/Reports/Batch29/2901_ROUTE_AWARE_SUN_WARNING_PATCH_PLAN.md`
+- `Docs/Screenshots/MCP/h8_1912_surface_edit_main.png`
+- `Docs/Screenshots/MCP/h8_1908_surface_runtime_ui_on.png`
+- `Docs/Screenshots/1428_sky_foam_caustics_pass_game.png`
+
+Owned scope:
+- Read-only: celestial reports, material/texture candidates by search.
+- Write: `Docs/Reports/Batch30/3006_AEGIR_SKY_ASSET_ROUTE_AUDIT.md`.
+
+Tasks:
+1. Read authority docs.
+2. Inspect the listed reports.
+3. Search for Aegir/gas giant/sky/cloud texture and material candidates.
+4. Identify current owner route risks: dirty impostor material, sun visual route, inactive sun disc candidate, skybox material state.
+5. State why raw-enabling old sun disc is not automatically correct.
+6. Propose an owner-correct visual polish route.
+7. Include compact/middle/high/ultra consequences with continuous quality scaling.
+8. Do not edit `Assets`.
+9. Create report.
+
+Rejection gates:
+- No muddy sine stripes.
+- No Aegir acceptance without texture/atmosphere proof.
+- No celestial runtime claim without Unity evidence.
+

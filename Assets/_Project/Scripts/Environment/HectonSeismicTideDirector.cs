@@ -2960,7 +2960,18 @@ namespace Hecton8.Environment
             if (!_celestialMechanicsJobScheduled)
                 return false;
 
-            if (!DispatcherJobFence.TryComplete(ref _celestialMechanicsJob, forceComplete: true))
+            bool completed;
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                completed = DispatcherJobFence.TryComplete(ref _celestialMechanicsJob, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
+
+            if (!completed)
                 return false;
 
             return CommitCompletedCelestialMechanicsJob(out state, out environmentState, out flowModifier);

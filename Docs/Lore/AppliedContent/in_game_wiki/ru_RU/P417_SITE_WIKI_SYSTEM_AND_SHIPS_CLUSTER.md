@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Маршрут Aegir и корабли
+# Aegir Route and Ships
 
-Hard-sci-fi маршрут: человеческие домены, no-FTL перелеты, система лун Aegir, пределы Black Keel и поврежденный drop interface.
+Hard-sci-fi route hub: human domains, no-FTL travel, the Aegir moon system, Black Keel carrier limits and the damaged drop interface.
 
 ## Scanner
 
-Публикационный хаб: без FTL, тайминг маршрута Aegir, пределы carrier и причина, почему помощь не прилетает по требованию.
+Publication hub: no FTL, Aegir route timing, carrier limits and why rescue cannot arrive on demand.
 
 ## Terminal
 
-SITE NAV: probes, beam/pellet lanes, Seed Ship braking, Black Keel custody, transfer orbit и отказ bathydrop-интерфейса.
+SITE NAV: probes, beam/pellet lanes, Seed Ship braking, Black Keel custody, transfer orbit and bathydrop interface failure.
 
 ## Audio
 
-Расстояние - не справочная мелочь. Это давление на каждое решение.
+Distance is not lore trivia. It is the pressure on every decision.
 
 ## Field Note
 
-Использовать для site route map, wiki navigation и codex hard-sci-fi index.
+Navigation cluster record: system and ships pages connect no-FTL travel, Aegir route scale, carrier custody, and drop-capsule constraints.
 
 <!-- In-Game Wiki; generated from P417_SITE_WIKI_SYSTEM_AND_SHIPS_CLUSTER/ru_RU. -->

@@ -10,31 +10,38 @@ Purpose: keep active docs small, source-backed, and free of work-log noise.
 ## Authority Order
 
 1. `../AGENTS.md`
-2. `../TASTE.md`
-3. `../textes.md` for public copy only
-4. `.agents-skills/README.md`
-5. task-relevant `.agents-skills/*` mandates
-6. current source under `Assets/_Project`
-7. `Docs/PROJECT_BASELINE.md`
-8. `Docs/ARCHITECTURE/README.md`
-9. `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
-10. active architecture contracts
-11. fresh verification artifacts
-12. dated reports and archives
+2. `../.agents-skills/README.md`
+3. task-relevant `../.agents-skills/*` mandates
+4. `../PROJECT_BIBLES.md`
+5. `../VISION_LOCKS.md` for product vision or ambiguity
+6. `../TASTE.md` and the matching standing root route bible
+7. `../textes.md` for public copy only
+8. current source under `Assets/_Project`
+9. `Docs/PROJECT_BASELINE.md`
+10. `Docs/ARCHITECTURE/README.md`
+11. `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+12. active architecture contracts
+13. fresh verification artifacts
+14. dated reports and archives
 
 ## Placement Rules
 
-Root may contain only:
+Root may contain these active text anchors and standing route bibles:
 
 - `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `VISION_LOCKS.md`
 - `TASTE.md`
 - `textes.md`
 - `MASTER_RELEASE_WORK_PLAN.md`
 - `BUILD_PLAYTEST_ISSUES.md`
+- standing root route bibles listed under `Routes` in `PROJECT_BIBLES.md`
 
 Active docs belong in `Docs/` or `Docs/ARCHITECTURE/`.
 
 Evidence snapshots belong in `Docs/Reports/`.
+
+Root reports, prompts, status files, work logs, generated evidence, task-progress prose, and temporary scan counters are forbidden as root doctrine.
 
 Historical material belongs in `Docs/DEPRECATED/`, `Docs/_Archive/`, or `Docs/Archive/`.
 

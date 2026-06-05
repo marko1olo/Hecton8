@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Роль inner relay moon
+# Inner Relay Moon Traffic Role
 
-У Aegir несколько лун. Inner relay moon объясняет traffic, beacons и danger, не уводя игру с HECTON-8.
+Aegir has multiple moons. The inner relay moon explains traffic, relay beacons and danger without pulling the game away from HECTON-8.
 
 ## Scanner
 
-Moon ledger. Inner bodies - hazards, relay anchors и traffic math, не игровые миры.
+Moon ledger. Inner bodies are hazards, relay anchors and traffic math, not playable worlds.
 
 ## Terminal
 
-MOON LADDER: inner relay moon жжёт корабли быстрой геометрией и radiation exposure, но старые beacons всё ещё помогают HECTON-8 window.
+MOON LADDER: the inner relay moon burns ships with fast geometry and radiation exposure, but its old beacons can still make a HECTON-8 window possible.
 
 ## Audio
 
-Inner moon - не пункт назначения. Это синяк тайминга с прикрученным маяком.
+The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.
 
 ## Field Note
 
-Для system atlas и orbital UI labels.
+Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds.
 
 <!-- In-Game Wiki; generated from P347_INNER_RELAY_MOON_TRAFFIC_ROLE/ru_RU. -->

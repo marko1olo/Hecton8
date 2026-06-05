@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ Venn did not leave a speech. She left the pump rhythm everyone else used to brea
 
 ## Field Note
 
-Place as a pump-room prop cluster; avoid family relation hooks.
+Pump-room evidence cluster: badge, cadence board, ledger correction, and polished bypass handle keep Mara Venn procedural, not melodramatic.
 
 <!-- External Site; generated from P401_MARA_VENN_PUMP_CHIEF_DOSSIER/en_US. -->

@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
 # Drop Capsule Damage Sequence
 
-The first hour needs a physical reason for staying. Every broken part should become a future repair object or route pressure.
+The damaged bathy-drop makes escape an engineering chain. Shelter and diagnostics survived, but ascent hardware is physically gone or flooded.
 
 ## Scanner
 
-The trap is engineering: the descent package survives by spending its way home.
+Capsule diagnostics. Descent saved the body by spending ascent hardware.
 
 ## Terminal
 
-DAMAGE SEQUENCE: warped crush-frame, lost high-gain, flooded ascent avionics, torn flotation/heat-shield ring and unreliable emergency buoy. The capsule can keep you alive; it cannot leave.
+BATHY-DROP DAMAGE SUMMARY: crush-frame warped; high-gain mast lost; ascent avionics flooded; recovery/flotation ring torn; emergency buoy repeating no-lock. Shelter power available. Independent ascent unavailable.
 
 ## Audio
 
-The ocean did not lock the door. It bent the hinge.
+Ascent bus flooded. Recovery ring no-lock. This capsule can keep you breathing, not take you home.
 
 ## Field Note
 
-Crash damage must be readable before it is explained.
+Lower ring is oval by two fingers. High-gain mast gone. Buoy still asks for a launch it cannot make.
 
 <!-- In-Game Wiki; generated from P152_DROP_CAPSULE_DAMAGE_SEQUENCE/he_IL. -->

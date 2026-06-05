@@ -10,20 +10,20 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Концовки и custody payload
+# Endings and Payload Custody
 
-Каждый известный исход HECTON-8 начинается раньше финального подъема. Решающим объектом становится не только тело в капсуле, но и payload при нем: координаты, образцы, записи Atlas, worker evidence, quarantine status и юридическая цепочка, которая решает, кто имеет право назвать recovery законным.
+Every known HECTON-8 outcome begins before the final ascent. The decisive object is not only the body in the capsule, but the payload attached to it: coordinates, samples, Atlas records, worker evidence, quarantine status and the legal chain that decides who can call the recovery legitimate.
 
-Black Keel может поднять выжившего и все равно плохо продать правду. Deep Reach может получить координаты и похоронить их под recovery compliance. Public ledger может ударить по компании, но не вернуть мертвых. Quarantine может быть медицински разумным и политически удобным в один и тот же час. Material payout может быть настоящими деньгами и все равно оставить главное доказательство в океане.
+Black Keel can lift a survivor and still sell the truth badly. Deep Reach can receive coordinates and bury them under recovery compliance. A public ledger can damage the company without returning the dead. Quarantine can be medically rational and politically useful in the same hour. Material payout can be real money and still leave the ocean holding the important proof.
 
-Atlas делает custody problem хуже. Severance может остановить опасную ремонтную сеть, но также уничтожить последнюю систему, которая помнит колонию не как страховой случай. Preservation может защитить записи, но оставляет поврежденный maintenance intelligence внутри живой ocean-machine. Coordinate sale может закрыть долг и передать самого ценного свидетеля наименее надежному офису.
+Atlas makes the custody problem worse. Severance can end a dangerous repair network, but it can also destroy the last system that remembers the colony as more than an insurance case. Preservation can protect records, but it leaves a damaged maintenance intelligence inside a living ocean-machine. Coordinate sale can end a debt and deliver the most valuable witness to the least trustworthy office.
 
-False exits не являются провалом смелости. Это выходы, где одна цепочка закрывается, а другая остается неоплаченной. Тело уходит, claim остается. Образец уходит, worker record нет. Ledger протекает наружу, но carrier все еще владеет mass window. Quarantine hold сохраняет evidence до тех пор, пока кто-то другой не решит, что evidence означает.
+The false exits are not failures of courage. They are exits where one chain closes and another remains unpaid. The body leaves, the claim remains. The sample leaves, the worker record does not. The ledger leaks, but the carrier still owns the mass window. The quarantine hold preserves evidence until someone else decides what evidence means.
 
-Ни одна концовка не выводит custody из истории. Финальный вопрос - кто владеет доказательством, когда HECTON-8 снова замолкает.
+No ending removes custody from the story. The final question is who owns the proof when HECTON-8 falls silent again.
 
 <!-- External Site; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/ru_RU. -->

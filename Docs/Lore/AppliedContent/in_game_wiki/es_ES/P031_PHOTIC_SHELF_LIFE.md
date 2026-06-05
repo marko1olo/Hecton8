@@ -10,8 +10,8 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
 # Vida de la plataforma fótica
@@ -24,7 +24,7 @@ La biología somera es brillante, ruidosa y casi intacta. La luna no está muert
 
 ## Terminal
 
-Sondeo de plataforma: tapetes vivos, pastadores transparentes, pressureweed y algas de ruta fuera del dominio de reparación Atlas.
+SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.
 
 ## Audio
 

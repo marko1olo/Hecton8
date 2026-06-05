@@ -1,0 +1,155 @@
+ID: 1892
+TITLE: PRODUCT_FACE_SINGLE_UNITY_OWNER_RUNBOOK
+MODE: REPORT_ONLY_STATIC_UNITY_SLOT_RUNBOOK
+
+You are HECTON-8 batch agent 1892.
+You are not alone in the codebase. Other agents may be editing unrelated product-face validators and reports. Do not revert or overwrite their work.
+
+PRIMARY GOAL
+
+Create the controller-grade single-Unity-owner runbook for product-face cleanup after the current static authoring, material, texture, validator, anchor, and exclusion packets.
+
+This is a no-Unity, no-mutation task. You are preparing the exact future execution contract for the one agent who will later own Unity/editor/import/relink/proof. Do not run Unity, MCP, menu items, import, PlayMode, screenshots, profiler, dotnet build, DataMonolith, or any exporter.
+
+READ
+
+- `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `VISION_LOCKS.md`
+- `TASTE.md`
+- `quality.md`
+- `3dmodel.md`
+- `3DMODEL_TEXTURES_MATERIALS.md`
+- `3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md`
+- `rendering.md`
+- `performance.md`
+- `world.md`
+- `ocean.md`
+- `celestial.md`
+- `player.md`
+- `tools.md`
+- `inventory.md`
+- `transport.md` if present; if absent, state that it is absent.
+
+Relevant mandates:
+
+- `.agents-skills/QA_Evidence_Text_Filter_Audit.txt`
+- `.agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt`
+- `.agents-skills/REND_Terrain_VirtualTexturing.txt`
+- `.agents-skills/PERF_Runtime_CPU_GC_ZeroAlloc.txt` if present; if absent, state it.
+- `.agents-skills/DATA_Inventory_Resources_Items_SOA_Layout.txt` if present; if absent, state it.
+
+Prior Batch 18 packets to read by targeted extraction:
+
+- `Docs/Reports/Batch18/1867_PRODUCT_FACE_PREFAB_AUDIT_GATE.md`
+- `Docs/Reports/Batch18/1868_PRODUCT_FACE_UNITY_VALIDATOR_GATE.md`
+- `Docs/Reports/Batch18/1874_TOOL_MESH_SOURCE_AUTHORING_IMPLEMENTATION.md`
+- `Docs/Reports/Batch18/1875_RESOURCE_PICKUP_MESH_SOURCE_AUTHORING_IMPLEMENTATION.md`
+- `Docs/Reports/Batch18/1876_TRANSPORT_MESH_SOURCE_AUTHORING_IMPLEMENTATION.md`
+- `Docs/Reports/Batch18/1877_PLAYER_SUIT_MESH_SOURCE_AUTHORING_IMPLEMENTATION.md`
+- `Docs/Reports/Batch18/1878_SKY_OCEAN_SOURCE_VALIDATOR_IMPLEMENTATION.md`
+- `Docs/Reports/Batch18/1879_PRODUCT_FACE_RELINK_AND_PROOF_CONTRACT.md`
+- `Docs/Reports/Batch18/1880_TOOL_MATERIAL_TEXTURE_ROLE_PACKAGE.md`
+- `Docs/Reports/Batch18/1881_RESOURCE_MATERIAL_TEXTURE_ROLE_PACKAGE.md`
+- `Docs/Reports/Batch18/1882_TRANSPORT_PLAYER_MATERIAL_TEXTURE_ROLE_PACKAGE.md`
+- `Docs/Reports/Batch18/1883_SKY_OCEAN_MATERIAL_TEXTURE_ROLE_PACKAGE.md`
+- `Docs/Reports/Batch18/1885_PRODUCT_FACE_PREFAB_ANCHOR_REFERENCE_STATIC_SNAPSHOT.md`
+- `Docs/Reports/Batch18/1886_PRODUCT_FACE_TEXTURE_AUTHORING_PIPELINE_DISCOVERY.md`
+- `Docs/Reports/Batch18/1887_PRODUCT_FACE_LEGACY_REFERENCE_QUARANTINE_DECISION_PACKET.md`
+- `Docs/Reports/Batch18/1888_PRODUCT_FACE_TEXTURE_CHANNEL_MANIFEST_AND_SHADER_AUDIT.md`
+- `Docs/Reports/Batch18/1889_PRODUCT_FACE_ENVIRONMENT_SOURCE_EXCLUSION_MANIFEST.md`
+- `Docs/Reports/Batch18/1891_AITEXTURE_PRODUCT_FACE_HARDENING_PACKET.md`
+
+If `Docs/Reports/Batch18/1890_PRODUCT_FACE_MATERIAL_TEXTURE_VALIDATOR_IMPLEMENTATION.md` exists by the time you read, include it. If it is absent, mark `1890_PENDING`.
+
+OUTPUTS YOU OWN
+
+- `Docs/Reports/Batch18/1892_PRODUCT_FACE_SINGLE_UNITY_OWNER_RUNBOOK.md`
+- `Docs/Reports/Batch18/1892_PRODUCT_FACE_SINGLE_UNITY_OWNER_SEQUENCE.csv`
+- `Docs/Tasks/Status_1892.md`
+- `Docs/AgentLogs/Rationale_1892.md`
+- `Docs/AgentLogs/LOG_1892.md`
+
+Do not edit any other file.
+
+CSV COLUMNS
+
+- `step_id`
+- `phase`
+- `owner_mode`
+- `action`
+- `allowed_files_or_routes`
+- `blocked_files_or_routes`
+- `inputs_required`
+- `preflight_check`
+- `proof_required`
+- `rollback_or_abort_condition`
+- `parallel_allowed_before_step`
+- `status`
+
+REQUIRED CONTENT
+
+Build a runbook that a future Unity owner can execute without guessing:
+
+1. Define the preflight process gate: CPU/build/Unity/shader compiler state, dirty tree snapshot, backup plan, and single-owner lock.
+2. Define the exact static prerequisites that must exist before Unity work starts.
+3. Define the exact product-face source-generation order:
+   - tool meshes;
+   - resource pickup meshes;
+   - transport meshes;
+   - player suit/body meshes;
+   - sky/ocean source validation;
+   - material/texture import route;
+   - material/texture validator.
+4. Preserve current source route roots:
+   - `Assets/_Project/Art/Generated/ProductFace/Tools/`
+   - `Assets/_Project/Art/Generated/ProductFace/Resources/`
+   - `Assets/_Project/Art/Generated/ProductFace/Transport/`
+   - `Assets/_Project/Art/Generated/ProductFace/PlayerSuit/`
+5. Do not resurrect stale non-ProductFace generated folder paths from older reports.
+6. Define how texture import can use ProductFace-specific manifests without touching prefabs.
+7. Define the hard boundary against `ai_texture_prefab_bindings.csv` and broad prefab binding.
+8. Define material channel contracts from 1888 and what must abort if a material family has no channel contract.
+9. Define environment-source exclusions from 1889: sky/ocean/terrain/Crest/flora/depth/noir assets are references, not product-face donors.
+10. Define anchor/reference preservation from 1885 for player, tools, resources, transport, sky, ocean, and legacy roots.
+11. Define how to handle `Buildings/Cube.prefab`, `Item_Titanium.prefab`, `STRUCTURES`, and `Tool_Propulsion_Held` contamination without deleting or moving assets blindly.
+12. Define the exact validation stack:
+   - `python Tools/GeneratedAssetProductionAudit.py --root .`
+   - `python Tools/GeneratedAssetProductionAudit.py --root . --fail-on-error`
+   - `Hecton8/Validation/Product-Face Prefab Quality Gate`
+   - `Hecton8/Validation/Sky-Ocean Source Primitive Gate`
+   - product-face material/texture validator from 1890 if present;
+   - route screenshot set;
+   - profiler/Frame Debugger/GC proof when Unity is safe.
+13. Define the route screenshot set:
+   - surface coastline;
+   - Aegir/moons horizon;
+   - waterline close-up;
+   - under-surface 5-20 m;
+   - photic shallows 30-100 m;
+   - medium-depth hero route;
+   - cockpit/tool/resource close-ups;
+   - transport body/player suit close-ups if available.
+14. Define visual rejection criteria: primitive body, flat color material, empty texture slots, muddy water, darkened surface, fog/noir hiding weak art, untextured transport, crude tool silhouette, unreadable pickup.
+15. Define gameplay rejection criteria: oxygen loop broken, starter tool route blocked, copper/material pickup broken, base/safe-room return broken, marker/sonar unreadable, hostile route unfair before player has tools.
+16. Define performance rejection criteria without fake numbers: build/profiler evidence, GC allocation checks, frame debugger sanity, import size/VRAM review, LOD/HLOD presence.
+17. Define rollback rules for every Unity mutation step: backup files, record touched assets, abort on compile/import error, no partial save if validator red-gates critical refs.
+18. Define what other agents can still do in parallel while Unity is busy: reports, source-only validators, manifests, no-mutation audits, lore/content packets.
+19. Define what must be serialized inside Unity: import refresh, menu execution, mesh asset creation, prefab relink, scene capture, profiler capture, DataMonolith bake if later needed.
+20. Include Low / Middle / High / Ultra consequences. Compact mode may reduce resolution, density, cadence, and optional detail, but it must still pass the Subnautica-level surface/shallow visual floor.
+21. Include a future-agent prompt for the eventual Unity owner.
+22. Include explicit `PENDING UNITY SLOT` labels for everything not proven.
+23. Do not claim runtime, visual, profiler, import, or screenshot acceptance.
+24. Keep the result operational, not a philosophical essay.
+
+VERIFICATION
+
+Run and record:
+
+- `git diff --check -- Docs/Reports/Batch18/1892_PRODUCT_FACE_SINGLE_UNITY_OWNER_RUNBOOK.md Docs/Reports/Batch18/1892_PRODUCT_FACE_SINGLE_UNITY_OWNER_SEQUENCE.csv Docs/Tasks/Status_1892.md Docs/AgentLogs/Rationale_1892.md Docs/AgentLogs/LOG_1892.md`
+- `Import-Csv Docs/Reports/Batch18/1892_PRODUCT_FACE_SINGLE_UNITY_OWNER_SEQUENCE.csv | Measure-Object`
+- Static term cross-check for `ProductFace`, `Unity owner`, `GeneratedAssetProductionAudit`, `Prefab Quality Gate`, `Sky-Ocean Source Primitive Gate`, `Subnautica`, `Aegir`, `photic`, `rollback`, `ai_texture_prefab_bindings`.
+
+FINAL RESPONSE
+
+Report changed files, CSV row count, first five Unity-owner phases, hard abort conditions, and what remains safe for parallel agents while Unity is occupied.

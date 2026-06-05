@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
-# Public Aegir Moon Map Article Module
+# Aegir Moon Route Map
 
-The Aegir moon map should teach orbital windows, relay shutters, ice scatter and tide pressure without making every moon playable.
+Aegir moon data is route data. HECTON-8 is one ocean moon inside a larger ladder of relay, radiation, scatter and tide constraints; the visible sky is part of navigation, not decoration.
 
 ## Scanner
 
-Publication module: Aegir map. Moons explain relay, radiation, scatter and rescue timing.
+System map record. Aegir moons define relay timing, radiation cover, ice scatter, tide pressure and recovery geometry.
 
 ## Terminal
 
-PUBLIC MODULE AEGIR: keep moon names as labels; route function is canon. Spoiler-gate Atlas payload consequences.
+PUBLIC ARCHIVE NODE // AEGIR MOON LADDER. Moon names are route labels. Each body changes signal age, transfer risk, storm exposure or custody timing.
 
 ## Audio
 
-The map is not background. It is why no one arrives when you ask.
+The map is why no one arrives the moment you ask.
 
 ## Field Note
 
-Use for Aegir public map, article art and route-window captions.
+Marauder note: mark the moon, then mark what it does to the route.
 
 <!-- In-Game Wiki; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/en_US. -->

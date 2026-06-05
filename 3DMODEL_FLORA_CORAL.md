@@ -110,6 +110,14 @@ Default flora/coral collision is none. Interaction is represented by coarse prox
 
 Visual fronds, small branches, pores, and serrations never become physical collision.
 
+## 7.1 2026-06-05 Static Source Anchors
+
+Evidence class: STATIC_SOURCE only. Compile, Unity import, cut-mask capture, Frame Debugger, profiler, GC, and player-build proof remain PENDING VERIFICATION.
+
+| Runtime | Owner / boundary | Static route | GlobalQualityWeight consequence | Missing proof |
+|---|---|---|---|---|
+| `Assets/_Project/Scripts/World/SargassumCutManager.cs` | `Hecton8.World`, `SystemID.WorldSargassum`; runtime cut-mask and terrain damage-volume service for sargassum/flora presentation. It does not generate flora/coral meshes, author root anchors, or own harvest/collision truth. | Registers global `ISargassumCutWriteService`, tick/slow/late-frame routes, DataVault stamp command buffers, compute-shader cut masks, ping-pong render textures, and shader globals for cut/damage response. External cuts enter through `RegisterExternalCut`/service calls; recent cut heat is registered in `WorldSpatialHashGrid`. | `GlobalQualityWeight` scales mask and damage-volume resolution with hysteresis. Mesh topology, vertex color semantics, root identity, harvest point identity, and collision proxies must not change by runtime mask resolution. | No generated asset readback, shader cut visual capture, compact/high comparison, Frame Debugger/GPU profiler, GCMonitor, or gameplay cut proof was provided by this static audit. |
+
 ## 8. Rejection Gates
 
 Reject if:

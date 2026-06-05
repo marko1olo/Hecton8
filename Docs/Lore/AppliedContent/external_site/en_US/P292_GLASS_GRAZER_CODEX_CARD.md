@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ When they stop eating, you stop moving.
 
 ## Field Note
 
-Use as tutorial for absence-as-warning without UI exposition.
+When the school locks still, stop treating the clearing as safe. Something is reading the same water you are.
 
 <!-- External Site; generated from P292_GLASS_GRAZER_CODEX_CARD/en_US. -->

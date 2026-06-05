@@ -10,8 +10,8 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
 # Kehidupan Paparan Fotik
@@ -24,7 +24,7 @@ Biologi paparan dangkal terang, bising dan hampir belum diubah. Bulan ini belum 
 
 ## Terminal
 
-Survei paparan: mat hidup, pemakan transparan, pressureweed dan alga rute masih di luar dominasi perbaikan Atlas.
+SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.
 
 ## Audio
 

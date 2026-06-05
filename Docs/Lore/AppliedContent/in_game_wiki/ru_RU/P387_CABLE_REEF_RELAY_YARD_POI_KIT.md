@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# POI-кит: Cable Reef Relay Yard
+# Cable Reef Relay Yard POI Kit
 
-Cable reef POI учит правилу repair-network: жизнь не декор, когда Atlas превратил ее в инфраструктуру.
+The cable reef POI teaches the repair-network rule: life is not decoration when Atlas has turned it into infrastructure.
 
 ## Scanner
 
-POI kit: relay cable достаточно живой, чтобы проводить, и достаточно неправильный, чтобы misroute.
+POI kit: relay cable is alive enough to conduct and wrong enough to misroute.
 
 ## Terminal
 
-RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response и Atlas service scar.
+RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.
 
 ## Audio
 
-Не срезай весь рост. Часть этого несет твой сигнал.
+Do not strip all growth. Some of it is carrying your signal.
 
 ## Field Note
 
-Для cable reef route, relay component, scanner stages и art brief.
+POI evidence kit: Cable Reef Relay Yard links route repair, relay components, scanner stages, and visible industrial reef damage.
 
 <!-- In-Game Wiki; generated from P387_CABLE_REEF_RELAY_YARD_POI_KIT/ru_RU. -->

@@ -1,6 +1,6 @@
 # AppliedLore Route Cards
 
-Status: checked authoring source.
+Status: authoring source / route-card export candidate. Checked state requires a timestamped audit artifact.
 
 Route cards are the gameplay-facing bridge between baked AppliedLore packets, discovery phases, replay variation, and ending pressure.
 
@@ -8,7 +8,10 @@ They are not runtime markdown. They are input for quest/PDA/POI planning and a f
 
 ## Files
 
-- `RS001_RS003_route_cards.csv`: first route-card layer for the 15 currently baked packets.
+This README is not the current route-card inventory. Treat local route-card counts and family lists as static snapshots unless a timestamped command output or audit artifact says otherwise.
+
+- `RS001_RS003_route_cards.csv`: historical first-wave route-card layer for the first 15 packets.
+- `RS###*_route_cards.csv`: release-set route-card CSV pattern for later waves. The directory currently extends beyond RS001-RS003; use folder inventory and scoped audit output for current coverage.
 
 ## Runtime Rule
 
@@ -19,7 +22,7 @@ They are not runtime markdown. They are input for quest/PDA/POI planning and a f
 - No per-frame route graph walk.
 - Unlocks still enter through `H8AppliedLoreRuntime.TryRaisePacketUnlocked`.
 
-## Current Card Families
+## Historical First-Wave Card Families
 
 - `RC001_SURVIVE_DROP`: arrival survival, capsule damage, first compromised carrier contact.
 - `RC002_PERSONAL_HOOK`: Barnard/frontier trace that turns contract work personal.

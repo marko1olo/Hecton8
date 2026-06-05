@@ -1,0 +1,43 @@
+ID: 3004_WATER_FOAM_CAUSTIC_ROUTE_AUDIT
+Role: Water / Foam / Caustic Static Route Auditor
+
+Objective:
+Audit the current static water/foam/caustic owner route and identify why visible proof still shows flat green water, no believable foam, and no valid caustic route. No Unity, no build, no Assets edits.
+
+Authority docs:
+- `AGENTS.md`
+- `TASTE.md`
+- `VISION_LOCKS.md`
+- `water.md`
+- `rendering.md`
+- `shaders.md`
+- `quality.md`
+
+Evidence basis:
+- `Docs/Reports/Batch25/2504_CREST_OCEAN_CLIP_FOAM_CAUSTIC_RISK_AUDIT.md`
+- `Docs/Reports/Batch26/BATCH26_SYNTHESIS_FOR_UNITY_OWNER.md`
+- `Docs/Screenshots/MCP/h8_1912_surface_edit_main.txt`
+- `Docs/Screenshots/MCP/h8_1912_surface_quarantine.txt`
+- relevant material files found by search: `Ocean.mat`, `Ocean-Underwater.mat`, `Ocean_UnderwaterCurtain.mat`, `MAT_H8_SurfaceCrestOcean_1428`, `MAT_H8_ShorelineFoamFine_1469`, `MAT_H8_FloorCausticSoft_1443`.
+
+Owned scope:
+- Read-only: material/shader/source/report files.
+- Write: `Docs/Reports/Batch30/3004_WATER_FOAM_CAUSTIC_ROUTE_AUDIT.md`.
+
+Tasks:
+1. Read authority docs.
+2. Verify exact material paths by search.
+3. Inspect relevant material YAML/static settings.
+4. Identify clip/transparency/keyword/strength risks.
+5. Identify which objects are active/disabled in 1912 metadata.
+6. Explain why numeric material strength is not visual proof.
+7. Propose safe owner-correct correction plan for Unity owner.
+8. Include compact/middle/high/ultra consequences using continuous `GlobalQualityWeight`.
+9. Do not edit materials.
+10. Create report.
+
+Rejection gates:
+- No Crest runtime material clone recommendations.
+- No global caustics without believable light reason.
+- No acceptance without six-view proof.
+

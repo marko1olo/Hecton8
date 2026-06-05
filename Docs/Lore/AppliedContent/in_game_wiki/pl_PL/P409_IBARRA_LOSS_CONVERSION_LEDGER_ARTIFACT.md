@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# PL LOC: Ibarra Loss Ledger
+# Ibarra Loss Ledger
 
-PL LOC HOLD: The Ibarra ledger is the accounting form of Deep Reach's lie. It treats the colony as unresolved load, preserving rights while delaying truth.
+The Ibarra ledger is the accounting form of the cover. It keeps asset rights active while missing workers become unresolved load.
 
 ## Scanner
 
-PL LOC HOLD: Deep Reach artifact: loss ledger. People, modules and claims share a conversion column.
+Keelmark loss ledger. People, modules and claims share a conversion column.
 
 ## Terminal
 
-PL LOC: IBARRA LEDGER. Personnel load held as continuity loss; claims retain asset rights.
+KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel mass unresolved. Habitat modules, tools and claims retain recoverable asset status pending final witness packet.
 
 ## Audio
 
-PL LOC HOLD: The ledger did not forget names. It made them payable later.
+The ledger did not forget names. It made them payable later.
 
 ## Field Note
 
-PL LOC HOLD: Use in claim-pool, carrier debt and public liability modules.
+The ledger did not forget the names. It moved them under unresolved personnel load and kept the hardware recoverable.
 
 <!-- In-Game Wiki; generated from P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT/pl_PL. -->

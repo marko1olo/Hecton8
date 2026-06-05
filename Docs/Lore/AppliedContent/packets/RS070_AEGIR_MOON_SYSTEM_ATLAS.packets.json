@@ -33,16 +33,16 @@
           "audio": "It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.",
           "in_game_wiki": "The Aegir system is not a brown-dwarf horror void. It uses a stable warm dwarf primary and gas-giant magnetosphere to justify light, weather, comm windows and radiation constraints.",
           "external_site": "Aegir is built as a hard-sci-fi moon system: readable light, ugly radiation, orbital windows and industrial travel rather than fantasy darkness.",
-          "field_note": "Use for system overview and skybox/art constraints."
+          "field_note": "System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive."
         },
         "ru_RU": {
-          "title": "Свет и радиация primary Aegir",
-          "scanner": "Звёздная заметка. Тёплый K-dwarf свет, а не космическая тьма, задаёт систему.",
-          "terminal": "КАРТА RAN: primary достаточно стабилен для инфраструктурных окон, но активен для наказания дешёвой защиты. Magnetosphere Aegir превращает радиацию в schedule math.",
-          "audio": "Тут не абсолютная тьма. В этом и проблема: света хватает работать, радиации - платить за ошибки.",
-          "in_game_wiki": "Aegir - не brown-dwarf horror void. Это тёплый dwarf primary, magnetosphere, weather, comm windows и radiation constraints.",
-          "external_site": "Aegir строится как hard-sci-fi moon system: читаемый свет, радиация, orbital windows и industrial travel.",
-          "field_note": "Для обзора системы и skybox/art constraints."
+          "title": "Draft RU localization pending native pass. Aegir Primary Light and Radiation",
+          "scanner": "Draft RU localization pending native pass. Stellar note. Warm K-dwarf light, not deep-space darkness, sets the system baseline.",
+          "terminal": "Draft RU localization pending native pass. RAN STELLAR CARD: the host primary is stable enough for long infrastructure windows but active enough to punish cheap shielding. Aegir's magnetosphere turns manageable radiation into schedule math.",
+          "audio": "Draft RU localization pending native pass. It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.",
+          "in_game_wiki": "Draft RU localization pending native pass. The Aegir system is not a brown-dwarf horror void. It uses a stable warm dwarf primary and gas-giant magnetosphere to justify light, weather, comm windows and radiation constraints.",
+          "external_site": "Draft RU localization pending native pass. Aegir is built as a hard-sci-fi moon system: readable light, ugly radiation, orbital windows and industrial travel rather than fantasy darkness.",
+          "field_note": "Draft RU localization pending native pass. System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Aegir Primary Light and Radiation",
@@ -51,7 +51,7 @@
           "audio": "Draft JA localization pending native pass. It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.",
           "in_game_wiki": "Draft JA localization pending native pass. The Aegir system is not a brown-dwarf horror void. It uses a stable warm dwarf primary and gas-giant magnetosphere to justify light, weather, comm windows and radiation constraints.",
           "external_site": "Draft JA localization pending native pass. Aegir is built as a hard-sci-fi moon system: readable light, ugly radiation, orbital windows and industrial travel rather than fantasy darkness.",
-          "field_note": "Draft JA localization pending native pass. Use for system overview and skybox/art constraints."
+          "field_note": "Draft JA localization pending native pass. System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Aegir Primary Light and Radiation",
@@ -60,7 +60,7 @@
           "audio": "Draft ZH localization pending native pass. It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.",
           "in_game_wiki": "Draft ZH localization pending native pass. The Aegir system is not a brown-dwarf horror void. It uses a stable warm dwarf primary and gas-giant magnetosphere to justify light, weather, comm windows and radiation constraints.",
           "external_site": "Draft ZH localization pending native pass. Aegir is built as a hard-sci-fi moon system: readable light, ugly radiation, orbital windows and industrial travel rather than fantasy darkness.",
-          "field_note": "Draft ZH localization pending native pass. Use for system overview and skybox/art constraints."
+          "field_note": "Draft ZH localization pending native pass. System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Aegir Primary Light and Radiation",
@@ -69,7 +69,7 @@
           "audio": "Draft FR localization pending native pass. It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.",
           "in_game_wiki": "Draft FR localization pending native pass. The Aegir system is not a brown-dwarf horror void. It uses a stable warm dwarf primary and gas-giant magnetosphere to justify light, weather, comm windows and radiation constraints.",
           "external_site": "Draft FR localization pending native pass. Aegir is built as a hard-sci-fi moon system: readable light, ugly radiation, orbital windows and industrial travel rather than fantasy darkness.",
-          "field_note": "Draft FR localization pending native pass. Use for system overview and skybox/art constraints."
+          "field_note": "Draft FR localization pending native pass. System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Aegir Primary Light and Radiation",
@@ -78,7 +78,7 @@
           "audio": "Draft ES localization pending native pass. It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.",
           "in_game_wiki": "Draft ES localization pending native pass. The Aegir system is not a brown-dwarf horror void. It uses a stable warm dwarf primary and gas-giant magnetosphere to justify light, weather, comm windows and radiation constraints.",
           "external_site": "Draft ES localization pending native pass. Aegir is built as a hard-sci-fi moon system: readable light, ugly radiation, orbital windows and industrial travel rather than fantasy darkness.",
-          "field_note": "Draft ES localization pending native pass. Use for system overview and skybox/art constraints."
+          "field_note": "Draft ES localization pending native pass. System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Aegir Primary Light and Radiation",
@@ -87,7 +87,7 @@
           "audio": "Draft DE localization pending native pass. It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.",
           "in_game_wiki": "Draft DE localization pending native pass. The Aegir system is not a brown-dwarf horror void. It uses a stable warm dwarf primary and gas-giant magnetosphere to justify light, weather, comm windows and radiation constraints.",
           "external_site": "Draft DE localization pending native pass. Aegir is built as a hard-sci-fi moon system: readable light, ugly radiation, orbital windows and industrial travel rather than fantasy darkness.",
-          "field_note": "Draft DE localization pending native pass. Use for system overview and skybox/art constraints."
+          "field_note": "Draft DE localization pending native pass. System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Aegir Primary Light and Radiation",
@@ -96,7 +96,7 @@
           "audio": "Draft PL localization pending native pass. It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.",
           "in_game_wiki": "Draft PL localization pending native pass. The Aegir system is not a brown-dwarf horror void. It uses a stable warm dwarf primary and gas-giant magnetosphere to justify light, weather, comm windows and radiation constraints.",
           "external_site": "Draft PL localization pending native pass. Aegir is built as a hard-sci-fi moon system: readable light, ugly radiation, orbital windows and industrial travel rather than fantasy darkness.",
-          "field_note": "Draft PL localization pending native pass. Use for system overview and skybox/art constraints."
+          "field_note": "Draft PL localization pending native pass. System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Aegir Primary Light and Radiation",
@@ -105,7 +105,7 @@
           "audio": "Draft UK localization pending native pass. It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.",
           "in_game_wiki": "Draft UK localization pending native pass. The Aegir system is not a brown-dwarf horror void. It uses a stable warm dwarf primary and gas-giant magnetosphere to justify light, weather, comm windows and radiation constraints.",
           "external_site": "Draft UK localization pending native pass. Aegir is built as a hard-sci-fi moon system: readable light, ugly radiation, orbital windows and industrial travel rather than fantasy darkness.",
-          "field_note": "Draft UK localization pending native pass. Use for system overview and skybox/art constraints."
+          "field_note": "Draft UK localization pending native pass. System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Aegir Primary Light and Radiation",
@@ -114,7 +114,7 @@
           "audio": "Draft AR localization pending native pass. It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.",
           "in_game_wiki": "Draft AR localization pending native pass. The Aegir system is not a brown-dwarf horror void. It uses a stable warm dwarf primary and gas-giant magnetosphere to justify light, weather, comm windows and radiation constraints.",
           "external_site": "Draft AR localization pending native pass. Aegir is built as a hard-sci-fi moon system: readable light, ugly radiation, orbital windows and industrial travel rather than fantasy darkness.",
-          "field_note": "Draft AR localization pending native pass. Use for system overview and skybox/art constraints."
+          "field_note": "Draft AR localization pending native pass. System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Aegir Primary Light and Radiation",
@@ -123,7 +123,7 @@
           "audio": "Draft ID localization pending native pass. It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.",
           "in_game_wiki": "Draft ID localization pending native pass. The Aegir system is not a brown-dwarf horror void. It uses a stable warm dwarf primary and gas-giant magnetosphere to justify light, weather, comm windows and radiation constraints.",
           "external_site": "Draft ID localization pending native pass. Aegir is built as a hard-sci-fi moon system: readable light, ugly radiation, orbital windows and industrial travel rather than fantasy darkness.",
-          "field_note": "Draft ID localization pending native pass. Use for system overview and skybox/art constraints."
+          "field_note": "Draft ID localization pending native pass. System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Aegir Primary Light and Radiation",
@@ -132,7 +132,7 @@
           "audio": "Draft KO localization pending native pass. It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.",
           "in_game_wiki": "Draft KO localization pending native pass. The Aegir system is not a brown-dwarf horror void. It uses a stable warm dwarf primary and gas-giant magnetosphere to justify light, weather, comm windows and radiation constraints.",
           "external_site": "Draft KO localization pending native pass. Aegir is built as a hard-sci-fi moon system: readable light, ugly radiation, orbital windows and industrial travel rather than fantasy darkness.",
-          "field_note": "Draft KO localization pending native pass. Use for system overview and skybox/art constraints."
+          "field_note": "Draft KO localization pending native pass. System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Aegir Primary Light and Radiation",
@@ -141,7 +141,7 @@
           "audio": "Draft HE localization pending native pass. It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.",
           "in_game_wiki": "Draft HE localization pending native pass. The Aegir system is not a brown-dwarf horror void. It uses a stable warm dwarf primary and gas-giant magnetosphere to justify light, weather, comm windows and radiation constraints.",
           "external_site": "Draft HE localization pending native pass. Aegir is built as a hard-sci-fi moon system: readable light, ugly radiation, orbital windows and industrial travel rather than fantasy darkness.",
-          "field_note": "Draft HE localization pending native pass. Use for system overview and skybox/art constraints."
+          "field_note": "Draft HE localization pending native pass. System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Aegir Primary Light and Radiation",
@@ -150,7 +150,7 @@
           "audio": "Draft PT localization pending native pass. It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.",
           "in_game_wiki": "Draft PT localization pending native pass. The Aegir system is not a brown-dwarf horror void. It uses a stable warm dwarf primary and gas-giant magnetosphere to justify light, weather, comm windows and radiation constraints.",
           "external_site": "Draft PT localization pending native pass. Aegir is built as a hard-sci-fi moon system: readable light, ugly radiation, orbital windows and industrial travel rather than fantasy darkness.",
-          "field_note": "Draft PT localization pending native pass. Use for system overview and skybox/art constraints."
+          "field_note": "Draft PT localization pending native pass. System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Aegir Primary Light and Radiation",
@@ -159,7 +159,7 @@
           "audio": "Draft NL localization pending native pass. It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.",
           "in_game_wiki": "Draft NL localization pending native pass. The Aegir system is not a brown-dwarf horror void. It uses a stable warm dwarf primary and gas-giant magnetosphere to justify light, weather, comm windows and radiation constraints.",
           "external_site": "Draft NL localization pending native pass. Aegir is built as a hard-sci-fi moon system: readable light, ugly radiation, orbital windows and industrial travel rather than fantasy darkness.",
-          "field_note": "Draft NL localization pending native pass. Use for system overview and skybox/art constraints."
+          "field_note": "Draft NL localization pending native pass. System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive."
         }
       }
     },
@@ -188,16 +188,16 @@
           "audio": "The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.",
           "in_game_wiki": "Aegir has multiple moons. The inner relay moon explains traffic, relay beacons and danger without pulling the game away from HECTON-8.",
           "external_site": "The non-playable Aegir moons give the world scale: traffic anchors, failed claims, radiation hazards and orbital timing.",
-          "field_note": "Use for system atlas entries and orbital UI labels."
+          "field_note": "Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds."
         },
         "ru_RU": {
-          "title": "Роль inner relay moon",
-          "scanner": "Moon ledger. Inner bodies - hazards, relay anchors и traffic math, не игровые миры.",
-          "terminal": "MOON LADDER: inner relay moon жжёт корабли быстрой геометрией и radiation exposure, но старые beacons всё ещё помогают HECTON-8 window.",
-          "audio": "Inner moon - не пункт назначения. Это синяк тайминга с прикрученным маяком.",
-          "in_game_wiki": "У Aegir несколько лун. Inner relay moon объясняет traffic, beacons и danger, не уводя игру с HECTON-8.",
-          "external_site": "Непроходимые луны Aegir дают масштабу: traffic anchors, failed claims, radiation hazards and orbital timing.",
-          "field_note": "Для system atlas и orbital UI labels."
+          "title": "Draft RU localization pending native pass. Inner Relay Moon Traffic Role",
+          "scanner": "Draft RU localization pending native pass. Moon ledger. Inner bodies are hazards, relay anchors and traffic math, not playable worlds.",
+          "terminal": "Draft RU localization pending native pass. MOON LADDER: the inner relay moon burns ships with fast geometry and radiation exposure, but its old beacons can still make a HECTON-8 window possible.",
+          "audio": "Draft RU localization pending native pass. The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.",
+          "in_game_wiki": "Draft RU localization pending native pass. Aegir has multiple moons. The inner relay moon explains traffic, relay beacons and danger without pulling the game away from HECTON-8.",
+          "external_site": "Draft RU localization pending native pass. The non-playable Aegir moons give the world scale: traffic anchors, failed claims, radiation hazards and orbital timing.",
+          "field_note": "Draft RU localization pending native pass. Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Inner Relay Moon Traffic Role",
@@ -206,7 +206,7 @@
           "audio": "Draft JA localization pending native pass. The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.",
           "in_game_wiki": "Draft JA localization pending native pass. Aegir has multiple moons. The inner relay moon explains traffic, relay beacons and danger without pulling the game away from HECTON-8.",
           "external_site": "Draft JA localization pending native pass. The non-playable Aegir moons give the world scale: traffic anchors, failed claims, radiation hazards and orbital timing.",
-          "field_note": "Draft JA localization pending native pass. Use for system atlas entries and orbital UI labels."
+          "field_note": "Draft JA localization pending native pass. Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Inner Relay Moon Traffic Role",
@@ -215,7 +215,7 @@
           "audio": "Draft ZH localization pending native pass. The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.",
           "in_game_wiki": "Draft ZH localization pending native pass. Aegir has multiple moons. The inner relay moon explains traffic, relay beacons and danger without pulling the game away from HECTON-8.",
           "external_site": "Draft ZH localization pending native pass. The non-playable Aegir moons give the world scale: traffic anchors, failed claims, radiation hazards and orbital timing.",
-          "field_note": "Draft ZH localization pending native pass. Use for system atlas entries and orbital UI labels."
+          "field_note": "Draft ZH localization pending native pass. Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Inner Relay Moon Traffic Role",
@@ -224,7 +224,7 @@
           "audio": "Draft FR localization pending native pass. The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.",
           "in_game_wiki": "Draft FR localization pending native pass. Aegir has multiple moons. The inner relay moon explains traffic, relay beacons and danger without pulling the game away from HECTON-8.",
           "external_site": "Draft FR localization pending native pass. The non-playable Aegir moons give the world scale: traffic anchors, failed claims, radiation hazards and orbital timing.",
-          "field_note": "Draft FR localization pending native pass. Use for system atlas entries and orbital UI labels."
+          "field_note": "Draft FR localization pending native pass. Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Inner Relay Moon Traffic Role",
@@ -233,7 +233,7 @@
           "audio": "Draft ES localization pending native pass. The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.",
           "in_game_wiki": "Draft ES localization pending native pass. Aegir has multiple moons. The inner relay moon explains traffic, relay beacons and danger without pulling the game away from HECTON-8.",
           "external_site": "Draft ES localization pending native pass. The non-playable Aegir moons give the world scale: traffic anchors, failed claims, radiation hazards and orbital timing.",
-          "field_note": "Draft ES localization pending native pass. Use for system atlas entries and orbital UI labels."
+          "field_note": "Draft ES localization pending native pass. Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Inner Relay Moon Traffic Role",
@@ -242,7 +242,7 @@
           "audio": "Draft DE localization pending native pass. The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.",
           "in_game_wiki": "Draft DE localization pending native pass. Aegir has multiple moons. The inner relay moon explains traffic, relay beacons and danger without pulling the game away from HECTON-8.",
           "external_site": "Draft DE localization pending native pass. The non-playable Aegir moons give the world scale: traffic anchors, failed claims, radiation hazards and orbital timing.",
-          "field_note": "Draft DE localization pending native pass. Use for system atlas entries and orbital UI labels."
+          "field_note": "Draft DE localization pending native pass. Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Inner Relay Moon Traffic Role",
@@ -251,7 +251,7 @@
           "audio": "Draft PL localization pending native pass. The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.",
           "in_game_wiki": "Draft PL localization pending native pass. Aegir has multiple moons. The inner relay moon explains traffic, relay beacons and danger without pulling the game away from HECTON-8.",
           "external_site": "Draft PL localization pending native pass. The non-playable Aegir moons give the world scale: traffic anchors, failed claims, radiation hazards and orbital timing.",
-          "field_note": "Draft PL localization pending native pass. Use for system atlas entries and orbital UI labels."
+          "field_note": "Draft PL localization pending native pass. Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Inner Relay Moon Traffic Role",
@@ -260,7 +260,7 @@
           "audio": "Draft UK localization pending native pass. The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.",
           "in_game_wiki": "Draft UK localization pending native pass. Aegir has multiple moons. The inner relay moon explains traffic, relay beacons and danger without pulling the game away from HECTON-8.",
           "external_site": "Draft UK localization pending native pass. The non-playable Aegir moons give the world scale: traffic anchors, failed claims, radiation hazards and orbital timing.",
-          "field_note": "Draft UK localization pending native pass. Use for system atlas entries and orbital UI labels."
+          "field_note": "Draft UK localization pending native pass. Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Inner Relay Moon Traffic Role",
@@ -269,7 +269,7 @@
           "audio": "Draft AR localization pending native pass. The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.",
           "in_game_wiki": "Draft AR localization pending native pass. Aegir has multiple moons. The inner relay moon explains traffic, relay beacons and danger without pulling the game away from HECTON-8.",
           "external_site": "Draft AR localization pending native pass. The non-playable Aegir moons give the world scale: traffic anchors, failed claims, radiation hazards and orbital timing.",
-          "field_note": "Draft AR localization pending native pass. Use for system atlas entries and orbital UI labels."
+          "field_note": "Draft AR localization pending native pass. Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Inner Relay Moon Traffic Role",
@@ -278,7 +278,7 @@
           "audio": "Draft ID localization pending native pass. The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.",
           "in_game_wiki": "Draft ID localization pending native pass. Aegir has multiple moons. The inner relay moon explains traffic, relay beacons and danger without pulling the game away from HECTON-8.",
           "external_site": "Draft ID localization pending native pass. The non-playable Aegir moons give the world scale: traffic anchors, failed claims, radiation hazards and orbital timing.",
-          "field_note": "Draft ID localization pending native pass. Use for system atlas entries and orbital UI labels."
+          "field_note": "Draft ID localization pending native pass. Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Inner Relay Moon Traffic Role",
@@ -287,7 +287,7 @@
           "audio": "Draft KO localization pending native pass. The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.",
           "in_game_wiki": "Draft KO localization pending native pass. Aegir has multiple moons. The inner relay moon explains traffic, relay beacons and danger without pulling the game away from HECTON-8.",
           "external_site": "Draft KO localization pending native pass. The non-playable Aegir moons give the world scale: traffic anchors, failed claims, radiation hazards and orbital timing.",
-          "field_note": "Draft KO localization pending native pass. Use for system atlas entries and orbital UI labels."
+          "field_note": "Draft KO localization pending native pass. Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Inner Relay Moon Traffic Role",
@@ -296,7 +296,7 @@
           "audio": "Draft HE localization pending native pass. The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.",
           "in_game_wiki": "Draft HE localization pending native pass. Aegir has multiple moons. The inner relay moon explains traffic, relay beacons and danger without pulling the game away from HECTON-8.",
           "external_site": "Draft HE localization pending native pass. The non-playable Aegir moons give the world scale: traffic anchors, failed claims, radiation hazards and orbital timing.",
-          "field_note": "Draft HE localization pending native pass. Use for system atlas entries and orbital UI labels."
+          "field_note": "Draft HE localization pending native pass. Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Inner Relay Moon Traffic Role",
@@ -305,7 +305,7 @@
           "audio": "Draft PT localization pending native pass. The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.",
           "in_game_wiki": "Draft PT localization pending native pass. Aegir has multiple moons. The inner relay moon explains traffic, relay beacons and danger without pulling the game away from HECTON-8.",
           "external_site": "Draft PT localization pending native pass. The non-playable Aegir moons give the world scale: traffic anchors, failed claims, radiation hazards and orbital timing.",
-          "field_note": "Draft PT localization pending native pass. Use for system atlas entries and orbital UI labels."
+          "field_note": "Draft PT localization pending native pass. Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Inner Relay Moon Traffic Role",
@@ -314,7 +314,7 @@
           "audio": "Draft NL localization pending native pass. The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.",
           "in_game_wiki": "Draft NL localization pending native pass. Aegir has multiple moons. The inner relay moon explains traffic, relay beacons and danger without pulling the game away from HECTON-8.",
           "external_site": "Draft NL localization pending native pass. The non-playable Aegir moons give the world scale: traffic anchors, failed claims, radiation hazards and orbital timing.",
-          "field_note": "Draft NL localization pending native pass. Use for system atlas entries and orbital UI labels."
+          "field_note": "Draft NL localization pending native pass. Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds."
         }
       }
     },
@@ -343,16 +343,16 @@
           "audio": "Every system has one moon that accountants love and pilots curse.",
           "in_game_wiki": "The ice-scatter moon adds hazard traffic and salvage rumor pressure around Aegir. It is part of the wider system, but HECTON-8 remains the playable focus.",
           "external_site": "Aegir's moon ladder gives the setting believable geography: relay moons, ice-scatter hazards, dead beacons and the drowned HECTON-8 claim.",
-          "field_note": "Use for map annotations and salvage rumor text."
+          "field_note": "Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8."
         },
         "ru_RU": {
-          "title": "Роль ice-scatter moon",
-          "scanner": "Запись outer ice-scatter. Salvage traffic избегает луну, пока debris lanes закрыты.",
-          "terminal": "MOON LEDGER: ice-scatter moon сыплет яркий debris и old claim dust. Ценная на бумаге, мерзкая для navigation.",
-          "audio": "В каждой системе есть луна, которую любят бухгалтеры и ненавидят пилоты.",
-          "in_game_wiki": "Ice-scatter moon добавляет hazard traffic и salvage rumors вокруг Aegir, но фокус игры остаётся HECTON-8.",
-          "external_site": "Moon ladder Aegir даёт believable geography: relay moons, ice hazards, dead beacons and HECTON-8.",
-          "field_note": "Для map annotations и salvage rumor text."
+          "title": "Draft RU localization pending native pass. Ice Scatter Moon Hazard Role",
+          "scanner": "Draft RU localization pending native pass. Outer ice-scatter record. Salvage traffic avoids this moon until debris lanes open.",
+          "terminal": "Draft RU localization pending native pass. MOON LEDGER: the ice-scatter moon sheds bright debris and old claim dust. It is valuable on paper and miserable for navigation.",
+          "audio": "Draft RU localization pending native pass. Every system has one moon that accountants love and pilots curse.",
+          "in_game_wiki": "Draft RU localization pending native pass. The ice-scatter moon adds hazard traffic and salvage rumor pressure around Aegir. It is part of the wider system, but HECTON-8 remains the playable focus.",
+          "external_site": "Draft RU localization pending native pass. Aegir's moon ladder gives the setting believable geography: relay moons, ice-scatter hazards, dead beacons and the drowned HECTON-8 claim.",
+          "field_note": "Draft RU localization pending native pass. Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Ice Scatter Moon Hazard Role",
@@ -361,7 +361,7 @@
           "audio": "Draft JA localization pending native pass. Every system has one moon that accountants love and pilots curse.",
           "in_game_wiki": "Draft JA localization pending native pass. The ice-scatter moon adds hazard traffic and salvage rumor pressure around Aegir. It is part of the wider system, but HECTON-8 remains the playable focus.",
           "external_site": "Draft JA localization pending native pass. Aegir's moon ladder gives the setting believable geography: relay moons, ice-scatter hazards, dead beacons and the drowned HECTON-8 claim.",
-          "field_note": "Draft JA localization pending native pass. Use for map annotations and salvage rumor text."
+          "field_note": "Draft JA localization pending native pass. Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Ice Scatter Moon Hazard Role",
@@ -370,7 +370,7 @@
           "audio": "Draft ZH localization pending native pass. Every system has one moon that accountants love and pilots curse.",
           "in_game_wiki": "Draft ZH localization pending native pass. The ice-scatter moon adds hazard traffic and salvage rumor pressure around Aegir. It is part of the wider system, but HECTON-8 remains the playable focus.",
           "external_site": "Draft ZH localization pending native pass. Aegir's moon ladder gives the setting believable geography: relay moons, ice-scatter hazards, dead beacons and the drowned HECTON-8 claim.",
-          "field_note": "Draft ZH localization pending native pass. Use for map annotations and salvage rumor text."
+          "field_note": "Draft ZH localization pending native pass. Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Ice Scatter Moon Hazard Role",
@@ -379,7 +379,7 @@
           "audio": "Draft FR localization pending native pass. Every system has one moon that accountants love and pilots curse.",
           "in_game_wiki": "Draft FR localization pending native pass. The ice-scatter moon adds hazard traffic and salvage rumor pressure around Aegir. It is part of the wider system, but HECTON-8 remains the playable focus.",
           "external_site": "Draft FR localization pending native pass. Aegir's moon ladder gives the setting believable geography: relay moons, ice-scatter hazards, dead beacons and the drowned HECTON-8 claim.",
-          "field_note": "Draft FR localization pending native pass. Use for map annotations and salvage rumor text."
+          "field_note": "Draft FR localization pending native pass. Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Ice Scatter Moon Hazard Role",
@@ -388,7 +388,7 @@
           "audio": "Draft ES localization pending native pass. Every system has one moon that accountants love and pilots curse.",
           "in_game_wiki": "Draft ES localization pending native pass. The ice-scatter moon adds hazard traffic and salvage rumor pressure around Aegir. It is part of the wider system, but HECTON-8 remains the playable focus.",
           "external_site": "Draft ES localization pending native pass. Aegir's moon ladder gives the setting believable geography: relay moons, ice-scatter hazards, dead beacons and the drowned HECTON-8 claim.",
-          "field_note": "Draft ES localization pending native pass. Use for map annotations and salvage rumor text."
+          "field_note": "Draft ES localization pending native pass. Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Ice Scatter Moon Hazard Role",
@@ -397,7 +397,7 @@
           "audio": "Draft DE localization pending native pass. Every system has one moon that accountants love and pilots curse.",
           "in_game_wiki": "Draft DE localization pending native pass. The ice-scatter moon adds hazard traffic and salvage rumor pressure around Aegir. It is part of the wider system, but HECTON-8 remains the playable focus.",
           "external_site": "Draft DE localization pending native pass. Aegir's moon ladder gives the setting believable geography: relay moons, ice-scatter hazards, dead beacons and the drowned HECTON-8 claim.",
-          "field_note": "Draft DE localization pending native pass. Use for map annotations and salvage rumor text."
+          "field_note": "Draft DE localization pending native pass. Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Ice Scatter Moon Hazard Role",
@@ -406,7 +406,7 @@
           "audio": "Draft PL localization pending native pass. Every system has one moon that accountants love and pilots curse.",
           "in_game_wiki": "Draft PL localization pending native pass. The ice-scatter moon adds hazard traffic and salvage rumor pressure around Aegir. It is part of the wider system, but HECTON-8 remains the playable focus.",
           "external_site": "Draft PL localization pending native pass. Aegir's moon ladder gives the setting believable geography: relay moons, ice-scatter hazards, dead beacons and the drowned HECTON-8 claim.",
-          "field_note": "Draft PL localization pending native pass. Use for map annotations and salvage rumor text."
+          "field_note": "Draft PL localization pending native pass. Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Ice Scatter Moon Hazard Role",
@@ -415,7 +415,7 @@
           "audio": "Draft UK localization pending native pass. Every system has one moon that accountants love and pilots curse.",
           "in_game_wiki": "Draft UK localization pending native pass. The ice-scatter moon adds hazard traffic and salvage rumor pressure around Aegir. It is part of the wider system, but HECTON-8 remains the playable focus.",
           "external_site": "Draft UK localization pending native pass. Aegir's moon ladder gives the setting believable geography: relay moons, ice-scatter hazards, dead beacons and the drowned HECTON-8 claim.",
-          "field_note": "Draft UK localization pending native pass. Use for map annotations and salvage rumor text."
+          "field_note": "Draft UK localization pending native pass. Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Ice Scatter Moon Hazard Role",
@@ -424,7 +424,7 @@
           "audio": "Draft AR localization pending native pass. Every system has one moon that accountants love and pilots curse.",
           "in_game_wiki": "Draft AR localization pending native pass. The ice-scatter moon adds hazard traffic and salvage rumor pressure around Aegir. It is part of the wider system, but HECTON-8 remains the playable focus.",
           "external_site": "Draft AR localization pending native pass. Aegir's moon ladder gives the setting believable geography: relay moons, ice-scatter hazards, dead beacons and the drowned HECTON-8 claim.",
-          "field_note": "Draft AR localization pending native pass. Use for map annotations and salvage rumor text."
+          "field_note": "Draft AR localization pending native pass. Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Ice Scatter Moon Hazard Role",
@@ -433,7 +433,7 @@
           "audio": "Draft ID localization pending native pass. Every system has one moon that accountants love and pilots curse.",
           "in_game_wiki": "Draft ID localization pending native pass. The ice-scatter moon adds hazard traffic and salvage rumor pressure around Aegir. It is part of the wider system, but HECTON-8 remains the playable focus.",
           "external_site": "Draft ID localization pending native pass. Aegir's moon ladder gives the setting believable geography: relay moons, ice-scatter hazards, dead beacons and the drowned HECTON-8 claim.",
-          "field_note": "Draft ID localization pending native pass. Use for map annotations and salvage rumor text."
+          "field_note": "Draft ID localization pending native pass. Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Ice Scatter Moon Hazard Role",
@@ -442,7 +442,7 @@
           "audio": "Draft KO localization pending native pass. Every system has one moon that accountants love and pilots curse.",
           "in_game_wiki": "Draft KO localization pending native pass. The ice-scatter moon adds hazard traffic and salvage rumor pressure around Aegir. It is part of the wider system, but HECTON-8 remains the playable focus.",
           "external_site": "Draft KO localization pending native pass. Aegir's moon ladder gives the setting believable geography: relay moons, ice-scatter hazards, dead beacons and the drowned HECTON-8 claim.",
-          "field_note": "Draft KO localization pending native pass. Use for map annotations and salvage rumor text."
+          "field_note": "Draft KO localization pending native pass. Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Ice Scatter Moon Hazard Role",
@@ -451,7 +451,7 @@
           "audio": "Draft HE localization pending native pass. Every system has one moon that accountants love and pilots curse.",
           "in_game_wiki": "Draft HE localization pending native pass. The ice-scatter moon adds hazard traffic and salvage rumor pressure around Aegir. It is part of the wider system, but HECTON-8 remains the playable focus.",
           "external_site": "Draft HE localization pending native pass. Aegir's moon ladder gives the setting believable geography: relay moons, ice-scatter hazards, dead beacons and the drowned HECTON-8 claim.",
-          "field_note": "Draft HE localization pending native pass. Use for map annotations and salvage rumor text."
+          "field_note": "Draft HE localization pending native pass. Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Ice Scatter Moon Hazard Role",
@@ -460,7 +460,7 @@
           "audio": "Draft PT localization pending native pass. Every system has one moon that accountants love and pilots curse.",
           "in_game_wiki": "Draft PT localization pending native pass. The ice-scatter moon adds hazard traffic and salvage rumor pressure around Aegir. It is part of the wider system, but HECTON-8 remains the playable focus.",
           "external_site": "Draft PT localization pending native pass. Aegir's moon ladder gives the setting believable geography: relay moons, ice-scatter hazards, dead beacons and the drowned HECTON-8 claim.",
-          "field_note": "Draft PT localization pending native pass. Use for map annotations and salvage rumor text."
+          "field_note": "Draft PT localization pending native pass. Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Ice Scatter Moon Hazard Role",
@@ -469,7 +469,7 @@
           "audio": "Draft NL localization pending native pass. Every system has one moon that accountants love and pilots curse.",
           "in_game_wiki": "Draft NL localization pending native pass. The ice-scatter moon adds hazard traffic and salvage rumor pressure around Aegir. It is part of the wider system, but HECTON-8 remains the playable focus.",
           "external_site": "Draft NL localization pending native pass. Aegir's moon ladder gives the setting believable geography: relay moons, ice-scatter hazards, dead beacons and the drowned HECTON-8 claim.",
-          "field_note": "Draft NL localization pending native pass. Use for map annotations and salvage rumor text."
+          "field_note": "Draft NL localization pending native pass. Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8."
         }
       }
     },
@@ -498,16 +498,16 @@
           "audio": "It sits in the part of the ladder where work looks possible until the water starts doing math.",
           "in_game_wiki": "HECTON-8 is the playable moon because its mid-orbit tide role makes oceans, industry, hazards and repair networks converge.",
           "external_site": "HECTON-8 is one moon in a larger Aegir ladder. Its position makes pressure, tides and resource extraction believable.",
-          "field_note": "Use for HECTON-8 system article and orbital map."
+          "field_note": "HECTON-8 atlas record: mid-orbit tides make ocean work possible and catastrophe credible."
         },
         "ru_RU": {
-          "title": "Mid-orbit tide role HECTON-8",
-          "scanner": "Tide record HECTON-8. Mid-orbit position делает океан полезным и смертельным.",
-          "terminal": "ORBIT NOTE: HECTON-8 не ближняя и не дальняя луна. Tide load, magnetosphere windows и drowned crust сделали её местом, где Deep Reach могла добывать и провалиться.",
-          "audio": "Она стоит там, где работа кажется возможной, пока вода не начинает считать.",
-          "in_game_wiki": "HECTON-8 игровая потому, что mid-orbit tide role сводит ocean, industry, hazards и repair networks.",
-          "external_site": "HECTON-8 - одна луна в larger Aegir ladder. Её position делает pressure, tides and extraction believable.",
-          "field_note": "Для статьи HECTON-8 и orbital map."
+          "title": "Draft RU localization pending native pass. HECTON-8 Mid-Orbit Tide Role",
+          "scanner": "Draft RU localization pending native pass. Hecton-8 tide record. Mid-orbit position makes the ocean useful and lethal.",
+          "terminal": "Draft RU localization pending native pass. ORBIT NOTE: HECTON-8 is not the closest moon and not the farthest. Its tide load, magnetosphere windows and drowned crust make it the place Deep Reach could exploit and fail.",
+          "audio": "Draft RU localization pending native pass. It sits in the part of the ladder where work looks possible until the water starts doing math.",
+          "in_game_wiki": "Draft RU localization pending native pass. HECTON-8 is the playable moon because its mid-orbit tide role makes oceans, industry, hazards and repair networks converge.",
+          "external_site": "Draft RU localization pending native pass. HECTON-8 is one moon in a larger Aegir ladder. Its position makes pressure, tides and resource extraction believable.",
+          "field_note": "Draft RU localization pending native pass. HECTON-8 atlas record: mid-orbit tides make ocean work possible and catastrophe credible."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. HECTON-8 Mid-Orbit Tide Role",
@@ -516,7 +516,7 @@
           "audio": "Draft JA localization pending native pass. It sits in the part of the ladder where work looks possible until the water starts doing math.",
           "in_game_wiki": "Draft JA localization pending native pass. HECTON-8 is the playable moon because its mid-orbit tide role makes oceans, industry, hazards and repair networks converge.",
           "external_site": "Draft JA localization pending native pass. HECTON-8 is one moon in a larger Aegir ladder. Its position makes pressure, tides and resource extraction believable.",
-          "field_note": "Draft JA localization pending native pass. Use for HECTON-8 system article and orbital map."
+          "field_note": "Draft JA localization pending native pass. HECTON-8 atlas record: mid-orbit tides make ocean work possible and catastrophe credible."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. HECTON-8 Mid-Orbit Tide Role",
@@ -525,7 +525,7 @@
           "audio": "Draft ZH localization pending native pass. It sits in the part of the ladder where work looks possible until the water starts doing math.",
           "in_game_wiki": "Draft ZH localization pending native pass. HECTON-8 is the playable moon because its mid-orbit tide role makes oceans, industry, hazards and repair networks converge.",
           "external_site": "Draft ZH localization pending native pass. HECTON-8 is one moon in a larger Aegir ladder. Its position makes pressure, tides and resource extraction believable.",
-          "field_note": "Draft ZH localization pending native pass. Use for HECTON-8 system article and orbital map."
+          "field_note": "Draft ZH localization pending native pass. HECTON-8 atlas record: mid-orbit tides make ocean work possible and catastrophe credible."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. HECTON-8 Mid-Orbit Tide Role",
@@ -534,7 +534,7 @@
           "audio": "Draft FR localization pending native pass. It sits in the part of the ladder where work looks possible until the water starts doing math.",
           "in_game_wiki": "Draft FR localization pending native pass. HECTON-8 is the playable moon because its mid-orbit tide role makes oceans, industry, hazards and repair networks converge.",
           "external_site": "Draft FR localization pending native pass. HECTON-8 is one moon in a larger Aegir ladder. Its position makes pressure, tides and resource extraction believable.",
-          "field_note": "Draft FR localization pending native pass. Use for HECTON-8 system article and orbital map."
+          "field_note": "Draft FR localization pending native pass. HECTON-8 atlas record: mid-orbit tides make ocean work possible and catastrophe credible."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. HECTON-8 Mid-Orbit Tide Role",
@@ -543,7 +543,7 @@
           "audio": "Draft ES localization pending native pass. It sits in the part of the ladder where work looks possible until the water starts doing math.",
           "in_game_wiki": "Draft ES localization pending native pass. HECTON-8 is the playable moon because its mid-orbit tide role makes oceans, industry, hazards and repair networks converge.",
           "external_site": "Draft ES localization pending native pass. HECTON-8 is one moon in a larger Aegir ladder. Its position makes pressure, tides and resource extraction believable.",
-          "field_note": "Draft ES localization pending native pass. Use for HECTON-8 system article and orbital map."
+          "field_note": "Draft ES localization pending native pass. HECTON-8 atlas record: mid-orbit tides make ocean work possible and catastrophe credible."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. HECTON-8 Mid-Orbit Tide Role",
@@ -552,7 +552,7 @@
           "audio": "Draft DE localization pending native pass. It sits in the part of the ladder where work looks possible until the water starts doing math.",
           "in_game_wiki": "Draft DE localization pending native pass. HECTON-8 is the playable moon because its mid-orbit tide role makes oceans, industry, hazards and repair networks converge.",
           "external_site": "Draft DE localization pending native pass. HECTON-8 is one moon in a larger Aegir ladder. Its position makes pressure, tides and resource extraction believable.",
-          "field_note": "Draft DE localization pending native pass. Use for HECTON-8 system article and orbital map."
+          "field_note": "Draft DE localization pending native pass. HECTON-8 atlas record: mid-orbit tides make ocean work possible and catastrophe credible."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. HECTON-8 Mid-Orbit Tide Role",
@@ -561,7 +561,7 @@
           "audio": "Draft PL localization pending native pass. It sits in the part of the ladder where work looks possible until the water starts doing math.",
           "in_game_wiki": "Draft PL localization pending native pass. HECTON-8 is the playable moon because its mid-orbit tide role makes oceans, industry, hazards and repair networks converge.",
           "external_site": "Draft PL localization pending native pass. HECTON-8 is one moon in a larger Aegir ladder. Its position makes pressure, tides and resource extraction believable.",
-          "field_note": "Draft PL localization pending native pass. Use for HECTON-8 system article and orbital map."
+          "field_note": "Draft PL localization pending native pass. HECTON-8 atlas record: mid-orbit tides make ocean work possible and catastrophe credible."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. HECTON-8 Mid-Orbit Tide Role",
@@ -570,7 +570,7 @@
           "audio": "Draft UK localization pending native pass. It sits in the part of the ladder where work looks possible until the water starts doing math.",
           "in_game_wiki": "Draft UK localization pending native pass. HECTON-8 is the playable moon because its mid-orbit tide role makes oceans, industry, hazards and repair networks converge.",
           "external_site": "Draft UK localization pending native pass. HECTON-8 is one moon in a larger Aegir ladder. Its position makes pressure, tides and resource extraction believable.",
-          "field_note": "Draft UK localization pending native pass. Use for HECTON-8 system article and orbital map."
+          "field_note": "Draft UK localization pending native pass. HECTON-8 atlas record: mid-orbit tides make ocean work possible and catastrophe credible."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. HECTON-8 Mid-Orbit Tide Role",
@@ -579,7 +579,7 @@
           "audio": "Draft AR localization pending native pass. It sits in the part of the ladder where work looks possible until the water starts doing math.",
           "in_game_wiki": "Draft AR localization pending native pass. HECTON-8 is the playable moon because its mid-orbit tide role makes oceans, industry, hazards and repair networks converge.",
           "external_site": "Draft AR localization pending native pass. HECTON-8 is one moon in a larger Aegir ladder. Its position makes pressure, tides and resource extraction believable.",
-          "field_note": "Draft AR localization pending native pass. Use for HECTON-8 system article and orbital map."
+          "field_note": "Draft AR localization pending native pass. HECTON-8 atlas record: mid-orbit tides make ocean work possible and catastrophe credible."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. HECTON-8 Mid-Orbit Tide Role",
@@ -588,7 +588,7 @@
           "audio": "Draft ID localization pending native pass. It sits in the part of the ladder where work looks possible until the water starts doing math.",
           "in_game_wiki": "Draft ID localization pending native pass. HECTON-8 is the playable moon because its mid-orbit tide role makes oceans, industry, hazards and repair networks converge.",
           "external_site": "Draft ID localization pending native pass. HECTON-8 is one moon in a larger Aegir ladder. Its position makes pressure, tides and resource extraction believable.",
-          "field_note": "Draft ID localization pending native pass. Use for HECTON-8 system article and orbital map."
+          "field_note": "Draft ID localization pending native pass. HECTON-8 atlas record: mid-orbit tides make ocean work possible and catastrophe credible."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. HECTON-8 Mid-Orbit Tide Role",
@@ -597,7 +597,7 @@
           "audio": "Draft KO localization pending native pass. It sits in the part of the ladder where work looks possible until the water starts doing math.",
           "in_game_wiki": "Draft KO localization pending native pass. HECTON-8 is the playable moon because its mid-orbit tide role makes oceans, industry, hazards and repair networks converge.",
           "external_site": "Draft KO localization pending native pass. HECTON-8 is one moon in a larger Aegir ladder. Its position makes pressure, tides and resource extraction believable.",
-          "field_note": "Draft KO localization pending native pass. Use for HECTON-8 system article and orbital map."
+          "field_note": "Draft KO localization pending native pass. HECTON-8 atlas record: mid-orbit tides make ocean work possible and catastrophe credible."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. HECTON-8 Mid-Orbit Tide Role",
@@ -606,7 +606,7 @@
           "audio": "Draft HE localization pending native pass. It sits in the part of the ladder where work looks possible until the water starts doing math.",
           "in_game_wiki": "Draft HE localization pending native pass. HECTON-8 is the playable moon because its mid-orbit tide role makes oceans, industry, hazards and repair networks converge.",
           "external_site": "Draft HE localization pending native pass. HECTON-8 is one moon in a larger Aegir ladder. Its position makes pressure, tides and resource extraction believable.",
-          "field_note": "Draft HE localization pending native pass. Use for HECTON-8 system article and orbital map."
+          "field_note": "Draft HE localization pending native pass. HECTON-8 atlas record: mid-orbit tides make ocean work possible and catastrophe credible."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. HECTON-8 Mid-Orbit Tide Role",
@@ -615,7 +615,7 @@
           "audio": "Draft PT localization pending native pass. It sits in the part of the ladder where work looks possible until the water starts doing math.",
           "in_game_wiki": "Draft PT localization pending native pass. HECTON-8 is the playable moon because its mid-orbit tide role makes oceans, industry, hazards and repair networks converge.",
           "external_site": "Draft PT localization pending native pass. HECTON-8 is one moon in a larger Aegir ladder. Its position makes pressure, tides and resource extraction believable.",
-          "field_note": "Draft PT localization pending native pass. Use for HECTON-8 system article and orbital map."
+          "field_note": "Draft PT localization pending native pass. HECTON-8 atlas record: mid-orbit tides make ocean work possible and catastrophe credible."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. HECTON-8 Mid-Orbit Tide Role",
@@ -624,7 +624,7 @@
           "audio": "Draft NL localization pending native pass. It sits in the part of the ladder where work looks possible until the water starts doing math.",
           "in_game_wiki": "Draft NL localization pending native pass. HECTON-8 is the playable moon because its mid-orbit tide role makes oceans, industry, hazards and repair networks converge.",
           "external_site": "Draft NL localization pending native pass. HECTON-8 is one moon in a larger Aegir ladder. Its position makes pressure, tides and resource extraction believable.",
-          "field_note": "Draft NL localization pending native pass. Use for HECTON-8 system article and orbital map."
+          "field_note": "Draft NL localization pending native pass. HECTON-8 atlas record: mid-orbit tides make ocean work possible and catastrophe credible."
         }
       }
     },
@@ -653,16 +653,16 @@
           "audio": "Dead infrastructure does not leave. It just becomes another error term.",
           "in_game_wiki": "The outer dead beacon moon lets comms and rescue windows feel technical: old relays are unreliable but still part of the math.",
           "external_site": "Aegir's outer moon records explain why communication with HECTON-8 is rare, delayed and ugly rather than simply impossible.",
-          "field_note": "Use for comm-window lore and orbital system pages."
+          "field_note": "Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary."
         },
         "ru_RU": {
-          "title": "Роль outer dead beacon moon",
-          "scanner": "Dead beacon ping. Outer moon traffic records всё ещё всплывают в rescue math.",
-          "terminal": "BEACON NOTE: мёртвый outer relay всё ещё входит в old route solvers. Иногда плохие данные - единственная причина предсказать окно.",
-          "audio": "Мёртвая инфраструктура не уходит. Она просто становится ещё одним error term.",
-          "in_game_wiki": "Outer dead beacon moon делает comms и rescue windows техническими: старые relays ненадёжны, но всё ещё часть математики.",
-          "external_site": "Outer moon records объясняют, почему связь с HECTON-8 редкая, delayed и грязная.",
-          "field_note": "Для comm-window lore и orbital pages."
+          "title": "Draft RU localization pending native pass. Outer Dead Beacon Moon Role",
+          "scanner": "Draft RU localization pending native pass. Dead beacon ping. Outer moon traffic records keep resurfacing in rescue math.",
+          "terminal": "Draft RU localization pending native pass. BEACON NOTE: a dead outer moon relay still appears in old route solvers. Sometimes the bad data is the only reason a window can be predicted at all.",
+          "audio": "Draft RU localization pending native pass. Dead infrastructure does not leave. It just becomes another error term.",
+          "in_game_wiki": "Draft RU localization pending native pass. The outer dead beacon moon lets comms and rescue windows feel technical: old relays are unreliable but still part of the math.",
+          "external_site": "Draft RU localization pending native pass. Aegir's outer moon records explain why communication with HECTON-8 is rare, delayed and ugly rather than simply impossible.",
+          "field_note": "Draft RU localization pending native pass. Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Outer Dead Beacon Moon Role",
@@ -671,7 +671,7 @@
           "audio": "Draft JA localization pending native pass. Dead infrastructure does not leave. It just becomes another error term.",
           "in_game_wiki": "Draft JA localization pending native pass. The outer dead beacon moon lets comms and rescue windows feel technical: old relays are unreliable but still part of the math.",
           "external_site": "Draft JA localization pending native pass. Aegir's outer moon records explain why communication with HECTON-8 is rare, delayed and ugly rather than simply impossible.",
-          "field_note": "Draft JA localization pending native pass. Use for comm-window lore and orbital system pages."
+          "field_note": "Draft JA localization pending native pass. Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Outer Dead Beacon Moon Role",
@@ -680,7 +680,7 @@
           "audio": "Draft ZH localization pending native pass. Dead infrastructure does not leave. It just becomes another error term.",
           "in_game_wiki": "Draft ZH localization pending native pass. The outer dead beacon moon lets comms and rescue windows feel technical: old relays are unreliable but still part of the math.",
           "external_site": "Draft ZH localization pending native pass. Aegir's outer moon records explain why communication with HECTON-8 is rare, delayed and ugly rather than simply impossible.",
-          "field_note": "Draft ZH localization pending native pass. Use for comm-window lore and orbital system pages."
+          "field_note": "Draft ZH localization pending native pass. Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Outer Dead Beacon Moon Role",
@@ -689,7 +689,7 @@
           "audio": "Draft FR localization pending native pass. Dead infrastructure does not leave. It just becomes another error term.",
           "in_game_wiki": "Draft FR localization pending native pass. The outer dead beacon moon lets comms and rescue windows feel technical: old relays are unreliable but still part of the math.",
           "external_site": "Draft FR localization pending native pass. Aegir's outer moon records explain why communication with HECTON-8 is rare, delayed and ugly rather than simply impossible.",
-          "field_note": "Draft FR localization pending native pass. Use for comm-window lore and orbital system pages."
+          "field_note": "Draft FR localization pending native pass. Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Outer Dead Beacon Moon Role",
@@ -698,7 +698,7 @@
           "audio": "Draft ES localization pending native pass. Dead infrastructure does not leave. It just becomes another error term.",
           "in_game_wiki": "Draft ES localization pending native pass. The outer dead beacon moon lets comms and rescue windows feel technical: old relays are unreliable but still part of the math.",
           "external_site": "Draft ES localization pending native pass. Aegir's outer moon records explain why communication with HECTON-8 is rare, delayed and ugly rather than simply impossible.",
-          "field_note": "Draft ES localization pending native pass. Use for comm-window lore and orbital system pages."
+          "field_note": "Draft ES localization pending native pass. Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Outer Dead Beacon Moon Role",
@@ -707,7 +707,7 @@
           "audio": "Draft DE localization pending native pass. Dead infrastructure does not leave. It just becomes another error term.",
           "in_game_wiki": "Draft DE localization pending native pass. The outer dead beacon moon lets comms and rescue windows feel technical: old relays are unreliable but still part of the math.",
           "external_site": "Draft DE localization pending native pass. Aegir's outer moon records explain why communication with HECTON-8 is rare, delayed and ugly rather than simply impossible.",
-          "field_note": "Draft DE localization pending native pass. Use for comm-window lore and orbital system pages."
+          "field_note": "Draft DE localization pending native pass. Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Outer Dead Beacon Moon Role",
@@ -716,7 +716,7 @@
           "audio": "Draft PL localization pending native pass. Dead infrastructure does not leave. It just becomes another error term.",
           "in_game_wiki": "Draft PL localization pending native pass. The outer dead beacon moon lets comms and rescue windows feel technical: old relays are unreliable but still part of the math.",
           "external_site": "Draft PL localization pending native pass. Aegir's outer moon records explain why communication with HECTON-8 is rare, delayed and ugly rather than simply impossible.",
-          "field_note": "Draft PL localization pending native pass. Use for comm-window lore and orbital system pages."
+          "field_note": "Draft PL localization pending native pass. Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Outer Dead Beacon Moon Role",
@@ -725,7 +725,7 @@
           "audio": "Draft UK localization pending native pass. Dead infrastructure does not leave. It just becomes another error term.",
           "in_game_wiki": "Draft UK localization pending native pass. The outer dead beacon moon lets comms and rescue windows feel technical: old relays are unreliable but still part of the math.",
           "external_site": "Draft UK localization pending native pass. Aegir's outer moon records explain why communication with HECTON-8 is rare, delayed and ugly rather than simply impossible.",
-          "field_note": "Draft UK localization pending native pass. Use for comm-window lore and orbital system pages."
+          "field_note": "Draft UK localization pending native pass. Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Outer Dead Beacon Moon Role",
@@ -734,7 +734,7 @@
           "audio": "Draft AR localization pending native pass. Dead infrastructure does not leave. It just becomes another error term.",
           "in_game_wiki": "Draft AR localization pending native pass. The outer dead beacon moon lets comms and rescue windows feel technical: old relays are unreliable but still part of the math.",
           "external_site": "Draft AR localization pending native pass. Aegir's outer moon records explain why communication with HECTON-8 is rare, delayed and ugly rather than simply impossible.",
-          "field_note": "Draft AR localization pending native pass. Use for comm-window lore and orbital system pages."
+          "field_note": "Draft AR localization pending native pass. Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Outer Dead Beacon Moon Role",
@@ -743,7 +743,7 @@
           "audio": "Draft ID localization pending native pass. Dead infrastructure does not leave. It just becomes another error term.",
           "in_game_wiki": "Draft ID localization pending native pass. The outer dead beacon moon lets comms and rescue windows feel technical: old relays are unreliable but still part of the math.",
           "external_site": "Draft ID localization pending native pass. Aegir's outer moon records explain why communication with HECTON-8 is rare, delayed and ugly rather than simply impossible.",
-          "field_note": "Draft ID localization pending native pass. Use for comm-window lore and orbital system pages."
+          "field_note": "Draft ID localization pending native pass. Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Outer Dead Beacon Moon Role",
@@ -752,7 +752,7 @@
           "audio": "Draft KO localization pending native pass. Dead infrastructure does not leave. It just becomes another error term.",
           "in_game_wiki": "Draft KO localization pending native pass. The outer dead beacon moon lets comms and rescue windows feel technical: old relays are unreliable but still part of the math.",
           "external_site": "Draft KO localization pending native pass. Aegir's outer moon records explain why communication with HECTON-8 is rare, delayed and ugly rather than simply impossible.",
-          "field_note": "Draft KO localization pending native pass. Use for comm-window lore and orbital system pages."
+          "field_note": "Draft KO localization pending native pass. Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Outer Dead Beacon Moon Role",
@@ -761,7 +761,7 @@
           "audio": "Draft HE localization pending native pass. Dead infrastructure does not leave. It just becomes another error term.",
           "in_game_wiki": "Draft HE localization pending native pass. The outer dead beacon moon lets comms and rescue windows feel technical: old relays are unreliable but still part of the math.",
           "external_site": "Draft HE localization pending native pass. Aegir's outer moon records explain why communication with HECTON-8 is rare, delayed and ugly rather than simply impossible.",
-          "field_note": "Draft HE localization pending native pass. Use for comm-window lore and orbital system pages."
+          "field_note": "Draft HE localization pending native pass. Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Outer Dead Beacon Moon Role",
@@ -770,7 +770,7 @@
           "audio": "Draft PT localization pending native pass. Dead infrastructure does not leave. It just becomes another error term.",
           "in_game_wiki": "Draft PT localization pending native pass. The outer dead beacon moon lets comms and rescue windows feel technical: old relays are unreliable but still part of the math.",
           "external_site": "Draft PT localization pending native pass. Aegir's outer moon records explain why communication with HECTON-8 is rare, delayed and ugly rather than simply impossible.",
-          "field_note": "Draft PT localization pending native pass. Use for comm-window lore and orbital system pages."
+          "field_note": "Draft PT localization pending native pass. Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Outer Dead Beacon Moon Role",
@@ -779,7 +779,7 @@
           "audio": "Draft NL localization pending native pass. Dead infrastructure does not leave. It just becomes another error term.",
           "in_game_wiki": "Draft NL localization pending native pass. The outer dead beacon moon lets comms and rescue windows feel technical: old relays are unreliable but still part of the math.",
           "external_site": "Draft NL localization pending native pass. Aegir's outer moon records explain why communication with HECTON-8 is rare, delayed and ugly rather than simply impossible.",
-          "field_note": "Draft NL localization pending native pass. Use for comm-window lore and orbital system pages."
+          "field_note": "Draft NL localization pending native pass. Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary."
         }
       }
     }

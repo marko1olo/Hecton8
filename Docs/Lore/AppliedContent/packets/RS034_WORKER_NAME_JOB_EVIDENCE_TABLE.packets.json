@@ -27,139 +27,139 @@
       },
       "localized": {
         "en_US": {
-          "title": "Worker Name Pool Protocol",
+          "title": "Worker Name Pool Record",
           "scanner": "Names are evidence, not collectible flavor.",
           "field_note": "Seed names must preserve identity without making family melodrama.",
-          "terminal": "NAME POOL: generate workers from domain-origin bands, job role, shift, badge fragment and route permission. Never translate personal names live at runtime.",
+          "terminal": "NAME POOL: workers derive from domain-origin bands, job role, shift, badge fragment, and route permission. Personal names stay stable across languages.",
           "audio": "A name is a route, a job, and a person Deep Reach tried to price.",
           "in_game_wiki": "The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
-          "external_site": "Worker Name Pool Protocol defines site/wiki and game rules for seeded worker evidence."
+          "external_site": "Worker name pools keep seeded worker evidence human: origin band, role, shift, badge fragment, and route permission."
         },
         "ru_RU": {
-          "title": "Протокол пула имен рабочих",
-          "scanner": "Имена - доказательство, а не коллекционный flavor.",
-          "field_note": "Seed names должны сохранять личность без семейной мелодрамы.",
-          "terminal": "NAME POOL: генерировать рабочих из domain-origin band, job role, shift, badge fragment и route permission. Никогда не переводить личные имена live at runtime.",
-          "audio": "Имя - это маршрут, работа и человек, которого Deep Reach пыталась оценить.",
-          "in_game_wiki": "Пул имен рабочих позволяет шкафчикам, ledger и job cards меняться по seed, сохраняя колонию человеческой и читаемой.",
-          "external_site": "Протокол пула имен рабочих задает правила сайта/wiki и игры для seeded worker evidence."
+          "title": "Draft RU localization pending native pass. Worker Name Pool Record",
+          "scanner": "Draft RU localization pending native pass. Names are evidence, not collectible flavor.",
+          "field_note": "Draft RU localization pending native pass. Seed names must preserve identity without making family melodrama.",
+          "terminal": "Draft RU localization pending native pass. NAME POOL: workers derive from domain-origin bands, job role, shift, badge fragment, and route permission. Personal names stay stable across languages.",
+          "audio": "Draft RU localization pending native pass. A name is a route, a job, and a person Deep Reach tried to price.",
+          "in_game_wiki": "Draft RU localization pending native pass. The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
+          "external_site": "Draft RU localization pending native pass. Worker name pools keep seeded worker evidence human: origin band, role, shift, badge fragment, and route permission."
         },
         "ja_JP": {
-          "title": "Worker Name Pool Protocol",
-          "scanner": "Draft JP localization pending native pass. Names are evidence, not collectible flavor.",
-          "field_note": "Draft JP localization pending native pass. Seed names must preserve identity without making family melodrama.",
-          "terminal": "Draft JP localization pending native pass. NAME POOL: generate workers from domain-origin bands, job role, shift, badge fragment and route permission. Never translate personal names live at runtime.",
-          "audio": "Draft JP localization pending native pass. A name is a route, a job, and a person Deep Reach tried to price.",
-          "in_game_wiki": "Draft JP localization pending native pass. The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
-          "external_site": "Draft JP localization pending native pass. Worker Name Pool Protocol defines site/wiki and game rules for seeded worker evidence."
+          "title": "Draft JP localization pending native pass. Worker Name Pool Record",
+          "scanner": "Draft JA localization pending native pass. Names are evidence, not collectible flavor.",
+          "field_note": "Draft JA localization pending native pass. Seed names must preserve identity without making family melodrama.",
+          "terminal": "Draft JP localization pending native pass. NAME POOL: workers derive from domain-origin bands, job role, shift, badge fragment, and route permission. Personal names stay stable across languages.",
+          "audio": "Draft JA localization pending native pass. A name is a route, a job, and a person Deep Reach tried to price.",
+          "in_game_wiki": "Draft JA localization pending native pass. The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
+          "external_site": "Draft JP localization pending native pass. Worker name pools keep seeded worker evidence human: origin band, role, shift, badge fragment, and route permission."
         },
         "zh_CN": {
-          "title": "Worker Name Pool Protocol",
-          "scanner": "Draft CN localization pending native pass. Names are evidence, not collectible flavor.",
-          "field_note": "Draft CN localization pending native pass. Seed names must preserve identity without making family melodrama.",
-          "terminal": "Draft CN localization pending native pass. NAME POOL: generate workers from domain-origin bands, job role, shift, badge fragment and route permission. Never translate personal names live at runtime.",
-          "audio": "Draft CN localization pending native pass. A name is a route, a job, and a person Deep Reach tried to price.",
-          "in_game_wiki": "Draft CN localization pending native pass. The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
-          "external_site": "Draft CN localization pending native pass. Worker Name Pool Protocol defines site/wiki and game rules for seeded worker evidence."
+          "title": "Draft CN localization pending native pass. Worker Name Pool Record",
+          "scanner": "Draft ZH localization pending native pass. Names are evidence, not collectible flavor.",
+          "field_note": "Draft ZH localization pending native pass. Seed names must preserve identity without making family melodrama.",
+          "terminal": "Draft CN localization pending native pass. NAME POOL: workers derive from domain-origin bands, job role, shift, badge fragment, and route permission. Personal names stay stable across languages.",
+          "audio": "Draft ZH localization pending native pass. A name is a route, a job, and a person Deep Reach tried to price.",
+          "in_game_wiki": "Draft ZH localization pending native pass. The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
+          "external_site": "Draft CN localization pending native pass. Worker name pools keep seeded worker evidence human: origin band, role, shift, badge fragment, and route permission."
         },
         "fr_FR": {
-          "title": "Worker Name Pool Protocol",
+          "title": "Draft FR localization pending native pass. Worker Name Pool Record",
           "scanner": "Draft FR localization pending native pass. Names are evidence, not collectible flavor.",
           "field_note": "Draft FR localization pending native pass. Seed names must preserve identity without making family melodrama.",
-          "terminal": "Draft FR localization pending native pass. NAME POOL: generate workers from domain-origin bands, job role, shift, badge fragment and route permission. Never translate personal names live at runtime.",
+          "terminal": "Draft FR localization pending native pass. NAME POOL: workers derive from domain-origin bands, job role, shift, badge fragment, and route permission. Personal names stay stable across languages.",
           "audio": "Draft FR localization pending native pass. A name is a route, a job, and a person Deep Reach tried to price.",
           "in_game_wiki": "Draft FR localization pending native pass. The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
-          "external_site": "Draft FR localization pending native pass. Worker Name Pool Protocol defines site/wiki and game rules for seeded worker evidence."
+          "external_site": "Draft FR localization pending native pass. Worker name pools keep seeded worker evidence human: origin band, role, shift, badge fragment, and route permission."
         },
         "es_ES": {
-          "title": "Worker Name Pool Protocol",
+          "title": "Draft ES localization pending native pass. Worker Name Pool Record",
           "scanner": "Draft ES localization pending native pass. Names are evidence, not collectible flavor.",
           "field_note": "Draft ES localization pending native pass. Seed names must preserve identity without making family melodrama.",
-          "terminal": "Draft ES localization pending native pass. NAME POOL: generate workers from domain-origin bands, job role, shift, badge fragment and route permission. Never translate personal names live at runtime.",
+          "terminal": "Draft ES localization pending native pass. NAME POOL: workers derive from domain-origin bands, job role, shift, badge fragment, and route permission. Personal names stay stable across languages.",
           "audio": "Draft ES localization pending native pass. A name is a route, a job, and a person Deep Reach tried to price.",
           "in_game_wiki": "Draft ES localization pending native pass. The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
-          "external_site": "Draft ES localization pending native pass. Worker Name Pool Protocol defines site/wiki and game rules for seeded worker evidence."
+          "external_site": "Draft ES localization pending native pass. Worker name pools keep seeded worker evidence human: origin band, role, shift, badge fragment, and route permission."
         },
         "de_DE": {
-          "title": "Worker Name Pool Protocol",
+          "title": "Draft DE localization pending native pass. Worker Name Pool Record",
           "scanner": "Draft DE localization pending native pass. Names are evidence, not collectible flavor.",
           "field_note": "Draft DE localization pending native pass. Seed names must preserve identity without making family melodrama.",
-          "terminal": "Draft DE localization pending native pass. NAME POOL: generate workers from domain-origin bands, job role, shift, badge fragment and route permission. Never translate personal names live at runtime.",
+          "terminal": "Draft DE localization pending native pass. NAME POOL: workers derive from domain-origin bands, job role, shift, badge fragment, and route permission. Personal names stay stable across languages.",
           "audio": "Draft DE localization pending native pass. A name is a route, a job, and a person Deep Reach tried to price.",
           "in_game_wiki": "Draft DE localization pending native pass. The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
-          "external_site": "Draft DE localization pending native pass. Worker Name Pool Protocol defines site/wiki and game rules for seeded worker evidence."
+          "external_site": "Draft DE localization pending native pass. Worker name pools keep seeded worker evidence human: origin band, role, shift, badge fragment, and route permission."
         },
         "pl_PL": {
-          "title": "Worker Name Pool Protocol",
+          "title": "Draft PL localization pending native pass. Worker Name Pool Record",
           "scanner": "Draft PL localization pending native pass. Names are evidence, not collectible flavor.",
           "field_note": "Draft PL localization pending native pass. Seed names must preserve identity without making family melodrama.",
-          "terminal": "Draft PL localization pending native pass. NAME POOL: generate workers from domain-origin bands, job role, shift, badge fragment and route permission. Never translate personal names live at runtime.",
+          "terminal": "Draft PL localization pending native pass. NAME POOL: workers derive from domain-origin bands, job role, shift, badge fragment, and route permission. Personal names stay stable across languages.",
           "audio": "Draft PL localization pending native pass. A name is a route, a job, and a person Deep Reach tried to price.",
           "in_game_wiki": "Draft PL localization pending native pass. The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
-          "external_site": "Draft PL localization pending native pass. Worker Name Pool Protocol defines site/wiki and game rules for seeded worker evidence."
+          "external_site": "Draft PL localization pending native pass. Worker name pools keep seeded worker evidence human: origin band, role, shift, badge fragment, and route permission."
         },
         "uk_UA": {
-          "title": "Worker Name Pool Protocol",
-          "scanner": "Draft UA localization pending native pass. Names are evidence, not collectible flavor.",
-          "field_note": "Draft UA localization pending native pass. Seed names must preserve identity without making family melodrama.",
-          "terminal": "Draft UA localization pending native pass. NAME POOL: generate workers from domain-origin bands, job role, shift, badge fragment and route permission. Never translate personal names live at runtime.",
-          "audio": "Draft UA localization pending native pass. A name is a route, a job, and a person Deep Reach tried to price.",
-          "in_game_wiki": "Draft UA localization pending native pass. The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
-          "external_site": "Draft UA localization pending native pass. Worker Name Pool Protocol defines site/wiki and game rules for seeded worker evidence."
+          "title": "Draft UA localization pending native pass. Worker Name Pool Record",
+          "scanner": "Draft UK localization pending native pass. Names are evidence, not collectible flavor.",
+          "field_note": "Draft UK localization pending native pass. Seed names must preserve identity without making family melodrama.",
+          "terminal": "Draft UA localization pending native pass. NAME POOL: workers derive from domain-origin bands, job role, shift, badge fragment, and route permission. Personal names stay stable across languages.",
+          "audio": "Draft UK localization pending native pass. A name is a route, a job, and a person Deep Reach tried to price.",
+          "in_game_wiki": "Draft UK localization pending native pass. The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
+          "external_site": "Draft UA localization pending native pass. Worker name pools keep seeded worker evidence human: origin band, role, shift, badge fragment, and route permission."
         },
         "ar_SA": {
-          "title": "Worker Name Pool Protocol",
+          "title": "Draft AR localization pending native pass. Worker Name Pool Record",
           "scanner": "Draft AR localization pending native pass. Names are evidence, not collectible flavor.",
           "field_note": "Draft AR localization pending native pass. Seed names must preserve identity without making family melodrama.",
-          "terminal": "Draft AR localization pending native pass. NAME POOL: generate workers from domain-origin bands, job role, shift, badge fragment and route permission. Never translate personal names live at runtime.",
+          "terminal": "Draft AR localization pending native pass. NAME POOL: workers derive from domain-origin bands, job role, shift, badge fragment, and route permission. Personal names stay stable across languages.",
           "audio": "Draft AR localization pending native pass. A name is a route, a job, and a person Deep Reach tried to price.",
           "in_game_wiki": "Draft AR localization pending native pass. The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
-          "external_site": "Draft AR localization pending native pass. Worker Name Pool Protocol defines site/wiki and game rules for seeded worker evidence."
+          "external_site": "Draft AR localization pending native pass. Worker name pools keep seeded worker evidence human: origin band, role, shift, badge fragment, and route permission."
         },
         "id_ID": {
-          "title": "Worker Name Pool Protocol",
+          "title": "Draft ID localization pending native pass. Worker Name Pool Record",
           "scanner": "Draft ID localization pending native pass. Names are evidence, not collectible flavor.",
           "field_note": "Draft ID localization pending native pass. Seed names must preserve identity without making family melodrama.",
-          "terminal": "Draft ID localization pending native pass. NAME POOL: generate workers from domain-origin bands, job role, shift, badge fragment and route permission. Never translate personal names live at runtime.",
+          "terminal": "Draft ID localization pending native pass. NAME POOL: workers derive from domain-origin bands, job role, shift, badge fragment, and route permission. Personal names stay stable across languages.",
           "audio": "Draft ID localization pending native pass. A name is a route, a job, and a person Deep Reach tried to price.",
           "in_game_wiki": "Draft ID localization pending native pass. The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
-          "external_site": "Draft ID localization pending native pass. Worker Name Pool Protocol defines site/wiki and game rules for seeded worker evidence."
+          "external_site": "Draft ID localization pending native pass. Worker name pools keep seeded worker evidence human: origin band, role, shift, badge fragment, and route permission."
         },
         "ko_KR": {
-          "title": "Worker Name Pool Protocol",
+          "title": "Draft KO localization pending native pass. Worker Name Pool Record",
           "scanner": "Draft KO localization pending native pass. Names are evidence, not collectible flavor.",
           "field_note": "Draft KO localization pending native pass. Seed names must preserve identity without making family melodrama.",
-          "terminal": "Draft KO localization pending native pass. NAME POOL: generate workers from domain-origin bands, job role, shift, badge fragment and route permission. Never translate personal names live at runtime.",
+          "terminal": "Draft KO localization pending native pass. NAME POOL: workers derive from domain-origin bands, job role, shift, badge fragment, and route permission. Personal names stay stable across languages.",
           "audio": "Draft KO localization pending native pass. A name is a route, a job, and a person Deep Reach tried to price.",
           "in_game_wiki": "Draft KO localization pending native pass. The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
-          "external_site": "Draft KO localization pending native pass. Worker Name Pool Protocol defines site/wiki and game rules for seeded worker evidence."
+          "external_site": "Draft KO localization pending native pass. Worker name pools keep seeded worker evidence human: origin band, role, shift, badge fragment, and route permission."
         },
         "he_IL": {
-          "title": "Worker Name Pool Protocol",
+          "title": "Draft HE localization pending native pass. Worker Name Pool Record",
           "scanner": "Draft HE localization pending native pass. Names are evidence, not collectible flavor.",
           "field_note": "Draft HE localization pending native pass. Seed names must preserve identity without making family melodrama.",
-          "terminal": "Draft HE localization pending native pass. NAME POOL: generate workers from domain-origin bands, job role, shift, badge fragment and route permission. Never translate personal names live at runtime.",
+          "terminal": "Draft HE localization pending native pass. NAME POOL: workers derive from domain-origin bands, job role, shift, badge fragment, and route permission. Personal names stay stable across languages.",
           "audio": "Draft HE localization pending native pass. A name is a route, a job, and a person Deep Reach tried to price.",
           "in_game_wiki": "Draft HE localization pending native pass. The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
-          "external_site": "Draft HE localization pending native pass. Worker Name Pool Protocol defines site/wiki and game rules for seeded worker evidence."
+          "external_site": "Draft HE localization pending native pass. Worker name pools keep seeded worker evidence human: origin band, role, shift, badge fragment, and route permission."
         },
         "pt_BR": {
-          "title": "Worker Name Pool Protocol",
+          "title": "Draft PT localization pending native pass. Worker Name Pool Record",
           "scanner": "Draft PT localization pending native pass. Names are evidence, not collectible flavor.",
           "field_note": "Draft PT localization pending native pass. Seed names must preserve identity without making family melodrama.",
-          "terminal": "Draft PT localization pending native pass. NAME POOL: generate workers from domain-origin bands, job role, shift, badge fragment and route permission. Never translate personal names live at runtime.",
+          "terminal": "Draft PT localization pending native pass. NAME POOL: workers derive from domain-origin bands, job role, shift, badge fragment, and route permission. Personal names stay stable across languages.",
           "audio": "Draft PT localization pending native pass. A name is a route, a job, and a person Deep Reach tried to price.",
           "in_game_wiki": "Draft PT localization pending native pass. The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
-          "external_site": "Draft PT localization pending native pass. Worker Name Pool Protocol defines site/wiki and game rules for seeded worker evidence."
+          "external_site": "Draft PT localization pending native pass. Worker name pools keep seeded worker evidence human: origin band, role, shift, badge fragment, and route permission."
         },
         "nl_NL": {
-          "title": "Worker Name Pool Protocol",
+          "title": "Draft NL localization pending native pass. Worker Name Pool Record",
           "scanner": "Draft NL localization pending native pass. Names are evidence, not collectible flavor.",
           "field_note": "Draft NL localization pending native pass. Seed names must preserve identity without making family melodrama.",
-          "terminal": "Draft NL localization pending native pass. NAME POOL: generate workers from domain-origin bands, job role, shift, badge fragment and route permission. Never translate personal names live at runtime.",
+          "terminal": "Draft NL localization pending native pass. NAME POOL: workers derive from domain-origin bands, job role, shift, badge fragment, and route permission. Personal names stay stable across languages.",
           "audio": "Draft NL localization pending native pass. A name is a route, a job, and a person Deep Reach tried to price.",
           "in_game_wiki": "Draft NL localization pending native pass. The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
-          "external_site": "Draft NL localization pending native pass. Worker Name Pool Protocol defines site/wiki and game rules for seeded worker evidence."
+          "external_site": "Draft NL localization pending native pass. Worker name pools keep seeded worker evidence human: origin band, role, shift, badge fragment, and route permission."
         }
       }
     },
@@ -188,133 +188,133 @@
           "terminal": "JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
           "audio": "Nobody died as Employee 438. They died doing a job.",
           "in_game_wiki": "The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
-          "external_site": "Pressure Job Title Table gives writers and UI a stable colony labor vocabulary."
+          "external_site": "Pressure job titles give the colony a stable labor vocabulary: pump chief, brine cartographer, vent-forge operator, relay notary, and the roles that make evidence physical."
         },
         "ru_RU": {
-          "title": "Таблица должностей под давлением",
-          "scanner": "Должности должны объяснять, что держало колонию живой.",
-          "field_note": "Каждая должность должна подразумевать инструмент, маршрут или отказ.",
-          "terminal": "JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader и shift supervisor.",
-          "audio": "Никто не умер как Employee 438. Они умерли, делая работу.",
-          "in_game_wiki": "Таблица должностей превращает worker evidence в механику: pumps, medlocks, routes, kilns и Atlas safety consoles.",
-          "external_site": "Таблица должностей под давлением дает авторам и UI устойчивый словарь труда колонии."
+          "title": "Draft RU localization pending native pass. Pressure Job Title Table",
+          "scanner": "Draft RU localization pending native pass. Job titles should explain what kept the colony alive.",
+          "field_note": "Draft RU localization pending native pass. Every title should imply a tool, route or failure.",
+          "terminal": "Draft RU localization pending native pass. JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
+          "audio": "Draft RU localization pending native pass. Nobody died as Employee 438. They died doing a job.",
+          "in_game_wiki": "Draft RU localization pending native pass. The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
+          "external_site": "Draft RU localization pending native pass. Pressure job titles give the colony a stable labor vocabulary: pump chief, brine cartographer, vent-forge operator, relay notary, and the roles that make evidence physical."
         },
         "ja_JP": {
-          "title": "Pressure Job Title Table",
-          "scanner": "Draft JP localization pending native pass. Job titles should explain what kept the colony alive.",
-          "field_note": "Draft JP localization pending native pass. Every title should imply a tool, route or failure.",
-          "terminal": "Draft JP localization pending native pass. JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
-          "audio": "Draft JP localization pending native pass. Nobody died as Employee 438. They died doing a job.",
-          "in_game_wiki": "Draft JP localization pending native pass. The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
-          "external_site": "Draft JP localization pending native pass. Pressure Job Title Table gives writers and UI a stable colony labor vocabulary."
+          "title": "Draft JA localization pending native pass. Pressure Job Title Table",
+          "scanner": "Draft JA localization pending native pass. Job titles should explain what kept the colony alive.",
+          "field_note": "Draft JA localization pending native pass. Every title should imply a tool, route or failure.",
+          "terminal": "Draft JA localization pending native pass. JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
+          "audio": "Draft JA localization pending native pass. Nobody died as Employee 438. They died doing a job.",
+          "in_game_wiki": "Draft JA localization pending native pass. The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
+          "external_site": "Draft JA localization pending native pass. Pressure job titles give the colony a stable labor vocabulary: pump chief, brine cartographer, vent-forge operator, relay notary, and the roles that make evidence physical."
         },
         "zh_CN": {
-          "title": "Pressure Job Title Table",
-          "scanner": "Draft CN localization pending native pass. Job titles should explain what kept the colony alive.",
-          "field_note": "Draft CN localization pending native pass. Every title should imply a tool, route or failure.",
-          "terminal": "Draft CN localization pending native pass. JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
-          "audio": "Draft CN localization pending native pass. Nobody died as Employee 438. They died doing a job.",
-          "in_game_wiki": "Draft CN localization pending native pass. The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
-          "external_site": "Draft CN localization pending native pass. Pressure Job Title Table gives writers and UI a stable colony labor vocabulary."
+          "title": "Draft ZH localization pending native pass. Pressure Job Title Table",
+          "scanner": "Draft ZH localization pending native pass. Job titles should explain what kept the colony alive.",
+          "field_note": "Draft ZH localization pending native pass. Every title should imply a tool, route or failure.",
+          "terminal": "Draft ZH localization pending native pass. JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
+          "audio": "Draft ZH localization pending native pass. Nobody died as Employee 438. They died doing a job.",
+          "in_game_wiki": "Draft ZH localization pending native pass. The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
+          "external_site": "Draft ZH localization pending native pass. Pressure job titles give the colony a stable labor vocabulary: pump chief, brine cartographer, vent-forge operator, relay notary, and the roles that make evidence physical."
         },
         "fr_FR": {
-          "title": "Pressure Job Title Table",
+          "title": "Draft FR localization pending native pass. Pressure Job Title Table",
           "scanner": "Draft FR localization pending native pass. Job titles should explain what kept the colony alive.",
           "field_note": "Draft FR localization pending native pass. Every title should imply a tool, route or failure.",
           "terminal": "Draft FR localization pending native pass. JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
           "audio": "Draft FR localization pending native pass. Nobody died as Employee 438. They died doing a job.",
           "in_game_wiki": "Draft FR localization pending native pass. The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
-          "external_site": "Draft FR localization pending native pass. Pressure Job Title Table gives writers and UI a stable colony labor vocabulary."
+          "external_site": "Draft FR localization pending native pass. Pressure job titles give the colony a stable labor vocabulary: pump chief, brine cartographer, vent-forge operator, relay notary, and the roles that make evidence physical."
         },
         "es_ES": {
-          "title": "Pressure Job Title Table",
+          "title": "Draft ES localization pending native pass. Pressure Job Title Table",
           "scanner": "Draft ES localization pending native pass. Job titles should explain what kept the colony alive.",
           "field_note": "Draft ES localization pending native pass. Every title should imply a tool, route or failure.",
           "terminal": "Draft ES localization pending native pass. JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
           "audio": "Draft ES localization pending native pass. Nobody died as Employee 438. They died doing a job.",
           "in_game_wiki": "Draft ES localization pending native pass. The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
-          "external_site": "Draft ES localization pending native pass. Pressure Job Title Table gives writers and UI a stable colony labor vocabulary."
+          "external_site": "Draft ES localization pending native pass. Pressure job titles give the colony a stable labor vocabulary: pump chief, brine cartographer, vent-forge operator, relay notary, and the roles that make evidence physical."
         },
         "de_DE": {
-          "title": "Pressure Job Title Table",
+          "title": "Draft DE localization pending native pass. Pressure Job Title Table",
           "scanner": "Draft DE localization pending native pass. Job titles should explain what kept the colony alive.",
           "field_note": "Draft DE localization pending native pass. Every title should imply a tool, route or failure.",
           "terminal": "Draft DE localization pending native pass. JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
           "audio": "Draft DE localization pending native pass. Nobody died as Employee 438. They died doing a job.",
           "in_game_wiki": "Draft DE localization pending native pass. The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
-          "external_site": "Draft DE localization pending native pass. Pressure Job Title Table gives writers and UI a stable colony labor vocabulary."
+          "external_site": "Draft DE localization pending native pass. Pressure job titles give the colony a stable labor vocabulary: pump chief, brine cartographer, vent-forge operator, relay notary, and the roles that make evidence physical."
         },
         "pl_PL": {
-          "title": "Pressure Job Title Table",
+          "title": "Draft PL localization pending native pass. Pressure Job Title Table",
           "scanner": "Draft PL localization pending native pass. Job titles should explain what kept the colony alive.",
           "field_note": "Draft PL localization pending native pass. Every title should imply a tool, route or failure.",
           "terminal": "Draft PL localization pending native pass. JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
           "audio": "Draft PL localization pending native pass. Nobody died as Employee 438. They died doing a job.",
           "in_game_wiki": "Draft PL localization pending native pass. The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
-          "external_site": "Draft PL localization pending native pass. Pressure Job Title Table gives writers and UI a stable colony labor vocabulary."
+          "external_site": "Draft PL localization pending native pass. Pressure job titles give the colony a stable labor vocabulary: pump chief, brine cartographer, vent-forge operator, relay notary, and the roles that make evidence physical."
         },
         "uk_UA": {
-          "title": "Pressure Job Title Table",
-          "scanner": "Draft UA localization pending native pass. Job titles should explain what kept the colony alive.",
-          "field_note": "Draft UA localization pending native pass. Every title should imply a tool, route or failure.",
-          "terminal": "Draft UA localization pending native pass. JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
-          "audio": "Draft UA localization pending native pass. Nobody died as Employee 438. They died doing a job.",
-          "in_game_wiki": "Draft UA localization pending native pass. The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
-          "external_site": "Draft UA localization pending native pass. Pressure Job Title Table gives writers and UI a stable colony labor vocabulary."
+          "title": "Draft UK localization pending native pass. Pressure Job Title Table",
+          "scanner": "Draft UK localization pending native pass. Job titles should explain what kept the colony alive.",
+          "field_note": "Draft UK localization pending native pass. Every title should imply a tool, route or failure.",
+          "terminal": "Draft UK localization pending native pass. JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
+          "audio": "Draft UK localization pending native pass. Nobody died as Employee 438. They died doing a job.",
+          "in_game_wiki": "Draft UK localization pending native pass. The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
+          "external_site": "Draft UK localization pending native pass. Pressure job titles give the colony a stable labor vocabulary: pump chief, brine cartographer, vent-forge operator, relay notary, and the roles that make evidence physical."
         },
         "ar_SA": {
-          "title": "Pressure Job Title Table",
+          "title": "Draft AR localization pending native pass. Pressure Job Title Table",
           "scanner": "Draft AR localization pending native pass. Job titles should explain what kept the colony alive.",
           "field_note": "Draft AR localization pending native pass. Every title should imply a tool, route or failure.",
           "terminal": "Draft AR localization pending native pass. JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
           "audio": "Draft AR localization pending native pass. Nobody died as Employee 438. They died doing a job.",
           "in_game_wiki": "Draft AR localization pending native pass. The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
-          "external_site": "Draft AR localization pending native pass. Pressure Job Title Table gives writers and UI a stable colony labor vocabulary."
+          "external_site": "Draft AR localization pending native pass. Pressure job titles give the colony a stable labor vocabulary: pump chief, brine cartographer, vent-forge operator, relay notary, and the roles that make evidence physical."
         },
         "id_ID": {
-          "title": "Pressure Job Title Table",
+          "title": "Draft ID localization pending native pass. Pressure Job Title Table",
           "scanner": "Draft ID localization pending native pass. Job titles should explain what kept the colony alive.",
           "field_note": "Draft ID localization pending native pass. Every title should imply a tool, route or failure.",
           "terminal": "Draft ID localization pending native pass. JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
           "audio": "Draft ID localization pending native pass. Nobody died as Employee 438. They died doing a job.",
           "in_game_wiki": "Draft ID localization pending native pass. The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
-          "external_site": "Draft ID localization pending native pass. Pressure Job Title Table gives writers and UI a stable colony labor vocabulary."
+          "external_site": "Draft ID localization pending native pass. Pressure job titles give the colony a stable labor vocabulary: pump chief, brine cartographer, vent-forge operator, relay notary, and the roles that make evidence physical."
         },
         "ko_KR": {
-          "title": "Pressure Job Title Table",
+          "title": "Draft KO localization pending native pass. Pressure Job Title Table",
           "scanner": "Draft KO localization pending native pass. Job titles should explain what kept the colony alive.",
           "field_note": "Draft KO localization pending native pass. Every title should imply a tool, route or failure.",
           "terminal": "Draft KO localization pending native pass. JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
           "audio": "Draft KO localization pending native pass. Nobody died as Employee 438. They died doing a job.",
           "in_game_wiki": "Draft KO localization pending native pass. The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
-          "external_site": "Draft KO localization pending native pass. Pressure Job Title Table gives writers and UI a stable colony labor vocabulary."
+          "external_site": "Draft KO localization pending native pass. Pressure job titles give the colony a stable labor vocabulary: pump chief, brine cartographer, vent-forge operator, relay notary, and the roles that make evidence physical."
         },
         "he_IL": {
-          "title": "Pressure Job Title Table",
+          "title": "Draft HE localization pending native pass. Pressure Job Title Table",
           "scanner": "Draft HE localization pending native pass. Job titles should explain what kept the colony alive.",
           "field_note": "Draft HE localization pending native pass. Every title should imply a tool, route or failure.",
           "terminal": "Draft HE localization pending native pass. JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
           "audio": "Draft HE localization pending native pass. Nobody died as Employee 438. They died doing a job.",
           "in_game_wiki": "Draft HE localization pending native pass. The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
-          "external_site": "Draft HE localization pending native pass. Pressure Job Title Table gives writers and UI a stable colony labor vocabulary."
+          "external_site": "Draft HE localization pending native pass. Pressure job titles give the colony a stable labor vocabulary: pump chief, brine cartographer, vent-forge operator, relay notary, and the roles that make evidence physical."
         },
         "pt_BR": {
-          "title": "Pressure Job Title Table",
+          "title": "Draft PT localization pending native pass. Pressure Job Title Table",
           "scanner": "Draft PT localization pending native pass. Job titles should explain what kept the colony alive.",
           "field_note": "Draft PT localization pending native pass. Every title should imply a tool, route or failure.",
           "terminal": "Draft PT localization pending native pass. JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
           "audio": "Draft PT localization pending native pass. Nobody died as Employee 438. They died doing a job.",
           "in_game_wiki": "Draft PT localization pending native pass. The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
-          "external_site": "Draft PT localization pending native pass. Pressure Job Title Table gives writers and UI a stable colony labor vocabulary."
+          "external_site": "Draft PT localization pending native pass. Pressure job titles give the colony a stable labor vocabulary: pump chief, brine cartographer, vent-forge operator, relay notary, and the roles that make evidence physical."
         },
         "nl_NL": {
-          "title": "Pressure Job Title Table",
+          "title": "Draft NL localization pending native pass. Pressure Job Title Table",
           "scanner": "Draft NL localization pending native pass. Job titles should explain what kept the colony alive.",
           "field_note": "Draft NL localization pending native pass. Every title should imply a tool, route or failure.",
           "terminal": "Draft NL localization pending native pass. JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
           "audio": "Draft NL localization pending native pass. Nobody died as Employee 438. They died doing a job.",
           "in_game_wiki": "Draft NL localization pending native pass. The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
-          "external_site": "Draft NL localization pending native pass. Pressure Job Title Table gives writers and UI a stable colony labor vocabulary."
+          "external_site": "Draft NL localization pending native pass. Pressure job titles give the colony a stable labor vocabulary: pump chief, brine cartographer, vent-forge operator, relay notary, and the roles that make evidence physical."
         }
       }
     },

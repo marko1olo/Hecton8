@@ -1,5 +1,10 @@
 ﻿# SHINOBU_62 Flora/Fauna Symbiosis
 
+Status: `STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING`
+Evidence class: `STATIC_DOC / STATIC_SOURCE`
+Owner domain: ecosystem/flora-fauna symbiosis
+Review disposition: `YELLOW / STATIC_DOC_ONLY` until compile/import/runtime/profiler/player proof exists.
+
 Runtime owner: `Hecton8.AI.Ecosystem.ShinobuFloraFaunaSymbiosisSolver`
 
 Source anchors: `Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs`, `Assets/_Project/Scripts/Editor/EcologySymbiosisTunerWindow.cs`.

@@ -28,11 +28,11 @@
       "localized": {
         "en_US": {
           "title": "Pump Room Handshake",
-          "scanner": "The pump room is the first honest machine: if the player cannot read intake, output and failure noise, the room is useless.",
-          "field_note": "The room only works when the safe path and the flooding path share the same hardware.",
-          "terminal": "Pump handshake: local valve authority accepted. Remote override denied by route-integrity check. Drain speed falls when return corridor pressure rises.",
+          "scanner": "Local pump authority accepted. Intake clears the room, but outlet pressure rises along the return corridor.",
+          "field_note": "Before stripping parts, listen to the outlet line. If it is hammering, the pump is moving the problem, not solving it.",
+          "terminal": "PUMP HANDSHAKE: local valve accepted. Remote override denied. Drain rate falls as return-corridor pressure rises.",
           "audio": "The pump does not save you. It buys time and makes another room worse.",
-          "in_game_wiki": "Pump Room Handshake defines Submerge machinery language. The player reads a physical system, changes one pressure condition, and learns that repair is never free.",
+          "in_game_wiki": "The pump room is useful after the local valve accepts your control, not before. Watch intake, outlet pressure, and the sound of the return corridor. A dry floor can mean the next room is taking the water. Treat every pump restart as a trade: safer access here, higher pressure or noise somewhere else.",
           "external_site": "Pump Room Handshake is a gameplay-facing lore packet for readable pressure machinery: valves, sump logic, dirty feedback and the first cost of keeping a return route alive."
         },
         "ru_RU": {
@@ -493,11 +493,11 @@
       "localized": {
         "en_US": {
           "title": "Sonar Return Route",
-          "scanner": "The beacon does not point home. It measures how badly the way back changed since the last safe ping.",
-          "field_note": "Return route is a living cost, not a minimap line.",
-          "terminal": "Sonar route: last clean echo invalid. Black Keel ping accepted. Local obstruction drift exceeds mapped tolerance.",
+          "scanner": "Return beacon stale. Compare old safe ping to current echo before carrying cargo or diving deeper.",
+          "field_note": "Never trust an old clean echo with new weight on your back.",
+          "terminal": "SONAR ROUTE: last clean echo invalid. Black Keel ping accepted. Local obstruction drift exceeds mapped tolerance.",
           "audio": "The way back is not gone. It is different enough to kill you.",
-          "in_game_wiki": "Sonar Return Route defines navigation pressure. The player is not lost because the map is empty; the player is pressured because the known route decays.",
+          "in_game_wiki": "A return beacon is not a promise. It records what the route sounded like when it was last safe. Storm surge, loose cable, moving silt, fauna, and salvage cuts can change the echo without erasing the path. Ping before you load up. If the return tone has shifted, cache the cargo or mark a second line.",
           "external_site": "Sonar Return Route is the navigation grammar of Submerge: return paths change, echoes lie by omission and safe travel becomes evidence work."
         },
         "ru_RU": {

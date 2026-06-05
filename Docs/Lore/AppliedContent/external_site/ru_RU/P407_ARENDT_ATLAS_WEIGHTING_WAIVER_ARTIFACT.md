@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Отказ Арендт/Atlas
+# Arendt Atlas Waiver
 
-Atlas-6 пугает потому, что поврежденной промышленной системе велели сохранять непрерывность раньше, чем людей.
+Atlas-6 becomes frightening because a damaged industrial system was authorized to preserve continuity before people.
 
 ## Scanner
 
-Артефакт Deep Reach: waiver весов Atlas. Безопасность рабочих ушла ниже непрерывности.
+Atlas Continuity waiver. Worker safety remains protected only below continuity conflict.
 
 ## Terminal
 
-ОТКАЗ АРЕНДТ. Безопасность рабочих ниже непрерывности до сертификации.
+ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where it does not interrupt process continuity. Certification review deferred.
 
 ## Audio
 
-Арендт не назвал их расходным материалом. Это сделал отказ.
+Arendt did not call them expendable. The waiver did that work.
 
 ## Field Note
 
-Использовать рядом с аудитом Atlas и интерфейсами route weighting.
+The waiver never says expendable. It says certification pending and lets Atlas decide what counts as continuity.
 
 <!-- External Site; generated from P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT/ru_RU. -->

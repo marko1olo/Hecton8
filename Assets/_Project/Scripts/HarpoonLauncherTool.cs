@@ -2,6 +2,7 @@ using System;
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Physics;
+using Hecton8.Interaction;
 using Hecton8.Tools;
 using Unity.Mathematics;
 using Unity.Collections;
@@ -280,7 +281,10 @@ namespace Hecton8.Gameplay
                     toolForward,
                     impulse,
                     DamageSourceIds.Harpoon,
-                    CombatDamageTypes.Impact);
+                    CombatDamageTypes.Impact,
+                    0u,
+                    0f,
+                    ToolCapabilityMasks.Grab | ToolCapabilityMasks.Bash);
 
                 TetherRegistrationResult tetherResult = TryRegisterTether(hit);
 

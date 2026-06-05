@@ -4,6 +4,12 @@ Status: pre-page conversion plan
 Owner lane: Marketing / Steam conversion
 Runtime impact: none
 
+## Authority Boundary
+
+Static Steam conversion plan only. Public voice routes through root `textes.md`.
+Any quality, release, platform, Steam, wishlist, demo, performance, press, review-key, embargo, showcase, curator, asset-QA, schedule, SEO, pricing, discount, publication, website, or presskit claim requires `quality.md`, `release.md`, `platform.md`, current proof artifacts, and the matching local permission gate.
+Page hypotheses, wishlist rows, iteration plans, checklists, schedules, and strategy rows do not approve Steam page, wishlist, pricing, discount, review-key, presskit, showcase, publication, platform, or release claims.
+
 ## Steam Page Publish Gate
 
 Current machine gate: `steam_page_publish_permission_gate = HOLD_NO_STEAM_PAGE_PUBLICATION`.
@@ -44,15 +50,15 @@ Recommended first draft:
 
 Steam first screenshot candidates:
 
-1. Player facing pressure/machinery problem.
-2. Salvage route in black water.
-3. Base/module with visible consequence.
-4. Agency/decision proof: threat, leak, route cost, sonar pressure, or salvage failure, backed by metadata `viewer_named_decision`/`capture_verdict` plus `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`.
-5. Seed Ship/anomaly signal.
-6. Heavy vehicle/tool if real.
-7. Biome/scale shot.
-8. UI/inventory only if polished.
-9. Optional beauty shot.
+1. Bright surface/photic route beauty with player route cue, if the current build proves it.
+2. Player facing pressure/machinery problem.
+3. Salvage route in black water.
+4. Base/module with visible consequence.
+5. Agency/decision proof: threat, leak, route cost, sonar pressure, or salvage failure, backed by metadata `viewer_named_decision`/`capture_verdict` plus `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`.
+6. Seed Ship/anomaly signal.
+7. Heavy vehicle/tool if real.
+8. Biome/scale shot.
+9. UI/inventory only if polished.
 
 Never lead with:
 

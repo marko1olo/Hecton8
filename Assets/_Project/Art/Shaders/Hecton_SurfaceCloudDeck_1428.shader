@@ -29,7 +29,7 @@ Shader "HECTON/Sky/Hecton_SurfaceCloudDeck_1428"
             Blend SrcAlpha OneMinusSrcAlpha
             Cull Off
             ZWrite Off
-            ZTest LEqual
+            ZTest Always
 
             HLSLPROGRAM
             #pragma vertex Vert

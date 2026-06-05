@@ -1,11 +1,12 @@
 # HECTON-8 Construction And Economy Bible
 
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
+Evidence class: STATIC_DOC
 Scope: base construction, modules, logistics, power/oxygen/fluid networks, inventory, resources, crafting, salvage economy, storage, and infrastructure progression.
 
 ## 0. Prime Construction Law
 
-Construction is survival infrastructure, not home decoration.
+Construction is survival infrastructure first, not only home decoration.
 
 Every built object must answer:
 
@@ -16,6 +17,8 @@ Every built object must answer:
 - how it changes route, oxygen, power, pressure, storage, repair, scan, or docking.
 
 If a buildable is only cosmetic comfort, it is secondary dressing and cannot carry progression weight.
+
+User vision lock: safe rooms and player bases may be cozy, beautiful, decorated, and emotionally worth protecting once their pressure/oxygen/power/logistics basis is credible. Subnautica-like base decoration is allowed. Industrial survival function remains the foundation; comfort is not forbidden.
 
 ## 1. Resource Taste
 
@@ -72,6 +75,8 @@ Modules must look and behave like pressure equipment:
 
 Clean modular rooms with no life-support logic are rejected.
 
+Comfort modules and decoration are allowed after survival infrastructure is real. They should still show industrial material logic: mounts, seals, wiring, condensation, pressure-rated frames, maintenance access, or plausible lightweight personal objects.
+
 ## 5. Inventory And Storage
 
 Inventory is logistics, not infinite pockets:
@@ -122,9 +127,20 @@ Construction truth is owned by data, logistics, persistence, and world systems:
 
 Build UI and VFX may present state but must not invent power, oxygen, storage, pressure, or resource truth.
 
+## 8A. Presentation-Only Boundary
+
+Build previews, ghost meshes, holograms, comfort props, status screens, sparks, condensation, alarms, wetness, damage decals, and construction VFX are presentation-only. They may show authoritative construction/logistics/physics snapshots; they must not own resource counts, recipe completion, oxygen, pressure, power, storage, module damage, route unlocks, or save state.
+
+Placement helpers may reject impossible placements only by reading the construction owner, physics proxy state, and logistics rules. They must not create alternate placement truth inside UI, VFX, or editor-preview logic.
+
 ## 9. GlobalQualityWeight Scaling
 
-Compact keeps network truth, clear module state, simple meshes, shared materials, and strong alarms. Middle adds richer module dressing and local VFX. High adds better damage/wetness/material response. Ultra adds dense maintenance detail, secondary animations, and cockpit/base screen richness without changing resource or network truth.
+Low/Middle/High/Ultra are continuous planning labels on the same `GlobalQualityWeight` curve, not binary switches:
+
+- Low: network truth, readable module state, shared materials, clear alarms, simple proxy meshes, no loss of survival function.
+- Middle: richer module dressing, local VFX, clearer preview affordances, and stronger storage/power/oxygen readability.
+- High: better damage, wetness, material response, maintenance screens, and room comfort dressing.
+- Ultra: dense maintenance detail, secondary animations, cockpit/base screen richness, and comfort polish without changing resource or network truth.
 
 ## 10. Proof Artifacts
 
@@ -138,6 +154,10 @@ Construction work must prove:
 - collision/proxy state;
 - low-tier screenshot;
 - runtime allocation and query route if implemented.
+
+## 10A. First-20 Route Hook
+
+The first-20 route needs construction language only where it removes a route blocker: emergency repair, oxygen/power extension, storage clarity, salvage conversion, or first safe-room/base affordance. Decoration may make shelter desirable, but it must not replace the early survival function.
 
 ## 11. Acceptance Sentence
 

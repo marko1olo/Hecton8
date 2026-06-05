@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
 # Правила audio fragments
 
-Правила audio fragments определяют, как HECTON-8 использует voice без lore-dump fatigue.
+Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues.
 
 ## Scanner
 
@@ -32,6 +32,6 @@ AUDIO RULE: без free-floating monologues. Voice принадлежит hydrop
 
 ## Field Note
 
-Audio fragments требуют source prop, transcript damage, route timestamp и одно physical contradiction.
+Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.
 
 <!-- External Site; generated from P215_AUDIO_FRAGMENT_PROP_RULES/ru_RU. -->

@@ -25,6 +25,15 @@ Darkness starts with depth, caves, storm occlusion, industrial interiors, and te
 
 Compact keeps clean silhouettes, ocean color, wet material breakup, and authored landmarks. Middle adds denser shoreline detail and richer water response. High and Ultra spend saved cycles on terrain microdetail, cloud depth, reflections, foam, caustic hints, and celestial atmosphere.
 
+Depth/light lock:
+
+- 0-100 m: mostly bright, colorful, beautiful, and readable.
+- Shallow caves can be dim or dark, but open photic water is not a noir zone.
+- 200-400 m: twilight and increasing tension.
+- 400-500 m and below: true darkness/murk becomes normal, with route structure preserved.
+
+Surface and shallow zones may be colorful and alien, including coral-like forms and unusual biota. They should also carry technogenic history in places: colony remnants, cables, route hardware, pipes, wreck fragments, salvage cuts, stations, or other signs that people and machines were here.
+
 ## 1. World Layers
 
 A strong location has layered logic:
@@ -146,6 +155,16 @@ Reject if:
 - no evidence cue exists;
 - player cannot describe why the place exists;
 - world composition depends on runtime generation in gameplay.
+- the first product-facing route is only a narrow resource proof and not a beautiful semi-open shallow route with unease, oxygen pressure, tool use, hazard, and save/load proof.
+
+## 9.1 2026-06-05 Static Source Anchors
+
+Evidence class: STATIC_SOURCE only. Compile, Unity import, Play Mode, profiler, GC, visual captures, save/load, and player-build proof remain PENDING VERIFICATION.
+
+| Runtime | Owner / boundary | Static route | GlobalQualityWeight consequence | Missing proof |
+|---|---|---|---|---|
+| `Assets/_Project/Scripts/World/SeedShipAnomalyRuntime.cs` | `Hecton8.World.SeedShipAnomaly`, `SystemID.EndgameAnomaly`; owns seed-ship anomaly field presentation/control signals, not generic world generation, save authority, AI cognition, or player UI ownership. | Registers cold, updatable, slow, and late-frame tick routes. Owns DataVault buffers `ShinobuSeedShipAnomaly*`, mock HUD/leviathan/AUP/thermo buffers, and a 300-entry telemetry ring with dump target `Docs/AgentLogs/Dump_SEED_SHIP_ANOMALY.bin`. Publishes/consumes typed lanes including `RadarJamSignal`, `CoreHackedSignal`, `MockHudSignal`, `MockAupRebaseSignal`, `AnomalyProximitySignal`, `SystemGlitchSignal`, `TelemetryAnomalySignal`, `RadiationSourceSignal`, and `RadiationDoseSignal`. | Reads borrowed graphics scalability state or fallback `global_quality_weight`; scales entity budget through anomaly math. It must not change anomaly authority, save identity, or signal DTO layout. | No scene wiring, runtime field capture, profiler, GCMonitor, telemetry dump artifact, radiation/radar gameplay proof, or save/load proof was provided by this static audit. |
+| `Assets/_Project/Scripts/World/SargassumCutManager.cs` | `Hecton8.World`, `SystemID.WorldSargassum`; owns global sargassum cut-mask service and terrain damage-volume presentation. It does not own flora mesh generation, terrain authority, inventory, or tool truth. | Registers `ITickable`, `ISlowTickable`, `ILateFrameTickable`, hot-swap listener, and `GlobalRegistry.SargassumCut`. Owns DataVault stamp command buffers `SargassumCutStampCommands` and `SargassumCutDamageVolumeStampCommands`. Uses ping-pong `RenderTexture` masks, double-buffered `GraphicsBuffer` stamp uploads, compute shaders `Hecton_SargassumCutMask.compute` and `Hecton_TerrainDamageVolume.compute`, and shader globals `_SargassumCutMaskRT` and `_HectonDamageVolumeTex`. Registers recent cut heat as transient world spatial hash events. | Reads `HomeostasisBrain.GlobalQualityWeight`; scales cut-mask resolution from 512 up to authored max and damage-volume resolution/depth with hysteresis. Cut truth, tool success, and terrain authority must not depend on high-tier texture resolution. | No compute-support matrix, visual cut-mask capture, Frame Debugger/GPU profiler, GCMonitor, Unity import, shader compatibility, or runtime cut interaction proof was provided by this static audit. |
 
 ## 10. Truth Ownership
 
@@ -162,6 +181,12 @@ World work must route to:
 ## 11. GlobalQualityWeight Scaling
 
 Compact keeps route silhouettes, landmarks, low-cost fog, simple scatter, HLOD, proxy collision, and readable evidence. Middle adds density and local biome detail. High adds richer lighting, material response, and ecology. Ultra adds sensory density and longer sightline richness without making navigation depend on expensive effects.
+
+## First-20 Route Hook
+
+- First-20 moment: boot to world load, first exit, swim, resource, tool, hazard, and save/load through one beautiful semi-open shallow route.
+- Route blocker removed: world composition cannot collapse into a narrow Copper Wire proof, random scatter field, or unproven beauty shot without route decisions and state restoration.
+- Proof class: screenshot, Play Mode/player capture for the full route, Profiler/GCMonitor for route runtime, save/load artifact for restored route state, and static-only route sketch for authoring-only changes.
 
 ## 12. Proof Artifacts
 

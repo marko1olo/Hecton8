@@ -1,0 +1,26 @@
+# Audio Support Corpus
+
+Status: STATIC AUDIO AUTHORING DATA
+Evidence class: STATIC_DOC / CSV_SUPPORT
+
+This folder stores dialogue, stem, synth, ledger, and remediation CSV support data. It is not audio DSP readiness, mixer readiness, import readiness, Addressables readiness, native audio proof, Play Mode proof, profiler proof, or runtime integration proof.
+
+Local support files:
+
+- `audio_asset_ledger.csv` - static ledger/remediation support data.
+- `audio_profile_usage_20260605.csv` - static source-scan evidence snapshot.
+- `audio_remediation_matrix_20260605.csv` - static remediation queue.
+- `audio_stem_rules.csv` - stem authoring support data.
+- `dialogue_script.csv` - dialogue authoring support data.
+- `synth_presets.csv` - synth preset authoring support data.
+
+Stable authority routes:
+
+- `audio.md`
+- `Docs/ARCHITECTURE/AUDIO_DSP_PIPELINE.md`
+- `Docs/ARCHITECTURE/ADAPTIVE_STEM_AUDIO_MIXER.md`
+- `Docs/ARCHITECTURE/VOCAL_SYNTHESIS_PIPELINE_SHINOBU_260.md`
+- `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md`
+- `Docs/ARCHITECTURE/SOURCE_SYSTEMS_REALITY_MAP.md`
+
+Do not cite these CSVs as proof of DSPGraph output, underrun-free playback, imported assets, Addressables groups, stem playback, synthesis routing, or runtime audio health. Those claims require current audio/runtime proof artifacts outside this README.

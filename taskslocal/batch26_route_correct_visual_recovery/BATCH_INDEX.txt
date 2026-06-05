@@ -1,0 +1,49 @@
+BATCH26_ROUTE_CORRECT_VISUAL_RECOVERY
+
+Purpose:
+No-Unity portfolio wave after rejected proof packet 1474. This wave prepares exact static audits, proof harness plans, and asset intake plans without stealing the Unity slot.
+
+Unity slot owner:
+- Separate Codex GUI thread named in `Docs/Orchestration/UNITY_OWNER_*.md`.
+- Batch26 agents must not launch Unity, enter Play Mode, run MCP capture, or start dotnet/build.
+
+Current rejected proof:
+- `Docs/Screenshots/MCP/h8_1474_surface_coast_aegir_ui_off.png`
+- `Docs/Screenshots/MCP/h8_1474_shoreline_close_1m.png`
+- `Docs/Screenshots/MCP/h8_1474_underwater_0_5m.png`
+- `Docs/Screenshots/MCP/h8_1474_underwater_20_50m_route.png`
+- `Docs/Screenshots/MCP/h8_1474_aegir_celestial_long.png`
+- `Docs/Screenshots/MCP/h8_1474_regression_low_oblique.png`
+
+1474 verdict:
+- REJECTED.
+- Underwater and shoreline labels are false route views.
+- No believable shoreline foam or wet contact.
+- No caustics, underwater volume, particles, route depth, manifest, or clean log tail.
+- Water/terrain/Aegir remain below the surface/photic Subnautica-level floor.
+
+Authority for all agents:
+- `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `TASTE.md`
+- `VISION_LOCKS.md`
+- `quality.md`
+- route bibles named in each task file
+- relevant `.agents-skills` only, no bulk archive reading
+
+Global rules:
+- Work static/read-only unless the task explicitly asks for a report file.
+- Report files go under `Docs/Reports/Batch26/`.
+- Status/LOG files are allowed because every task has an explicit ID.
+- Do not edit scene, material, code, or `Assets` content in this batch.
+- Do not write screenshots/log junk into `Assets`.
+- Runtime claims remain `PENDING VERIFICATION`.
+- No binary quality switches. Any proposed visual/runtime route must use continuous `GlobalQualityWeight`.
+
+Agents:
+- 2601 Capture harness, depth route, metadata, manifest, and freshness proof auditor.
+- 2602 Foam, caustics, Crest material, clipping, and receiver isolation auditor.
+- 2603 Shoreline, terrain, wet rock, and material asset route auditor.
+- 2604 Aegir, celestial, sun visual, sky/material ownership auditor.
+- 2605 Generated texture/asset intake, duplicate status, and safe staging auditor.
+- 2606 Proof watchdog, process hygiene, and Unity-owner steering/delivery verifier.

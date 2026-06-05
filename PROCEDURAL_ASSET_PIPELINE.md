@@ -1,11 +1,22 @@
 # HECTON-8 Procedural Asset Pipeline
 
 Status: AUTHORING LAW / STATIC DOC / RUNTIME PROOF NOT IMPLIED
+Evidence class: STATIC_DOC
 Scope: offline generation of procedural meshes, textures, materials, prefabs, LODs, colliders, manifests, and proof artifacts.
+
+Authority path: root `PROCEDURAL_ASSET_PIPELINE.md` is the binding procedural asset package route bible selected by `PROJECT_BIBLES.md` and `Docs/README.md`. `Docs/PROCEDURAL_ASSET_PIPELINE.md` is a non-binding supporting/historical duplicate until a later source-backed governance patch says otherwise.
+
+## First-20 Route Hook
+
+- First-20 moment: semi-open shallow route dressing with deterministic offline terrain fragments, shallow biota, resource objects, tool targets, wreckage, equipment, and landmark prefabs.
+- Route blocker removed: isolated generated meshes or runtime-authored visuals cannot stand in for complete prefab packages with LODs, materials, colliders, anchors, manifests, and proof.
+- Proof class: STATIC_DOC until generated package manifests, validator reports, render captures, Unity import evidence, and route screenshots exist.
 
 ## Prime Law
 
 Procedural assets are generated only in the Unity Editor or external offline tooling. Runtime loads finished `.mesh`, `.prefab`, `.mat`, `.asset`, and texture files. Runtime code may select, stream, cull, instance, animate shaders, and swap LODs, but it must not author mesh topology, unwrap UVs, synthesize textures, bake maps, cook colliders, or allocate/grow geometry buffers during gameplay.
+
+Procedural does not mean visibly procedural. A generated asset is production-eligible only if it looks like authored HECTON-8 art: detailed, material-correct, scaled, optimized, and beautiful enough for its route. For surface, coastline, sky-facing structures, photic shallows, medium-depth hero paths, and close player interactions, the minimum visual bar is Subnautica-level or better. Cheap approximation is allowed only when it still preserves the visual floor; cheap-looking output is rejected.
 
 Any procedural asset task starts here, then routes into the matching specialist bible:
 
@@ -104,6 +115,8 @@ Material assignment rules:
 
 AI-generated textures are source candidates, not automatic final assets. Reject them if they contain baked lighting, fake shadows, random symbols, unreadable labels, perspective artifacts, inconsistent scale, false normal information, or material channels that do not match physical surface behavior.
 
+Do not commit temporary generated art as final route content. If a generator produces a usable collider or socket but weak visuals, split the useful technical artifact from the rejected presentation asset and keep the production prefab blocked until the visual source is rebuilt.
+
 ## LOD And Bounds
 
 Every saved prefab must have an LOD policy. LOD0 is close/interaction only. LOD1 preserves silhouette and major material zones. LOD2 preserves navigation and threat read, not decorative detail. Tiny props may share clustered LODs or be merged into an HLOD group, but the decision must be recorded in the manifest.
@@ -199,3 +212,5 @@ Reject immediately:
 ## Acceptance Sentence
 
 A procedural asset is accepted only when it is deterministic, offline-authored, physically readable, materially credible, efficiently serialized, collision-safe, LOD-complete, proof-backed, and aligned with HECTON-8 pressure, machinery, salvage, and black-water taste.
+
+For bright surface and shallow-water content, "black-water taste" means pressure, machinery, risk, and depth memory, not permanent darkness or muddy art. Do not use noir language to hide weak surface, sky, ocean, terrain, or shallow-biome visuals.

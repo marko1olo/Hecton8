@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 559ad33e1d65b1d42950ade30bdf05c9, type: 3}
   m_Name: 00_Profile_Surface
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeProfile
-  biomeName: Unnamed Biome
-  scatterColorBase: {r: 0, g: 0.03, b: 0.07, a: 1}
-  scatterColorShallow: {r: 0, g: 0.15, b: 0.12, a: 1}
-  depthFogDensity: {x: 0.0075, y: 0.0075, z: 0.0075}
-  fogColor: {r: 0.56256676, g: 0.7435475, b: 0.9245283, a: 1}
-  turbidityMultiplier: 1
+  biomeName: Surface Photic Shelf
+  scatterColorBase: {r: 0.025, g: 0.125, b: 0.18, a: 1}
+  scatterColorShallow: {r: 0.12, g: 0.56, b: 0.5, a: 1}
+  depthFogDensity: {x: 0.0042, y: 0.0042, z: 0.0042}
+  fogColor: {r: 0.68, g: 0.86, b: 0.98, a: 1}
+  turbidityMultiplier: 0.78

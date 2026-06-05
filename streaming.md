@@ -1,6 +1,7 @@
 # HECTON-8 Streaming And Residency Bible
 
 Status: AUTHORING LAW / STATIC DOC / RUNTIME PROOF NOT IMPLIED
+Evidence class: STATIC_DOC
 Scope: Addressables, asset lifecycle, memory residency, HLOD, biome streaming, release order, VRAM pressure, and load proof.
 
 ## Prime Law
@@ -91,6 +92,12 @@ Memory pressure response is continuous. It may reduce mip residency, LOD distanc
 `GlobalQualityWeight` may scale prefetch distance, speculative load slots, HLOD residency radius, mip bias, decorative biome density, audio bank breadth, VFX support residency, and diagnostic ledger depth. It must not change save identity, gameplay truth, asset ownership, release order, collision truth, or required near-field survival assets.
 
 Compact keeps player survival assets, UI, held tools, collision proxies, and return-route silhouettes resident before decorative content. Middle expands near biome dressing and audio/VFX support. High increases HLOD continuity and texture residency. Ultra keeps richer far silhouettes and biome dressing only while memory pressure proof remains green.
+
+## First-20 Route Hook
+
+- First-20 moment: world load and first exit must stream the selected shallow route without stalls while keeping suit/HUD, held tool, collision proxies, near hazards, return-route silhouettes, water/terrain/lighting/audio assets, and save/load-critical state resident.
+- Route blocker removed: streaming cannot starve near-field survival assets to show distant beauty, hide missing Addressables payloads, or unload the return path during memory pressure.
+- Proof class: import log for asset availability, Play Mode/player capture for route load/return, Profiler/GCMonitor for load/runtime pressure, screenshot for HLOD/readability, and save/load artifact when streamed state participates in restoration.
 
 ## Rejection Gates
 

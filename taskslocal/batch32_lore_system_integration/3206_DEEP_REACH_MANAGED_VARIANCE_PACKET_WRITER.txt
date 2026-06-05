@@ -1,0 +1,41 @@
+ID: 3206
+Role: DEEP_REACH_MANAGED_VARIANCE_PACKET_WRITER
+
+Objective:
+Write one production draft packet about Deep Reach "managed variance" language and how clean corporate wording contradicts physical evidence.
+
+Why this is needed:
+P462 uses the P-63 pressure collar as the first repair contradiction. The lore system needs a broader public/wiki/in-game packet that teaches the player's evidence-reading rule: Deep Reach documents understate damage; physical objects, waterlines, route stamps, and black-box fragments carry the stronger truth.
+
+Owned scope:
+- Create exactly one new file: `Docs/Lore/AppliedContent/production_packets/P465_DEEP_REACH_MANAGED_VARIANCE_BRIDGE.production.md`.
+- Do not edit P461, P462, P463, P464, RS093, route_cards, source CSV, h8bin, Unity scenes, generated pages, runtime scripts, or other workers' logs.
+
+Authority docs:
+AGENTS.md, PROJECT_BIBLES.md, TASTE.md, writing.md, narrative.md, localization.md, Docs/Lore/Canon_Locks.md, Docs/Lore/Lore_Bible.md, Docs/Lore/Website_Publication_Map.md, Docs/Lore/Codex_Delivery_Map.md.
+
+Tasks:
+1. Read authority docs and relevant mandates from BATCH_INDEX.
+2. Create source brief before prose.
+3. Topic: Deep Reach terminology such as "managed variance", "nominal", "service tolerance", and "deferred replacement"; contrast with physical evidence.
+4. English authority text must include external site/wiki, in-game codex, scanner short, terminal/document, audio, Marauder field note, black-box fragment, and QA.
+5. Produce all 15 locale rows for title, site teaser, scanner, field note, and audio.
+6. Mark en_US `source_authority`; mark all other rows `draft_machine_or_llm`.
+7. Preserve names: HECTON-8, Aegir, Deep Reach, Black Keel, P-63, Atlas-6, Xenon-Omega.
+8. Avoid final payload spoilers, direct confession, murder-button simplification, family hook, instant rescue, or final Atlas basin truth.
+9. Add Runtime/Monolith placement notes as authoring intent only: LocIDs, layer, surfaces, unlock route, relation tags, and explicit no-runtime-markdown boundary.
+10. Add GlobalQualityWeight presentation density for Low/Middle/High/Ultra without changing lore truth, LocID, unlock identity, or save identity.
+11. Validate 15 locale headers, 14 draft rows, zero U+FFFD, and no obvious mojibake codepoints U+00C3/U+00D0/U+00D8/U+00E6/U+00EC/U+00D7.
+
+Proof packet:
+- Canon sources used.
+- Locale roster present.
+- Native-review/runtime status honest.
+- Evidence class STATIC_DOC.
+- Static validation output.
+
+Rejection gates:
+- No English clone rows.
+- No native-reviewed/runtime-ready claim.
+- No route_cards/DataMonolith edits.
+- No public accusation beyond evidence gate.

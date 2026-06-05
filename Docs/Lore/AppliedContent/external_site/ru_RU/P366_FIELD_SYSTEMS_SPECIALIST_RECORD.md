@@ -10,8 +10,8 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
 # Запись полевого системного специалиста
@@ -32,6 +32,6 @@ PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certificat
 
 ## Field Note
 
-Для dossier origin card и contract-start context.
+The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible.
 
 <!-- External Site; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/ru_RU. -->

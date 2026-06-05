@@ -93,7 +93,7 @@ Do not do now:
 |---|---|---|
 | Pressure | The ocean is a mechanical threat | pressure warnings, hull noise, base stress, depth penalties |
 | Machinery | Survival depends on heavy systems | pumps, ballast, power, tools, dirty interfaces |
-| Deep-Sea Noir | Tone distinct from bright alien wonder | black water, industrial light, silhouettes, grime |
+| Deep-Sea Noir | Tone distinct from pure cozy ocean wonder | bright photic beauty contrasted with black-water depth, industrial light, silhouettes, grime |
 | Salvage | Progress through dangerous recovery | wrecks, tools, partial safety, evidence trails |
 | Seed Ship | Narrative hook as system corruption | radar glitches, flora/fauna aggression, instrument distortion |
 | Performance Honesty | Trust against UE5-stutter anxiety | only when real: frametime overlay, 0 GC capture, hardware label |

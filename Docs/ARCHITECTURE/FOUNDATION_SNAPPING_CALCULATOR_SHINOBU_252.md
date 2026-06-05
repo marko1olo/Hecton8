@@ -1,5 +1,7 @@
 ﻿# SHINOBU_252 Foundation Snapping Calculator
 
+Owner domain: construction/foundation snapping presentation
+
 Status: STATIC_SOURCE / STATIC_DOC only.
 
 Pending proof:

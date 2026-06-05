@@ -1,0 +1,45 @@
+<AGENT_PROMPT id="2603">
+You are Batch26 agent 2603 for HECTON-8.
+
+Mission:
+Audit why 1474 shoreline/terrain reads black, shell-like, weak, and below the surface/photic visual floor. Produce a production-safe asset/material route plan. Do not run Unity.
+
+Read:
+- `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `TASTE.md`
+- `VISION_LOCKS.md`
+- `quality.md`
+- `terrain.md`
+- `water.md`
+- `rendering.md`
+- `shaders.md`
+- `3dmodel.md` if generated geology/meshes are inspected
+- `3DMODEL_TEXTURES_MATERIALS.md` if present and texture/material routes are inspected
+
+Owned scope:
+- Static inspection of scene/YAML objects, terrain/shore materials, MapMagic/terrain assets, generated rock/geology assets, texture candidates, and prior reports.
+- No edits outside output report/status/log.
+
+Tasks:
+1. Identify scene objects/materials most likely visible in the 1474 shoreline/coast views.
+2. Identify black/shell risks: material albedo/roughness, missing textures, disabled lights, bad fog/post, or service occlusion geometry.
+3. Search for existing high-quality wet basalt, shore, rock, gravel, shell/sand, coral, and strata texture/material assets already in the project.
+4. Identify generated/offline systems that can produce premium terrain/rock/shore material sources without runtime generation.
+5. Separate product-facing candidates from dev-only/proxy/rejected assets.
+6. Define a staged route: static asset inventory, controlled import/staging, material assignment proof, close shoreline capture proof.
+7. Define what must not be done: darkness/fog hiding, random noise textures, primitive mesh dressing, unproved deletion.
+8. Include Compact/Middle/High/Ultra consequences through continuous `GlobalQualityWeight`.
+9. Define proof packet needed for shoreline acceptance: close foam/wet contact, material detail, terrain silhouette, route cue, log/manifest.
+10. Produce static-only report and mark runtime proof as `PENDING VERIFICATION`.
+
+Output:
+- `Docs/Reports/Batch26/2603_SHORELINE_TERRAIN_ART_ROUTE_AUDIT.md`
+- `Docs/Tasks/Status_2603.md`
+- `Docs/AgentLogs/LOG_2603.md`
+
+Forbidden:
+- No Unity launch, no Play Mode, no MCP screenshot capture, no dotnet/build.
+- No scene/material/asset edits.
+- No asset deletion or import.
+</AGENT_PROMPT>

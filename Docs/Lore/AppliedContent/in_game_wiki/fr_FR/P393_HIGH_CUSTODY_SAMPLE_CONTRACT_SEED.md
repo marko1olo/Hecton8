@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ A sample can weigh more after it enters the ledger.
 
 ## Field Note
 
-Use for sample-heavy replay contracts and inventory/custody UI.
+Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation.
 
 <!-- In-Game Wiki; generated from P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED/fr_FR. -->

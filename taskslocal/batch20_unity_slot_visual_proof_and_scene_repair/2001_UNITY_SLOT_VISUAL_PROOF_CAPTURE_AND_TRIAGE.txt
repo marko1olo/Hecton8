@@ -1,0 +1,137 @@
+TASK 2001: UNITY SLOT VISUAL PROOF CAPTURE AND TRIAGE
+
+Role:
+Unity-slot visual proof owner for surface, sky, Aegir, moons, clouds, coastline, ocean surface, photic shallows, and medium-depth hero route.
+
+Slot status:
+UNITY SLOT ONLY. Do not start until the current Unity owner thread/agent named "Продолжить работу по логам" explicitly hands over the Unity slot. If the slot is not free, create Status_2001.md with PENDING UNITY SLOT and stop without touching Unity.
+
+Primary objective:
+Capture objective visual and performance proof for the current scene, then produce a triage ledger of scene repair candidates. This task does not exist to make the scene look "acceptable." It exists to prove whether the current product face meets the surface/shallow floor and to provide repair-grade evidence.
+
+Authority files to read first:
+1. AGENTS.md
+2. TASTE.md
+3. VISION_LOCKS.md
+4. PROJECT_BIBLES.md
+5. quality.md
+6. rendering.md
+7. water.md
+8. terrain.md
+9. celestial.md
+10. atmosphere.md
+11. lighting.md
+12. presentation.md
+13. performance.md
+14. Docs/ARCHITECTURE/URP_SCREENSHOT_PIPELINE.md
+15. Docs/ARCHITECTURE/SHINOBU_277_CREST_SHORELINE_FOAM_GRAFT.md
+
+Relevant mandates to load:
+1. .agents-skills/REND_Shader_Noir_Aesthetics_Dithering_Fog.txt
+2. .agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt
+3. .agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt
+4. .agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt
+5. .agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+6. .agents-skills/DBG_Telemetry_Crash_Reporting_PostMortem.txt
+
+Exact project files and tools to inspect:
+1. Assets/_Project/Scripts/Rendering/OceanSinglePass/HectonSinglePassOceanFeature.cs
+2. Assets/_Project/Scripts/Rendering/OceanSinglePass/OceanSinglePassRuntime.cs
+3. Assets/_Project/Scripts/Rendering/OceanSinglePass/OceanSinglePassContracts.cs
+4. Assets/_Project/Scripts/Rendering/OceanSinglePass/ShorelineFoamGraftContracts.cs
+5. Assets/_Project/Scripts/Rendering/OceanSinglePass/ShorelineFoamGraftGizmos.cs
+6. Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs
+7. Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereContracts.cs
+8. Assets/_Project/Scripts/SkySystemFollowCamera.cs
+9. Assets/_Project/Editor/HectonSkyTools.cs
+10. Assets/_Project/Editor/HectonSkyAtlasGenerator.cs
+11. Assets/_Project/Editor/OceanRenderLayoutValidator.cs
+12. Assets/_Project/Scripts/Editor/SceneViewSkyboxEnforcer.cs
+13. Assets/_Project/Scripts/Editor/ProductFaceSkyOceanSourceValidator.cs
+14. Assets/_Project/_PROLOGUE_CONTENT/Prefabs/GasGiant_Aegir.prefab
+15. Assets/_Project/_PROLOGUE_CONTENT/Textures/Planets/Clouds/GASgIANT/Aegir_storms.png
+16. Unity Console, Frame Debugger, RenderGraph Viewer, Profiler, Memory Profiler if already installed.
+
+Forbidden actions:
+1. Do not run Unity while another owner controls it.
+2. Do not run a build.
+3. Do not launch dotnet build or rebuild.
+4. Do not edit unrelated Assets.
+5. Do not delete primitive/default assets as cleanup without scoped proof and a replacement route.
+6. Do not hide weak visuals with darkness, dense fog, heavy blur, extreme exposure, crushed contrast, or camera angle tricks.
+7. Do not claim proof from static docs, old screenshots, or editor thumbnails.
+8. Do not use Camera.Render, Texture2D.ReadPixels, synchronous GPU readback, or ad hoc screenshot scripts in runtime code.
+
+Ownership boundaries:
+1. You own the Unity-slot proof pass and triage report only.
+2. You may temporarily change editor camera/view settings for capture.
+3. You may use existing editor tools/menus if they are already in the project and do not mutate active scenes/materials/prefabs without explicit scoped intent.
+4. If a scoped scene repair is essential to make proof possible, document the exact file before and after, take a backup or use version control diff discipline, and keep the edit minimal.
+5. You do not own BioForge, GeologyForge, Flora, ProductFace relink, Gemini generation, or broad material remapping.
+
+Deliverables:
+1. Docs/Reports/Batch20/2001_UNITY_SLOT_VISUAL_PROOF.md
+2. Docs/Reports/Batch20/2001_CAPTURE_INDEX.csv
+3. Docs/Reports/Batch20/2001_TRIAGE_LEDGER.md
+4. Docs/Reports/Batch20/2001_PROFILER_NOTES.md
+5. Captures under Docs/Reports/Batch20/2001_Captures/
+6. Docs/Tasks/Status_2001.md
+7. Docs/AgentLogs/Rationale_2001.md
+8. Docs/AgentLogs/LOG_2001.md
+
+Required proof shots:
+1. Game View and Scene View matching pair from same pose.
+2. Shoreline closeup at player inspection distance.
+3. Underwater 0-5m photic shallows.
+4. Underwater 20-50m medium depth.
+5. Aegir long shot.
+6. Aegir crop showing texture/cloud/storm quality.
+7. 360 sky pan with enough headings to cover sun, clouds, moons, Aegir, horizon, coastline, and ocean.
+8. Low GlobalQualityWeight proof.
+9. Middle GlobalQualityWeight proof.
+10. High GlobalQualityWeight proof.
+11. Ultra GlobalQualityWeight proof.
+
+Work plan:
+1. Confirm Unity slot is free. If not free, stop with PENDING UNITY SLOT.
+2. Read the authority files and mandates above. Do not bulk-read unrelated docs.
+3. Record Unity version, active scene, active render pipeline, active quality tier, and camera route.
+4. Inspect Console before capture. Record compile/import/shader errors exactly.
+5. Inspect render features for ocean/sky/screenshot/shoreline paths.
+6. Establish a fixed capture naming convention: 2001_[view]_[location]_[quality]_[timestamp].png.
+7. Capture Game View / Scene View matching pair from the same camera pose.
+8. Capture shoreline closeup. Evaluate rocks, beach material, foam, waterline, vegetation, horizon, and shadows.
+9. Capture underwater 0-5m. Evaluate photic color, caustics, kelp/coral presence, haze, surface underside, and navigation readability.
+10. Capture underwater 20-50m. Evaluate medium-depth hero readability, not abyss darkness.
+11. Capture Aegir long shot. Check scale, placement, cloud detail, storm detail, silhouette, and relation to moons/clouds.
+12. Capture Aegir crop. The crop must be honest. Do not crop away compression, low-resolution source, or stretching.
+13. Capture 360 sky pan. Use consistent exposure and do not skip ugly headings.
+14. Capture Low/Middle/High/Ultra GlobalQualityWeight states. If no control exists, document the missing route as a blocker.
+15. Open Frame Debugger or RenderGraph Viewer if available. Record whether shoreline foam and ocean pass routes are visible.
+16. Open Profiler and record CPU/GPU frame, render thread, batches, triangles, texture memory, and GC allocation while stationary and while moving.
+17. Perform an interaction/navigation sanity pass: can the player read shoreline entry, swim route, hazards, climbable/blocked areas, and orientation markers?
+18. Build triage categories: blocking visual debt, blocking optimization debt, blocking gameplay readability debt, static-only unknowns, and Unity-slot repair candidates.
+19. For each defect, record owner route, exact asset/script/config path, evidence image, and whether fix belongs to BioForge, GeologyForge, Flora, ProductFace, ocean/sky render, or scene dressing.
+20. Do not close the task with "looks fine." Use proof labels only.
+21. If crash, NaN, or severe render instability occurs, dump available high-level state to Docs/AgentLogs/Dump_2001.bin or equivalent deterministic text/binary artifact and explain the route.
+22. Write final status and concise handoff.
+
+Three-pillar acceptance:
+1. Graphics: surface/sky/Aegir/moons/clouds/coast/ocean/photic shallows are bright, premium, readable, and not hidden by noir.
+2. Optimization: no new suspicious >0.1 ms route or allocation spike is accepted without profiler evidence and owner route.
+3. Gameplay: the visual state preserves navigation, player scale, interactable readability, hazard visibility, and route comprehension.
+
+GlobalQualityWeight consequences to record:
+1. Low: what is removed, simplified, or cadence-limited while preserving the visual floor.
+2. Middle: default stable target behavior.
+3. High: added fidelity bought with available frame budget.
+4. Ultra: visual overkill path, with proof that gameplay truth and DTO/save identity do not change.
+
+Final report format:
+1. Slot status.
+2. Proof label summary.
+3. Capture index path.
+4. Top 10 visual blockers.
+5. Top optimization blockers.
+6. Top gameplay readability blockers.
+7. Exact next owner handoff.

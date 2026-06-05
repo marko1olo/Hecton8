@@ -28,138 +28,138 @@
       "localized": {
         "en_US": {
           "title": "Capsule Blackbox Audio 01",
-          "scanner": "Blackbox fragment confirms ascent sleeve spent during survival burn.",
-          "field_note": "Short audio: crush-frame, avionics flood, recovery ring shear, buoy unreliable, no narrator explanation.",
-          "terminal": "BLACKBOX: survival burn complete. Ascent sleeve unavailable. Recovery ring no-lock.",
-          "audio": "Burn spent. Ring no-lock. Do not request ascent.",
-          "in_game_wiki": "Capsule Blackbox Audio 01 is the first playable proof that escape is blocked by named hardware failure.",
-          "external_site": "The opening capsule audio gives HECTON-8 its hard-sci-fi lock: survival was purchased with the part that would have taken the player home."
+          "scanner": "Capsule black-box event confirms the survival burn spent the ascent sleeve.",
+          "field_note": "RECORDER BKX-CAP-01: crush-frame cracked at lower ring; ascent bus flooded; recovery ring no-lock; buoy repeats a dead ascent request.",
+          "terminal": "BLACKBOX EVT 00:14:32: survival burn complete; ascent sleeve spent; recovery ring no-lock; buoy unreliable; frames dropped 12-19.",
+          "audio": "Black box event. Survival burn complete. Ascent sleeve spent. Recovery ring no-lock. Frames twelve through nineteen missing.",
+          "in_game_wiki": "The capsule blackbox proves the opening blocker. The descent survived by spending hardware that would have made ascent possible.",
+          "external_site": "The first recovered blackbox makes survival a debt: the capsule bought one landing by burning the part meant to take it back."
         },
         "ru_RU": {
-          "title": "Аудио черного ящика капсулы 01",
-          "scanner": "Фрагмент blackbox подтверждает: ascent sleeve потрачен на survival burn.",
-          "field_note": "Короткое audio: crush-frame, flooded avionics, recovery ring shear, unreliable buoy, без narrator explanation.",
-          "terminal": "BLACKBOX: survival burn complete. Ascent sleeve unavailable. Recovery ring no-lock.",
-          "audio": "Burn spent. Ring no-lock. Не запрашивать ascent.",
-          "in_game_wiki": "Аудио черного ящика капсулы 01 - первое доказательство, что побег заблокирован конкретной поломкой.",
-          "external_site": "Стартовое capsule audio дает HECTON-8 hard-sci-fi lock: выживание куплено той деталью, которая должна была вернуть игрока домой."
+          "title": "Draft RU localization pending native pass. Capsule Blackbox Audio 01",
+          "scanner": "Draft RU localization pending native pass. Blackbox fragment: survival burn spent the ascent sleeve.",
+          "field_note": "Draft RU localization pending native pass. Crush-frame cracked at lower ring. Avionics bay smells of warm salt. Recovery ring reports no-lock; buoy repeats a dead ascent request.",
+          "terminal": "Draft RU localization pending native pass. BLACKBOX EXTRACT 01 / SURVIVAL BURN: COMPLETE / ASCENT SLEEVE: SPENT / RECOVERY RING: NO-LOCK / BUOY: UNRELIABLE.",
+          "audio": "Draft RU localization pending native pass. Burn spent. Ring no-lock. Do not request ascent.",
+          "in_game_wiki": "Draft RU localization pending native pass. The capsule blackbox proves the opening blocker. The descent survived by spending hardware that would have made ascent possible.",
+          "external_site": "Draft RU localization pending native pass. The first recovered blackbox makes survival a debt: the capsule bought one landing by burning the part meant to take it back."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Capsule Blackbox Audio 01",
-          "scanner": "Draft JA localization pending native pass. Blackbox fragment confirms ascent sleeve spent during survival burn.",
-          "field_note": "Draft JA localization pending native pass. Short audio: crush-frame, avionics flood, recovery ring shear, buoy unreliable, no narrator explanation.",
-          "terminal": "Draft JA localization pending native pass. BLACKBOX: survival burn complete. Ascent sleeve unavailable. Recovery ring no-lock.",
+          "scanner": "Draft JA localization pending native pass. Blackbox fragment: survival burn spent the ascent sleeve.",
+          "field_note": "Draft JA localization pending native pass. Crush-frame cracked at lower ring. Avionics bay smells of warm salt. Recovery ring reports no-lock; buoy repeats a dead ascent request.",
+          "terminal": "Draft JA localization pending native pass. BLACKBOX EXTRACT 01 / SURVIVAL BURN: COMPLETE / ASCENT SLEEVE: SPENT / RECOVERY RING: NO-LOCK / BUOY: UNRELIABLE.",
           "audio": "Draft JA localization pending native pass. Burn spent. Ring no-lock. Do not request ascent.",
-          "in_game_wiki": "Draft JA localization pending native pass. Capsule Blackbox Audio 01 is the first playable proof that escape is blocked by named hardware failure.",
-          "external_site": "Draft JA localization pending native pass. The opening capsule audio gives HECTON-8 its hard-sci-fi lock: survival was purchased with the part that would have taken the player home."
+          "in_game_wiki": "Draft JA localization pending native pass. The capsule blackbox proves the opening blocker. The descent survived by spending hardware that would have made ascent possible.",
+          "external_site": "Draft JA localization pending native pass. The first recovered blackbox makes survival a debt: the capsule bought one landing by burning the part meant to take it back."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Capsule Blackbox Audio 01",
-          "scanner": "Draft ZH localization pending native pass. Blackbox fragment confirms ascent sleeve spent during survival burn.",
-          "field_note": "Draft ZH localization pending native pass. Short audio: crush-frame, avionics flood, recovery ring shear, buoy unreliable, no narrator explanation.",
-          "terminal": "Draft ZH localization pending native pass. BLACKBOX: survival burn complete. Ascent sleeve unavailable. Recovery ring no-lock.",
+          "scanner": "Draft ZH localization pending native pass. Blackbox fragment: survival burn spent the ascent sleeve.",
+          "field_note": "Draft ZH localization pending native pass. Crush-frame cracked at lower ring. Avionics bay smells of warm salt. Recovery ring reports no-lock; buoy repeats a dead ascent request.",
+          "terminal": "Draft ZH localization pending native pass. BLACKBOX EXTRACT 01 / SURVIVAL BURN: COMPLETE / ASCENT SLEEVE: SPENT / RECOVERY RING: NO-LOCK / BUOY: UNRELIABLE.",
           "audio": "Draft ZH localization pending native pass. Burn spent. Ring no-lock. Do not request ascent.",
-          "in_game_wiki": "Draft ZH localization pending native pass. Capsule Blackbox Audio 01 is the first playable proof that escape is blocked by named hardware failure.",
-          "external_site": "Draft ZH localization pending native pass. The opening capsule audio gives HECTON-8 its hard-sci-fi lock: survival was purchased with the part that would have taken the player home."
+          "in_game_wiki": "Draft ZH localization pending native pass. The capsule blackbox proves the opening blocker. The descent survived by spending hardware that would have made ascent possible.",
+          "external_site": "Draft ZH localization pending native pass. The first recovered blackbox makes survival a debt: the capsule bought one landing by burning the part meant to take it back."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Capsule Blackbox Audio 01",
-          "scanner": "Draft FR localization pending native pass. Blackbox fragment confirms ascent sleeve spent during survival burn.",
-          "field_note": "Draft FR localization pending native pass. Short audio: crush-frame, avionics flood, recovery ring shear, buoy unreliable, no narrator explanation.",
-          "terminal": "Draft FR localization pending native pass. BLACKBOX: survival burn complete. Ascent sleeve unavailable. Recovery ring no-lock.",
+          "scanner": "Draft FR localization pending native pass. Blackbox fragment: survival burn spent the ascent sleeve.",
+          "field_note": "Draft FR localization pending native pass. Crush-frame cracked at lower ring. Avionics bay smells of warm salt. Recovery ring reports no-lock; buoy repeats a dead ascent request.",
+          "terminal": "Draft FR localization pending native pass. BLACKBOX EXTRACT 01 / SURVIVAL BURN: COMPLETE / ASCENT SLEEVE: SPENT / RECOVERY RING: NO-LOCK / BUOY: UNRELIABLE.",
           "audio": "Draft FR localization pending native pass. Burn spent. Ring no-lock. Do not request ascent.",
-          "in_game_wiki": "Draft FR localization pending native pass. Capsule Blackbox Audio 01 is the first playable proof that escape is blocked by named hardware failure.",
-          "external_site": "Draft FR localization pending native pass. The opening capsule audio gives HECTON-8 its hard-sci-fi lock: survival was purchased with the part that would have taken the player home."
+          "in_game_wiki": "Draft FR localization pending native pass. The capsule blackbox proves the opening blocker. The descent survived by spending hardware that would have made ascent possible.",
+          "external_site": "Draft FR localization pending native pass. The first recovered blackbox makes survival a debt: the capsule bought one landing by burning the part meant to take it back."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Capsule Blackbox Audio 01",
-          "scanner": "Draft ES localization pending native pass. Blackbox fragment confirms ascent sleeve spent during survival burn.",
-          "field_note": "Draft ES localization pending native pass. Short audio: crush-frame, avionics flood, recovery ring shear, buoy unreliable, no narrator explanation.",
-          "terminal": "Draft ES localization pending native pass. BLACKBOX: survival burn complete. Ascent sleeve unavailable. Recovery ring no-lock.",
+          "scanner": "Draft ES localization pending native pass. Blackbox fragment: survival burn spent the ascent sleeve.",
+          "field_note": "Draft ES localization pending native pass. Crush-frame cracked at lower ring. Avionics bay smells of warm salt. Recovery ring reports no-lock; buoy repeats a dead ascent request.",
+          "terminal": "Draft ES localization pending native pass. BLACKBOX EXTRACT 01 / SURVIVAL BURN: COMPLETE / ASCENT SLEEVE: SPENT / RECOVERY RING: NO-LOCK / BUOY: UNRELIABLE.",
           "audio": "Draft ES localization pending native pass. Burn spent. Ring no-lock. Do not request ascent.",
-          "in_game_wiki": "Draft ES localization pending native pass. Capsule Blackbox Audio 01 is the first playable proof that escape is blocked by named hardware failure.",
-          "external_site": "Draft ES localization pending native pass. The opening capsule audio gives HECTON-8 its hard-sci-fi lock: survival was purchased with the part that would have taken the player home."
+          "in_game_wiki": "Draft ES localization pending native pass. The capsule blackbox proves the opening blocker. The descent survived by spending hardware that would have made ascent possible.",
+          "external_site": "Draft ES localization pending native pass. The first recovered blackbox makes survival a debt: the capsule bought one landing by burning the part meant to take it back."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Capsule Blackbox Audio 01",
-          "scanner": "Draft DE localization pending native pass. Blackbox fragment confirms ascent sleeve spent during survival burn.",
-          "field_note": "Draft DE localization pending native pass. Short audio: crush-frame, avionics flood, recovery ring shear, buoy unreliable, no narrator explanation.",
-          "terminal": "Draft DE localization pending native pass. BLACKBOX: survival burn complete. Ascent sleeve unavailable. Recovery ring no-lock.",
+          "scanner": "Draft DE localization pending native pass. Blackbox fragment: survival burn spent the ascent sleeve.",
+          "field_note": "Draft DE localization pending native pass. Crush-frame cracked at lower ring. Avionics bay smells of warm salt. Recovery ring reports no-lock; buoy repeats a dead ascent request.",
+          "terminal": "Draft DE localization pending native pass. BLACKBOX EXTRACT 01 / SURVIVAL BURN: COMPLETE / ASCENT SLEEVE: SPENT / RECOVERY RING: NO-LOCK / BUOY: UNRELIABLE.",
           "audio": "Draft DE localization pending native pass. Burn spent. Ring no-lock. Do not request ascent.",
-          "in_game_wiki": "Draft DE localization pending native pass. Capsule Blackbox Audio 01 is the first playable proof that escape is blocked by named hardware failure.",
-          "external_site": "Draft DE localization pending native pass. The opening capsule audio gives HECTON-8 its hard-sci-fi lock: survival was purchased with the part that would have taken the player home."
+          "in_game_wiki": "Draft DE localization pending native pass. The capsule blackbox proves the opening blocker. The descent survived by spending hardware that would have made ascent possible.",
+          "external_site": "Draft DE localization pending native pass. The first recovered blackbox makes survival a debt: the capsule bought one landing by burning the part meant to take it back."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Capsule Blackbox Audio 01",
-          "scanner": "Draft PL localization pending native pass. Blackbox fragment confirms ascent sleeve spent during survival burn.",
-          "field_note": "Draft PL localization pending native pass. Short audio: crush-frame, avionics flood, recovery ring shear, buoy unreliable, no narrator explanation.",
-          "terminal": "Draft PL localization pending native pass. BLACKBOX: survival burn complete. Ascent sleeve unavailable. Recovery ring no-lock.",
+          "scanner": "Draft PL localization pending native pass. Blackbox fragment: survival burn spent the ascent sleeve.",
+          "field_note": "Draft PL localization pending native pass. Crush-frame cracked at lower ring. Avionics bay smells of warm salt. Recovery ring reports no-lock; buoy repeats a dead ascent request.",
+          "terminal": "Draft PL localization pending native pass. BLACKBOX EXTRACT 01 / SURVIVAL BURN: COMPLETE / ASCENT SLEEVE: SPENT / RECOVERY RING: NO-LOCK / BUOY: UNRELIABLE.",
           "audio": "Draft PL localization pending native pass. Burn spent. Ring no-lock. Do not request ascent.",
-          "in_game_wiki": "Draft PL localization pending native pass. Capsule Blackbox Audio 01 is the first playable proof that escape is blocked by named hardware failure.",
-          "external_site": "Draft PL localization pending native pass. The opening capsule audio gives HECTON-8 its hard-sci-fi lock: survival was purchased with the part that would have taken the player home."
+          "in_game_wiki": "Draft PL localization pending native pass. The capsule blackbox proves the opening blocker. The descent survived by spending hardware that would have made ascent possible.",
+          "external_site": "Draft PL localization pending native pass. The first recovered blackbox makes survival a debt: the capsule bought one landing by burning the part meant to take it back."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Capsule Blackbox Audio 01",
-          "scanner": "Draft UK localization pending native pass. Blackbox fragment confirms ascent sleeve spent during survival burn.",
-          "field_note": "Draft UK localization pending native pass. Short audio: crush-frame, avionics flood, recovery ring shear, buoy unreliable, no narrator explanation.",
-          "terminal": "Draft UK localization pending native pass. BLACKBOX: survival burn complete. Ascent sleeve unavailable. Recovery ring no-lock.",
+          "scanner": "Draft UK localization pending native pass. Blackbox fragment: survival burn spent the ascent sleeve.",
+          "field_note": "Draft UK localization pending native pass. Crush-frame cracked at lower ring. Avionics bay smells of warm salt. Recovery ring reports no-lock; buoy repeats a dead ascent request.",
+          "terminal": "Draft UK localization pending native pass. BLACKBOX EXTRACT 01 / SURVIVAL BURN: COMPLETE / ASCENT SLEEVE: SPENT / RECOVERY RING: NO-LOCK / BUOY: UNRELIABLE.",
           "audio": "Draft UK localization pending native pass. Burn spent. Ring no-lock. Do not request ascent.",
-          "in_game_wiki": "Draft UK localization pending native pass. Capsule Blackbox Audio 01 is the first playable proof that escape is blocked by named hardware failure.",
-          "external_site": "Draft UK localization pending native pass. The opening capsule audio gives HECTON-8 its hard-sci-fi lock: survival was purchased with the part that would have taken the player home."
+          "in_game_wiki": "Draft UK localization pending native pass. The capsule blackbox proves the opening blocker. The descent survived by spending hardware that would have made ascent possible.",
+          "external_site": "Draft UK localization pending native pass. The first recovered blackbox makes survival a debt: the capsule bought one landing by burning the part meant to take it back."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Capsule Blackbox Audio 01",
-          "scanner": "Draft AR localization pending native pass. Blackbox fragment confirms ascent sleeve spent during survival burn.",
-          "field_note": "Draft AR localization pending native pass. Short audio: crush-frame, avionics flood, recovery ring shear, buoy unreliable, no narrator explanation.",
-          "terminal": "Draft AR localization pending native pass. BLACKBOX: survival burn complete. Ascent sleeve unavailable. Recovery ring no-lock.",
+          "scanner": "Draft AR localization pending native pass. Blackbox fragment: survival burn spent the ascent sleeve.",
+          "field_note": "Draft AR localization pending native pass. Crush-frame cracked at lower ring. Avionics bay smells of warm salt. Recovery ring reports no-lock; buoy repeats a dead ascent request.",
+          "terminal": "Draft AR localization pending native pass. BLACKBOX EXTRACT 01 / SURVIVAL BURN: COMPLETE / ASCENT SLEEVE: SPENT / RECOVERY RING: NO-LOCK / BUOY: UNRELIABLE.",
           "audio": "Draft AR localization pending native pass. Burn spent. Ring no-lock. Do not request ascent.",
-          "in_game_wiki": "Draft AR localization pending native pass. Capsule Blackbox Audio 01 is the first playable proof that escape is blocked by named hardware failure.",
-          "external_site": "Draft AR localization pending native pass. The opening capsule audio gives HECTON-8 its hard-sci-fi lock: survival was purchased with the part that would have taken the player home."
+          "in_game_wiki": "Draft AR localization pending native pass. The capsule blackbox proves the opening blocker. The descent survived by spending hardware that would have made ascent possible.",
+          "external_site": "Draft AR localization pending native pass. The first recovered blackbox makes survival a debt: the capsule bought one landing by burning the part meant to take it back."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Capsule Blackbox Audio 01",
-          "scanner": "Draft ID localization pending native pass. Blackbox fragment confirms ascent sleeve spent during survival burn.",
-          "field_note": "Draft ID localization pending native pass. Short audio: crush-frame, avionics flood, recovery ring shear, buoy unreliable, no narrator explanation.",
-          "terminal": "Draft ID localization pending native pass. BLACKBOX: survival burn complete. Ascent sleeve unavailable. Recovery ring no-lock.",
+          "scanner": "Draft ID localization pending native pass. Blackbox fragment: survival burn spent the ascent sleeve.",
+          "field_note": "Draft ID localization pending native pass. Crush-frame cracked at lower ring. Avionics bay smells of warm salt. Recovery ring reports no-lock; buoy repeats a dead ascent request.",
+          "terminal": "Draft ID localization pending native pass. BLACKBOX EXTRACT 01 / SURVIVAL BURN: COMPLETE / ASCENT SLEEVE: SPENT / RECOVERY RING: NO-LOCK / BUOY: UNRELIABLE.",
           "audio": "Draft ID localization pending native pass. Burn spent. Ring no-lock. Do not request ascent.",
-          "in_game_wiki": "Draft ID localization pending native pass. Capsule Blackbox Audio 01 is the first playable proof that escape is blocked by named hardware failure.",
-          "external_site": "Draft ID localization pending native pass. The opening capsule audio gives HECTON-8 its hard-sci-fi lock: survival was purchased with the part that would have taken the player home."
+          "in_game_wiki": "Draft ID localization pending native pass. The capsule blackbox proves the opening blocker. The descent survived by spending hardware that would have made ascent possible.",
+          "external_site": "Draft ID localization pending native pass. The first recovered blackbox makes survival a debt: the capsule bought one landing by burning the part meant to take it back."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Capsule Blackbox Audio 01",
-          "scanner": "Draft KO localization pending native pass. Blackbox fragment confirms ascent sleeve spent during survival burn.",
-          "field_note": "Draft KO localization pending native pass. Short audio: crush-frame, avionics flood, recovery ring shear, buoy unreliable, no narrator explanation.",
-          "terminal": "Draft KO localization pending native pass. BLACKBOX: survival burn complete. Ascent sleeve unavailable. Recovery ring no-lock.",
+          "scanner": "Draft KO localization pending native pass. Blackbox fragment: survival burn spent the ascent sleeve.",
+          "field_note": "Draft KO localization pending native pass. Crush-frame cracked at lower ring. Avionics bay smells of warm salt. Recovery ring reports no-lock; buoy repeats a dead ascent request.",
+          "terminal": "Draft KO localization pending native pass. BLACKBOX EXTRACT 01 / SURVIVAL BURN: COMPLETE / ASCENT SLEEVE: SPENT / RECOVERY RING: NO-LOCK / BUOY: UNRELIABLE.",
           "audio": "Draft KO localization pending native pass. Burn spent. Ring no-lock. Do not request ascent.",
-          "in_game_wiki": "Draft KO localization pending native pass. Capsule Blackbox Audio 01 is the first playable proof that escape is blocked by named hardware failure.",
-          "external_site": "Draft KO localization pending native pass. The opening capsule audio gives HECTON-8 its hard-sci-fi lock: survival was purchased with the part that would have taken the player home."
+          "in_game_wiki": "Draft KO localization pending native pass. The capsule blackbox proves the opening blocker. The descent survived by spending hardware that would have made ascent possible.",
+          "external_site": "Draft KO localization pending native pass. The first recovered blackbox makes survival a debt: the capsule bought one landing by burning the part meant to take it back."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Capsule Blackbox Audio 01",
-          "scanner": "Draft HE localization pending native pass. Blackbox fragment confirms ascent sleeve spent during survival burn.",
-          "field_note": "Draft HE localization pending native pass. Short audio: crush-frame, avionics flood, recovery ring shear, buoy unreliable, no narrator explanation.",
-          "terminal": "Draft HE localization pending native pass. BLACKBOX: survival burn complete. Ascent sleeve unavailable. Recovery ring no-lock.",
+          "scanner": "Draft HE localization pending native pass. Blackbox fragment: survival burn spent the ascent sleeve.",
+          "field_note": "Draft HE localization pending native pass. Crush-frame cracked at lower ring. Avionics bay smells of warm salt. Recovery ring reports no-lock; buoy repeats a dead ascent request.",
+          "terminal": "Draft HE localization pending native pass. BLACKBOX EXTRACT 01 / SURVIVAL BURN: COMPLETE / ASCENT SLEEVE: SPENT / RECOVERY RING: NO-LOCK / BUOY: UNRELIABLE.",
           "audio": "Draft HE localization pending native pass. Burn spent. Ring no-lock. Do not request ascent.",
-          "in_game_wiki": "Draft HE localization pending native pass. Capsule Blackbox Audio 01 is the first playable proof that escape is blocked by named hardware failure.",
-          "external_site": "Draft HE localization pending native pass. The opening capsule audio gives HECTON-8 its hard-sci-fi lock: survival was purchased with the part that would have taken the player home."
+          "in_game_wiki": "Draft HE localization pending native pass. The capsule blackbox proves the opening blocker. The descent survived by spending hardware that would have made ascent possible.",
+          "external_site": "Draft HE localization pending native pass. The first recovered blackbox makes survival a debt: the capsule bought one landing by burning the part meant to take it back."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Capsule Blackbox Audio 01",
-          "scanner": "Draft PT localization pending native pass. Blackbox fragment confirms ascent sleeve spent during survival burn.",
-          "field_note": "Draft PT localization pending native pass. Short audio: crush-frame, avionics flood, recovery ring shear, buoy unreliable, no narrator explanation.",
-          "terminal": "Draft PT localization pending native pass. BLACKBOX: survival burn complete. Ascent sleeve unavailable. Recovery ring no-lock.",
-          "audio": "Draft PT localization pending native pass. Burn spent. Ring no-lock. Do not request ascent.",
-          "in_game_wiki": "Draft PT localization pending native pass. Capsule Blackbox Audio 01 is the first playable proof that escape is blocked by named hardware failure.",
-          "external_site": "Draft PT localization pending native pass. The opening capsule audio gives HECTON-8 its hard-sci-fi lock: survival was purchased with the part that would have taken the player home."
+          "title": "Draft PT-BR localization pending native pass. Capsule Blackbox Audio 01",
+          "scanner": "Draft PT-BR localization pending native pass. Blackbox fragment: survival burn spent the ascent sleeve.",
+          "field_note": "Draft PT-BR localization pending native pass. Crush-frame cracked at lower ring. Avionics bay smells of warm salt. Recovery ring reports no-lock; buoy repeats a dead ascent request.",
+          "terminal": "Draft PT-BR localization pending native pass. BLACKBOX EXTRACT 01 / SURVIVAL BURN: COMPLETE / ASCENT SLEEVE: SPENT / RECOVERY RING: NO-LOCK / BUOY: UNRELIABLE.",
+          "audio": "Draft PT-BR localization pending native pass. Burn spent. Ring no-lock. Do not request ascent.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. The capsule blackbox proves the opening blocker. The descent survived by spending hardware that would have made ascent possible.",
+          "external_site": "Draft PT-BR localization pending native pass. The first recovered blackbox makes survival a debt: the capsule bought one landing by burning the part meant to take it back."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Capsule Blackbox Audio 01",
-          "scanner": "Draft NL localization pending native pass. Blackbox fragment confirms ascent sleeve spent during survival burn.",
-          "field_note": "Draft NL localization pending native pass. Short audio: crush-frame, avionics flood, recovery ring shear, buoy unreliable, no narrator explanation.",
-          "terminal": "Draft NL localization pending native pass. BLACKBOX: survival burn complete. Ascent sleeve unavailable. Recovery ring no-lock.",
+          "scanner": "Draft NL localization pending native pass. Blackbox fragment: survival burn spent the ascent sleeve.",
+          "field_note": "Draft NL localization pending native pass. Crush-frame cracked at lower ring. Avionics bay smells of warm salt. Recovery ring reports no-lock; buoy repeats a dead ascent request.",
+          "terminal": "Draft NL localization pending native pass. BLACKBOX EXTRACT 01 / SURVIVAL BURN: COMPLETE / ASCENT SLEEVE: SPENT / RECOVERY RING: NO-LOCK / BUOY: UNRELIABLE.",
           "audio": "Draft NL localization pending native pass. Burn spent. Ring no-lock. Do not request ascent.",
-          "in_game_wiki": "Draft NL localization pending native pass. Capsule Blackbox Audio 01 is the first playable proof that escape is blocked by named hardware failure.",
-          "external_site": "Draft NL localization pending native pass. The opening capsule audio gives HECTON-8 its hard-sci-fi lock: survival was purchased with the part that would have taken the player home."
+          "in_game_wiki": "Draft NL localization pending native pass. The capsule blackbox proves the opening blocker. The descent survived by spending hardware that would have made ascent possible.",
+          "external_site": "Draft NL localization pending native pass. The first recovered blackbox makes survival a debt: the capsule bought one landing by burning the part meant to take it back."
         }
       }
     },
@@ -182,139 +182,139 @@
       },
       "localized": {
         "en_US": {
-          "title": "P63 Pump Room Work Order",
-          "scanner": "Work order lists pump, seal, cut, pinger and fabricator in pressure order.",
-          "field_note": "Place on pump room terminal or soaked clipboard; no tutorial language.",
-          "terminal": "WORK ORDER P-63: clear sump, patch cold seam, cut fused latch, deploy acoustic return line, then print gasket.",
+          "title": "P-63 Pump Room Work Order",
+          "scanner": "Work order lists pump, seal, cut, pinger and gasket in pressure order.",
+          "field_note": "Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.",
+          "terminal": "WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.",
           "audio": "Pump first. Seal second. If it sings, stop cutting.",
-          "in_game_wiki": "P-63 Pump Room Work Order turns the first survival task into diegetic engineering copy.",
-          "external_site": "The P-63 work order shows the game's first hour in miniature: tools, water, pressure and procedural evidence before lore explanation."
+          "in_game_wiki": "The P-63 work order makes the first repair a colony procedure, not a tutorial overlay.",
+          "external_site": "P-63 shows HECTON-8 at small scale: water in the room, one tool in hand, and a return route that has to be marked before it is trusted."
         },
         "ru_RU": {
-          "title": "Рабочий наряд P-63",
-          "scanner": "Наряд перечисляет pump, seal, cut, pinger и fabricator в pressure order.",
-          "field_note": "Размещать на терминале pump room или мокром clipboard; без tutorial language.",
-          "terminal": "WORK ORDER P-63: clear sump, patch cold seam, cut fused latch, deploy acoustic return line, then print gasket.",
-          "audio": "Сначала pump. Потом seal. Если запоет - прекрати резать.",
-          "in_game_wiki": "Рабочий наряд P-63 превращает первый survival task в diegetic engineering copy.",
-          "external_site": "Рабочий наряд P-63 показывает первый час игры в миниатюре: tools, water, pressure и procedural evidence до объяснения лора."
+          "title": "Draft RU localization pending native pass. P-63 Pump Room Work Order",
+          "scanner": "Draft RU localization pending native pass. Work order lists pump, seal, cut, pinger and gasket in pressure order.",
+          "field_note": "Draft RU localization pending native pass. Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.",
+          "terminal": "Draft RU localization pending native pass. WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.",
+          "audio": "Draft RU localization pending native pass. Pump first. Seal second. If it sings, stop cutting.",
+          "in_game_wiki": "Draft RU localization pending native pass. The P-63 work order makes the first repair a colony procedure, not a tutorial overlay.",
+          "external_site": "Draft RU localization pending native pass. P-63 shows HECTON-8 at small scale: water in the room, one tool in hand, and a return route that has to be marked before it is trusted."
         },
         "ja_JP": {
-          "title": "Draft JA localization pending native pass. P63 Pump Room Work Order",
-          "scanner": "Draft JA localization pending native pass. Work order lists pump, seal, cut, pinger and fabricator in pressure order.",
-          "field_note": "Draft JA localization pending native pass. Place on pump room terminal or soaked clipboard; no tutorial language.",
-          "terminal": "Draft JA localization pending native pass. WORK ORDER P-63: clear sump, patch cold seam, cut fused latch, deploy acoustic return line, then print gasket.",
+          "title": "Draft JA localization pending native pass. P-63 Pump Room Work Order",
+          "scanner": "Draft JA localization pending native pass. Work order lists pump, seal, cut, pinger and gasket in pressure order.",
+          "field_note": "Draft JA localization pending native pass. Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.",
+          "terminal": "Draft JA localization pending native pass. WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.",
           "audio": "Draft JA localization pending native pass. Pump first. Seal second. If it sings, stop cutting.",
-          "in_game_wiki": "Draft JA localization pending native pass. P-63 Pump Room Work Order turns the first survival task into diegetic engineering copy.",
-          "external_site": "Draft JA localization pending native pass. The P-63 work order shows the game's first hour in miniature: tools, water, pressure and procedural evidence before lore explanation."
+          "in_game_wiki": "Draft JA localization pending native pass. The P-63 work order makes the first repair a colony procedure, not a tutorial overlay.",
+          "external_site": "Draft JA localization pending native pass. P-63 shows HECTON-8 at small scale: water in the room, one tool in hand, and a return route that has to be marked before it is trusted."
         },
         "zh_CN": {
-          "title": "Draft ZH localization pending native pass. P63 Pump Room Work Order",
-          "scanner": "Draft ZH localization pending native pass. Work order lists pump, seal, cut, pinger and fabricator in pressure order.",
-          "field_note": "Draft ZH localization pending native pass. Place on pump room terminal or soaked clipboard; no tutorial language.",
-          "terminal": "Draft ZH localization pending native pass. WORK ORDER P-63: clear sump, patch cold seam, cut fused latch, deploy acoustic return line, then print gasket.",
+          "title": "Draft ZH localization pending native pass. P-63 Pump Room Work Order",
+          "scanner": "Draft ZH localization pending native pass. Work order lists pump, seal, cut, pinger and gasket in pressure order.",
+          "field_note": "Draft ZH localization pending native pass. Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.",
+          "terminal": "Draft ZH localization pending native pass. WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.",
           "audio": "Draft ZH localization pending native pass. Pump first. Seal second. If it sings, stop cutting.",
-          "in_game_wiki": "Draft ZH localization pending native pass. P-63 Pump Room Work Order turns the first survival task into diegetic engineering copy.",
-          "external_site": "Draft ZH localization pending native pass. The P-63 work order shows the game's first hour in miniature: tools, water, pressure and procedural evidence before lore explanation."
+          "in_game_wiki": "Draft ZH localization pending native pass. The P-63 work order makes the first repair a colony procedure, not a tutorial overlay.",
+          "external_site": "Draft ZH localization pending native pass. P-63 shows HECTON-8 at small scale: water in the room, one tool in hand, and a return route that has to be marked before it is trusted."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. P63 Pump Room Work Order",
-          "scanner": "Draft FR localization pending native pass. Work order lists pump, seal, cut, pinger and fabricator in pressure order.",
-          "field_note": "Draft FR localization pending native pass. Place on pump room terminal or soaked clipboard; no tutorial language.",
-          "terminal": "Draft FR localization pending native pass. WORK ORDER P-63: clear sump, patch cold seam, cut fused latch, deploy acoustic return line, then print gasket.",
+          "title": "Draft FR localization pending native pass. P-63 Pump Room Work Order",
+          "scanner": "Draft FR localization pending native pass. Work order lists pump, seal, cut, pinger and gasket in pressure order.",
+          "field_note": "Draft FR localization pending native pass. Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.",
+          "terminal": "Draft FR localization pending native pass. WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.",
           "audio": "Draft FR localization pending native pass. Pump first. Seal second. If it sings, stop cutting.",
-          "in_game_wiki": "Draft FR localization pending native pass. P-63 Pump Room Work Order turns the first survival task into diegetic engineering copy.",
-          "external_site": "Draft FR localization pending native pass. The P-63 work order shows the game's first hour in miniature: tools, water, pressure and procedural evidence before lore explanation."
+          "in_game_wiki": "Draft FR localization pending native pass. The P-63 work order makes the first repair a colony procedure, not a tutorial overlay.",
+          "external_site": "Draft FR localization pending native pass. P-63 shows HECTON-8 at small scale: water in the room, one tool in hand, and a return route that has to be marked before it is trusted."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. P63 Pump Room Work Order",
-          "scanner": "Draft ES localization pending native pass. Work order lists pump, seal, cut, pinger and fabricator in pressure order.",
-          "field_note": "Draft ES localization pending native pass. Place on pump room terminal or soaked clipboard; no tutorial language.",
-          "terminal": "Draft ES localization pending native pass. WORK ORDER P-63: clear sump, patch cold seam, cut fused latch, deploy acoustic return line, then print gasket.",
+          "title": "Draft ES localization pending native pass. P-63 Pump Room Work Order",
+          "scanner": "Draft ES localization pending native pass. Work order lists pump, seal, cut, pinger and gasket in pressure order.",
+          "field_note": "Draft ES localization pending native pass. Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.",
+          "terminal": "Draft ES localization pending native pass. WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.",
           "audio": "Draft ES localization pending native pass. Pump first. Seal second. If it sings, stop cutting.",
-          "in_game_wiki": "Draft ES localization pending native pass. P-63 Pump Room Work Order turns the first survival task into diegetic engineering copy.",
-          "external_site": "Draft ES localization pending native pass. The P-63 work order shows the game's first hour in miniature: tools, water, pressure and procedural evidence before lore explanation."
+          "in_game_wiki": "Draft ES localization pending native pass. The P-63 work order makes the first repair a colony procedure, not a tutorial overlay.",
+          "external_site": "Draft ES localization pending native pass. P-63 shows HECTON-8 at small scale: water in the room, one tool in hand, and a return route that has to be marked before it is trusted."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. P63 Pump Room Work Order",
-          "scanner": "Draft DE localization pending native pass. Work order lists pump, seal, cut, pinger and fabricator in pressure order.",
-          "field_note": "Draft DE localization pending native pass. Place on pump room terminal or soaked clipboard; no tutorial language.",
-          "terminal": "Draft DE localization pending native pass. WORK ORDER P-63: clear sump, patch cold seam, cut fused latch, deploy acoustic return line, then print gasket.",
+          "title": "Draft DE localization pending native pass. P-63 Pump Room Work Order",
+          "scanner": "Draft DE localization pending native pass. Work order lists pump, seal, cut, pinger and gasket in pressure order.",
+          "field_note": "Draft DE localization pending native pass. Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.",
+          "terminal": "Draft DE localization pending native pass. WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.",
           "audio": "Draft DE localization pending native pass. Pump first. Seal second. If it sings, stop cutting.",
-          "in_game_wiki": "Draft DE localization pending native pass. P-63 Pump Room Work Order turns the first survival task into diegetic engineering copy.",
-          "external_site": "Draft DE localization pending native pass. The P-63 work order shows the game's first hour in miniature: tools, water, pressure and procedural evidence before lore explanation."
+          "in_game_wiki": "Draft DE localization pending native pass. The P-63 work order makes the first repair a colony procedure, not a tutorial overlay.",
+          "external_site": "Draft DE localization pending native pass. P-63 shows HECTON-8 at small scale: water in the room, one tool in hand, and a return route that has to be marked before it is trusted."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. P63 Pump Room Work Order",
-          "scanner": "Draft PL localization pending native pass. Work order lists pump, seal, cut, pinger and fabricator in pressure order.",
-          "field_note": "Draft PL localization pending native pass. Place on pump room terminal or soaked clipboard; no tutorial language.",
-          "terminal": "Draft PL localization pending native pass. WORK ORDER P-63: clear sump, patch cold seam, cut fused latch, deploy acoustic return line, then print gasket.",
+          "title": "Draft PL localization pending native pass. P-63 Pump Room Work Order",
+          "scanner": "Draft PL localization pending native pass. Work order lists pump, seal, cut, pinger and gasket in pressure order.",
+          "field_note": "Draft PL localization pending native pass. Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.",
+          "terminal": "Draft PL localization pending native pass. WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.",
           "audio": "Draft PL localization pending native pass. Pump first. Seal second. If it sings, stop cutting.",
-          "in_game_wiki": "Draft PL localization pending native pass. P-63 Pump Room Work Order turns the first survival task into diegetic engineering copy.",
-          "external_site": "Draft PL localization pending native pass. The P-63 work order shows the game's first hour in miniature: tools, water, pressure and procedural evidence before lore explanation."
+          "in_game_wiki": "Draft PL localization pending native pass. The P-63 work order makes the first repair a colony procedure, not a tutorial overlay.",
+          "external_site": "Draft PL localization pending native pass. P-63 shows HECTON-8 at small scale: water in the room, one tool in hand, and a return route that has to be marked before it is trusted."
         },
         "uk_UA": {
-          "title": "Draft UK localization pending native pass. P63 Pump Room Work Order",
-          "scanner": "Draft UK localization pending native pass. Work order lists pump, seal, cut, pinger and fabricator in pressure order.",
-          "field_note": "Draft UK localization pending native pass. Place on pump room terminal or soaked clipboard; no tutorial language.",
-          "terminal": "Draft UK localization pending native pass. WORK ORDER P-63: clear sump, patch cold seam, cut fused latch, deploy acoustic return line, then print gasket.",
+          "title": "Draft UK localization pending native pass. P-63 Pump Room Work Order",
+          "scanner": "Draft UK localization pending native pass. Work order lists pump, seal, cut, pinger and gasket in pressure order.",
+          "field_note": "Draft UK localization pending native pass. Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.",
+          "terminal": "Draft UK localization pending native pass. WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.",
           "audio": "Draft UK localization pending native pass. Pump first. Seal second. If it sings, stop cutting.",
-          "in_game_wiki": "Draft UK localization pending native pass. P-63 Pump Room Work Order turns the first survival task into diegetic engineering copy.",
-          "external_site": "Draft UK localization pending native pass. The P-63 work order shows the game's first hour in miniature: tools, water, pressure and procedural evidence before lore explanation."
+          "in_game_wiki": "Draft UK localization pending native pass. The P-63 work order makes the first repair a colony procedure, not a tutorial overlay.",
+          "external_site": "Draft UK localization pending native pass. P-63 shows HECTON-8 at small scale: water in the room, one tool in hand, and a return route that has to be marked before it is trusted."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. P63 Pump Room Work Order",
-          "scanner": "Draft AR localization pending native pass. Work order lists pump, seal, cut, pinger and fabricator in pressure order.",
-          "field_note": "Draft AR localization pending native pass. Place on pump room terminal or soaked clipboard; no tutorial language.",
-          "terminal": "Draft AR localization pending native pass. WORK ORDER P-63: clear sump, patch cold seam, cut fused latch, deploy acoustic return line, then print gasket.",
+          "title": "Draft AR localization pending native pass. P-63 Pump Room Work Order",
+          "scanner": "Draft AR localization pending native pass. Work order lists pump, seal, cut, pinger and gasket in pressure order.",
+          "field_note": "Draft AR localization pending native pass. Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.",
+          "terminal": "Draft AR localization pending native pass. WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.",
           "audio": "Draft AR localization pending native pass. Pump first. Seal second. If it sings, stop cutting.",
-          "in_game_wiki": "Draft AR localization pending native pass. P-63 Pump Room Work Order turns the first survival task into diegetic engineering copy.",
-          "external_site": "Draft AR localization pending native pass. The P-63 work order shows the game's first hour in miniature: tools, water, pressure and procedural evidence before lore explanation."
+          "in_game_wiki": "Draft AR localization pending native pass. The P-63 work order makes the first repair a colony procedure, not a tutorial overlay.",
+          "external_site": "Draft AR localization pending native pass. P-63 shows HECTON-8 at small scale: water in the room, one tool in hand, and a return route that has to be marked before it is trusted."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. P63 Pump Room Work Order",
-          "scanner": "Draft ID localization pending native pass. Work order lists pump, seal, cut, pinger and fabricator in pressure order.",
-          "field_note": "Draft ID localization pending native pass. Place on pump room terminal or soaked clipboard; no tutorial language.",
-          "terminal": "Draft ID localization pending native pass. WORK ORDER P-63: clear sump, patch cold seam, cut fused latch, deploy acoustic return line, then print gasket.",
+          "title": "Draft ID localization pending native pass. P-63 Pump Room Work Order",
+          "scanner": "Draft ID localization pending native pass. Work order lists pump, seal, cut, pinger and gasket in pressure order.",
+          "field_note": "Draft ID localization pending native pass. Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.",
+          "terminal": "Draft ID localization pending native pass. WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.",
           "audio": "Draft ID localization pending native pass. Pump first. Seal second. If it sings, stop cutting.",
-          "in_game_wiki": "Draft ID localization pending native pass. P-63 Pump Room Work Order turns the first survival task into diegetic engineering copy.",
-          "external_site": "Draft ID localization pending native pass. The P-63 work order shows the game's first hour in miniature: tools, water, pressure and procedural evidence before lore explanation."
+          "in_game_wiki": "Draft ID localization pending native pass. The P-63 work order makes the first repair a colony procedure, not a tutorial overlay.",
+          "external_site": "Draft ID localization pending native pass. P-63 shows HECTON-8 at small scale: water in the room, one tool in hand, and a return route that has to be marked before it is trusted."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. P63 Pump Room Work Order",
-          "scanner": "Draft KO localization pending native pass. Work order lists pump, seal, cut, pinger and fabricator in pressure order.",
-          "field_note": "Draft KO localization pending native pass. Place on pump room terminal or soaked clipboard; no tutorial language.",
-          "terminal": "Draft KO localization pending native pass. WORK ORDER P-63: clear sump, patch cold seam, cut fused latch, deploy acoustic return line, then print gasket.",
+          "title": "Draft KO localization pending native pass. P-63 Pump Room Work Order",
+          "scanner": "Draft KO localization pending native pass. Work order lists pump, seal, cut, pinger and gasket in pressure order.",
+          "field_note": "Draft KO localization pending native pass. Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.",
+          "terminal": "Draft KO localization pending native pass. WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.",
           "audio": "Draft KO localization pending native pass. Pump first. Seal second. If it sings, stop cutting.",
-          "in_game_wiki": "Draft KO localization pending native pass. P-63 Pump Room Work Order turns the first survival task into diegetic engineering copy.",
-          "external_site": "Draft KO localization pending native pass. The P-63 work order shows the game's first hour in miniature: tools, water, pressure and procedural evidence before lore explanation."
+          "in_game_wiki": "Draft KO localization pending native pass. The P-63 work order makes the first repair a colony procedure, not a tutorial overlay.",
+          "external_site": "Draft KO localization pending native pass. P-63 shows HECTON-8 at small scale: water in the room, one tool in hand, and a return route that has to be marked before it is trusted."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. P63 Pump Room Work Order",
-          "scanner": "Draft HE localization pending native pass. Work order lists pump, seal, cut, pinger and fabricator in pressure order.",
-          "field_note": "Draft HE localization pending native pass. Place on pump room terminal or soaked clipboard; no tutorial language.",
-          "terminal": "Draft HE localization pending native pass. WORK ORDER P-63: clear sump, patch cold seam, cut fused latch, deploy acoustic return line, then print gasket.",
+          "title": "Draft HE localization pending native pass. P-63 Pump Room Work Order",
+          "scanner": "Draft HE localization pending native pass. Work order lists pump, seal, cut, pinger and gasket in pressure order.",
+          "field_note": "Draft HE localization pending native pass. Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.",
+          "terminal": "Draft HE localization pending native pass. WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.",
           "audio": "Draft HE localization pending native pass. Pump first. Seal second. If it sings, stop cutting.",
-          "in_game_wiki": "Draft HE localization pending native pass. P-63 Pump Room Work Order turns the first survival task into diegetic engineering copy.",
-          "external_site": "Draft HE localization pending native pass. The P-63 work order shows the game's first hour in miniature: tools, water, pressure and procedural evidence before lore explanation."
+          "in_game_wiki": "Draft HE localization pending native pass. The P-63 work order makes the first repair a colony procedure, not a tutorial overlay.",
+          "external_site": "Draft HE localization pending native pass. P-63 shows HECTON-8 at small scale: water in the room, one tool in hand, and a return route that has to be marked before it is trusted."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. P63 Pump Room Work Order",
-          "scanner": "Draft PT localization pending native pass. Work order lists pump, seal, cut, pinger and fabricator in pressure order.",
-          "field_note": "Draft PT localization pending native pass. Place on pump room terminal or soaked clipboard; no tutorial language.",
-          "terminal": "Draft PT localization pending native pass. WORK ORDER P-63: clear sump, patch cold seam, cut fused latch, deploy acoustic return line, then print gasket.",
-          "audio": "Draft PT localization pending native pass. Pump first. Seal second. If it sings, stop cutting.",
-          "in_game_wiki": "Draft PT localization pending native pass. P-63 Pump Room Work Order turns the first survival task into diegetic engineering copy.",
-          "external_site": "Draft PT localization pending native pass. The P-63 work order shows the game's first hour in miniature: tools, water, pressure and procedural evidence before lore explanation."
+          "title": "Draft PT-BR localization pending native pass. P-63 Pump Room Work Order",
+          "scanner": "Draft PT-BR localization pending native pass. Work order lists pump, seal, cut, pinger and gasket in pressure order.",
+          "field_note": "Draft PT-BR localization pending native pass. Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.",
+          "terminal": "Draft PT-BR localization pending native pass. WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.",
+          "audio": "Draft PT-BR localization pending native pass. Pump first. Seal second. If it sings, stop cutting.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. The P-63 work order makes the first repair a colony procedure, not a tutorial overlay.",
+          "external_site": "Draft PT-BR localization pending native pass. P-63 shows HECTON-8 at small scale: water in the room, one tool in hand, and a return route that has to be marked before it is trusted."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. P63 Pump Room Work Order",
-          "scanner": "Draft NL localization pending native pass. Work order lists pump, seal, cut, pinger and fabricator in pressure order.",
-          "field_note": "Draft NL localization pending native pass. Place on pump room terminal or soaked clipboard; no tutorial language.",
-          "terminal": "Draft NL localization pending native pass. WORK ORDER P-63: clear sump, patch cold seam, cut fused latch, deploy acoustic return line, then print gasket.",
+          "title": "Draft NL localization pending native pass. P-63 Pump Room Work Order",
+          "scanner": "Draft NL localization pending native pass. Work order lists pump, seal, cut, pinger and gasket in pressure order.",
+          "field_note": "Draft NL localization pending native pass. Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.",
+          "terminal": "Draft NL localization pending native pass. WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.",
           "audio": "Draft NL localization pending native pass. Pump first. Seal second. If it sings, stop cutting.",
-          "in_game_wiki": "Draft NL localization pending native pass. P-63 Pump Room Work Order turns the first survival task into diegetic engineering copy.",
-          "external_site": "Draft NL localization pending native pass. The P-63 work order shows the game's first hour in miniature: tools, water, pressure and procedural evidence before lore explanation."
+          "in_game_wiki": "Draft NL localization pending native pass. The P-63 work order makes the first repair a colony procedure, not a tutorial overlay.",
+          "external_site": "Draft NL localization pending native pass. P-63 shows HECTON-8 at small scale: water in the room, one tool in hand, and a return route that has to be marked before it is trusted."
         }
       }
     },
@@ -338,138 +338,138 @@
       "localized": {
         "en_US": {
           "title": "Worker Locker Nameplate Sample",
-          "scanner": "Nameplate has route tag, clamp certification and erased payroll stripe.",
-          "field_note": "Example prop copy: REN OKOYE / Clamp route B / cutter cert active / payroll stripe sanded.",
-          "terminal": "LOCKER CROSSCHECK: route B permission valid; payroll status overwritten by loss desk.",
+          "scanner": "Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.",
+          "field_note": "REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.",
+          "terminal": "LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.",
           "audio": "Name retained. Payline erased.",
-          "in_game_wiki": "Worker Locker Nameplate Sample defines how individual colonists appear through work evidence.",
-          "external_site": "HECTON-8 treats colonists as workers first: not anonymous victims, not family hooks, but people whose names survive in permissions, tools and damaged ledgers."
+          "in_game_wiki": "Worker locker plates preserve people through work permissions, tool checks and erasure scars.",
+          "external_site": "HECTON-8 remembers colonists through objects that had jobs: lockers, route tags, gloves, meal tokens and damaged ledgers."
         },
         "ru_RU": {
-          "title": "Пример nameplate рабочего locker",
-          "scanner": "Nameplate: route tag, clamp certification, erased payroll stripe.",
-          "field_note": "Пример prop copy: REN OKOYE / Clamp route B / cutter cert active / payroll stripe sanded.",
-          "terminal": "LOCKER CROSSCHECK: route B permission valid; payroll status overwritten by loss desk.",
-          "audio": "Имя сохранено. Payline erased.",
-          "in_game_wiki": "Пример locker nameplate задает, как отдельные колонисты появляются через work evidence.",
-          "external_site": "HECTON-8 пишет колонистов как работников: не anonymous victims, не family hooks, а людей, чьи имена выживают в permissions, tools и damaged ledgers."
+          "title": "Draft RU localization pending native pass. Worker Locker Nameplate Sample",
+          "scanner": "Draft RU localization pending native pass. Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.",
+          "field_note": "Draft RU localization pending native pass. REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.",
+          "terminal": "Draft RU localization pending native pass. LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.",
+          "audio": "Draft RU localization pending native pass. Name retained. Payline erased.",
+          "in_game_wiki": "Draft RU localization pending native pass. Worker locker plates preserve people through work permissions, tool checks and erasure scars.",
+          "external_site": "Draft RU localization pending native pass. HECTON-8 remembers colonists through objects that had jobs: lockers, route tags, gloves, meal tokens and damaged ledgers."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Worker Locker Nameplate Sample",
-          "scanner": "Draft JA localization pending native pass. Nameplate has route tag, clamp certification and erased payroll stripe.",
-          "field_note": "Draft JA localization pending native pass. Example prop copy: REN OKOYE / Clamp route B / cutter cert active / payroll stripe sanded.",
-          "terminal": "Draft JA localization pending native pass. LOCKER CROSSCHECK: route B permission valid; payroll status overwritten by loss desk.",
+          "scanner": "Draft JA localization pending native pass. Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.",
+          "field_note": "Draft JA localization pending native pass. REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.",
+          "terminal": "Draft JA localization pending native pass. LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.",
           "audio": "Draft JA localization pending native pass. Name retained. Payline erased.",
-          "in_game_wiki": "Draft JA localization pending native pass. Worker Locker Nameplate Sample defines how individual colonists appear through work evidence.",
-          "external_site": "Draft JA localization pending native pass. HECTON-8 treats colonists as workers first: not anonymous victims, not family hooks, but people whose names survive in permissions, tools and damaged ledgers."
+          "in_game_wiki": "Draft JA localization pending native pass. Worker locker plates preserve people through work permissions, tool checks and erasure scars.",
+          "external_site": "Draft JA localization pending native pass. HECTON-8 remembers colonists through objects that had jobs: lockers, route tags, gloves, meal tokens and damaged ledgers."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Worker Locker Nameplate Sample",
-          "scanner": "Draft ZH localization pending native pass. Nameplate has route tag, clamp certification and erased payroll stripe.",
-          "field_note": "Draft ZH localization pending native pass. Example prop copy: REN OKOYE / Clamp route B / cutter cert active / payroll stripe sanded.",
-          "terminal": "Draft ZH localization pending native pass. LOCKER CROSSCHECK: route B permission valid; payroll status overwritten by loss desk.",
+          "scanner": "Draft ZH localization pending native pass. Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.",
+          "field_note": "Draft ZH localization pending native pass. REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.",
+          "terminal": "Draft ZH localization pending native pass. LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.",
           "audio": "Draft ZH localization pending native pass. Name retained. Payline erased.",
-          "in_game_wiki": "Draft ZH localization pending native pass. Worker Locker Nameplate Sample defines how individual colonists appear through work evidence.",
-          "external_site": "Draft ZH localization pending native pass. HECTON-8 treats colonists as workers first: not anonymous victims, not family hooks, but people whose names survive in permissions, tools and damaged ledgers."
+          "in_game_wiki": "Draft ZH localization pending native pass. Worker locker plates preserve people through work permissions, tool checks and erasure scars.",
+          "external_site": "Draft ZH localization pending native pass. HECTON-8 remembers colonists through objects that had jobs: lockers, route tags, gloves, meal tokens and damaged ledgers."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Worker Locker Nameplate Sample",
-          "scanner": "Draft FR localization pending native pass. Nameplate has route tag, clamp certification and erased payroll stripe.",
-          "field_note": "Draft FR localization pending native pass. Example prop copy: REN OKOYE / Clamp route B / cutter cert active / payroll stripe sanded.",
-          "terminal": "Draft FR localization pending native pass. LOCKER CROSSCHECK: route B permission valid; payroll status overwritten by loss desk.",
+          "scanner": "Draft FR localization pending native pass. Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.",
+          "field_note": "Draft FR localization pending native pass. REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.",
+          "terminal": "Draft FR localization pending native pass. LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.",
           "audio": "Draft FR localization pending native pass. Name retained. Payline erased.",
-          "in_game_wiki": "Draft FR localization pending native pass. Worker Locker Nameplate Sample defines how individual colonists appear through work evidence.",
-          "external_site": "Draft FR localization pending native pass. HECTON-8 treats colonists as workers first: not anonymous victims, not family hooks, but people whose names survive in permissions, tools and damaged ledgers."
+          "in_game_wiki": "Draft FR localization pending native pass. Worker locker plates preserve people through work permissions, tool checks and erasure scars.",
+          "external_site": "Draft FR localization pending native pass. HECTON-8 remembers colonists through objects that had jobs: lockers, route tags, gloves, meal tokens and damaged ledgers."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Worker Locker Nameplate Sample",
-          "scanner": "Draft ES localization pending native pass. Nameplate has route tag, clamp certification and erased payroll stripe.",
-          "field_note": "Draft ES localization pending native pass. Example prop copy: REN OKOYE / Clamp route B / cutter cert active / payroll stripe sanded.",
-          "terminal": "Draft ES localization pending native pass. LOCKER CROSSCHECK: route B permission valid; payroll status overwritten by loss desk.",
+          "scanner": "Draft ES localization pending native pass. Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.",
+          "field_note": "Draft ES localization pending native pass. REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.",
+          "terminal": "Draft ES localization pending native pass. LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.",
           "audio": "Draft ES localization pending native pass. Name retained. Payline erased.",
-          "in_game_wiki": "Draft ES localization pending native pass. Worker Locker Nameplate Sample defines how individual colonists appear through work evidence.",
-          "external_site": "Draft ES localization pending native pass. HECTON-8 treats colonists as workers first: not anonymous victims, not family hooks, but people whose names survive in permissions, tools and damaged ledgers."
+          "in_game_wiki": "Draft ES localization pending native pass. Worker locker plates preserve people through work permissions, tool checks and erasure scars.",
+          "external_site": "Draft ES localization pending native pass. HECTON-8 remembers colonists through objects that had jobs: lockers, route tags, gloves, meal tokens and damaged ledgers."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Worker Locker Nameplate Sample",
-          "scanner": "Draft DE localization pending native pass. Nameplate has route tag, clamp certification and erased payroll stripe.",
-          "field_note": "Draft DE localization pending native pass. Example prop copy: REN OKOYE / Clamp route B / cutter cert active / payroll stripe sanded.",
-          "terminal": "Draft DE localization pending native pass. LOCKER CROSSCHECK: route B permission valid; payroll status overwritten by loss desk.",
+          "scanner": "Draft DE localization pending native pass. Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.",
+          "field_note": "Draft DE localization pending native pass. REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.",
+          "terminal": "Draft DE localization pending native pass. LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.",
           "audio": "Draft DE localization pending native pass. Name retained. Payline erased.",
-          "in_game_wiki": "Draft DE localization pending native pass. Worker Locker Nameplate Sample defines how individual colonists appear through work evidence.",
-          "external_site": "Draft DE localization pending native pass. HECTON-8 treats colonists as workers first: not anonymous victims, not family hooks, but people whose names survive in permissions, tools and damaged ledgers."
+          "in_game_wiki": "Draft DE localization pending native pass. Worker locker plates preserve people through work permissions, tool checks and erasure scars.",
+          "external_site": "Draft DE localization pending native pass. HECTON-8 remembers colonists through objects that had jobs: lockers, route tags, gloves, meal tokens and damaged ledgers."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Worker Locker Nameplate Sample",
-          "scanner": "Draft PL localization pending native pass. Nameplate has route tag, clamp certification and erased payroll stripe.",
-          "field_note": "Draft PL localization pending native pass. Example prop copy: REN OKOYE / Clamp route B / cutter cert active / payroll stripe sanded.",
-          "terminal": "Draft PL localization pending native pass. LOCKER CROSSCHECK: route B permission valid; payroll status overwritten by loss desk.",
+          "scanner": "Draft PL localization pending native pass. Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.",
+          "field_note": "Draft PL localization pending native pass. REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.",
+          "terminal": "Draft PL localization pending native pass. LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.",
           "audio": "Draft PL localization pending native pass. Name retained. Payline erased.",
-          "in_game_wiki": "Draft PL localization pending native pass. Worker Locker Nameplate Sample defines how individual colonists appear through work evidence.",
-          "external_site": "Draft PL localization pending native pass. HECTON-8 treats colonists as workers first: not anonymous victims, not family hooks, but people whose names survive in permissions, tools and damaged ledgers."
+          "in_game_wiki": "Draft PL localization pending native pass. Worker locker plates preserve people through work permissions, tool checks and erasure scars.",
+          "external_site": "Draft PL localization pending native pass. HECTON-8 remembers colonists through objects that had jobs: lockers, route tags, gloves, meal tokens and damaged ledgers."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Worker Locker Nameplate Sample",
-          "scanner": "Draft UK localization pending native pass. Nameplate has route tag, clamp certification and erased payroll stripe.",
-          "field_note": "Draft UK localization pending native pass. Example prop copy: REN OKOYE / Clamp route B / cutter cert active / payroll stripe sanded.",
-          "terminal": "Draft UK localization pending native pass. LOCKER CROSSCHECK: route B permission valid; payroll status overwritten by loss desk.",
+          "scanner": "Draft UK localization pending native pass. Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.",
+          "field_note": "Draft UK localization pending native pass. REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.",
+          "terminal": "Draft UK localization pending native pass. LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.",
           "audio": "Draft UK localization pending native pass. Name retained. Payline erased.",
-          "in_game_wiki": "Draft UK localization pending native pass. Worker Locker Nameplate Sample defines how individual colonists appear through work evidence.",
-          "external_site": "Draft UK localization pending native pass. HECTON-8 treats colonists as workers first: not anonymous victims, not family hooks, but people whose names survive in permissions, tools and damaged ledgers."
+          "in_game_wiki": "Draft UK localization pending native pass. Worker locker plates preserve people through work permissions, tool checks and erasure scars.",
+          "external_site": "Draft UK localization pending native pass. HECTON-8 remembers colonists through objects that had jobs: lockers, route tags, gloves, meal tokens and damaged ledgers."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Worker Locker Nameplate Sample",
-          "scanner": "Draft AR localization pending native pass. Nameplate has route tag, clamp certification and erased payroll stripe.",
-          "field_note": "Draft AR localization pending native pass. Example prop copy: REN OKOYE / Clamp route B / cutter cert active / payroll stripe sanded.",
-          "terminal": "Draft AR localization pending native pass. LOCKER CROSSCHECK: route B permission valid; payroll status overwritten by loss desk.",
+          "scanner": "Draft AR localization pending native pass. Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.",
+          "field_note": "Draft AR localization pending native pass. REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.",
+          "terminal": "Draft AR localization pending native pass. LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.",
           "audio": "Draft AR localization pending native pass. Name retained. Payline erased.",
-          "in_game_wiki": "Draft AR localization pending native pass. Worker Locker Nameplate Sample defines how individual colonists appear through work evidence.",
-          "external_site": "Draft AR localization pending native pass. HECTON-8 treats colonists as workers first: not anonymous victims, not family hooks, but people whose names survive in permissions, tools and damaged ledgers."
+          "in_game_wiki": "Draft AR localization pending native pass. Worker locker plates preserve people through work permissions, tool checks and erasure scars.",
+          "external_site": "Draft AR localization pending native pass. HECTON-8 remembers colonists through objects that had jobs: lockers, route tags, gloves, meal tokens and damaged ledgers."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Worker Locker Nameplate Sample",
-          "scanner": "Draft ID localization pending native pass. Nameplate has route tag, clamp certification and erased payroll stripe.",
-          "field_note": "Draft ID localization pending native pass. Example prop copy: REN OKOYE / Clamp route B / cutter cert active / payroll stripe sanded.",
-          "terminal": "Draft ID localization pending native pass. LOCKER CROSSCHECK: route B permission valid; payroll status overwritten by loss desk.",
+          "scanner": "Draft ID localization pending native pass. Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.",
+          "field_note": "Draft ID localization pending native pass. REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.",
+          "terminal": "Draft ID localization pending native pass. LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.",
           "audio": "Draft ID localization pending native pass. Name retained. Payline erased.",
-          "in_game_wiki": "Draft ID localization pending native pass. Worker Locker Nameplate Sample defines how individual colonists appear through work evidence.",
-          "external_site": "Draft ID localization pending native pass. HECTON-8 treats colonists as workers first: not anonymous victims, not family hooks, but people whose names survive in permissions, tools and damaged ledgers."
+          "in_game_wiki": "Draft ID localization pending native pass. Worker locker plates preserve people through work permissions, tool checks and erasure scars.",
+          "external_site": "Draft ID localization pending native pass. HECTON-8 remembers colonists through objects that had jobs: lockers, route tags, gloves, meal tokens and damaged ledgers."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Worker Locker Nameplate Sample",
-          "scanner": "Draft KO localization pending native pass. Nameplate has route tag, clamp certification and erased payroll stripe.",
-          "field_note": "Draft KO localization pending native pass. Example prop copy: REN OKOYE / Clamp route B / cutter cert active / payroll stripe sanded.",
-          "terminal": "Draft KO localization pending native pass. LOCKER CROSSCHECK: route B permission valid; payroll status overwritten by loss desk.",
+          "scanner": "Draft KO localization pending native pass. Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.",
+          "field_note": "Draft KO localization pending native pass. REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.",
+          "terminal": "Draft KO localization pending native pass. LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.",
           "audio": "Draft KO localization pending native pass. Name retained. Payline erased.",
-          "in_game_wiki": "Draft KO localization pending native pass. Worker Locker Nameplate Sample defines how individual colonists appear through work evidence.",
-          "external_site": "Draft KO localization pending native pass. HECTON-8 treats colonists as workers first: not anonymous victims, not family hooks, but people whose names survive in permissions, tools and damaged ledgers."
+          "in_game_wiki": "Draft KO localization pending native pass. Worker locker plates preserve people through work permissions, tool checks and erasure scars.",
+          "external_site": "Draft KO localization pending native pass. HECTON-8 remembers colonists through objects that had jobs: lockers, route tags, gloves, meal tokens and damaged ledgers."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Worker Locker Nameplate Sample",
-          "scanner": "Draft HE localization pending native pass. Nameplate has route tag, clamp certification and erased payroll stripe.",
-          "field_note": "Draft HE localization pending native pass. Example prop copy: REN OKOYE / Clamp route B / cutter cert active / payroll stripe sanded.",
-          "terminal": "Draft HE localization pending native pass. LOCKER CROSSCHECK: route B permission valid; payroll status overwritten by loss desk.",
+          "scanner": "Draft HE localization pending native pass. Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.",
+          "field_note": "Draft HE localization pending native pass. REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.",
+          "terminal": "Draft HE localization pending native pass. LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.",
           "audio": "Draft HE localization pending native pass. Name retained. Payline erased.",
-          "in_game_wiki": "Draft HE localization pending native pass. Worker Locker Nameplate Sample defines how individual colonists appear through work evidence.",
-          "external_site": "Draft HE localization pending native pass. HECTON-8 treats colonists as workers first: not anonymous victims, not family hooks, but people whose names survive in permissions, tools and damaged ledgers."
+          "in_game_wiki": "Draft HE localization pending native pass. Worker locker plates preserve people through work permissions, tool checks and erasure scars.",
+          "external_site": "Draft HE localization pending native pass. HECTON-8 remembers colonists through objects that had jobs: lockers, route tags, gloves, meal tokens and damaged ledgers."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Worker Locker Nameplate Sample",
-          "scanner": "Draft PT localization pending native pass. Nameplate has route tag, clamp certification and erased payroll stripe.",
-          "field_note": "Draft PT localization pending native pass. Example prop copy: REN OKOYE / Clamp route B / cutter cert active / payroll stripe sanded.",
-          "terminal": "Draft PT localization pending native pass. LOCKER CROSSCHECK: route B permission valid; payroll status overwritten by loss desk.",
-          "audio": "Draft PT localization pending native pass. Name retained. Payline erased.",
-          "in_game_wiki": "Draft PT localization pending native pass. Worker Locker Nameplate Sample defines how individual colonists appear through work evidence.",
-          "external_site": "Draft PT localization pending native pass. HECTON-8 treats colonists as workers first: not anonymous victims, not family hooks, but people whose names survive in permissions, tools and damaged ledgers."
+          "title": "Draft PT-BR localization pending native pass. Worker Locker Nameplate Sample",
+          "scanner": "Draft PT-BR localization pending native pass. Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.",
+          "field_note": "Draft PT-BR localization pending native pass. REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.",
+          "terminal": "Draft PT-BR localization pending native pass. LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.",
+          "audio": "Draft PT-BR localization pending native pass. Name retained. Payline erased.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Worker locker plates preserve people through work permissions, tool checks and erasure scars.",
+          "external_site": "Draft PT-BR localization pending native pass. HECTON-8 remembers colonists through objects that had jobs: lockers, route tags, gloves, meal tokens and damaged ledgers."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Worker Locker Nameplate Sample",
-          "scanner": "Draft NL localization pending native pass. Nameplate has route tag, clamp certification and erased payroll stripe.",
-          "field_note": "Draft NL localization pending native pass. Example prop copy: REN OKOYE / Clamp route B / cutter cert active / payroll stripe sanded.",
-          "terminal": "Draft NL localization pending native pass. LOCKER CROSSCHECK: route B permission valid; payroll status overwritten by loss desk.",
+          "scanner": "Draft NL localization pending native pass. Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.",
+          "field_note": "Draft NL localization pending native pass. REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.",
+          "terminal": "Draft NL localization pending native pass. LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.",
           "audio": "Draft NL localization pending native pass. Name retained. Payline erased.",
-          "in_game_wiki": "Draft NL localization pending native pass. Worker Locker Nameplate Sample defines how individual colonists appear through work evidence.",
-          "external_site": "Draft NL localization pending native pass. HECTON-8 treats colonists as workers first: not anonymous victims, not family hooks, but people whose names survive in permissions, tools and damaged ledgers."
+          "in_game_wiki": "Draft NL localization pending native pass. Worker locker plates preserve people through work permissions, tool checks and erasure scars.",
+          "external_site": "Draft NL localization pending native pass. HECTON-8 remembers colonists through objects that had jobs: lockers, route tags, gloves, meal tokens and damaged ledgers."
         }
       }
     },
@@ -493,138 +493,138 @@
       "localized": {
         "en_US": {
           "title": "Marauder Correction Note Sample",
-          "scanner": "Correction note crosses out accident and writes weighted delay.",
-          "field_note": "Example prop copy: NOT WEATHER. AUTH DELAY. CHECK PUMP CERT, SHIFT COUNT, BODY CATEGORY.",
-          "terminal": "MARAUDER NOTE: official cause rejected; physical contradiction required before claim filing.",
+          "scanner": "Marauder correction note rejects accident wording and points to authorization delay.",
+          "field_note": "NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.",
+          "terminal": "MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.",
           "audio": "Someone else smelled the paperwork rot.",
-          "in_game_wiki": "Marauder Correction Note Sample turns prior salvage traces into evidence pressure without giving the player a guide.",
-          "external_site": "Marauder notes let the world argue with official records. They preserve doubt, not answers."
+          "in_game_wiki": "Marauder correction notes preserve suspicion without handing over certainty. They point toward physical contradictions the room must prove.",
+          "external_site": "Marauder notes let the world argue with official records. The best ones keep doubt useful and answers unpaid."
         },
         "ru_RU": {
-          "title": "Пример Marauder correction note",
-          "scanner": "Correction note зачеркивает accident и пишет weighted delay.",
-          "field_note": "Пример prop copy: NOT WEATHER. AUTH DELAY. CHECK PUMP CERT, SHIFT COUNT, BODY CATEGORY.",
-          "terminal": "MARAUDER NOTE: official cause rejected; physical contradiction required before claim filing.",
-          "audio": "Кто-то уже почувствовал гниль в бумагах.",
-          "in_game_wiki": "Пример Marauder correction note превращает следы прошлых salvage в evidence pressure без выдачи гайда.",
-          "external_site": "Marauder notes позволяют миру спорить с официальными записями. Они сохраняют сомнение, не ответы."
+          "title": "Draft RU localization pending native pass. Marauder Correction Note Sample",
+          "scanner": "Draft RU localization pending native pass. Marauder correction note rejects accident wording and points to authorization delay.",
+          "field_note": "Draft RU localization pending native pass. NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.",
+          "terminal": "Draft RU localization pending native pass. MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.",
+          "audio": "Draft RU localization pending native pass. Someone else smelled the paperwork rot.",
+          "in_game_wiki": "Draft RU localization pending native pass. Marauder correction notes preserve suspicion without handing over certainty. They point toward physical contradictions the room must prove.",
+          "external_site": "Draft RU localization pending native pass. Marauder notes let the world argue with official records. The best ones keep doubt useful and answers unpaid."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Marauder Correction Note Sample",
-          "scanner": "Draft JA localization pending native pass. Correction note crosses out accident and writes weighted delay.",
-          "field_note": "Draft JA localization pending native pass. Example prop copy: NOT WEATHER. AUTH DELAY. CHECK PUMP CERT, SHIFT COUNT, BODY CATEGORY.",
-          "terminal": "Draft JA localization pending native pass. MARAUDER NOTE: official cause rejected; physical contradiction required before claim filing.",
+          "scanner": "Draft JA localization pending native pass. Marauder correction note rejects accident wording and points to authorization delay.",
+          "field_note": "Draft JA localization pending native pass. NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.",
+          "terminal": "Draft JA localization pending native pass. MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.",
           "audio": "Draft JA localization pending native pass. Someone else smelled the paperwork rot.",
-          "in_game_wiki": "Draft JA localization pending native pass. Marauder Correction Note Sample turns prior salvage traces into evidence pressure without giving the player a guide.",
-          "external_site": "Draft JA localization pending native pass. Marauder notes let the world argue with official records. They preserve doubt, not answers."
+          "in_game_wiki": "Draft JA localization pending native pass. Marauder correction notes preserve suspicion without handing over certainty. They point toward physical contradictions the room must prove.",
+          "external_site": "Draft JA localization pending native pass. Marauder notes let the world argue with official records. The best ones keep doubt useful and answers unpaid."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Marauder Correction Note Sample",
-          "scanner": "Draft ZH localization pending native pass. Correction note crosses out accident and writes weighted delay.",
-          "field_note": "Draft ZH localization pending native pass. Example prop copy: NOT WEATHER. AUTH DELAY. CHECK PUMP CERT, SHIFT COUNT, BODY CATEGORY.",
-          "terminal": "Draft ZH localization pending native pass. MARAUDER NOTE: official cause rejected; physical contradiction required before claim filing.",
+          "scanner": "Draft ZH localization pending native pass. Marauder correction note rejects accident wording and points to authorization delay.",
+          "field_note": "Draft ZH localization pending native pass. NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.",
+          "terminal": "Draft ZH localization pending native pass. MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.",
           "audio": "Draft ZH localization pending native pass. Someone else smelled the paperwork rot.",
-          "in_game_wiki": "Draft ZH localization pending native pass. Marauder Correction Note Sample turns prior salvage traces into evidence pressure without giving the player a guide.",
-          "external_site": "Draft ZH localization pending native pass. Marauder notes let the world argue with official records. They preserve doubt, not answers."
+          "in_game_wiki": "Draft ZH localization pending native pass. Marauder correction notes preserve suspicion without handing over certainty. They point toward physical contradictions the room must prove.",
+          "external_site": "Draft ZH localization pending native pass. Marauder notes let the world argue with official records. The best ones keep doubt useful and answers unpaid."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Marauder Correction Note Sample",
-          "scanner": "Draft FR localization pending native pass. Correction note crosses out accident and writes weighted delay.",
-          "field_note": "Draft FR localization pending native pass. Example prop copy: NOT WEATHER. AUTH DELAY. CHECK PUMP CERT, SHIFT COUNT, BODY CATEGORY.",
-          "terminal": "Draft FR localization pending native pass. MARAUDER NOTE: official cause rejected; physical contradiction required before claim filing.",
+          "scanner": "Draft FR localization pending native pass. Marauder correction note rejects accident wording and points to authorization delay.",
+          "field_note": "Draft FR localization pending native pass. NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.",
+          "terminal": "Draft FR localization pending native pass. MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.",
           "audio": "Draft FR localization pending native pass. Someone else smelled the paperwork rot.",
-          "in_game_wiki": "Draft FR localization pending native pass. Marauder Correction Note Sample turns prior salvage traces into evidence pressure without giving the player a guide.",
-          "external_site": "Draft FR localization pending native pass. Marauder notes let the world argue with official records. They preserve doubt, not answers."
+          "in_game_wiki": "Draft FR localization pending native pass. Marauder correction notes preserve suspicion without handing over certainty. They point toward physical contradictions the room must prove.",
+          "external_site": "Draft FR localization pending native pass. Marauder notes let the world argue with official records. The best ones keep doubt useful and answers unpaid."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Marauder Correction Note Sample",
-          "scanner": "Draft ES localization pending native pass. Correction note crosses out accident and writes weighted delay.",
-          "field_note": "Draft ES localization pending native pass. Example prop copy: NOT WEATHER. AUTH DELAY. CHECK PUMP CERT, SHIFT COUNT, BODY CATEGORY.",
-          "terminal": "Draft ES localization pending native pass. MARAUDER NOTE: official cause rejected; physical contradiction required before claim filing.",
+          "scanner": "Draft ES localization pending native pass. Marauder correction note rejects accident wording and points to authorization delay.",
+          "field_note": "Draft ES localization pending native pass. NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.",
+          "terminal": "Draft ES localization pending native pass. MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.",
           "audio": "Draft ES localization pending native pass. Someone else smelled the paperwork rot.",
-          "in_game_wiki": "Draft ES localization pending native pass. Marauder Correction Note Sample turns prior salvage traces into evidence pressure without giving the player a guide.",
-          "external_site": "Draft ES localization pending native pass. Marauder notes let the world argue with official records. They preserve doubt, not answers."
+          "in_game_wiki": "Draft ES localization pending native pass. Marauder correction notes preserve suspicion without handing over certainty. They point toward physical contradictions the room must prove.",
+          "external_site": "Draft ES localization pending native pass. Marauder notes let the world argue with official records. The best ones keep doubt useful and answers unpaid."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Marauder Correction Note Sample",
-          "scanner": "Draft DE localization pending native pass. Correction note crosses out accident and writes weighted delay.",
-          "field_note": "Draft DE localization pending native pass. Example prop copy: NOT WEATHER. AUTH DELAY. CHECK PUMP CERT, SHIFT COUNT, BODY CATEGORY.",
-          "terminal": "Draft DE localization pending native pass. MARAUDER NOTE: official cause rejected; physical contradiction required before claim filing.",
+          "scanner": "Draft DE localization pending native pass. Marauder correction note rejects accident wording and points to authorization delay.",
+          "field_note": "Draft DE localization pending native pass. NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.",
+          "terminal": "Draft DE localization pending native pass. MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.",
           "audio": "Draft DE localization pending native pass. Someone else smelled the paperwork rot.",
-          "in_game_wiki": "Draft DE localization pending native pass. Marauder Correction Note Sample turns prior salvage traces into evidence pressure without giving the player a guide.",
-          "external_site": "Draft DE localization pending native pass. Marauder notes let the world argue with official records. They preserve doubt, not answers."
+          "in_game_wiki": "Draft DE localization pending native pass. Marauder correction notes preserve suspicion without handing over certainty. They point toward physical contradictions the room must prove.",
+          "external_site": "Draft DE localization pending native pass. Marauder notes let the world argue with official records. The best ones keep doubt useful and answers unpaid."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Marauder Correction Note Sample",
-          "scanner": "Draft PL localization pending native pass. Correction note crosses out accident and writes weighted delay.",
-          "field_note": "Draft PL localization pending native pass. Example prop copy: NOT WEATHER. AUTH DELAY. CHECK PUMP CERT, SHIFT COUNT, BODY CATEGORY.",
-          "terminal": "Draft PL localization pending native pass. MARAUDER NOTE: official cause rejected; physical contradiction required before claim filing.",
+          "scanner": "Draft PL localization pending native pass. Marauder correction note rejects accident wording and points to authorization delay.",
+          "field_note": "Draft PL localization pending native pass. NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.",
+          "terminal": "Draft PL localization pending native pass. MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.",
           "audio": "Draft PL localization pending native pass. Someone else smelled the paperwork rot.",
-          "in_game_wiki": "Draft PL localization pending native pass. Marauder Correction Note Sample turns prior salvage traces into evidence pressure without giving the player a guide.",
-          "external_site": "Draft PL localization pending native pass. Marauder notes let the world argue with official records. They preserve doubt, not answers."
+          "in_game_wiki": "Draft PL localization pending native pass. Marauder correction notes preserve suspicion without handing over certainty. They point toward physical contradictions the room must prove.",
+          "external_site": "Draft PL localization pending native pass. Marauder notes let the world argue with official records. The best ones keep doubt useful and answers unpaid."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Marauder Correction Note Sample",
-          "scanner": "Draft UK localization pending native pass. Correction note crosses out accident and writes weighted delay.",
-          "field_note": "Draft UK localization pending native pass. Example prop copy: NOT WEATHER. AUTH DELAY. CHECK PUMP CERT, SHIFT COUNT, BODY CATEGORY.",
-          "terminal": "Draft UK localization pending native pass. MARAUDER NOTE: official cause rejected; physical contradiction required before claim filing.",
+          "scanner": "Draft UK localization pending native pass. Marauder correction note rejects accident wording and points to authorization delay.",
+          "field_note": "Draft UK localization pending native pass. NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.",
+          "terminal": "Draft UK localization pending native pass. MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.",
           "audio": "Draft UK localization pending native pass. Someone else smelled the paperwork rot.",
-          "in_game_wiki": "Draft UK localization pending native pass. Marauder Correction Note Sample turns prior salvage traces into evidence pressure without giving the player a guide.",
-          "external_site": "Draft UK localization pending native pass. Marauder notes let the world argue with official records. They preserve doubt, not answers."
+          "in_game_wiki": "Draft UK localization pending native pass. Marauder correction notes preserve suspicion without handing over certainty. They point toward physical contradictions the room must prove.",
+          "external_site": "Draft UK localization pending native pass. Marauder notes let the world argue with official records. The best ones keep doubt useful and answers unpaid."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Marauder Correction Note Sample",
-          "scanner": "Draft AR localization pending native pass. Correction note crosses out accident and writes weighted delay.",
-          "field_note": "Draft AR localization pending native pass. Example prop copy: NOT WEATHER. AUTH DELAY. CHECK PUMP CERT, SHIFT COUNT, BODY CATEGORY.",
-          "terminal": "Draft AR localization pending native pass. MARAUDER NOTE: official cause rejected; physical contradiction required before claim filing.",
+          "scanner": "Draft AR localization pending native pass. Marauder correction note rejects accident wording and points to authorization delay.",
+          "field_note": "Draft AR localization pending native pass. NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.",
+          "terminal": "Draft AR localization pending native pass. MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.",
           "audio": "Draft AR localization pending native pass. Someone else smelled the paperwork rot.",
-          "in_game_wiki": "Draft AR localization pending native pass. Marauder Correction Note Sample turns prior salvage traces into evidence pressure without giving the player a guide.",
-          "external_site": "Draft AR localization pending native pass. Marauder notes let the world argue with official records. They preserve doubt, not answers."
+          "in_game_wiki": "Draft AR localization pending native pass. Marauder correction notes preserve suspicion without handing over certainty. They point toward physical contradictions the room must prove.",
+          "external_site": "Draft AR localization pending native pass. Marauder notes let the world argue with official records. The best ones keep doubt useful and answers unpaid."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Marauder Correction Note Sample",
-          "scanner": "Draft ID localization pending native pass. Correction note crosses out accident and writes weighted delay.",
-          "field_note": "Draft ID localization pending native pass. Example prop copy: NOT WEATHER. AUTH DELAY. CHECK PUMP CERT, SHIFT COUNT, BODY CATEGORY.",
-          "terminal": "Draft ID localization pending native pass. MARAUDER NOTE: official cause rejected; physical contradiction required before claim filing.",
+          "scanner": "Draft ID localization pending native pass. Marauder correction note rejects accident wording and points to authorization delay.",
+          "field_note": "Draft ID localization pending native pass. NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.",
+          "terminal": "Draft ID localization pending native pass. MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.",
           "audio": "Draft ID localization pending native pass. Someone else smelled the paperwork rot.",
-          "in_game_wiki": "Draft ID localization pending native pass. Marauder Correction Note Sample turns prior salvage traces into evidence pressure without giving the player a guide.",
-          "external_site": "Draft ID localization pending native pass. Marauder notes let the world argue with official records. They preserve doubt, not answers."
+          "in_game_wiki": "Draft ID localization pending native pass. Marauder correction notes preserve suspicion without handing over certainty. They point toward physical contradictions the room must prove.",
+          "external_site": "Draft ID localization pending native pass. Marauder notes let the world argue with official records. The best ones keep doubt useful and answers unpaid."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Marauder Correction Note Sample",
-          "scanner": "Draft KO localization pending native pass. Correction note crosses out accident and writes weighted delay.",
-          "field_note": "Draft KO localization pending native pass. Example prop copy: NOT WEATHER. AUTH DELAY. CHECK PUMP CERT, SHIFT COUNT, BODY CATEGORY.",
-          "terminal": "Draft KO localization pending native pass. MARAUDER NOTE: official cause rejected; physical contradiction required before claim filing.",
+          "scanner": "Draft KO localization pending native pass. Marauder correction note rejects accident wording and points to authorization delay.",
+          "field_note": "Draft KO localization pending native pass. NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.",
+          "terminal": "Draft KO localization pending native pass. MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.",
           "audio": "Draft KO localization pending native pass. Someone else smelled the paperwork rot.",
-          "in_game_wiki": "Draft KO localization pending native pass. Marauder Correction Note Sample turns prior salvage traces into evidence pressure without giving the player a guide.",
-          "external_site": "Draft KO localization pending native pass. Marauder notes let the world argue with official records. They preserve doubt, not answers."
+          "in_game_wiki": "Draft KO localization pending native pass. Marauder correction notes preserve suspicion without handing over certainty. They point toward physical contradictions the room must prove.",
+          "external_site": "Draft KO localization pending native pass. Marauder notes let the world argue with official records. The best ones keep doubt useful and answers unpaid."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Marauder Correction Note Sample",
-          "scanner": "Draft HE localization pending native pass. Correction note crosses out accident and writes weighted delay.",
-          "field_note": "Draft HE localization pending native pass. Example prop copy: NOT WEATHER. AUTH DELAY. CHECK PUMP CERT, SHIFT COUNT, BODY CATEGORY.",
-          "terminal": "Draft HE localization pending native pass. MARAUDER NOTE: official cause rejected; physical contradiction required before claim filing.",
+          "scanner": "Draft HE localization pending native pass. Marauder correction note rejects accident wording and points to authorization delay.",
+          "field_note": "Draft HE localization pending native pass. NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.",
+          "terminal": "Draft HE localization pending native pass. MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.",
           "audio": "Draft HE localization pending native pass. Someone else smelled the paperwork rot.",
-          "in_game_wiki": "Draft HE localization pending native pass. Marauder Correction Note Sample turns prior salvage traces into evidence pressure without giving the player a guide.",
-          "external_site": "Draft HE localization pending native pass. Marauder notes let the world argue with official records. They preserve doubt, not answers."
+          "in_game_wiki": "Draft HE localization pending native pass. Marauder correction notes preserve suspicion without handing over certainty. They point toward physical contradictions the room must prove.",
+          "external_site": "Draft HE localization pending native pass. Marauder notes let the world argue with official records. The best ones keep doubt useful and answers unpaid."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Marauder Correction Note Sample",
-          "scanner": "Draft PT localization pending native pass. Correction note crosses out accident and writes weighted delay.",
-          "field_note": "Draft PT localization pending native pass. Example prop copy: NOT WEATHER. AUTH DELAY. CHECK PUMP CERT, SHIFT COUNT, BODY CATEGORY.",
-          "terminal": "Draft PT localization pending native pass. MARAUDER NOTE: official cause rejected; physical contradiction required before claim filing.",
-          "audio": "Draft PT localization pending native pass. Someone else smelled the paperwork rot.",
-          "in_game_wiki": "Draft PT localization pending native pass. Marauder Correction Note Sample turns prior salvage traces into evidence pressure without giving the player a guide.",
-          "external_site": "Draft PT localization pending native pass. Marauder notes let the world argue with official records. They preserve doubt, not answers."
+          "title": "Draft PT-BR localization pending native pass. Marauder Correction Note Sample",
+          "scanner": "Draft PT-BR localization pending native pass. Marauder correction note rejects accident wording and points to authorization delay.",
+          "field_note": "Draft PT-BR localization pending native pass. NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.",
+          "terminal": "Draft PT-BR localization pending native pass. MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.",
+          "audio": "Draft PT-BR localization pending native pass. Someone else smelled the paperwork rot.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Marauder correction notes preserve suspicion without handing over certainty. They point toward physical contradictions the room must prove.",
+          "external_site": "Draft PT-BR localization pending native pass. Marauder notes let the world argue with official records. The best ones keep doubt useful and answers unpaid."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Marauder Correction Note Sample",
-          "scanner": "Draft NL localization pending native pass. Correction note crosses out accident and writes weighted delay.",
-          "field_note": "Draft NL localization pending native pass. Example prop copy: NOT WEATHER. AUTH DELAY. CHECK PUMP CERT, SHIFT COUNT, BODY CATEGORY.",
-          "terminal": "Draft NL localization pending native pass. MARAUDER NOTE: official cause rejected; physical contradiction required before claim filing.",
+          "scanner": "Draft NL localization pending native pass. Marauder correction note rejects accident wording and points to authorization delay.",
+          "field_note": "Draft NL localization pending native pass. NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.",
+          "terminal": "Draft NL localization pending native pass. MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.",
           "audio": "Draft NL localization pending native pass. Someone else smelled the paperwork rot.",
-          "in_game_wiki": "Draft NL localization pending native pass. Marauder Correction Note Sample turns prior salvage traces into evidence pressure without giving the player a guide.",
-          "external_site": "Draft NL localization pending native pass. Marauder notes let the world argue with official records. They preserve doubt, not answers."
+          "in_game_wiki": "Draft NL localization pending native pass. Marauder correction notes preserve suspicion without handing over certainty. They point toward physical contradictions the room must prove.",
+          "external_site": "Draft NL localization pending native pass. Marauder notes let the world argue with official records. The best ones keep doubt useful and answers unpaid."
         }
       }
     },
@@ -649,137 +649,137 @@
         "en_US": {
           "title": "Quarantine Relay Fragment",
           "scanner": "Relay fragment approves extraction and denies clean release in the same packet.",
-          "field_note": "Use after partial exit/corporate rescue routes; keep it legal, cold and bitter.",
-          "terminal": "RELAY HOLD: extraction accepted. Release denied pending sample custody, air review and claimant dispute.",
-          "audio": "You are out of the water. You are not out of custody.",
-          "in_game_wiki": "Quarantine Relay Fragment defines the administrative texture of partial exits.",
-          "external_site": "HECTON-8 endings can save the player's body while preserving the systems that made the descent necessary."
+          "field_note": "Stamped twice: body recovered, person retained. Legal acceptance and release denial share one packet.",
+          "terminal": "RELAY HOLD QRF-17: extraction accepted; release denied pending sample custody, air review and claimant dispute.",
+          "audio": "Relay hold. Extraction accepted. Release denied: sample custody, air review, claimant dispute. You are dry, not free.",
+          "in_game_wiki": "Quarantine relay fragments make partial exits bitter: extraction can save a body while keeping the witness under custody.",
+          "external_site": "HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there."
         },
         "ru_RU": {
-          "title": "Фрагмент quarantine relay",
-          "scanner": "Relay fragment одновременно разрешает extraction и отказывает clean release.",
-          "field_note": "Использовать после partial exit/corporate rescue routes; legal, cold, bitter.",
-          "terminal": "RELAY HOLD: extraction accepted. Release denied pending sample custody, air review and claimant dispute.",
-          "audio": "Ты вышел из воды. Ты не вышел из custody.",
-          "in_game_wiki": "Фрагмент quarantine relay задает административную текстуру partial exits.",
-          "external_site": "Концовки HECTON-8 могут спасти тело игрока и одновременно сохранить системы, из-за которых спуск стал необходимым."
+          "title": "Draft RU localization pending native pass. Quarantine Relay Fragment",
+          "scanner": "Draft RU localization pending native pass. Relay fragment approves extraction and denies clean release in the same packet.",
+          "field_note": "Draft RU localization pending native pass. Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.",
+          "terminal": "Draft RU localization pending native pass. RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.",
+          "audio": "Draft RU localization pending native pass. You are out of the water. You are not out of custody.",
+          "in_game_wiki": "Draft RU localization pending native pass. Quarantine relay fragments make partial exits bitter: extraction can save a body while keeping the witness under custody.",
+          "external_site": "Draft RU localization pending native pass. HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Quarantine Relay Fragment",
           "scanner": "Draft JA localization pending native pass. Relay fragment approves extraction and denies clean release in the same packet.",
-          "field_note": "Draft JA localization pending native pass. Use after partial exit/corporate rescue routes; keep it legal, cold and bitter.",
-          "terminal": "Draft JA localization pending native pass. RELAY HOLD: extraction accepted. Release denied pending sample custody, air review and claimant dispute.",
+          "field_note": "Draft JA localization pending native pass. Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.",
+          "terminal": "Draft JA localization pending native pass. RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.",
           "audio": "Draft JA localization pending native pass. You are out of the water. You are not out of custody.",
-          "in_game_wiki": "Draft JA localization pending native pass. Quarantine Relay Fragment defines the administrative texture of partial exits.",
-          "external_site": "Draft JA localization pending native pass. HECTON-8 endings can save the player's body while preserving the systems that made the descent necessary."
+          "in_game_wiki": "Draft JA localization pending native pass. Quarantine relay fragments make partial exits bitter: extraction can save a body while keeping the witness under custody.",
+          "external_site": "Draft JA localization pending native pass. HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Quarantine Relay Fragment",
           "scanner": "Draft ZH localization pending native pass. Relay fragment approves extraction and denies clean release in the same packet.",
-          "field_note": "Draft ZH localization pending native pass. Use after partial exit/corporate rescue routes; keep it legal, cold and bitter.",
-          "terminal": "Draft ZH localization pending native pass. RELAY HOLD: extraction accepted. Release denied pending sample custody, air review and claimant dispute.",
+          "field_note": "Draft ZH localization pending native pass. Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.",
+          "terminal": "Draft ZH localization pending native pass. RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.",
           "audio": "Draft ZH localization pending native pass. You are out of the water. You are not out of custody.",
-          "in_game_wiki": "Draft ZH localization pending native pass. Quarantine Relay Fragment defines the administrative texture of partial exits.",
-          "external_site": "Draft ZH localization pending native pass. HECTON-8 endings can save the player's body while preserving the systems that made the descent necessary."
+          "in_game_wiki": "Draft ZH localization pending native pass. Quarantine relay fragments make partial exits bitter: extraction can save a body while keeping the witness under custody.",
+          "external_site": "Draft ZH localization pending native pass. HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Quarantine Relay Fragment",
           "scanner": "Draft FR localization pending native pass. Relay fragment approves extraction and denies clean release in the same packet.",
-          "field_note": "Draft FR localization pending native pass. Use after partial exit/corporate rescue routes; keep it legal, cold and bitter.",
-          "terminal": "Draft FR localization pending native pass. RELAY HOLD: extraction accepted. Release denied pending sample custody, air review and claimant dispute.",
+          "field_note": "Draft FR localization pending native pass. Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.",
+          "terminal": "Draft FR localization pending native pass. RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.",
           "audio": "Draft FR localization pending native pass. You are out of the water. You are not out of custody.",
-          "in_game_wiki": "Draft FR localization pending native pass. Quarantine Relay Fragment defines the administrative texture of partial exits.",
-          "external_site": "Draft FR localization pending native pass. HECTON-8 endings can save the player's body while preserving the systems that made the descent necessary."
+          "in_game_wiki": "Draft FR localization pending native pass. Quarantine relay fragments make partial exits bitter: extraction can save a body while keeping the witness under custody.",
+          "external_site": "Draft FR localization pending native pass. HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Quarantine Relay Fragment",
           "scanner": "Draft ES localization pending native pass. Relay fragment approves extraction and denies clean release in the same packet.",
-          "field_note": "Draft ES localization pending native pass. Use after partial exit/corporate rescue routes; keep it legal, cold and bitter.",
-          "terminal": "Draft ES localization pending native pass. RELAY HOLD: extraction accepted. Release denied pending sample custody, air review and claimant dispute.",
+          "field_note": "Draft ES localization pending native pass. Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.",
+          "terminal": "Draft ES localization pending native pass. RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.",
           "audio": "Draft ES localization pending native pass. You are out of the water. You are not out of custody.",
-          "in_game_wiki": "Draft ES localization pending native pass. Quarantine Relay Fragment defines the administrative texture of partial exits.",
-          "external_site": "Draft ES localization pending native pass. HECTON-8 endings can save the player's body while preserving the systems that made the descent necessary."
+          "in_game_wiki": "Draft ES localization pending native pass. Quarantine relay fragments make partial exits bitter: extraction can save a body while keeping the witness under custody.",
+          "external_site": "Draft ES localization pending native pass. HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Quarantine Relay Fragment",
           "scanner": "Draft DE localization pending native pass. Relay fragment approves extraction and denies clean release in the same packet.",
-          "field_note": "Draft DE localization pending native pass. Use after partial exit/corporate rescue routes; keep it legal, cold and bitter.",
-          "terminal": "Draft DE localization pending native pass. RELAY HOLD: extraction accepted. Release denied pending sample custody, air review and claimant dispute.",
+          "field_note": "Draft DE localization pending native pass. Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.",
+          "terminal": "Draft DE localization pending native pass. RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.",
           "audio": "Draft DE localization pending native pass. You are out of the water. You are not out of custody.",
-          "in_game_wiki": "Draft DE localization pending native pass. Quarantine Relay Fragment defines the administrative texture of partial exits.",
-          "external_site": "Draft DE localization pending native pass. HECTON-8 endings can save the player's body while preserving the systems that made the descent necessary."
+          "in_game_wiki": "Draft DE localization pending native pass. Quarantine relay fragments make partial exits bitter: extraction can save a body while keeping the witness under custody.",
+          "external_site": "Draft DE localization pending native pass. HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Quarantine Relay Fragment",
           "scanner": "Draft PL localization pending native pass. Relay fragment approves extraction and denies clean release in the same packet.",
-          "field_note": "Draft PL localization pending native pass. Use after partial exit/corporate rescue routes; keep it legal, cold and bitter.",
-          "terminal": "Draft PL localization pending native pass. RELAY HOLD: extraction accepted. Release denied pending sample custody, air review and claimant dispute.",
+          "field_note": "Draft PL localization pending native pass. Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.",
+          "terminal": "Draft PL localization pending native pass. RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.",
           "audio": "Draft PL localization pending native pass. You are out of the water. You are not out of custody.",
-          "in_game_wiki": "Draft PL localization pending native pass. Quarantine Relay Fragment defines the administrative texture of partial exits.",
-          "external_site": "Draft PL localization pending native pass. HECTON-8 endings can save the player's body while preserving the systems that made the descent necessary."
+          "in_game_wiki": "Draft PL localization pending native pass. Quarantine relay fragments make partial exits bitter: extraction can save a body while keeping the witness under custody.",
+          "external_site": "Draft PL localization pending native pass. HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Quarantine Relay Fragment",
           "scanner": "Draft UK localization pending native pass. Relay fragment approves extraction and denies clean release in the same packet.",
-          "field_note": "Draft UK localization pending native pass. Use after partial exit/corporate rescue routes; keep it legal, cold and bitter.",
-          "terminal": "Draft UK localization pending native pass. RELAY HOLD: extraction accepted. Release denied pending sample custody, air review and claimant dispute.",
+          "field_note": "Draft UK localization pending native pass. Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.",
+          "terminal": "Draft UK localization pending native pass. RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.",
           "audio": "Draft UK localization pending native pass. You are out of the water. You are not out of custody.",
-          "in_game_wiki": "Draft UK localization pending native pass. Quarantine Relay Fragment defines the administrative texture of partial exits.",
-          "external_site": "Draft UK localization pending native pass. HECTON-8 endings can save the player's body while preserving the systems that made the descent necessary."
+          "in_game_wiki": "Draft UK localization pending native pass. Quarantine relay fragments make partial exits bitter: extraction can save a body while keeping the witness under custody.",
+          "external_site": "Draft UK localization pending native pass. HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Quarantine Relay Fragment",
           "scanner": "Draft AR localization pending native pass. Relay fragment approves extraction and denies clean release in the same packet.",
-          "field_note": "Draft AR localization pending native pass. Use after partial exit/corporate rescue routes; keep it legal, cold and bitter.",
-          "terminal": "Draft AR localization pending native pass. RELAY HOLD: extraction accepted. Release denied pending sample custody, air review and claimant dispute.",
+          "field_note": "Draft AR localization pending native pass. Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.",
+          "terminal": "Draft AR localization pending native pass. RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.",
           "audio": "Draft AR localization pending native pass. You are out of the water. You are not out of custody.",
-          "in_game_wiki": "Draft AR localization pending native pass. Quarantine Relay Fragment defines the administrative texture of partial exits.",
-          "external_site": "Draft AR localization pending native pass. HECTON-8 endings can save the player's body while preserving the systems that made the descent necessary."
+          "in_game_wiki": "Draft AR localization pending native pass. Quarantine relay fragments make partial exits bitter: extraction can save a body while keeping the witness under custody.",
+          "external_site": "Draft AR localization pending native pass. HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Quarantine Relay Fragment",
           "scanner": "Draft ID localization pending native pass. Relay fragment approves extraction and denies clean release in the same packet.",
-          "field_note": "Draft ID localization pending native pass. Use after partial exit/corporate rescue routes; keep it legal, cold and bitter.",
-          "terminal": "Draft ID localization pending native pass. RELAY HOLD: extraction accepted. Release denied pending sample custody, air review and claimant dispute.",
+          "field_note": "Draft ID localization pending native pass. Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.",
+          "terminal": "Draft ID localization pending native pass. RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.",
           "audio": "Draft ID localization pending native pass. You are out of the water. You are not out of custody.",
-          "in_game_wiki": "Draft ID localization pending native pass. Quarantine Relay Fragment defines the administrative texture of partial exits.",
-          "external_site": "Draft ID localization pending native pass. HECTON-8 endings can save the player's body while preserving the systems that made the descent necessary."
+          "in_game_wiki": "Draft ID localization pending native pass. Quarantine relay fragments make partial exits bitter: extraction can save a body while keeping the witness under custody.",
+          "external_site": "Draft ID localization pending native pass. HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Quarantine Relay Fragment",
           "scanner": "Draft KO localization pending native pass. Relay fragment approves extraction and denies clean release in the same packet.",
-          "field_note": "Draft KO localization pending native pass. Use after partial exit/corporate rescue routes; keep it legal, cold and bitter.",
-          "terminal": "Draft KO localization pending native pass. RELAY HOLD: extraction accepted. Release denied pending sample custody, air review and claimant dispute.",
+          "field_note": "Draft KO localization pending native pass. Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.",
+          "terminal": "Draft KO localization pending native pass. RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.",
           "audio": "Draft KO localization pending native pass. You are out of the water. You are not out of custody.",
-          "in_game_wiki": "Draft KO localization pending native pass. Quarantine Relay Fragment defines the administrative texture of partial exits.",
-          "external_site": "Draft KO localization pending native pass. HECTON-8 endings can save the player's body while preserving the systems that made the descent necessary."
+          "in_game_wiki": "Draft KO localization pending native pass. Quarantine relay fragments make partial exits bitter: extraction can save a body while keeping the witness under custody.",
+          "external_site": "Draft KO localization pending native pass. HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Quarantine Relay Fragment",
           "scanner": "Draft HE localization pending native pass. Relay fragment approves extraction and denies clean release in the same packet.",
-          "field_note": "Draft HE localization pending native pass. Use after partial exit/corporate rescue routes; keep it legal, cold and bitter.",
-          "terminal": "Draft HE localization pending native pass. RELAY HOLD: extraction accepted. Release denied pending sample custody, air review and claimant dispute.",
+          "field_note": "Draft HE localization pending native pass. Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.",
+          "terminal": "Draft HE localization pending native pass. RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.",
           "audio": "Draft HE localization pending native pass. You are out of the water. You are not out of custody.",
-          "in_game_wiki": "Draft HE localization pending native pass. Quarantine Relay Fragment defines the administrative texture of partial exits.",
-          "external_site": "Draft HE localization pending native pass. HECTON-8 endings can save the player's body while preserving the systems that made the descent necessary."
+          "in_game_wiki": "Draft HE localization pending native pass. Quarantine relay fragments make partial exits bitter: extraction can save a body while keeping the witness under custody.",
+          "external_site": "Draft HE localization pending native pass. HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Quarantine Relay Fragment",
-          "scanner": "Draft PT localization pending native pass. Relay fragment approves extraction and denies clean release in the same packet.",
-          "field_note": "Draft PT localization pending native pass. Use after partial exit/corporate rescue routes; keep it legal, cold and bitter.",
-          "terminal": "Draft PT localization pending native pass. RELAY HOLD: extraction accepted. Release denied pending sample custody, air review and claimant dispute.",
-          "audio": "Draft PT localization pending native pass. You are out of the water. You are not out of custody.",
-          "in_game_wiki": "Draft PT localization pending native pass. Quarantine Relay Fragment defines the administrative texture of partial exits.",
-          "external_site": "Draft PT localization pending native pass. HECTON-8 endings can save the player's body while preserving the systems that made the descent necessary."
+          "title": "Draft PT-BR localization pending native pass. Quarantine Relay Fragment",
+          "scanner": "Draft PT-BR localization pending native pass. Relay fragment approves extraction and denies clean release in the same packet.",
+          "field_note": "Draft PT-BR localization pending native pass. Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.",
+          "terminal": "Draft PT-BR localization pending native pass. RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.",
+          "audio": "Draft PT-BR localization pending native pass. You are out of the water. You are not out of custody.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Quarantine relay fragments make partial exits bitter: extraction can save a body while keeping the witness under custody.",
+          "external_site": "Draft PT-BR localization pending native pass. HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Quarantine Relay Fragment",
           "scanner": "Draft NL localization pending native pass. Relay fragment approves extraction and denies clean release in the same packet.",
-          "field_note": "Draft NL localization pending native pass. Use after partial exit/corporate rescue routes; keep it legal, cold and bitter.",
-          "terminal": "Draft NL localization pending native pass. RELAY HOLD: extraction accepted. Release denied pending sample custody, air review and claimant dispute.",
+          "field_note": "Draft NL localization pending native pass. Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.",
+          "terminal": "Draft NL localization pending native pass. RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.",
           "audio": "Draft NL localization pending native pass. You are out of the water. You are not out of custody.",
-          "in_game_wiki": "Draft NL localization pending native pass. Quarantine Relay Fragment defines the administrative texture of partial exits.",
-          "external_site": "Draft NL localization pending native pass. HECTON-8 endings can save the player's body while preserving the systems that made the descent necessary."
+          "in_game_wiki": "Draft NL localization pending native pass. Quarantine relay fragments make partial exits bitter: extraction can save a body while keeping the witness under custody.",
+          "external_site": "Draft NL localization pending native pass. HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there."
         }
       }
     }

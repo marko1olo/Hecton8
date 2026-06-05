@@ -1,0 +1,42 @@
+HECTON-8 Local Task - Documentation Wave 3B
+
+Mission: strengthen presentation-only boundaries, hot-path truth ownership, and continuous GlobalQualityWeight consequences in route bibles identified by static audit.
+
+Prerequisite:
+- Start only after Huygens governance patch is integrated.
+- Do not run concurrently with another worker editing the same root bibles.
+
+Read:
+- AGENTS.md, especially global systems doctrine, continuous GlobalQualityWeight, and hot-path laws.
+- PROJECT_BIBLES.md
+- Docs/Reports/DocumentationCompleteness_20260605/ROOT_BIBLE_COMPLETENESS_MATRIX_3224_20260605.md
+- Docs/Reports/DocumentationCompleteness_20260605/DOC_COMPLETENESS_SYNTHESIS_AND_PATCH_QUEUE_20260605.md
+- Target route bibles listed below.
+
+Write scope:
+- localization.md
+- construction.md
+- bootstrap.md
+- input.md
+- player.md
+- physics.md
+- combat.md
+- VISION_LOCKS.md
+
+Task:
+- Add concise packets only where the audit found missing or weak language.
+- For localization/construction/bootstrap/input/player: clarify presentation-only boundaries and what must not own gameplay truth.
+- For physics/combat: strengthen owner/truth/hot-path/zero-GC language without changing public APIs or source code.
+- For VISION_LOCKS.md: add runtime/hot-path hook language that locks product vision without inventing system implementation.
+- Add Low/Middle/High/Ultra consequences as continuous GlobalQualityWeight planning labels, not binary switches.
+
+Verification:
+- git diff --check for touched files.
+- rg scan for GlobalQualityWeight, presentation-only, hot path, and first-20 wording in touched files.
+- Final report in chat only: files changed, packets added, checks run, residual risk.
+
+Reject:
+- No Unity/build/import/runtime proof claims.
+- No code changes.
+- No broad rewrite.
+- No binary low/high quality switches.

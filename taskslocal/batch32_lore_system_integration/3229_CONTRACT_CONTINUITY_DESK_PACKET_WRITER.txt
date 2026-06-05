@@ -1,0 +1,58 @@
+ID: 3229
+Role: STATIC_DOC lore packet writer.
+Task: Create P480_CONTRACT_CONTINUITY_DESK_RECOVERY_LANGUAGE_BRIDGE.production.md.
+
+Scope:
+- Write exactly one new production packet:
+  Docs/Lore/AppliedContent/production_packets/P480_CONTRACT_CONTINUITY_DESK_RECOVERY_LANGUAGE_BRIDGE.production.md
+- Write concise tracking files:
+  Docs/Tasks/Status_3229.md
+  Docs/AgentLogs/LOG_3229.md
+  Docs/AgentLogs/Rationale_3229.md
+
+Authority to read:
+- AGENTS.md
+- writing.md
+- narrative.md
+- localization.md
+- data.md
+- authoring.md
+- quality.md
+- Docs/Lore/Canon_Locks.md
+- Docs/Lore/Lore_Bible.md
+- Docs/Lore/Lore_Content_System.md
+- Docs/Lore/Lore_Localization_Model.md
+- .agents-skills/QA_Evidence_Text_Filter_Audit.txt
+- .agents-skills/UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt
+- .agents-skills/DATA_Runtime_Struct_Layout_ARM64.txt
+- .agents-skills/TOOL_Designer_Facades_CSV_Binary_Bridge.txt
+- .agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+
+Canon target:
+- Explain `Contract Continuity Desk` as the Deep Reach office surface that keeps recovery language contract-valid while delaying or narrowing human extraction.
+- Show how "recovery", "return", "contractor welfare", "payload", and "receiver" language can all be true while still hostile.
+- Connect to Black Keel, Aegir Reclamation Pool, Keelmark, Aegir Continuity Holdings, and Recovery Compliance without duplicating P476/P477.
+
+Packet requirements:
+- Evidence class: STATIC_DOC only.
+- Include 15 locale sections exactly: en_US, ar_SA, de_DE, es_ES, fr_FR, he_IL, id_ID, ja_JP, ko_KR, nl_NL, pl_PL, pt_BR, ru_RU, uk_UA, zh_CN.
+- en_US row must be source_authority.
+- Non-English rows must be draft_machine_or_llm, native-pass pending.
+- Use standalone headings: `### en_US` and a separate `Status: source_authority` line. Do not use bracketed headings.
+- Include future integration notes and first-20 route moment improved.
+- Include explicit boundary: no runtime, Unity, h8bin, source CSV, route-card, generated page, native localization, or publication readiness claimed.
+
+Forbidden:
+- Do not edit P461-P479.
+- Do not edit release sets, packets JSON, source CSV, route cards, graphs, binding maps, h8bin, generated pages/hashes, Unity assets, runtime scripts, or BATCH_INDEX.
+- Do not claim runtime-ready, native-reviewed, Unity-verified, DataMonolith-ready, h8bin-ready, published, accepted, or visually verified.
+
+Validation before final:
+- UTF-8 read.
+- Locale headings count = 15 and unique.
+- source_authority rows = 1.
+- draft_machine_or_llm rows = 14.
+- Bracketed locale/status headings = 0.
+- U+FFFD = 0.
+- Explicit mojibake markers/codepoints = 0.
+- readiness boundary hits = 0 for positive runtime/DataMonolith/h8bin/Unity/native/publication claims.

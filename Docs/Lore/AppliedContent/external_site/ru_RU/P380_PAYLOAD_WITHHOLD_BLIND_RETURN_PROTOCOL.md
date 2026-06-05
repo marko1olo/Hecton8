@@ -10,17 +10,17 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Протокол приемника: withheld blind return
+# Payload Withhold Blind Return Protocol
 
-Концовка HECTON-8 может быть отказом: игрок оставляет Deep Reach blind, но платит unresolved survival и unresolved truth.
+A HECTON-8 ending can be defined by refusal: the player may leave Deep Reach blind, but the cost is unresolved survival and unresolved truth.
 
 ## Scanner
 
-Blind return route. Deep Reach не получает map. Игрок не получает clean receipt.
+Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.
 
 ## Terminal
 
@@ -28,10 +28,10 @@ PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncer
 
 ## Audio
 
-Иногда не отправить - единственное, что еще принадлежит тебе.
+Sometimes not sending is the only thing that still belongs to you.
 
 ## Field Note
 
-Для no-clean ending dossier и refusal branch.
+Receiver record: withholding keeps Deep Reach blind while risking proof, payout, and clean extraction.
 
 <!-- External Site; generated from P380_PAYLOAD_WITHHOLD_BLIND_RETURN_PROTOCOL/ru_RU. -->

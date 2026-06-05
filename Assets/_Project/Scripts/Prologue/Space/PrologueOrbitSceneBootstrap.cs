@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Hecton8.Audio.Prologue;
 using Hecton8.Core;
 using Hecton8.Narrative.Prologue;
 using Hecton8.Prologue.VFX;
@@ -27,6 +28,7 @@ namespace Hecton8.Prologue.Space
         private const string HectonCloudsName = "\u043E\u0431\u043B\u0430\u043A\u0430 \u0433\u0435\u043A\u0442\u043E\u043D8";
         private const string PlasmaOverlayName = "__HECTON_REENTRY_PLASMA_OVERLAY";
         private const string OrbitVolumeProfileName = "__H8_Orbit_OpticalProfile";
+        private const string OrbitReflectionProbeName = "__H8_ORBIT_STATIC_REFLECTION_PROBE";
         private const int SceneRootScratchCapacity = 16;
         private const int SceneTransformScratchCapacity = 64;
         private const float OrbitCameraFarClipMeters = 360000f;
@@ -45,6 +47,12 @@ namespace Hecton8.Prologue.Space
         private const float OrbitBloomMinimumScatter = 0.05f;
         private const float OrbitBloomFullScatter = 0.84f;
         private const float OrbitOpticalQualityFloor = 0.18f;
+        private const float OrbitHardShadowStrength = 0.92f;
+        private const float OrbitHardShadowBias = 0.015f;
+        private const float OrbitHardShadowNormalBias = 0.08f;
+        private const float OrbitHardShadowNearPlane = 0.08f;
+        private const float OrbitReflectionIntensity = 0.34f;
+        private const int OrbitReflectionResolution = 128;
 
         private static readonly Color OrbitCameraBackground = new Color(0.012f, 0.026f, 0.048f, 1f);
         private static readonly Color OrbitAmbientColor = new Color(0.018f, 0.032f, 0.052f, 1f);
@@ -71,7 +79,6 @@ namespace Hecton8.Prologue.Space
         // COLD ALLOC: int[6] - one domain-load mesh triangle seed for the camera-local plasma fake - owner: PrologueOrbitSceneBootstrap.
         private static readonly int[] s_overlayTriangles = { 0, 1, 2, 0, 2, 3 };
 
-        // COLD ALLOC: List<GameObject>[16] - one-shot 01_ORBIT root traversal scratch - owner: PrologueOrbitSceneBootstrap.
         // COLD ALLOC: List<GameObject>[16] - reusable scene-root traversal buffer during scene bootstrap - owner: PrologueOrbitSceneBootstrap.
         private static readonly List<GameObject> s_sceneRootScratch = new List<GameObject>(SceneRootScratchCapacity);
         // COLD ALLOC: List<Transform>[64] - one-shot loaded-scene listener traversal scratch - owner: PrologueOrbitSceneBootstrap.
@@ -80,6 +87,7 @@ namespace Hecton8.Prologue.Space
 
         [SerializeField] private Material orbitPlasmaMaterial;
         [SerializeField] private Material orbitSkyboxMaterial;
+        [SerializeField] private ReflectionProbe orbitStaticReflectionProbe;
 
         private void Awake()
         {
@@ -111,12 +119,14 @@ namespace Hecton8.Prologue.Space
             GameObject runtimeRoot = ResolveOrCreateRuntimeRoot(scene);
             runtimeRoot.SetActive(false);
             ConfigureOrbitPostProcessing(runtimeRoot, camera);
+            ConfigureOrbitStaticReflection(scene, bootstrap, camera);
 
             OrbitalRelativityDirector orbital = EnsureComponent<OrbitalRelativityDirector>(runtimeRoot);
             AwaitableDropSequenceDirector sequence = EnsureComponent<AwaitableDropSequenceDirector>(runtimeRoot);
             PrologueSequenceRegistryBridge bridge = EnsureComponent<PrologueSequenceRegistryBridge>(runtimeRoot);
             OrbitalDropReentryVfxController reentryVfx = EnsureComponent<OrbitalDropReentryVfxController>(runtimeRoot);
             PrologueWorldHandoffSceneLoader worldHandoff = EnsureComponent<PrologueWorldHandoffSceneLoader>(runtimeRoot);
+            PrologueAcousticOrchestrator audioOrchestrator = EnsureComponent<PrologueAcousticOrchestrator>(runtimeRoot);
 
             Renderer hectonRenderer = ResolveRenderer(hectonSurface);
             Renderer aegirRenderer = ResolveRenderer(aegir);
@@ -158,8 +168,15 @@ namespace Hecton8.Prologue.Space
                 bootstrap != null ? bootstrap.orbitPlasmaMaterial : null);
             worldHandoff.ConfigureTargetScene(WorldSceneName);
 
-            if (orbital != null && sequence != null && bridge != null && reentryVfx != null && worldHandoff != null)
+            if (orbital != null &&
+                sequence != null &&
+                bridge != null &&
+                reentryVfx != null &&
+                worldHandoff != null &&
+                audioOrchestrator != null)
+            {
                 runtimeRoot.SetActive(true);
+            }
         }
 
         private static GameObject ResolveOrCreateRuntimeRoot(Scene scene)
@@ -302,6 +319,9 @@ namespace Hecton8.Prologue.Space
             RenderSettings.ambientSkyColor = OrbitAmbientColor;
             RenderSettings.ambientEquatorColor = OrbitAmbientColor;
             RenderSettings.ambientGroundColor = OrbitAmbientColor;
+            RenderSettings.defaultReflectionMode = DefaultReflectionMode.Skybox;
+            RenderSettings.defaultReflectionResolution = OrbitReflectionResolution;
+            RenderSettings.reflectionIntensity = OrbitReflectionIntensity;
             if (skyboxMaterial != null)
                 RenderSettings.skybox = skyboxMaterial;
 
@@ -314,10 +334,41 @@ namespace Hecton8.Prologue.Space
                 light.type = LightType.Directional;
                 light.intensity = OrbitKeyLightIntensity;
                 light.color = OrbitKeyLightColor;
-                light.shadows = LightShadows.None;
-                light.shadowStrength = 0f;
+                light.shadows = LightShadows.Hard;
+                light.shadowStrength = OrbitHardShadowStrength;
+                light.shadowBias = OrbitHardShadowBias;
+                light.shadowNormalBias = OrbitHardShadowNormalBias;
+                light.shadowNearPlane = OrbitHardShadowNearPlane;
+                light.renderMode = LightRenderMode.ForcePixel;
                 light.bounceIntensity = 0f;
+                RenderSettings.sun = light;
             }
+        }
+
+        private static void ConfigureOrbitStaticReflection(
+            Scene scene,
+            PrologueOrbitSceneBootstrap bootstrap,
+            Transform cameraTransform)
+        {
+            ReflectionProbe probe = bootstrap != null ? bootstrap.orbitStaticReflectionProbe : null;
+            Transform probeTransform = probe != null ? probe.transform : FindSceneTransform(scene, OrbitReflectionProbeName);
+            if (probe == null && probeTransform != null)
+                probeTransform.TryGetComponent(out probe);
+
+            if (probe == null)
+                return;
+
+            probe.mode = ReflectionProbeMode.Baked;
+            probe.refreshMode = ReflectionProbeRefreshMode.ViaScripting;
+            probe.timeSlicingMode = ReflectionProbeTimeSlicingMode.NoTimeSlicing;
+            probe.resolution = OrbitReflectionResolution;
+            probe.intensity = OrbitReflectionIntensity;
+            probe.boxProjection = false;
+            probe.clearFlags = ReflectionProbeClearFlags.Skybox;
+            probe.cullingMask = 0;
+            if (cameraTransform != null)
+                probeTransform.SetPositionAndRotation(cameraTransform.position, Quaternion.identity);
+            probe.size = new Vector3(2048f, 2048f, 2048f);
         }
 
         private static void EnsureSingleOrbitAudioListener(Transform orbitCamera)

@@ -33,6 +33,63 @@ The project source is not a clean folder-only architecture. Static scan shows th
 
 Exact file counts are not a source of truth. Ownership is determined by concrete owner files and runtime routes.
 
+## 2026-06-05 Coverage Addendum
+
+Status: STATIC_SOURCE / STATIC_DOC COVERAGE UPDATE - RUNTIME PENDING.
+
+Static refresh during the documentation actuality front found:
+
+- `Assets/_Project/Scripts`: `2545` `.cs` files.
+- `Assets/_Project`: `171` `.asmdef` files.
+- Stable-doc coverage scout checked `2545` scripts against `276` stable doc files.
+- Exact stable-doc anchor gaps are recorded in `Docs/Reports/Batch31/SCRIPT_DOCUMENTATION_COVERAGE_GAP_LEDGER_20260605.md`.
+
+Highest-risk live classes needing exact stable-doc anchors:
+
+- `Core/Signals/GlobalSignalPayloads.DomainRemainder.cs`
+- `SaveSystem/H8BinaryWorldPager.cs`
+- `Core/Memory/VaultMemoryContracts.cs`
+- `Plugins/Crest/OceanKinematics/OceanKinematicsVaultRuntime.cs`
+- `Physics/Vehicles/SubmarineDynamicsContracts.cs`
+- `Physics/Vehicles/VehicleComponentDamageJobs.cs`
+- `Power/SubmarineOsThermalGridRuntime.cs`
+- `UI/Navigation/DiegeticGyroCompassRuntime.cs`
+- `Visor/SpectrumSystem.cs`
+- `Visor/HectonVisorFluidDistortionFeature.cs`
+- `Graphics/Materials/VisualPressureAgingRuntime.cs`
+- `Graphics/Materials/ShinobuMaterialResponseRuntime.cs`
+- `World/SeedShipAnomaly/SeedShipAnomalyRuntime.cs`
+- `Gameplay/Mining/DeployableSdfDrillRuntime.cs`
+- `World/SargassumCutManager.cs`
+- `World/HectonAnomalyEngine.cs`
+- `Lighting/DynamicPointLightCulling/DynamicPointLightCullingDirector.cs`
+- `HectonBoidController.cs`
+- `Tools/ToolDurabilitySystem.cs`
+- `AtlasSignal/SignalBeacon.cs`
+
+This addendum is a documentation routing update only. It does not prove compile, Unity import, Play Mode, profiler, GC, visual quality, save/load, player build, or platform readiness.
+
+## Wave 2 Source Owner Routing Precision
+
+Status: STATIC_SOURCE only. This section adds family-level routing precision for under-routed source surfaces identified by the 2026-06-05 source coverage audit. It is not a 2257-script catalog and is not runtime proof.
+
+| Source family | Static exemplar anchors | Owner doc / architecture row | Evidence class | Failure mode / proof artifact class |
+|---|---|---|---|---|
+| Editor authoring, bakers, validators, tuners | `Assets/_Project/Scripts/Editor/AITextureControlMapBaker/Shinobu269/AITextureControlMapBaker.cs`; `Assets/_Project/Scripts/Editor/AITextureControlMapBaker/Shinobu269/AITextureImportAndMaterialPipeline.cs`; `Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchBakePipeline.cs`; `Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs`; `Assets/_Project/Scripts/Editor/DocumentationAuthoritySmokeTester.cs` | `Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md` Echelon 9 plus `Docs/ARCHITECTURE/TECH_ART_PBR_SURFACE_DOCTRINE.md`, `Docs/ARCHITECTURE/PROCEDURAL_WORLD_VERTICAL_ARCHITECTURE.md`, and `Docs/QUALITY_GATES.md` | STATIC_SOURCE only | Failure mode: editor tooling routed as generic build tooling or treated as imported asset proof. Proof class: generated baker/validator report, importer log, CI/tool exit artifact, or player-build artifact as applicable. |
+| Loose root mixed-domain scripts | `Assets/_Project/Scripts/HectonWorldGenerator.cs`; `Assets/_Project/Scripts/WorldGeneratedPrimitiveFactory.cs`; `Assets/_Project/Scripts/CaveGraphGenerator.cs`; `Assets/_Project/Scripts/SaveSidecarStorage.cs`; `Assets/_Project/Scripts/LocalizationManager.cs`; `Assets/_Project/Scripts/AutomationSmokeTester.cs` | This map's `Loose Root Script Reality` rule plus the matching matrix echelon by concrete owner | STATIC_SOURCE only | Failure mode: folder-only routing misses active root owners. Proof class: per-owner source read, domain route card/static audit, then compile/import/runtime artifact for the touched owner. |
+| Physiology runtime cluster | `Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs`; `Assets/_Project/Scripts/Physiology/ShinobuMetabolismRuntime.cs`; `Assets/_Project/Scripts/Physiology/ShinobuSuitIntegrityRuntime.cs` | `Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md` Echelon 5 plus `survival.md` and `physics.md` | STATIC_SOURCE only | Failure mode: physiology routed as generic combat or UI trauma. Proof class: survival/pressure route run, DataVault/SignalBus layout audit, black-box dump, profiler/GC artifact. |
+| Plugins bridge / quarantine | `Assets/_Project/Scripts/Plugins/Crest/OceanKinematics/OceanKinematicsVaultRuntime.cs`; `Assets/_Project/Scripts/Plugins/MapMagic/MapMagicRuntimeBridge.cs`; `Assets/_Project/Scripts/Plugins/Steam/SteamManager.cs` | `Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md` Echelon 9 plus `Docs/ARCHITECTURE/THIRD_PARTY_POISON.md`; `water.md` and `terrain.md` only through approved bridge routes | STATIC_SOURCE only | Failure mode: bridge source mistaken for approved direct third-party runtime usage. Proof class: quarantine audit, bridge-route review, package/import/runtime artifact, platform/device proof where applicable. |
+| UI navigation and instruments | `Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs`; `Assets/_Project/Scripts/UI/SubmarineSonarHoloMapRenderer.cs`; `Assets/_Project/Scripts/UI/AcousticRadarSphereRenderer.cs` | `Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md` Echelon 8 plus `Docs/ARCHITECTURE/ZERO_GC_UI_PIPELINE.md`, `ui.md`, and `sonar.md` | STATIC_SOURCE only | Failure mode: instrument presentation becomes gameplay truth owner or allocates in HUD paths. Proof class: UI GC artifact, route interaction capture, profiler/frame artifact, snapshot-consumer audit. |
+| Visor render features | `Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs`; `Assets/_Project/Scripts/Visor/HectonAbyssalSsdoFeature.cs`; `Assets/_Project/Scripts/Visor/HectonStochasticSsrFeature.cs` | `Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md` Echelon 8 plus `Docs/ARCHITECTURE/VISOR_AR_STENCIL_RENDERER.md`, `rendering.md`, and `shaders.md` | STATIC_SOURCE only | Failure mode: render feature source treated as shader/import/visual readiness. Proof class: shader import log, Frame Debugger/RenderGraph artifact, visual capture, VRAM/frame artifact. |
+| Audio propagation, echolocation, synthesis | `Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs`; `Assets/_Project/Scripts/Audio/Echolocation/AcousticEcholocationRaymarch.cs`; `Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs` | `Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md` Echelon 8 plus `Docs/ARCHITECTURE/AUDIO_DSP_PIPELINE.md`, `Docs/ARCHITECTURE/ADAPTIVE_STEM_AUDIO_MIXER.md`, `Docs/ARCHITECTURE/VOCAL_WARNING_QUEUE_SHINOBU_352.md`, and `audio.md` | STATIC_SOURCE only | Failure mode: broad audio row hides DSP/native/thread proof needs. Proof class: audio profiler/device capture, DSP queue audit, warning/music route artifact, GC/profiler artifact. |
+| Lighting / GI / light shafts | `Assets/_Project/Scripts/Lighting/HectonLightingRuntime_DayNightRelay.cs`; `Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs`; `Assets/_Project/Scripts/Lighting/Shafts/ScreenSpaceLightShaftRuntime.cs` | `Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md` Echelon 7 plus `lighting.md`, `rendering.md`, and `Docs/ARCHITECTURE/SHINOBU_151_DYNAMIC_POINT_LIGHT_CULLING_ROUTE_CARD.md` | STATIC_SOURCE only | Failure mode: lighting source treated as baked/probe/visual proof. Proof class: Frame Debugger, probe/lightmap artifact, shader import artifact, visual capture, profiler/frame artifact. |
+| Graphics material response and caustics | `Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs`; `Assets/_Project/Scripts/Graphics/Materials/ShinobuMaterialResponseRuntime.cs`; `Assets/_Project/Scripts/Graphics/Caustics/AnalyticalCausticsService.cs` | `Docs/ARCHITECTURE/TECH_ART_PBR_SURFACE_DOCTRINE.md`, `rendering.md`, `shaders.md`, and `Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md` Echelon 7/8 | STATIC_SOURCE only | Failure mode: material response source mistaken for import/shader/runtime visual proof. Proof class: material/shader import audit, Frame Debugger, visual capture, VRAM/frame artifact. |
+| Core bridge, diagnostics, replay | `Assets/_Project/Scripts/Core/Bridge/H8BridgeFacadeRuntime.cs`; `Assets/_Project/Scripts/Core/DodReplayRecorder.cs`; `Assets/_Project/Scripts/Core/Diagnostics/AsynchronousTelemetryExporter.cs` | `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md` Core Source Spine plus `Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md` Echelon 1, `Docs/ARCHITECTURE/CORE_REPLAY_DETERMINISM.md`, and `Docs/ARCHITECTURE/ASYNCHRONOUS_TELEMETRY_EXPORTER_SHINOBU_160.md` | STATIC_SOURCE only | Failure mode: bridge/diagnostics code becomes hidden authority or proof inflation. Proof class: replay hash artifact, telemetry export artifact, black-box dump, compile/import/runtime proof. |
+| Save sidecars, thumbnails, maintenance | `Assets/_Project/Scripts/SaveSidecarStorage.cs`; `Assets/_Project/Scripts/SaveThumbnailSystem.cs`; `Assets/_Project/Scripts/SaveSlotMaintenanceRecord.cs` | `Docs/ARCHITECTURE/SAVE_PAGING_PROTOCOL.md`, `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md` Data And Persistence, and `Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md` Echelon 1 | STATIC_SOURCE only | Failure mode: sidecar support treated as save/load correctness. Proof class: save/load roundtrip, corruption recovery, thumbnail/sidecar artifact, checksum/migration log. |
+| World anomaly, sargassum, readability | `Assets/_Project/Scripts/World/HectonAnomalyEngine.cs`; `Assets/_Project/Scripts/World/SargassumCutManager.cs`; `Assets/_Project/Scripts/World/WorldReadabilityDirector.cs` | `Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md` Echelon 2 plus `Docs/ARCHITECTURE/PROCEDURAL_WORLD_VERTICAL_ARCHITECTURE.md`, `world.md`, and `terrain.md` | STATIC_SOURCE only | Failure mode: world readability/anomaly source treated as route readability or visual proof. Proof class: route capture, gameplay readability artifact, profiler/GC/frame artifact, save/load artifact when stateful. |
+| QA and headless harnesses | `Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs`; `Assets/_Project/Scripts/Editor/DocumentationAuthoritySmokeTester.cs`; `Assets/_Project/Scripts/AutomationSmokeTester.cs` | `Docs/QUALITY_GATES.md`, `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md` QA row, and `Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md` Echelon 9 | STATIC_SOURCE only | Failure mode: harness source treated as executed validation. Proof class: fresh headless/QA CSV, black-box artifact, CI log, profiler/GC artifact where measured. |
+| Settings, localization, subtitles | `Assets/_Project/Scripts/UI/SettingsManager.cs`; `Assets/_Project/Scripts/LocalizationManager.cs`; `Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs` | `Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md` Echelon 8 plus `Docs/ARCHITECTURE/ZERO_GC_UI_PIPELINE.md`, `settings.md`, `localization.md`, and `ui.md` | STATIC_SOURCE only | Failure mode: settings/localization/subtitle source treated as persistence, font, or UI-GC proof. Proof class: settings persistence roundtrip, locale/font/subtitle capture, UI GC/profiler artifact. |
+
 ## Real System Map
 
 | System surface | Actual source owners | What exists in source | Proof still missing |
@@ -84,4 +141,4 @@ When a system doc is updated:
 - cite concrete source owners, not domain labels alone;
 - keep runtime status `PENDING VERIFICATION` unless fresh artifacts exist;
 - never copy historical route-card status as current readiness;
-- prefer this map plus `PROJECT_RUNTIME_TOPOLOGY.md` before dated reports.
+- prefer this map plus `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md` before dated reports.

@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# First Atlas Repair Trace Scene
+# First Atlas Repair Trace
 
-First Atlas Repair Trace Scene sets the game's horror rule: repair can be mercy and violation at the same time.
+The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.
 
 ## Scanner
 
-The seal holds. That is the problem.
+Nonstandard sealant holds a human object closed. Classification unresolved.
 
 ## Terminal
 
-MAINTENANCE TRACE: nonstandard sealant growth stabilized human-use object. Identity category unresolved.
+MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.
 
 ## Audio
 
-It fixed the thing. It did not know what the thing meant.
+It saved the object. It did not know whose it was.
 
 ## Field Note
 
-The first Atlas trace should save something small while violating the category of what was saved.
+The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.
 
 <!-- In-Game Wiki; generated from P250_FIRST_ATLAS_REPAIR_TRACE_SCENE/uk_UA. -->

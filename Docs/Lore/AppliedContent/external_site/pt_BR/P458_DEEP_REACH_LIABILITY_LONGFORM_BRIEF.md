@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Liability Longform Brief
+# Deep Reach Liability Chain
 
-Longform spine: Deep Reach did not need to invent the flood. HECTON-8's Great Tide was real physics, but accepted margins, underbuilt evacuation, Atlas continuity weighting, quarantine certification delay and Keelmark loss conversion made the disaster fatal and profitable. The article should quote sanitized wording only briefly and let physical evidence carry the accusation.
+Deep Reach did not need to invent the ocean. HECTON-8 failed under real pressure, real tide force and real infrastructure limits. That is what makes the liability harder to bury. The official record names a localized geotechnical cascade, corrupted Atlas logs and incomplete evacuation. Each phrase has enough truth to survive a hearing. The physical site adds what the public sentence omits: margin approvals signed before the tide window, evacuation routes held behind authorization, quarantine doors certified late, Atlas continuity weights that protected system function before worker recovery, and loss ledgers that turned names into categories after the water had already won. The accusation is not that Deep Reach caused the ocean to rise by command. It is that the company priced known risk, delayed human exit, kept records clean and let recovery offices convert disaster into manageable custody. On HECTON-8, the rooms testify more precisely than the statement.
 
 ## Scanner
 
-Public brief: Deep Reach article pairs sanitized accident language with five physical proof chains.
+Public accident language conflicts with pressure marks, evacuation timing, quarantine seals, Atlas weighting and post-loss claim conversion.
 
 ## Terminal
 
-LIABILITY ARTICLE: real Great Tide physics, accepted margins, delayed evacuation, Atlas weighting, quarantine hold and claim conversion.
+PUBLIC ARCHIVE NODE // DEEP REACH LIABILITY. Great Tide physics accepted. Human liability remains open: margin approval, delayed evacuation, quarantine certification, Atlas continuity priority, Keelmark conversion.
 
 ## Audio
 
-Public note: a natural disaster can still have signatures.
+A natural disaster can still carry signatures. Read the room before you read the report.
 
 ## Field Note
 
-Use with memo artifacts and room photos. Avoid villain monologue tone.
+Marauder note: trust timestamps, pressure scars and door states before polished incident language.
 
 <!-- External Site; generated from P458_DEEP_REACH_LIABILITY_LONGFORM_BRIEF/pt_BR. -->

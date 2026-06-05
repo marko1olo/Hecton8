@@ -66,6 +66,11 @@ namespace Hecton8.Gameplay
         private const float DegreesToRadians = 0.01745329252f;
         private const int MaxDamageReceivers = 4;
         private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
+        private const uint MountableTransportCameraImpactSourceHash = 0x4D545049u;
+        private const float MountableTransportCameraImpactRadiusMeters = 18f;
+        private const float MountableTransportCameraImpactAmplitudeScale = 0.9f;
+        private const float MountableTransportCameraImpactTranslationGain = 0.78f;
+        private const float MountableTransportCameraImpactRotationGain = 1.15f;
         private const uint KccVelocityTransportRiderMaxAgeFrames = 12u;
 
         [Header("-- Preset ---------------------------")]
@@ -373,6 +378,7 @@ namespace Hecton8.Gameplay
             BindPresetToFeelContract();
             ResolveVehicleUpgradeModule();
             ToolHapticsRuntime.EnsureRuntimeInstance();
+            CameraJuiceSignals.EnsurePrewarmed();
             RebuildPromptCache();
             EnsureLifecycleInitialized();
             PlayerTransportLifecycleRegistry.Register(this, this);
@@ -1824,6 +1830,7 @@ namespace Hecton8.Gameplay
                 math.max(0.01f, maximumImpactSpeed - SubmarineImpactDentStartSpeedMetersPerSecond));
 
             NotifySubmarineImpactHaptic(severity01);
+            PublishTransportCameraImpact(severity01, impactPoint, impactNormal);
             ResolveSubmarineStructuralGrid();
             if (_submarineStructuralGrid != null)
             {
@@ -1834,8 +1841,28 @@ namespace Hecton8.Gameplay
                     severity01);
                 return;
             }
+        }
 
-            CameraJuiceSignals.TryPublishImpact(severity01, impactPoint, -impactNormal);
+        private static void PublishTransportCameraImpact(float severity01, Vector3 impactPoint, Vector3 impactNormal)
+        {
+            float severity = math.saturate(severity01);
+            if (severity <= 0.0001f || !IsFiniteVector(impactPoint))
+                return;
+
+            Vector3 direction = IsFiniteVector(impactNormal)
+                ? -impactNormal
+                : Vector3.zero;
+            CameraJuiceSignals.TryPublishImpact(
+                severity,
+                impactPoint,
+                direction,
+                CameraJuiceSignals.SharpKineticImpactProfileHash,
+                MountableTransportCameraImpactAmplitudeScale,
+                severity >= 0.55f ? CameraJuiceSignals.HighPriority : CameraJuiceSignals.NormalPriority,
+                MountableTransportCameraImpactRadiusMeters,
+                MountableTransportCameraImpactTranslationGain,
+                MountableTransportCameraImpactRotationGain,
+                MountableTransportCameraImpactSourceHash);
         }
 
         private static void NotifySubmarineImpactHaptic(float severity01)

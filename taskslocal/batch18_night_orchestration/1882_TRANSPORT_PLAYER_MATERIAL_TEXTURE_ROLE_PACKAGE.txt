@@ -1,0 +1,55 @@
+<AGENT_PROMPT id="1882">
+ROLE: Transport and player suit material/texture role package auditor.
+
+READ FIRST:
+- C:\hades\Hecton8\AGENTS.md
+- C:\hades\Hecton8\PROJECT_BIBLES.md
+- C:\hades\Hecton8\VISION_LOCKS.md
+- C:\hades\Hecton8\TASTE.md
+- C:\hades\Hecton8\quality.md
+- C:\hades\Hecton8\player.md
+- C:\hades\Hecton8\tools.md
+- C:\hades\Hecton8\survival.md
+- C:\hades\Hecton8\3dmodel.md
+- C:\hades\Hecton8\3DMODEL_TEXTURES_MATERIALS.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1871_TRANSPORT_VISUAL_SOURCE_PACKAGE.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1872_PLAYER_BODY_VISUAL_SOURCE_PACKAGE.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1876_TRANSPORT_MESH_SOURCE_AUTHORING_IMPLEMENTATION.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1879_PRODUCT_FACE_RELINK_AND_PROOF_CONTRACT.md
+- Relevant .agents-skills only: QA_Evidence_Text_Filter_Audit, REND_URP_Graphics_HotPath_Optimization_HLOD, MATH_AUP_Determinism_Sync.
+
+OWNED WRITE SCOPE:
+- Docs/Tasks/Status_1882.md
+- Docs/AgentLogs/Rationale_1882.md
+- Docs/AgentLogs/LOG_1882.md
+- Docs/Reports/Batch18/1882_TRANSPORT_PLAYER_MATERIAL_TEXTURE_ROLE_PACKAGE.md
+- Docs/Reports/Batch18/1882_TRANSPORT_PLAYER_MATERIAL_TEXTURE_MATRIX.csv
+
+NO SOURCE/PREFAB/ASSET/SCENE/META/BINARY EDITS.
+NO UNITY MENU, IMPORT, BAKE, PLAYMODE, PROFILER, DOTNET BUILD, OR DATA MONOLITH RUN.
+
+PARALLEL LAW:
+- You may run alongside 1877, 1880, 1881, and 1883.
+- Do not depend on sibling output.
+
+TASK:
+Build the concrete material/texture role package for transport bodies and player suit/visor so future mesh relinks do not ship as toy plastic or blockout.
+
+Requirements:
+1. Cover transport: CargoSled, ExosuitFrame, MicroSub, ScoutGlider.
+2. Cover player suit roles from 1872: first-person gloves/forearms, torso/pelvis/legs/fins, helmet/visor housing, visor glass/rim, labels/latches/instrument trims.
+3. Inspect actual project-owned material/texture candidates, especially RuntimeVisualProof, visor materials, construction/metal/rubber/glass/ocean-adjacent materials, and texture masks/normals.
+4. For each role, map credible existing path or mark `MISSING_SOURCE_REQUIRED`.
+5. Explicitly reject blockout, default material, unresolved GUID, package cache `Lit.mat`, flat color, primitive debug materials.
+6. Include collider/anchor boundary reminders: material package cannot change Player CapsuleCollider, HandAnchor, transport RiderAnchor/DismountAnchor, or occupancy/drive truth.
+7. Define shader/texture semantics: albedo, normal, packed MRAO, wetness, glass/scratch/droplet, emissive trim, decal/label/wear.
+8. Define continuous quality scaling for compact/middle/high/ultra material richness without ugly compact mode.
+9. List future Unity proof steps and screenshots. Do not claim acceptance.
+
+VERIFY:
+- `git diff --check` on owned report/log/status files.
+- CSV parse check with `Import-Csv`.
+- Static cross-check that all four transport ids plus player/visor role ids appear in report and CSV.
+- Do not run Unity or dotnet.
+</AGENT_PROMPT>
+

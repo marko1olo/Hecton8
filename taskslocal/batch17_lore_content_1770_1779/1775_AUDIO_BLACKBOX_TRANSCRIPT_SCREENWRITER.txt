@@ -1,0 +1,111 @@
+HECTON-8 LOCAL TASK FILE
+Batch: batch17_lore_content_1770_1779
+Agent ID: 1775
+Role: Audio Log, Black-Box, and Transcript Screenwriter
+Distribution: give this whole file to one agent. No XML extraction is required.
+Wave mode: PARALLEL. Agents 1770-1779 work simultaneously. Do not wait for them, do not depend on their future output.
+
+IDENTIFICATION LINE
+First response must begin exactly:
+PROMPT IDENTIFIED: 1775 | DOMAIN: Audio Logs / Black Box / Transcripts | TASK COUNT: 20
+
+OBJECTIVE
+Make audio logs, black-box fragments, and subtitle-ready transcripts believable, interrupted, useful, and localized.
+Audio must sound spoken by people under real pressure. Black-box text must feel like damaged telemetry or formal event reconstruction, not a lore essay.
+
+AUTHORITY DOCS
+Read fully before editing:
+- AGENTS.md
+- PROJECT_BIBLES.md
+- writing.md
+- narrative.md
+- localization.md
+- textes.md
+- Docs/Lore/Lore_Bible.md
+- Docs/Lore/Canon_Locks.md
+- Docs/Lore/Lore_Content_System.md
+- Docs/Lore/Lore_Localization_Model.md
+- Docs/Lore/Lore_Multilingual_Content_Architecture.md
+- Docs/Lore/Final_Payloads_Gameplay_Map.md
+- Docs/Lore/AppliedContent/README.md
+
+OWNED SCOPE
+Primary inspect/edit scope:
+- Docs/Lore/AppliedContent/packets/*.packets.json fields for audio and transcript-like content
+- Docs/Lore/AppliedContent/in_game_wiki/ only for subtitle/article consistency checks
+- Data/Localization/ only if existing audio/subtitle source files are verified and directly relevant
+- Docs/Lore/AppliedContent/production_audits/1775/
+
+Do not edit terminal documents except to avoid contradiction.
+Do not depend on agents 1770-1774 or 1776-1779.
+
+AUDIO CONTRACT
+- Spoken fragment under pressure.
+- One scene, one speaker or clear handoff.
+- Specific object, route, failure, person, signal, tide, debt, pressure, or repair.
+- Interruptions must carry information, not decoration.
+- No polished omniscient narration.
+
+BLACK-BOX CONTRACT
+- Event marker, telemetry contradiction, damaged transcript, confidence score, dropped frames, pressure/timestamp/system ID.
+- It can be cold and formal, but must still point to a player-useful clue.
+
+15-LOCALE CONTRACT
+Every changed transcript requires source text, subtitle segmentation notes, and status for:
+en_US, ru_RU, ja_JP, zh_CN, fr_FR, es_ES, de_DE, pl_PL, uk_UA, ar_SA, id_ID, ko_KR, he_IL, pt_BR, nl_NL.
+Do not fake voice-over readiness for non-reviewed locales.
+
+TASKS
+Task 01: Create/update Docs/Tasks/Status_1775.md with all 20 tasks and checkpoints after Tasks 05, 10, 15, and 20.
+
+Task 02: Create/update Docs/AgentLogs/Rationale_1775.md with exact choices for speaker, interruption, subtitle, and black-box grammar.
+
+Task 03: Inventory audio fields in AppliedContent packets. Output production_audits/1775/audio_blackbox_inventory.csv with packet ID, article ID, locale count, speaker/source, duration risk, subtitle risk, unlock context.
+
+Task 04: Identify audio entries that read like written articles, design notes, generic monologues, or summary exposition.
+
+Task 05: Checkpoint. Select a bounded set of audio/black-box entries to repair without waiting for sibling agents.
+
+Task 06: Rewrite selected audio logs into playable spoken fragments. Keep each line speakable, specific, and interruptible.
+
+Task 07: Rewrite selected black-box fragments into telemetry/event reconstruction format with useful contradiction or clue.
+
+Task 08: Segment changed audio into subtitle-friendly beats. Avoid overlong subtitle chunks. Document segmentation in production_audits/1775/subtitle_segmentation_notes.md.
+
+Task 09: Ensure no audio log reveals late-game truth before the unlock route supports it. Mark spoiler/lock problems exactly.
+
+Task 10: Checkpoint. Reopen changed JSON/Markdown and validate syntax.
+
+Task 11: Fix any audio/black-box text that makes the surface/sky/moons/shallows inherently dark or ugly. Correct surface to bright/beautiful/alien where applicable.
+
+Task 12: Create a speaker/source map for changed logs: Marauder, Deep Reach dispatcher, colony worker, Atlas fragment, ship black box, insurer, rescue pool, maintenance crew, or unknown damaged source.
+
+Task 13: Add 15-locale status notes for changed audio. Mark lip-sync/VO/native review needs separately from text translation.
+
+Task 14: Check changed transcript text for AI tells: polished lesson structure, rhetorical analogies, "serves as", "symbolizes", "designed to", "one might", "in a world where".
+
+Task 15: Checkpoint. Run safe validation/export command if available and relevant. Capture exact output.
+
+Task 16: Create production_audits/1775/audio_style_sheet.md with accepted patterns for distress, corporate call, black-box, Atlas fragment, survivor whisper, and field-team chatter.
+
+Task 17: Update surface/index metadata only for verified existing packet/page IDs. Do not invent audio asset GUIDs or Unity event names.
+
+Task 18: Write Docs/AgentLogs/HANDOFF_1775.md with existing packet IDs needing VO casting, subtitle UI review, or placement. No sibling dependency.
+
+Task 19: Re-run syntax and player-visible marker checks for changed files. Remove TODO/draft/placeholder from player-facing strings.
+
+Task 20: Final verification. Reopen edited files, update Status_1775.md, append final report to Docs/AgentLogs/LOG_1775.md.
+
+ACCEPTANCE PROOF
+- audio_blackbox_inventory.csv exists.
+- Selected entries become spoken/damaged artifacts, not prose articles.
+- Subtitle segmentation notes exist for changed audio.
+- 15-locale status and VO/native-review needs are explicit.
+- Final LOG_1775.md lists exact files and validation.
+
+REJECTION CONDITIONS
+- Audio becomes omniscient narration.
+- Black box becomes poetic lore.
+- Late spoilers leak early.
+- Future sibling output is required.
+- JSON syntax breaks.

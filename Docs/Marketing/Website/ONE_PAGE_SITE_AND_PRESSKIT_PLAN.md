@@ -4,6 +4,12 @@ Status: future website/presskit shell
  Public stance: single-player-first scope / proof-first public copy
 Runtime impact: none
 
+## Authority Boundary
+
+Static website and presskit plan only. Public voice routes through root `textes.md`.
+Any quality, release, platform, Steam, wishlist, demo, performance, press, review-key, embargo, showcase, curator, asset-QA, schedule, SEO, pricing, discount, publication, website, or presskit claim requires `quality.md`, `release.md`, `platform.md`, current proof artifacts, and the matching local permission gate.
+Site sections, factsheet rows, presskit checklists, schedules, and strategy rows do not approve Steam page, wishlist, pricing, discount, review-key, presskit, showcase, publication, platform, or release claims.
+
 ## Objective
 
 Create a small, fast, boringly useful site when Steam page and assets exist. The site should serve press, creators, and players who need one link with official information.
@@ -15,7 +21,7 @@ Do not make a marketing vanity page before Steam is ready.
 | Section | Content |
 |---|---|
 | Hero | One real gameplay image/video with readable player decision backed by AB-009/KPI decision-read fields, title, one-line pitch, Steam CTA. |
-| What It Is | Single-player-first underwater survival: pressure, machinery, salvage, black water. |
+| What It Is | Single-player-first underwater survival: beautiful alien surface/shallows, pressure, machinery, salvage, and black-water depth risk. |
 | Screenshots | 6-10 real images, downloadable. |
 | Trailer/Clips | trailer and short clips. |
 | Factsheet | developer, platform, genre, status, contact, links. |
@@ -25,7 +31,9 @@ Do not make a marketing vanity page before Steam is ready.
 
 ## One-Line Pitch
 
-Submerge is a single-player-first underwater survival game where pressure, machinery, salvage, and black-water exploration decide whether you make it back alive.
+Submerge is a single-player-first underwater survival game where a beautiful alien ocean, pressure, machinery, salvage, and black-water depth risk decide whether you make it back alive.
+
+Website visual lock: spoiler-safe public pages may sell beauty when screenshots show surface, Aegir, coastline, ocean skin, or photic shallows. Do not make the whole site read as permanently dark water. Darkness belongs to depth, caves, interiors, storms, and temporary eclipse windows.
 
 Naming caveat: `Submerge` is the owner-selected public title candidate as of 2026-05-31. Keep `HOLD_NAMING_CONFLICT_REVIEW` until the exact-title Steam conflict and domain/social route are resolved.
 

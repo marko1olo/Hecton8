@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Таблица должностей под давлением
+# Pressure Job Title Table
 
-Таблица должностей превращает worker evidence в механику: pumps, medlocks, routes, kilns и Atlas safety consoles.
+The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.
 
 ## Scanner
 
-Должности должны объяснять, что держало колонию живой.
+Job titles should explain what kept the colony alive.
 
 ## Terminal
 
-JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader и shift supervisor.
+JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.
 
 ## Audio
 
-Никто не умер как Employee 438. Они умерли, делая работу.
+Nobody died as Employee 438. They died doing a job.
 
 ## Field Note
 
-Каждая должность должна подразумевать инструмент, маршрут или отказ.
+Every title should imply a tool, route or failure.
 
 <!-- In-Game Wiki; generated from P167_PRESSURE_JOB_TITLE_TABLE/ru_RU. -->

@@ -17,7 +17,7 @@ namespace Hecton8.Scavenging
     /// Legacy UniqueId support remains for scene-authored compatibility, but authoritative depletion lives in PersistentWorldRegistry.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ResourceNode : MonoBehaviour, IPoolable, ICuttable, IInteractionSignalConsumer
+    public sealed class ResourceNode : MonoBehaviour, IPoolable, ICuttable, IInteractionSignalConsumer, IInteractionVulnerabilitySource
     {
         private static int s_x001ResourceNodeSignalPushDropCount;
         private static readonly int _MeltCenterId = Shader.PropertyToID("_MeltCenter");
@@ -207,6 +207,9 @@ namespace Hecton8.Scavenging
 
         /// <summary>Applied authoring template when spawned by the distribution director.</summary>
         public ResourceNodeTemplate ResourceTemplate => resourceTemplate;
+
+        /// <summary>Tool capability mask required by the authored node template.</summary>
+        public uint VulnerabilityMask => ResolveRequiredToolCapabilityMask(resourceTemplate);
 
         /// <summary>AUP-derived persistence tombstone key used by PersistentWorldRegistry.</summary>
         public ulong PersistentTombstoneId => _persistentTombstoneId;
@@ -424,6 +427,9 @@ namespace Hecton8.Scavenging
 
         public void ApplyCutDamage(float damage, Vector3 hitPoint)
         {
+            if (!CanApplyToolCapability(ToolCapabilityMasks.Cut))
+                return;
+
             _lastLootOracleToolMask = ScavengingLootOracleConstants.ToolMaskCutter;
             TakeDamage(
                 damage,
@@ -440,6 +446,10 @@ namespace Hecton8.Scavenging
         public void ApplyInteractionSignal(in Hecton8.Interaction.InteractionSignal signal, Vector3 runtimeHitPoint)
         {
             if (_isDepleted || _despawnRequested || signal.PowerDelivered <= 0f)
+                return;
+
+            uint capabilityMask = ToolCapabilityMasks.ResolveCapabilityMask((InteractionEffectType)signal.EffectType);
+            if (capabilityMask != 0u && !CanApplyToolCapability(capabilityMask))
                 return;
 
             _lastLootOracleToolMask = ResolveLootOracleToolMask((InteractionEffectType)signal.EffectType);
@@ -474,6 +484,43 @@ namespace Hecton8.Scavenging
                 Vector3.up,
                 allowIncrementalYield: true,
                 allowImpactDebris: true);
+        }
+
+        private bool CanApplyToolCapability(uint capabilityMask)
+        {
+            if (capabilityMask == 0u)
+                return true;
+
+            return (VulnerabilityMask & capabilityMask) != 0u;
+        }
+
+        private static uint ResolveRequiredToolCapabilityMask(ResourceNodeTemplate template)
+        {
+            return template != null
+                ? ResolveRequiredToolCapabilityMask(template.RequiredToolClass)
+                : uint.MaxValue;
+        }
+
+        private static uint ResolveRequiredToolCapabilityMask(ResourceNodeTemplate.HarvestToolClass toolClass)
+        {
+            switch (toolClass)
+            {
+                case ResourceNodeTemplate.HarvestToolClass.Knife:
+                    return ToolCapabilityMasks.Cut;
+
+                case ResourceNodeTemplate.HarvestToolClass.Drill:
+                    return ToolCapabilityMasks.Drill;
+
+                case ResourceNodeTemplate.HarvestToolClass.Laser:
+                    return ToolCapabilityMasks.Laser;
+
+                case ResourceNodeTemplate.HarvestToolClass.Salvage:
+                    return ToolCapabilityMasks.Salvage;
+
+                case ResourceNodeTemplate.HarvestToolClass.Any:
+                default:
+                    return uint.MaxValue;
+            }
         }
 
         private void ActivateRuntimeState()

@@ -103,6 +103,7 @@ def export_route_cards(root: Path) -> int:
     known_packets = baked_packet_ids(root)
     output_rows: list[dict[str, str]] = []
     seen_routes: set[str] = set()
+    packet_owner_by_id: dict[str, str] = {}
     for input_path in input_paths:
         with input_path.open("r", encoding="utf-8", newline="") as handle:
             reader = csv.DictReader(handle)
@@ -126,6 +127,13 @@ def export_route_cards(root: Path) -> int:
                 for packet_id in packets + required:
                     if packet_id not in known_packets:
                         raise ValueError(f"Route card line {line_number}: unknown packet id {packet_id}")
+                for packet_id in packets:
+                    owner = packet_owner_by_id.get(packet_id)
+                    if owner is not None:
+                        raise ValueError(
+                            f"Route card line {line_number}: packet_id {packet_id} already owned by {owner}"
+                        )
+                    packet_owner_by_id[packet_id] = route_card_id
 
                 route_hash = fnv1a32(route_card_id)
                 phase_hash = fnv1a32(phase_id)

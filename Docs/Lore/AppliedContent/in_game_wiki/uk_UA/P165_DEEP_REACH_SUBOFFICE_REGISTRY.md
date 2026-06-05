@@ -10,21 +10,21 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
 # Deep Reach Suboffice Registry
 
-The suboffice registry gives writers granular corporate surfaces without inventing new masterminds.
+The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.
 
 ## Scanner
 
-The shell chain needs small offices for mission text and terminal stamps.
+Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.
 
 ## Terminal
 
-SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Review Gate, Asset Silence Board, and Return Action Queue are valid lower-level Deep Reach surfaces.
+SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.
 
 ## Audio
 

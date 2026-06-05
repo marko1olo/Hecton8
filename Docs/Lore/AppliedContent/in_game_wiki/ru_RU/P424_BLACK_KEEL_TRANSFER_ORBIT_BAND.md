@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Полоса Black Keel
+# Black Keel Transfer Band
 
-Орбита carrier объясняет, почему contact, payload pickup и human extraction - разные задачи.
+The carrier's orbit explains why contact, payload pickup and human extraction are different problems.
 
 ## Scanner
 
-Полоса носителя: Black Keel высоко, не над HECTON-8.
+Carrier band: Black Keel loiters high, not above HECTON-8.
 
 ## Terminal
 
-CARRIER ORBIT. Высокая линия; масса спуска урезана и зависит от погоды.
+CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.
 
 ## Audio
 
-Он не висит над тобой. Он ждет там, где страховка позволяет ждать.
+It is not parked above you. It is waiting where insurance allows it to wait.
 
 ## Field Note
 
-Для ship page, escape route UI и объяснения partial exit.
+Carrier orbit record: Black Keel can receive payloads before it can retrieve people; that gap drives partial-exit logic.
 
 <!-- In-Game Wiki; generated from P424_BLACK_KEEL_TRANSFER_ORBIT_BAND/ru_RU. -->

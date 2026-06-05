@@ -1,0 +1,80 @@
+# Asset Owner 12 - Flora Proxy Material Replacement Packet
+
+Status: `PENDING UNITY READBACK`.
+Evidence boundary: `STATIC_DOC` / `STATIC_SOURCE` / `STATIC_IMAGE_QA` only. No Unity, import, Play Mode, build, profiler, Frame Debugger, prefab mutation, material mutation, scene save, or runtime proof was performed.
+Write scope: execution packet only. Do not mutate `Assets` from this packet.
+
+First-20 route blocker: photic shallows and medium-depth route dressing cannot be promoted while active-world flora/coral/kelp surfaces resolve to `WorldProceduralProxy` material families.
+
+Mandates followed:
+
+- `STRM_Async_Asset_Upload_Texture_Settings.txt`
+- `REND_URP_Graphics_HotPath_Optimization_HLOD.txt`
+- `3DMODEL_FLORA_CORAL.md`
+- `3DMODEL_TEXTURES_MATERIALS.md`
+- `rendering.md`
+- `world.md`
+- `Docs/AssetAudit/README.md`
+
+## Exact Blocker
+
+Static evidence reports four `WorldProceduralProxy` materials serialized in `Assets/_Project/Scenes/02_HECTON_WORLD.unity` and visible-route usage risk:
+
+| Material | Static active-world ref | Static visible-user count | Disposition |
+|---|---:|---:|---|
+| `Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_coral_branching.mat` | 1 | 10 | Replace or prove non-visible before route promotion. |
+| `Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_coral_massive.mat` | 1 | 9 | Replace or prove non-visible before route promotion. |
+| `Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_coral_plate.mat` | 1 | 9 | Replace or prove non-visible before route promotion. |
+| `Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_kelp_patch_dense.mat` | 1 | 16 | Replace or prove non-visible before route promotion. |
+
+Static reachability is not live renderer proof. It is enough to block visual promotion. Proxy/placeholder visible route content is rejected by the asset audit, flora/coral bible, rendering bible, and world bible.
+
+## Replacement Requirements
+
+- Replace route-visible proxy flora/coral/kelp materials with route-owned organic material families under an approved material path, not `WorldProceduralProxy` or `WorldRuntime/ProceduralPlaceholders`.
+- Preserve organic continuity: holdfast/root anchoring, non-floating forms, welded or hidden branch intersections, taper, asymmetry, thickness variation, scars, pores, cavities, and biome-correct pigment or biolum response.
+- Preserve alpha and LOD silhouette: dense flora uses alpha clip plus dithered fade/crossfade, not alpha blend. LOD2/HLOD keeps anchor mass, silhouette, vertex color semantics, and non-cardboard biological read.
+- Preserve material identity: albedo, normal/detail, and MRAO/mask roles must be explicit. MRAO channels cannot be empty, duplicated by accident, or wrong color space.
+- Use MRAO/normal/detail roles as authored material data, not runtime-filled color noise. Albedo is sRGB. Normal/MRAO/masks are linear. World textures use mips and compression proof.
+- Use few meaningful material slots: primary tissue, secondary wear/fracture/mineral, organ/trim/emissive only when needed. Material-per-part generation is rejected.
+- Route use of primitive/proxy content is rejected on all tiers. Low-tier fallback may reduce density and residency, not replace final art with proxy materials.
+
+## Safe Execution Route
+
+1. Run Unity readback first after the process gate is clean. Confirm exact renderer/object names using the four proxy materials, camera-visible route slices, material slots, shaders, and texture bindings. Do not save scenes.
+2. Author or select replacement material families through `TEXTURE_MATERIAL_FAMILY_ROUTE_MATRIX_20260605.csv` and import-role rows for `flora_coral` (`albedo`, `normal_detail_mask`). Source-only packs stay source-only until cleaned PBR roles exist.
+3. Prove material assets before binding: import settings, texture roles, MRAO channel meaning, normal/detail response, SRP Batcher compatibility, shader variant budget, and streaming mip behavior.
+4. Mutate prefabs/scenes only through Unity-safe workflow after readback and material gates clear. No raw YAML patching. No blind find/replace.
+5. Do not create per-object material clones. Do not use `renderer.material`. Do not add runtime wrappers. Do not use MPB on standard geometry; preserve SRP Batcher through shared material assets, CBUFFER material data, vertex colors, atlas rects, or approved instancing data.
+6. If active placement uses candidate baked flora prefabs, verify prefab asset and scene instance values separately. Do not Apply All/Revert All on unrelated objects.
+
+## Acceptance Gates
+
+All gates are pending Unity evidence:
+
+- Unity readback: exact renderer list, object names, scene path, material slot index, shader, texture slots, null/stale refs, and active camera-visible route status.
+- Importer/material proof: albedo/normal/MRAO/detail role report, color space, compression, mips, max size, streaming settings, SRP Batcher compatibility, and no runtime material clones.
+- Screenshot/contact-sheet proof: bright photic-shallow and medium-depth route captures showing final organic material response. Darkness, fog, bloom, or post cannot hide weak assets.
+- LOD/collider/material-slot proof: LODGroup presence, dither/crossfade behavior, triangle/transition data, preserved anchor silhouette, no complex MeshCollider misuse, and slot count justification.
+- Memory/SetPass proof: Stats and Frame Debugger for SetPass, batches, overdraw risk, texture memory/residency, and active shader variants.
+- Addressables/residency proof before broad placement: group/key/load/release ownership and upload spike behavior.
+
+No acceptance sentence is allowed until the gates above have fresh Unity proof.
+
+## Regression Model
+
+- CPU: material replacement must not add runtime polling, scene searches, renderer scans, material cloning, or per-frame upload work. Any new render feature over `0.1 ms` requires profiler proof and load-shed.
+- GC: no runtime code is required for this replacement. If runtime code changes later, hot path target is `0 B/frame` with GCMonitor proof.
+- VRAM: proxy removal can increase texture residency. Replacement families must prove compression, mip chain, streaming budget, and compact 2GB VRAM safety before broad route placement.
+- SetPass: additional material families can increase SetPass and variants. Shared route-owned materials, atlas families, texture arrays, and SRP Batcher compatibility are mandatory.
+- Correctness: material changes must not change harvest identity, root anchor identity, collision proxy ownership, save identity, DTO layout, or gameplay truth.
+- Visual floor: final route view must read as grown flora/coral/kelp, not primitive proxy meshes with prettier colors. Surface/photic/medium-depth visuals must stay bright, readable, detailed, and above the Subnautica-level floor.
+
+## Continuous GlobalQualityWeight Consequences
+
+- Low: keep final organic silhouettes, anchors, baked AO, dithered LOD, route readability, and compressed route-owned textures. Reduce density, texture residency, and far LOD distance smoothly; do not use proxy materials as fallback.
+- Middle: use final PBR material stacks with stable dither transitions, conservative material slot counts, and proven importer settings. Increase density only after readback and screenshot proof.
+- High: extend LOD residency, detail normal strength, wet tissue response, emissive organ masks, and near-field dressing after SetPass/VRAM proof.
+- Ultra: spend spare budget on richer pores, scars, branching, layered material response, longer HLOD residency, and denser photic dressing. Gameplay truth, prefab identity, material ownership route, and save identity stay unchanged.
+
+Final status: `PENDING UNITY READBACK`.

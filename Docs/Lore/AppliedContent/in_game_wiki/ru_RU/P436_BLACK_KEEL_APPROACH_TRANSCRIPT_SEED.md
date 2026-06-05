@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Seed транскрипта подхода Black Keel
+# Транскрипт подхода Black Keel
 
-Approach transcript задает первый тон: professional salvage, debt pressure и physics раньше conspiracy.
+The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.
 
 ## Scanner
 
-Audio seed: first contact Black Keel - clipped, contractual и delayed by orbital geometry.
+Восстановленное аудио ретранслятора подтверждает оплаченный спуск, условный возврат, задержку четыре секунды и обязательный пакет доказательств.
 
 ## Terminal
 
-TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag и evidence bounty teaser.
+РАСШИФРОВКА РЕТРАНСЛЯТОРА BK-APP-01: задержка 4.0 с; потеря пакетов 18%; спуск выставлен к оплате; возврат зависит от окна приемника, здоровья, массы и доказательства.
 
 ## Audio
 
-Black Keel claimant: telemetry received. Не трать кислород на спор с орбитой.
+Тендер Black Keel для заявителя. Задержка четыре секунды. Спуск выставлен к оплате. Возврат не гарантирован. Передайте здоровье, массу, доказательство.
 
 ## Field Note
 
-Для VO script, caption article и trailer-safe excerpt первого часа.
+Буфер тендера по требованию, срезанный штормовым ретранслятором. Голос дает факты маршрута и не обещает спасение.
 
 <!-- In-Game Wiki; generated from P436_BLACK_KEEL_APPROACH_TRANSCRIPT_SEED/ru_RU. -->

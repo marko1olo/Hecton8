@@ -85,7 +85,7 @@ namespace Hecton8.VFX
         {
             return new VfxConfigurationDTO
             {
-                ParticleCount = math.max(64, particleCount),
+                ParticleCount = math.clamp(particleCount, 64, VfxComputeParticleBudgetCatalog.OverkillQualityMarineSnowCount),
                 CurlNoiseStrength = 0.15f,
                 WakeInfluence = 1f,
                 GravitySinkingSpeed = 1f,
@@ -166,7 +166,10 @@ namespace Hecton8.VFX
             switch (keyHash)
             {
                 case ParticleCountHash:
-                    tuning.ParticleCount = math.clamp((int)(value + 0.5f), 64, 100000);
+                    tuning.ParticleCount = math.clamp(
+                        (int)(value + 0.5f),
+                        64,
+                        VfxComputeParticleBudgetCatalog.OverkillQualityMarineSnowCount);
                     return true;
                 case CurlNoiseStrengthHash:
                     tuning.CurlNoiseStrength = math.clamp(value, 0f, 4f);

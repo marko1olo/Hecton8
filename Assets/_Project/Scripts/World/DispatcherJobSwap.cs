@@ -10,6 +10,22 @@ namespace Hecton8.World
     public static class DispatcherJobSwap
     {
         /// <summary>
+        /// Marks the start of the dispatcher-owned pre-simulation swap window.
+        /// </summary>
+        public static void BeginPreSimulationSwapWindow()
+        {
+            DispatcherJobFence.BeginPreSimulationSwapWindow();
+        }
+
+        /// <summary>
+        /// Marks the end of the dispatcher-owned pre-simulation swap window.
+        /// </summary>
+        public static void EndPreSimulationSwapWindow()
+        {
+            DispatcherJobFence.EndPreSimulationSwapWindow();
+        }
+
+        /// <summary>
         /// Marks the start of the dispatcher-owned late-frame swap window.
         /// </summary>
         public static void BeginLateFrameSwapWindow()

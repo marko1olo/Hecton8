@@ -28,18 +28,18 @@
       "localized": {
         "en_US": {
           "title": "Photic Shelf Life",
-          "scanner": "Shallow shelf biology is bright, loud and mostly unaltered. The moon is not dead at the surface.",
-          "field_note": "Beauty is the control sample.",
-          "terminal": "Shelf survey: living mats, transparent grazers, pressureweed and route algae remain outside Atlas repair dominance.",
-          "audio": "The first living water is not mercy. It is baseline.",
-          "in_game_wiki": "The photic shelf is the contrast layer. It proves that HECTON-8 still has a native ocean ecology before the player reaches the cable reefs and repair scars below.",
-          "external_site": "Photic Shelf Life defines the bright opening biome: not a safe aquarium, but the living baseline that makes deeper Atlas repair corruption legible."
+          "scanner": "Native shallow ecology confirmed: living mats, glass grazers, pressureweed and route algae. Bright water is readable, not harmless.",
+          "field_note": "Beauty is useful only if you remember what it looked like before the machinery grew over it.",
+          "terminal": "SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
+          "audio": "The first living water is not mercy. It is a baseline.",
+          "in_game_wiki": "After the first shallow-biome scan, the photic shelf gives the PDA a baseline. Living mats oxygenate pockets, transparent grazers clear route algae, and pressureweed marks water that still behaves like native HECTON-8 rather than Atlas repair tissue. It is bright enough to navigate, but not safe enough to ignore weather, predators or a bad return line.",
+          "external_site": "Photic shelf life is the bright opening baseline: living mats, transparent grazers and route algae before deeper cable reefs and Atlas repair tissue complicate the water."
         },
         "ru_RU": {
           "title": "Жизнь светового шельфа",
           "scanner": "Биология мелкого шельфа яркая, шумная и почти не переделана. На поверхности луна не мертва.",
           "field_note": "Красота здесь контрольный образец.",
-          "terminal": "Обзор шельфа: живые маты, прозрачные пастбищники, pressureweed и маршрутные водоросли пока вне доминирования ремонта Atlas.",
+          "terminal": "Draft RU localization pending native pass. SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
           "audio": "Первая живая вода не милость. Это базовая линия.",
           "in_game_wiki": "Световой шельф нужен как контраст. Он доказывает, что у HECTON-8 еще есть родная океанская экология до кабельных рифов и ремонтных шрамов ниже.",
           "external_site": "Жизнь светового шельфа задает яркий стартовый биом: не безопасный аквариум, а живая база, на фоне которой читается глубокая порча Atlas."
@@ -48,7 +48,7 @@
           "title": "有光棚の生命",
           "scanner": "浅い棚の生物は明るく騒がしく、ほぼ未改造だ。表層の月は死んでいない。",
           "field_note": "美しさは対照標本だ。",
-          "terminal": "棚調査: 生体マット、透明な摂食種、pressureweed、経路藻はまだAtlas修復支配の外にある。",
+          "terminal": "Draft JP localization pending native pass. SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
           "audio": "最初の生きた水は慈悲ではない。基準線だ。",
           "in_game_wiki": "有光棚は対照層だ。下層のケーブル礁や修復痕に入る前に、HECTON-8本来の海洋生態が残ることを示す。",
           "external_site": "有光棚は明るい序盤バイオームを定義する。安全な水族館ではなく、深部のAtlas汚染を読ませる生きた基準だ。"
@@ -57,7 +57,7 @@
           "title": "透光陆架生命",
           "scanner": "浅层陆架生物明亮、喧闹，基本未被改造。月球表层并未死亡。",
           "field_note": "美丽是对照样本。",
-          "terminal": "陆架调查：活体菌席、透明食草者、pressureweed和路径藻仍在Atlas修复支配之外。",
+          "terminal": "Draft CN localization pending native pass. SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
           "audio": "第一片活水不是仁慈。它是基线。",
           "in_game_wiki": "透光陆架是对照层。它证明玩家进入下方电缆礁和修复疤痕前，HECTON-8仍有原生海洋生态。",
           "external_site": "透光陆架定义明亮开场生物群落：不是安全水族箱，而是让深层Atlas修复污染可读的生命基线。"
@@ -66,7 +66,7 @@
           "title": "Vie du plateau photique",
           "scanner": "La biologie du plateau peu profond est vive, sonore et peu altérée. La lune n'est pas morte en surface.",
           "field_note": "La beauté sert d'échantillon témoin.",
-          "terminal": "Relevé du plateau: tapis vivants, brouteurs transparents, pressureweed et algues de route hors domination de réparation Atlas.",
+          "terminal": "Draft FR localization pending native pass. SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
           "audio": "La première eau vivante n'est pas une grâce. C'est la ligne de base.",
           "in_game_wiki": "Le plateau photique est la couche de contraste. Il prouve qu'HECTON-8 garde une écologie native avant les récifs de câbles et les cicatrices de réparation.",
           "external_site": "Cette entrée définit le biome lumineux d'ouverture: pas un aquarium sûr, mais la base vivante qui rend la corruption Atlas lisible."
@@ -75,7 +75,7 @@
           "title": "Vida de la plataforma fótica",
           "scanner": "La biología somera es brillante, ruidosa y casi intacta. La luna no está muerta en la superficie.",
           "field_note": "La belleza es la muestra de control.",
-          "terminal": "Sondeo de plataforma: tapetes vivos, pastadores transparentes, pressureweed y algas de ruta fuera del dominio de reparación Atlas.",
+          "terminal": "Draft ES localization pending native pass. SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
           "audio": "La primera agua viva no es misericordia. Es línea base.",
           "in_game_wiki": "La plataforma fótica es la capa de contraste. Demuestra una ecología nativa antes de los arrecifes de cable y las cicatrices de reparación.",
           "external_site": "Define el bioma inicial luminoso: no un acuario seguro, sino la base viva que vuelve legible la corrupción profunda de Atlas."
@@ -84,7 +84,7 @@
           "title": "Leben des Lichtschelfs",
           "scanner": "Die Biologie des flachen Schelfs ist hell, laut und kaum verändert. An der Oberfläche ist der Mond nicht tot.",
           "field_note": "Schönheit ist die Kontrollprobe.",
-          "terminal": "Schelfsurvey: lebende Matten, transparente Weider, pressureweed und Routenalgen liegen noch außerhalb der Atlas-Reparaturdominanz.",
+          "terminal": "Draft DE localization pending native pass. SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
           "audio": "Das erste lebende Wasser ist keine Gnade. Es ist die Basislinie.",
           "in_game_wiki": "Der Lichtschelf ist die Kontrastschicht. Er beweist native Ozeanökologie vor Kabelriffen und Reparaturnarben.",
           "external_site": "Der Lichtschelf ist das helle Anfangsbiom: kein sicheres Aquarium, sondern die lebende Basis für lesbare Atlas-Korruption."
@@ -93,7 +93,7 @@
           "title": "Życie półki świetlnej",
           "scanner": "Płytka półka jest jasna, głośna i prawie nietknięta. Księżyc nie jest martwy przy powierzchni.",
           "field_note": "Piękno jest próbką kontrolną.",
-          "terminal": "Przegląd półki: żywe maty, przezroczyści spasacze, pressureweed i glony trasy poza dominacją napraw Atlas.",
+          "terminal": "Draft PL localization pending native pass. SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
           "audio": "Pierwsza żywa woda nie jest łaską. To linia bazowa.",
           "in_game_wiki": "Półka świetlna jest warstwą kontrastu. Dowodzi, że HECTON-8 ma rodzimą ekologię przed rafami kabli i bliznami napraw.",
           "external_site": "To jasny biom otwarcia: nie bezpieczne akwarium, lecz żywa baza dla czytelnej korupcji Atlas."
@@ -102,7 +102,7 @@
           "title": "Життя світлового шельфу",
           "scanner": "Мілкий шельф яскравий, шумний і майже не змінений. Біля поверхні місяць не мертвий.",
           "field_note": "Краса тут контрольний зразок.",
-          "terminal": "Огляд шельфу: живі мати, прозорі пасовищники, pressureweed і маршрутні водорості ще поза домінуванням ремонту Atlas.",
+          "terminal": "Draft UA localization pending native pass. SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
           "audio": "Перша жива вода не милість. Це базова лінія.",
           "in_game_wiki": "Світловий шельф є шаром контрасту. Він доводить, що HECTON-8 має рідну океанську екологію до кабельних рифів і ремонтних шрамів нижче.",
           "external_site": "Світловий шельф задає яскравий початок: не безпечний акваріум, а жива база для читання глибокої порчі Atlas."
@@ -111,7 +111,7 @@
           "title": "حياة الرف الضوئي",
           "scanner": "أحياء الرف الضحل ساطعة وصاخبة وغير معدلة غالبا. القمر ليس ميتا عند السطح.",
           "field_note": "الجمال هنا عينة ضبط.",
-          "terminal": "مسح الرف: حصائر حية، رعاة شفافة، pressureweed وطحالب طريق خارج سيطرة إصلاح Atlas.",
+          "terminal": "Draft AR localization pending native pass. SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
           "audio": "أول ماء حي ليس رحمة. إنه خط أساس.",
           "in_game_wiki": "الرف الضوئي هو طبقة التباين. يثبت أن HECTON-8 يحتفظ ببيئة محيطية أصلية قبل شعاب الكابلات وندوب الإصلاح.",
           "external_site": "حياة الرف الضوئي تعرف بيوم الافتتاح المشرق: ليس حوضا آمنا بل خط أساس حي يجعل فساد Atlas العميق مقروءا."
@@ -120,7 +120,7 @@
           "title": "Kehidupan Paparan Fotik",
           "scanner": "Biologi paparan dangkal terang, bising dan hampir belum diubah. Bulan ini belum mati di permukaan.",
           "field_note": "Keindahan adalah sampel kontrol.",
-          "terminal": "Survei paparan: mat hidup, pemakan transparan, pressureweed dan alga rute masih di luar dominasi perbaikan Atlas.",
+          "terminal": "Draft ID localization pending native pass. SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
           "audio": "Air hidup pertama bukan belas kasihan. Itu garis dasar.",
           "in_game_wiki": "Paparan fotik adalah lapisan kontras. Ia membuktikan HECTON-8 masih punya ekologi laut asli sebelum karang kabel dan luka perbaikan.",
           "external_site": "Bioma awal ini cerah bukan akuarium aman, melainkan baseline hidup agar korupsi Atlas di bawah terbaca."
@@ -129,7 +129,7 @@
           "title": "유광 선반의 생명",
           "scanner": "얕은 선반 생태는 밝고 시끄럽고 거의 변형되지 않았다. 표면의 달은 죽지 않았다.",
           "field_note": "아름다움은 대조 표본이다.",
-          "terminal": "선반 조사: 살아 있는 매트, 투명 초식종, pressureweed, 경로 조류는 아직 Atlas 수리 지배 밖이다.",
+          "terminal": "Draft KO localization pending native pass. SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
           "audio": "첫 살아 있는 물은 자비가 아니다. 기준선이다.",
           "in_game_wiki": "유광 선반은 대비층이다. 아래 케이블 암초와 수리 흉터 전의 HECTON-8 원생 해양 생태를 증명한다.",
           "external_site": "밝은 시작 생물군계는 안전한 수족관이 아니라 깊은 Atlas 오염을 읽게 하는 생명 기준선이다."
@@ -138,7 +138,7 @@
           "title": "חיי המדף המואר",
           "scanner": "הביולוגיה הרדודה בהירה, רועשת וכמעט לא שונתה. הירח אינו מת על פני השטח.",
           "field_note": "היופי הוא דגימת הבקרה.",
-          "terminal": "סקר מדף: מרבדים חיים, רועים שקופים, pressureweed ואצות נתיב עדיין מחוץ לשליטת תיקון Atlas.",
+          "terminal": "Draft HE localization pending native pass. SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
           "audio": "המים החיים הראשונים אינם חסד. הם קו בסיס.",
           "in_game_wiki": "המדף המואר הוא שכבת הניגוד. הוא מוכיח של-HECTON-8 יש אקולוגיית אוקיינוס מקורית לפני שוניות הכבלים וצלקות התיקון.",
           "external_site": "חיי המדף המואר מגדירים פתיחה בהירה: לא אקווריום בטוח, אלא בסיס חי לקריאת השחתת Atlas בעומק."
@@ -147,7 +147,7 @@
           "title": "Vida da plataforma fótica",
           "scanner": "A biologia rasa é brilhante, sonora e quase intacta. A lua não está morta na superfície.",
           "field_note": "A beleza é a amostra de controle.",
-          "terminal": "Levantamento da plataforma: tapetes vivos, pastadores transparentes, pressureweed e algas de rota fora da dominância de reparo Atlas.",
+          "terminal": "Draft PT localization pending native pass. SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
           "audio": "A primeira água viva não é misericórdia. É linha de base.",
           "in_game_wiki": "A plataforma fótica é a camada de contraste. Ela prova ecologia nativa antes dos recifes de cabo e cicatrizes de reparo.",
           "external_site": "Define o bioma claro inicial: não um aquário seguro, mas a base viva que torna legível a corrupção profunda de Atlas."
@@ -156,7 +156,7 @@
           "title": "Leven op het lichtplateau",
           "scanner": "Het ondiepe plateau is helder, luid en nauwelijks veranderd. De maan is aan de oppervlakte niet dood.",
           "field_note": "Schoonheid is het controlemonster.",
-          "terminal": "Plateausurvey: levende matten, transparante grazers, pressureweed en routealgen staan nog buiten Atlas-reparatiedominantie.",
+          "terminal": "Draft NL localization pending native pass. SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
           "audio": "Het eerste levende water is geen genade. Het is de basislijn.",
           "in_game_wiki": "Het lichtplateau is de contrastlaag. Het bewijst native oceaanecologie vóór kabelriffen en reparatielittekens.",
           "external_site": "Dit heldere openingsbioom is geen veilig aquarium, maar de levende basis die diepe Atlas-corruptie leesbaar maakt."
@@ -183,12 +183,12 @@
       "localized": {
         "en_US": {
           "title": "Pressure Ladder",
-          "scanner": "Depth is divided by pressure ratings, not level names. Each band needs a different engineering answer.",
-          "field_note": "The ocean gates progress with math.",
-          "terminal": "Depth ladder: shelf equipment, canyon reinforcement, brine insulation, abyss hull discipline, factory-zone signal hardening.",
+          "scanner": "Depth banding detected: photic shelf, industrial shelf, brine canyon, abyssal machine field, Atlas basin. Gear rating gates the route.",
+          "field_note": "The ocean gates progress with pressure, not permission.",
+          "terminal": "DEPTH LADDER: 0-250 m shelf; 250-1200 m industrial/cable shelf; 1200-2800 m brine canyon; 2800-4300 m abyssal machine field; 4300-5600 m Atlas basin.",
           "audio": "You do not descend because you are brave. You descend because the next seal holds.",
-          "in_game_wiki": "The pressure ladder is the practical campaign spine. It explains why tens of hours pass before Atlas-6: not by arbitrary locks, but by oxygen, hull, power, insulation, route knowledge and orbital timing.",
-          "external_site": "Pressure Ladder converts HECTON-8 depth progression into hard-sci-fi survival structure for long-form exploration."
+          "in_game_wiki": "The pressure ladder is a survival map. The 0-250 m shelf tolerates damaged gear for short work. The 250-1200 m industrial shelf needs better seals and power. Brine canyons bend buoyancy and sonar. Abyssal machine fields punish weak hull discipline. The Atlas basin requires signal hardening and pressure-rated return planning. Descend when the next seal, battery, oxygen loop and return ping all agree.",
+          "external_site": "The pressure ladder turns HECTON-8's depth bands into survival work: seals, power, oxygen, sonar and return timing before each deeper route."
         },
         "ru_RU": {
           "title": "Лестница давления",
@@ -338,12 +338,12 @@
       "localized": {
         "en_US": {
           "title": "Cable Reef Symbiosis",
-          "scanner": "Flora is growing on power trunks and signal lines. The reef is using the colony's wiring as skeleton.",
-          "field_note": "The first merge is useful before it is horrible.",
-          "terminal": "Maintenance note: cable-root mats reduce abrasion and preserve signal continuity, but attract drones and grazing fauna.",
+          "scanner": "Flora is bonded to power trunks and signal lines. Some growth protects the cable; some hides failed insulation.",
+          "field_note": "If it is growing on a cable, prove it is killing the line before you strip it.",
+          "terminal": "MAINTENANCE NOTE: cable-root mats reduce abrasion and preserve signal continuity. Drone and grazer traffic increases near live trunks.",
           "audio": "A living reef learned the shape of a service corridor.",
-          "in_game_wiki": "Cable reefs are the middle-depth warning. They are not yet the bottom factory, but they show how ocean life can treat industry as bone, shade, current break and nutrient line.",
-          "external_site": "Cable Reef Symbiosis turns abandoned infrastructure into a readable ecological and industrial hybrid."
+          "in_game_wiki": "Cable reefs mark the first place where life and infrastructure help each other enough to fool a salvage cutter. Mats reduce abrasion on power trunks, filter bodies calm current around service corridors, and grazing fauna keep some lines clean. The same growth can hide broken insulation or draw Atlas maintenance drones. Scan before cutting; a living sleeve may be the only thing keeping a relay line dry.",
+          "external_site": "Cable reef symbiosis makes abandoned infrastructure useful and dangerous at the same time: living sleeves can protect signal lines or hide failure."
         },
         "ru_RU": {
           "title": "Симбиоз кабельного рифа",

@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Longform brief главной страницы сайта
+# HECTON-8: Pressure Claim
 
-In-game start-here copy может reuse same spine после P-63 unlock, но должно оставаться evidence-first.
+Recovered P-63 route notes tie the opening contract to Black Keel's salvage window. The shelf is bright enough to navigate, but the useful facts are mechanical: bathydrop damage, pressure repair, scanner returns, and official wording that does not match the marks on the hardware. Keep the record spoiler-safe until deeper evidence is recovered.
 
 ## Scanner
 
-Public brief: home article opens with contract, damaged bathydrop, pressure repair и first contradiction.
+Marauder intake record. Initial route links Black Keel, a damaged bathydrop, and P-63 pressure repairs. Public accident record is incomplete.
 
 ## Terminal
 
-SITE HOME: показать player verb в первом экране - repair, scan, descend, return with evidence or cargo.
+PUBLIC ARCHIVE NODE // H8 CLAIM SUMMARY. Contract window: Aegir relay open. Required actions: repair pressure seals, scan the shelf, recover cargo, return with evidence.
 
 ## Audio
 
-Public copy note: pressure before myth.
+Black Keel relay excerpt: "Contract window is short. Fix the capsule, read the pressure marks, and bring back proof with the cargo."
 
 ## Field Note
 
-Assemble for website: first viewport = pressure machinery and player action; second = Aegir/Black Keel constraint; third = Deep Reach lie; fourth = Atlas repair ecology teaser; no release/platform claims.
+Marauder note: daylight on the shelf does not make it safe. Count air, fix seals before chasing cargo, and distrust any record that cannot match the dents.
 
 <!-- In-Game Wiki; generated from P456_SITE_HOME_LONGFORM_BRIEF/ru_RU. -->

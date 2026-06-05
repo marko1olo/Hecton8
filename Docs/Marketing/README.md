@@ -3,6 +3,8 @@
 ## Authority Boundary
 
 Static documentation only. Current source, active architecture contracts, fresh proof artifacts, and official platform rules override dated claims in this file. No runtime, profiler, memory, render, platform, public-page, or ship-readiness proof is implied by this file alone.
+Public voice routes to root `textes.md`. Any claim about visual quality, performance, demo state, Steam state, wishlist state, platform support, publication, or release readiness routes through `quality.md`, `release.md`, and `platform.md` with current proof artifacts.
+No public send, ad approval, demo claim, Steam claim, platform claim, wishlist claim, visual-quality claim, or release-readiness claim exists from this folder without current proof artifacts and the matching permission gate.
 
 Status: working strategy / pre-screenshot / single-player-first
 Owner lane: Marketing / competitive intelligence / marketing preparation
@@ -152,6 +154,7 @@ Competitor positioning note, source-check before public use: the active SN2 rout
 
 HECTON-8 must own:
 
+- bright alien surface/shallow spectacle when the capture is above water or in photic routes;
 - pressure;
 - machinery;
 - corrosion;
@@ -162,9 +165,11 @@ HECTON-8 must own:
 - Seed Ship anomaly as systemic threat;
 - honest performance receipts when they exist.
 
+Marketing visual lock: "black water" is a depth/pressure identity, not a license to make the surface, sky, Aegir, coastline, ocean skin, or photic shallows dark, muddy, or ugly. First public visual packets should include beauty and readability when the build can prove them. Surface/shallow assets must meet the same Subnautica-level-or-better floor as `TASTE.md`.
+
 One-sentence working pitch:
 
-> HECTON-8 is a single-player-first NASA-punk / deep-sea noir survival game about pressure, salvage, machinery, and the cost of staying alive below the light.
+> HECTON-8 is a single-player-first NASA-punk / deep-sea noir survival game about a beautiful alien ocean, pressure, salvage, machinery, and the cost of staying alive when the route drops below the light.
 
 ## First Asset Gate
 

@@ -47,7 +47,7 @@ Purpose: stable execution order for moving HECTON-8 toward a measurable runtime 
    - `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` must pass import, bake, boot, checksum, and player validation before any static-data readiness claim.
 
 5. Prove save and paging.
-   - Use source contracts in `DATA_MONOLITH_H8BIN_SPEC.md`, `DATA_MONOLITH_RUNTIME_INTEGRATION.md`, and `SAVE_PAGING_PROTOCOL.md`.
+   - Use source contracts in `Docs/ARCHITECTURE/DATA_MONOLITH_H8BIN_SPEC.md`, `Docs/ARCHITECTURE/DATA_MONOLITH_RUNTIME_INTEGRATION.md`, and `Docs/ARCHITECTURE/SAVE_PAGING_PROTOCOL.md`.
    - Required proof: write/read, migration, checksum failure, locked-file behavior, and player path.
 
 6. Stabilize world runtime.

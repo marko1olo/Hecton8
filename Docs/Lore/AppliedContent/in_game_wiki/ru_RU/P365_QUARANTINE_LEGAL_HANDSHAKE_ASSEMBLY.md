@@ -10,8 +10,8 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
 # Сборка карантинно-правового handshake
@@ -32,6 +32,6 @@ RECOVERY HANDSHAKE: receiver key required. Keelmark принимает mass and 
 
 ## Field Note
 
-Использовать для exit UI, late terminal proof и ending payload bridge.
+Exit readiness is mechanical, legal, and evidentiary at once; the chosen receiver defines what recovery means.
 
 <!-- In-Game Wiki; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/ru_RU. -->

@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Джуно Кейд/связь
+# Juno Kade/Relay
 
-Досье Джуно Кейда связывает закон HECTON-8 с релейными объектами. Печать, лоток и лестница пакетов показывают, как свидетельства пережили задержку связи.
+Juno Kade's dossier ties HECTON-8 law to physical relay objects. The seal, tray and packet ladder show how testimony survived when messages took too long to rescue anyone.
 
 ## Scanner
 
-Досье: Джуно Кейд. Печать, лоток и лента свидетелей совпадают.
+Dossier: Juno Kade. Seal, packet tray and witness tape agree.
 
 ## Terminal
 
-ДЖУНО КЕЙД/СВЯЗЬ. Лотки штамповали после окон связи; цепь осталась уликой.
+JUNO KADE/RELAY. Stamped witness trays after each comm window; custody stayed evidence.
 
 ## Audio
 
-Кейд заверял факты, которые придут поздно и все равно должны иметь вес.
+Kade certified facts that would arrive late and still have to matter.
 
 ## Field Note
 
-Использовать на объектах релейного двора и в статьях о законе расстояния.
+Relay-yard objects and law-of-distance records should stay paired: seal, tray, packet ladder, and the late fact that still matters.
 
 <!-- In-Game Wiki; generated from P402_JUNO_KADE_RELAY_NOTARY_DOSSIER/ru_RU. -->

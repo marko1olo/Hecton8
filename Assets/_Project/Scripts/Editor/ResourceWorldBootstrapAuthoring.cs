@@ -17,6 +17,11 @@ namespace Hecton8.EditorTools
         [MenuItem("Hecton/Authoring/Rebuild Starter Resource Sources", priority = 172)]
         public static void RebuildStarterResourceSources()
         {
+            if (!WorldProceduralFinalPrefabQualityGate.AllowLegacyPrimitiveProductionAuthoring(
+                    nameof(ResourceWorldBootstrapAuthoring),
+                    PickupPrefabFolder))
+                return;
+
             EnsureFolder("Assets/_Project/Art");
             EnsureFolder("Assets/_Project/Art/Materials");
             EnsureFolder(MaterialFolder);

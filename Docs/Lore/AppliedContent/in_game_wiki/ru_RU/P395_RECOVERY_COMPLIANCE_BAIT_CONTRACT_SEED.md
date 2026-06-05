@@ -10,17 +10,17 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Replay seed: Recovery Compliance bait
+# Recovery Compliance Bait Contract Seed
 
-Recovery Compliance bait runs показывают Deep Reach с начала, не превращая их в постоянного radio villain.
+Recovery Compliance bait runs make Deep Reach present from the beginning without turning them into a constant radio villain.
 
 ## Scanner
 
-Contract seed: Recovery Compliance bait. Высокий payout, высокая receiver contamination.
+Contract seed: Recovery Compliance bait. High payout, high receiver contamination.
 
 ## Terminal
 
@@ -28,10 +28,10 @@ SEED BAIT: Recovery Compliance receiver implied, coordinate demand hidden, payou
 
 ## Audio
 
-Некоторые контракты не предложения. Это конверты, где твое имя уже стоит в обратном адресе.
+Some contracts are not offers. They are envelopes with your name already on the return line.
 
 ## Field Note
 
-Для high-spoiler replay contract и ending-pressure setup.
+Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap.
 
 <!-- In-Game Wiki; generated from P395_RECOVERY_COMPLIANCE_BAIT_CONTRACT_SEED/ru_RU. -->

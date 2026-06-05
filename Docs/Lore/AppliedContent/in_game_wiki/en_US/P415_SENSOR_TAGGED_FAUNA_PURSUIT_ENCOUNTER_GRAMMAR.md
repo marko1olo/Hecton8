@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -20,7 +20,7 @@ Sensor-tagged fauna make Atlas' repair logic visible. The animal remains local l
 
 ## Scanner
 
-Encounter grammar: sensor-tagged fauna. Noisy tags turn pursuit into repair-network feedback.
+Sensor-tagged fauna. Old biometal tag emits repair-network echo; avoid leading it toward shelter.
 
 ## Terminal
 
@@ -32,6 +32,6 @@ It follows because the network thinks following is a repair.
 
 ## Field Note
 
-Use near abyssal machine fields and final repair-network encounters.
+The tag is not steering the animal cleanly. It is making your route easier to hear.
 
 <!-- In-Game Wiki; generated from P415_SENSOR_TAGGED_FAUNA_PURSUIT_ENCOUNTER_GRAMMAR/en_US. -->

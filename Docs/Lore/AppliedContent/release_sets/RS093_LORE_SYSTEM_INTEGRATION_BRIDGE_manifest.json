@@ -1,0 +1,26 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS093_LORE_SYSTEM_INTEGRATION_BRIDGE",
+  "status": "canonical_importer_source_wired_pending_native_localization_route_card_export_and_static_data_bake",
+  "packets": [
+    "P461_PACKET_CUSTODY_BRIDGE",
+    "P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE",
+    "P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE",
+    "P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS093_LORE_SYSTEM_INTEGRATION_BRIDGE.packets.json"
+  ],
+  "canonical_importer_sources": [
+    "Docs/Lore/AppliedContent/packets/RS093_LORE_SYSTEM_INTEGRATION_BRIDGE.packets.json"
+  ],
+  "authoring_packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P461_PACKET_CUSTODY_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE.production.md"
+  ],
+  "canonical_importer_ready": true,
+  "runtime_ready": false,
+  "evidence_class": "STATIC_SOURCE"
+}

@@ -1,0 +1,143 @@
+ID: 1908
+ROLE: FLORA_CORAL_KELP_SOURCE_ATLAS_PREP
+LANE: Flora, coral, kelp, and source atlas preparation
+UNITY OWNER: NO
+BUILD OWNER: NO
+SCENE OWNER: NO
+
+MISSION
+Prepare a static source atlas and proof naming packet for high-priority flora, coral, kelp, and related shallow-biome material families. This agent does not create Unity meshes, prefabs, materials, import settings, scenes, or runtime placement. It prepares extraction-free source requirements, atlas grouping, QA rules, and Unity-owner handoff.
+
+MANDATORY FIRST LINE IN CHAT WHEN LAUNCHED
+PROMPT IDENTIFIED: 1908 FLORA_CORAL_KELP_SOURCE_ATLAS_PREP
+
+AUTHORITY TO READ BEFORE WORK
+- AGENTS.md
+- PROJECT_BIBLES.md
+- TASTE.md
+- VISION_LOCKS.md
+- 3dmodel.md
+- 3DMODEL_TEXTURES_MATERIALS.md
+- 3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md
+- 3DMODEL_FLORA_CORAL.md
+- 3DMODEL_GEOLOGY_ROCKS.md
+- PROCEDURAL_ASSET_PIPELINE.md
+- rendering.md
+- performance.md
+- quality.md
+- Docs/Reports/Batch18/1858_GENERATED_FLORA_GEOLOGY_MANIFEST_PROOF_PACKET.md
+- Docs/Reports/Batch18/1901_SHALLOW_PROOF_ARTIFACT_PRIORITY_RUNBOOK.md
+
+MANDATES TO READ
+- .agents-skills/REND_Instanced_Flora_Physics.txt
+- .agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt
+- .agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt
+- .agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt
+- .agents-skills/QA_Evidence_Text_Filter_Audit.txt
+
+OWNED OUTPUT SCOPE WHEN LAUNCHED
+- Docs/Reports/Batch19/1908_FLORA_CORAL_KELP_SOURCE_ATLAS_PREP.md
+- Docs/Reports/Batch19/1908_FLORA_CORAL_KELP_SOURCE_ATLAS_PREP.csv
+- Docs/Reports/Batch19/1908_FLORA_CORAL_KELP_PROOF_NAMING_MATRIX.csv
+- Docs/GeneratedAssets/Gemini/Prompts/1908/**
+- Docs/Tasks/Status_1908.md
+- Docs/AgentLogs/Rationale_1908.md
+- Docs/AgentLogs/LOG_1908.md
+
+FORBIDDEN OUTPUTS AND ACTIONS
+- Do not write under Assets/**.
+- Do not create or modify meshes, prefabs, materials, textures under Assets, shaders, scripts, import settings, scenes, or generated asset files.
+- Do not create .meta, .mesh, .mat, .asset, .prefab, .unity, .shader, .cs, .asmdef, or serialized Unity files.
+- Do not open Unity.
+- Do not call Unity MCP tools.
+- Do not run dotnet build, Unity build, player build, package restore, or editor validation.
+- Do not claim LODs, colliders, material assignment, GPU instancing, placement, screenshots, or runtime visuals were proven.
+- Do not require alpha-blend dense flora as a solution for compact hardware.
+- Do not accept cylinders, spheres, ribbons, primitive planes, or generic fronds as final flora/coral art.
+- Do not require another Batch19 agent to finish first. Missing source is PENDING SOURCE.
+
+HIGH-PRIORITY STATIC STEMS FROM BATCH18
+- Coral: coral_branching, coral_brittle, coral_low, coral_massive, coral_plate.
+- Kelp: kelp_canopy, kelp_patch, kelp_tall.
+- Geology support: CaveEntrance_00, LandmarkSpire_00, RockArch_00, RockShelf_00.
+- Batch18 1901 listed manifest/proof debt and named proof conventions for shallow assets. Static source prep cannot close visual proof.
+
+FLORA/CORAL MATERIAL LAW
+- Flora/coral cannot be primitive cylinders, spheres, flat ribbons, or cheap alpha cards.
+- Vertex colors must preserve authored semantic plans: R sway, G biolum/phase, B AO, A thickness/damage/harvest/wetness where used by the future owner.
+- Dense fields must avoid alpha-blend dependence on compact hardware; favor opaque/dithered/cutout and instancing-friendly source plans.
+- Source atlases must include padding, mip safety, material identity, biolum restraint, and readable silhouettes.
+
+PHASE 0 - AUTHORITY AND STEM LOCK
+1. Read all authority files and mandates listed above. Record exact files read in Status_1908.md.
+2. Create only owned output folders and files.
+3. Copy the no-Unity/no-build/no-scene-edit/no-asset-edit gate into Status_1908.md.
+4. Build a stem list from Batch18 reports. Include all high-priority static stems above and any directly cited shallow flora/geology stems found in those reports.
+5. Mark each stem as CORAL, KELP, GEOLOGY_SUPPORT, SOURCE_REQUIRED, SOURCE_PRESENT_STATIC, PENDING SOURCE, or PENDING UNITY OWNER.
+
+CHECKPOINT A AFTER TASK 5
+- Stem list exists and is evidence-backed.
+- No Unity or Assets path was touched.
+- Missing stems are not invented as complete.
+
+PHASE 1 - ATLAS GROUPING AND SOURCE ROLE DESIGN
+6. Define atlas groups for coral hard surfaces, coral soft/porous surfaces, kelp blade/fiber surfaces, kelp holdfast/root surfaces, shallow rubble/geology support, and biolum/detail masks.
+7. For each atlas group, define source roles: albedo/source, height/normal source, AO cavity source, roughness/wetness source, emission/biolum source, thickness/readability source, and detail overlay source.
+8. Add padding and mip safety requirements for each atlas group. Record minimum padding in pixels for compact, middle, high, and ultra source masters.
+9. Define material identity rules: coral must show pores/ridges/growth scars; kelp must show fibrous blade veins/edge wear; geology support must show strata/chips/wetness/mineral logic.
+10. Define anti-patterns for each group: neon flood, wallpaper repetition, flat ribbons, muddy grayscale, baked shadows, perspective object renders, and low-poly/painterly style.
+11. Write the first version of 1908_FLORA_CORAL_KELP_SOURCE_ATLAS_PREP.csv.
+
+CHECKPOINT B AFTER TASK 11
+- Every atlas group has source roles and rejection gates.
+- GlobalQualityWeight consequences are continuous, not binary.
+- No future import paths are written as current edits.
+
+PHASE 2 - STATIC PROOF NAMING MATRIX
+12. Build 1908_FLORA_CORAL_KELP_PROOF_NAMING_MATRIX.csv with rows for each high-priority stem.
+13. For each stem, define required future proof files: manifest, source ledger, atlas preview, material channel QA, LOD/proxy note, flat preview, final Unity screenshot, compact screenshot, high/ultra screenshot, and profiler capture.
+14. Mark proof files that can be produced by this static lane as STATIC SOURCE/PREP only.
+15. Mark Unity screenshots, material assignment, LOD proof, collider proof, placement, and profiler capture as PENDING UNITY OWNER.
+16. Add specific rejection gates for primitive-looking flora/coral, alpha-blend density dependence, and unbounded per-instance simulation.
+17. Add a black-box note for future runtime owners only; this source prep agent must not implement telemetry.
+
+CHECKPOINT C AFTER TASK 17
+- Proof naming matrix exists.
+- Static proof and Unity proof are separated.
+- No visual proof is falsely closed.
+
+PHASE 3 - GEMINI PROMPT AND SOURCE REQUEST PACK
+18. Write source-generation prompt files under Docs/GeneratedAssets/Gemini/Prompts/1908/** only.
+19. Create at least 16 prompt rows: branching coral pore albedo, branching coral height, plate coral layered ridges, massive coral pitted surface, brittle coral lattice detail, kelp blade veins, kelp blade edge wear, kelp holdfast root, kelp canopy fibrous pattern, coral biolum mask, kelp biolum speckle, shallow rubble coral fragments, wet limestone strata, mineral chip mask, algae film, and sand/sediment overlay.
+20. Every prompt must enforce seamless square tileable material, orthographic top-down, diffuse even light, no perspective, no horizon, no object render, no labels, no text, no logo, no UI, no watermark, no baked cast shadows, no blurry/noir/painterly/cartoony/low-poly output.
+21. For each prompt, state whether it is intended as albedo source, height source, mask source, emission source, reference-only, or derivative QA input.
+22. For each prompt, add compact/middle/high/ultra consequences. Compact must preserve silhouette/source readability and avoid muddy cheapness.
+23. Add a "do not import" warning to every prompt pack file header.
+
+CHECKPOINT D AFTER TASK 23
+- Prompt pack is extraction-free and source-only.
+- It cannot be mistaken for Unity import or prefab instructions.
+- Flora/coral/kelp visual law is explicit.
+
+PHASE 4 - FINAL STATIC PACKAGE
+24. Write 1908_FLORA_CORAL_KELP_SOURCE_ATLAS_PREP.md summarizing atlas groups, source role needs, proof naming, rejection gates, and Unity-owner handoff.
+25. Include a section titled "Hardware Consequences" with GlobalQualityWeight ranges: compact, middle, high, ultra. Compact must use fewer atlas variants, tighter channel packing, and instancing-friendly masks while preserving premium shape/material identity.
+26. Include a section titled "Future Unity Owner Only" listing import settings, material binding, atlas packing into Assets, prefab/material assignment, scene scatter, LOD/collider/proxy proof, screenshots, profiler, and player capture.
+27. Update Status_1908.md, LOG_1908.md, and Rationale_1908.md with factual outcomes only.
+
+FINAL PROOF PACKET REQUIRED
+- Status_1908.md
+- LOG_1908.md
+- Rationale_1908.md for atlas grouping decisions
+- 1908_FLORA_CORAL_KELP_SOURCE_ATLAS_PREP.md
+- 1908_FLORA_CORAL_KELP_SOURCE_ATLAS_PREP.csv
+- 1908_FLORA_CORAL_KELP_PROOF_NAMING_MATRIX.csv
+- Prompt pack under Docs/GeneratedAssets/Gemini/Prompts/1908/** if created
+
+REJECTION GATES
+- Any Assets/** write is failure.
+- Any Unity launch or Unity MCP call is failure.
+- Any build command is failure.
+- Any mesh/material/prefab/importer/code/scene edit is failure.
+- Any static evidence upgraded to Unity visual proof is failure.
+- Any alpha-blend dense field, primitive flora, primitive coral, or binary quality switch plan is failure.

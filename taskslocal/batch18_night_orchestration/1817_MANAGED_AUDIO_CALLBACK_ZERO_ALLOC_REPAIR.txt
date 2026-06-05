@@ -1,0 +1,53 @@
+AGENT ID: 1817
+ROLE: MANAGED_AUDIO_CALLBACK_ZERO_ALLOC_REPAIR
+MODE: Source audit/repair. No Unity unless explicitly safe and needed; no dotnet build under CPU/build contention.
+
+PRIMARY GOAL
+Fix or produce a scoped patch plan for known managed audio callback blockers without touching unrelated audio design: `OnAudioFilterRead(float[]...)` paths must not allocate, use LINQ, string formatting, managed lookups, scene searches, dynamic collections, locks, or hidden registry polling.
+
+READ
+- AGENTS.md, PROJECT_BIBLES.md, VISION_LOCKS.md, TASTE.md, quality.md
+- audio.md, performance.md, architecture.md if present, memory.md if present
+- Docs/Reports/Batch18/1805_AGENT_OUTPUT_TRIAGE_DASHBOARD.md
+- Docs/Reports/Batch18/1813_STALE_BLOCKER_ERRATA_PACKET.md
+- Relevant `.agents-skills` mandates for audio hot path, zero-GC, black-box/debug evidence, and Burst/jobs rules.
+
+LIKELY FILES
+- Assets/_Project/Scripts/Audio/DynamicMusicGranularSynthesizer.cs
+- Assets/_Project/Scripts/Audio/VocalBankPlaybackRuntime.cs
+- Any directly referenced audio buffer/ring-buffer helper types found from source.
+
+OWNED OUTPUTS
+- Docs/Tasks/Status_1817.md
+- Docs/AgentLogs/Rationale_1817.md for non-trivial decisions only
+- Docs/AgentLogs/LOG_1817.md
+- Docs/Reports/Batch18/1817_MANAGED_AUDIO_CALLBACK_ZERO_ALLOC_REPAIR.md
+
+HARD RULES
+- Do not run Unity or dotnet build if CPU is busy or another dotnet/csc is active.
+- Do not degrade audio design into silence or flat placeholder behavior just to pass scans.
+- Prefer fixed buffers, precomputed state, owner-thread preparation, and read-only callback consumption.
+- Runtime callback code must be predictable and allocation-free.
+- If the safe repair is too broad, write exact blocker and minimal patch plan instead of speculative rewrites.
+
+20 TASKS
+01. Create tracking files.
+02. Read authorities and 2-8 relevant mandates.
+03. Inspect both target files and direct helpers.
+04. Locate every `OnAudioFilterRead` implementation.
+05. Search callback bodies and callees for allocations, LINQ, format/string work, locks, registry calls, scene calls, list growth, dictionary lookups, and `.Complete()`.
+06. Separate real blockers from stale report claims.
+07. Identify state that can be prepared outside the callback.
+08. Design zero-GC callback ownership.
+09. If repair is narrow, patch source with minimal changes.
+10. If not narrow, write an exact patch plan and mark BLOCKED.
+11. Preserve audio feature intent and existing public serialized fields.
+12. Add comments only where callback ownership is non-obvious.
+13. Run static text scans for forbidden callback patterns in touched files.
+14. Run script validation only if safe and local; do not start broad builds.
+15. Record compile/build limitations honestly.
+16. Add Low/Middle/High/Ultra audio consequences.
+17. Add runtime proof plan: profiler allocation, audio continuity, no spikes.
+18. Append concise log.
+19. Final scan for unrelated edits.
+20. Mark COMPLETE, PATCHED_STATIC_ONLY, or BLOCKED with exact reason.

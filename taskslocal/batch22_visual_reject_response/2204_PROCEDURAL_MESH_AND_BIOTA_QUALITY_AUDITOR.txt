@@ -1,0 +1,87 @@
+ID: 2204
+ROLE: PROCEDURAL_MESH_AND_BIOTA_QUALITY_AUDITOR
+CHAT NAME: 2204 procedural mesh quality
+
+MISSION
+The project has editor/offline scripts for generating rocks, flora, fauna, wreckage, coral, and environmental details, but recent placement attempts produced primitive-looking shame: rocks/algae on land, inconsistent materials, proxy geometry, dry-land sea flora. Audit the generator/tooling routes and define a quality gate for using them without contaminating production visuals.
+
+DO NOT TAKE UNITY SLOT BY DEFAULT.
+This task is mostly source/tooling/static report. Do not run generator authoring in Unity unless later explicitly assigned.
+
+AUTHORITIES TO READ
+1. `AGENTS.md`
+2. `PROJECT_BIBLES.md`
+3. `TASTE.md`
+4. `VISION_LOCKS.md`
+5. `quality.md`
+6. `PROCEDURAL_ASSET_PIPELINE.md`
+7. `3dmodel.md`
+8. `3DMODEL_TEXTURES_MATERIALS.md`
+9. `terrain.md`
+10. `creatures.md`
+11. `world.md`
+12. `.agents-skills/TOOL_Procedural_Wreckage_Generator.txt`
+13. `.agents-skills/REND_Instanced_Flora_Physics.txt`
+14. `.agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`
+
+EVIDENCE BASIS
+- User rejected primitive rocks/seaweed placement on land as inconsistent and unacceptable.
+- 1472 screenshots still show weak coastline/seabed detail and little/no authored biota.
+- Batch21/2104 static validator found primitive/proxy/default material candidates.
+
+OWNED SCOPE
+Read-only unless later permitted:
+- `Assets/_Project/Scripts/Editor/WorldProcedural*`
+- `Assets/_Project/Scripts/World*`
+- `Assets/_Project/Art/Materials/WorldProceduralProxy/**`
+- `Assets/_Project/Art/Models/**`
+- `Assets/_Project/Prefabs/**`
+- `Docs/Reports/Batch21/**`
+- `Docs/Reports/Batch22/**`
+- root procedural/3dmodel docs
+
+MANDATES
+- Offline generation is allowed only if output looks authored and premium.
+- Procedural assets must be inspected, not trusted.
+- No land-placed underwater flora unless it is intentionally beached/dead/salt-crust ecology with lore/placement proof.
+- Proxies/dev primitives must not be visible in production routes.
+- LOD/detail/material quality must scale continuously; compact tier still must look premium.
+
+TASKS
+01. Read authorities and record active mandates in `Status_2204.md`.
+02. Inventory editor generator scripts under `Assets/_Project/Scripts/Editor/WorldProcedural*` and related tools.
+03. For each generator, identify output type: rock, flora, coral, fauna, wreckage/support, interior, structural, organic misc.
+04. Identify whether each generator is runtime or editor/offline. Mark runtime generation suspicious unless already routed.
+05. Inspect validator scripts for final variants and family contracts. List what they check and what they miss.
+06. Inspect proxy material folder and name every proxy/default-looking material family.
+07. Cross-check 2104 validator outputs for active production-scene proxy/primitive findings related to world procedural.
+08. Create a reject taxonomy: primitive mesh, default material, dry-land sea flora, poor LOD, no collision/proxy mismatch, no material identity, repeated obvious stamp, too-flat silhouette.
+09. Create a placement taxonomy: above surface, intertidal, 0-5 m, 5-50 m, 50-100 m, 100-400 m, cave, wreck/interior.
+10. For each placement zone, define allowed asset families and forbidden families.
+11. Define a shore/coast dressing rule: wet basalt, salt, foam, tide marks, stranded debris, sparse algae where credible; no random underwater gardens on dry slopes.
+12. Define photic underwater dressing rule: coral/alien biota clusters, caustic-lit rocks, sand/shell patches, small fish/silhouettes, route landmarks.
+13. Define medium-depth dressing rule: lower color, biolum cues, stronger silhouettes, silt/marine snow, route readable.
+14. Identify existing art assets/textures/models that can be used before generation.
+15. Identify candidates that require new Gemini/source textures before they can pass.
+16. Propose a generator-run proof packet: before/after screenshots, close material view, LOD view, collision/placement layer proof, profiler/GC proof if runtime.
+17. Propose no-Unity static validators that can catch dry-land underwater flora or proxy materials before Play.
+18. State exact no-go: generated output is rejected if it cannot beat the user reference floor.
+19. Write `Docs/Reports/Batch22/2204_PROCEDURAL_MESH_GENERATOR_QUALITY_AUDIT.md`.
+20. Write `Docs/Reports/Batch22/2204_GENERATED_WORLD_ASSET_REJECT_GATES.md`.
+21. Write `Docs/Reports/Batch22/2204_PLACEMENT_ZONE_MATRIX.csv`.
+22. Write `Docs/Orchestration/UNITY_OWNER_HANDOFF_2204_GENERATOR_USE_RULES.md` with only actionable Unity-owner notes.
+23. Append concise log to `LOG_2204.md`.
+24. Final chat report: generator routes, top risks, next concrete safe run.
+
+PROOF PACKET
+- `Status_2204.md`
+- `LOG_2204.md`
+- `2204_PROCEDURAL_MESH_GENERATOR_QUALITY_AUDIT.md`
+- `2204_GENERATED_WORLD_ASSET_REJECT_GATES.md`
+- `2204_PLACEMENT_ZONE_MATRIX.csv`
+
+REJECT
+- Running Unity/generators without slot permission.
+- Treating primitive generator output as acceptable.
+- Broad refactor of generator architecture.
+- Moving sea flora to land as decoration without ecological/lore proof.

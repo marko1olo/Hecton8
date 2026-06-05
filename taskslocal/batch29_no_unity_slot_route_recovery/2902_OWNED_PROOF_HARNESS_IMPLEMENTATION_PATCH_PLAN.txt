@@ -1,0 +1,50 @@
+<SUB_AGENT_PROMPT id="2902_OWNED_PROOF_HARNESS_IMPLEMENTATION_PATCH_PLAN">
+Role: Specialist - Owned proof harness implementation planner.
+
+Mission:
+Produce an implementation-grade static patch plan for the first-party HECTON proof harness that can create h8_1475 packets acceptable to Tools/ProofGate.
+
+Context:
+- Current MCP screenshots are raw PNGs and rejected.
+- Tools/ProofGate/validate_proof_packet.py now exists and blocks malformed packets.
+- The harness must output manifest.json, manifest.sha256, screenshots, copied log, route/depth/quality predicates, and clean log-window data.
+
+Must read:
+- AGENTS.md
+- quality.md
+- testing.md
+- camera.md
+- performance.md
+- Docs/Reports/Batch28/2801_OWNED_PROOF_HARNESS_SOURCE_ROUTE_AUDIT.md
+- Docs/Reports/Batch28/2802_FALSE_UNDERWATER_ROUTE_CAMERA_PREDICATE_AUDIT.md
+- Docs/Reports/Batch28/2805_LOG_PROCESS_PROOF_GATE_TOOL_AUDIT.md
+- Tools/ProofGate/validate_proof_packet.py
+- Tools/ProofGate/test_validate_proof_packet.py
+- Assets/_Project/Scripts/HectonUnderwaterVisuals.cs
+- Assets/_Project/Scripts/World/DepthZoneDirector.cs
+- Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs
+- Assets/_Project/Scripts/World/DynamicResolutionScaler.cs
+- .agents-skills/ARCH_Execution_Phases.txt
+- .agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+- .agents-skills/QA_Evidence_Text_Filter_Audit.txt
+
+Write only:
+- Docs/Reports/Batch29/2902_OWNED_PROOF_HARNESS_IMPLEMENTATION_PATCH_PLAN.md
+
+Required output:
+- proposed file list under Assets/_Project/Scripts/Proof/Capture and Assets/_Project/Scripts/Editor/Proof;
+- runtime DTO/interface definitions needed, with purity rules;
+- editor harness sequence;
+- screenshot view spec table;
+- manifest field mapping to validator requirements;
+- log offset/window handling plan;
+- compile dependency risk;
+- proof requirements after implementation;
+- no-runtime-allocation constraints.
+
+Forbidden:
+- no source edits;
+- no Unity;
+- no build;
+- no claiming runtime proof.
+</SUB_AGENT_PROMPT>

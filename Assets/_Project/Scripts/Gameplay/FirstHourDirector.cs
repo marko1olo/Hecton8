@@ -29,6 +29,7 @@ using Hecton8.AtlasSignal;
 using Hecton8.Bootstrap;
 using Hecton8.Crafting;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Environment;
 using Hecton8.Interaction;
 using Hecton8.Inventory;
@@ -722,6 +723,22 @@ namespace Hecton8.Gameplay
         [Tooltip("Narrative discovery that counts as a real ruined-colony/module contact.")]
         [SerializeField] private string firstModuleZoneDiscoveryId = "zone_drowned_factories";
 
+        [Header("-- First Craft Gate -------------------------")]
+        [Tooltip("First-hour craft milestone result: early conductive line.")]
+        [SerializeField] private string firstCraftResultItemId0 = "Comp_CopperWire";
+
+        [Tooltip("First-hour craft milestone result: emergency oxygen safety margin.")]
+        [SerializeField] private string firstCraftResultItemId1 = "Data_EmergencyO2Canister";
+
+        [Tooltip("First-hour craft milestone result: real navigation support.")]
+        [SerializeField] private string firstCraftResultItemId2 = "Item_Tool_BeaconDeployer";
+
+        [Tooltip("First-hour craft milestone result: repair progression tool.")]
+        [SerializeField] private string firstCraftResultItemId3 = "Item_Tool_Repair";
+
+        [Tooltip("First-hour craft milestone result: pressure route component.")]
+        [SerializeField] private string firstCraftResultItemId4 = "Comp_PressureSeal";
+
         [Header("-- Retention Nudges -------------------------")]
         [Tooltip("When to remind the player about the first core resource if they are still drifting.")]
         [SerializeField] private float firstResourceReminderTime = 480f;
@@ -781,6 +798,11 @@ namespace Hecton8.Gameplay
         private uint _firstDepthQuestHash;
         private int _firstResourceItemHash;
         private bool _firstResourceIsCopper;
+        private int _firstCraftResultItemHash0;
+        private int _firstCraftResultItemHash1;
+        private int _firstCraftResultItemHash2;
+        private int _firstCraftResultItemHash3;
+        private int _firstCraftResultItemHash4;
         private bool _hotSwapRegistered;
         private bool _saveRegistered;
         private ISaveService _saveService;
@@ -959,6 +981,7 @@ namespace Hecton8.Gameplay
 
         public void LateFrameTick()
         {
+            ConsumeCraftingCompletedSignals();
             FlushQueuedNotifications();
         }
 
@@ -1307,11 +1330,52 @@ namespace Hecton8.Gameplay
 
         private void HandleCraftCompleted(ItemData resultItem)
         {
-            if (resultItem == null)
+            if (resultItem == null || !IsAcceptedFirstCraftResultItem(resultItem))
                 return;
 
             CheckMilestone(FirstHourMilestone.FirstCraft,
                 !IsMilestoneComplete(FirstHourMilestone.FirstCraft));
+        }
+
+        private void ConsumeCraftingCompletedSignals()
+        {
+            if (IsMilestoneComplete(FirstHourMilestone.FirstCraft))
+                return;
+
+            ReadOnlySpan<CraftingCompletedSignal> signals = SignalBus<CraftingCompletedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                if (!IsAcceptedFirstCraftResultHash(signals[i].ResultItemHash))
+                    continue;
+
+                CheckMilestone(FirstHourMilestone.FirstCraft, true);
+                return;
+            }
+        }
+
+        private bool IsAcceptedFirstCraftResultItem(ItemData item)
+        {
+            return item != null &&
+                   (item.MatchesPersistentHash(_firstCraftResultItemHash0) ||
+                    item.MatchesPersistentHash(_firstCraftResultItemHash1) ||
+                    item.MatchesPersistentHash(_firstCraftResultItemHash2) ||
+                    item.MatchesPersistentHash(_firstCraftResultItemHash3) ||
+                    item.MatchesPersistentHash(_firstCraftResultItemHash4));
+        }
+
+        private bool IsAcceptedFirstCraftResultHash(uint itemHash)
+        {
+            return itemHash != 0u &&
+                   (MatchesCachedHash(itemHash, _firstCraftResultItemHash0) ||
+                    MatchesCachedHash(itemHash, _firstCraftResultItemHash1) ||
+                    MatchesCachedHash(itemHash, _firstCraftResultItemHash2) ||
+                    MatchesCachedHash(itemHash, _firstCraftResultItemHash3) ||
+                    MatchesCachedHash(itemHash, _firstCraftResultItemHash4));
+        }
+
+        private static bool MatchesCachedHash(uint itemHash, int cachedHash)
+        {
+            return cachedHash != 0 && itemHash == unchecked((uint)cachedHash);
         }
 
         public void OnNarrativeEvent(in NarrativeEventPayload payload)
@@ -2125,6 +2189,16 @@ namespace Hecton8.Gameplay
                 ? 0
                 : LocHash.Compute(firstResourceItemId);
             _firstResourceIsCopper = _firstResourceItemHash != 0 && _firstResourceItemHash == _dataCopperItemHash;
+            _firstCraftResultItemHash0 = ComputeOptionalHash(firstCraftResultItemId0);
+            _firstCraftResultItemHash1 = ComputeOptionalHash(firstCraftResultItemId1);
+            _firstCraftResultItemHash2 = ComputeOptionalHash(firstCraftResultItemId2);
+            _firstCraftResultItemHash3 = ComputeOptionalHash(firstCraftResultItemId3);
+            _firstCraftResultItemHash4 = ComputeOptionalHash(firstCraftResultItemId4);
+        }
+
+        private static int ComputeOptionalHash(string value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? 0 : LocHash.Compute(value);
         }
     }
 }

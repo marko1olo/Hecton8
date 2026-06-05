@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# PT-BR LOC: Aegir Window Bands
+# Aegir Window Bands
 
-PT LOC HOLD: Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.
+Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.
 
 ## Scanner
 
-PT-BR LOC: Local band: ascent waits on hours-to-days windows, not instant rescue.
+Local band: ascent waits on hours-to-days windows, not instant rescue.
 
 ## Terminal
 
-PT-BR LOC: WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.
+WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.
 
 ## Audio
 
-PT LOC HOLD: The carrier can hear you and still be in the wrong sky.
+The carrier can hear you and still be in the wrong sky.
 
 ## Field Note
 
-PT LOC HOLD: Use for Black Keel timing UI, in-game wiki and spoiler-light site systems page.
+Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints.
 
 <!-- In-Game Wiki; generated from P422_AEGIR_LOCAL_WINDOW_BAND_TABLE/pt_BR. -->

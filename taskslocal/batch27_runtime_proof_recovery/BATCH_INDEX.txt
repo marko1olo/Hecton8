@@ -1,0 +1,39 @@
+Batch27 Runtime Proof Recovery
+Date: 2026-06-04
+Mode: independent report-only wave. No Unity Editor slot, no Play Mode, no dotnet build, no process kills, no Assets edits.
+
+Purpose:
+Recover the next proof path after rejected packet 1474 and Batch26 synthesis.
+
+Authority:
+- C:\hades\Hecton8\AGENTS.md
+- C:\hades\Hecton8\PROJECT_BIBLES.md
+- C:\hades\Hecton8\VISION_LOCKS.md
+- C:\hades\Hecton8\TASTE.md
+- C:\hades\Hecton8\quality.md
+- Route docs named in each task file.
+
+Active front:
+- Last complete proof packet: Docs/Screenshots/MCP/h8_1474_*.png
+- Verdict: REJECTED
+- Synthesis: Docs/Reports/Batch26/BATCH26_SYNTHESIS_FOR_UNITY_OWNER.md
+- Steer: Docs/Orchestration/UNITY_OWNER_STEER_20260604_BATCH26_SYNTHESIS.md
+
+Tasks:
+- 2701_SEAMGAP_DITHER_GRAPHICSBUFFER_LEAK_AUDIT.txt
+- 2702_UNDERWATER_REGISTRY_PUBLICATION_ROUTE_AUDIT.txt
+- 2703_OWNED_CAPTURE_MANIFEST_HARNESS_SPEC.txt
+- 2704_SHORELINE_TEXTURE_GENERATION_QA_ROUTE.txt
+- 2705_AEGIR_SKY_OWNER_VISUAL_POLISH_ROUTE_AUDIT.txt
+
+Required outputs:
+- Docs/Reports/Batch27/2701_SEAMGAP_DITHER_GRAPHICSBUFFER_LEAK_AUDIT.md
+- Docs/Reports/Batch27/2702_UNDERWATER_REGISTRY_PUBLICATION_ROUTE_AUDIT.md
+- Docs/Reports/Batch27/2703_OWNED_CAPTURE_MANIFEST_HARNESS_SPEC.md
+- Docs/Reports/Batch27/2704_SHORELINE_TEXTURE_GENERATION_QA_ROUTE.md
+- Docs/Reports/Batch27/2705_AEGIR_SKY_OWNER_VISUAL_POLISH_ROUTE_AUDIT.md
+
+Forbidden:
+- No Unity, no Play Mode, no build, no asset import, no image generation into Assets.
+- No fake runtime/profiler/screenshot claims.
+- No "probably fixed" wording. Use PENDING VERIFICATION unless fresh proof exists.

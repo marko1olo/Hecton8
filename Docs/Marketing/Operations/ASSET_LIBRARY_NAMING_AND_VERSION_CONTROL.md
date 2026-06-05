@@ -1,5 +1,11 @@
 ﻿# HECTON-8 Marketing Asset Library, Naming, And Version Control
 
+## Authority Boundary
+
+Static asset-operations policy only. Folder rules, filename rules, status values, metadata rows, rejection codes, and review rituals do not prove quality, release, platform, Steam, wishlist, demo, performance, legal/compliance, localization, monitoring, launch, asset-public-use, or public-response readiness.
+Public voice routes to root `textes.md`. Quality, release, platform, Steam, wishlist, demo, performance, feedback, review/forum response, legal/compliance, localization, monitoring, operations, partnership, contract, and launch claims route through root `quality.md`, `release.md`, and `platform.md` with current proof artifacts plus local permission gates where present.
+No launch/release readiness, localized public use, public response, creator contract send, platform claim, Steam approval, wishlist claim, demo approval, asset approval for public use, or public send approval exists from asset folders, metadata status, QA score, or static operations rows.
+
 Status: asset ops policy
 Owner lane: Marketing / marketing operations
 Runtime impact: none

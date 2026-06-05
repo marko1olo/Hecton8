@@ -10,17 +10,17 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Site Aegir System Art Composition Lock
+# Aegir System Art Rule
 
-Site Aegir System Art Composition Lock makes orbital mechanics visible in public/wiki material.
+Aegir System Art Rule makes orbital mechanics visible in public material.
 
 ## Scanner
 
-Aegir art lock: orbital window, moon ladder, relay shadow, not fantasy skybox.
+Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.
 
 ## Terminal
 

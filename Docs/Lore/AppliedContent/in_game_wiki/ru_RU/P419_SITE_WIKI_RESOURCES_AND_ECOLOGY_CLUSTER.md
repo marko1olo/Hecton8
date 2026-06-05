@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Ресурсы и экология
+# Resources and Ecology
 
-Хаб ресурсов и экологии: drowned crust, brine ladders, vent chemistry, living systems и поврежденная repair logic Atlas.
+Resource/ecology hub: drowned crust, brine ladders, vent chemistry, living systems and Atlas' damaged repair logic.
 
 ## Scanner
 
-Публикационный хаб: geology, blue debt, fauna grammar и misuse ремонтной сети Atlas.
+Publication hub: geology, blue debt, fauna grammar and Atlas repair-network misuse.
 
 ## Terminal
 
-SITE NAV: native geology, process feedstock, Atlas-altered resources, shallow ecology и encounter grammar как одна process map.
+SITE NAV: native geology, process feedstock, Atlas-altered resources, shallow ecology and encounter grammar as one process map.
 
 ## Audio
 
-Здесь нет просто лута.
+Nothing here is just loot.
 
 ## Field Note
 
-Использовать как resource hub, ecology index и art brief grouping.
+Navigation cluster record: resources and ecology belong together when materials, biota, and evidence pressure share the same route.
 
 <!-- In-Game Wiki; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/ru_RU. -->

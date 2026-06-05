@@ -59,6 +59,7 @@ Shader "Hecton/Environment/Storm Ocean Surface"
                 float3 normalWS : TEXCOORD0;
                 float3 positionWS : TEXCOORD1;
                 float foam : TEXCOORD2;
+                float2 surfaceUv : TEXCOORD3;
             };
 
             Varyings Vert(Attributes input)
@@ -77,12 +78,14 @@ Shader "Hecton/Environment/Storm Ocean Surface"
                 output.normalWS = H8OceanNormalize3(normalWS, float3(0.0, 1.0, 0.0));
                 output.positionWS = positionWS;
                 output.foam = saturate(foamScalar);
+                output.surfaceUv = cameraLocalXZ;
                 return output;
             }
 
             half4 Frag(Varyings input) : SV_Target
             {
-                half fresnel = (half)pow(saturate(1.0 - input.normalWS.y), 2.0);
+                float3 stormNormalWS = H8ApplyRainSurfaceDisturbance(input.normalWS, input.surfaceUv);
+                half fresnel = (half)pow(saturate(1.0 - stormNormalWS.y), 2.0);
                 float screenFoam = H8OceanSampleScreenFoam(input.positionCS);
                 half foam = (half)saturate(input.foam + screenFoam);
                 half3 baseColor = lerp(_BaseColor.rgb, _FoamColor.rgb, foam);
@@ -90,7 +93,7 @@ Shader "Hecton/Environment/Storm Ocean Surface"
                 half quality = (half)H8OceanSafeQuality(_H8OceanFoamAndShadowParams.w);
                 float2 foamSlope = float2(ddx(screenFoam), ddy(screenFoam)) * lerp(0.035, 0.18, quality);
                 float3 reflectionNormalWS = H8OceanNormalize3(
-                    input.normalWS + float3(foamSlope.x, screenFoam * 0.035, foamSlope.y),
+                    stormNormalWS + float3(foamSlope.x, screenFoam * 0.035, foamSlope.y),
                     float3(0.0, 1.0, 0.0));
                 float3 reflectDirWS = reflect(-viewDirWS, reflectionNormalWS);
                 half cubemapMip = lerp(5.0, 0.0, quality);

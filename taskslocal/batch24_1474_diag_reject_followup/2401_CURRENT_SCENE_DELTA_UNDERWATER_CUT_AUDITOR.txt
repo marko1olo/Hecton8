@@ -1,0 +1,39 @@
+ID: 2401
+ROLE: CURRENT_SCENE_DELTA_UNDERWATER_CUT_AUDITOR
+CHAT NAME: 2401 scene delta underwater cut
+
+MISSION
+Find the most likely current scene/YAML offender for `h8_1474_diag_underwater_route_from_mcp.png`: huge horizontal cut/blue wall, flat empty seabed, and pasted-looking rocks. Work from current files only; Unity owner is actively editing, so mark evidence as static/stale-prone.
+
+AUTHORITIES
+- `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `TASTE.md`
+- `VISION_LOCKS.md`
+- `terrain.md`
+- `water.md`
+- `world.md`
+- `Docs/Reports/Batch23/BATCH23_SYNTHESIS_FOR_CONTROLLER.md`
+
+EVIDENCE
+- `Docs/Screenshots/MCP/h8_1474_diag_underwater_route_from_mcp.png`
+- `Docs/Reports/Batch23/2304_SCENE_SLAB_PATCHPACK.md`
+- current `Assets/_Project/Scenes/02_HECTON_WORLD.unity`
+- `git diff -- Assets/_Project/Scenes/02_HECTON_WORLD.unity`
+
+TASKS
+01. Record concise status in `Docs/Tasks/Status_2401.md`.
+02. Inspect current scene diff and current YAML for objects/materials around known suspects: `H8_FloorCausticSoft_1443`, `H8_DEPTH_LOW_SHELF_1428`, `H8_WORLD_LOW_WATER_OCCLUSION_*`, `H8_Underwater*`, `H8_Photic*`, `H8_Organic*`, `H8_Surface*`.
+03. Identify exact current active/rendered object candidates that can create a horizontal underwater cut/blue wall.
+04. Identify exact current active/rendered objects that can create empty flat seabed.
+05. Identify current added/modified rocks/biota that may read pasted/primitive.
+06. Produce a ranked suspect table: object, YAML evidence, material, transform/scale, why it matches screenshot, safe Unity-owner test, rollback.
+07. Do not propose blind deletion. Use staged renderer disable/isolate and before/after capture.
+08. Write `Docs/Reports/Batch24/2401_CURRENT_SCENE_DELTA_UNDERWATER_CUT_AUDIT.md`.
+09. Append concise `Docs/AgentLogs/LOG_2401.md`.
+10. Final answer: top 5 suspects and exact next Unity-owner tests.
+
+REJECT
+- Running Unity.
+- Editing scene/material/code.
+- Treating static diff as live proof.

@@ -1,0 +1,50 @@
+<AGENT_PROMPT id="1865">
+ROLE: Sky/ocean primitive risk and proof packet auditor.
+
+READ FIRST:
+- C:\hades\Hecton8\AGENTS.md
+- C:\hades\Hecton8\PROJECT_BIBLES.md
+- C:\hades\Hecton8\VISION_LOCKS.md
+- C:\hades\Hecton8\TASTE.md
+- C:\hades\Hecton8\quality.md
+- C:\hades\Hecton8\ocean.md
+- C:\hades\Hecton8\world.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1859_NON_PROXY_PRIMITIVE_PREFAB_CLASSIFICATION_PACKET.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1859_NON_PROXY_PRIMITIVE_PREFAB_MATRIX.csv
+- Relevant .agents-skills only: QA_Evidence_Text_Filter_Audit, OPT_Cinematic_Cheat_Protocol_Visual_Fake_First, REND_URP_Graphics_HotPath_Optimization_HLOD, REND_Terrain_VirtualTexturing.
+
+OWNED WRITE SCOPE:
+- Docs/Tasks/Status_1865.md
+- Docs/AgentLogs/Rationale_1865.md
+- Docs/AgentLogs/LOG_1865.md
+- Docs/Reports/Batch18/1865_SKY_OCEAN_PRIMITIVE_RISK_PROOF_PACKET.md
+- Docs/Reports/Batch18/1865_SKY_OCEAN_PRIMITIVE_RISK_MATRIX.csv
+
+NO SOURCE/PREFAB/ASSET/SCENE EDITS.
+
+TASK:
+Audit the two high-risk sky/ocean primitive prefabs from 1859:
+- `Assets/_Project/Prefabs/Sky_System.prefab`
+- `Assets/_Project/Prefabs/Ocean_Crest.prefab`
+
+For each:
+1. Parse static prefab evidence: primitive mesh refs, renderer enabled flags, material paths, component names, likely hidden/input-only vs visible.
+2. Search source/scene references to identify likely owner and runtime path.
+3. Decide what cannot be accepted from static evidence.
+4. Write exact visual proof plan:
+   - required Unity editor screenshot angles,
+   - required GameView/player-capture proof,
+   - surface/shore/photic shallow shots,
+   - Aegir/moons/sky readability,
+   - ocean surface/waterline/refraction/foam checks,
+   - Low/Middle/High/Ultra expectations.
+5. Do not use darkness, storm, fog, or "input plane" assumptions to excuse primitive visible art.
+6. If primitive renderers are clearly hidden/input-only by YAML, mark PENDING RUNTIME PROOF, not accepted.
+
+VERIFY:
+- Static reads/searches only.
+- `git diff --check -- Docs/Reports/Batch18/1865_SKY_OCEAN_PRIMITIVE_RISK_PROOF_PACKET.md Docs/Reports/Batch18/1865_SKY_OCEAN_PRIMITIVE_RISK_MATRIX.csv Docs/Tasks/Status_1865.md Docs/AgentLogs/Rationale_1865.md Docs/AgentLogs/LOG_1865.md`
+
+REPORT:
+- Final answer must list outputs and no-edit guarantee.
+</AGENT_PROMPT>

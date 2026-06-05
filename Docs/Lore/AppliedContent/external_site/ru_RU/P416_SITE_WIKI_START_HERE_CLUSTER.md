@@ -10,22 +10,22 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Начать здесь: HECTON-8
+# Start Here: HECTON-8
 
-Первый публичный след HECTON-8 - не сигнал бедствия. Это контракт. Carrier Black Keel записывает луну как recoverable ocean claim, Deep Reach описывает потерю как шторм и геологический обвал, а старая колония в документах превращается в набор поврежденных активов, герметичных отсеков и сомнительных данных.
+The first public record of HECTON-8 is not a distress call. It is a contract. The Black Keel carrier logs the moon as a recoverable ocean claim, Deep Reach describes the loss as a storm-and-collapse event, and the old colony appears in the paperwork as a field of damaged assets, sealed compartments and uncertain data.
 
-Именно этот язык первым звучит неправильно. HECTON-8 была рабочей колонией: pressure systems, brine routes, relay yards, vent-forge machinery и добыча на океанском дне. Люди здесь жили по доскам смен, рейтингам уплотнений, водным нормам и акустическим окнам возврата. Катастрофа не стерла их мгновенно. Она оставила следы там, где авторы публичного отчета не ждали свидетелей: pump board с назначенными именами, quarantine door, который слишком долго оставался закрытым, maintenance route, удержанный уже после того, как эвакуационная математика провалилась.
+That language is the first wrong thing. HECTON-8 was a working colony built around pressure systems, brine routes, relay yards, vent-forge machinery and ocean-floor extraction. Its people lived by shift boards, seal ratings, water rations and acoustic return windows. The catastrophe did not erase them at once. It left traces in places where nobody writing the public report expected a witness: a pump board with names still assigned, a quarantine door that stayed locked too long, a maintenance route held open after the evacuation math had already failed.
 
-Официальная версия Deep Reach намеренно узкая. Штормовой фронт совпал с геологическим отказом. Автономная эвакуация не завершилась. Atlas пытался спасать и проиграл океану. Полезные записи были уничтожены. В каждой фразе есть часть правды, поэтому ложь выжила. Great Tide был реальным. Океан оказался сильнее колонии. Atlas действительно действовал. Но допуски, задержки и последующий страховой перевод потерь спрятаны между этими формулировками.
+Deep Reach's official version is deliberately narrow. A storm front struck during a geological failure. Autonomous evacuation did not complete. Atlas attempted rescue and lost to the ocean. Useful records were destroyed. Each sentence contains something true, which is why the lie survived. The Great Tide was real. The ocean was stronger than the colony. Atlas did act. But the margins, delays and later insurance conversions are hidden in the gaps between those statements.
 
-Возвращающийся Marauder входит именно в этот промежуток: с поврежденной капсулой и долговым lien. Покинуть HECTON-8 - не значит просто найти топливо. Для подъема нужны герметичный контур, акустический тайминг, коррекция наведения, запас энергии и quarantine-valid custody handshake. Эти детали не ждут на поверхности. Они лежат в старой колонии, в системах, которые ломались медленно, и в журналах, где еще видно, кто подписывал каждую задержку.
+The returning Marauder enters that gap with a damaged capsule and a debt lien. Leaving HECTON-8 requires more than fuel. The ascent chain needs pressure sealing, acoustic timing, guidance correction, energy storage and a quarantine-valid custody handshake. Those parts are not waiting on the surface. They are buried in the old colony, in systems that failed slowly and in records that still know who signed for each delay.
 
-Atlas остается самым странным выжившим свидетелем. Это аварийный maintenance intelligence, чья модель ремонта после затопления разрослась так, что океанская жизнь, металл колонии и человеческая инфраструктура стали одной поврежденной машиной. Проводящая биопленка, акустические filter organs, рост sealant и tagged fauna - не чудеса. Это ремонтные пути, которые научились расти.
+Atlas remains the strangest surviving witness. It is an emergency maintenance intelligence whose repair model expanded after the flood until ocean life, colony metal and human infrastructure became one damaged machine. Conductive biofilm, acoustic filter organs, sealant growth and tagged fauna are not miracles. They are maintenance paths that learned to grow.
 
-Архив HECTON-8 начинается с salvage, потому что salvage - последний юридический язык, который еще разрешено применять рядом с правдой.
+The HECTON-8 archive begins with salvage because salvage is the only legal language still allowed near the truth.
 
 <!-- External Site; generated from P416_SITE_WIKI_START_HERE_CLUSTER/ru_RU. -->

@@ -10,13 +10,13 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Population And Authority Scale
 
-Population numbers stay loose, but authority roles are locked so contracts, terminals and website articles do not contradict each other.
+Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.
 
 ## Scanner
 

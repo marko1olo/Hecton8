@@ -2,6 +2,7 @@ using System;
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Input;
 using TMPro;
 using Unity.Mathematics;
 using UnityEngine;
@@ -26,8 +27,6 @@ namespace Hecton8.UI
         private const int FontReadinessTimeoutFrames = 2;
         private const ushort UIRescaleReasonLocalizedFontSwap = 1;
         private const ushort UIRescaleReasonAccessibilityTextScale = 2;
-        private const float MinimumAccessibilityTextScale = 0.78f;
-        private const float MaximumAccessibilityTextScale = 1.35f;
         private const uint AccessibilityTextScaleSourceHash = 0x41313332u;
         private static readonly Color StatusTextColor = new Color(0.82f, 0.96f, 0.92f, 0.96f);
         private static readonly Color StatusBackgroundColor = new Color(0.02f, 0.08f, 0.10f, 0.82f);
@@ -269,7 +268,7 @@ namespace Hecton8.UI
             if (!math.isfinite(fontScale) || fontScale <= 0f)
                 return 1f;
 
-            return math.clamp(fontScale, MinimumAccessibilityTextScale, MaximumAccessibilityTextScale);
+            return math.clamp(fontScale, AccessibilitySettings.MinimumTextScale, AccessibilitySettings.MaximumTextScale);
         }
 
         private void EvaluatePendingFontReadiness()

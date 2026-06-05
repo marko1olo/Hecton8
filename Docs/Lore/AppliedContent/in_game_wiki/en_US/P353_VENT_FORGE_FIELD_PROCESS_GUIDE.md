@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -20,7 +20,7 @@ Vent forges make resources feel scientific: heat, brine, cooling paths and press
 
 ## Scanner
 
-Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.
+Vent-forge chemistry active. Sample quality depends on pressure history, heat pulse and slow cooling.
 
 ## Terminal
 
@@ -32,6 +32,6 @@ The vent did not make ore. It made a process you interrupted.
 
 ## Field Note
 
-Use for resource taxonomy and crafting-table handoff.
+Do not lift a fresh lot straight into cold water. Let the vent finish the anneal or the shell will craze.
 
 <!-- In-Game Wiki; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/en_US. -->

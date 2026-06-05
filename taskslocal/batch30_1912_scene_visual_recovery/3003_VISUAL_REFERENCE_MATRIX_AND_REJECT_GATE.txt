@@ -1,0 +1,46 @@
+ID: 3003_VISUAL_REFERENCE_MATRIX_AND_REJECT_GATE
+Role: Visual Reference / Screenshot Rejection Matrix Auditor
+
+Objective:
+Build a strict local visual matrix comparing `1912`, `1474`, and selected local direction-only frames, then define the minimum visual reject/accept gates for the next `1475+` packet.
+
+Authority docs:
+- `AGENTS.md`
+- `TASTE.md`
+- `VISION_LOCKS.md`
+- `quality.md`
+- `water.md`
+- `rendering.md`
+- `terrain.md`
+- `celestial.md`
+
+Evidence basis:
+- `Docs/Screenshots/MCP/h8_1912_surface_edit_main.png`
+- `Docs/Screenshots/MCP/h8_1474_underwater_0_5m.png`
+- `Docs/Screenshots/MCP/h8_1474_underwater_20_50m_route.png`
+- `Docs/Screenshots/MCP/h8_1473_mainrt_crest_foam_shoreline.png`
+- `Docs/Screenshots/MCP/h8_1908_surface_runtime_ui_on.png`
+- `Docs/Screenshots/1428_surface_game_cloud_deck_pass12.png`
+- `Docs/Screenshots/1428_sky_foam_caustics_pass_game.png`
+
+Owned scope:
+- Write: `Docs/Reports/Batch30/3003_VISUAL_REFERENCE_MATRIX_AND_REJECT_GATE.md`.
+
+Tasks:
+1. Read the authority docs.
+2. Inspect each listed screenshot visually.
+3. Mark every listed screenshot as rejected unless it truly meets all gates; do not upgrade old images.
+4. Compare composition, water surface, foam, caustics, shoreline/wetness, terrain, Aegir/sky, underwater volume, and proof hygiene.
+5. State what each older direction-only frame does better than `1912`.
+6. State what each older frame still fails.
+7. Define hard visual reject gates for `1475+`.
+8. Define positive required traits for `1475+`.
+9. Include a short route-correctness checklist for each of the six proof views.
+10. Do not invent external references or web claims.
+11. Create the report.
+
+Rejection gates:
+- No "looks better" acceptance.
+- No vague "visual acceptable".
+- No accepting false underwater labels.
+

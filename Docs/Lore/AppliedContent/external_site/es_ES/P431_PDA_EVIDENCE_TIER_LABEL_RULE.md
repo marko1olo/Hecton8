@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ The PDA should tell you how strong the proof is, not what to feel.
 
 ## Field Note
 
-Use for PDA UI labels and localization glossary.
+PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe.
 
 <!-- External Site; generated from P431_PDA_EVIDENCE_TIER_LABEL_RULE/es_ES. -->

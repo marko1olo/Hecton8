@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
 # P-63 Pump Room First Repair Task
 
-P-63 Pump Room First Repair Task anchors the first hour in a small believable survival loop.
+P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.
 
 ## Scanner
 
-The pump does not care about the plot. It cares about pressure.
+Pump-room task card recovered. Pressure work comes before salvage.
 
 ## Terminal
 
-P-63 TASK: restore manual pump cycle, patch cold seam, clear cutter contact, deploy pinger.
+WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.
 
 ## Audio
 
-Make one dry room. Then think about why it was wet.
+Pump first. Patch cold. Cut only when the seam goes quiet.
 
 ## Field Note
 
-First repair should teach the grammar of the whole game: physical system, pressure, tool, evidence.
+Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.
 
 <!-- In-Game Wiki; generated from P248_P63_PUMP_ROOM_FIRST_REPAIR_TASK/zh_CN. -->

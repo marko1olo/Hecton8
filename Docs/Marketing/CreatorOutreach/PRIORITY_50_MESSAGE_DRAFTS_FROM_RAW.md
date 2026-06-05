@@ -5,6 +5,11 @@ Generated: 2026-05-19
 Public stance: single-player-first scope / proof-first public copy
 Runtime impact: none
 
+## Authority Boundary
+
+Static documentation only. Public creator outreach, private access, Steam, wishlist, demo, performance, platform, release, publication, trailer/capture, creative, and gameplay-proof claims require root `textes.md` for voice plus `quality.md`, `release.md`, and `platform.md` with current proof artifacts and the local permission gates.
+No public post, Steam news, trailer/capsule approval, creator send, community launch, platform/release claim, demo claim, key/access offer, private preview, or message send is authorized by drafts, examples, lead rows, source signals, or plan rows in this file.
+
 ## Boundary
 
 These messages are not send-ready. They are first drafts generated from public index signals: source games, segment, country candidate, and repeated appearances. Before sending, verify the official channel, recent content, public contact route, brand safety, and a matching real HECTON-8 asset.
@@ -206,7 +211,7 @@ Hi Accurize2,
 
 Your channel is a better fit for a practical survival pitch than a cinematic reveal. HECTON-8 should only be sent when we can show the actual survival loop.
 
-HECTON-8 is single-player deep-sea survival about pressure, salvage, black water, and machines that keep the player alive. Single-player-first scope and no competitor-attack framing.
+HECTON-8 is single-player underwater survival about beautiful alien water, pressure, salvage, black-water depth, and machines that keep the player alive. Single-player-first scope and no competitor-attack framing.
 
 The useful angle for your audience: a route where oxygen, pressure, power, and salvage value force the player to decide when to turn back.
 
@@ -332,7 +337,7 @@ Hi Splattercat,
 
 I am holding this until HECTON-8 has a strong enough clip for an indie discovery audience. It needs to show the playable verb in seconds.
 
-HECTON-8 is single-player deep-sea survival about pressure, salvage, machinery, and black water. Single-player-first scope, no competitor-attack framing, no concept-art bait.
+HECTON-8 is single-player underwater survival about beautiful alien water, pressure, salvage, machinery, and black-water depth. Single-player-first scope, no competitor-attack framing, no concept-art bait.
 
 The possible fit: a first-look demo where the hook is not "underwater", but the pressure/base/salvage loop.
 

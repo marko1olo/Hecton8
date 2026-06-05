@@ -108,13 +108,13 @@ Current profile asset direction:
 - banner: `MarketingAssets/00_Brand/Teni_Games_TenI_Banner_X_1500x500.png`;
 - motion rule: sine/sonar movement is allowed; glitch must stay subtle enough that `天衣` remains readable.
 
-HECTON-8 is a single-player-first NASA-punk / deep-sea noir survival game about pressure, salvage, machinery, and staying alive below the light.
+HECTON-8 is a single-player-first NASA-punk / deep-sea noir survival game about a beautiful alien ocean, pressure, salvage, machinery, and staying alive when the route drops below the light.
 
 The enemy is not "Subnautica 2". The enemy is the ocean, pressure, failing machines, bad visibility, resource tension, and the feeling that the player is operating a fragile industrial system in a place humans should not be.
 
 ## One-Line Public Pitch
 
-HECTON-8 is a single-player-first underwater survival game where pressure, machinery, salvage, and black-water exploration decide whether you make it back alive.
+HECTON-8 is a single-player-first underwater survival game where beautiful surface/shallows, pressure, machinery, salvage, and black-water depth decide whether you make it back alive.
 
 ## Short Public Pitch
 
@@ -122,9 +122,9 @@ HECTON-8 is a NASA-punk / deep-sea noir survival game about building, repairing,
 
 ## Long Public Pitch
 
-HECTON-8 is a single-player-first underwater survival game set in a hostile industrial abyss. The player survives through salvage, pressure-rated equipment, machinery, base systems, careful route planning, and hard choices under limited visibility.
+HECTON-8 is a single-player-first underwater survival game set in a beautiful alien ocean that becomes a hostile industrial abyss. The player survives through salvage, pressure-rated equipment, machinery, base systems, careful route planning, and hard choices under limited visibility.
 
-The visual identity is not bright alien wonder. It is salt, corrosion, floodlights, scratched glass, crushed metal, emergency lamps, black water, and machines that sound like they are one fault away from failing. The long-term hook is the Seed Ship: a deep anomaly that changes instruments, habitats, routes, fauna, and the player's sense of safety.
+The visual identity is not bright alien wonder alone. Surface, Aegir, coastline, ocean skin, and photic shallows must be beautiful when shown. The HECTON identity is the contrast: salt, corrosion, floodlights, scratched glass, crushed metal, emergency lamps, black-water depth, and machines that sound like they are one fault away from failing. The long-term hook is the Seed Ship: a deep anomaly that changes instruments, habitats, routes, fauna, and the player's sense of safety.
 
 ## Positioning Pillars
 

@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
 # Правила audio transcript censor
 
-Правила audio transcript censor задают readable damaged-audio policy для HECTON-8.
+Audio Transcript Censor Rules balance damaged recordings, redacted names, readable warnings, and localization clarity.
 
 ## Scanner
 
@@ -32,6 +32,6 @@ Static может скрыть имя. Он не может скрыть тре�
 
 ## Field Note
 
-Diegetic censor marks скрывают missing route facts; critical accessibility text нельзя прятать за стилем.
+Diegetic censor marks can hide missing route facts; critical accessibility text stays readable.
 
 <!-- External Site; generated from P218_AUDIO_TRANSCRIPT_CENSOR_RULES/ru_RU. -->

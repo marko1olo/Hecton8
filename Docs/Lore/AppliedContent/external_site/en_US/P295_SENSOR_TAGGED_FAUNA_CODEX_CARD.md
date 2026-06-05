@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ It is not obeying. It is being used.
 
 ## Field Note
 
-Do not write as possession. It is damaged maintenance using animal movement.
+The tag is a scar, not a leash. Expect dirty telemetry and a nervous animal.
 
 <!-- External Site; generated from P295_SENSOR_TAGGED_FAUNA_CODEX_CARD/en_US. -->

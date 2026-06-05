@@ -1,5 +1,10 @@
 ﻿# SHINOBU_333 Submarine Ballast Buoyancy Route Card
 
+Status: `STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING`
+Evidence class: `STATIC_DOC / STATIC_SOURCE`
+Owner domain: vehicles/submarine ballast and buoyancy
+Review disposition: `YELLOW / STATIC_DOC_ONLY` until compile/import/runtime/profiler/player proof exists.
+
 - Date: 2026-05-22 Owner: `SHINOBU_333 / SUBMARINE_BALLAST_BUOYANCY_SOLVER` Domain: Echelon 6 Vehicles & Kinematics / submarine ballast,
 - displacement,
 - and pressure-gated buoyancy Status: STATIC SOURCE,

@@ -59,7 +59,7 @@ Interpretation: active docs are split between architecture contracts, content co
 
 ## 2026-06-02 DOCS_AUDIT Code Reality Correction
 
-No runtime code was edited by `DOCS_AUDIT`. User rejected folder/glossary-style documentation. This correction promotes source-backed implementation facts into `PROJECT_RUNTIME_TOPOLOGY.md` and marks proof gaps explicitly.
+No runtime code was edited by `DOCS_AUDIT`. User rejected folder/glossary-style documentation. This correction promotes source-backed implementation facts into `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md` and marks proof gaps explicitly.
 
 | Area | Source-backed reality recorded | Source / proof |
 |---|---|---|
@@ -94,7 +94,7 @@ No runtime code was edited by `DOC_ROOT_ARCH_AUDIT`. This section records static
 | First-party asmdefs | superseded by 2026-06-01 count: `171` under `Assets/_Project` | 2026-06-01 static filesystem count |
 | Data Monolith payload | superseded by 2026-06-01 payload: `1,804,864` bytes | `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` |
 | Data Monolith scoped validator | `PASS`; `files=2`; `structs=32`; `mb=1.0495`; `seconds=0.491846`; Python schema/payload proof only | `../Reports/DOC_ROOT_ARCH_AUDIT_h8bin_validator_narrow_20260528.json` |
-| Source topology doc | Added current project topology, source owner spine, route map, and verification gaps | `PROJECT_RUNTIME_TOPOLOGY.md` |
+| Source topology doc | Added current project topology, source owner spine, route map, and verification gaps | `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md` |
 | Source topology source-spine recheck | Corrected player/environment runtime-context source anchors to `Assets/_Project/Scripts/Core/...` | PowerShell path scan |
 | Domain coverage doc | Added echelon map to active docs, source anchors, and proof gaps | `DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md` |
 | Domain coverage reference check | Every listed architecture doc and `Assets/_Project/Scripts` anchor exists | PowerShell path scan |
@@ -103,7 +103,7 @@ No runtime code was edited by `DOC_ROOT_ARCH_AUDIT`. This section records static
 | Atlas stub cleanup | `observedAssemblyCount = 83` is compatibility-only; current count lives in topology/generated graph | `../PROJECT_ATLAS.md` |
 | Dependency graph regeneration | `BuildArchitectureAtlas.py` regenerated graph markdown/json/cache on 2026-05-28; graph reports `220` asmdefs scanned, `167` first-party asmdefs under `Assets/_Project`; graph count is stale against the 2026-06-01 filesystem count of `171` until regenerated | `../Generated/DEPENDENCY_GRAPH.md`, `../Generated/DEPENDENCY_GRAPH.json`, `../Generated/DEPENDENCY_GRAPH.cache.json` |
 | AtlasCheck | `ATLAS_CHECK_PASS references=5807` | `python Tools/AtlasCheck.py` |
-| H-Phi atlas | `PROJECT_ATLAS_HPHI.md` is absent; `HectonPhiStaticAudit.py --no-fail` timed out after 300 seconds before producing it | no proof artifact; see `../Generated/README.md` |
+| H-Phi atlas | `Docs/Generated/PROJECT_ATLAS_HPHI.md` is absent; `HectonPhiStaticAudit.py --no-fail` timed out after 300 seconds before producing it | no proof artifact; see `Docs/Generated/README.md` |
 | Structure validation | `pass=true`; activeDocCount `704`; broken links `0`; duplicate headers `0`; fence issues `0`; stale parameter files `0`; encodingWithoutUtf8Sig `0` | `../Reports/DOC_STRUCTURE_VALIDATION_X_012.json` |
 | OOP doc scanner | `finalPass=true`; activeFileCount `704`; sourceSyncPass `true`; active stale parameter files `0`; wordReductionPercent above `31%` | `../Reports/DOCUMENTATION_OPTIMIZATION_REPORT_X_012.json` |
 

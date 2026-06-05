@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# POI-кит: Evacuation Queue Terminal
+# Evacuation Queue Terminal POI Kit
 
-Evacuation terminals не должны быть абстрактными логами. Нужны physical doors, clocks, lists и route damage, чтобы доказательство было playable.
+Evacuation terminals should not be abstract logs. They need physical doors, clocks, lists and route damage to make the proof playable.
 
 ## Scanner
 
-POI kit: queue terminal доказывает delay через door state, clock drift и missing route capacity.
+POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.
 
 ## Terminal
 
-QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch и salvage conflict.
+QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.
 
 ## Audio
 
-Очередь - это body count с более чистым форматированием.
+A queue is a body count with cleaner formatting.
 
 ## Field Note
 
-Для evidence rooms, где salvage и proof preservation конфликтуют.
+POI evidence kit: Evacuation Queue Terminal frames rooms where salvage value and proof preservation conflict.
 
 <!-- In-Game Wiki; generated from P389_EVACUATION_QUEUE_TERMINAL_POI_KIT/ru_RU. -->

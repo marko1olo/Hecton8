@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ The carrier can hear you and still be in the wrong sky.
 
 ## Field Note
 
-Use for Black Keel timing UI, in-game wiki and spoiler-light site systems page.
+Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints.
 
 <!-- In-Game Wiki; generated from P422_AEGIR_LOCAL_WINDOW_BAND_TABLE/en_US. -->

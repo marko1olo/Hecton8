@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Site Home Longform Brief
+# HECTON-8: Pressure Claim
 
-Longform spine: HECTON-8 is a hard-sci-fi salvage descent where a former Deep Reach field-systems specialist accepts a dirty Marauder contract, crashes into a bright drowned shelf, repairs enough to survive, and discovers that the official accident language fails against physical evidence. The article should name Black Keel, Aegir windows, the damaged capsule, P-63 and the long descent promise without spoiling final receiver endings.
+HECTON-8 begins as a salvage job, not a rescue story. A debt-bound Marauder, formerly a Deep Reach field-systems specialist, takes a Black Keel contract during a narrow Aegir window and drops toward P-63, a bright drowned shelf with enough machinery left to keep a person alive for one more repair cycle. The first work is practical: seal the bathydrop, scan what survived, restore pressure, and return with cargo or evidence before the route closes. The open accident record calls the site unstable. The shelf says more: damaged evacuation hardware, clean liability language, and physical marks that do not match the official sequence. The long descent starts there, with pressure machinery, Black Keel accounting, and a question Deep Reach never wanted answered.
 
 ## Scanner
 
-Public brief: the home article opens with contract, damaged bathydrop, pressure repair and the first contradiction.
+Marauder intake record. Initial route links Black Keel, a damaged bathydrop, and P-63 pressure repairs. Public accident record is incomplete.
 
 ## Terminal
 
-SITE HOME: show the player verb within the first screen - repair, scan, descend, return with evidence or cargo.
+PUBLIC ARCHIVE NODE // H8 CLAIM SUMMARY. Contract window: Aegir relay open. Required actions: repair pressure seals, scan the shelf, recover cargo, return with evidence.
 
 ## Audio
 
-Public copy note: pressure before myth.
+Black Keel relay excerpt: "Contract window is short. Fix the capsule, read the pressure marks, and bring back proof with the cargo."
 
 ## Field Note
 
-Assemble for website: first viewport = pressure machinery and player action; second = Aegir/Black Keel constraint; third = Deep Reach lie; fourth = Atlas repair ecology teaser; no release/platform claims.
+Marauder note: daylight on the shelf does not make it safe. Count air, fix seals before chasing cargo, and distrust any record that cannot match the dents.
 
 <!-- External Site; generated from P456_SITE_HOME_LONGFORM_BRIEF/ar_SA. -->

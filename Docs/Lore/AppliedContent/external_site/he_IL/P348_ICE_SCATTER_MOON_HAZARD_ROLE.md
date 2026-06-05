@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ Every system has one moon that accountants love and pilots curse.
 
 ## Field Note
 
-Use for map annotations and salvage rumor text.
+Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8.
 
 <!-- External Site; generated from P348_ICE_SCATTER_MOON_HAZARD_ROLE/he_IL. -->

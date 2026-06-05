@@ -1,0 +1,75 @@
+{
+  "agentId": "1748",
+  "timestamp": "2026-06-03T23:04:44+04:00",
+  "proofLevel": "static_only",
+  "modifiedFiles": [
+    {
+      "path": "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
+      "sha256": "DF91ABCB40ECED41FD62664862AE878C11B3082F3846650EE77BC32873BAB39C",
+      "changes": [
+        "MaxCapacity changed to 64.",
+        "LowCapacity changed to 16."
+      ]
+    },
+    {
+      "path": "Assets/_Project/Art/Shaders/HectonVisorUberPost.shader",
+      "sha256": "4F68A1268CA02765B78708A492955774FAE0F2D4818F386B3A2E6B4D1B27A18C",
+      "changes": [
+        "Desktop internal waterline mask now samples scene depth.",
+        "Mask reconstructs world position and compares sceneWorld.y against _InternalWaterlineY.",
+        "Mask uses fwidth(yDelta) antialiasing and falls back to the old screen split for invalid depth."
+      ]
+    }
+  ],
+  "staticEvidence": {
+    "activeDecalBudget": {
+      "status": "implemented",
+      "evidence": [
+        "DynamicDecalVaultRuntime.cs:232 MaxCapacity = 64",
+        "DynamicDecalVaultRuntime.cs:233 LowCapacity = 16",
+        "GenerateTraumaDecalMatricesJob writes at state.TotalWritten % Capacity and ActiveCount is clamped to Capacity."
+      ]
+    },
+    "waterlineSplit": {
+      "status": "implemented",
+      "evidence": [
+        "HectonVisorUberPost.shader:239 HectonSceneDepthValid01(rawDepth)",
+        "HectonVisorUberPost.shader:240 ComputeWorldSpacePosition(safeUv, rawDepth, UNITY_MATRIX_I_VP)",
+        "HectonVisorUberPost.shader:245 fwidth(yDelta)"
+      ]
+    },
+    "forbiddenRoutes": {
+      "status": "touched_visor_route_clear",
+      "evidence": [
+        "No DecalProjector, Graphics.Blit, new Material, Instantiate, Resources.Load, GlobalRegistry.Get<, TryGetLatestCreated, or .Complete() matches in touched visor route static scan.",
+        "Unrelated editor-only TryGetLatestCreated matches remain under Assets/_Project/Scripts/VFX/Parasites/Editor."
+      ]
+    },
+    "laserCutterGlowHandoff": {
+      "status": "unresolved",
+      "evidence": [
+        "LaserCutterDodJobs.cs:461 writes LaserCutGlowDecalRequestDTO.",
+        "LaserCutterDodRuntime.cs:517 publishes impact VFX only; no verified decal consumer call."
+      ]
+    },
+    "saltCrustProjection": {
+      "status": "unresolved",
+      "evidence": [
+        "No VehicleSurfacedSignal found in audited scripts.",
+        "Existing salt references are shader/mask domain, not a verified dynamic decal material/profile handoff."
+      ]
+    }
+  },
+  "verification": {
+    "staticSearch": "ran",
+    "dotnetBuild": "skipped_active_dotnet_process",
+    "unityProfiler": "not_run",
+    "screenshot": "not_run"
+  },
+  "scaleConsequences": {
+    "low": "16 active decals; mobile waterline stays cheap camera-ray fake.",
+    "middle": "GlobalQualityWeight continuously increases decal budget toward 64.",
+    "high": "64 active decal ring and desktop world-space waterline edge.",
+    "ultra": "64 truth cap remains; higher tiers spend budget on existing shader/refraction fidelity instead of decal count growth."
+  }
+}

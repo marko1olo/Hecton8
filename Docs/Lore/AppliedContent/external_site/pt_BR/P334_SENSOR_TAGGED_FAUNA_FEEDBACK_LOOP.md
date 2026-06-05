@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ It is not hunting you. It may still report you.
 
 ## Field Note
 
-Use for scanner clues, not boss telegraphs.
+Scanner returns remain environmental evidence: tag, migration, repair priority, and no explicit predator command.
 
 <!-- External Site; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/pt_BR. -->

@@ -10,17 +10,17 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Replay seed: storm window rush
+# Storm Window Rush Contract Seed
 
-Replay seed HECTON-8 может делать ту же луну другой через orbital и weather pressure.
+A HECTON-8 replay seed can make the same moon feel different by changing orbital and weather pressure.
 
 ## Scanner
 
-Contract seed: rush window. Быстрее claim, жестче timing и меньше допуска на repair mistakes.
+Contract seed: rush window. Faster claim, harsher timing and less tolerance for repair mistakes.
 
 ## Terminal
 
@@ -28,10 +28,10 @@ SEED RUSH: storm window compressed, orbital relay shutter hostile, payout ceilin
 
 ## Audio
 
-Этот контракт платит потому, что ненавидит ожидание.
+This contract pays because it hates waiting.
 
 ## Field Note
 
-Для high-pressure replay contract и route warning UI.
+Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour.
 
 <!-- External Site; generated from P392_STORM_WINDOW_RUSH_CONTRACT_SEED/ru_RU. -->

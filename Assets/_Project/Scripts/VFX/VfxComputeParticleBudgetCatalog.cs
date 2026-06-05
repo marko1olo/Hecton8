@@ -27,50 +27,50 @@ namespace Hecton8.VFX
         /// <summary>MX350 soft group cap. Larger quality totals must be split by pool.</summary>
         public const int Mx350SoftGroupsPerDispatch = 512;
 
-        /// <summary>Minimum-quality total particle ceiling.</summary>
-        public const int MinimumQualityParticleCount = 8512;
+        /// <summary>Minimum-quality total particle ceiling: compact hardware acceptance cap.</summary>
+        public const int MinimumQualityParticleCount = 500;
 
         /// <summary>Middle-quality total particle ceiling.</summary>
-        public const int MiddleQualityParticleCount = 16384;
+        public const int MiddleQualityParticleCount = 2048;
 
-        /// <summary>Maximum-quality total particle ceiling.</summary>
-        public const int MaximumQualityParticleCount = 104096;
+        /// <summary>Maximum-quality total particle ceiling: full high-lane acceptance cap.</summary>
+        public const int MaximumQualityParticleCount = 5000;
 
-        /// <summary>Visual-overkill total particle ceiling.</summary>
-        public const int OverkillQualityParticleCount = 105120;
+        /// <summary>Visual-overkill total particle ceiling: one 512-group dispatch envelope at 64 threads.</summary>
+        public const int OverkillQualityParticleCount = 32768;
 
         /// <summary>Minimum-quality marine-snow pool ceiling.</summary>
-        public const int MinimumQualityMarineSnowCount = 8000;
+        public const int MinimumQualityMarineSnowCount = 448;
 
         /// <summary>Middle-quality marine-snow pool ceiling.</summary>
-        public const int MiddleQualityMarineSnowCount = 14336;
+        public const int MiddleQualityMarineSnowCount = 1792;
 
         /// <summary>Maximum-quality marine-snow pool ceiling.</summary>
-        public const int MaximumQualityMarineSnowCount = 100000;
+        public const int MaximumQualityMarineSnowCount = 4608;
 
         /// <summary>Visual-overkill marine-snow pool ceiling.</summary>
-        public const int OverkillQualityMarineSnowCount = 100000;
+        public const int OverkillQualityMarineSnowCount = 28672;
 
         /// <summary>Minimum-quality bubble pool ceiling.</summary>
-        public const int MinimumQualityBubbleCount = 384;
+        public const int MinimumQualityBubbleCount = 32;
 
         /// <summary>Middle-quality bubble pool ceiling.</summary>
-        public const int MiddleQualityBubbleCount = 1536;
+        public const int MiddleQualityBubbleCount = 192;
 
         /// <summary>Maximum-quality bubble pool ceiling.</summary>
-        public const int MaximumQualityBubbleCount = 3072;
+        public const int MaximumQualityBubbleCount = 320;
 
         /// <summary>Visual-overkill bubble pool ceiling.</summary>
-        public const int OverkillQualityBubbleCount = 4096;
+        public const int OverkillQualityBubbleCount = 3072;
 
         /// <summary>Minimum-quality debris pool ceiling.</summary>
-        public const int MinimumQualityDebrisCount = 128;
+        public const int MinimumQualityDebrisCount = 20;
 
         /// <summary>Middle-quality debris pool ceiling.</summary>
-        public const int MiddleQualityDebrisCount = 512;
+        public const int MiddleQualityDebrisCount = 64;
 
         /// <summary>Maximum-quality debris pool ceiling.</summary>
-        public const int MaximumQualityDebrisCount = 1024;
+        public const int MaximumQualityDebrisCount = 72;
 
         /// <summary>Visual-overkill debris pool ceiling.</summary>
         public const int OverkillQualityDebrisCount = 1024;

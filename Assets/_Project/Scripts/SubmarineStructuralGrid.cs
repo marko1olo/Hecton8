@@ -1048,8 +1048,20 @@ namespace Hecton8.Physics
 
         private void TriggerHullImpactCameraShake(float severity01, Vector3 worldPoint, Vector3 worldNormal)
         {
-            if (!CameraJuiceSignals.TryPublishImpact(severity01, worldPoint, -worldNormal))
+            if (!CameraJuiceSignals.TryPublishImpact(
+                    severity01,
+                    worldPoint,
+                    -worldNormal,
+                    CameraJuiceSignals.SharpKineticImpactProfileHash,
+                    1.15f,
+                    severity01 >= 0.72f ? CameraJuiceSignals.CriticalPriority : CameraJuiceSignals.HighPriority,
+                    0f,
+                    1.1f,
+                    1.2f,
+                    HullDentVisualSourceHash))
+            {
                 IncrementDroppedSignalCount();
+            }
         }
 
         private void EnsureHullImpactSparkParticles()

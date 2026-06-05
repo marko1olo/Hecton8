@@ -1,5 +1,10 @@
 ﻿# Seismic Shockwave Signal Route - SHINOBU_346
 
+Status: `STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING`.
+Evidence class: `STATIC_DOC` / `STATIC_SOURCE`.
+Owner domain: atmosphere / seismic shockwave signal route.
+Review disposition: `YELLOW / STATIC_DOC_ONLY` until compile/import/runtime/profiler/player proof exists.
+
 Owner: `HectonSeismicTideDirector` (`SystemID.HabitatAtmosphere`).
 
 Runtime truth:

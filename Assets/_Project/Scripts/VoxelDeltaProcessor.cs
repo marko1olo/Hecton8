@@ -4338,7 +4338,18 @@ namespace Hecton8.Caves
             // [BLOCKING_SYNC_POINT] FAIL_CLOSED_FRAME_BOUNDARY: the carve write buffer is
             // Vault-pinned while the worker owns it. Completing here is cheaper than
             // carrying a relocation-blocking pin into the next PRE_SIMULATION compaction pass.
-            if (!DispatcherJobFence.TryComplete(ref _scheduledCarveHandle, forceComplete: true))
+            DispatcherJobFence.BeginLateFrameSwapWindow();
+            bool completed;
+            try
+            {
+                completed = DispatcherJobFence.TryComplete(ref _scheduledCarveHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndLateFrameSwapWindow();
+            }
+
+            if (!completed)
             {
                 ResetScheduledCarveState();
                 return false;

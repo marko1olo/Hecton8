@@ -119,6 +119,11 @@ Instrument:
 
 - Valid profile radius cells hydrate the same Vault tuning row consumed by the Burst trauma evaluator; there is no separate managed profile radius route.
 
+- Agent 1746 update: `CameraJuiceImpactSignal` uses its fixed 128-byte reserved region for profile hash, source hash, amplitude scale, radius override, translation gain, rotation gain, priority, and flags. The ABI size remains 128 bytes.
+- Camera impact packets are admitted in critical/high/normal/low priority bands before generic impact lanes, still under `PROCEDURAL_MAX_IMPACTS_PER_FRAME=32`.
+- Profile selection resolves authored `camera_trauma_profiles.csv` rows first, then falls back to four named profiles: `SharpKineticImpact`, `LowFreqSeismicHeave`, `HighFreqToolVibration`, and `ContinuousPressureStress`.
+- Settings comfort bridge: camera shake and FOV presentation scale by cached `SettingsManager.UiMotionScale` on slow tick. This is presentation-only and does not alter gameplay truth, DTO layout, save identity, or signal ownership.
+
 
 
 Accessor purity:

@@ -1,5 +1,10 @@
 ﻿# SHINOBU_271 VR Interaction Kinematic Bridge Route Card
 
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
+Evidence class: STATIC_DOC / STATIC_SOURCE
+Owner domain: Echelon 4 Player / Kinematics / VR Interaction Bridge
+Review disposition: YELLOW / STATIC_DOC_ONLY until compile/import/runtime/profiler/player proof exists.
+
 - Route ID: `SHINOBU_271_VR_INTERACTION_KINEMATIC_BRIDGE` Date: 2026-05-21 Owner: `SHINOBU_271` Owner domain: Echelon 4 Player / Kinematics / VR Interaction Bridge Owning file/system: `PhysicalHandController`,
 - `VRInteractionKinematicBridge`,
 - `VRPhysicsInquisition` Status: `YELLOW / LOOP 14 CLI DOTNET SOLUTION EXIT 0;

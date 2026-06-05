@@ -4,6 +4,7 @@
 
 Status: Compile verification pending. `Directory.Build.targets` now shields SHINOBU_229's stale generated-project entries, but guarded compile/profiler proof is still not rerun and unrelated sibling-agent missing types may remain.
 
+Owner domain: tools / auxiliary equipment routing
 
 
 Route card: `Docs/ARCHITECTURE/SHINOBU_229_AUXILIARY_EQUIPMENT_ROUTE_CARD.md`, review disposition `YELLOW` until Unity import/profiler proof exists.

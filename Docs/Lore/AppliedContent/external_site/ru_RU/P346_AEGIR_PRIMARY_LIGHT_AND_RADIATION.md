@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Свет и радиация primary Aegir
+# Aegir Primary Light and Radiation
 
-Aegir строится как hard-sci-fi moon system: читаемый свет, радиация, orbital windows и industrial travel.
+Aegir is built as a hard-sci-fi moon system: readable light, ugly radiation, orbital windows and industrial travel rather than fantasy darkness.
 
 ## Scanner
 
-Звёздная заметка. Тёплый K-dwarf свет, а не космическая тьма, задаёт систему.
+Stellar note. Warm K-dwarf light, not deep-space darkness, sets the system baseline.
 
 ## Terminal
 
-КАРТА RAN: primary достаточно стабилен для инфраструктурных окон, но активен для наказания дешёвой защиты. Magnetosphere Aegir превращает радиацию в schedule math.
+RAN STELLAR CARD: the host primary is stable enough for long infrastructure windows but active enough to punish cheap shielding. Aegir's magnetosphere turns manageable radiation into schedule math.
 
 ## Audio
 
-Тут не абсолютная тьма. В этом и проблема: света хватает работать, радиации - платить за ошибки.
+It is not black out here. That is the problem. There is enough light to work, and enough radiation to charge you for every mistake.
 
 ## Field Note
 
-Для обзора системы и skybox/art constraints.
+System overview record: Aegir's readable sky comes from warm dwarf light, while radiation and magnetosphere windows keep travel expensive.
 
 <!-- External Site; generated from P346_AEGIR_PRIMARY_LIGHT_AND_RADIATION/ru_RU. -->

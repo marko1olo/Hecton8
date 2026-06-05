@@ -251,9 +251,22 @@ UI owns presentation, input focus, layout, control affordance, text rendering, a
 
 Every UI readout must name its source owner. If the source is stale, missing, corrupted, or low-confidence, the UI must show that state instead of pretending certainty.
 
+## 14A. Live Source Anchors - 2026-06-05
+
+Evidence class: STATIC_SOURCE / STATIC_DOC only. These anchors do not prove Unity import, Play Mode, profiler, GC, Frame Debugger, save/load, or player-build readiness.
+
+- `Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs` owns the diegetic compass presentation surface and implements `IInertialNavigationService`, `ISlowTickable`, `ILateFrameTickable`, and `IGlobalRegistryHotSwapListener`. It reads compass state from DataVault lanes `BufferID.CompassState`, `BufferID.CompassPresentationState`, `BufferID.CompassHeadingOutput`, and `BufferID.CompassBlackBox`; publishes/consumes typed compass/anomaly/survival/system/AUP signal snapshots; and presents cardinal text through a fixed `char[2]` plus `TMP_Text.SetCharArray`. UI GC boundary: no HUD/update path may replace that route with `TMP_Text.text`, interpolation, `ToString()`, scene search, or runtime hierarchy hashing. Runtime zero-GC proof remains pending.
+- `Assets/_Project/Scripts/AtlasSignal/SignalBeacon.cs` is navigation/signal presentation and recovery glue, not quest authority. It solves AUP triangulated strength on `IUpdatable`, queues dominant static shader publication to `ILateFrameTickable`, publishes acoustic breadcrumbs through `SignalBus<PhysicsEventPayload>`, and caches up to 32 active beacon telemetry rows in `SignalBeaconRegistry`. UI consumers may display `SignalBeaconTelemetry` strength/static/error/recovered-bit fields as partial/stale signal facts only. Save/quest/objective truth remains with the audio-log, narrative, persistence, and quest owners; runtime route proof remains pending.
+
 ## 15. GlobalQualityWeight Scaling
 
 Compact keeps hierarchy, legibility, color roles, static atlases, zero-GC text, and reduced motion. Middle adds richer glass, route diagrams, and screen material. High adds better degradation, secondary display response, and smoother transitions. Ultra adds dense instrument detail and cinematic screen texture without changing the command model or state truth.
+
+## First-20 Route Hook
+
+- First-20 moment: boot, world load, swim, tool, hazard, pause/save, death/retry, and load return must expose only decisions and true state needed for the selected opening route.
+- Route blocker removed: UI cannot be generic chrome, fake telemetry, unreadable art, mouse-only navigation, or a save/load facade without restored-state proof.
+- Proof class: screenshot, Play Mode/player capture for route UI operation, Profiler/GCMonitor for runtime UI paths, Frame Debugger for UI render features when changed, and save/load artifact for save/load screens or restored persistent state.
 
 ## 16. Proof Artifacts
 

@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Публичный модуль: ответственность Deep Reach
+# Deep Reach Liability Evidence
 
-Этот module объясняет guilt Deep Reach, не делая physics HECTON-8 фейком. Компания приняла margins, задержала evacuation и отмыла losses.
+Deep Reach liability survives because it does not require fake physics. The flood was real; the preventable damage appears in margins, clocks, access holds and records that cleaned names into categories.
 
 ## Scanner
 
-Publication module: Deep Reach. Physics caused the flood; corporate procedure shaped the loss.
+Liability record. Real tide physics, accepted margin risk, evacuation delay and sanitized loss language converge in the same evidence chain.
 
 ## Terminal
 
-PUBLIC MODULE LIABILITY: pair sanitized accident language with physical proof chain. Не пиши villain monologues.
+PUBLIC ARCHIVE NODE // LIABILITY EVIDENCE. Great Tide accepted. Review remains open for sensor margins, evacuation queue delay, quarantine hold, Atlas weighting and loss conversion.
 
 ## Audio
 
-Катастрофа может быть природной и все равно иметь подписи.
+A disaster can be natural and still have signatures on it.
 
 ## Field Note
 
-Для public evidence article, press kit lore и spoiler-tiered liability summary.
+Marauder note: never argue with the tide. Argue with the signatures beside it.
 
 <!-- In-Game Wiki; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/ru_RU. -->

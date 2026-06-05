@@ -4,6 +4,12 @@ Status: future / requires Steam page assets
 Public stance: single-player-first scope / proof-first campaign copy
 Runtime impact: none
 
+## Authority Boundary
+
+Static marketing plan only. Public voice routes to root `textes.md`.
+Claims about quality, release, platform support, Steam, wishlist, demo/playtest state, performance, spend, audience size, campaign readiness, or publication-readiness route through `quality.md`, `release.md`, `platform.md`, current proof artifacts, and the local permission gates named in this file.
+Rows, launch sequences, pitch drafts, announcement drafts, URLs, or gate names in this file do not approve public send, paid spend, Steam page publication, demo/wishlist claims, platform claims, or release claims.
+
 ## Objective
 
 Launch a Coming Soon page that converts cold traffic to wishlists without overselling features. The Steam page is the funnel center; every creator, post, clip, and press beat should point there only after the page can survive cold-read QA.
@@ -25,7 +31,7 @@ Launch a Coming Soon page that converts cold traffic to wishlists without overse
 
 Short description candidate:
 
-Single-player underwater survival below the light: pressure, salvage, machinery, black-water exploration, and a Seed Ship anomaly that makes the ocean stop feeling neutral.
+Single-player underwater survival in a beautiful alien ocean that becomes dangerous below the light: pressure, salvage, machinery, black-water exploration, and a Seed Ship anomaly that makes the ocean stop feeling neutral.
 
 ## Launch Sequence
 
@@ -162,7 +168,7 @@ Machine gate:
 | Steam surface | Minimum acceptable input |
 |---|---|
 | Short description | Candidate A unless first assets prove B or C harder. |
-| First screenshot | `PLAN-SHOT-001` or winning AB-001 asset. |
+| First screenshot | `PLAN-SHOT-000` or winning AB-001 asset; use `PLAN-SHOT-001` only as a depth/pressure identity candidate. |
 | Player verb screenshot | `PLAN-SHOT-003`. |
 | Base/machinery screenshot | One of `PLAN-SHOT-002`, `PLAN-SHOT-004`, or `PLAN-SHOT-005`. |
 | Agency/decision proof | `PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003`; `PLAN-SHOT-007` can add anomaly flavor but cannot replace decision proof. The asset metadata row must store non-pending `viewer_named_decision` and a valid `capture_verdict`, and the owning AB-009/KPI row must store the named pressure decision in `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`. |

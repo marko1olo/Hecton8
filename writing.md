@@ -1,6 +1,7 @@
 # HECTON-8 Writer-Screenwriter Bible
 
 Status: AUTHORING LAW / STATIC DOC / RUNTIME PROOF NOT IMPLIED
+Evidence class: STATIC_DOC
 Scope: in-world articles, encyclopedia pages, survivor diaries, terminal notes, black-box fragments, scanner/codex entries, technical explainers, mineral notes, ship/drive articles, public lore pages, and multilingual AppliedContent text packets.
 
 ## Prime Law
@@ -22,6 +23,12 @@ Use this file with:
 - `textes.md` only for real-world public marketing/community copy.
 
 This file owns prose quality, genre voice, realism, anti-AI wording, and multilingual package shape. It does not own simulation truth, quest state, UI runtime, or public readiness claims.
+
+## First-20 Route Hook
+
+- First-20 moment: first scanner result, terminal note, black-box fragment, field note, or codex unlock that makes the opening route's resource, tool, hazard, or return-path decision more concrete.
+- Route blocker removed: prevents first-route text from becoming generic lore, AI-sounding packet prose, or exposition detached from a physical evidence object.
+- Proof class: STATIC_DOC hook only; acceptance still requires source brief, surface-specific artifact text, canon sources, locale status where production content is requested, and runtime/UI proof only when the text is implemented.
 
 ## Writer And Screenwriter Roles
 
@@ -116,6 +123,8 @@ Use this order for real work:
 9. Provide a proof packet: sources used, IDs, surfaces, locale roster, native-review status, forbidden facts avoided.
 
 The loop must produce content, not a proposal about content. A task asking for a diary should end with a diary. A task asking for a technical article should end with a readable technical article, not notes about the future article.
+
+Localization lock: AppliedContent and major in-world content should be prepared for all 15 supported locales immediately. Non-native or machine-assisted text must be labeled honestly through status/frontmatter/index fields, never as player-visible disclaimers and never as native-final without proof.
 
 ## Surface Truth Contract
 
@@ -594,7 +603,7 @@ For any substantial writing task, provide:
 - localization plan for all 15 locales or explicit English-only scope;
 - forbidden facts avoided;
 - evidence object or UI route;
-- review status: source draft, localized draft, native-reviewed, or runtime-ready.
+- review status: source draft, localized draft, native-reviewed, or runtime proof attached.
 
 ## Acceptance Sentence
 

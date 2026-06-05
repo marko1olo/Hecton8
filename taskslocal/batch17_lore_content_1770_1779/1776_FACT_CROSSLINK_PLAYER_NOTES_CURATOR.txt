@@ -1,0 +1,108 @@
+HECTON-8 LOCAL TASK FILE
+Batch: batch17_lore_content_1770_1779
+Agent ID: 1776
+Role: Fact Taxonomy, Crosslink, and Player Notes Curator
+Distribution: give this whole file to one agent. No XML extraction is required.
+Wave mode: PARALLEL. Agents 1770-1779 work simultaneously. Do not wait for them, do not depend on their future output.
+
+IDENTIFICATION LINE
+First response must begin exactly:
+PROMPT IDENTIFIED: 1776 | DOMAIN: Lore Facts / Crosslinks / Player Notes | TASK COUNT: 20
+
+OBJECTIVE
+Build a clean lore fact and crosslink layer so content can serve website, in-game wiki, encyclopedia, scanner facts, player notes, and unlock logic without contradiction.
+The result must help future agents find facts by article ID, packet ID, surface, cluster, unlock, and spoiler level.
+
+AUTHORITY DOCS
+Read fully before editing:
+- AGENTS.md
+- PROJECT_BIBLES.md
+- writing.md
+- narrative.md
+- localization.md
+- Docs/Lore/Lore_Bible.md
+- Docs/Lore/Canon_Locks.md
+- Docs/Lore/Lore_Content_System.md
+- Docs/Lore/Lore_Localization_Model.md
+- Docs/Lore/Lore_Multilingual_Content_Architecture.md
+- Docs/Lore/Lore_Crosslink_Graph.md
+- Docs/Lore/Codex_Delivery_Map.md
+- Docs/Lore/AppliedContent/README.md
+
+OWNED SCOPE
+Primary inspect/edit scope:
+- Docs/Lore/Lore_Crosslink_Graph.md
+- Docs/Lore/Codex_Delivery_Map.md
+- Docs/Lore/AppliedContent/Publication_Cluster_Index.csv
+- Docs/Lore/AppliedContent/Publication_Surface_Index.csv
+- Docs/Lore/AppliedContent/packets/*.packets.json
+- Docs/Lore/AppliedContent/production_audits/1776/
+
+Do not rewrite full articles except for tiny metadata/crosslink fixes.
+Do not depend on agents 1770-1775 or 1777-1779.
+
+FACT CONTRACT
+One fact has one owner, one route, and one proof artifact.
+Facts must be separated from voice. A survivor note can be wrong; the fact registry must record whether it is observed, claimed, contradicted, inferred, or confirmed.
+
+PLAYER NOTE CONTRACT
+Player notes are not omniscient. They should help the player remember clues, routes, contradictions, fragments, resource needs, or unresolved questions after discovery.
+
+15-LOCALE CONTRACT
+Fact IDs are locale-stable. Player-facing labels and note text must account for:
+en_US, ru_RU, ja_JP, zh_CN, fr_FR, es_ES, de_DE, pl_PL, uk_UA, ar_SA, id_ID, ko_KR, he_IL, pt_BR, nl_NL.
+
+TASKS
+Task 01: Create/update Docs/Tasks/Status_1776.md with all 20 tasks and checkpoints after Tasks 05, 10, 15, and 20.
+
+Task 02: Create/update Docs/AgentLogs/Rationale_1776.md with exact fact-owner and crosslink decisions.
+
+Task 03: Inventory existing crosslink and cluster data. Output production_audits/1776/crosslink_inventory.csv with article ID, packet ID, related IDs, cluster, surface, spoiler, unlock route.
+
+Task 04: Identify orphan packet IDs, orphan article IDs, duplicate article IDs, dead crosslinks, and clusters with no clear reader/player purpose.
+
+Task 05: Checkpoint. Select a bounded set of metadata/crosslink fixes that do not depend on sibling agents.
+
+Task 06: Create production_audits/1776/fact_taxonomy.md defining fact states: observed, claimed, contradicted, inferred, confirmed, redacted, damaged, player-note, public-safe, spoiler-locked.
+
+Task 07: Build production_audits/1776/fact_owner_matrix.csv with fact_id, owner_doc_or_packet, evidence_path, first_allowed_surface, spoiler_level, unlock_gate, contradiction_state.
+
+Task 08: Patch small verified crosslink/index errors where a packet/article/cluster already exists and the fix is unambiguous.
+
+Task 09: Mark any false surface-darkness claims as canon-conflict facts with exact paths. Patch only metadata or small text if within scope and obvious.
+
+Task 10: Checkpoint. Reopen edited CSV/Markdown/JSON files and validate parse where relevant.
+
+Task 11: Define player-note templates for route clue, resource clue, contradiction clue, person clue, audio clue, scanner clue, repair clue, and surface/navigation clue. Output player_note_templates.md.
+
+Task 12: Map selected articles to player note candidates without inventing runtime UI fields. Use existing article/packet/unlock IDs only.
+
+Task 13: Improve Publication_Cluster_Index.csv or companion audit so clusters separate public wiki, in-game wiki, encyclopedia, scanner, audio, notes, and spoiler archive.
+
+Task 14: Ensure crosslinks do not leak late truth into early player/public surfaces. Mark any leak with exact path and fix if metadata-only.
+
+Task 15: Checkpoint. Run safe CSV/JSON validation and capture exact output.
+
+Task 16: Document a stable naming convention for future fact IDs if one is missing. Label as proposed unless already used.
+
+Task 17: Add 15-locale notes for player-facing labels/templates. Do not create fake native translations.
+
+Task 18: Write Docs/AgentLogs/HANDOFF_1776.md with existing IDs that need writer, localization, runtime, or reader follow-up. No sibling dependency.
+
+Task 19: Search edited files for invented future references to agents 1770-1779. Remove any dependency wording.
+
+Task 20: Final verification. Reopen edited files, update Status_1776.md, append final report to Docs/AgentLogs/LOG_1776.md.
+
+ACCEPTANCE PROOF
+- crosslink_inventory.csv exists.
+- fact_taxonomy.md and fact_owner_matrix.csv exist.
+- Player-note templates exist and are unlock-aware.
+- Small verified metadata fixes are made or blocked with exact reasons.
+- Final LOG_1776.md lists exact files and validation.
+
+REJECTION CONDITIONS
+- Crosslinks fabricate article IDs.
+- Player notes become omniscient.
+- Sibling output is required.
+- Surface brightness canon is weakened.
+- CSV/JSON syntax breaks.

@@ -1,13 +1,22 @@
 # HECTON-8 Drones, Automation, And Remote Systems Bible
 
 Status: AUTHORING LAW / STATIC DOC / RUNTIME PROOF NOT IMPLIED
+Evidence class: STATIC_DOC
 Scope: repair drones, mining bots, scanner probes, remote cameras, automation commands, docking/charging, drone AI boundaries, UI control, and drone proof gates.
+
+## First-20 Route Hook
+
+- First-20 moment: opening salvage route may show neutral or hostile old-system probes, remote scanner traces, or relay evidence as route pressure, not friendly automation.
+- Route blocker removed: prevents early drone work from erasing survival pressure, bypassing tool owners, or implying helper-drone dependency before the first route proves basic swim, scan, repair, and return decisions.
+- Proof class: STATIC_DOC hook only; acceptance still requires role contract, command owner route, active-count/cadence budget, compact readability proof, and profiler/GC proof for runtime automation changes.
 
 ## Prime Law
 
 Drones are fragile industrial tools with limited authority, not autonomous magic helpers.
 
 A drone must extend a player verb through risk, range, noise, power, maintenance, or perspective. HECTON-8 rejects free automation, omniscient repair bots, pet-like decorative drones with no system role, and AI helpers that erase survival pressure.
+
+Current design lock: friendly helper drones are not the default production direction. The main underwater drones are neutral or hostile systems from source/ship/old infrastructure, with deeper encounters trending more hostile or dangerous. Player-helper drone roles remain future/candidate work and must not erase survival pressure.
 
 ## Truth Ownership
 

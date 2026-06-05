@@ -10,21 +10,21 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# P63 Pump Room Work Order
+# P-63 Pump Room Work Order
 
-P-63 Pump Room Work Order turns the first survival task into diegetic engineering copy.
+The P-63 work order makes the first repair a colony procedure, not a tutorial overlay.
 
 ## Scanner
 
-Work order lists pump, seal, cut, pinger and fabricator in pressure order.
+Work order lists pump, seal, cut, pinger and gasket in pressure order.
 
 ## Terminal
 
-WORK ORDER P-63: clear sump, patch cold seam, cut fused latch, deploy acoustic return line, then print gasket.
+WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.
 
 ## Audio
 
@@ -32,6 +32,6 @@ Pump first. Seal second. If it sings, stop cutting.
 
 ## Field Note
 
-Place on pump room terminal or soaked clipboard; no tutorial language.
+Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.
 
 <!-- In-Game Wiki; generated from P287_P63_PUMP_ROOM_WORK_ORDER/id_ID. -->

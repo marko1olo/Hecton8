@@ -1,0 +1,37 @@
+---
+packet_id: P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE
+release_set_id: RS093_LORE_SYSTEM_INTEGRATION_BRIDGE
+article_id: applied_lore.black_keel_claim_window_bridge
+unlock_id: unlock.black_keel_claim_window_bridge
+poi_tags: poi.claim_window_panel;poi.aegir_relay_timestamp
+biome_tags: biome.carrier_link;biome.shallow_annex
+locale: pt_BR
+surface: external_site
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_machine_or_llm
+localization_flags: 1
+---
+
+# Janela de reivindicação do Black Keel
+
+Black Keel pode ouvir um sinal antes de içar um corpo. Em Aegir, resposta de carrier é uma faixa tarifada por geometria de relé, clima, quarentena, aceitação de carga e recuperação de massa. Contato é fato de rota. Resgate é cadeia completa.
+
+## Scanner
+
+JANELA DE REIVINDICAÇÃO // O relé de Aegir prevê só recebimento. Recuperação exige pacote de subida, acordo de quarentena e alocação tonne-window.
+
+## Terminal
+
+AVISO DE CUSTÓDIA KEELMARK // Sinal do operador recebido. Prioridade de recuperação não resolvida. Receber sinal ou pacote de prova não garante recuperação do operador.
+
+## Audio
+
+Relé Black Keel: sinal do operador precificado. Janela de recuperação pendente. Não confunda recebimento com içamento.
+
+## Field Note
+
+Se Black Keel responder, conte a cobrança, não o resgate. Um pacote recebido é só lugar na fila até massa, selo, quarentena e clima concordarem.
+
+<!-- External Site; generated from P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE/pt_BR. -->

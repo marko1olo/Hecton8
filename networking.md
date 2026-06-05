@@ -1,11 +1,20 @@
 # HECTON-8 Networking, Rollback, And Shared-State Bible
 
 Status: AUTHORING LAW / STATIC DOC / RUNTIME PROOF NOT IMPLIED
+Evidence class: STATIC_DOC
 Scope: co-op readiness, rollback, Merkle state deltas, logistics sync, bit packing, authority, reconciliation, input/state ownership, transport proof, and public networking claims.
+
+## First-20 Route Hook
+
+- First-20 moment: route-safe singleplayer state must already have packet-shaped authority boundaries for input, AUP position, survival, inventory, logistics, and save deltas.
+- Route blocker removed: local-only facts that cannot be reconciled later, float transform identity, unbounded full-state broadcasts, and co-op claims from static diagrams.
+- Proof class: `STATIC_DOC` until local loopback, packet/DTO byte-size proof, rollback/hash proof, zero-GC packet hot path, profiler, and save/load artifacts exist.
 
 ## Prime Law
 
 Networking is not a feature label. It is a proof burden. HECTON-8 may prepare every system for future shared state, rollback, and co-op, but no document, UI, store text, or report may claim operational multiplayer until transport, rollback, save, authority, profiler, and device evidence exist.
+
+User vision lock: co-op is not locked as a shipping feature yet, but its foundation may be prepared cautiously. Foundation work must preserve deterministic ownership, packet layout discipline, and rollback readiness without forcing multiplayer claims into public copy or route acceptance.
 
 The project rejects two equal failures:
 

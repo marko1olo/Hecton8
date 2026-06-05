@@ -86,7 +86,7 @@ Goal: prevent scope drift and derivative messaging.
 
 Current approved position:
 
-> HECTON-8 is a single-player-first NASA-punk / deep-sea noir survival game about pressure, salvage, machinery, and the cost of staying alive below the light.
+> HECTON-8 is a single-player-first NASA-punk / deep-sea noir survival game about a beautiful alien ocean, pressure, salvage, machinery, and the cost of staying alive when the route drops below the light.
 
 Public enemies:
 
@@ -100,7 +100,7 @@ Immediate prep:
 
 - keep a forbidden-claims checklist;
 - run every Steam, post, press, and creator pitch through the checklist;
-- require one concrete differentiator in every public copy block: pressure, machinery, salvage, corrosion, black water, Seed Ship, acoustic dread, heavy traversal.
+- require one concrete differentiator in every public copy block: bright surface/photic beauty when the asset shows it, pressure, machinery, salvage, corrosion, black-water depth, Seed Ship, acoustic dread, heavy traversal.
 
 Use existing files:
 
@@ -156,7 +156,7 @@ Goal: create screenshots that sell identity without explanation.
 
 The first image set must prove:
 
-- this is not bright plastic alien wonder;
+- this is not bright plastic alien wonder without pressure, route cost, machinery, or proof;
 - this is not just dark water;
 - the base is a machine;
 - pressure is visible;

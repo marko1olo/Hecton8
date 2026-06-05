@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Tool certification rituals
+# Tool Certification Board
 
-Colony culture HECTON-8 индустриальная: checklists, custody marks and tool signatures.
+The colony rituals in HECTON-8 are industrial: checklists, custody marks, pressure gloves and tool signatures.
 
 ## Scanner
 
-Tool cert board. Рабочие отмечали доверие stamped tools и repeated checks.
+Tool certification board. Trust was stamped into cutters, gloves and pump keys.
 
 ## Terminal
 
-CERT BOARD: cutter head checked, sealant cartridge weighed, pressure glove signed, pump key returned. Не церемония - survival discipline.
+CERT BOARD: cutter head checked; sealant cartridge weighed; pressure glove dual-signed; pump key returned late; descent tools held until recheck.
 
 ## Audio
 
-Перед спуском они не молились. Они проверяли инструменты друг друга.
+They did not pray before descent. They checked each other's tools.
 
 ## Field Note
 
-Для workshop, pump-room and fabricator props.
+Cutter head checked. Sealant cartridge weighed. Pressure glove signed by two hands. Pump key returned late and nobody erased the warning.
 
 <!-- External Site; generated from P358_TOOL_CERTIFICATION_RITUALS/ru_RU. -->

@@ -60,6 +60,24 @@ Rejected Alternatives: Keeping field-offset reflection in an editor branch that 
 Scalability potential: All tiers keep the same DTO layout route; high-tier visual-only joints/anchors do not introduce managed validation costs.
 Hardware Impact: Removes managed reflection pressure during cold metadata validation on i3/MX350-class systems.
 
+Problem: The factory blindly called `RecalculateNormals()` after every combined drone mesh, which can erase authored weighted/hard-surface normals on chassis and tool-arm source assets.
+Solution: Track whether any source mesh lacks `VertexAttribute.Normal`; preserve existing normals when all sources provide them and only rebuild normals for incomplete source meshes.
+Rejected Alternatives: Always rebuilding normals, or adding a new mesh postprocessor instead of fixing the factory combine owner.
+Scalability potential: Low/Middle keep clean readable hard-surface silhouettes without extra runtime work; High/Ultra can retain authored premium bevel/weighted-normal lighting through the same baked mesh path.
+Hardware Impact: Runtime cost remains 0; editor combine avoids unnecessary normal generation and protects visual fidelity.
+
+Problem: `DroneBoneMetadata` exposed an unused linear `TryGetJointByBoneIndex` route and validation allowed descriptor arrays whose row order did not match bone or anchor indices.
+Solution: Removed the linear lookup API and made validation enforce direct row-index ownership: `descriptors[i].BoneIndex == i`, `attachments[i].AnchorIndex == i`, and bone parents must precede children.
+Rejected Alternatives: Keeping the linear API for convenience, or letting future IK/pool code build remap tables after prefab load.
+Scalability potential: Low avoids needless spawn-time remaps; Middle/High/Ultra can add more visual-only joints and anchors without changing the solver's direct SOA addressing model.
+Hardware Impact: Removes a future O(n) search vector and keeps Burst-facing data contiguous and index-stable.
+
+Problem: JSON-authored drone bones could arrive in child-before-parent order, conflicting with the new direct-index parent-before-child contract.
+Solution: `DronePrefabFactory` now normalizes authoring bone order in-place before bake; unresolved parents or cycles reject the authoring file and trigger the deterministic default rig.
+Rejected Alternatives: Baking invalid source order, adding a runtime remap table, or doing hierarchy repair after prefab load.
+Scalability potential: All tiers keep parent-before-child SOA rows; Ultra visual-only joints can be authored freely as long as their parent graph is valid.
+Hardware Impact: Runtime cost remains 0; editor bake absorbs ordering work once.
+
 Problem: Full project build is currently unsafe on the shared workstation.
 Solution: Used Unity MCP script validation for files where the tool completes, targeted scans for `DroneFleetManager`, and blocked `dotnet build` under CPU/compiler gate. Last successful Unity console error query returned 0 entries; latest retry was blocked by Unity MCP readiness.
 Rejected Alternatives: Launching a competing project build, hiding MCP regex timeout as success, or editing another agent's vegetation domain without a direct drone dependency.

@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Ran-Aegir Distance Model
 
-Ran-Aegir Distance Model gives site/wiki text a clean scale: reachable by infrastructure, unreachable by sympathy.
+The Ran-Aegir distance model sets the scale: reachable by infrastructure, unreachable by sympathy.
 
 ## Scanner
 

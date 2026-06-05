@@ -10,8 +10,8 @@ Shader "HECTON/Sky/Hecton_AegirSky"
         _RingTint ("Ring Tint", Color) = (0.78, 0.9, 1.0, 1.0)
         _VoidTint ("Void Tint", Color) = (0.001, 0.0014, 0.0022, 1.0)
         _ScreenAegirCenterRadius ("Screen Aegir Center Radius", Vector) = (0.60, 0.56, 0.155, 0.0)
-        _ScreenAegirOpacity ("Screen Aegir Opacity", Range(0.0, 1.0)) = 0.88
-        _RingOpacity ("Ring Opacity", Range(0.0, 1.0)) = 0.18
+        _ScreenAegirOpacity ("Screen Aegir Opacity", Range(0.0, 1.0)) = 0.0
+        _RingOpacity ("Ring Opacity", Range(0.0, 1.0)) = 0.0
         _DiscTextureWeight ("Disc Texture Weight", Range(0.0, 1.0)) = 0.82
     }
 
@@ -63,6 +63,8 @@ Shader "HECTON/Sky/Hecton_AegirSky"
             float4 _H8AegirPlanetCenterRadius;
             float4 _H8AegirRingPlaneInner;
             float4 _H8AegirOrbitScalars;
+            float _H8AegirFlowPhase;
+            float _H8AegirFlowPhaseValid;
             float _H8GlobalQualityWeight;
 
             struct Attributes
@@ -87,6 +89,13 @@ Shader "HECTON/Sky/Hecton_AegirSky"
             float3 SafeUnit(float3 value)
             {
                 return value * rsqrt(max(dot(value, value), 0.00000001));
+            }
+
+            float AegirFlowPhase(float flowSpeed)
+            {
+                return _H8AegirFlowPhaseValid > 0.5
+                    ? _H8AegirFlowPhase
+                    : _Time.y * flowSpeed;
             }
 
             float Hash13(float3 value)
@@ -257,8 +266,9 @@ Shader "HECTON/Sky/Hecton_AegirSky"
                 float longitude01 = frac(normalXY.x * 0.46 + 0.5);
                 float latShear = sin(latitude01 * 18.0 + normalXY.x * 3.2) * 0.014
                                + sin(latitude01 * 43.0 - normalXY.x * 7.0) * 0.006;
-                float2 bandUv = float2(frac(longitude01 + latShear + _Time.y * flowSpeed), latitude01);
-                float2 detailUv = float2(frac(longitude01 * 1.73 - latShear * 1.4 - _Time.y * flowSpeed * 0.42),
+                float flowPhase = AegirFlowPhase(flowSpeed);
+                float2 bandUv = float2(frac(longitude01 + latShear + flowPhase), latitude01);
+                float2 detailUv = float2(frac(longitude01 * 1.73 - latShear * 1.4 - flowPhase * 0.42),
                                          saturate(latitude01 * 0.94 + 0.03));
                 float3 bands = SAMPLE_TEXTURE2D(_AegirBandTex, sampler_AegirBandTex, bandUv).rgb;
                 float3 detailBands = SAMPLE_TEXTURE2D(_AegirBandTex, sampler_AegirBandTex, detailUv).rgb;
@@ -266,7 +276,7 @@ Shader "HECTON/Sky/Hecton_AegirSky"
                 float detailLuma = saturate(dot(detailBands, float3(0.3333, 0.3333, 0.3333)) * 1.65);
                 float cloudTexture = saturate(textureLuma * 0.72 + detailLuma * 0.34);
                 float bandBreakup = 0.78 + Hash11(floor((latitude01 + normalXY.x * 0.17) * 89.0)) * 0.22;
-                float bandPhase = normalXY.y * lerp(11.0, 19.0, quality) + _Time.y * flowSpeed * 1.7;
+                float bandPhase = normalXY.y * lerp(11.0, 19.0, quality) + flowPhase * 1.7;
                 float wideBand = 0.5 + 0.5 * sin(bandPhase);
                 float stormBand = 0.5 + 0.5 * sin(bandPhase * 2.37 + normalXY.x * 5.0);
                 float shearBand = 0.5 + 0.5 * sin(bandPhase * 0.71 + normalXY.x * 10.5 + stormBand * 1.7);
@@ -296,7 +306,8 @@ Shader "HECTON/Sky/Hecton_AegirSky"
             {
                 float2 uv = AegirUv(hitNormal);
                 float flowWeight = saturate((quality - 0.08) * 1.2);
-                float driftPhase = frac(uv.y * 19.0 + _Time.y * flowSpeed);
+                float flowPhase = AegirFlowPhase(flowSpeed);
+                float driftPhase = frac(uv.y * 19.0 + flowPhase);
                 float drift = (driftPhase - 0.5) * flowWeight;
                 uv.x += drift * 0.028;
                 uv.y += drift * 0.006;
@@ -374,7 +385,8 @@ Shader "HECTON/Sky/Hecton_AegirSky"
                     alpha = max(alpha, 1.0);
                 }
 
-                color = DrawScreenSpaceAegir(color, input.positionCS, quality, flowSpeed, alpha);
+                if (_ScreenAegirOpacity > 0.0001)
+                    color = DrawScreenSpaceAegir(color, input.positionCS, quality, flowSpeed, alpha);
 
                 return float4(color, saturate(alpha));
             }

@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -20,7 +20,7 @@ HECTON-8 resources are not generic loot. Their value depends on pressure history
 
 ## Scanner
 
-Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.
+Blue debt receipt: value tied to custody chain, pressure history and contamination. Mass alone is low-grade.
 
 ## Terminal
 
@@ -32,6 +32,6 @@ The expensive part is not the mineral. It is proving where it has been.
 
 ## Field Note
 
-Use for scanner receipt, contract payout tease and resource wiki.
+Weigh the seal record before the sample. A heavy dirty lot can cost more than it pays.
 
 <!-- External Site; generated from P426_BLUE_DEBT_CUSTODY_GRADE_RECEIPT/en_US. -->

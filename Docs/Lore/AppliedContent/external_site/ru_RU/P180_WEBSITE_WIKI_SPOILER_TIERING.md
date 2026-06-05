@@ -10,25 +10,25 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Уровни спойлеров сайта и wiki
+# Public Spoiler Tiering Protocol
 
-Уровни спойлеров сайта и wiki задают publication gates для AppliedLore.
+Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth.
 
 ## Scanner
 
-Публичным статьям нужен spoiler pressure так же, как внутриигровым evidence.
+Public records need pressure doors like field evidence does.
 
 ## Terminal
 
-SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Сайт и внутриигровая wiki используют те же packet IDs.
+SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.
 
 ## Audio
 
-Wiki может испортить игру, если в ней нет pressure doors.
+A public archive can ruin a case if it has no pressure doors.
 
 ## Field Note
 

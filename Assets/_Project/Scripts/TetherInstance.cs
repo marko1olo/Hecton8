@@ -3236,7 +3236,18 @@ namespace Hecton8.Physics
                 return true;
 
             JobHandle handle = _pendingVerletSolveHandle;
-            if (!DispatcherJobFence.TryComplete(ref handle, forceComplete: true))
+            bool completed;
+            DispatcherJobFence.BeginPostFixedSwapWindow();
+            try
+            {
+                completed = DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostFixedSwapWindow();
+            }
+
+            if (!completed)
                 return false;
 
             return CommitPendingVerletSolve(publishResults);

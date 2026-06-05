@@ -27,30 +27,30 @@
       },
       "localized": {
         "en_US": {
-          "title": "Black Keel Approach Transcript Seed",
-          "scanner": "Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
-          "terminal": "TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
-          "audio": "Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
-          "in_game_wiki": "The approach transcript sets the first tone: professional salvage, debt pressure and physics before conspiracy.",
-          "external_site": "Opening audio should make the carrier useful, cold and constrained, not heroic.",
-          "field_note": "Use for VO script, caption article and first-hour trailer-safe excerpt."
+          "title": "Black Keel Approach Transcript",
+          "scanner": "Recovered carrier audio confirms paid descent, conditional return, four-second lag and required proof packet.",
+          "terminal": "CARRIER TRANSCRIPT BK-APP-01: lag 4.0s; packet loss 18%; descent billed; return conditional on receiver window, health, mass and proof.",
+          "audio": "Black Keel tender to claimant. Lag four seconds. Descent billed. Return not guaranteed. Send health, mass, proof.",
+          "in_game_wiki": "The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
+          "external_site": "The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
+          "field_note": "Claim-tender buffer, clipped by storm carrier. The speaker gives route facts and refuses to promise rescue."
         },
         "ru_RU": {
-          "title": "Seed транскрипта подхода Black Keel",
-          "scanner": "Audio seed: first contact Black Keel - clipped, contractual и delayed by orbital geometry.",
-          "terminal": "TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag и evidence bounty teaser.",
-          "audio": "Black Keel claimant: telemetry received. Не трать кислород на спор с орбитой.",
-          "in_game_wiki": "Approach transcript задает первый тон: professional salvage, debt pressure и physics раньше conspiracy.",
-          "external_site": "Opening audio должен делать carrier полезным, холодным и ограниченным, а не героическим.",
-          "field_note": "Для VO script, caption article и trailer-safe excerpt первого часа."
+          "title": "Draft RU localization pending native pass. Транскрипт подхода Black Keel",
+          "scanner": "Восстановленное аудио ретранслятора подтверждает оплаченный спуск, условный возврат, задержку четыре секунды и обязательный пакет доказательств.",
+          "terminal": "РАСШИФРОВКА РЕТРАНСЛЯТОРА BK-APP-01: задержка 4.0 с; потеря пакетов 18%; спуск выставлен к оплате; возврат зависит от окна приемника, здоровья, массы и доказательства.",
+          "audio": "Тендер Black Keel для заявителя. Задержка четыре секунды. Спуск выставлен к оплате. Возврат не гарантирован. Передайте здоровье, массу, доказательство.",
+          "in_game_wiki": "Draft RU localization pending native pass. The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
+          "external_site": "Draft RU localization pending native pass. The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
+          "field_note": "Буфер тендера по требованию, срезанный штормовым ретранслятором. Голос дает факты маршрута и не обещает спасение."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Black Keel Approach Transcript Seed",
           "scanner": "Draft JA localization pending native pass. Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
           "terminal": "Draft JA localization pending native pass. TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
           "audio": "Draft JA localization pending native pass. Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
-          "in_game_wiki": "Draft JA localization pending native pass. The approach transcript sets the first tone: professional salvage, debt pressure and physics before conspiracy.",
-          "external_site": "Draft JA localization pending native pass. Opening audio should make the carrier useful, cold and constrained, not heroic.",
+          "in_game_wiki": "Draft JP localization pending native pass. The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
+          "external_site": "Draft JP localization pending native pass. The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
           "field_note": "Draft JA localization pending native pass. Use for VO script, caption article and first-hour trailer-safe excerpt."
         },
         "zh_CN": {
@@ -58,8 +58,8 @@
           "scanner": "Draft ZH localization pending native pass. Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
           "terminal": "Draft ZH localization pending native pass. TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
           "audio": "Draft ZH localization pending native pass. Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
-          "in_game_wiki": "Draft ZH localization pending native pass. The approach transcript sets the first tone: professional salvage, debt pressure and physics before conspiracy.",
-          "external_site": "Draft ZH localization pending native pass. Opening audio should make the carrier useful, cold and constrained, not heroic.",
+          "in_game_wiki": "Draft CN localization pending native pass. The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
+          "external_site": "Draft CN localization pending native pass. The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
           "field_note": "Draft ZH localization pending native pass. Use for VO script, caption article and first-hour trailer-safe excerpt."
         },
         "fr_FR": {
@@ -67,8 +67,8 @@
           "scanner": "Draft FR localization pending native pass. Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
           "terminal": "Draft FR localization pending native pass. TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
           "audio": "Draft FR localization pending native pass. Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
-          "in_game_wiki": "Draft FR localization pending native pass. The approach transcript sets the first tone: professional salvage, debt pressure and physics before conspiracy.",
-          "external_site": "Draft FR localization pending native pass. Opening audio should make the carrier useful, cold and constrained, not heroic.",
+          "in_game_wiki": "Draft FR localization pending native pass. The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
+          "external_site": "Draft FR localization pending native pass. The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
           "field_note": "Draft FR localization pending native pass. Use for VO script, caption article and first-hour trailer-safe excerpt."
         },
         "es_ES": {
@@ -76,8 +76,8 @@
           "scanner": "Draft ES localization pending native pass. Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
           "terminal": "Draft ES localization pending native pass. TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
           "audio": "Draft ES localization pending native pass. Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
-          "in_game_wiki": "Draft ES localization pending native pass. The approach transcript sets the first tone: professional salvage, debt pressure and physics before conspiracy.",
-          "external_site": "Draft ES localization pending native pass. Opening audio should make the carrier useful, cold and constrained, not heroic.",
+          "in_game_wiki": "Draft ES localization pending native pass. The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
+          "external_site": "Draft ES localization pending native pass. The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
           "field_note": "Draft ES localization pending native pass. Use for VO script, caption article and first-hour trailer-safe excerpt."
         },
         "de_DE": {
@@ -85,8 +85,8 @@
           "scanner": "Draft DE localization pending native pass. Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
           "terminal": "Draft DE localization pending native pass. TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
           "audio": "Draft DE localization pending native pass. Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
-          "in_game_wiki": "Draft DE localization pending native pass. The approach transcript sets the first tone: professional salvage, debt pressure and physics before conspiracy.",
-          "external_site": "Draft DE localization pending native pass. Opening audio should make the carrier useful, cold and constrained, not heroic.",
+          "in_game_wiki": "Draft DE localization pending native pass. The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
+          "external_site": "Draft DE localization pending native pass. The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
           "field_note": "Draft DE localization pending native pass. Use for VO script, caption article and first-hour trailer-safe excerpt."
         },
         "pl_PL": {
@@ -94,8 +94,8 @@
           "scanner": "Draft PL localization pending native pass. Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
           "terminal": "Draft PL localization pending native pass. TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
           "audio": "Draft PL localization pending native pass. Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
-          "in_game_wiki": "Draft PL localization pending native pass. The approach transcript sets the first tone: professional salvage, debt pressure and physics before conspiracy.",
-          "external_site": "Draft PL localization pending native pass. Opening audio should make the carrier useful, cold and constrained, not heroic.",
+          "in_game_wiki": "Draft PL localization pending native pass. The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
+          "external_site": "Draft PL localization pending native pass. The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
           "field_note": "Draft PL localization pending native pass. Use for VO script, caption article and first-hour trailer-safe excerpt."
         },
         "uk_UA": {
@@ -103,8 +103,8 @@
           "scanner": "Draft UK localization pending native pass. Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
           "terminal": "Draft UK localization pending native pass. TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
           "audio": "Draft UK localization pending native pass. Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
-          "in_game_wiki": "Draft UK localization pending native pass. The approach transcript sets the first tone: professional salvage, debt pressure and physics before conspiracy.",
-          "external_site": "Draft UK localization pending native pass. Opening audio should make the carrier useful, cold and constrained, not heroic.",
+          "in_game_wiki": "Draft UA localization pending native pass. The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
+          "external_site": "Draft UA localization pending native pass. The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
           "field_note": "Draft UK localization pending native pass. Use for VO script, caption article and first-hour trailer-safe excerpt."
         },
         "ar_SA": {
@@ -112,8 +112,8 @@
           "scanner": "Draft AR localization pending native pass. Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
           "terminal": "Draft AR localization pending native pass. TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
           "audio": "Draft AR localization pending native pass. Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
-          "in_game_wiki": "Draft AR localization pending native pass. The approach transcript sets the first tone: professional salvage, debt pressure and physics before conspiracy.",
-          "external_site": "Draft AR localization pending native pass. Opening audio should make the carrier useful, cold and constrained, not heroic.",
+          "in_game_wiki": "Draft AR localization pending native pass. The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
+          "external_site": "Draft AR localization pending native pass. The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
           "field_note": "Draft AR localization pending native pass. Use for VO script, caption article and first-hour trailer-safe excerpt."
         },
         "id_ID": {
@@ -121,8 +121,8 @@
           "scanner": "Draft ID localization pending native pass. Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
           "terminal": "Draft ID localization pending native pass. TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
           "audio": "Draft ID localization pending native pass. Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
-          "in_game_wiki": "Draft ID localization pending native pass. The approach transcript sets the first tone: professional salvage, debt pressure and physics before conspiracy.",
-          "external_site": "Draft ID localization pending native pass. Opening audio should make the carrier useful, cold and constrained, not heroic.",
+          "in_game_wiki": "Draft ID localization pending native pass. The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
+          "external_site": "Draft ID localization pending native pass. The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
           "field_note": "Draft ID localization pending native pass. Use for VO script, caption article and first-hour trailer-safe excerpt."
         },
         "ko_KR": {
@@ -130,8 +130,8 @@
           "scanner": "Draft KO localization pending native pass. Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
           "terminal": "Draft KO localization pending native pass. TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
           "audio": "Draft KO localization pending native pass. Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
-          "in_game_wiki": "Draft KO localization pending native pass. The approach transcript sets the first tone: professional salvage, debt pressure and physics before conspiracy.",
-          "external_site": "Draft KO localization pending native pass. Opening audio should make the carrier useful, cold and constrained, not heroic.",
+          "in_game_wiki": "Draft KO localization pending native pass. The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
+          "external_site": "Draft KO localization pending native pass. The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
           "field_note": "Draft KO localization pending native pass. Use for VO script, caption article and first-hour trailer-safe excerpt."
         },
         "he_IL": {
@@ -139,8 +139,8 @@
           "scanner": "Draft HE localization pending native pass. Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
           "terminal": "Draft HE localization pending native pass. TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
           "audio": "Draft HE localization pending native pass. Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
-          "in_game_wiki": "Draft HE localization pending native pass. The approach transcript sets the first tone: professional salvage, debt pressure and physics before conspiracy.",
-          "external_site": "Draft HE localization pending native pass. Opening audio should make the carrier useful, cold and constrained, not heroic.",
+          "in_game_wiki": "Draft HE localization pending native pass. The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
+          "external_site": "Draft HE localization pending native pass. The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
           "field_note": "Draft HE localization pending native pass. Use for VO script, caption article and first-hour trailer-safe excerpt."
         },
         "pt_BR": {
@@ -148,8 +148,8 @@
           "scanner": "Draft PT localization pending native pass. Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
           "terminal": "Draft PT localization pending native pass. TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
           "audio": "Draft PT localization pending native pass. Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
-          "in_game_wiki": "Draft PT localization pending native pass. The approach transcript sets the first tone: professional salvage, debt pressure and physics before conspiracy.",
-          "external_site": "Draft PT localization pending native pass. Opening audio should make the carrier useful, cold and constrained, not heroic.",
+          "in_game_wiki": "Draft PT localization pending native pass. The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
+          "external_site": "Draft PT localization pending native pass. The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
           "field_note": "Draft PT localization pending native pass. Use for VO script, caption article and first-hour trailer-safe excerpt."
         },
         "nl_NL": {
@@ -157,8 +157,8 @@
           "scanner": "Draft NL localization pending native pass. Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
           "terminal": "Draft NL localization pending native pass. TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
           "audio": "Draft NL localization pending native pass. Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
-          "in_game_wiki": "Draft NL localization pending native pass. The approach transcript sets the first tone: professional salvage, debt pressure and physics before conspiracy.",
-          "external_site": "Draft NL localization pending native pass. Opening audio should make the carrier useful, cold and constrained, not heroic.",
+          "in_game_wiki": "Draft NL localization pending native pass. The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
+          "external_site": "Draft NL localization pending native pass. The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
           "field_note": "Draft NL localization pending native pass. Use for VO script, caption article and first-hour trailer-safe excerpt."
         }
       }
@@ -182,22 +182,22 @@
       },
       "localized": {
         "en_US": {
-          "title": "Deep Reach Sanitized Packet Transcript Seed",
-          "scanner": "Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.",
-          "terminal": "TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.",
-          "audio": "Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.",
-          "in_game_wiki": "Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.",
-          "external_site": "Deep Reach's public lie is built from true fragments arranged to hide liability.",
-          "field_note": "Use for terminal packet body, VO captions and public article sidebars."
+          "title": "Deep Reach Sanitized Packet Transcript",
+          "scanner": "Recovered Deep Reach packet repeats the accident summary, then gates rescue behind coordinates and quarantine pricing.",
+          "terminal": "PACKET DR-RCO-2190: safety priority asserted; coordinates required; quarantine cost pending; worker-cause fields omitted.",
+          "audio": "Recovery Compliance packet. Safety priority acknowledged. Coordinates first. Quarantine cost pending. Rescue cannot be priced blind.",
+          "in_game_wiki": "The sanitized packet stays plausible because it keeps true disaster nouns and removes the decisions that made them fatal.",
+          "external_site": "Deep Reach's public lie is omission: real physics, delayed authorization, and coordinate demands arranged into defensible language.",
+          "field_note": "Present-tense corporate packet. Legal phrasing must sound useful while withholding rescue until custody is priced."
         },
         "ru_RU": {
-          "title": "Seed транскрипта sanitized packet Deep Reach",
-          "scanner": "Audio/article seed: present contact Deep Reach повторяет sanitized accident language под legal delay.",
-          "terminal": "TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data и request for coordinates. Ложь - omission.",
-          "audio": "Deep Reach packet: ваша safety - our priority. Coordinate clarity required before safety can be priced.",
-          "in_game_wiki": "Sanitized packets сохраняют Deep Reach правдоподобными: они используют legal language, а не cartoon confessions.",
-          "external_site": "Публичная ложь Deep Reach собрана из true fragments, расставленных так, чтобы скрыть liability.",
-          "field_note": "Для terminal packet body, VO captions и public article sidebars."
+          "title": "Draft RU localization pending native pass. Транскрипт очищенного пакета Deep Reach",
+          "scanner": "Восстановленный пакет Deep Reach повторяет сводку аварии, затем ставит спасение после координат и расчета карантина.",
+          "terminal": "PACKET DR-RCO-2190: приоритет безопасности заявлен; координаты требуются; стоимость карантина ожидает расчета; поля причины работников опущены.",
+          "audio": "Пакет регламента восстановления. Приоритет безопасности подтвержден. Сначала координаты. Стоимость карантина ожидает расчета. Спасение нельзя оценить вслепую.",
+          "in_game_wiki": "Очищенный пакет остается правдоподобным, потому что сохраняет настоящие слова катастрофы и удаляет решения, сделавшие их смертельными.",
+          "external_site": "Публичная ложь Deep Reach построена на умолчании: настоящая физика, задержанная авторизация и запрос координат собраны в защищаемую формулировку.",
+          "field_note": "Корпоративный пакет в настоящем времени. Юридическая фраза должна звучать полезно, пока спасение удерживают до расчета цепочки хранения."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Deep Reach Sanitized Packet Transcript Seed",
@@ -337,22 +337,22 @@
       },
       "localized": {
         "en_US": {
-          "title": "Worker Dossier Audio Transcript Seed",
-          "scanner": "Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.",
-          "terminal": "TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.",
-          "audio": "Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.",
-          "in_game_wiki": "Worker transcripts make the colony human through procedure, fatigue, jokes and competence.",
-          "external_site": "The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.",
-          "field_note": "Use for VO fragments, dossier pages and prop evidence."
+          "title": "Worker Dossier Audio Transcript",
+          "scanner": "Worker audio ties pump cadence to route safety and shift fatigue.",
+          "terminal": "WORKER AUDIO M-VENN-07: pump cadence clean; upper route safe only while sump climbs under mark six.",
+          "audio": "Mara Venn, pump chief. If the pump sings clean, log it. If it coughs twice, stop arguing and take the upper stairs.",
+          "in_game_wiki": "Worker transcripts make the colony human through procedure, fatigue and competence. They avoid family hooks.",
+          "external_site": "The dead colony reads as a workplace that failed under physics and policy, not a melodrama prop.",
+          "field_note": "Recovered worker voice. Keep the human detail inside job pressure, route safety and worn equipment."
         },
         "ru_RU": {
-          "title": "Seed аудио-транскрипта worker dossier",
-          "scanner": "Audio seed: worker dossiers используют job pressure, routine и fatigue вместо family hooks.",
-          "terminal": "TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate и triage queue. Human through work.",
-          "audio": "Mara Venn, pump chief: если pump поет чисто, логируй. Если перестал петь - беги вверх.",
-          "in_game_wiki": "Worker transcripts делают колонию человеческой через procedure, fatigue, jokes и competence.",
-          "external_site": "Мертвая колония должна читаться как workplace, сломанный physics и policy, а не melodrama prop.",
-          "field_note": "Для VO fragments, dossier pages и prop evidence."
+          "title": "Draft RU localization pending native pass. Аудиотранскрипт рабочего досье",
+          "scanner": "Аудио работника связывает ритм помпы с безопасностью маршрута и усталостью смены.",
+          "terminal": "WORKER AUDIO M-VENN-07: ритм помпы чистый; верхний маршрут безопасен только пока sump поднимается ниже отметки шесть.",
+          "audio": "Мара Венн, начальник помпы. Если помпа поет чисто, внеси в журнал. Если кашляет дважды, не спорь и иди по верхней лестнице.",
+          "in_game_wiki": "Рабочие транскрипты делают колонию человеческой через процедуру, усталость и компетентность. Без семейной мелодрамы.",
+          "external_site": "Мертвая колония читается как рабочее место, сломанное физикой и политикой, а не как реквизит мелодрамы.",
+          "field_note": "Восстановленный голос работника. Человеческая деталь держится внутри давления работы, безопасности маршрута и изношенного оборудования."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Worker Dossier Audio Transcript Seed",
@@ -492,22 +492,22 @@
       },
       "localized": {
         "en_US": {
-          "title": "Atlas Repair Trace Transcript Seed",
-          "scanner": "Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.",
-          "terminal": "TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.",
-          "audio": "Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.",
+          "title": "Atlas Repair Trace Transcript",
+          "scanner": "Atlas trace logs a repair that treats cable, tissue and route as one service surface.",
+          "terminal": "MAINTENANCE TRACE ATLAS-6: leak class accepted; membrane/cable growth authorized; fauna route marked serviceable; human-use object category unresolved.",
+          "audio": "ATLAS-6 maintenance trace. Leak closed. Cable growth accepted. Warm-body route serviceable. Human-use category unresolved.",
           "in_game_wiki": "Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.",
-          "external_site": "Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.",
-          "field_note": "Use for scanner captions, deep audio layers and Atlas article spoiler gate."
+          "external_site": "Atlas does not explain itself. Its repair traces reveal what it has stopped distinguishing.",
+          "field_note": "Damaged maintenance telemetry. No villain speech; the clue is category collapse."
         },
         "ru_RU": {
-          "title": "Seed транскрипта repair trace Atlas",
-          "scanner": "Audio/caption seed: Atlas traces должны звучать как repair telemetry, где рушатся категории, а не speaking god.",
-          "terminal": "TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. Без direct confession; только maintenance grammar.",
-          "audio": "Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.",
-          "in_game_wiki": "Atlas audio пугает тем, что считает life, metal и water одной damaged maintenance surface.",
-          "external_site": "Atlas не должен объяснять себя. Его repair traces показывают, что он перестал различать.",
-          "field_note": "Для scanner captions, deep audio layers и Atlas article spoiler gate."
+          "title": "Draft RU localization pending native pass. Транскрипт ремонтного следа Atlas",
+          "scanner": "След Atlas фиксирует ремонт, где кабель, ткань и маршрут считаются одной сервисной поверхностью.",
+          "terminal": "СЛЕД ОБСЛУЖИВАНИЯ ATLAS-6: класс утечки принят; рост мембраны и кабеля разрешен; фаунистический маршрут помечен пригодным; категория для человека не решена.",
+          "audio": "Ремонтный след ATLAS-6. Утечка закрыта. Рост кабеля принят. Маршрут для живого тела пригоден. Категория для человека не решена.",
+          "in_game_wiki": "Аудио Atlas пугает тем, что считает жизнь, металл и воду одной поврежденной сервисной поверхностью.",
+          "external_site": "Atlas не объясняет себя. Его ремонтные следы показывают, что он перестал различать.",
+          "field_note": "Поврежденная maintenance telemetry. Без речи злодея; ключ в collapse категорий."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Atlas Repair Trace Transcript Seed",
@@ -647,22 +647,22 @@
       },
       "localized": {
         "en_US": {
-          "title": "Ending Record Transcript Seed",
-          "scanner": "Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.",
-          "terminal": "AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.",
-          "audio": "Dossier entry: claim closed for accounting. Truth status unresolved by design.",
-          "in_game_wiki": "Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.",
-          "external_site": "Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.",
-          "field_note": "Use for ending dossier, spoiler pages and final VO captions."
+          "title": "Ending Record Transcript",
+          "scanner": "Ending record fragment itemizes receiver, payload hash, debt state and unresolved cost.",
+          "terminal": "AFTER-ACTION RECORD: receiver accepted; payload hash retained; claim closed for accounting; truth state unresolved; suppression flag unknown.",
+          "audio": "After-action record. Receiver accepted payload hash. Claim closed for accounting. Suppression flag unreadable. Truth custody unresolved.",
+          "in_game_wiki": "Ending record transcripts make outcomes loggable and replay-comparable without converting knowledge into inherited power.",
+          "external_site": "Spoiler ending pages read as after-action custody records: what left, who owns it, and what stayed damaged.",
+          "field_note": "Ending dossier record. It must name receiver, custody and unresolved cost, not clean moral closure."
         },
         "ru_RU": {
-          "title": "Seed транскрипта ending record",
-          "scanner": "Ending transcript seed: after-action records itemize receiver, proof custody и unresolved cost.",
-          "terminal": "AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.",
-          "audio": "Dossier entry: claim closed for accounting. Truth status unresolved by design.",
-          "in_game_wiki": "Ending record transcripts делают каждый outcome loggable и replay-comparable, не превращая knowledge в inherited power.",
-          "external_site": "Spoiler ending pages должны читаться как after-action custody records: что ушло, кто этим владеет и что осталось поврежденным.",
-          "field_note": "Для ending dossier, spoiler pages и final VO captions."
+          "title": "Draft RU localization pending native pass. Транскрипт финальной записи",
+          "scanner": "Фрагмент финальной записи перечисляет приемника, хэш полезной нагрузки, состояние долга и неурегулированную цену.",
+          "terminal": "ПОСЛЕОПЕРАЦИОННАЯ ЗАПИСЬ: приемник подтвердил прием; хэш полезной нагрузки сохранен; требование закрыто для учета; состояние правды не решено; флаг подавления неизвестен.",
+          "audio": "Послеоперационная запись. Приемник принял хэш полезной нагрузки. Требование закрыто для учета. Флаг подавления нечитаем. Цепочка правды не решена.",
+          "in_game_wiki": "Транскрипты финальных записей делают исходы логируемыми и сравнимыми при replay, не превращая знание в наследуемую силу.",
+          "external_site": "Спойлерные финальные страницы читаются как послеоперационные записи хранения: что ушло, кто этим владеет и что осталось поврежденным.",
+          "field_note": "Финальная запись досье. Должна назвать приемника, хранение и неурегулированную цену, а не чистое моральное закрытие."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Ending Record Transcript Seed",

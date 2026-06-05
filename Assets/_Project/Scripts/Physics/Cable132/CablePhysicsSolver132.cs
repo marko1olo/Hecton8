@@ -1166,7 +1166,16 @@ namespace Hecton8.Physics
             }
 
             JobHandle handle = upload.Handle;
-            DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            DispatcherJobFence.BeginLateFrameSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndLateFrameSwapWindow();
+            }
+
             bool unlocked = TryUnlockSplineVertexUploadBuffer(upload.Destination, upload.Count);
             upload = default;
             return unlocked;
@@ -1268,7 +1277,16 @@ namespace Hecton8.Physics
             }
 
             JobHandle handle = upload.Handle;
-            DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            DispatcherJobFence.BeginLateFrameSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndLateFrameSwapWindow();
+            }
+
             bool unlocked = TryUnlockSplineIndirectArgsUploadBuffer(upload.Destination);
             upload = default;
             return unlocked;

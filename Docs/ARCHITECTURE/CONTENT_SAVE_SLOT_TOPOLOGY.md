@@ -6,6 +6,8 @@ Date: 2026-05-17
 
 Status: PENDING VERIFICATION
 
+Owner domain: persistence / content save slot topology
+
 ## Source Anchors
 
 Evidence class: STATIC_SOURCE / FILESYSTEM path check. These anchors prove current path visibility only, not save/load roundtrip, migration, Steam Cloud, or player-build proof.

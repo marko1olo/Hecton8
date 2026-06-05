@@ -1,13 +1,22 @@
 # HECTON-8 XR, VR, And Comfort Bible
 
 Status: AUTHORING LAW / STATIC DOC / RUNTIME PROOF NOT IMPLIED
+Evidence class: STATIC_DOC
 Scope: PCVR, standalone XR, Quest/PICO readiness, VR comfort, XR input, foveation, stencil masking, cockpit/visor UI, motion sickness, and XR proof gates.
+
+## First-20 Route Hook
+
+- First-20 moment: XR groundwork must preserve the same boot, world load, shallow exit, swim/orient, tool, hazard, save/load route while adding comfort, input, and per-eye readability constraints.
+- Route blocker removed: XR package presence treated as proof, flat HUD copied into stereo view, foveation/stencil claims without device evidence, and XR branches changing gameplay truth.
+- Proof class: `STATIC_DOC` until headset launch, frame pacing/profiler, input binding, UI readability, stencil/foveation capability, thermal/memory, and save/load artifacts exist.
 
 ## Prime Law
 
 XR is a separate proof lane, not a high-end graphics preset.
 
 HECTON-8 may support XR only when comfort, input, UI readability, frame pacing, thermal behavior, and platform proof exist. XR must intensify embodied pressure without making controls unreadable or nausea the primary threat. Claims about VR, Quest, PICO, or foveation are rejected without device artifacts.
+
+User vision lock: XR/VR groundwork is a real goal and may be prepared in parallel. It remains a proof lane, not a readiness claim. Do not block flat-screen production on XR, and do not claim XR-ready without headset/device artifacts.
 
 ## Truth Ownership
 

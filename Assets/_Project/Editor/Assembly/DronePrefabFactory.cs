@@ -669,12 +669,16 @@ namespace Hecton8.Editor.Assembly
         {
             materials = Array.Empty<Material>();
             ClearCombineScratch();
+            bool requiresNormalRebuild = false;
             for (int i = 0; i < segments.Count; i++)
             {
                 VisualSegment segment = segments[i];
                 Mesh mesh = segment.Mesh;
                 if (mesh == null)
                     continue;
+
+                if (!mesh.HasVertexAttribute(VertexAttribute.Normal))
+                    requiresNormalRebuild = true;
 
                 int subMeshCount = Mathf.Max(1, mesh.subMeshCount);
                 for (int subMesh = 0; subMesh < subMeshCount; subMesh++)
@@ -723,7 +727,8 @@ namespace Hecton8.Editor.Assembly
             };
             combined.CombineMeshes(finalInstances, false, false);
             combined.RecalculateBounds();
-            combined.RecalculateNormals();
+            if (requiresNormalRebuild)
+                combined.RecalculateNormals();
 
             if (!settings.DryRun)
             {
@@ -1577,6 +1582,12 @@ namespace Hecton8.Editor.Assembly
                     });
                 }
 
+                if (!NormalizeBoneBuildOrder(output))
+                {
+                    output.Clear();
+                    return false;
+                }
+
                 return output.Count > 0;
             }
             catch (Exception exception)
@@ -1585,6 +1596,48 @@ namespace Hecton8.Editor.Assembly
                 output.Clear();
                 return false;
             }
+        }
+
+        private static bool NormalizeBoneBuildOrder(List<BoneBuildData> bones)
+        {
+            if (bones == null || bones.Count == 0)
+                return false;
+
+            for (int targetIndex = 0; targetIndex < bones.Count; targetIndex++)
+            {
+                int selectedIndex = -1;
+                for (int candidateIndex = targetIndex; candidateIndex < bones.Count; candidateIndex++)
+                {
+                    string parentName = bones[candidateIndex].ParentName;
+                    if (string.IsNullOrEmpty(parentName))
+                    {
+                        selectedIndex = candidateIndex;
+                        break;
+                    }
+
+                    int parentIndex = FindBoneIndex(bones, parentName);
+                    if (parentIndex < 0)
+                        return false;
+
+                    if (parentIndex < targetIndex)
+                    {
+                        selectedIndex = candidateIndex;
+                        break;
+                    }
+                }
+
+                if (selectedIndex < 0)
+                    return false;
+
+                if (selectedIndex == targetIndex)
+                    continue;
+
+                BoneBuildData swap = bones[targetIndex];
+                bones[targetIndex] = bones[selectedIndex];
+                bones[selectedIndex] = swap;
+            }
+
+            return true;
         }
 
         private static TextAsset FindBestMetadata(string groupName, string metadataDirectory)

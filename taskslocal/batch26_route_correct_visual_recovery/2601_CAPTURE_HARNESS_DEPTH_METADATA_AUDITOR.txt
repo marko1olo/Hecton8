@@ -1,0 +1,45 @@
+<AGENT_PROMPT id="2601">
+You are Batch26 agent 2601 for HECTON-8.
+
+Mission:
+Find why proof packet labels can claim underwater/shoreline while images remain surface/coast views. Produce a route-correct capture harness plan with manifest and freshness checks. Do not run Unity.
+
+Read:
+- `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `TASTE.md`
+- `VISION_LOCKS.md`
+- `quality.md`
+- `camera.md`
+- `presentation.md`
+- `Docs/Reports/Batch25/BATCH25_SYNTHESIS_FOR_UNITY_OWNER.md`
+- newest relevant `Docs/Orchestration/UNITY_OWNER_*.md`
+- newest screenshot/log directories only
+
+Owned scope:
+- Static inspection of capture scripts, MCP helper scripts, screenshot naming, docs/reports, and proof files.
+- No edits outside output report/status/log.
+
+Tasks:
+1. Locate candidate capture code/scripts/classes that generated or named `h8_1474_*.png`.
+2. Verify whether capture output records camera position, rotation, depth, active underwater state, quality weight, toggles, and log path.
+3. Identify how `underwater_0_5m`, `underwater_20_50m_route`, and `shoreline_close_1m` can be mislabeled.
+4. Compare timestamps of six 1474 PNG files against latest log tail and report freshness defects.
+5. Define six required proof views and exact route intent for each.
+6. Define required metadata fields: scene, route, camera transform, water surface Y, camera depth below surface, underwater owner state, active fog/writer, quality weight, renderer toggles, log file.
+7. Define checksum manifest format using existing repo conventions if present; otherwise propose simple SHA256 text manifest under `Docs/Screenshots/MCP`.
+8. Define log freshness gate: clean log tail newer than final screenshot, no compile/import/domain reload/ILPP/noise after capture.
+9. Define reject codes for false route labels.
+10. State Compact/Middle/High/Ultra capture consequences without binary quality switches.
+11. Produce static-only report and mark runtime proof as `PENDING VERIFICATION`.
+
+Output:
+- `Docs/Reports/Batch26/2601_CAPTURE_HARNESS_DEPTH_METADATA_AUDIT.md`
+- `Docs/Tasks/Status_2601.md`
+- `Docs/AgentLogs/LOG_2601.md`
+
+Forbidden:
+- No Unity launch, no Play Mode, no MCP screenshot capture, no dotnet/build.
+- No code/scene/material edits.
+- No acceptance from prose.
+</AGENT_PROMPT>

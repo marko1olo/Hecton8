@@ -10,17 +10,17 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Протокол приемника: withheld blind return
+# Payload Withhold Blind Return Protocol
 
-Withholding payload - это route agency, не perfect ending. Он отказывает corporate access, но рискует proof, payout и rescue clarity.
+Withholding the payload is an agency route, not a perfect ending. It denies corporate access while risking proof, payout and rescue clarity.
 
 ## Scanner
 
-Blind return route. Deep Reach не получает map. Игрок не получает clean receipt.
+Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.
 
 ## Terminal
 
@@ -28,10 +28,10 @@ PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncer
 
 ## Audio
 
-Иногда не отправить - единственное, что еще принадлежит тебе.
+Sometimes not sending is the only thing that still belongs to you.
 
 ## Field Note
 
-Для no-clean ending dossier и refusal branch.
+Receiver record: withholding keeps Deep Reach blind while risking proof, payout, and clean extraction.
 
 <!-- In-Game Wiki; generated from P380_PAYLOAD_WITHHOLD_BLIND_RETURN_PROTOCOL/ru_RU. -->

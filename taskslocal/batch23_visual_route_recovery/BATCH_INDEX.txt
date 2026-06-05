@@ -1,0 +1,63 @@
+ID RANGE: 2301-2306
+BATCH: visual_route_recovery_after_1473_reject
+CREATED: 2026-06-04
+UNITY SLOT: NOT OWNED BY THIS WAVE
+
+PURPOSE
+The latest accepted evidence is none. Packets 1466-1473 remain rejected for flat/poor water, missing believable foam, missing visible caustics, invalid or weak underwater proof, green swamp cast, primitive/slab geometry, and unresolved runtime cleanliness proof.
+
+All agents in this wave must work independently. Do not wait for another Batch23 agent. Do not assume another agent's future patch exists. Use static files, reports, screenshots, logs, YAML, materials, shaders, and source code. The Unity Editor slot is owned by the thread named `Продолжить работу по логам`; do not enter Play Mode, move scene objects, import assets, or run Unity tests unless the controller explicitly transfers the Unity slot.
+
+VISUAL FLOOR
+Surface, sky, Aegir, moons, coastline, ocean surface, photic shallows, and medium-depth hero routes must be bright, legible, beautiful, detailed, and Subnautica-level or better. Darkness/noir belongs to depth, caves, interiors, storms, eclipses, and pressure events only. Do not hide weak terrain, primitive meshes, bad water, missing foam, or missing caustics with fog, darkness, saturation, or post-processing.
+
+COMMON AUTHORITIES
+Read only what is relevant to your task:
+- `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `TASTE.md`
+- `VISION_LOCKS.md`
+- `quality.md`
+- `water.md`
+- `lighting.md`
+- `vfx.md`
+- `terrain.md`
+- `world.md`
+- `.agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`
+- `.agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
+- `.agents-skills/REND_Shader_Noir_Aesthetics_Dithering_Fog.txt`
+- `.agents-skills/REND_VFX_Fluid_Aesthetics_Compute_Particles.txt`
+
+EVIDENCE BASELINE
+- `Docs/Screenshots/MCP/h8_1473_mainrt_surface_forced_day.png`
+- `Docs/Screenshots/MCP/h8_1473_mainrt_underwater_0_5m.png`
+- `Docs/Screenshots/MCP/h8_1473_mainrt_crest_foam_shoreline.png`
+- `Docs/Screenshots/MCP/h8_1473_mainrt_surface_motes_caustic_off.png`
+- `Docs/Screenshots/MCP/h8_1473_underwater_0_5m.png`
+- `Docs/Screenshots/MCP/h8_1473_underwater_20_50m_route.png`
+- `Docs/Reports/Batch22/*`
+- `Docs/AgentLogs/UnityEditor_visual_audit_restart*.log`
+
+TASKS
+- `2301_ATMOSPHERE_FOG_WRITER_LIVE_ROUTE_AUDITOR.txt`
+- `2302_UNDERWATER_PROOF_HARNESS_AND_CAMERA_ROUTE_AUDITOR.txt`
+- `2303_FOAM_CAUSTIC_ACTIVATION_PATCH_DESIGNER.txt`
+- `2304_SCENE_SLAB_PRIMITIVE_OFFENDER_STATIC_PATCHPACK.txt`
+- `2305_VISUAL_ACCEPTANCE_PACKET_JUDGE_AND_RUBRIC.txt`
+- `2306_PHOTIC_TEXTURE_INTAKE_AND_MATERIAL_BINDING_PLANNER.txt`
+
+REPORTS
+Write concise factual outputs under:
+- `Docs/Tasks/Status_23XX.md`
+- `Docs/AgentLogs/Rationale_23XX.md` only for non-trivial decisions
+- `Docs/AgentLogs/LOG_23XX.md`
+- `Docs/Reports/Batch23/`
+
+REJECT
+- Claiming visual acceptance without fresh complete proof.
+- Touching Unity slot.
+- Broad scene rewrites.
+- Depending on another Batch23 agent.
+- Fake performance numbers.
+- Hiding weak visuals with darkness/fog/post.
+- Re-enabling old primitive quads/slabs just because they contain useful words.

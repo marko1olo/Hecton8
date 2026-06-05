@@ -4,6 +4,12 @@ Status: future / requires stable demo
 Public stance: single-player-first scope / proof-first campaign copy
 Runtime impact: none
 
+## Authority Boundary
+
+Static marketing plan only. Public voice routes to root `textes.md`.
+Claims about quality, release, platform support, Steam, wishlist, demo/playtest state, performance, spend, audience size, campaign readiness, or publication-readiness route through `quality.md`, `release.md`, `platform.md`, current proof artifacts, and the local permission gates named in this file.
+Rows, demo slice notes, outreach batches, pitch drafts, key/access notes, or gate names in this file do not approve public send, paid spend, demo access, Steam page/wishlist claims, platform claims, or release claims.
+
 ## Objective
 
 Use the first demo, after all demo gates pass, to convert send-verified creators and Steam visitors with a playable proof slice. This is the first point where review keys and broader creator outreach make sense.

@@ -1,0 +1,41 @@
+ID: 3211
+Role: ATLAS6_PUBLIC_REPAIR_NETWORK_PACKET_WRITER
+
+Objective:
+Write one production draft packet about the public-facing Atlas-6 repair-network story without exposing final Atlas basin truth.
+
+Why this is needed:
+Public/wiki/in-game lore needs safe Atlas-6 context. The player can know public industrial history and repair-network language before deeper evidence reveals what the system did under pressure.
+
+Owned scope:
+- Create exactly one new file: `Docs/Lore/AppliedContent/production_packets/P467_ATLAS6_PUBLIC_REPAIR_NETWORK_BRIDGE.production.md`.
+- Do not edit P461-P466, RS093, route_cards, source CSV, h8bin, generated pages, Unity scenes, runtime scripts, or other workers' logs.
+
+Authority docs:
+AGENTS.md, PROJECT_BIBLES.md, TASTE.md, writing.md, narrative.md, localization.md, Docs/Lore/Canon_Locks.md, Docs/Lore/Lore_Bible.md, Docs/Lore/Website_Publication_Map.md, Docs/Lore/Codex_Delivery_Map.md.
+
+Tasks:
+1. Read authority docs and relevant mandates from BATCH_INDEX.
+2. Create source brief before prose.
+3. Topic: Atlas-6 as public industrial repair-network language, emergency routing, service prioritization, and why public pages can name it without revealing final basin truth.
+4. English authority text must include external site/wiki, in-game codex, scanner short, terminal/document, audio, Marauder field note, black-box fragment, and QA.
+5. Produce all 15 locale rows for title, site teaser, scanner, field note, and audio.
+6. Mark en_US `source_authority`; mark all other rows `draft_machine_or_llm`.
+7. Preserve names: HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, P-63, Xenon-Omega.
+8. Avoid final Atlas basin truth, final payload receiver spoilers, murder-button simplification, family hook, instant rescue, FTL/ansible, and direct confession.
+9. Add Runtime/Monolith placement notes as authoring intent only: LocIDs, layer, surfaces, unlock route, relation tags, and explicit no-runtime-markdown boundary.
+10. Add GlobalQualityWeight presentation density for Low/Middle/High/Ultra without changing lore truth, LocID, unlock identity, or save identity.
+11. Validate 15 locale headers, 14 draft rows, zero U+FFFD, and no obvious mojibake codepoints U+00C3/U+00D0/U+00D8/U+00E6/U+00EC/U+00D7.
+
+Proof packet:
+- Canon sources used.
+- Locale roster present.
+- Native-review/runtime status honest.
+- Evidence class STATIC_DOC.
+- Static validation output.
+
+Rejection gates:
+- No English clone rows.
+- No native-reviewed/runtime-ready claim.
+- No route_cards/DataMonolith edits.
+- No final Atlas truth.

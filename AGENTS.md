@@ -8,6 +8,7 @@ Engine: Unity 6000.4 URP. Minimum proof lane: compact 2GB VRAM / 8GB RAM / 4C-8T
 Perf target: 60 FPS / 16.67 ms. Throttle threshold = 25 ms.
 Guardrails: main thread = 12 ms · GC = 0 B/frame · SetPass = 600 · Batches = 1800 · mem = 4096 MB.
 Compact VRAM HARD CEILING: 1800MB. Texture budget: 900MB. RT+Depth: 320MB. Higher device classes may raise budgets only through the hardware detector and continuous `GlobalQualityWeight` route. Anyway, visuals MUST look astonishing, real, detailed.
+[REQ] use GOALS(/Goal) to make GOALS for you.
 [REQ] Graduation response: used/total > 0.90 triggers Mip-downgrade.
 [REQ] About `GlobalQualityWeight` - it is nice to make hardware-dependant optimization, but do not make shitty choices of graphics. Graphics worse than Subnautica is ABSOLUTELY PROHIBITED ON ANY HARDWARE LEVEL!
 [REQ] Surface, sky, Aegir, moons, clouds, coastline, ocean surface, and photic shallows are NOT the dark/noir zone. They must be bright, legible, beautiful, premium, and detailed on every hardware lane. Darkness, gloom, crushed blacks, and hostile noir grading belong to depth, caves, interiors, storms, eclipse windows, and pressure events only. Never use darkness/fog/post to hide primitive terrain, weak textures, procedural scribbles, or unfinished celestial art.
@@ -21,6 +22,7 @@ Compact VRAM HARD CEILING: 1800MB. Texture budget: 900MB. RT+Depth: 320MB. Highe
 [REQ] BE A STRONG CONTROLLER! IF YOU'RE NOT PRODUCING AAA-DETAILED VISUALS BUT BLURRY SHIT FOR THE PS1, THROW IT IN THE TRASH AND DO IT NORMALLY. KEEP AN EYE ON YOUR DETAILS, LODs, AND VISUALS. OUR GOAL IS BEAUTIFUL VISUALS WITH GOOD OPTIMIZATION. THE PROJECT HAS EVERYTHING FOR THIS – LOW-LEVEL MEMORY WORK, BIT-BY-BIT ALIGNMENT FOR CACHE LINES, BURST, JOBS, LOTS OF TEXTURES. USE IT WISELY. RELATED TO CAPSULES, STRUCTURES, AND OBJECTS, THEY SHOULD BE DETAILED AND HAVE BEAUTIFUL, DETAILED TEXTURES. IF THEY'RE PRIMITIVE, THROW THEM AWAY AND DO IT NORMALLY.
 [REQ] In Unity Game-View and Editor-View should be consistent, we need to see a big part of gameplay while flying with camera in Editor mode.
 [REQ] For gameplay or design decisions must read 'TASTE.md'
+[REQ] For user product vision decisions and ambiguity resolutions must read `VISION_LOCKS.md`; it overrides older narrow/over-austere interpretations in route bibles when they conflict.
 [REQ] Read main documents (AGENTS.md, TASTE.md, another .md root files according to your domain etc. fully)
 [REQ] You ABSOLUTELY have to read root .md design docs ACCORDING to your domain. Here described necessary bounds and choices! They're 'Hecton8/XXX.md'
 [REQ] If and only if you are acting as a local orchestrator, batch dispatcher, controller, or task-file generator, read `HECTON8_ORCHESTRATOR.md`. Ordinary implementation/content agents must not read it unless explicitly assigned orchestration work.
@@ -719,6 +721,8 @@ Response format: What was wrong -> What I did -> In-game result -> What was veri
 ## ABSOLUTELY FORBIDDEN
 
 [FORBID] Writing fluff in main documents or logs - keep brutal, concise. Not applied to code.
+[FORBID] Poor image
+[forbid] Saving fluff like tmp screenshots or logs inside /Assets folder. It provokes unity rebuild. Save tmp fluff only to /Docs
 [FORBID] Editing AGENTS.md without explicit instructions.
 [FORBID] Optimism/pleasantries: "should work now" / "problem solved" / "covered without literal impl."
 [FORBID] Refactor architecture without instruction. Add packages without permission.
@@ -765,6 +769,15 @@ Context compression is possible. Treat durable files as memory only when they ar
 [FORBID] Reading `Docs/Tasks/Status_[ID].md`, `Docs/AgentLogs/Rationale_[ID].md`, or `CURRENT_BATCH.md` before every response unless the user explicitly supplied that ID/batch, the current conversation already established an active ID/logging mode, or the user asked for those logs.
 [REQ] When an active ID/logging mode exists, keep Status/Rationale/LOG concise and factual for controller review. No filler, no copied chat, no fake metrics.
 [REQ] In ordinary work, preserve memory through concise chat updates, direct source reads, and the actual edited files. Re-read `.agents-skills/` and root bibles only when the task domain requires them.
+[REQ] If you are acting as an orchestrator/controller after context compression, resume, model handoff, or visible confusion about the current front, you MUST run an evidence refresh before acting:
+- read the tail of the active `Docs/Orchestration/ORCHESTRATOR_*YYYYMMDD*.md` memory file;
+- read the newest relevant `Docs/Orchestration/UNITY_OWNER_*`, handoff, or steer file;
+- inspect the newest relevant reports under `Docs/Reports/`;
+- inspect newest screenshots/proof artifacts and active Unity/build/process state when Unity is the front;
+- then state the current front, last accepted/rejected evidence, active owner, and next action.
+[FORBID] Orchestrators must not continue from compressed-chat memory alone, revive stale side tasks, or act on old Downloads/browser context until the current front is re-established from disk.
+[REQ] Orchestrators are portfolio controllers, not supervisors for one agent. A Unity owner or any other active agent is one lane only; while it runs, the orchestrator must keep independent fronts moving through Codex GUI agents, local subagents, static audits, browser/Gemini asset work, report synthesis, task generation, process hygiene, and proof review.
+[FORBID] Over-monitoring one active thread while independent project-improving work is available.
 
 SYSTEMIC MANDATE: Absolute rejection of binary quality switches. Every algorithm must consume a continuous float GlobalQualityWeight (0.0 = Minimum Survival, 1.0 = Visual Overkill). Use this weight to drive:
 Stochastic Decimation: Instead of cutting populations, use Weight as a probability threshold for entity updates.

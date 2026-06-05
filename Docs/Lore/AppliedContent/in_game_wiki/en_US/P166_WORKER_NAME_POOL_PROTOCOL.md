@@ -10,11 +10,11 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
-# Worker Name Pool Protocol
+# Worker Name Pool Record
 
 The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.
 
@@ -24,7 +24,7 @@ Names are evidence, not collectible flavor.
 
 ## Terminal
 
-NAME POOL: generate workers from domain-origin bands, job role, shift, badge fragment and route permission. Never translate personal names live at runtime.
+NAME POOL: workers derive from domain-origin bands, job role, shift, badge fragment, and route permission. Personal names stay stable across languages.
 
 ## Audio
 

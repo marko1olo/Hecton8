@@ -1,7 +1,14 @@
 # HECTON-8 Authoring, Editor Tools, And Data Bridge Bible
 
 Status: AUTHORING LAW / STATIC DOC / RUNTIME PROOF NOT IMPLIED
+Evidence class: STATIC_DOC
 Scope: designer facades, CSV/TSV authoring, ScriptableObject facades, `.h8bin` baking, editor windows, validators, hot reload staging, data monolith bridges, and human-readable tuning surfaces.
+
+## First-20 Route Hook
+
+- First-20 moment: opening route tuning for resource chain, tool interaction, recipe/repair/build action, hazard response, save/load flags, and route-readable UI data.
+- Route blocker removed: designers must not hardcode or hand-edit binary route values, and runtime must not parse human-readable data during gameplay.
+- Proof class: STATIC_DOC until source schemas, bake reports, binary readback, import evidence, runtime owner proof, and save/load route artifacts exist.
 
 ## Prime Law
 

@@ -1,0 +1,8 @@
+Command:
+python Tools\AppliedLoreRuntimeAudit.py --root . --source-only
+
+Exit code:
+1
+
+Output:
+AppliedLore audit FAILED: Publication page C:\hades\Hecton8\Docs\Lore\AppliedContent\external_site\ru_RU\P456_SITE_HOME_LONGFORM_BRIEF.md missing frontmatter line: localization_status: source_ready

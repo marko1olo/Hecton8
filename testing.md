@@ -1,6 +1,7 @@
 # HECTON-8 Testing, CI, And Verification Bible
 
 Status: AUTHORING LAW / STATIC DOC / RUNTIME PROOF NOT IMPLIED
+Evidence class: STATIC_DOC
 Scope: static scans, EditMode/PlayMode tests, generated asset validation, profiler evidence, hardware proof, CI gates, regression packets, and anti-fake reporting.
 
 ## Prime Law
@@ -78,6 +79,12 @@ Static scans are not valid for:
 ## GlobalQualityWeight Scaling
 
 `GlobalQualityWeight` affects test matrix breadth, not truth. Compact, Middle, High, and Ultra paths must be checked when a change affects visuals, cadence, capacity, or runtime budget. Testing must prove that compact does not become ugly/unreadable and high tier does not change gameplay truth.
+
+## First-20 Route Hook
+
+- First-20 moment: testing must gate boot, world load, first exit, swim, resource, tool, craft/repair/build, hazard, and save/load as one route proof package.
+- Route blocker removed: reports cannot upgrade static scans into route readiness, profiler readiness, save/load correctness, visual acceptance, or platform proof.
+- Proof class: screenshot, Frame Debugger, Profiler/GCMonitor, Play Mode/player capture, import log, save/load artifact, and static-only scans labeled at their real evidence level.
 
 ## Proof Artifacts
 

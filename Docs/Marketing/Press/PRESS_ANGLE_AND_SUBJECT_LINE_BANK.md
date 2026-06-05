@@ -4,6 +4,12 @@ Status: draft bank / requires asset proof before use
 Owner lane: Marketing / press copy
 Runtime impact: none
 
+## Authority Boundary
+
+Static press-copy bank only. Public voice routes through root `textes.md`.
+Any quality, release, platform, Steam, wishlist, demo, performance, press, review-key, embargo, showcase, curator, publication, website, or presskit claim requires `quality.md`, `release.md`, `platform.md`, current proof artifacts, and the matching local permission gate.
+Draft angles, subject lines, matrices, checklists, schedules, and strategy rows do not approve Steam page, wishlist, pricing, discount, review-key, presskit, showcase, publication, platform, or release claims.
+
 ## Rule
 
 A press angle is valid only if the current asset/build proves it. If the screenshot/clip does not show the angle, do not pitch it.
@@ -33,7 +39,7 @@ This matrix turns press angles into proof gates. A pitch can use only one primar
 
 | Angle ID | Primary proof asset | Secondary proof | Best outlet bucket | Subject line seed | Hold condition |
 |---|---|---|---|---|---|
-| PA-001 | `PLAN-SHOT-001` + Steam page | `PLAN-SHOT-003` | PC general / indie discovery | `HECTON-8 first look: single-player deep-sea survival under pressure` | Hold if the first shot reads as generic diver/ocean or implies unsupported multiplayer scope. |
+| PA-001 | `PLAN-SHOT-000` + Steam page | `PLAN-SHOT-003`; `PLAN-SHOT-001` only as depth identity support | PC general / indie discovery | `HECTON-8 first look: beautiful alien water under pressure` | Hold if the first shot reads as generic pretty water, generic diver/ocean, darkened surface, or implies unsupported multiplayer scope. |
 | PA-002 | `PLAN-SHOT-004` | `PLAN-SHOT-002` | Visual/design / indie / creator | `NASA-punk survival below the light: HECTON-8 machinery first look` | Hold if machinery looks decorative, plastic, or clean sci-fi. |
 | PA-003 | `PLAN-SHOT-005` | `PLAN-CLIP-001` plus AB-009/KPI decision-read field if sold as player-choice proof | Survival/base-building press | `HECTON-8 shows base risk and pressure failure below the light` | Hold if failure is fake, UI-only, not present in build, or viewers cannot name repair/seal/retreat/continue. |
 | PA-004 | `PLAN-SHOT-007` | `PLAN-CLIP-002` | Indie/story / mystery | `HECTON-8 teases the Seed Ship signal beneath black water` | Hold if anomaly reads as abstract concept art or lore-only. |

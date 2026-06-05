@@ -33,16 +33,16 @@
           "audio": "Low storm windows are never free. They are bought somewhere else.",
           "in_game_wiki": "Quiet salvage is a replay seed for players who want slower discovery. It should still carry moral cost through custody clauses.",
           "external_site": "Replay in HECTON-8 varies pressure and route context, not inherited power. Quiet salvage is an easier start with worse ownership terms.",
-          "field_note": "Use for contract selection and dossier rumor card."
+          "field_note": "Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise."
         },
         "ru_RU": {
-          "title": "Replay seed: тихий salvage-контракт",
-          "scanner": "Contract seed: quiet salvage. Меньше ранних hazards, чище payout, грязнее custody.",
-          "terminal": "SEED QUIET: reduced storm risk, reduced early hostility, increased claim-custody restriction и evidence ambiguity.",
-          "audio": "Низкие storm windows никогда не бесплатны. Их покупают где-то еще.",
-          "in_game_wiki": "Quiet salvage - replay seed для медленного discovery. Он все равно должен нести моральную цену через custody clauses.",
-          "external_site": "Replay в HECTON-8 меняет pressure и route context, не inherited power. Quiet salvage - более легкий старт с худшими ownership terms.",
-          "field_note": "Для contract selection и dossier rumor card."
+          "title": "Draft RU localization pending native pass. Quiet Salvage Contract Seed",
+          "scanner": "Draft RU localization pending native pass. Contract seed: quiet salvage. Fewer early hazards, cleaner payout, dirtier custody.",
+          "terminal": "Draft RU localization pending native pass. SEED QUIET: reduced storm risk, reduced early hostility, increased claim-custody restriction and evidence ambiguity.",
+          "audio": "Draft RU localization pending native pass. Low storm windows are never free. They are bought somewhere else.",
+          "in_game_wiki": "Draft RU localization pending native pass. Quiet salvage is a replay seed for players who want slower discovery. It should still carry moral cost through custody clauses.",
+          "external_site": "Draft RU localization pending native pass. Replay in HECTON-8 varies pressure and route context, not inherited power. Quiet salvage is an easier start with worse ownership terms.",
+          "field_note": "Draft RU localization pending native pass. Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Quiet Salvage Contract Seed",
@@ -51,7 +51,7 @@
           "audio": "Draft JA localization pending native pass. Low storm windows are never free. They are bought somewhere else.",
           "in_game_wiki": "Draft JA localization pending native pass. Quiet salvage is a replay seed for players who want slower discovery. It should still carry moral cost through custody clauses.",
           "external_site": "Draft JA localization pending native pass. Replay in HECTON-8 varies pressure and route context, not inherited power. Quiet salvage is an easier start with worse ownership terms.",
-          "field_note": "Draft JA localization pending native pass. Use for contract selection and dossier rumor card."
+          "field_note": "Draft JA localization pending native pass. Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Quiet Salvage Contract Seed",
@@ -60,7 +60,7 @@
           "audio": "Draft ZH localization pending native pass. Low storm windows are never free. They are bought somewhere else.",
           "in_game_wiki": "Draft ZH localization pending native pass. Quiet salvage is a replay seed for players who want slower discovery. It should still carry moral cost through custody clauses.",
           "external_site": "Draft ZH localization pending native pass. Replay in HECTON-8 varies pressure and route context, not inherited power. Quiet salvage is an easier start with worse ownership terms.",
-          "field_note": "Draft ZH localization pending native pass. Use for contract selection and dossier rumor card."
+          "field_note": "Draft ZH localization pending native pass. Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Quiet Salvage Contract Seed",
@@ -69,7 +69,7 @@
           "audio": "Draft FR localization pending native pass. Low storm windows are never free. They are bought somewhere else.",
           "in_game_wiki": "Draft FR localization pending native pass. Quiet salvage is a replay seed for players who want slower discovery. It should still carry moral cost through custody clauses.",
           "external_site": "Draft FR localization pending native pass. Replay in HECTON-8 varies pressure and route context, not inherited power. Quiet salvage is an easier start with worse ownership terms.",
-          "field_note": "Draft FR localization pending native pass. Use for contract selection and dossier rumor card."
+          "field_note": "Draft FR localization pending native pass. Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Quiet Salvage Contract Seed",
@@ -78,7 +78,7 @@
           "audio": "Draft ES localization pending native pass. Low storm windows are never free. They are bought somewhere else.",
           "in_game_wiki": "Draft ES localization pending native pass. Quiet salvage is a replay seed for players who want slower discovery. It should still carry moral cost through custody clauses.",
           "external_site": "Draft ES localization pending native pass. Replay in HECTON-8 varies pressure and route context, not inherited power. Quiet salvage is an easier start with worse ownership terms.",
-          "field_note": "Draft ES localization pending native pass. Use for contract selection and dossier rumor card."
+          "field_note": "Draft ES localization pending native pass. Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Quiet Salvage Contract Seed",
@@ -87,7 +87,7 @@
           "audio": "Draft DE localization pending native pass. Low storm windows are never free. They are bought somewhere else.",
           "in_game_wiki": "Draft DE localization pending native pass. Quiet salvage is a replay seed for players who want slower discovery. It should still carry moral cost through custody clauses.",
           "external_site": "Draft DE localization pending native pass. Replay in HECTON-8 varies pressure and route context, not inherited power. Quiet salvage is an easier start with worse ownership terms.",
-          "field_note": "Draft DE localization pending native pass. Use for contract selection and dossier rumor card."
+          "field_note": "Draft DE localization pending native pass. Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Quiet Salvage Contract Seed",
@@ -96,7 +96,7 @@
           "audio": "Draft PL localization pending native pass. Low storm windows are never free. They are bought somewhere else.",
           "in_game_wiki": "Draft PL localization pending native pass. Quiet salvage is a replay seed for players who want slower discovery. It should still carry moral cost through custody clauses.",
           "external_site": "Draft PL localization pending native pass. Replay in HECTON-8 varies pressure and route context, not inherited power. Quiet salvage is an easier start with worse ownership terms.",
-          "field_note": "Draft PL localization pending native pass. Use for contract selection and dossier rumor card."
+          "field_note": "Draft PL localization pending native pass. Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Quiet Salvage Contract Seed",
@@ -105,7 +105,7 @@
           "audio": "Draft UK localization pending native pass. Low storm windows are never free. They are bought somewhere else.",
           "in_game_wiki": "Draft UK localization pending native pass. Quiet salvage is a replay seed for players who want slower discovery. It should still carry moral cost through custody clauses.",
           "external_site": "Draft UK localization pending native pass. Replay in HECTON-8 varies pressure and route context, not inherited power. Quiet salvage is an easier start with worse ownership terms.",
-          "field_note": "Draft UK localization pending native pass. Use for contract selection and dossier rumor card."
+          "field_note": "Draft UK localization pending native pass. Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Quiet Salvage Contract Seed",
@@ -114,7 +114,7 @@
           "audio": "Draft AR localization pending native pass. Low storm windows are never free. They are bought somewhere else.",
           "in_game_wiki": "Draft AR localization pending native pass. Quiet salvage is a replay seed for players who want slower discovery. It should still carry moral cost through custody clauses.",
           "external_site": "Draft AR localization pending native pass. Replay in HECTON-8 varies pressure and route context, not inherited power. Quiet salvage is an easier start with worse ownership terms.",
-          "field_note": "Draft AR localization pending native pass. Use for contract selection and dossier rumor card."
+          "field_note": "Draft AR localization pending native pass. Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Quiet Salvage Contract Seed",
@@ -123,7 +123,7 @@
           "audio": "Draft ID localization pending native pass. Low storm windows are never free. They are bought somewhere else.",
           "in_game_wiki": "Draft ID localization pending native pass. Quiet salvage is a replay seed for players who want slower discovery. It should still carry moral cost through custody clauses.",
           "external_site": "Draft ID localization pending native pass. Replay in HECTON-8 varies pressure and route context, not inherited power. Quiet salvage is an easier start with worse ownership terms.",
-          "field_note": "Draft ID localization pending native pass. Use for contract selection and dossier rumor card."
+          "field_note": "Draft ID localization pending native pass. Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Quiet Salvage Contract Seed",
@@ -132,7 +132,7 @@
           "audio": "Draft KO localization pending native pass. Low storm windows are never free. They are bought somewhere else.",
           "in_game_wiki": "Draft KO localization pending native pass. Quiet salvage is a replay seed for players who want slower discovery. It should still carry moral cost through custody clauses.",
           "external_site": "Draft KO localization pending native pass. Replay in HECTON-8 varies pressure and route context, not inherited power. Quiet salvage is an easier start with worse ownership terms.",
-          "field_note": "Draft KO localization pending native pass. Use for contract selection and dossier rumor card."
+          "field_note": "Draft KO localization pending native pass. Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Quiet Salvage Contract Seed",
@@ -141,7 +141,7 @@
           "audio": "Draft HE localization pending native pass. Low storm windows are never free. They are bought somewhere else.",
           "in_game_wiki": "Draft HE localization pending native pass. Quiet salvage is a replay seed for players who want slower discovery. It should still carry moral cost through custody clauses.",
           "external_site": "Draft HE localization pending native pass. Replay in HECTON-8 varies pressure and route context, not inherited power. Quiet salvage is an easier start with worse ownership terms.",
-          "field_note": "Draft HE localization pending native pass. Use for contract selection and dossier rumor card."
+          "field_note": "Draft HE localization pending native pass. Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Quiet Salvage Contract Seed",
@@ -150,7 +150,7 @@
           "audio": "Draft PT localization pending native pass. Low storm windows are never free. They are bought somewhere else.",
           "in_game_wiki": "Draft PT localization pending native pass. Quiet salvage is a replay seed for players who want slower discovery. It should still carry moral cost through custody clauses.",
           "external_site": "Draft PT localization pending native pass. Replay in HECTON-8 varies pressure and route context, not inherited power. Quiet salvage is an easier start with worse ownership terms.",
-          "field_note": "Draft PT localization pending native pass. Use for contract selection and dossier rumor card."
+          "field_note": "Draft PT localization pending native pass. Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Quiet Salvage Contract Seed",
@@ -159,7 +159,7 @@
           "audio": "Draft NL localization pending native pass. Low storm windows are never free. They are bought somewhere else.",
           "in_game_wiki": "Draft NL localization pending native pass. Quiet salvage is a replay seed for players who want slower discovery. It should still carry moral cost through custody clauses.",
           "external_site": "Draft NL localization pending native pass. Replay in HECTON-8 varies pressure and route context, not inherited power. Quiet salvage is an easier start with worse ownership terms.",
-          "field_note": "Draft NL localization pending native pass. Use for contract selection and dossier rumor card."
+          "field_note": "Draft NL localization pending native pass. Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise."
         }
       }
     },
@@ -188,16 +188,16 @@
           "audio": "This contract pays because it hates waiting.",
           "in_game_wiki": "Storm-window rush changes pacing without changing truth. The player faces tighter timing and harsher recovery geometry.",
           "external_site": "A HECTON-8 replay seed can make the same moon feel different by changing orbital and weather pressure.",
-          "field_note": "Use for high-pressure replay contract and route warning UI."
+          "field_note": "Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour."
         },
         "ru_RU": {
-          "title": "Replay seed: storm window rush",
-          "scanner": "Contract seed: rush window. Быстрее claim, жестче timing и меньше допуска на repair mistakes.",
-          "terminal": "SEED RUSH: storm window compressed, orbital relay shutter hostile, payout ceiling raised, repair slack reduced.",
-          "audio": "Этот контракт платит потому, что ненавидит ожидание.",
-          "in_game_wiki": "Storm-window rush меняет темп, не меняя truth. Игрок получает tighter timing и harsher recovery geometry.",
-          "external_site": "Replay seed HECTON-8 может делать ту же луну другой через orbital и weather pressure.",
-          "field_note": "Для high-pressure replay contract и route warning UI."
+          "title": "Draft RU localization pending native pass. Storm Window Rush Contract Seed",
+          "scanner": "Draft RU localization pending native pass. Contract seed: rush window. Faster claim, harsher timing and less tolerance for repair mistakes.",
+          "terminal": "Draft RU localization pending native pass. SEED RUSH: storm window compressed, orbital relay shutter hostile, payout ceiling raised, repair slack reduced.",
+          "audio": "Draft RU localization pending native pass. This contract pays because it hates waiting.",
+          "in_game_wiki": "Draft RU localization pending native pass. Storm-window rush changes pacing without changing truth. The player faces tighter timing and harsher recovery geometry.",
+          "external_site": "Draft RU localization pending native pass. A HECTON-8 replay seed can make the same moon feel different by changing orbital and weather pressure.",
+          "field_note": "Draft RU localization pending native pass. Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Storm Window Rush Contract Seed",
@@ -206,7 +206,7 @@
           "audio": "Draft JA localization pending native pass. This contract pays because it hates waiting.",
           "in_game_wiki": "Draft JA localization pending native pass. Storm-window rush changes pacing without changing truth. The player faces tighter timing and harsher recovery geometry.",
           "external_site": "Draft JA localization pending native pass. A HECTON-8 replay seed can make the same moon feel different by changing orbital and weather pressure.",
-          "field_note": "Draft JA localization pending native pass. Use for high-pressure replay contract and route warning UI."
+          "field_note": "Draft JA localization pending native pass. Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Storm Window Rush Contract Seed",
@@ -215,7 +215,7 @@
           "audio": "Draft ZH localization pending native pass. This contract pays because it hates waiting.",
           "in_game_wiki": "Draft ZH localization pending native pass. Storm-window rush changes pacing without changing truth. The player faces tighter timing and harsher recovery geometry.",
           "external_site": "Draft ZH localization pending native pass. A HECTON-8 replay seed can make the same moon feel different by changing orbital and weather pressure.",
-          "field_note": "Draft ZH localization pending native pass. Use for high-pressure replay contract and route warning UI."
+          "field_note": "Draft ZH localization pending native pass. Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Storm Window Rush Contract Seed",
@@ -224,7 +224,7 @@
           "audio": "Draft FR localization pending native pass. This contract pays because it hates waiting.",
           "in_game_wiki": "Draft FR localization pending native pass. Storm-window rush changes pacing without changing truth. The player faces tighter timing and harsher recovery geometry.",
           "external_site": "Draft FR localization pending native pass. A HECTON-8 replay seed can make the same moon feel different by changing orbital and weather pressure.",
-          "field_note": "Draft FR localization pending native pass. Use for high-pressure replay contract and route warning UI."
+          "field_note": "Draft FR localization pending native pass. Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Storm Window Rush Contract Seed",
@@ -233,7 +233,7 @@
           "audio": "Draft ES localization pending native pass. This contract pays because it hates waiting.",
           "in_game_wiki": "Draft ES localization pending native pass. Storm-window rush changes pacing without changing truth. The player faces tighter timing and harsher recovery geometry.",
           "external_site": "Draft ES localization pending native pass. A HECTON-8 replay seed can make the same moon feel different by changing orbital and weather pressure.",
-          "field_note": "Draft ES localization pending native pass. Use for high-pressure replay contract and route warning UI."
+          "field_note": "Draft ES localization pending native pass. Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Storm Window Rush Contract Seed",
@@ -242,7 +242,7 @@
           "audio": "Draft DE localization pending native pass. This contract pays because it hates waiting.",
           "in_game_wiki": "Draft DE localization pending native pass. Storm-window rush changes pacing without changing truth. The player faces tighter timing and harsher recovery geometry.",
           "external_site": "Draft DE localization pending native pass. A HECTON-8 replay seed can make the same moon feel different by changing orbital and weather pressure.",
-          "field_note": "Draft DE localization pending native pass. Use for high-pressure replay contract and route warning UI."
+          "field_note": "Draft DE localization pending native pass. Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Storm Window Rush Contract Seed",
@@ -251,7 +251,7 @@
           "audio": "Draft PL localization pending native pass. This contract pays because it hates waiting.",
           "in_game_wiki": "Draft PL localization pending native pass. Storm-window rush changes pacing without changing truth. The player faces tighter timing and harsher recovery geometry.",
           "external_site": "Draft PL localization pending native pass. A HECTON-8 replay seed can make the same moon feel different by changing orbital and weather pressure.",
-          "field_note": "Draft PL localization pending native pass. Use for high-pressure replay contract and route warning UI."
+          "field_note": "Draft PL localization pending native pass. Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Storm Window Rush Contract Seed",
@@ -260,7 +260,7 @@
           "audio": "Draft UK localization pending native pass. This contract pays because it hates waiting.",
           "in_game_wiki": "Draft UK localization pending native pass. Storm-window rush changes pacing without changing truth. The player faces tighter timing and harsher recovery geometry.",
           "external_site": "Draft UK localization pending native pass. A HECTON-8 replay seed can make the same moon feel different by changing orbital and weather pressure.",
-          "field_note": "Draft UK localization pending native pass. Use for high-pressure replay contract and route warning UI."
+          "field_note": "Draft UK localization pending native pass. Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Storm Window Rush Contract Seed",
@@ -269,7 +269,7 @@
           "audio": "Draft AR localization pending native pass. This contract pays because it hates waiting.",
           "in_game_wiki": "Draft AR localization pending native pass. Storm-window rush changes pacing without changing truth. The player faces tighter timing and harsher recovery geometry.",
           "external_site": "Draft AR localization pending native pass. A HECTON-8 replay seed can make the same moon feel different by changing orbital and weather pressure.",
-          "field_note": "Draft AR localization pending native pass. Use for high-pressure replay contract and route warning UI."
+          "field_note": "Draft AR localization pending native pass. Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Storm Window Rush Contract Seed",
@@ -278,7 +278,7 @@
           "audio": "Draft ID localization pending native pass. This contract pays because it hates waiting.",
           "in_game_wiki": "Draft ID localization pending native pass. Storm-window rush changes pacing without changing truth. The player faces tighter timing and harsher recovery geometry.",
           "external_site": "Draft ID localization pending native pass. A HECTON-8 replay seed can make the same moon feel different by changing orbital and weather pressure.",
-          "field_note": "Draft ID localization pending native pass. Use for high-pressure replay contract and route warning UI."
+          "field_note": "Draft ID localization pending native pass. Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Storm Window Rush Contract Seed",
@@ -287,7 +287,7 @@
           "audio": "Draft KO localization pending native pass. This contract pays because it hates waiting.",
           "in_game_wiki": "Draft KO localization pending native pass. Storm-window rush changes pacing without changing truth. The player faces tighter timing and harsher recovery geometry.",
           "external_site": "Draft KO localization pending native pass. A HECTON-8 replay seed can make the same moon feel different by changing orbital and weather pressure.",
-          "field_note": "Draft KO localization pending native pass. Use for high-pressure replay contract and route warning UI."
+          "field_note": "Draft KO localization pending native pass. Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Storm Window Rush Contract Seed",
@@ -296,7 +296,7 @@
           "audio": "Draft HE localization pending native pass. This contract pays because it hates waiting.",
           "in_game_wiki": "Draft HE localization pending native pass. Storm-window rush changes pacing without changing truth. The player faces tighter timing and harsher recovery geometry.",
           "external_site": "Draft HE localization pending native pass. A HECTON-8 replay seed can make the same moon feel different by changing orbital and weather pressure.",
-          "field_note": "Draft HE localization pending native pass. Use for high-pressure replay contract and route warning UI."
+          "field_note": "Draft HE localization pending native pass. Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Storm Window Rush Contract Seed",
@@ -305,7 +305,7 @@
           "audio": "Draft PT localization pending native pass. This contract pays because it hates waiting.",
           "in_game_wiki": "Draft PT localization pending native pass. Storm-window rush changes pacing without changing truth. The player faces tighter timing and harsher recovery geometry.",
           "external_site": "Draft PT localization pending native pass. A HECTON-8 replay seed can make the same moon feel different by changing orbital and weather pressure.",
-          "field_note": "Draft PT localization pending native pass. Use for high-pressure replay contract and route warning UI."
+          "field_note": "Draft PT localization pending native pass. Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Storm Window Rush Contract Seed",
@@ -314,7 +314,7 @@
           "audio": "Draft NL localization pending native pass. This contract pays because it hates waiting.",
           "in_game_wiki": "Draft NL localization pending native pass. Storm-window rush changes pacing without changing truth. The player faces tighter timing and harsher recovery geometry.",
           "external_site": "Draft NL localization pending native pass. A HECTON-8 replay seed can make the same moon feel different by changing orbital and weather pressure.",
-          "field_note": "Draft NL localization pending native pass. Use for high-pressure replay contract and route warning UI."
+          "field_note": "Draft NL localization pending native pass. Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour."
         }
       }
     },
@@ -343,16 +343,16 @@
           "audio": "A sample can weigh more after it enters the ledger.",
           "in_game_wiki": "High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.",
           "external_site": "Blue debt is valuable because it is dangerous to own, move and certify. Replay contracts can expose that pressure.",
-          "field_note": "Use for sample-heavy replay contracts and inventory/custody UI."
+          "field_note": "Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation."
         },
         "ru_RU": {
-          "title": "Replay seed: high custody sample",
-          "scanner": "Contract seed: high custody sample. Blue debt платит больше и утяжеляет каждый route choice.",
-          "terminal": "SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay и Deep Reach receiver pressure.",
-          "audio": "Sample может стать тяжелее после того, как попал в ledger.",
-          "in_game_wiki": "High-custody sample seeds заставляют resources конкурировать с evidence и escape engineering. Это не simple loot multiplier.",
-          "external_site": "Blue debt ценен потому, что им опасно владеть, двигать и сертифицировать. Replay contracts должны показывать это давление.",
-          "field_note": "Для sample-heavy replay contracts и inventory/custody UI."
+          "title": "Draft RU localization pending native pass. High Custody Sample Contract Seed",
+          "scanner": "Draft RU localization pending native pass. Contract seed: high custody sample. Blue debt pays more and burdens every route choice.",
+          "terminal": "Draft RU localization pending native pass. SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay and Deep Reach receiver pressure.",
+          "audio": "Draft RU localization pending native pass. A sample can weigh more after it enters the ledger.",
+          "in_game_wiki": "Draft RU localization pending native pass. High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.",
+          "external_site": "Draft RU localization pending native pass. Blue debt is valuable because it is dangerous to own, move and certify. Replay contracts can expose that pressure.",
+          "field_note": "Draft RU localization pending native pass. Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. High Custody Sample Contract Seed",
@@ -361,7 +361,7 @@
           "audio": "Draft JA localization pending native pass. A sample can weigh more after it enters the ledger.",
           "in_game_wiki": "Draft JA localization pending native pass. High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.",
           "external_site": "Draft JA localization pending native pass. Blue debt is valuable because it is dangerous to own, move and certify. Replay contracts can expose that pressure.",
-          "field_note": "Draft JA localization pending native pass. Use for sample-heavy replay contracts and inventory/custody UI."
+          "field_note": "Draft JA localization pending native pass. Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. High Custody Sample Contract Seed",
@@ -370,7 +370,7 @@
           "audio": "Draft ZH localization pending native pass. A sample can weigh more after it enters the ledger.",
           "in_game_wiki": "Draft ZH localization pending native pass. High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.",
           "external_site": "Draft ZH localization pending native pass. Blue debt is valuable because it is dangerous to own, move and certify. Replay contracts can expose that pressure.",
-          "field_note": "Draft ZH localization pending native pass. Use for sample-heavy replay contracts and inventory/custody UI."
+          "field_note": "Draft ZH localization pending native pass. Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. High Custody Sample Contract Seed",
@@ -379,7 +379,7 @@
           "audio": "Draft FR localization pending native pass. A sample can weigh more after it enters the ledger.",
           "in_game_wiki": "Draft FR localization pending native pass. High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.",
           "external_site": "Draft FR localization pending native pass. Blue debt is valuable because it is dangerous to own, move and certify. Replay contracts can expose that pressure.",
-          "field_note": "Draft FR localization pending native pass. Use for sample-heavy replay contracts and inventory/custody UI."
+          "field_note": "Draft FR localization pending native pass. Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. High Custody Sample Contract Seed",
@@ -388,7 +388,7 @@
           "audio": "Draft ES localization pending native pass. A sample can weigh more after it enters the ledger.",
           "in_game_wiki": "Draft ES localization pending native pass. High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.",
           "external_site": "Draft ES localization pending native pass. Blue debt is valuable because it is dangerous to own, move and certify. Replay contracts can expose that pressure.",
-          "field_note": "Draft ES localization pending native pass. Use for sample-heavy replay contracts and inventory/custody UI."
+          "field_note": "Draft ES localization pending native pass. Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. High Custody Sample Contract Seed",
@@ -397,7 +397,7 @@
           "audio": "Draft DE localization pending native pass. A sample can weigh more after it enters the ledger.",
           "in_game_wiki": "Draft DE localization pending native pass. High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.",
           "external_site": "Draft DE localization pending native pass. Blue debt is valuable because it is dangerous to own, move and certify. Replay contracts can expose that pressure.",
-          "field_note": "Draft DE localization pending native pass. Use for sample-heavy replay contracts and inventory/custody UI."
+          "field_note": "Draft DE localization pending native pass. Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. High Custody Sample Contract Seed",
@@ -406,7 +406,7 @@
           "audio": "Draft PL localization pending native pass. A sample can weigh more after it enters the ledger.",
           "in_game_wiki": "Draft PL localization pending native pass. High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.",
           "external_site": "Draft PL localization pending native pass. Blue debt is valuable because it is dangerous to own, move and certify. Replay contracts can expose that pressure.",
-          "field_note": "Draft PL localization pending native pass. Use for sample-heavy replay contracts and inventory/custody UI."
+          "field_note": "Draft PL localization pending native pass. Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. High Custody Sample Contract Seed",
@@ -415,7 +415,7 @@
           "audio": "Draft UK localization pending native pass. A sample can weigh more after it enters the ledger.",
           "in_game_wiki": "Draft UK localization pending native pass. High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.",
           "external_site": "Draft UK localization pending native pass. Blue debt is valuable because it is dangerous to own, move and certify. Replay contracts can expose that pressure.",
-          "field_note": "Draft UK localization pending native pass. Use for sample-heavy replay contracts and inventory/custody UI."
+          "field_note": "Draft UK localization pending native pass. Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. High Custody Sample Contract Seed",
@@ -424,7 +424,7 @@
           "audio": "Draft AR localization pending native pass. A sample can weigh more after it enters the ledger.",
           "in_game_wiki": "Draft AR localization pending native pass. High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.",
           "external_site": "Draft AR localization pending native pass. Blue debt is valuable because it is dangerous to own, move and certify. Replay contracts can expose that pressure.",
-          "field_note": "Draft AR localization pending native pass. Use for sample-heavy replay contracts and inventory/custody UI."
+          "field_note": "Draft AR localization pending native pass. Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. High Custody Sample Contract Seed",
@@ -433,7 +433,7 @@
           "audio": "Draft ID localization pending native pass. A sample can weigh more after it enters the ledger.",
           "in_game_wiki": "Draft ID localization pending native pass. High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.",
           "external_site": "Draft ID localization pending native pass. Blue debt is valuable because it is dangerous to own, move and certify. Replay contracts can expose that pressure.",
-          "field_note": "Draft ID localization pending native pass. Use for sample-heavy replay contracts and inventory/custody UI."
+          "field_note": "Draft ID localization pending native pass. Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. High Custody Sample Contract Seed",
@@ -442,7 +442,7 @@
           "audio": "Draft KO localization pending native pass. A sample can weigh more after it enters the ledger.",
           "in_game_wiki": "Draft KO localization pending native pass. High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.",
           "external_site": "Draft KO localization pending native pass. Blue debt is valuable because it is dangerous to own, move and certify. Replay contracts can expose that pressure.",
-          "field_note": "Draft KO localization pending native pass. Use for sample-heavy replay contracts and inventory/custody UI."
+          "field_note": "Draft KO localization pending native pass. Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. High Custody Sample Contract Seed",
@@ -451,7 +451,7 @@
           "audio": "Draft HE localization pending native pass. A sample can weigh more after it enters the ledger.",
           "in_game_wiki": "Draft HE localization pending native pass. High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.",
           "external_site": "Draft HE localization pending native pass. Blue debt is valuable because it is dangerous to own, move and certify. Replay contracts can expose that pressure.",
-          "field_note": "Draft HE localization pending native pass. Use for sample-heavy replay contracts and inventory/custody UI."
+          "field_note": "Draft HE localization pending native pass. Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. High Custody Sample Contract Seed",
@@ -460,7 +460,7 @@
           "audio": "Draft PT localization pending native pass. A sample can weigh more after it enters the ledger.",
           "in_game_wiki": "Draft PT localization pending native pass. High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.",
           "external_site": "Draft PT localization pending native pass. Blue debt is valuable because it is dangerous to own, move and certify. Replay contracts can expose that pressure.",
-          "field_note": "Draft PT localization pending native pass. Use for sample-heavy replay contracts and inventory/custody UI."
+          "field_note": "Draft PT localization pending native pass. Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. High Custody Sample Contract Seed",
@@ -469,7 +469,7 @@
           "audio": "Draft NL localization pending native pass. A sample can weigh more after it enters the ledger.",
           "in_game_wiki": "Draft NL localization pending native pass. High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.",
           "external_site": "Draft NL localization pending native pass. Blue debt is valuable because it is dangerous to own, move and certify. Replay contracts can expose that pressure.",
-          "field_note": "Draft NL localization pending native pass. Use for sample-heavy replay contracts and inventory/custody UI."
+          "field_note": "Draft NL localization pending native pass. Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation."
         }
       }
     },
@@ -498,16 +498,16 @@
           "audio": "Truth has a lower listed value until someone tries to bury it.",
           "in_game_wiki": "Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.",
           "external_site": "HECTON-8's replay model lets contract framing change what the player risks, not who the protagonist is.",
-          "field_note": "Use for public-ledger replay runs and legal/notary UI."
+          "field_note": "Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes."
         },
         "ru_RU": {
-          "title": "Replay seed: evidence-first charter",
-          "scanner": "Contract seed: evidence first. Меньше payout, сильнее custody и опаснее route decisions.",
-          "terminal": "SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation conflict raised, Deep Reach hostility probable.",
-          "audio": "У правды ниже listed value, пока кто-то не пытается ее похоронить.",
-          "in_game_wiki": "Evidence-first contracts - replay routes для игроков, которые хотят public-ledger axis раньше и дороже.",
-          "external_site": "Replay model HECTON-8 позволяет contract framing менять риск, но не личность protagonist.",
-          "field_note": "Для public-ledger replay runs и legal/notary UI."
+          "title": "Draft RU localization pending native pass. Evidence First Charter Contract Seed",
+          "scanner": "Draft RU localization pending native pass. Contract seed: evidence first. Lower payout, stronger custody and more dangerous route decisions.",
+          "terminal": "Draft RU localization pending native pass. SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation conflict raised, Deep Reach hostility probable.",
+          "audio": "Draft RU localization pending native pass. Truth has a lower listed value until someone tries to bury it.",
+          "in_game_wiki": "Draft RU localization pending native pass. Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.",
+          "external_site": "Draft RU localization pending native pass. HECTON-8's replay model lets contract framing change what the player risks, not who the protagonist is.",
+          "field_note": "Draft RU localization pending native pass. Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Evidence First Charter Contract Seed",
@@ -516,7 +516,7 @@
           "audio": "Draft JA localization pending native pass. Truth has a lower listed value until someone tries to bury it.",
           "in_game_wiki": "Draft JA localization pending native pass. Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.",
           "external_site": "Draft JA localization pending native pass. HECTON-8's replay model lets contract framing change what the player risks, not who the protagonist is.",
-          "field_note": "Draft JA localization pending native pass. Use for public-ledger replay runs and legal/notary UI."
+          "field_note": "Draft JA localization pending native pass. Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Evidence First Charter Contract Seed",
@@ -525,7 +525,7 @@
           "audio": "Draft ZH localization pending native pass. Truth has a lower listed value until someone tries to bury it.",
           "in_game_wiki": "Draft ZH localization pending native pass. Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.",
           "external_site": "Draft ZH localization pending native pass. HECTON-8's replay model lets contract framing change what the player risks, not who the protagonist is.",
-          "field_note": "Draft ZH localization pending native pass. Use for public-ledger replay runs and legal/notary UI."
+          "field_note": "Draft ZH localization pending native pass. Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Evidence First Charter Contract Seed",
@@ -534,7 +534,7 @@
           "audio": "Draft FR localization pending native pass. Truth has a lower listed value until someone tries to bury it.",
           "in_game_wiki": "Draft FR localization pending native pass. Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.",
           "external_site": "Draft FR localization pending native pass. HECTON-8's replay model lets contract framing change what the player risks, not who the protagonist is.",
-          "field_note": "Draft FR localization pending native pass. Use for public-ledger replay runs and legal/notary UI."
+          "field_note": "Draft FR localization pending native pass. Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Evidence First Charter Contract Seed",
@@ -543,7 +543,7 @@
           "audio": "Draft ES localization pending native pass. Truth has a lower listed value until someone tries to bury it.",
           "in_game_wiki": "Draft ES localization pending native pass. Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.",
           "external_site": "Draft ES localization pending native pass. HECTON-8's replay model lets contract framing change what the player risks, not who the protagonist is.",
-          "field_note": "Draft ES localization pending native pass. Use for public-ledger replay runs and legal/notary UI."
+          "field_note": "Draft ES localization pending native pass. Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Evidence First Charter Contract Seed",
@@ -552,7 +552,7 @@
           "audio": "Draft DE localization pending native pass. Truth has a lower listed value until someone tries to bury it.",
           "in_game_wiki": "Draft DE localization pending native pass. Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.",
           "external_site": "Draft DE localization pending native pass. HECTON-8's replay model lets contract framing change what the player risks, not who the protagonist is.",
-          "field_note": "Draft DE localization pending native pass. Use for public-ledger replay runs and legal/notary UI."
+          "field_note": "Draft DE localization pending native pass. Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Evidence First Charter Contract Seed",
@@ -561,7 +561,7 @@
           "audio": "Draft PL localization pending native pass. Truth has a lower listed value until someone tries to bury it.",
           "in_game_wiki": "Draft PL localization pending native pass. Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.",
           "external_site": "Draft PL localization pending native pass. HECTON-8's replay model lets contract framing change what the player risks, not who the protagonist is.",
-          "field_note": "Draft PL localization pending native pass. Use for public-ledger replay runs and legal/notary UI."
+          "field_note": "Draft PL localization pending native pass. Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Evidence First Charter Contract Seed",
@@ -570,7 +570,7 @@
           "audio": "Draft UK localization pending native pass. Truth has a lower listed value until someone tries to bury it.",
           "in_game_wiki": "Draft UK localization pending native pass. Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.",
           "external_site": "Draft UK localization pending native pass. HECTON-8's replay model lets contract framing change what the player risks, not who the protagonist is.",
-          "field_note": "Draft UK localization pending native pass. Use for public-ledger replay runs and legal/notary UI."
+          "field_note": "Draft UK localization pending native pass. Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Evidence First Charter Contract Seed",
@@ -579,7 +579,7 @@
           "audio": "Draft AR localization pending native pass. Truth has a lower listed value until someone tries to bury it.",
           "in_game_wiki": "Draft AR localization pending native pass. Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.",
           "external_site": "Draft AR localization pending native pass. HECTON-8's replay model lets contract framing change what the player risks, not who the protagonist is.",
-          "field_note": "Draft AR localization pending native pass. Use for public-ledger replay runs and legal/notary UI."
+          "field_note": "Draft AR localization pending native pass. Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Evidence First Charter Contract Seed",
@@ -588,7 +588,7 @@
           "audio": "Draft ID localization pending native pass. Truth has a lower listed value until someone tries to bury it.",
           "in_game_wiki": "Draft ID localization pending native pass. Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.",
           "external_site": "Draft ID localization pending native pass. HECTON-8's replay model lets contract framing change what the player risks, not who the protagonist is.",
-          "field_note": "Draft ID localization pending native pass. Use for public-ledger replay runs and legal/notary UI."
+          "field_note": "Draft ID localization pending native pass. Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Evidence First Charter Contract Seed",
@@ -597,7 +597,7 @@
           "audio": "Draft KO localization pending native pass. Truth has a lower listed value until someone tries to bury it.",
           "in_game_wiki": "Draft KO localization pending native pass. Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.",
           "external_site": "Draft KO localization pending native pass. HECTON-8's replay model lets contract framing change what the player risks, not who the protagonist is.",
-          "field_note": "Draft KO localization pending native pass. Use for public-ledger replay runs and legal/notary UI."
+          "field_note": "Draft KO localization pending native pass. Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Evidence First Charter Contract Seed",
@@ -606,7 +606,7 @@
           "audio": "Draft HE localization pending native pass. Truth has a lower listed value until someone tries to bury it.",
           "in_game_wiki": "Draft HE localization pending native pass. Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.",
           "external_site": "Draft HE localization pending native pass. HECTON-8's replay model lets contract framing change what the player risks, not who the protagonist is.",
-          "field_note": "Draft HE localization pending native pass. Use for public-ledger replay runs and legal/notary UI."
+          "field_note": "Draft HE localization pending native pass. Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Evidence First Charter Contract Seed",
@@ -615,7 +615,7 @@
           "audio": "Draft PT localization pending native pass. Truth has a lower listed value until someone tries to bury it.",
           "in_game_wiki": "Draft PT localization pending native pass. Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.",
           "external_site": "Draft PT localization pending native pass. HECTON-8's replay model lets contract framing change what the player risks, not who the protagonist is.",
-          "field_note": "Draft PT localization pending native pass. Use for public-ledger replay runs and legal/notary UI."
+          "field_note": "Draft PT localization pending native pass. Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Evidence First Charter Contract Seed",
@@ -624,7 +624,7 @@
           "audio": "Draft NL localization pending native pass. Truth has a lower listed value until someone tries to bury it.",
           "in_game_wiki": "Draft NL localization pending native pass. Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.",
           "external_site": "Draft NL localization pending native pass. HECTON-8's replay model lets contract framing change what the player risks, not who the protagonist is.",
-          "field_note": "Draft NL localization pending native pass. Use for public-ledger replay runs and legal/notary UI."
+          "field_note": "Draft NL localization pending native pass. Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes."
         }
       }
     },
@@ -653,16 +653,16 @@
           "audio": "Some contracts are not offers. They are envelopes with your name already on the return line.",
           "in_game_wiki": "Recovery Compliance bait runs make Deep Reach present from the beginning without turning them into a constant radio villain.",
           "external_site": "A late replay seed can reveal how corporate cleanup pressure starts before the player ever reaches Atlas.",
-          "field_note": "Use for high-spoiler replay contract and ending-pressure setup."
+          "field_note": "Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap."
         },
         "ru_RU": {
-          "title": "Replay seed: Recovery Compliance bait",
-          "scanner": "Contract seed: Recovery Compliance bait. Высокий payout, высокая receiver contamination.",
-          "terminal": "SEED BAIT: Recovery Compliance receiver implied, coordinate demand hidden, payout raised, withholding route becomes harder.",
-          "audio": "Некоторые контракты не предложения. Это конверты, где твое имя уже стоит в обратном адресе.",
-          "in_game_wiki": "Recovery Compliance bait runs показывают Deep Reach с начала, не превращая их в постоянного radio villain.",
-          "external_site": "Поздний replay seed может показать, что корпоративное cleanup pressure начинается до Atlas.",
-          "field_note": "Для high-spoiler replay contract и ending-pressure setup."
+          "title": "Draft RU localization pending native pass. Recovery Compliance Bait Contract Seed",
+          "scanner": "Draft RU localization pending native pass. Contract seed: Recovery Compliance bait. High payout, high receiver contamination.",
+          "terminal": "Draft RU localization pending native pass. SEED BAIT: Recovery Compliance receiver implied, coordinate demand hidden, payout raised, withholding route becomes harder.",
+          "audio": "Draft RU localization pending native pass. Some contracts are not offers. They are envelopes with your name already on the return line.",
+          "in_game_wiki": "Draft RU localization pending native pass. Recovery Compliance bait runs make Deep Reach present from the beginning without turning them into a constant radio villain.",
+          "external_site": "Draft RU localization pending native pass. A late replay seed can reveal how corporate cleanup pressure starts before the player ever reaches Atlas.",
+          "field_note": "Draft RU localization pending native pass. Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Recovery Compliance Bait Contract Seed",
@@ -671,7 +671,7 @@
           "audio": "Draft JA localization pending native pass. Some contracts are not offers. They are envelopes with your name already on the return line.",
           "in_game_wiki": "Draft JA localization pending native pass. Recovery Compliance bait runs make Deep Reach present from the beginning without turning them into a constant radio villain.",
           "external_site": "Draft JA localization pending native pass. A late replay seed can reveal how corporate cleanup pressure starts before the player ever reaches Atlas.",
-          "field_note": "Draft JA localization pending native pass. Use for high-spoiler replay contract and ending-pressure setup."
+          "field_note": "Draft JA localization pending native pass. Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Recovery Compliance Bait Contract Seed",
@@ -680,7 +680,7 @@
           "audio": "Draft ZH localization pending native pass. Some contracts are not offers. They are envelopes with your name already on the return line.",
           "in_game_wiki": "Draft ZH localization pending native pass. Recovery Compliance bait runs make Deep Reach present from the beginning without turning them into a constant radio villain.",
           "external_site": "Draft ZH localization pending native pass. A late replay seed can reveal how corporate cleanup pressure starts before the player ever reaches Atlas.",
-          "field_note": "Draft ZH localization pending native pass. Use for high-spoiler replay contract and ending-pressure setup."
+          "field_note": "Draft ZH localization pending native pass. Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Recovery Compliance Bait Contract Seed",
@@ -689,7 +689,7 @@
           "audio": "Draft FR localization pending native pass. Some contracts are not offers. They are envelopes with your name already on the return line.",
           "in_game_wiki": "Draft FR localization pending native pass. Recovery Compliance bait runs make Deep Reach present from the beginning without turning them into a constant radio villain.",
           "external_site": "Draft FR localization pending native pass. A late replay seed can reveal how corporate cleanup pressure starts before the player ever reaches Atlas.",
-          "field_note": "Draft FR localization pending native pass. Use for high-spoiler replay contract and ending-pressure setup."
+          "field_note": "Draft FR localization pending native pass. Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Recovery Compliance Bait Contract Seed",
@@ -698,7 +698,7 @@
           "audio": "Draft ES localization pending native pass. Some contracts are not offers. They are envelopes with your name already on the return line.",
           "in_game_wiki": "Draft ES localization pending native pass. Recovery Compliance bait runs make Deep Reach present from the beginning without turning them into a constant radio villain.",
           "external_site": "Draft ES localization pending native pass. A late replay seed can reveal how corporate cleanup pressure starts before the player ever reaches Atlas.",
-          "field_note": "Draft ES localization pending native pass. Use for high-spoiler replay contract and ending-pressure setup."
+          "field_note": "Draft ES localization pending native pass. Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Recovery Compliance Bait Contract Seed",
@@ -707,7 +707,7 @@
           "audio": "Draft DE localization pending native pass. Some contracts are not offers. They are envelopes with your name already on the return line.",
           "in_game_wiki": "Draft DE localization pending native pass. Recovery Compliance bait runs make Deep Reach present from the beginning without turning them into a constant radio villain.",
           "external_site": "Draft DE localization pending native pass. A late replay seed can reveal how corporate cleanup pressure starts before the player ever reaches Atlas.",
-          "field_note": "Draft DE localization pending native pass. Use for high-spoiler replay contract and ending-pressure setup."
+          "field_note": "Draft DE localization pending native pass. Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Recovery Compliance Bait Contract Seed",
@@ -716,7 +716,7 @@
           "audio": "Draft PL localization pending native pass. Some contracts are not offers. They are envelopes with your name already on the return line.",
           "in_game_wiki": "Draft PL localization pending native pass. Recovery Compliance bait runs make Deep Reach present from the beginning without turning them into a constant radio villain.",
           "external_site": "Draft PL localization pending native pass. A late replay seed can reveal how corporate cleanup pressure starts before the player ever reaches Atlas.",
-          "field_note": "Draft PL localization pending native pass. Use for high-spoiler replay contract and ending-pressure setup."
+          "field_note": "Draft PL localization pending native pass. Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Recovery Compliance Bait Contract Seed",
@@ -725,7 +725,7 @@
           "audio": "Draft UK localization pending native pass. Some contracts are not offers. They are envelopes with your name already on the return line.",
           "in_game_wiki": "Draft UK localization pending native pass. Recovery Compliance bait runs make Deep Reach present from the beginning without turning them into a constant radio villain.",
           "external_site": "Draft UK localization pending native pass. A late replay seed can reveal how corporate cleanup pressure starts before the player ever reaches Atlas.",
-          "field_note": "Draft UK localization pending native pass. Use for high-spoiler replay contract and ending-pressure setup."
+          "field_note": "Draft UK localization pending native pass. Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Recovery Compliance Bait Contract Seed",
@@ -734,7 +734,7 @@
           "audio": "Draft AR localization pending native pass. Some contracts are not offers. They are envelopes with your name already on the return line.",
           "in_game_wiki": "Draft AR localization pending native pass. Recovery Compliance bait runs make Deep Reach present from the beginning without turning them into a constant radio villain.",
           "external_site": "Draft AR localization pending native pass. A late replay seed can reveal how corporate cleanup pressure starts before the player ever reaches Atlas.",
-          "field_note": "Draft AR localization pending native pass. Use for high-spoiler replay contract and ending-pressure setup."
+          "field_note": "Draft AR localization pending native pass. Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Recovery Compliance Bait Contract Seed",
@@ -743,7 +743,7 @@
           "audio": "Draft ID localization pending native pass. Some contracts are not offers. They are envelopes with your name already on the return line.",
           "in_game_wiki": "Draft ID localization pending native pass. Recovery Compliance bait runs make Deep Reach present from the beginning without turning them into a constant radio villain.",
           "external_site": "Draft ID localization pending native pass. A late replay seed can reveal how corporate cleanup pressure starts before the player ever reaches Atlas.",
-          "field_note": "Draft ID localization pending native pass. Use for high-spoiler replay contract and ending-pressure setup."
+          "field_note": "Draft ID localization pending native pass. Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Recovery Compliance Bait Contract Seed",
@@ -752,7 +752,7 @@
           "audio": "Draft KO localization pending native pass. Some contracts are not offers. They are envelopes with your name already on the return line.",
           "in_game_wiki": "Draft KO localization pending native pass. Recovery Compliance bait runs make Deep Reach present from the beginning without turning them into a constant radio villain.",
           "external_site": "Draft KO localization pending native pass. A late replay seed can reveal how corporate cleanup pressure starts before the player ever reaches Atlas.",
-          "field_note": "Draft KO localization pending native pass. Use for high-spoiler replay contract and ending-pressure setup."
+          "field_note": "Draft KO localization pending native pass. Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Recovery Compliance Bait Contract Seed",
@@ -761,7 +761,7 @@
           "audio": "Draft HE localization pending native pass. Some contracts are not offers. They are envelopes with your name already on the return line.",
           "in_game_wiki": "Draft HE localization pending native pass. Recovery Compliance bait runs make Deep Reach present from the beginning without turning them into a constant radio villain.",
           "external_site": "Draft HE localization pending native pass. A late replay seed can reveal how corporate cleanup pressure starts before the player ever reaches Atlas.",
-          "field_note": "Draft HE localization pending native pass. Use for high-spoiler replay contract and ending-pressure setup."
+          "field_note": "Draft HE localization pending native pass. Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Recovery Compliance Bait Contract Seed",
@@ -770,7 +770,7 @@
           "audio": "Draft PT localization pending native pass. Some contracts are not offers. They are envelopes with your name already on the return line.",
           "in_game_wiki": "Draft PT localization pending native pass. Recovery Compliance bait runs make Deep Reach present from the beginning without turning them into a constant radio villain.",
           "external_site": "Draft PT localization pending native pass. A late replay seed can reveal how corporate cleanup pressure starts before the player ever reaches Atlas.",
-          "field_note": "Draft PT localization pending native pass. Use for high-spoiler replay contract and ending-pressure setup."
+          "field_note": "Draft PT localization pending native pass. Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Recovery Compliance Bait Contract Seed",
@@ -779,7 +779,7 @@
           "audio": "Draft NL localization pending native pass. Some contracts are not offers. They are envelopes with your name already on the return line.",
           "in_game_wiki": "Draft NL localization pending native pass. Recovery Compliance bait runs make Deep Reach present from the beginning without turning them into a constant radio villain.",
           "external_site": "Draft NL localization pending native pass. A late replay seed can reveal how corporate cleanup pressure starts before the player ever reaches Atlas.",
-          "field_note": "Draft NL localization pending native pass. Use for high-spoiler replay contract and ending-pressure setup."
+          "field_note": "Draft NL localization pending native pass. Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap."
         }
       }
     }

@@ -2,6 +2,11 @@
 
 
 
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
+Evidence class: STATIC_DOC / STATIC_SOURCE
+Owner domain: acoustic sensory route documentation
+Review disposition: YELLOW / STATIC_DOC_ONLY until compile/import/runtime/profiler/player proof exists.
+
 - Owner: `PredatorCognitionDomain`.
 - Phase: AI simulation after SignalBus snapshot staging, before `PredatorCognitionJob`.
 - Buffers: `72760..72768` for stimuli, 64-byte counter, 128-byte parallel result rows, telemetry, profiles, tuning, CSV scratch.

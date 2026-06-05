@@ -682,13 +682,13 @@ namespace Hecton8.UI
             H8AppliedLoreSurface surface = H8AppliedLoreSurface.Title)
         {
             if (packetHash == 0u ||
-                !TryGetTerminalPreviewAppliedLoreUtf8(packetHash, localeHash, surface, out ReadOnlySpan<byte> utf8Bytes) ||
                 !TryOpenVaultBuffer(ref _terminalStatesHandle, out NativeArray<TerminalStateDTO> terminalStates) ||
                 !TryResolveTerminalPreviewIndex(
                     terminalStates,
                     index,
                     expectedTerminalHash,
-                    out int resolvedIndex))
+                    out int resolvedIndex) ||
+                !TryGetTerminalPreviewAppliedLoreUtf8(packetHash, localeHash, surface, out ReadOnlySpan<byte> utf8Bytes))
             {
                 return false;
             }
@@ -2858,7 +2858,18 @@ namespace Hecton8.UI
             // OWNER-PHASE FENCE: GazeRays is a shared DataVault read source for other gameplay systems.
             // Keep this presentation/input pipeline inside LateFrameTick so the next simulation frame never sees
             // a pending writer dependency on the gaze buffer.
-            if (!DispatcherJobFence.TryComplete(ref _terminalInteractionHandle, forceComplete: true))
+            bool completed;
+            DispatcherJobFence.BeginLateFrameSwapWindow();
+            try
+            {
+                completed = DispatcherJobFence.TryComplete(ref _terminalInteractionHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndLateFrameSwapWindow();
+            }
+
+            if (!completed)
                 return;
 
             CompleteTerminalInteractionFinalizeForOwner();
@@ -2946,7 +2957,18 @@ namespace Hecton8.UI
             // OWNER-PHASE FENCE: decryption reads terminal input, gaze, and terminal lanes captured from
             // the settled presentation state. Leaving it pending lets the next gaze writer collide with
             // those shared DataVault buffers, so this tiny puzzle pass closes inside LateFrameTick.
-            if (!DispatcherJobFence.TryComplete(ref _decryptionHandle, forceComplete: true))
+            bool completed;
+            DispatcherJobFence.BeginLateFrameSwapWindow();
+            try
+            {
+                completed = DispatcherJobFence.TryComplete(ref _decryptionHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndLateFrameSwapWindow();
+            }
+
+            if (!completed)
                 return;
 
             CompleteDecryptionFinalizeForOwner();

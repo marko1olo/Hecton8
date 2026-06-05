@@ -33,7 +33,7 @@
           "terminal": "LOCKER MATRIX: every authored locker needs a job clue, route clue and damage clue. Decorative keepsakes are secondary.",
           "audio": "The locker is not a shrine. It is a failed work order.",
           "in_game_wiki": "Locker Prop Variant Matrix keeps worker evidence physical and scan-readable.",
-          "external_site": "Locker Prop Variant Matrix defines publication and asset rules for HECTON-8 worker lockers."
+          "external_site": "Locker Prop Variant Matrix keeps worker lockers physical: job clue, route clue, damage clue, and erased-account scar before decorative memory."
         },
         "ru_RU": {
           "title": "Матрица locker prop variants",
@@ -42,7 +42,7 @@
           "terminal": "LOCKER MATRIX: каждый authored locker требует job clue, route clue и damage clue. Decorative keepsakes вторичны.",
           "audio": "Локер не shrine. Это failed work order.",
           "in_game_wiki": "Матрица locker prop variants держит worker evidence физическим и scan-readable.",
-          "external_site": "Матрица locker prop variants задает publication и asset rules для worker lockers HECTON-8."
+          "external_site": "Draft RU localization pending native pass. Locker Prop Variant Matrix keeps worker lockers physical: job clue, route clue, damage clue, and erased-account scar before decorative memory."
         },
         "ja_JP": {
           "title": "Locker Prop Variant Matrix",
@@ -51,7 +51,7 @@
           "terminal": "Draft JP localization pending native pass. LOCKER MATRIX: every authored locker needs a job clue, route clue and damage clue. Decorative keepsakes are secondary.",
           "audio": "Draft JP localization pending native pass. The locker is not a shrine. It is a failed work order.",
           "in_game_wiki": "Draft JP localization pending native pass. Locker Prop Variant Matrix keeps worker evidence physical and scan-readable.",
-          "external_site": "Draft JP localization pending native pass. Locker Prop Variant Matrix defines publication and asset rules for HECTON-8 worker lockers."
+          "external_site": "Draft JP localization pending native pass. Locker Prop Variant Matrix keeps worker lockers physical: job clue, route clue, damage clue, and erased-account scar before decorative memory."
         },
         "zh_CN": {
           "title": "Locker Prop Variant Matrix",
@@ -60,7 +60,7 @@
           "terminal": "Draft CN localization pending native pass. LOCKER MATRIX: every authored locker needs a job clue, route clue and damage clue. Decorative keepsakes are secondary.",
           "audio": "Draft CN localization pending native pass. The locker is not a shrine. It is a failed work order.",
           "in_game_wiki": "Draft CN localization pending native pass. Locker Prop Variant Matrix keeps worker evidence physical and scan-readable.",
-          "external_site": "Draft CN localization pending native pass. Locker Prop Variant Matrix defines publication and asset rules for HECTON-8 worker lockers."
+          "external_site": "Draft CN localization pending native pass. Locker Prop Variant Matrix keeps worker lockers physical: job clue, route clue, damage clue, and erased-account scar before decorative memory."
         },
         "fr_FR": {
           "title": "Locker Prop Variant Matrix",
@@ -69,7 +69,7 @@
           "terminal": "Draft FR localization pending native pass. LOCKER MATRIX: every authored locker needs a job clue, route clue and damage clue. Decorative keepsakes are secondary.",
           "audio": "Draft FR localization pending native pass. The locker is not a shrine. It is a failed work order.",
           "in_game_wiki": "Draft FR localization pending native pass. Locker Prop Variant Matrix keeps worker evidence physical and scan-readable.",
-          "external_site": "Draft FR localization pending native pass. Locker Prop Variant Matrix defines publication and asset rules for HECTON-8 worker lockers."
+          "external_site": "Draft FR localization pending native pass. Locker Prop Variant Matrix keeps worker lockers physical: job clue, route clue, damage clue, and erased-account scar before decorative memory."
         },
         "es_ES": {
           "title": "Locker Prop Variant Matrix",
@@ -78,7 +78,7 @@
           "terminal": "Draft ES localization pending native pass. LOCKER MATRIX: every authored locker needs a job clue, route clue and damage clue. Decorative keepsakes are secondary.",
           "audio": "Draft ES localization pending native pass. The locker is not a shrine. It is a failed work order.",
           "in_game_wiki": "Draft ES localization pending native pass. Locker Prop Variant Matrix keeps worker evidence physical and scan-readable.",
-          "external_site": "Draft ES localization pending native pass. Locker Prop Variant Matrix defines publication and asset rules for HECTON-8 worker lockers."
+          "external_site": "Draft ES localization pending native pass. Locker Prop Variant Matrix keeps worker lockers physical: job clue, route clue, damage clue, and erased-account scar before decorative memory."
         },
         "de_DE": {
           "title": "Locker Prop Variant Matrix",
@@ -87,7 +87,7 @@
           "terminal": "Draft DE localization pending native pass. LOCKER MATRIX: every authored locker needs a job clue, route clue and damage clue. Decorative keepsakes are secondary.",
           "audio": "Draft DE localization pending native pass. The locker is not a shrine. It is a failed work order.",
           "in_game_wiki": "Draft DE localization pending native pass. Locker Prop Variant Matrix keeps worker evidence physical and scan-readable.",
-          "external_site": "Draft DE localization pending native pass. Locker Prop Variant Matrix defines publication and asset rules for HECTON-8 worker lockers."
+          "external_site": "Draft DE localization pending native pass. Locker Prop Variant Matrix keeps worker lockers physical: job clue, route clue, damage clue, and erased-account scar before decorative memory."
         },
         "pl_PL": {
           "title": "Locker Prop Variant Matrix",
@@ -96,7 +96,7 @@
           "terminal": "Draft PL localization pending native pass. LOCKER MATRIX: every authored locker needs a job clue, route clue and damage clue. Decorative keepsakes are secondary.",
           "audio": "Draft PL localization pending native pass. The locker is not a shrine. It is a failed work order.",
           "in_game_wiki": "Draft PL localization pending native pass. Locker Prop Variant Matrix keeps worker evidence physical and scan-readable.",
-          "external_site": "Draft PL localization pending native pass. Locker Prop Variant Matrix defines publication and asset rules for HECTON-8 worker lockers."
+          "external_site": "Draft PL localization pending native pass. Locker Prop Variant Matrix keeps worker lockers physical: job clue, route clue, damage clue, and erased-account scar before decorative memory."
         },
         "uk_UA": {
           "title": "Locker Prop Variant Matrix",
@@ -105,7 +105,7 @@
           "terminal": "Draft UA localization pending native pass. LOCKER MATRIX: every authored locker needs a job clue, route clue and damage clue. Decorative keepsakes are secondary.",
           "audio": "Draft UA localization pending native pass. The locker is not a shrine. It is a failed work order.",
           "in_game_wiki": "Draft UA localization pending native pass. Locker Prop Variant Matrix keeps worker evidence physical and scan-readable.",
-          "external_site": "Draft UA localization pending native pass. Locker Prop Variant Matrix defines publication and asset rules for HECTON-8 worker lockers."
+          "external_site": "Draft UA localization pending native pass. Locker Prop Variant Matrix keeps worker lockers physical: job clue, route clue, damage clue, and erased-account scar before decorative memory."
         },
         "ar_SA": {
           "title": "Locker Prop Variant Matrix",
@@ -114,7 +114,7 @@
           "terminal": "Draft AR localization pending native pass. LOCKER MATRIX: every authored locker needs a job clue, route clue and damage clue. Decorative keepsakes are secondary.",
           "audio": "Draft AR localization pending native pass. The locker is not a shrine. It is a failed work order.",
           "in_game_wiki": "Draft AR localization pending native pass. Locker Prop Variant Matrix keeps worker evidence physical and scan-readable.",
-          "external_site": "Draft AR localization pending native pass. Locker Prop Variant Matrix defines publication and asset rules for HECTON-8 worker lockers."
+          "external_site": "Draft AR localization pending native pass. Locker Prop Variant Matrix keeps worker lockers physical: job clue, route clue, damage clue, and erased-account scar before decorative memory."
         },
         "id_ID": {
           "title": "Locker Prop Variant Matrix",
@@ -123,7 +123,7 @@
           "terminal": "Draft ID localization pending native pass. LOCKER MATRIX: every authored locker needs a job clue, route clue and damage clue. Decorative keepsakes are secondary.",
           "audio": "Draft ID localization pending native pass. The locker is not a shrine. It is a failed work order.",
           "in_game_wiki": "Draft ID localization pending native pass. Locker Prop Variant Matrix keeps worker evidence physical and scan-readable.",
-          "external_site": "Draft ID localization pending native pass. Locker Prop Variant Matrix defines publication and asset rules for HECTON-8 worker lockers."
+          "external_site": "Draft ID localization pending native pass. Locker Prop Variant Matrix keeps worker lockers physical: job clue, route clue, damage clue, and erased-account scar before decorative memory."
         },
         "ko_KR": {
           "title": "Locker Prop Variant Matrix",
@@ -132,7 +132,7 @@
           "terminal": "Draft KO localization pending native pass. LOCKER MATRIX: every authored locker needs a job clue, route clue and damage clue. Decorative keepsakes are secondary.",
           "audio": "Draft KO localization pending native pass. The locker is not a shrine. It is a failed work order.",
           "in_game_wiki": "Draft KO localization pending native pass. Locker Prop Variant Matrix keeps worker evidence physical and scan-readable.",
-          "external_site": "Draft KO localization pending native pass. Locker Prop Variant Matrix defines publication and asset rules for HECTON-8 worker lockers."
+          "external_site": "Draft KO localization pending native pass. Locker Prop Variant Matrix keeps worker lockers physical: job clue, route clue, damage clue, and erased-account scar before decorative memory."
         },
         "he_IL": {
           "title": "Locker Prop Variant Matrix",
@@ -141,7 +141,7 @@
           "terminal": "Draft HE localization pending native pass. LOCKER MATRIX: every authored locker needs a job clue, route clue and damage clue. Decorative keepsakes are secondary.",
           "audio": "Draft HE localization pending native pass. The locker is not a shrine. It is a failed work order.",
           "in_game_wiki": "Draft HE localization pending native pass. Locker Prop Variant Matrix keeps worker evidence physical and scan-readable.",
-          "external_site": "Draft HE localization pending native pass. Locker Prop Variant Matrix defines publication and asset rules for HECTON-8 worker lockers."
+          "external_site": "Draft HE localization pending native pass. Locker Prop Variant Matrix keeps worker lockers physical: job clue, route clue, damage clue, and erased-account scar before decorative memory."
         },
         "pt_BR": {
           "title": "Locker Prop Variant Matrix",
@@ -150,7 +150,7 @@
           "terminal": "Draft PT localization pending native pass. LOCKER MATRIX: every authored locker needs a job clue, route clue and damage clue. Decorative keepsakes are secondary.",
           "audio": "Draft PT localization pending native pass. The locker is not a shrine. It is a failed work order.",
           "in_game_wiki": "Draft PT localization pending native pass. Locker Prop Variant Matrix keeps worker evidence physical and scan-readable.",
-          "external_site": "Draft PT localization pending native pass. Locker Prop Variant Matrix defines publication and asset rules for HECTON-8 worker lockers."
+          "external_site": "Draft PT localization pending native pass. Locker Prop Variant Matrix keeps worker lockers physical: job clue, route clue, damage clue, and erased-account scar before decorative memory."
         },
         "nl_NL": {
           "title": "Locker Prop Variant Matrix",
@@ -159,7 +159,7 @@
           "terminal": "Draft NL localization pending native pass. LOCKER MATRIX: every authored locker needs a job clue, route clue and damage clue. Decorative keepsakes are secondary.",
           "audio": "Draft NL localization pending native pass. The locker is not a shrine. It is a failed work order.",
           "in_game_wiki": "Draft NL localization pending native pass. Locker Prop Variant Matrix keeps worker evidence physical and scan-readable.",
-          "external_site": "Draft NL localization pending native pass. Locker Prop Variant Matrix defines publication and asset rules for HECTON-8 worker lockers."
+          "external_site": "Draft NL localization pending native pass. Locker Prop Variant Matrix keeps worker lockers physical: job clue, route clue, damage clue, and erased-account scar before decorative memory."
         }
       }
     },
@@ -186,135 +186,135 @@
           "scanner": "Medical evidence should expose delay and routing, not decorate the room with suffering.",
           "field_note": "Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.",
           "terminal": "TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.",
-          "audio": "Pain is not proof until the route explains it.",
+          "audio": "Pain is not proof until the route bears the mark.",
           "in_game_wiki": "Triage Ledger Prop Variants keep colony harm procedural and readable.",
-          "external_site": "Triage Ledger Prop Variants define how HECTON-8 presents medical evidence."
+          "external_site": "Triage Ledger Prop Variants keep medical evidence procedural: pressure injury, route denial, equipment state, certification delay, and witness gap."
         },
         "ru_RU": {
           "title": "Варианты triage ledger props",
           "scanner": "Medical evidence должен показывать delay и routing, а не украшать комнату страданием.",
           "field_note": "Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.",
           "terminal": "TRIAGE PROP RULE: каждая ledger entry связывает injury с pressure, route denial, equipment state или certification delay.",
-          "audio": "Боль не доказательство, пока маршрут ее не объяснит.",
+          "audio": "Draft RU localization pending native pass. Pain is not proof until the route bears the mark.",
           "in_game_wiki": "Варианты triage ledger props держат colony harm процедурным и читаемым.",
-          "external_site": "Варианты triage ledger props определяют, как HECTON-8 показывает medical evidence."
+          "external_site": "Draft RU localization pending native pass. Triage Ledger Prop Variants keep medical evidence procedural: pressure injury, route denial, equipment state, certification delay, and witness gap."
         },
         "ja_JP": {
           "title": "Triage Ledger Prop Variants",
           "scanner": "Draft JP localization pending native pass. Medical evidence should expose delay and routing, not decorate the room with suffering.",
           "field_note": "Draft JP localization pending native pass. Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.",
           "terminal": "Draft JP localization pending native pass. TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.",
-          "audio": "Draft JP localization pending native pass. Pain is not proof until the route explains it.",
+          "audio": "Draft JP localization pending native pass. Pain is not proof until the route bears the mark.",
           "in_game_wiki": "Draft JP localization pending native pass. Triage Ledger Prop Variants keep colony harm procedural and readable.",
-          "external_site": "Draft JP localization pending native pass. Triage Ledger Prop Variants define how HECTON-8 presents medical evidence."
+          "external_site": "Draft JP localization pending native pass. Triage Ledger Prop Variants keep medical evidence procedural: pressure injury, route denial, equipment state, certification delay, and witness gap."
         },
         "zh_CN": {
           "title": "Triage Ledger Prop Variants",
           "scanner": "Draft CN localization pending native pass. Medical evidence should expose delay and routing, not decorate the room with suffering.",
           "field_note": "Draft CN localization pending native pass. Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.",
           "terminal": "Draft CN localization pending native pass. TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.",
-          "audio": "Draft CN localization pending native pass. Pain is not proof until the route explains it.",
+          "audio": "Draft CN localization pending native pass. Pain is not proof until the route bears the mark.",
           "in_game_wiki": "Draft CN localization pending native pass. Triage Ledger Prop Variants keep colony harm procedural and readable.",
-          "external_site": "Draft CN localization pending native pass. Triage Ledger Prop Variants define how HECTON-8 presents medical evidence."
+          "external_site": "Draft CN localization pending native pass. Triage Ledger Prop Variants keep medical evidence procedural: pressure injury, route denial, equipment state, certification delay, and witness gap."
         },
         "fr_FR": {
           "title": "Triage Ledger Prop Variants",
           "scanner": "Draft FR localization pending native pass. Medical evidence should expose delay and routing, not decorate the room with suffering.",
           "field_note": "Draft FR localization pending native pass. Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.",
           "terminal": "Draft FR localization pending native pass. TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.",
-          "audio": "Draft FR localization pending native pass. Pain is not proof until the route explains it.",
+          "audio": "Draft FR localization pending native pass. Pain is not proof until the route bears the mark.",
           "in_game_wiki": "Draft FR localization pending native pass. Triage Ledger Prop Variants keep colony harm procedural and readable.",
-          "external_site": "Draft FR localization pending native pass. Triage Ledger Prop Variants define how HECTON-8 presents medical evidence."
+          "external_site": "Draft FR localization pending native pass. Triage Ledger Prop Variants keep medical evidence procedural: pressure injury, route denial, equipment state, certification delay, and witness gap."
         },
         "es_ES": {
           "title": "Triage Ledger Prop Variants",
           "scanner": "Draft ES localization pending native pass. Medical evidence should expose delay and routing, not decorate the room with suffering.",
           "field_note": "Draft ES localization pending native pass. Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.",
           "terminal": "Draft ES localization pending native pass. TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.",
-          "audio": "Draft ES localization pending native pass. Pain is not proof until the route explains it.",
+          "audio": "Draft ES localization pending native pass. Pain is not proof until the route bears the mark.",
           "in_game_wiki": "Draft ES localization pending native pass. Triage Ledger Prop Variants keep colony harm procedural and readable.",
-          "external_site": "Draft ES localization pending native pass. Triage Ledger Prop Variants define how HECTON-8 presents medical evidence."
+          "external_site": "Draft ES localization pending native pass. Triage Ledger Prop Variants keep medical evidence procedural: pressure injury, route denial, equipment state, certification delay, and witness gap."
         },
         "de_DE": {
           "title": "Triage Ledger Prop Variants",
           "scanner": "Draft DE localization pending native pass. Medical evidence should expose delay and routing, not decorate the room with suffering.",
           "field_note": "Draft DE localization pending native pass. Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.",
           "terminal": "Draft DE localization pending native pass. TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.",
-          "audio": "Draft DE localization pending native pass. Pain is not proof until the route explains it.",
+          "audio": "Draft DE localization pending native pass. Pain is not proof until the route bears the mark.",
           "in_game_wiki": "Draft DE localization pending native pass. Triage Ledger Prop Variants keep colony harm procedural and readable.",
-          "external_site": "Draft DE localization pending native pass. Triage Ledger Prop Variants define how HECTON-8 presents medical evidence."
+          "external_site": "Draft DE localization pending native pass. Triage Ledger Prop Variants keep medical evidence procedural: pressure injury, route denial, equipment state, certification delay, and witness gap."
         },
         "pl_PL": {
           "title": "Triage Ledger Prop Variants",
           "scanner": "Draft PL localization pending native pass. Medical evidence should expose delay and routing, not decorate the room with suffering.",
           "field_note": "Draft PL localization pending native pass. Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.",
           "terminal": "Draft PL localization pending native pass. TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.",
-          "audio": "Draft PL localization pending native pass. Pain is not proof until the route explains it.",
+          "audio": "Draft PL localization pending native pass. Pain is not proof until the route bears the mark.",
           "in_game_wiki": "Draft PL localization pending native pass. Triage Ledger Prop Variants keep colony harm procedural and readable.",
-          "external_site": "Draft PL localization pending native pass. Triage Ledger Prop Variants define how HECTON-8 presents medical evidence."
+          "external_site": "Draft PL localization pending native pass. Triage Ledger Prop Variants keep medical evidence procedural: pressure injury, route denial, equipment state, certification delay, and witness gap."
         },
         "uk_UA": {
           "title": "Triage Ledger Prop Variants",
           "scanner": "Draft UA localization pending native pass. Medical evidence should expose delay and routing, not decorate the room with suffering.",
           "field_note": "Draft UA localization pending native pass. Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.",
           "terminal": "Draft UA localization pending native pass. TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.",
-          "audio": "Draft UA localization pending native pass. Pain is not proof until the route explains it.",
+          "audio": "Draft UA localization pending native pass. Pain is not proof until the route bears the mark.",
           "in_game_wiki": "Draft UA localization pending native pass. Triage Ledger Prop Variants keep colony harm procedural and readable.",
-          "external_site": "Draft UA localization pending native pass. Triage Ledger Prop Variants define how HECTON-8 presents medical evidence."
+          "external_site": "Draft UA localization pending native pass. Triage Ledger Prop Variants keep medical evidence procedural: pressure injury, route denial, equipment state, certification delay, and witness gap."
         },
         "ar_SA": {
           "title": "Triage Ledger Prop Variants",
           "scanner": "Draft AR localization pending native pass. Medical evidence should expose delay and routing, not decorate the room with suffering.",
           "field_note": "Draft AR localization pending native pass. Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.",
           "terminal": "Draft AR localization pending native pass. TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.",
-          "audio": "Draft AR localization pending native pass. Pain is not proof until the route explains it.",
+          "audio": "Draft AR localization pending native pass. Pain is not proof until the route bears the mark.",
           "in_game_wiki": "Draft AR localization pending native pass. Triage Ledger Prop Variants keep colony harm procedural and readable.",
-          "external_site": "Draft AR localization pending native pass. Triage Ledger Prop Variants define how HECTON-8 presents medical evidence."
+          "external_site": "Draft AR localization pending native pass. Triage Ledger Prop Variants keep medical evidence procedural: pressure injury, route denial, equipment state, certification delay, and witness gap."
         },
         "id_ID": {
           "title": "Triage Ledger Prop Variants",
           "scanner": "Draft ID localization pending native pass. Medical evidence should expose delay and routing, not decorate the room with suffering.",
           "field_note": "Draft ID localization pending native pass. Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.",
           "terminal": "Draft ID localization pending native pass. TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.",
-          "audio": "Draft ID localization pending native pass. Pain is not proof until the route explains it.",
+          "audio": "Draft ID localization pending native pass. Pain is not proof until the route bears the mark.",
           "in_game_wiki": "Draft ID localization pending native pass. Triage Ledger Prop Variants keep colony harm procedural and readable.",
-          "external_site": "Draft ID localization pending native pass. Triage Ledger Prop Variants define how HECTON-8 presents medical evidence."
+          "external_site": "Draft ID localization pending native pass. Triage Ledger Prop Variants keep medical evidence procedural: pressure injury, route denial, equipment state, certification delay, and witness gap."
         },
         "ko_KR": {
           "title": "Triage Ledger Prop Variants",
           "scanner": "Draft KO localization pending native pass. Medical evidence should expose delay and routing, not decorate the room with suffering.",
           "field_note": "Draft KO localization pending native pass. Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.",
           "terminal": "Draft KO localization pending native pass. TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.",
-          "audio": "Draft KO localization pending native pass. Pain is not proof until the route explains it.",
+          "audio": "Draft KO localization pending native pass. Pain is not proof until the route bears the mark.",
           "in_game_wiki": "Draft KO localization pending native pass. Triage Ledger Prop Variants keep colony harm procedural and readable.",
-          "external_site": "Draft KO localization pending native pass. Triage Ledger Prop Variants define how HECTON-8 presents medical evidence."
+          "external_site": "Draft KO localization pending native pass. Triage Ledger Prop Variants keep medical evidence procedural: pressure injury, route denial, equipment state, certification delay, and witness gap."
         },
         "he_IL": {
           "title": "Triage Ledger Prop Variants",
           "scanner": "Draft HE localization pending native pass. Medical evidence should expose delay and routing, not decorate the room with suffering.",
           "field_note": "Draft HE localization pending native pass. Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.",
           "terminal": "Draft HE localization pending native pass. TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.",
-          "audio": "Draft HE localization pending native pass. Pain is not proof until the route explains it.",
+          "audio": "Draft HE localization pending native pass. Pain is not proof until the route bears the mark.",
           "in_game_wiki": "Draft HE localization pending native pass. Triage Ledger Prop Variants keep colony harm procedural and readable.",
-          "external_site": "Draft HE localization pending native pass. Triage Ledger Prop Variants define how HECTON-8 presents medical evidence."
+          "external_site": "Draft HE localization pending native pass. Triage Ledger Prop Variants keep medical evidence procedural: pressure injury, route denial, equipment state, certification delay, and witness gap."
         },
         "pt_BR": {
           "title": "Triage Ledger Prop Variants",
           "scanner": "Draft PT localization pending native pass. Medical evidence should expose delay and routing, not decorate the room with suffering.",
           "field_note": "Draft PT localization pending native pass. Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.",
           "terminal": "Draft PT localization pending native pass. TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.",
-          "audio": "Draft PT localization pending native pass. Pain is not proof until the route explains it.",
+          "audio": "Draft PT localization pending native pass. Pain is not proof until the route bears the mark.",
           "in_game_wiki": "Draft PT localization pending native pass. Triage Ledger Prop Variants keep colony harm procedural and readable.",
-          "external_site": "Draft PT localization pending native pass. Triage Ledger Prop Variants define how HECTON-8 presents medical evidence."
+          "external_site": "Draft PT localization pending native pass. Triage Ledger Prop Variants keep medical evidence procedural: pressure injury, route denial, equipment state, certification delay, and witness gap."
         },
         "nl_NL": {
           "title": "Triage Ledger Prop Variants",
           "scanner": "Draft NL localization pending native pass. Medical evidence should expose delay and routing, not decorate the room with suffering.",
           "field_note": "Draft NL localization pending native pass. Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.",
           "terminal": "Draft NL localization pending native pass. TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.",
-          "audio": "Draft NL localization pending native pass. Pain is not proof until the route explains it.",
+          "audio": "Draft NL localization pending native pass. Pain is not proof until the route bears the mark.",
           "in_game_wiki": "Draft NL localization pending native pass. Triage Ledger Prop Variants keep colony harm procedural and readable.",
-          "external_site": "Draft NL localization pending native pass. Triage Ledger Prop Variants define how HECTON-8 presents medical evidence."
+          "external_site": "Draft NL localization pending native pass. Triage Ledger Prop Variants keep medical evidence procedural: pressure injury, route denial, equipment state, certification delay, and witness gap."
         }
       }
     },
@@ -343,7 +343,7 @@
           "terminal": "STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.",
           "audio": "Access is biography under pressure.",
           "in_game_wiki": "Route Permission Stamp Set lets the player reconstruct colony movement through physical access evidence.",
-          "external_site": "Route Permission Stamp Set provides visual vocabulary for HECTON-8 access props."
+          "external_site": "Route Permission Stamp Set gives access props a visual vocabulary: worker, door or vehicle, job family, and later contradiction."
         },
         "ru_RU": {
           "title": "Набор route permission stamps",
@@ -352,7 +352,7 @@
           "terminal": "STAMP RULE: route permission связывает одного worker, одну door или vehicle, одну job family и одно later contradiction.",
           "audio": "Access это biography under pressure.",
           "in_game_wiki": "Набор route permission stamps дает игроку восстанавливать движение колонии через физический access evidence.",
-          "external_site": "Набор route permission stamps дает visual vocabulary для access props HECTON-8."
+          "external_site": "Draft RU localization pending native pass. Route Permission Stamp Set gives access props a visual vocabulary: worker, door or vehicle, job family, and later contradiction."
         },
         "ja_JP": {
           "title": "Route Permission Stamp Set",
@@ -361,7 +361,7 @@
           "terminal": "Draft JP localization pending native pass. STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.",
           "audio": "Draft JP localization pending native pass. Access is biography under pressure.",
           "in_game_wiki": "Draft JP localization pending native pass. Route Permission Stamp Set lets the player reconstruct colony movement through physical access evidence.",
-          "external_site": "Draft JP localization pending native pass. Route Permission Stamp Set provides visual vocabulary for HECTON-8 access props."
+          "external_site": "Draft JP localization pending native pass. Route Permission Stamp Set gives access props a visual vocabulary: worker, door or vehicle, job family, and later contradiction."
         },
         "zh_CN": {
           "title": "Route Permission Stamp Set",
@@ -370,7 +370,7 @@
           "terminal": "Draft CN localization pending native pass. STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.",
           "audio": "Draft CN localization pending native pass. Access is biography under pressure.",
           "in_game_wiki": "Draft CN localization pending native pass. Route Permission Stamp Set lets the player reconstruct colony movement through physical access evidence.",
-          "external_site": "Draft CN localization pending native pass. Route Permission Stamp Set provides visual vocabulary for HECTON-8 access props."
+          "external_site": "Draft CN localization pending native pass. Route Permission Stamp Set gives access props a visual vocabulary: worker, door or vehicle, job family, and later contradiction."
         },
         "fr_FR": {
           "title": "Route Permission Stamp Set",
@@ -379,7 +379,7 @@
           "terminal": "Draft FR localization pending native pass. STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.",
           "audio": "Draft FR localization pending native pass. Access is biography under pressure.",
           "in_game_wiki": "Draft FR localization pending native pass. Route Permission Stamp Set lets the player reconstruct colony movement through physical access evidence.",
-          "external_site": "Draft FR localization pending native pass. Route Permission Stamp Set provides visual vocabulary for HECTON-8 access props."
+          "external_site": "Draft FR localization pending native pass. Route Permission Stamp Set gives access props a visual vocabulary: worker, door or vehicle, job family, and later contradiction."
         },
         "es_ES": {
           "title": "Route Permission Stamp Set",
@@ -388,7 +388,7 @@
           "terminal": "Draft ES localization pending native pass. STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.",
           "audio": "Draft ES localization pending native pass. Access is biography under pressure.",
           "in_game_wiki": "Draft ES localization pending native pass. Route Permission Stamp Set lets the player reconstruct colony movement through physical access evidence.",
-          "external_site": "Draft ES localization pending native pass. Route Permission Stamp Set provides visual vocabulary for HECTON-8 access props."
+          "external_site": "Draft ES localization pending native pass. Route Permission Stamp Set gives access props a visual vocabulary: worker, door or vehicle, job family, and later contradiction."
         },
         "de_DE": {
           "title": "Route Permission Stamp Set",
@@ -397,7 +397,7 @@
           "terminal": "Draft DE localization pending native pass. STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.",
           "audio": "Draft DE localization pending native pass. Access is biography under pressure.",
           "in_game_wiki": "Draft DE localization pending native pass. Route Permission Stamp Set lets the player reconstruct colony movement through physical access evidence.",
-          "external_site": "Draft DE localization pending native pass. Route Permission Stamp Set provides visual vocabulary for HECTON-8 access props."
+          "external_site": "Draft DE localization pending native pass. Route Permission Stamp Set gives access props a visual vocabulary: worker, door or vehicle, job family, and later contradiction."
         },
         "pl_PL": {
           "title": "Route Permission Stamp Set",
@@ -406,7 +406,7 @@
           "terminal": "Draft PL localization pending native pass. STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.",
           "audio": "Draft PL localization pending native pass. Access is biography under pressure.",
           "in_game_wiki": "Draft PL localization pending native pass. Route Permission Stamp Set lets the player reconstruct colony movement through physical access evidence.",
-          "external_site": "Draft PL localization pending native pass. Route Permission Stamp Set provides visual vocabulary for HECTON-8 access props."
+          "external_site": "Draft PL localization pending native pass. Route Permission Stamp Set gives access props a visual vocabulary: worker, door or vehicle, job family, and later contradiction."
         },
         "uk_UA": {
           "title": "Route Permission Stamp Set",
@@ -415,7 +415,7 @@
           "terminal": "Draft UA localization pending native pass. STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.",
           "audio": "Draft UA localization pending native pass. Access is biography under pressure.",
           "in_game_wiki": "Draft UA localization pending native pass. Route Permission Stamp Set lets the player reconstruct colony movement through physical access evidence.",
-          "external_site": "Draft UA localization pending native pass. Route Permission Stamp Set provides visual vocabulary for HECTON-8 access props."
+          "external_site": "Draft UA localization pending native pass. Route Permission Stamp Set gives access props a visual vocabulary: worker, door or vehicle, job family, and later contradiction."
         },
         "ar_SA": {
           "title": "Route Permission Stamp Set",
@@ -424,7 +424,7 @@
           "terminal": "Draft AR localization pending native pass. STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.",
           "audio": "Draft AR localization pending native pass. Access is biography under pressure.",
           "in_game_wiki": "Draft AR localization pending native pass. Route Permission Stamp Set lets the player reconstruct colony movement through physical access evidence.",
-          "external_site": "Draft AR localization pending native pass. Route Permission Stamp Set provides visual vocabulary for HECTON-8 access props."
+          "external_site": "Draft AR localization pending native pass. Route Permission Stamp Set gives access props a visual vocabulary: worker, door or vehicle, job family, and later contradiction."
         },
         "id_ID": {
           "title": "Route Permission Stamp Set",
@@ -433,7 +433,7 @@
           "terminal": "Draft ID localization pending native pass. STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.",
           "audio": "Draft ID localization pending native pass. Access is biography under pressure.",
           "in_game_wiki": "Draft ID localization pending native pass. Route Permission Stamp Set lets the player reconstruct colony movement through physical access evidence.",
-          "external_site": "Draft ID localization pending native pass. Route Permission Stamp Set provides visual vocabulary for HECTON-8 access props."
+          "external_site": "Draft ID localization pending native pass. Route Permission Stamp Set gives access props a visual vocabulary: worker, door or vehicle, job family, and later contradiction."
         },
         "ko_KR": {
           "title": "Route Permission Stamp Set",
@@ -442,7 +442,7 @@
           "terminal": "Draft KO localization pending native pass. STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.",
           "audio": "Draft KO localization pending native pass. Access is biography under pressure.",
           "in_game_wiki": "Draft KO localization pending native pass. Route Permission Stamp Set lets the player reconstruct colony movement through physical access evidence.",
-          "external_site": "Draft KO localization pending native pass. Route Permission Stamp Set provides visual vocabulary for HECTON-8 access props."
+          "external_site": "Draft KO localization pending native pass. Route Permission Stamp Set gives access props a visual vocabulary: worker, door or vehicle, job family, and later contradiction."
         },
         "he_IL": {
           "title": "Route Permission Stamp Set",
@@ -451,7 +451,7 @@
           "terminal": "Draft HE localization pending native pass. STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.",
           "audio": "Draft HE localization pending native pass. Access is biography under pressure.",
           "in_game_wiki": "Draft HE localization pending native pass. Route Permission Stamp Set lets the player reconstruct colony movement through physical access evidence.",
-          "external_site": "Draft HE localization pending native pass. Route Permission Stamp Set provides visual vocabulary for HECTON-8 access props."
+          "external_site": "Draft HE localization pending native pass. Route Permission Stamp Set gives access props a visual vocabulary: worker, door or vehicle, job family, and later contradiction."
         },
         "pt_BR": {
           "title": "Route Permission Stamp Set",
@@ -460,7 +460,7 @@
           "terminal": "Draft PT localization pending native pass. STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.",
           "audio": "Draft PT localization pending native pass. Access is biography under pressure.",
           "in_game_wiki": "Draft PT localization pending native pass. Route Permission Stamp Set lets the player reconstruct colony movement through physical access evidence.",
-          "external_site": "Draft PT localization pending native pass. Route Permission Stamp Set provides visual vocabulary for HECTON-8 access props."
+          "external_site": "Draft PT localization pending native pass. Route Permission Stamp Set gives access props a visual vocabulary: worker, door or vehicle, job family, and later contradiction."
         },
         "nl_NL": {
           "title": "Route Permission Stamp Set",
@@ -469,7 +469,7 @@
           "terminal": "Draft NL localization pending native pass. STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.",
           "audio": "Draft NL localization pending native pass. Access is biography under pressure.",
           "in_game_wiki": "Draft NL localization pending native pass. Route Permission Stamp Set lets the player reconstruct colony movement through physical access evidence.",
-          "external_site": "Draft NL localization pending native pass. Route Permission Stamp Set provides visual vocabulary for HECTON-8 access props."
+          "external_site": "Draft NL localization pending native pass. Route Permission Stamp Set gives access props a visual vocabulary: worker, door or vehicle, job family, and later contradiction."
         }
       }
     },
@@ -498,7 +498,7 @@
           "terminal": "CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.",
           "audio": "Somebody came before you and still failed to leave clean.",
           "in_game_wiki": "Marauder Correction Mark Rules make replay evidence feel touched by other claim workers without breaking canon.",
-          "external_site": "Marauder Correction Mark Rules defines HECTON-8's salvage-note visual language."
+          "external_site": "Marauder Correction Mark Rules keep salvage notes functional: preserve name, challenge category, warn route, price sample, hide witness, or mark debt."
         },
         "ru_RU": {
           "title": "Правила Marauder correction marks",
@@ -507,7 +507,7 @@
           "terminal": "CORRECTION RULE: Marauder marks меняют evidence interpretation, route risk или payout pressure. Без пустого graffiti.",
           "audio": "Кто-то был до тебя и тоже не смог уйти чисто.",
           "in_game_wiki": "Правила Marauder correction marks делают replay evidence тронутым другими claim workers, не ломая canon.",
-          "external_site": "Правила Marauder correction marks задают salvage-note visual language HECTON-8."
+          "external_site": "Draft RU localization pending native pass. Marauder Correction Mark Rules keep salvage notes functional: preserve name, challenge category, warn route, price sample, hide witness, or mark debt."
         },
         "ja_JP": {
           "title": "Marauder Correction Mark Rules",
@@ -516,7 +516,7 @@
           "terminal": "Draft JP localization pending native pass. CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.",
           "audio": "Draft JP localization pending native pass. Somebody came before you and still failed to leave clean.",
           "in_game_wiki": "Draft JP localization pending native pass. Marauder Correction Mark Rules make replay evidence feel touched by other claim workers without breaking canon.",
-          "external_site": "Draft JP localization pending native pass. Marauder Correction Mark Rules defines HECTON-8's salvage-note visual language."
+          "external_site": "Draft JP localization pending native pass. Marauder Correction Mark Rules keep salvage notes functional: preserve name, challenge category, warn route, price sample, hide witness, or mark debt."
         },
         "zh_CN": {
           "title": "Marauder Correction Mark Rules",
@@ -525,7 +525,7 @@
           "terminal": "Draft CN localization pending native pass. CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.",
           "audio": "Draft CN localization pending native pass. Somebody came before you and still failed to leave clean.",
           "in_game_wiki": "Draft CN localization pending native pass. Marauder Correction Mark Rules make replay evidence feel touched by other claim workers without breaking canon.",
-          "external_site": "Draft CN localization pending native pass. Marauder Correction Mark Rules defines HECTON-8's salvage-note visual language."
+          "external_site": "Draft CN localization pending native pass. Marauder Correction Mark Rules keep salvage notes functional: preserve name, challenge category, warn route, price sample, hide witness, or mark debt."
         },
         "fr_FR": {
           "title": "Marauder Correction Mark Rules",
@@ -534,7 +534,7 @@
           "terminal": "Draft FR localization pending native pass. CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.",
           "audio": "Draft FR localization pending native pass. Somebody came before you and still failed to leave clean.",
           "in_game_wiki": "Draft FR localization pending native pass. Marauder Correction Mark Rules make replay evidence feel touched by other claim workers without breaking canon.",
-          "external_site": "Draft FR localization pending native pass. Marauder Correction Mark Rules defines HECTON-8's salvage-note visual language."
+          "external_site": "Draft FR localization pending native pass. Marauder Correction Mark Rules keep salvage notes functional: preserve name, challenge category, warn route, price sample, hide witness, or mark debt."
         },
         "es_ES": {
           "title": "Marauder Correction Mark Rules",
@@ -543,7 +543,7 @@
           "terminal": "Draft ES localization pending native pass. CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.",
           "audio": "Draft ES localization pending native pass. Somebody came before you and still failed to leave clean.",
           "in_game_wiki": "Draft ES localization pending native pass. Marauder Correction Mark Rules make replay evidence feel touched by other claim workers without breaking canon.",
-          "external_site": "Draft ES localization pending native pass. Marauder Correction Mark Rules defines HECTON-8's salvage-note visual language."
+          "external_site": "Draft ES localization pending native pass. Marauder Correction Mark Rules keep salvage notes functional: preserve name, challenge category, warn route, price sample, hide witness, or mark debt."
         },
         "de_DE": {
           "title": "Marauder Correction Mark Rules",
@@ -552,7 +552,7 @@
           "terminal": "Draft DE localization pending native pass. CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.",
           "audio": "Draft DE localization pending native pass. Somebody came before you and still failed to leave clean.",
           "in_game_wiki": "Draft DE localization pending native pass. Marauder Correction Mark Rules make replay evidence feel touched by other claim workers without breaking canon.",
-          "external_site": "Draft DE localization pending native pass. Marauder Correction Mark Rules defines HECTON-8's salvage-note visual language."
+          "external_site": "Draft DE localization pending native pass. Marauder Correction Mark Rules keep salvage notes functional: preserve name, challenge category, warn route, price sample, hide witness, or mark debt."
         },
         "pl_PL": {
           "title": "Marauder Correction Mark Rules",
@@ -561,7 +561,7 @@
           "terminal": "Draft PL localization pending native pass. CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.",
           "audio": "Draft PL localization pending native pass. Somebody came before you and still failed to leave clean.",
           "in_game_wiki": "Draft PL localization pending native pass. Marauder Correction Mark Rules make replay evidence feel touched by other claim workers without breaking canon.",
-          "external_site": "Draft PL localization pending native pass. Marauder Correction Mark Rules defines HECTON-8's salvage-note visual language."
+          "external_site": "Draft PL localization pending native pass. Marauder Correction Mark Rules keep salvage notes functional: preserve name, challenge category, warn route, price sample, hide witness, or mark debt."
         },
         "uk_UA": {
           "title": "Marauder Correction Mark Rules",
@@ -570,7 +570,7 @@
           "terminal": "Draft UA localization pending native pass. CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.",
           "audio": "Draft UA localization pending native pass. Somebody came before you and still failed to leave clean.",
           "in_game_wiki": "Draft UA localization pending native pass. Marauder Correction Mark Rules make replay evidence feel touched by other claim workers without breaking canon.",
-          "external_site": "Draft UA localization pending native pass. Marauder Correction Mark Rules defines HECTON-8's salvage-note visual language."
+          "external_site": "Draft UA localization pending native pass. Marauder Correction Mark Rules keep salvage notes functional: preserve name, challenge category, warn route, price sample, hide witness, or mark debt."
         },
         "ar_SA": {
           "title": "Marauder Correction Mark Rules",
@@ -579,7 +579,7 @@
           "terminal": "Draft AR localization pending native pass. CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.",
           "audio": "Draft AR localization pending native pass. Somebody came before you and still failed to leave clean.",
           "in_game_wiki": "Draft AR localization pending native pass. Marauder Correction Mark Rules make replay evidence feel touched by other claim workers without breaking canon.",
-          "external_site": "Draft AR localization pending native pass. Marauder Correction Mark Rules defines HECTON-8's salvage-note visual language."
+          "external_site": "Draft AR localization pending native pass. Marauder Correction Mark Rules keep salvage notes functional: preserve name, challenge category, warn route, price sample, hide witness, or mark debt."
         },
         "id_ID": {
           "title": "Marauder Correction Mark Rules",
@@ -588,7 +588,7 @@
           "terminal": "Draft ID localization pending native pass. CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.",
           "audio": "Draft ID localization pending native pass. Somebody came before you and still failed to leave clean.",
           "in_game_wiki": "Draft ID localization pending native pass. Marauder Correction Mark Rules make replay evidence feel touched by other claim workers without breaking canon.",
-          "external_site": "Draft ID localization pending native pass. Marauder Correction Mark Rules defines HECTON-8's salvage-note visual language."
+          "external_site": "Draft ID localization pending native pass. Marauder Correction Mark Rules keep salvage notes functional: preserve name, challenge category, warn route, price sample, hide witness, or mark debt."
         },
         "ko_KR": {
           "title": "Marauder Correction Mark Rules",
@@ -597,7 +597,7 @@
           "terminal": "Draft KO localization pending native pass. CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.",
           "audio": "Draft KO localization pending native pass. Somebody came before you and still failed to leave clean.",
           "in_game_wiki": "Draft KO localization pending native pass. Marauder Correction Mark Rules make replay evidence feel touched by other claim workers without breaking canon.",
-          "external_site": "Draft KO localization pending native pass. Marauder Correction Mark Rules defines HECTON-8's salvage-note visual language."
+          "external_site": "Draft KO localization pending native pass. Marauder Correction Mark Rules keep salvage notes functional: preserve name, challenge category, warn route, price sample, hide witness, or mark debt."
         },
         "he_IL": {
           "title": "Marauder Correction Mark Rules",
@@ -606,7 +606,7 @@
           "terminal": "Draft HE localization pending native pass. CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.",
           "audio": "Draft HE localization pending native pass. Somebody came before you and still failed to leave clean.",
           "in_game_wiki": "Draft HE localization pending native pass. Marauder Correction Mark Rules make replay evidence feel touched by other claim workers without breaking canon.",
-          "external_site": "Draft HE localization pending native pass. Marauder Correction Mark Rules defines HECTON-8's salvage-note visual language."
+          "external_site": "Draft HE localization pending native pass. Marauder Correction Mark Rules keep salvage notes functional: preserve name, challenge category, warn route, price sample, hide witness, or mark debt."
         },
         "pt_BR": {
           "title": "Marauder Correction Mark Rules",
@@ -615,7 +615,7 @@
           "terminal": "Draft PT localization pending native pass. CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.",
           "audio": "Draft PT localization pending native pass. Somebody came before you and still failed to leave clean.",
           "in_game_wiki": "Draft PT localization pending native pass. Marauder Correction Mark Rules make replay evidence feel touched by other claim workers without breaking canon.",
-          "external_site": "Draft PT localization pending native pass. Marauder Correction Mark Rules defines HECTON-8's salvage-note visual language."
+          "external_site": "Draft PT localization pending native pass. Marauder Correction Mark Rules keep salvage notes functional: preserve name, challenge category, warn route, price sample, hide witness, or mark debt."
         },
         "nl_NL": {
           "title": "Marauder Correction Mark Rules",
@@ -624,7 +624,7 @@
           "terminal": "Draft NL localization pending native pass. CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.",
           "audio": "Draft NL localization pending native pass. Somebody came before you and still failed to leave clean.",
           "in_game_wiki": "Draft NL localization pending native pass. Marauder Correction Mark Rules make replay evidence feel touched by other claim workers without breaking canon.",
-          "external_site": "Draft NL localization pending native pass. Marauder Correction Mark Rules defines HECTON-8's salvage-note visual language."
+          "external_site": "Draft NL localization pending native pass. Marauder Correction Mark Rules keep salvage notes functional: preserve name, challenge category, warn route, price sample, hide witness, or mark debt."
         }
       }
     },
@@ -649,137 +649,137 @@
         "en_US": {
           "title": "Audio Fragment Prop Rules",
           "scanner": "Voice is expensive. It must prove something the room also proves.",
-          "field_note": "Audio fragments need source prop, transcript damage, route timestamp and one physical contradiction.",
+          "field_note": "Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.",
           "terminal": "AUDIO RULE: no free-floating monologues. Voice belongs to hydrophone strip, suit recorder, terminal cache or black-box fragment.",
           "audio": "If the room cannot prove me, cut the line.",
           "in_game_wiki": "Audio Fragment Prop Rules keep voice logs useful and restrained.",
-          "external_site": "Audio Fragment Prop Rules defines how HECTON-8 uses voice without lore-dump fatigue."
+          "external_site": "Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues."
         },
         "ru_RU": {
           "title": "Правила audio fragments",
           "scanner": "Voice дорогой. Он должен доказать то, что комната тоже доказывает.",
-          "field_note": "Audio fragments требуют source prop, transcript damage, route timestamp и одно physical contradiction.",
+          "field_note": "Draft RU localization pending native pass. Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.",
           "terminal": "AUDIO RULE: без free-floating monologues. Voice принадлежит hydrophone strip, suit recorder, terminal cache или black-box fragment.",
           "audio": "Если комната не может доказать меня, режь линию.",
           "in_game_wiki": "Правила audio fragments держат voice logs полезными и сдержанными.",
-          "external_site": "Правила audio fragments определяют, как HECTON-8 использует voice без lore-dump fatigue."
+          "external_site": "Draft RU localization pending native pass. Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues."
         },
         "ja_JP": {
           "title": "Audio Fragment Prop Rules",
           "scanner": "Draft JP localization pending native pass. Voice is expensive. It must prove something the room also proves.",
-          "field_note": "Draft JP localization pending native pass. Audio fragments need source prop, transcript damage, route timestamp and one physical contradiction.",
+          "field_note": "Draft JP localization pending native pass. Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.",
           "terminal": "Draft JP localization pending native pass. AUDIO RULE: no free-floating monologues. Voice belongs to hydrophone strip, suit recorder, terminal cache or black-box fragment.",
           "audio": "Draft JP localization pending native pass. If the room cannot prove me, cut the line.",
           "in_game_wiki": "Draft JP localization pending native pass. Audio Fragment Prop Rules keep voice logs useful and restrained.",
-          "external_site": "Draft JP localization pending native pass. Audio Fragment Prop Rules defines how HECTON-8 uses voice without lore-dump fatigue."
+          "external_site": "Draft JP localization pending native pass. Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues."
         },
         "zh_CN": {
           "title": "Audio Fragment Prop Rules",
           "scanner": "Draft CN localization pending native pass. Voice is expensive. It must prove something the room also proves.",
-          "field_note": "Draft CN localization pending native pass. Audio fragments need source prop, transcript damage, route timestamp and one physical contradiction.",
+          "field_note": "Draft CN localization pending native pass. Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.",
           "terminal": "Draft CN localization pending native pass. AUDIO RULE: no free-floating monologues. Voice belongs to hydrophone strip, suit recorder, terminal cache or black-box fragment.",
           "audio": "Draft CN localization pending native pass. If the room cannot prove me, cut the line.",
           "in_game_wiki": "Draft CN localization pending native pass. Audio Fragment Prop Rules keep voice logs useful and restrained.",
-          "external_site": "Draft CN localization pending native pass. Audio Fragment Prop Rules defines how HECTON-8 uses voice without lore-dump fatigue."
+          "external_site": "Draft CN localization pending native pass. Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues."
         },
         "fr_FR": {
           "title": "Audio Fragment Prop Rules",
           "scanner": "Draft FR localization pending native pass. Voice is expensive. It must prove something the room also proves.",
-          "field_note": "Draft FR localization pending native pass. Audio fragments need source prop, transcript damage, route timestamp and one physical contradiction.",
+          "field_note": "Draft FR localization pending native pass. Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.",
           "terminal": "Draft FR localization pending native pass. AUDIO RULE: no free-floating monologues. Voice belongs to hydrophone strip, suit recorder, terminal cache or black-box fragment.",
           "audio": "Draft FR localization pending native pass. If the room cannot prove me, cut the line.",
           "in_game_wiki": "Draft FR localization pending native pass. Audio Fragment Prop Rules keep voice logs useful and restrained.",
-          "external_site": "Draft FR localization pending native pass. Audio Fragment Prop Rules defines how HECTON-8 uses voice without lore-dump fatigue."
+          "external_site": "Draft FR localization pending native pass. Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues."
         },
         "es_ES": {
           "title": "Audio Fragment Prop Rules",
           "scanner": "Draft ES localization pending native pass. Voice is expensive. It must prove something the room also proves.",
-          "field_note": "Draft ES localization pending native pass. Audio fragments need source prop, transcript damage, route timestamp and one physical contradiction.",
+          "field_note": "Draft ES localization pending native pass. Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.",
           "terminal": "Draft ES localization pending native pass. AUDIO RULE: no free-floating monologues. Voice belongs to hydrophone strip, suit recorder, terminal cache or black-box fragment.",
           "audio": "Draft ES localization pending native pass. If the room cannot prove me, cut the line.",
           "in_game_wiki": "Draft ES localization pending native pass. Audio Fragment Prop Rules keep voice logs useful and restrained.",
-          "external_site": "Draft ES localization pending native pass. Audio Fragment Prop Rules defines how HECTON-8 uses voice without lore-dump fatigue."
+          "external_site": "Draft ES localization pending native pass. Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues."
         },
         "de_DE": {
           "title": "Audio Fragment Prop Rules",
           "scanner": "Draft DE localization pending native pass. Voice is expensive. It must prove something the room also proves.",
-          "field_note": "Draft DE localization pending native pass. Audio fragments need source prop, transcript damage, route timestamp and one physical contradiction.",
+          "field_note": "Draft DE localization pending native pass. Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.",
           "terminal": "Draft DE localization pending native pass. AUDIO RULE: no free-floating monologues. Voice belongs to hydrophone strip, suit recorder, terminal cache or black-box fragment.",
           "audio": "Draft DE localization pending native pass. If the room cannot prove me, cut the line.",
           "in_game_wiki": "Draft DE localization pending native pass. Audio Fragment Prop Rules keep voice logs useful and restrained.",
-          "external_site": "Draft DE localization pending native pass. Audio Fragment Prop Rules defines how HECTON-8 uses voice without lore-dump fatigue."
+          "external_site": "Draft DE localization pending native pass. Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues."
         },
         "pl_PL": {
           "title": "Audio Fragment Prop Rules",
           "scanner": "Draft PL localization pending native pass. Voice is expensive. It must prove something the room also proves.",
-          "field_note": "Draft PL localization pending native pass. Audio fragments need source prop, transcript damage, route timestamp and one physical contradiction.",
+          "field_note": "Draft PL localization pending native pass. Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.",
           "terminal": "Draft PL localization pending native pass. AUDIO RULE: no free-floating monologues. Voice belongs to hydrophone strip, suit recorder, terminal cache or black-box fragment.",
           "audio": "Draft PL localization pending native pass. If the room cannot prove me, cut the line.",
           "in_game_wiki": "Draft PL localization pending native pass. Audio Fragment Prop Rules keep voice logs useful and restrained.",
-          "external_site": "Draft PL localization pending native pass. Audio Fragment Prop Rules defines how HECTON-8 uses voice without lore-dump fatigue."
+          "external_site": "Draft PL localization pending native pass. Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues."
         },
         "uk_UA": {
           "title": "Audio Fragment Prop Rules",
           "scanner": "Draft UA localization pending native pass. Voice is expensive. It must prove something the room also proves.",
-          "field_note": "Draft UA localization pending native pass. Audio fragments need source prop, transcript damage, route timestamp and one physical contradiction.",
+          "field_note": "Draft UA localization pending native pass. Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.",
           "terminal": "Draft UA localization pending native pass. AUDIO RULE: no free-floating monologues. Voice belongs to hydrophone strip, suit recorder, terminal cache or black-box fragment.",
           "audio": "Draft UA localization pending native pass. If the room cannot prove me, cut the line.",
           "in_game_wiki": "Draft UA localization pending native pass. Audio Fragment Prop Rules keep voice logs useful and restrained.",
-          "external_site": "Draft UA localization pending native pass. Audio Fragment Prop Rules defines how HECTON-8 uses voice without lore-dump fatigue."
+          "external_site": "Draft UA localization pending native pass. Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues."
         },
         "ar_SA": {
           "title": "Audio Fragment Prop Rules",
           "scanner": "Draft AR localization pending native pass. Voice is expensive. It must prove something the room also proves.",
-          "field_note": "Draft AR localization pending native pass. Audio fragments need source prop, transcript damage, route timestamp and one physical contradiction.",
+          "field_note": "Draft AR localization pending native pass. Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.",
           "terminal": "Draft AR localization pending native pass. AUDIO RULE: no free-floating monologues. Voice belongs to hydrophone strip, suit recorder, terminal cache or black-box fragment.",
           "audio": "Draft AR localization pending native pass. If the room cannot prove me, cut the line.",
           "in_game_wiki": "Draft AR localization pending native pass. Audio Fragment Prop Rules keep voice logs useful and restrained.",
-          "external_site": "Draft AR localization pending native pass. Audio Fragment Prop Rules defines how HECTON-8 uses voice without lore-dump fatigue."
+          "external_site": "Draft AR localization pending native pass. Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues."
         },
         "id_ID": {
           "title": "Audio Fragment Prop Rules",
           "scanner": "Draft ID localization pending native pass. Voice is expensive. It must prove something the room also proves.",
-          "field_note": "Draft ID localization pending native pass. Audio fragments need source prop, transcript damage, route timestamp and one physical contradiction.",
+          "field_note": "Draft ID localization pending native pass. Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.",
           "terminal": "Draft ID localization pending native pass. AUDIO RULE: no free-floating monologues. Voice belongs to hydrophone strip, suit recorder, terminal cache or black-box fragment.",
           "audio": "Draft ID localization pending native pass. If the room cannot prove me, cut the line.",
           "in_game_wiki": "Draft ID localization pending native pass. Audio Fragment Prop Rules keep voice logs useful and restrained.",
-          "external_site": "Draft ID localization pending native pass. Audio Fragment Prop Rules defines how HECTON-8 uses voice without lore-dump fatigue."
+          "external_site": "Draft ID localization pending native pass. Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues."
         },
         "ko_KR": {
           "title": "Audio Fragment Prop Rules",
           "scanner": "Draft KO localization pending native pass. Voice is expensive. It must prove something the room also proves.",
-          "field_note": "Draft KO localization pending native pass. Audio fragments need source prop, transcript damage, route timestamp and one physical contradiction.",
+          "field_note": "Draft KO localization pending native pass. Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.",
           "terminal": "Draft KO localization pending native pass. AUDIO RULE: no free-floating monologues. Voice belongs to hydrophone strip, suit recorder, terminal cache or black-box fragment.",
           "audio": "Draft KO localization pending native pass. If the room cannot prove me, cut the line.",
           "in_game_wiki": "Draft KO localization pending native pass. Audio Fragment Prop Rules keep voice logs useful and restrained.",
-          "external_site": "Draft KO localization pending native pass. Audio Fragment Prop Rules defines how HECTON-8 uses voice without lore-dump fatigue."
+          "external_site": "Draft KO localization pending native pass. Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues."
         },
         "he_IL": {
           "title": "Audio Fragment Prop Rules",
           "scanner": "Draft HE localization pending native pass. Voice is expensive. It must prove something the room also proves.",
-          "field_note": "Draft HE localization pending native pass. Audio fragments need source prop, transcript damage, route timestamp and one physical contradiction.",
+          "field_note": "Draft HE localization pending native pass. Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.",
           "terminal": "Draft HE localization pending native pass. AUDIO RULE: no free-floating monologues. Voice belongs to hydrophone strip, suit recorder, terminal cache or black-box fragment.",
           "audio": "Draft HE localization pending native pass. If the room cannot prove me, cut the line.",
           "in_game_wiki": "Draft HE localization pending native pass. Audio Fragment Prop Rules keep voice logs useful and restrained.",
-          "external_site": "Draft HE localization pending native pass. Audio Fragment Prop Rules defines how HECTON-8 uses voice without lore-dump fatigue."
+          "external_site": "Draft HE localization pending native pass. Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues."
         },
         "pt_BR": {
           "title": "Audio Fragment Prop Rules",
           "scanner": "Draft PT localization pending native pass. Voice is expensive. It must prove something the room also proves.",
-          "field_note": "Draft PT localization pending native pass. Audio fragments need source prop, transcript damage, route timestamp and one physical contradiction.",
+          "field_note": "Draft PT localization pending native pass. Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.",
           "terminal": "Draft PT localization pending native pass. AUDIO RULE: no free-floating monologues. Voice belongs to hydrophone strip, suit recorder, terminal cache or black-box fragment.",
           "audio": "Draft PT localization pending native pass. If the room cannot prove me, cut the line.",
           "in_game_wiki": "Draft PT localization pending native pass. Audio Fragment Prop Rules keep voice logs useful and restrained.",
-          "external_site": "Draft PT localization pending native pass. Audio Fragment Prop Rules defines how HECTON-8 uses voice without lore-dump fatigue."
+          "external_site": "Draft PT localization pending native pass. Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues."
         },
         "nl_NL": {
           "title": "Audio Fragment Prop Rules",
           "scanner": "Draft NL localization pending native pass. Voice is expensive. It must prove something the room also proves.",
-          "field_note": "Draft NL localization pending native pass. Audio fragments need source prop, transcript damage, route timestamp and one physical contradiction.",
+          "field_note": "Draft NL localization pending native pass. Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.",
           "terminal": "Draft NL localization pending native pass. AUDIO RULE: no free-floating monologues. Voice belongs to hydrophone strip, suit recorder, terminal cache or black-box fragment.",
           "audio": "Draft NL localization pending native pass. If the room cannot prove me, cut the line.",
           "in_game_wiki": "Draft NL localization pending native pass. Audio Fragment Prop Rules keep voice logs useful and restrained.",
-          "external_site": "Draft NL localization pending native pass. Audio Fragment Prop Rules defines how HECTON-8 uses voice without lore-dump fatigue."
+          "external_site": "Draft NL localization pending native pass. Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues."
         }
       }
     }

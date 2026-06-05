@@ -66,6 +66,7 @@ namespace Hecton8.Narrative
         private bool _hotSwapListenerRegistered;
         private IAudioLogRuntime _cachedAudioLogSystem;
         private ILocalizationTextReadModel _cachedLocalization;
+        private uint _cachedLogHash;
 
         internal static int RegisteredPickupTemplateCount => _registeredPickupTemplates.Count;
 
@@ -108,6 +109,7 @@ namespace Hecton8.Narrative
             InteractableRegistry.RegisterTree(this);
             LocalizationEvents.RegisterLanguageListener(this);
             _alreadyDiscovered = false;
+            RefreshCachedLogHash();
 
             if (_wfcOutpostPersistenceConfigured)
             {
@@ -122,7 +124,7 @@ namespace Hecton8.Narrative
             IAudioLogRuntime audioLogSystem = _cachedAudioLogSystem;
             if (logData != null && audioLogSystem != null)
             {
-                _alreadyDiscovered = audioLogSystem.IsAudioLogDiscovered(logData.logId);
+                _alreadyDiscovered = _cachedLogHash != 0u && audioLogSystem.IsAudioLogDiscovered(_cachedLogHash);
 
                 if (_alreadyDiscovered && deactivateAfterPickup)
                 {
@@ -142,6 +144,7 @@ namespace Hecton8.Narrative
             TryUnregisterPickupTemplate();
             TryUnregisterHotSwapListener();
             LocalizationEvents.UnregisterLanguageListener(this);
+            _cachedLogHash = 0u;
 
             if (highlightObject != null)
                 highlightObject.SetActive(false);
@@ -253,7 +256,16 @@ namespace Hecton8.Narrative
             }
 
             bool wasDiscovered = _alreadyDiscovered;
-            system.TryPlayAudioLog(logData.logId);
+            uint logHash = _cachedLogHash;
+            if (logHash == 0u)
+            {
+                RefreshCachedLogHash();
+                logHash = _cachedLogHash;
+            }
+
+            if (logHash == 0u || !system.TryPlayAudioLogByHash(logHash))
+                return;
+
             _alreadyDiscovered = true;
             BuildCache();
             if (!wasDiscovered)
@@ -333,6 +345,7 @@ namespace Hecton8.Narrative
             if (string.IsNullOrWhiteSpace(interactVerb))
                 interactVerb = DefaultPlaybackVerbRu;
 
+            RefreshCachedLogHash();
             BuildCache();
         }
 #endif
@@ -401,11 +414,17 @@ namespace Hecton8.Narrative
             if (_wfcOutpostPersistenceConfigured || logData == null)
                 return;
 
+            RefreshCachedLogHash();
             IAudioLogRuntime audioLogSystem = _cachedAudioLogSystem;
-            _alreadyDiscovered = audioLogSystem != null && audioLogSystem.IsAudioLogDiscovered(logData.logId);
+            _alreadyDiscovered = audioLogSystem != null && _cachedLogHash != 0u && audioLogSystem.IsAudioLogDiscovered(_cachedLogHash);
             BuildCache();
             if (_alreadyDiscovered && deactivateAfterPickup && isActiveAndEnabled)
                 gameObject.SetActive(false);
+        }
+
+        private void RefreshCachedLogHash()
+        {
+            _cachedLogHash = logData != null ? QuestFlagHashKernel.ComputeStableHash(logData.logId) : 0u;
         }
 
         private void TryRegisterHotSwapListener()
@@ -432,6 +451,13 @@ namespace Hecton8.Narrative
             deactivateAfterPickup = deactivateAfterUse;
             highlightObject = null;
             _alreadyDiscovered = false;
+            RefreshCachedLogHash();
+            if (logData != null && _cachedAudioLogSystem != null && !_wfcOutpostPersistenceConfigured)
+            {
+                RefreshDiscoveryStateFromAudioLogSystem();
+                return;
+            }
+
             BuildCache();
         }
 

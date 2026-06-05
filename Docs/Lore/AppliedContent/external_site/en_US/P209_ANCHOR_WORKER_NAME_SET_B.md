@@ -10,25 +10,25 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Anchor Worker Name Set B
 
-Anchor Worker Name Set B gives HECTON-8 deeper worker identities for spoiler-gated pages.
+Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood.
 
 ## Scanner
 
-Deep names should arrive with damage the player already understands.
+Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.
 
 ## Terminal
 
-ANCHOR SET B: brine and abyssal recurrence. Use for witness hashes, route holds, triage exceptions and Atlas repair contradictions.
+ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.
 
 ## Audio
 
-The deeper name should cost more than the shallow one.
+A deep name costs more because the water has already proved what happened.
 
 ## Field Note
 

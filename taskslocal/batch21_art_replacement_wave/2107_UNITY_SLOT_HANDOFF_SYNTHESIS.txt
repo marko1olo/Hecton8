@@ -1,0 +1,102 @@
+HECTON-8 LOCAL TASK FILE
+ID: 2107
+Role: UNITY_SLOT_HANDOFF_SYNTHESIS_ONLY
+Batch: batch21_art_replacement_wave
+
+OBJECTIVE
+Create a future Unity-owner handoff synthesis packet from existing Batch20/Batch21 evidence, prioritizing surface/photic primitive/proxy debt, source blockers, validator gaps, and proof gates. This task is synthesis only. It must not perform Unity work and must not depend on sibling task outputs from this wave.
+
+WHY THIS EXISTS
+2019 sequencing says production acceptance needs staged Unity-owner slots after static/source blockers are prepared. Evidence is sufficient to create a handoff packet now, but not sufficient to run import/relink/captures in this wave.
+
+AUTHORITY DOCS TO READ
+- AGENTS.md
+- HECTON8_ORCHESTRATOR.md
+- TASTE.md
+- VISION_LOCKS.md
+- PROJECT_BIBLES.md
+- quality.md
+- PROCEDURAL_ASSET_PIPELINE.md
+- 3dmodel.md
+- world.md
+- terrain.md
+- water.md
+- atmosphere.md
+- celestial.md
+- rendering.md
+- shaders.md
+- Docs/Reports/Batch20/2016_SURFACE_PHOTIC_MATERIAL_DEBT_TRIAGE.md
+- Docs/Reports/Batch20/2019_PRIMITIVE_PROXY_ART_DEBT_ELIMINATION_PLAN.md
+- Docs/Reports/Batch20/2019_PROXY_DEBT_QUEUE.csv
+- Docs/Reports/Batch20/2019_GENERATION_ROUTE_MATRIX.csv
+- Docs/Reports/Batch21/2022_GEMINI_TEXTURE_BUDGET_AND_PROMPT_QUEUE.md
+
+OWNED DOMAIN
+Future Unity-owner handoff synthesis and sequencing only. No source generation, no validator code, no Unity work.
+
+OWNED OUTPUT SCOPE
+- Docs/Reports/Batch21/2107_*
+- Docs/Tasks/Status_2107.md
+- Docs/AgentLogs/Rationale_2107.md only for real decisions.
+- Docs/AgentLogs/LOG_2107.md
+
+FORBIDDEN ACTIONS
+- Do not run Unity, MCP, Play Mode, profiler, imports, dotnet build, csc, or any project build.
+- Do not edit Assets, Packages, ProjectSettings, Library, Temp, UserSettings, scenes, prefabs, materials, shaders, scripts, generated source outputs, or validator tools.
+- Do not consume or require outputs from 2101-2106. This task may reference this batch index only as dispatch context.
+- Do not claim any production visual row is closed.
+- Do not ask future Unity owner to accept static YAML/path existence as visual proof.
+
+QUALITY SCALING EXPECTATION
+Low: future Unity slot must preserve bright/readable surface, photic, and medium-depth route identity with reduced density/resolution only.
+Middle: expected player lane must look genuinely good, not merely acceptable.
+High: future slot spends saved budget on richer normals, materials, reflections, clouds, caustics, and detail.
+Ultra: visual overkill is allowed only after compact/middle route proof, profiler, and owner truth remain stable.
+
+PHASE 0 - EVIDENCE AND BOUNDARY
+01. Read authority docs and evidence reports listed above. Proof: Status_2107.md doc list.
+02. Extract 2019 sequencing and identify which steps are future Unity-owner only. Proof: synthesis section.
+03. Extract open blocker categories from 2016 and 2019 queue: primitive scene refs, null materials, placeholder/default materials, sky/cloud, terrain/triplanar/wetness, dry-land kelp/coral/rocks, flora/coral finals, geology finals, ocean/Crest proof, static validator gap. Proof: blocker matrix.
+04. Extract 2022 source queue relevance without treating source queue as generated art. Proof: source-priority note.
+05. Write Status_2107.md with no-Unity/no-sibling-dependency acknowledgment.
+06. Gate: if evidence reports are absent, mark handoff PENDING SOURCE EVIDENCE and stop. Do not invent Unity tasks.
+
+PHASE 1 - UNITY-OWNER SLOT SYNTHESIS
+07. Define Unity slot 1: active scene primitive/null/default material audit and visible product-face primitive replacement. Proof: slot card. Blocker: all target paths CANDIDATE until Unity owner verifies.
+08. Define Unity slot 2: material source import/bind for sky, terrain, triplanar, wetness, rock, coral only after source/channel contracts exist. Proof: slot card. Blocker: no relink before source unlock.
+09. Define Unity slot 3: placement rule repair for kelp, coral, and rocks with dry-land rejection and submerged acceptance proof. Proof: slot card.
+10. Define Unity slot 4: flora/coral generated final import, family profile relink, proxy fallback disable, photic route proof. Proof: slot card.
+11. Define Unity slot 5: geology/waterline generated final import, placement split, collision/LOD proof, shoreline/medium-depth proof. Proof: slot card.
+12. Define Unity slot 6: sky/ocean/Aegir/moon source relink, haze/fog tuning, horizon/atmosphere capture, Crest/ocean proof without custom wrapper. Proof: slot card.
+13. Define Unity slot 7: product-face tool/resource pickup mesh/material import, primitive replacement, interaction/icon proof where applicable. Proof: slot card.
+14. Define Integrator gate: static validators plus current Unity visual/profiler packet; static docs alone cannot close production visual rows. Proof: gate card.
+
+PHASE 2 - PROOF AND BLOCKER RULES
+15. For each Unity slot, define required proof: static validator, material preview, Game View, Scene View, low-tier capture, high-tier capture, Frame Debugger/profiler/GC/memory/VRAM if runtime/render/material route changed. Proof: proof matrix.
+16. Define forbidden future-owner shortcuts: material repaint of primitive, darkness/fog to hide weak art, accepting proxy fallback, using package/default materials, unresolved GUIDs, guessed channels, dry-land kelp/coral. Proof: rejection section.
+17. Define asset-source preconditions: source package, channel contract, import intent, QA result, manual tiling review, PBR derivation. Proof: precondition table.
+18. Define no-destructive-cleanup rule: delete only after obsolete reference proof, .meta handling, rollback path, and import/compile proof. Proof: cleanup rule.
+19. Define GlobalQualityWeight consequences for future Unity slots: quality scales density/resolution/cadence, not gameplay truth or material identity. Proof: scaling table.
+20. Define blocker statuses: CANDIDATE, BLOCKED BY SOURCE, BLOCKED BY UNITY SLOT, PENDING PROFILER, PENDING PLAYER CAPTURE, NOT APPLICABLE. Proof: status legend.
+21. Cross-check no same-wave dependencies. Proof: self-audit states 2107 uses existing reports only.
+22. Cross-check no target path/class/asset is stated as hard fact unless report-cited; otherwise mark CANDIDATE. Proof: target audit.
+23. Cross-check no static YAML/path existence is accepted as visual proof. Proof: evidence label audit.
+24. Write 2107 handoff synthesis report under Docs/Reports/Batch21. Proof: report path.
+
+PHASE 3 - REPORTING
+25. Update Status_2107.md with files created, proof label, and future Unity-owner slots.
+26. Update Rationale_2107.md only for real decisions, including why this task is synthesis-only and why Unity execution is deferred.
+27. Append LOG_2107.md with concise proof.
+28. Final chat report: list the handoff packet, intended future Unity slot order, and residual blockers. Do not claim implementation.
+
+PROOF PACKET
+- STATIC VERIFIED: handoff synthesis created from existing evidence.
+- PENDING VERIFICATION: all Unity imports, relinks, placement edits, scene captures, material previews, Frame Debugger/profiler/GC/memory/VRAM, gameplay proof.
+
+BLOCKER RULES
+- If a handoff item requires source packages not yet present, mark BLOCKED BY SOURCE, not dependency on sibling output.
+- If a handoff item requires Unity, mark BLOCKED BY UNITY SLOT.
+- If an item is unsupported by existing evidence, mark CANDIDATE.
+
+FINAL REPORT REQUIREMENTS
+Report what was synthesized, what remains future Unity-owner work, and proof labels. No fake readiness.

@@ -263,6 +263,7 @@ namespace Hecton8.Gameplay
         private bool _registeredHotSwapListener;
         private uint _survivalVitalsSignalSourceId;
         private uint _survivalVitalsSignalSequence;
+        private uint _playerEntityHash;
         private float _pendingNarcosisShaderScalar;
         private bool _hasPendingNarcosisShaderScalar;
 
@@ -588,9 +589,11 @@ namespace Hecton8.Gameplay
             ResolveRuntimeContextDependencies();
             RefreshColdRegistryReferences();
             WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _vegetationBridge);
-            int ownerId = unchecked((int)EntityId.ToULong(GetEntityId()));
+            ulong ownerEntityId = EntityId.ToULong(GetEntityId());
+            int ownerId = unchecked((int)ownerEntityId);
             int statsId = stats != null ? unchecked((int)EntityId.ToULong(stats.GetEntityId())) : 0;
-            _survivalVitalsSignalSourceId = RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
+            _survivalVitalsSignalSourceId = RuntimeOriginRoute.FoldEntityIdToSourceId(ownerEntityId);
+            _playerEntityHash = unchecked((uint)ownerEntityId);
             _traumaRandom = CreateDeterministicRandom(ownerId, statsId);
 #if UNITY_EDITOR
             TryBootstrapInjectedSurvivalDatabase();
@@ -604,6 +607,7 @@ namespace Hecton8.Gameplay
         {
             ResolveRuntimeContextDependencies();
             RefreshColdRegistryReferences();
+            RefreshSurvivalIdentityCold();
             TryRegisterHotSwapListener();
             TryRegisterTickOwners();
             _slowTickDt = 0.1f;
@@ -2349,12 +2353,7 @@ namespace Hecton8.Gameplay
             if (flags == 0u || stats == null)
                 return;
 
-            uint sourceId = _survivalVitalsSignalSourceId;
-            if (sourceId == 0u)
-            {
-                sourceId = RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
-                _survivalVitalsSignalSourceId = sourceId;
-            }
+            uint sourceId = ResolveSurvivalVitalsSignalSourceId();
 
             _survivalVitalsSignalSequence++;
             if (_survivalVitalsSignalSequence == 0u)
@@ -2389,7 +2388,7 @@ namespace Hecton8.Gameplay
                 SurvivalVitalsChangedSignalFlags.Integrity |
                 SurvivalVitalsChangedSignalFlags.Oxygen |
                 SurvivalVitalsChangedSignalFlags.Depth);
-            uint playerHash = unchecked((uint)EntityId.ToULong(gameObject.GetEntityId()));
+            uint playerHash = ResolvePlayerEntityHash();
             if (!TryResolveSurvivalAbsoluteAup(out double3 deathAup))
                 deathAup = MissingRespawnDeathAup();
 
@@ -2535,20 +2534,8 @@ namespace Hecton8.Gameplay
             _survivalDatabaseItemCount = 0;
         }
 
-        private bool TryPrepareInjectedSurvivalDatabaseBuffers(
-            int requiredLength,
-            out NativeArray<uint> stableHashes,
-            out NativeArray<float> massKilograms,
-            out NativeArray<float> volumeLiters,
-            out NativeArray<float> energyDensityMegajoulesPerKilogram,
-            out NativeArray<int> baseDurability)
+        private bool TryPrepareInjectedSurvivalDatabaseBuffers(int requiredLength)
         {
-            stableHashes = default;
-            massKilograms = default;
-            volumeLiters = default;
-            energyDensityMegajoulesPerKilogram = default;
-            baseDurability = default;
-
             if (requiredLength <= 0)
                 return false;
 
@@ -2561,44 +2548,39 @@ namespace Hecton8.Gameplay
                        ref _survivalDatabaseStableHashesHandle,
                        BufferID.SurvivalDatabaseStableHashes,
                        requiredLength,
-                       NativeArrayOptions.ClearMemory,
-                       out stableHashes) &&
+                       NativeArrayOptions.ClearMemory) &&
                    OpenOrAcquireSurvivalVaultBuffer(
                        vault,
                        ref _survivalDatabaseMassKilogramsHandle,
                        BufferID.SurvivalDatabaseMassKilograms,
                        requiredLength,
-                       NativeArrayOptions.ClearMemory,
-                       out massKilograms) &&
+                       NativeArrayOptions.ClearMemory) &&
                    OpenOrAcquireSurvivalVaultBuffer(
                        vault,
                        ref _survivalDatabaseVolumeLitersHandle,
                        BufferID.SurvivalDatabaseVolumeLiters,
                        requiredLength,
-                       NativeArrayOptions.ClearMemory,
-                       out volumeLiters) &&
+                       NativeArrayOptions.ClearMemory) &&
                    OpenOrAcquireSurvivalVaultBuffer(
                        vault,
                        ref _survivalDatabaseEnergyDensityMegajoulesPerKilogramHandle,
                        BufferID.SurvivalDatabaseEnergyDensityMegajoulesPerKilogram,
                        requiredLength,
-                       NativeArrayOptions.ClearMemory,
-                       out energyDensityMegajoulesPerKilogram) &&
+                       NativeArrayOptions.ClearMemory) &&
                    OpenOrAcquireSurvivalVaultBuffer(
                        vault,
                        ref _survivalDatabaseBaseDurabilityHandle,
                        BufferID.SurvivalDatabaseBaseDurability,
                        requiredLength,
-                       NativeArrayOptions.ClearMemory,
-                       out baseDurability);
+                       NativeArrayOptions.ClearMemory);
         }
 
         private bool TryResolveInjectedSurvivalDatabaseBuffers(
-            out NativeArray<uint> stableHashes,
-            out NativeArray<float> massKilograms,
-            out NativeArray<float> volumeLiters,
-            out NativeArray<float> energyDensityMegajoulesPerKilogram,
-            out NativeArray<int> baseDurability)
+            out NativeArray<uint>.ReadOnly stableHashes,
+            out NativeArray<float>.ReadOnly massKilograms,
+            out NativeArray<float>.ReadOnly volumeLiters,
+            out NativeArray<float>.ReadOnly energyDensityMegajoulesPerKilogram,
+            out NativeArray<int>.ReadOnly baseDurability)
         {
             stableHashes = default;
             massKilograms = default;
@@ -2623,11 +2605,11 @@ namespace Hecton8.Gameplay
         private bool TryResolveInjectedSurvivalDatabaseBuffers(
             IDataVault vault,
             int requiredLength,
-            out NativeArray<uint> stableHashes,
-            out NativeArray<float> massKilograms,
-            out NativeArray<float> volumeLiters,
-            out NativeArray<float> energyDensityMegajoulesPerKilogram,
-            out NativeArray<int> baseDurability)
+            out NativeArray<uint>.ReadOnly stableHashes,
+            out NativeArray<float>.ReadOnly massKilograms,
+            out NativeArray<float>.ReadOnly volumeLiters,
+            out NativeArray<float>.ReadOnly energyDensityMegajoulesPerKilogram,
+            out NativeArray<int>.ReadOnly baseDurability)
         {
             stableHashes = default;
             massKilograms = default;
@@ -2692,25 +2674,19 @@ namespace Hecton8.Gameplay
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
-            NativeArrayOptions options,
-            out NativeArray<T> buffer) where T : struct
+            NativeArrayOptions options) where T : struct
         {
+            NativeArray<T>.ReadOnly buffer;
             if (TryOpenSurvivalVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
                 return true;
 
             if (vault == null || requiredLength <= 0)
-            {
-                buffer = default;
                 return false;
-            }
 
             if (vault.IsAllocationLocked)
             {
                 if (!vault.TryGetGenerationHandle(bufferId, out handle))
-                {
-                    buffer = default;
                     return false;
-                }
 
                 return TryOpenSurvivalVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
             }
@@ -2728,13 +2704,13 @@ namespace Hecton8.Gameplay
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T>.ReadOnly buffer) where T : struct
         {
             buffer = default;
             if (vault == null ||
                 requiredLength <= 0 ||
                 !IsSurvivalVaultHandle(in handle, bufferId) ||
-                !vault.TryResolveHandle(in handle, out buffer) ||
+                !vault.TryReadOnlyHandle(in handle, out buffer) ||
                 !buffer.IsCreated ||
                 buffer.Length < requiredLength)
             {
@@ -2752,6 +2728,183 @@ namespace Hecton8.Gameplay
             return handle.BufferID == (uint)bufferId &&
                    handle.SystemID == (uint)SystemID.GameplayPlayer &&
                    handle.Generation != 0u;
+        }
+
+        private bool TryWriteInjectedSurvivalDatabaseBuffers(
+            NativeArray<SurvivalDatabaseItemRecord> parsedItems,
+            int itemCount)
+        {
+            if (!parsedItems.IsCreated ||
+                itemCount <= 0 ||
+                parsedItems.Length < itemCount)
+            {
+                return false;
+            }
+
+            IDataVault vault = _survivalDataVault;
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            return TryWriteInjectedSurvivalStableHashes(vault, parsedItems, itemCount) &&
+                   TryWriteInjectedSurvivalMassKilograms(vault, parsedItems, itemCount) &&
+                   TryWriteInjectedSurvivalVolumeLiters(vault, parsedItems, itemCount) &&
+                   TryWriteInjectedSurvivalEnergyDensity(vault, parsedItems, itemCount) &&
+                   TryWriteInjectedSurvivalBaseDurability(vault, parsedItems, itemCount);
+        }
+
+        private bool TryWriteInjectedSurvivalStableHashes(
+            IDataVault vault,
+            NativeArray<SurvivalDatabaseItemRecord> parsedItems,
+            int itemCount)
+        {
+            VaultGenerationHandle<uint> handle = _survivalDatabaseStableHashesHandle;
+            bool lockAcquired = false;
+            try
+            {
+                if (vault.IsCompactionFenceActive ||
+                    !vault.TryAcquireWriteLock(in handle, SystemID.GameplayPlayer, out NativeArray<uint> target))
+                {
+                    return false;
+                }
+
+                lockAcquired = true;
+                if (!target.IsCreated || target.Length < itemCount)
+                    return false;
+
+                for (int i = 0; i < itemCount; i++)
+                    target[i] = parsedItems[i].StableHash;
+
+                return true;
+            }
+            finally
+            {
+                if (lockAcquired)
+                    vault.ReleaseWriteLock(in handle, SystemID.GameplayPlayer);
+            }
+        }
+
+        private bool TryWriteInjectedSurvivalMassKilograms(
+            IDataVault vault,
+            NativeArray<SurvivalDatabaseItemRecord> parsedItems,
+            int itemCount)
+        {
+            VaultGenerationHandle<float> handle = _survivalDatabaseMassKilogramsHandle;
+            bool lockAcquired = false;
+            try
+            {
+                if (vault.IsCompactionFenceActive ||
+                    !vault.TryAcquireWriteLock(in handle, SystemID.GameplayPlayer, out NativeArray<float> target))
+                {
+                    return false;
+                }
+
+                lockAcquired = true;
+                if (!target.IsCreated || target.Length < itemCount)
+                    return false;
+
+                for (int i = 0; i < itemCount; i++)
+                    target[i] = parsedItems[i].MassKilograms;
+
+                return true;
+            }
+            finally
+            {
+                if (lockAcquired)
+                    vault.ReleaseWriteLock(in handle, SystemID.GameplayPlayer);
+            }
+        }
+
+        private bool TryWriteInjectedSurvivalVolumeLiters(
+            IDataVault vault,
+            NativeArray<SurvivalDatabaseItemRecord> parsedItems,
+            int itemCount)
+        {
+            VaultGenerationHandle<float> handle = _survivalDatabaseVolumeLitersHandle;
+            bool lockAcquired = false;
+            try
+            {
+                if (vault.IsCompactionFenceActive ||
+                    !vault.TryAcquireWriteLock(in handle, SystemID.GameplayPlayer, out NativeArray<float> target))
+                {
+                    return false;
+                }
+
+                lockAcquired = true;
+                if (!target.IsCreated || target.Length < itemCount)
+                    return false;
+
+                for (int i = 0; i < itemCount; i++)
+                    target[i] = parsedItems[i].VolumeLiters;
+
+                return true;
+            }
+            finally
+            {
+                if (lockAcquired)
+                    vault.ReleaseWriteLock(in handle, SystemID.GameplayPlayer);
+            }
+        }
+
+        private bool TryWriteInjectedSurvivalEnergyDensity(
+            IDataVault vault,
+            NativeArray<SurvivalDatabaseItemRecord> parsedItems,
+            int itemCount)
+        {
+            VaultGenerationHandle<float> handle = _survivalDatabaseEnergyDensityMegajoulesPerKilogramHandle;
+            bool lockAcquired = false;
+            try
+            {
+                if (vault.IsCompactionFenceActive ||
+                    !vault.TryAcquireWriteLock(in handle, SystemID.GameplayPlayer, out NativeArray<float> target))
+                {
+                    return false;
+                }
+
+                lockAcquired = true;
+                if (!target.IsCreated || target.Length < itemCount)
+                    return false;
+
+                for (int i = 0; i < itemCount; i++)
+                    target[i] = parsedItems[i].EnergyDensityMegajoulesPerKilogram;
+
+                return true;
+            }
+            finally
+            {
+                if (lockAcquired)
+                    vault.ReleaseWriteLock(in handle, SystemID.GameplayPlayer);
+            }
+        }
+
+        private bool TryWriteInjectedSurvivalBaseDurability(
+            IDataVault vault,
+            NativeArray<SurvivalDatabaseItemRecord> parsedItems,
+            int itemCount)
+        {
+            VaultGenerationHandle<int> handle = _survivalDatabaseBaseDurabilityHandle;
+            bool lockAcquired = false;
+            try
+            {
+                if (vault.IsCompactionFenceActive ||
+                    !vault.TryAcquireWriteLock(in handle, SystemID.GameplayPlayer, out NativeArray<int> target))
+                {
+                    return false;
+                }
+
+                lockAcquired = true;
+                if (!target.IsCreated || target.Length < itemCount)
+                    return false;
+
+                for (int i = 0; i < itemCount; i++)
+                    target[i] = parsedItems[i].BaseDurability;
+
+                return true;
+            }
+            finally
+            {
+                if (lockAcquired)
+                    vault.ReleaseWriteLock(in handle, SystemID.GameplayPlayer);
+            }
         }
 
         private void BindPhysiologyVaultHandles(IDataVault vault)
@@ -2978,10 +3131,26 @@ namespace Hecton8.Gameplay
 
         private uint ResolveSurvivalVitalsSignalSourceId()
         {
-            if (_survivalVitalsSignalSourceId == 0u)
-                _survivalVitalsSignalSourceId = RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
+            uint sourceId = _survivalVitalsSignalSourceId;
+            return sourceId != 0u ? sourceId : _SurvivalRuntimeContextHash;
+        }
 
-            return _survivalVitalsSignalSourceId;
+        private uint ResolvePlayerEntityHash()
+        {
+            uint playerHash = _playerEntityHash;
+            return playerHash != 0u ? playerHash : _SurvivalRuntimeContextHash;
+        }
+
+        private void RefreshSurvivalIdentityCold()
+        {
+            if (_survivalVitalsSignalSourceId != 0u && _playerEntityHash != 0u)
+                return;
+
+            ulong ownerEntityId = EntityId.ToULong(GetEntityId());
+            if (_survivalVitalsSignalSourceId == 0u)
+                _survivalVitalsSignalSourceId = RuntimeOriginRoute.FoldEntityIdToSourceId(ownerEntityId);
+            if (_playerEntityHash == 0u)
+                _playerEntityHash = unchecked((uint)ownerEntityId);
         }
 
         // ---------------------------------------------------------
@@ -3341,30 +3510,20 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            if (!TryPrepareInjectedSurvivalDatabaseBuffers(
-                parsedItemCount,
-                out NativeArray<uint> stableHashes,
-                out NativeArray<float> massKilograms,
-                out NativeArray<float> volumeLiters,
-                out NativeArray<float> energyDensityMegajoulesPerKilogram,
-                out NativeArray<int> baseDurability))
+            if (!TryPrepareInjectedSurvivalDatabaseBuffers(parsedItemCount))
             {
                 ReleaseSurvivalDatabaseRows(ref parsedItems);
                 return false;
             }
 
-            _survivalDatabaseItemCount = parsedItemCount;
-
-            for (int i = 0; i < parsedItemCount; i++)
+            if (!TryWriteInjectedSurvivalDatabaseBuffers(parsedItems, parsedItemCount))
             {
-                SurvivalDatabaseItemRecord parsedItem = parsedItems[i];
-                stableHashes[i] = parsedItem.StableHash;
-                massKilograms[i] = parsedItem.MassKilograms;
-                volumeLiters[i] = parsedItem.VolumeLiters;
-                energyDensityMegajoulesPerKilogram[i] = parsedItem.EnergyDensityMegajoulesPerKilogram;
-                baseDurability[i] = parsedItem.BaseDurability;
+                _survivalDatabaseItemCount = 0;
+                ReleaseSurvivalDatabaseRows(ref parsedItems);
+                return false;
             }
 
+            _survivalDatabaseItemCount = parsedItemCount;
             ReleaseSurvivalDatabaseRows(ref parsedItems);
             return _survivalDatabaseItemCount > 0;
         }
@@ -3381,11 +3540,11 @@ namespace Hecton8.Gameplay
             if (string.IsNullOrWhiteSpace(stableId) ||
                 _survivalDatabaseItemCount <= 0 ||
                 !TryResolveInjectedSurvivalDatabaseBuffers(
-                    out NativeArray<uint> stableHashes,
-                    out NativeArray<float> massKilograms,
-                    out NativeArray<float> volumeLiters,
-                    out NativeArray<float> energyDensityMegajoulesPerKilogram,
-                    out NativeArray<int> baseDurability))
+                    out NativeArray<uint>.ReadOnly stableHashes,
+                    out NativeArray<float>.ReadOnly massKilograms,
+                    out NativeArray<float>.ReadOnly volumeLiters,
+                    out NativeArray<float>.ReadOnly energyDensityMegajoulesPerKilogram,
+                    out NativeArray<int>.ReadOnly baseDurability))
             {
                 return false;
             }

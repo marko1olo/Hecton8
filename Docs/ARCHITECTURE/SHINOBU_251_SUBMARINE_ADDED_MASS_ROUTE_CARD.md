@@ -118,6 +118,18 @@ Each field is one `float4x4` cache line. No properties or managed references are
 
 `SubmarineAddedMassTuningDTO` and `SubmarineHullProfileDTO` are explicit 64-byte DTOs. They are snapshot/tuning surfaces, not gameplay authority owners.
 
+## Source Anchor - SubmarineDynamicsContracts (2026-06-05)
+
+Evidence class: STATIC_SOURCE only. `Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs` anchors the shared DTO/job surface consumed by this route and the wider submarine dynamics runtime.
+
+- `SubmarineDynamicsConstants.BlackBoxFrames = 300`.
+- `SubmarineForceAccumulator` is the force convergence surface for linear force, torque, thrust, drag, buoyancy, impact, gyro correction, cavitation, and frame flags.
+- `SubmarineKinematicTelemetry`, `SubmarineHydrodynamicsTelemetry`, and `GyroTelemetryEntry` provide source-level black-box rows. Runtime dump readback remains unproven here.
+- `CavitationAcousticSignal` uses a typed `SignalBus` lane; hot paths do not use string event names.
+- Vehicle damage boundary: dynamics consumes `VehicleDamageStateDTO` scalars from the damage owner. It does not read the damage grid and the damage jobs do not own force application.
+- Force boundary: arbitrary cross-domain Rigidbody force writes are not authorized by this contract; force inputs must enter the simulation lane as owned packets/signals/DTO scalars.
+- Proof gap: Unity import, compile after the existing project-file blocker, profiler/GC, dump decode, force correctness, and player-build proof remain pending.
+
 ## Dear Lie
 
 Dear Lie scope:

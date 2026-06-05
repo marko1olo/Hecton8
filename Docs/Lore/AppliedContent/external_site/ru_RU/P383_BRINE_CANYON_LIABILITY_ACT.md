@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Акт: brine canyon и ответственность
+# Brine Canyon Liability Act
 
-Срединная глубина HECTON-8 не дает один большой reveal. Она дает физическую цепь margins, delays и сломанных evacuation routes.
+Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.
 
 ## Scanner
 
-Гейт акта: brine canyon. Плотность, поврежденные часы и принятые margins становятся доказательством.
+Act gate: brine canyon. Density, damaged clocks and accepted margins become evidence.
 
 ## Terminal
 
-АКТ ОТВЕТСТВЕННОСТИ: сопоставь margin logs, evacuation delay и route damage. Потоп был реален; priority weighting был преступным.
+LIABILITY ACT: match margin logs, evacuation delay and route damage. The flood was real; the priority weighting was criminal.
 
 ## Audio
 
-Океан не лгал. Расписание лгало.
+The ocean did not lie. The timetable did.
 
 ## Field Note
 
-Для midgame evidence ordering и размещения brine POI.
+Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
 
 <!-- External Site; generated from P383_BRINE_CANYON_LIABILITY_ACT/ru_RU. -->

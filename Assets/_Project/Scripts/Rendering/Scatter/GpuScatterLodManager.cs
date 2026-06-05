@@ -455,31 +455,62 @@ namespace Hecton8.Rendering.Scatter
             if (_activeInstanceCount <= 0 || !EnsureCpuAuditBuffers(_activeInstanceCount))
                 return false;
 
-            if (!TryResolveMatrixView(out var matrices) ||
-                !TryResolveCpuFrustumPlaneView(out var frustumPlanes) ||
-                !TryResolveCpuVisibilityMaskView(out var visibilityMask))
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            if (!TryResolveMatrixView(out var matrices))
             {
                 return false;
             }
 
-            UploadCpuFrustumPlanes();
+            if (!TryAcquireScatterVaultWriteBuffer(vault, ref _cpuFrustumPlanesHandle, BufferID.FloraScatterCpuFrustumPlanes, FrustumPlaneCount, NativeArrayOptions.UninitializedMemory, out NativeArray<float4> frustumPlanes))
+                return false;
+
+            try
+            {
+                for (int i = 0; i < FrustumPlaneCount; i++)
+                {
+                    Vector4 plane = _frustumPlaneUpload[i];
+                    frustumPlanes[i] = new float4(plane.x, plane.y, plane.z, plane.w);
+                }
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _cpuFrustumPlanesHandle, SystemID.Vfx);
+            }
+
+            if (!TryReadOnlyScatterVaultBuffer(vault, ref _cpuFrustumPlanesHandle, BufferID.FloraScatterCpuFrustumPlanes, FrustumPlaneCount, out NativeArray<float4>.ReadOnly readOnlyFrustumPlanes))
+                return false;
+
+            int visibilityCapacity = math.max(_activeInstanceCount, instanceCapacity);
+            if (!TryAcquireScatterVaultWriteBuffer(vault, ref _cpuVisibilityMaskHandle, BufferID.FloraScatterCpuVisibilityMask, visibilityCapacity, NativeArrayOptions.UninitializedMemory, out NativeArray<byte> visibilityMask))
+                return false;
+
             Vector3 safeLocalBoundsCenter = ResolveSafeLocalBoundsCenter();
             Vector3 safeLocalBoundsExtents = ResolveSafeLocalBoundsExtents();
-            JobHandle handle = new ScatterCullJob
+            try
             {
-                Matrices = matrices,
-                CullingPlanes = frustumPlanes,
-                VisibilityMask = visibilityMask,
-                InstanceCount = _activeInstanceCount,
-                AupShiftOffset = new float3(_aupShiftOffset.x, _aupShiftOffset.y, _aupShiftOffset.z),
-                CameraPosition = new float3(_lastCameraSignalPosition.x, _lastCameraSignalPosition.y, _lastCameraSignalPosition.z),
-                LocalBoundsCenter = new float3(safeLocalBoundsCenter.x, safeLocalBoundsCenter.y, safeLocalBoundsCenter.z),
-                LocalBoundsExtents = new float3(safeLocalBoundsExtents.x, safeLocalBoundsExtents.y, safeLocalBoundsExtents.z),
-                MaxDistanceSq = _effectiveCullDistanceMeters * _effectiveCullDistanceMeters
-            }.Schedule(_activeInstanceCount, BurstAuditBatchSize);
+                JobHandle handle = new ScatterCullJob
+                {
+                    Matrices = matrices,
+                    CullingPlanes = readOnlyFrustumPlanes,
+                    VisibilityMask = visibilityMask,
+                    InstanceCount = _activeInstanceCount,
+                    AupShiftOffset = new float3(_aupShiftOffset.x, _aupShiftOffset.y, _aupShiftOffset.z),
+                    CameraPosition = new float3(_lastCameraSignalPosition.x, _lastCameraSignalPosition.y, _lastCameraSignalPosition.z),
+                    LocalBoundsCenter = new float3(safeLocalBoundsCenter.x, safeLocalBoundsCenter.y, safeLocalBoundsCenter.z),
+                    LocalBoundsExtents = new float3(safeLocalBoundsExtents.x, safeLocalBoundsExtents.y, safeLocalBoundsExtents.z),
+                    MaxDistanceSq = _effectiveCullDistanceMeters * _effectiveCullDistanceMeters
+                }.Schedule(_activeInstanceCount, BurstAuditBatchSize);
 
-            DispatcherJobFence.TryComplete(ref handle, forceComplete: true); // COLD SYNC JOB: explicit manual audit, never part of the shipping Tick path.
-            return true;
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true); // COLD SYNC JOB: explicit manual audit, never part of the shipping Tick path.
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _cpuVisibilityMaskHandle, SystemID.Vfx);
+            }
         }
 
         private void Awake()
@@ -659,7 +690,8 @@ namespace Hecton8.Rendering.Scatter
         /// <inheritdoc />
         void IGlobalRegistryHotSwapRefListener.OnGlobalRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService)
         {
-            ApplyRegistryServiceRebind(serviceSlot, currentService);
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+                RebindScatterDataVault(currentService as IDataVault);
         }
 
         /// <inheritdoc />
@@ -668,7 +700,8 @@ namespace Hecton8.Rendering.Scatter
             object previousService,
             object currentService)
         {
-            ApplyRegistryServiceRebind(serviceSlot, currentService);
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+                RebindScatterDataVault(currentService as IDataVault);
         }
 
         private void TryRegisterLateFrame()
@@ -742,15 +775,11 @@ namespace Hecton8.Rendering.Scatter
 
         private void RefreshCachedRegistryServicesCold()
         {
-            ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.DataVault, GlobalRegistry.DataVault);
+            RebindScatterDataVault(GlobalRegistry.DataVault);
         }
 
-        private void ApplyRegistryServiceRebind(GlobalRegistryServiceSlot serviceSlot, object currentService)
+        private void RebindScatterDataVault(IDataVault currentVault)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
-                return;
-
-            IDataVault currentVault = currentService as IDataVault;
             _registryDataVault = currentVault;
             if (!ReferenceEquals(_dataVault, currentVault))
             {
@@ -790,11 +819,11 @@ namespace Hecton8.Rendering.Scatter
             if (!ReferenceEquals(_dataVault, vault))
                 BindDataVault(vault);
 
-            if (!TryResolveScatterVaultBuffer(vault, ref _vaultMatricesHandle, BufferID.FloraScatterMatrices, instanceCapacity, out NativeArray<Matrix4x4> _) ||
-                !TryResolveScatterVaultBuffer(vault, ref _vaultMetadataHandle, BufferID.FloraScatterMetadata, instanceCapacity, out NativeArray<GpuScatterFloraInstanceData> _) ||
-                !TryResolveScatterVaultBuffer(vault, ref _vaultAgeHandle, BufferID.FloraScatterAge01, instanceCapacity, out NativeArray<float> _) ||
-                !TryResolveScatterVaultBuffer(vault, ref _vaultPhaseSeedHandle, BufferID.FloraScatterPhaseSeeds, instanceCapacity, out NativeArray<float> _) ||
-                !TryResolveScatterVaultBuffer(vault, ref _vaultVisualPayloadHandle, BufferID.FloraScatterVisualPayload, instanceCapacity, out NativeArray<Vector4> _))
+            if (!TryReadOnlyScatterVaultBuffer(vault, ref _vaultMatricesHandle, BufferID.FloraScatterMatrices, instanceCapacity, out NativeArray<Matrix4x4>.ReadOnly _) ||
+                !TryReadOnlyScatterVaultBuffer(vault, ref _vaultMetadataHandle, BufferID.FloraScatterMetadata, instanceCapacity, out NativeArray<GpuScatterFloraInstanceData>.ReadOnly _) ||
+                !TryReadOnlyScatterVaultBuffer(vault, ref _vaultAgeHandle, BufferID.FloraScatterAge01, instanceCapacity, out NativeArray<float>.ReadOnly _) ||
+                !TryReadOnlyScatterVaultBuffer(vault, ref _vaultPhaseSeedHandle, BufferID.FloraScatterPhaseSeeds, instanceCapacity, out NativeArray<float>.ReadOnly _) ||
+                !TryReadOnlyScatterVaultBuffer(vault, ref _vaultVisualPayloadHandle, BufferID.FloraScatterVisualPayload, instanceCapacity, out NativeArray<Vector4>.ReadOnly _))
             {
                 return false;
             }
@@ -864,15 +893,15 @@ namespace Hecton8.Rendering.Scatter
         private void BindDataVault(IDataVault vault)
         {
             _dataVault = vault;
-            bool needsDefaultAges = !TryResolveScatterVaultBuffer(vault, ref _vaultAgeHandle, BufferID.FloraScatterAge01, instanceCapacity, out NativeArray<float> _);
-            bool needsDefaultPhaseSeeds = !TryResolveScatterVaultBuffer(vault, ref _vaultPhaseSeedHandle, BufferID.FloraScatterPhaseSeeds, instanceCapacity, out NativeArray<float> _);
-            bool needsDefaultVisualPayload = !TryResolveScatterVaultBuffer(vault, ref _vaultVisualPayloadHandle, BufferID.FloraScatterVisualPayload, instanceCapacity, out NativeArray<Vector4> _);
+            bool needsDefaultAges = !TryReadOnlyScatterVaultBuffer(vault, ref _vaultAgeHandle, BufferID.FloraScatterAge01, instanceCapacity, out NativeArray<float>.ReadOnly _);
+            bool needsDefaultPhaseSeeds = !TryReadOnlyScatterVaultBuffer(vault, ref _vaultPhaseSeedHandle, BufferID.FloraScatterPhaseSeeds, instanceCapacity, out NativeArray<float>.ReadOnly _);
+            bool needsDefaultVisualPayload = !TryReadOnlyScatterVaultBuffer(vault, ref _vaultVisualPayloadHandle, BufferID.FloraScatterVisualPayload, instanceCapacity, out NativeArray<Vector4>.ReadOnly _);
 
-            if (!TryAcquireScatterVaultBuffer(vault, ref _vaultMatricesHandle, BufferID.FloraScatterMatrices, instanceCapacity, NativeArrayOptions.UninitializedMemory, out NativeArray<Matrix4x4> _) ||
-                !TryAcquireScatterVaultBuffer(vault, ref _vaultMetadataHandle, BufferID.FloraScatterMetadata, instanceCapacity, NativeArrayOptions.ClearMemory, out NativeArray<GpuScatterFloraInstanceData> _) ||
-                !TryAcquireScatterVaultBuffer(vault, ref _vaultAgeHandle, BufferID.FloraScatterAge01, instanceCapacity, NativeArrayOptions.ClearMemory, out NativeArray<float> _) ||
-                !TryAcquireScatterVaultBuffer(vault, ref _vaultPhaseSeedHandle, BufferID.FloraScatterPhaseSeeds, instanceCapacity, NativeArrayOptions.ClearMemory, out NativeArray<float> _) ||
-                !TryAcquireScatterVaultBuffer(vault, ref _vaultVisualPayloadHandle, BufferID.FloraScatterVisualPayload, instanceCapacity, NativeArrayOptions.ClearMemory, out NativeArray<Vector4> _))
+            if (!TryEnsureScatterVaultBuffer(vault, ref _vaultMatricesHandle, BufferID.FloraScatterMatrices, instanceCapacity, NativeArrayOptions.UninitializedMemory) ||
+                !TryEnsureScatterVaultBuffer(vault, ref _vaultMetadataHandle, BufferID.FloraScatterMetadata, instanceCapacity, NativeArrayOptions.ClearMemory) ||
+                !TryEnsureScatterVaultBuffer(vault, ref _vaultAgeHandle, BufferID.FloraScatterAge01, instanceCapacity, NativeArrayOptions.ClearMemory) ||
+                !TryEnsureScatterVaultBuffer(vault, ref _vaultPhaseSeedHandle, BufferID.FloraScatterPhaseSeeds, instanceCapacity, NativeArrayOptions.ClearMemory) ||
+                !TryEnsureScatterVaultBuffer(vault, ref _vaultVisualPayloadHandle, BufferID.FloraScatterVisualPayload, instanceCapacity, NativeArrayOptions.ClearMemory))
             {
                 CaptureVaultGenerations(vault);
                 _forceUpload = true;
@@ -887,7 +916,25 @@ namespace Hecton8.Rendering.Scatter
             _forceUpload = true;
         }
 
-        private static bool TryAcquireScatterVaultBuffer<T>(
+        private static bool TryEnsureScatterVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options) where T : struct
+        {
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            handle = vault.EnsureGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.Vfx,
+                options);
+            return TryReadOnlyScatterVaultBuffer(vault, ref handle, bufferId, requiredLength, out NativeArray<T>.ReadOnly _);
+        }
+
+        private static bool TryAcquireScatterVaultWriteBuffer<T>(
             IDataVault vault,
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
@@ -899,27 +946,45 @@ namespace Hecton8.Rendering.Scatter
             if (vault == null || requiredLength <= 0)
                 return false;
 
-            handle = vault.EnsureGenerationHandle<T>(
-                bufferId,
-                requiredLength,
-                SystemID.Vfx,
-                options);
-            return TryResolveScatterVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
+            if (!IsMatchingScatterVaultHandle(in handle, bufferId) ||
+                !vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly existing) ||
+                !existing.IsCreated ||
+                existing.Length < requiredLength)
+            {
+                handle = vault.EnsureGenerationHandle<T>(
+                    bufferId,
+                    requiredLength,
+                    SystemID.Vfx,
+                    options);
+            }
+
+            if (!IsMatchingScatterVaultHandle(in handle, bufferId) ||
+                !vault.TryAcquireWriteLock(in handle, SystemID.Vfx, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                if (buffer.IsCreated)
+                    vault.ReleaseWriteLock(in handle, SystemID.Vfx);
+                buffer = default;
+                return false;
+            }
+
+            return true;
         }
 
-        private static bool TryResolveScatterVaultBuffer<T>(
+        private static bool TryReadOnlyScatterVaultBuffer<T>(
             IDataVault vault,
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T>.ReadOnly buffer) where T : struct
         {
             buffer = default;
             if (vault == null || requiredLength <= 0)
                 return false;
 
             if (IsMatchingScatterVaultHandle(in handle, bufferId) &&
-                vault.TryResolveHandle(in handle, out buffer) &&
+                vault.TryReadOnlyHandle(in handle, out buffer) &&
                 buffer.IsCreated &&
                 buffer.Length >= requiredLength)
             {
@@ -928,7 +993,7 @@ namespace Hecton8.Rendering.Scatter
 
             if (!vault.TryGetGenerationHandle<T>(bufferId, out handle) ||
                 !IsMatchingScatterVaultHandle(in handle, bufferId) ||
-                !vault.TryResolveHandle(in handle, out buffer) ||
+                !vault.TryReadOnlyHandle(in handle, out buffer) ||
                 !buffer.IsCreated ||
                 buffer.Length < requiredLength)
             {
@@ -1320,7 +1385,7 @@ namespace Hecton8.Rendering.Scatter
             return true;
         }
 
-        private bool ValidateFiniteMetadata(NativeArray<GpuScatterFloraInstanceData> metadata, int activeCount)
+        private bool ValidateFiniteMetadata(NativeArray<GpuScatterFloraInstanceData>.ReadOnly metadata, int activeCount)
         {
             for (int i = 0; i < activeCount; i++)
             {
@@ -1341,7 +1406,7 @@ namespace Hecton8.Rendering.Scatter
             return true;
         }
 
-        private bool ValidateFiniteFloatLane(NativeArray<float> values, int activeCount)
+        private bool ValidateFiniteFloatLane(NativeArray<float>.ReadOnly values, int activeCount)
         {
             for (int i = 0; i < activeCount; i++)
             {
@@ -1356,7 +1421,7 @@ namespace Hecton8.Rendering.Scatter
             return true;
         }
 
-        private bool ValidateFiniteVector4Lane(NativeArray<Vector4> values, int activeCount)
+        private bool ValidateFiniteVector4Lane(NativeArray<Vector4>.ReadOnly values, int activeCount)
         {
             for (int i = 0; i < activeCount; i++)
             {
@@ -1400,7 +1465,7 @@ namespace Hecton8.Rendering.Scatter
             _hasVisualPayloadGeneration = TryReadScatterVaultGeneration<Vector4>(vault, BufferID.FloraScatterVisualPayload, out _lastVisualPayloadGeneration);
         }
 
-        private bool ValidateFiniteMatrices(NativeArray<Matrix4x4> matrices, int activeCount)
+        private bool ValidateFiniteMatrices(NativeArray<Matrix4x4>.ReadOnly matrices, int activeCount)
         {
             for (int i = 0; i < activeCount; i++)
             {
@@ -2023,99 +2088,122 @@ namespace Hecton8.Rendering.Scatter
             return math.isfinite(value) ? math.max(0.01f, math.abs(value)) : 0.01f;
         }
 
-        private bool TryResolveMatrixView(out NativeArray<Matrix4x4> matrices)
+        private bool TryResolveMatrixView(out NativeArray<Matrix4x4>.ReadOnly matrices)
         {
             IDataVault vault = _dataVault;
-            return TryResolveScatterVaultBuffer(vault, ref _vaultMatricesHandle, BufferID.FloraScatterMatrices, 1, out matrices);
+            return TryReadOnlyScatterVaultBuffer(vault, ref _vaultMatricesHandle, BufferID.FloraScatterMatrices, 1, out matrices);
         }
 
-        private bool TryResolveMetadataView(out NativeArray<GpuScatterFloraInstanceData> metadata)
+        private bool TryResolveMetadataView(out NativeArray<GpuScatterFloraInstanceData>.ReadOnly metadata)
         {
             IDataVault vault = _dataVault;
-            return TryResolveScatterVaultBuffer(vault, ref _vaultMetadataHandle, BufferID.FloraScatterMetadata, 1, out metadata);
+            return TryReadOnlyScatterVaultBuffer(vault, ref _vaultMetadataHandle, BufferID.FloraScatterMetadata, 1, out metadata);
         }
 
-        private bool TryResolveAgeView(out NativeArray<float> ages01)
+        private bool TryResolveAgeView(out NativeArray<float>.ReadOnly ages01)
         {
             IDataVault vault = _dataVault;
-            return TryResolveScatterVaultBuffer(vault, ref _vaultAgeHandle, BufferID.FloraScatterAge01, 1, out ages01);
+            return TryReadOnlyScatterVaultBuffer(vault, ref _vaultAgeHandle, BufferID.FloraScatterAge01, 1, out ages01);
         }
 
-        private bool TryResolvePhaseSeedView(out NativeArray<float> phaseSeeds)
+        private bool TryResolvePhaseSeedView(out NativeArray<float>.ReadOnly phaseSeeds)
         {
             IDataVault vault = _dataVault;
-            return TryResolveScatterVaultBuffer(vault, ref _vaultPhaseSeedHandle, BufferID.FloraScatterPhaseSeeds, 1, out phaseSeeds);
+            return TryReadOnlyScatterVaultBuffer(vault, ref _vaultPhaseSeedHandle, BufferID.FloraScatterPhaseSeeds, 1, out phaseSeeds);
         }
 
-        private bool TryResolveVisualPayloadView(out NativeArray<Vector4> visualPayload)
+        private bool TryResolveVisualPayloadView(out NativeArray<Vector4>.ReadOnly visualPayload)
         {
             IDataVault vault = _dataVault;
-            return TryResolveScatterVaultBuffer(vault, ref _vaultVisualPayloadHandle, BufferID.FloraScatterVisualPayload, 1, out visualPayload);
-        }
-
-        private bool TryResolveCpuFrustumPlaneView(out NativeArray<float4> frustumPlanes)
-        {
-            IDataVault vault = _dataVault;
-            return TryResolveScatterVaultBuffer(vault, ref _cpuFrustumPlanesHandle, BufferID.FloraScatterCpuFrustumPlanes, FrustumPlaneCount, out frustumPlanes);
-        }
-
-        private bool TryResolveCpuVisibilityMaskView(out NativeArray<byte> visibilityMask)
-        {
-            IDataVault vault = _dataVault;
-            return TryResolveScatterVaultBuffer(vault, ref _cpuVisibilityMaskHandle, BufferID.FloraScatterCpuVisibilityMask, 1, out visibilityMask);
+            return TryReadOnlyScatterVaultBuffer(vault, ref _vaultVisualPayloadHandle, BufferID.FloraScatterVisualPayload, 1, out visualPayload);
         }
 
         private void EnsureMetadataDefaults()
         {
-            if (!TryResolveMetadataView(out var metadata) ||
+            if (!TryResolveMetadataView(out var metadataReadOnly) ||
                 _metadataDefaultsInitialized ||
-                metadata.Length <= 0)
+                metadataReadOnly.Length <= 0)
             {
                 return;
             }
 
-            GpuScatterFloraInstanceData first = metadata[0];
+            GpuScatterFloraInstanceData first = metadataReadOnly[0];
             if (math.isfinite(first.HeightScale) && first.HeightScale > 0f && first.WidthScale > 0f)
             {
                 _metadataDefaultsInitialized = true;
                 return;
             }
 
-            int count = math.min(instanceCapacity, metadata.Length);
-            for (int i = 0; i < count; i++)
-                metadata[i] = GpuScatterFloraInstanceData.CreateDefault(i);
+            IDataVault vault = _dataVault;
+            if (!TryAcquireScatterVaultWriteBuffer(vault, ref _vaultMetadataHandle, BufferID.FloraScatterMetadata, instanceCapacity, NativeArrayOptions.ClearMemory, out NativeArray<GpuScatterFloraInstanceData> metadata))
+                return;
 
-            _metadataDefaultsInitialized = true;
+            try
+            {
+                int count = math.min(instanceCapacity, metadata.Length);
+                for (int i = 0; i < count; i++)
+                    metadata[i] = GpuScatterFloraInstanceData.CreateDefault(i);
+
+                _metadataDefaultsInitialized = true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _vaultMetadataHandle, SystemID.Vfx);
+            }
         }
 
         private void EnsureAuxiliaryShaderLaneDefaults(bool needsDefaultAges, bool needsDefaultPhaseSeeds)
         {
-            bool hasAgeView = TryResolveAgeView(out var ages01);
-            bool hasPhaseSeedView = TryResolvePhaseSeedView(out var phaseSeeds);
             if (_auxiliaryShaderLanesInitialized ||
-                (!needsDefaultAges && !needsDefaultPhaseSeeds) ||
-                (needsDefaultAges && !hasAgeView) ||
-                (needsDefaultPhaseSeeds && !hasPhaseSeedView))
+                (!needsDefaultAges && !needsDefaultPhaseSeeds))
             {
-                _auxiliaryShaderLanesInitialized = !needsDefaultAges && !needsDefaultPhaseSeeds;
+                _auxiliaryShaderLanesInitialized = true;
                 return;
             }
 
+            IDataVault vault = _dataVault;
+            bool wroteAges = !needsDefaultAges;
+            bool wrotePhaseSeeds = !needsDefaultPhaseSeeds;
+
             if (needsDefaultAges)
             {
-                int ageCount = math.min(instanceCapacity, ages01.Length);
-                for (int i = 0; i < ageCount; i++)
-                    ages01[i] = 1f;
+                if (!TryAcquireScatterVaultWriteBuffer(vault, ref _vaultAgeHandle, BufferID.FloraScatterAge01, instanceCapacity, NativeArrayOptions.ClearMemory, out NativeArray<float> ages01))
+                    return;
+
+                try
+                {
+                    int ageCount = math.min(instanceCapacity, ages01.Length);
+                    for (int i = 0; i < ageCount; i++)
+                        ages01[i] = 1f;
+
+                    wroteAges = true;
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in _vaultAgeHandle, SystemID.Vfx);
+                }
             }
 
             if (needsDefaultPhaseSeeds)
             {
-                int seedCount = math.min(instanceCapacity, phaseSeeds.Length);
-                for (int i = 0; i < seedCount; i++)
-                    phaseSeeds[i] = Hash01((uint)i * 2246822519u + 3266489917u);
+                if (!TryAcquireScatterVaultWriteBuffer(vault, ref _vaultPhaseSeedHandle, BufferID.FloraScatterPhaseSeeds, instanceCapacity, NativeArrayOptions.ClearMemory, out NativeArray<float> phaseSeeds))
+                    return;
+
+                try
+                {
+                    int seedCount = math.min(instanceCapacity, phaseSeeds.Length);
+                    for (int i = 0; i < seedCount; i++)
+                        phaseSeeds[i] = Hash01((uint)i * 2246822519u + 3266489917u);
+
+                    wrotePhaseSeeds = true;
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in _vaultPhaseSeedHandle, SystemID.Vfx);
+                }
             }
 
-            _auxiliaryShaderLanesInitialized = true;
+            _auxiliaryShaderLanesInitialized = wroteAges && wrotePhaseSeeds;
         }
 
         private void EnsureVisualPayloadDefaults(bool needsDefaultVisualPayload)
@@ -2127,24 +2215,32 @@ namespace Hecton8.Rendering.Scatter
                 return;
             }
 
-            if (!TryResolveVisualPayloadView(out var visualPayload) ||
-                visualPayload.Length <= 0)
-            {
+            IDataVault vault = _dataVault;
+            if (!TryAcquireScatterVaultWriteBuffer(vault, ref _vaultVisualPayloadHandle, BufferID.FloraScatterVisualPayload, instanceCapacity, NativeArrayOptions.ClearMemory, out NativeArray<Vector4> visualPayload))
                 return;
-            }
 
-            int count = math.min(instanceCapacity, visualPayload.Length);
-            for (int i = 0; i < count; i++)
+            try
             {
-                uint index = (uint)i;
-                visualPayload[i] = new Vector4(
-                    Hash01(index * 3266489917u + 668265263u),
-                    Hash01(index * 2246822519u + 374761393u),
-                    Hash01(index * 747796405u + 2891336453u),
-                    Hash01(index * 1103515245u + 12345u));
-            }
+                if (visualPayload.Length <= 0)
+                    return;
 
-            _visualPayloadDefaultsInitialized = true;
+                int count = math.min(instanceCapacity, visualPayload.Length);
+                for (int i = 0; i < count; i++)
+                {
+                    uint index = (uint)i;
+                    visualPayload[i] = new Vector4(
+                        Hash01(index * 3266489917u + 668265263u),
+                        Hash01(index * 2246822519u + 374761393u),
+                        Hash01(index * 747796405u + 2891336453u),
+                        Hash01(index * 1103515245u + 12345u));
+                }
+
+                _visualPayloadDefaultsInitialized = true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _vaultVisualPayloadHandle, SystemID.Vfx);
+            }
         }
 
         private bool EnsureBlackBox(IDataVault vault)
@@ -2152,10 +2248,10 @@ namespace Hecton8.Rendering.Scatter
             if (vault == null)
                 return false;
 
-            if (TryResolveScatterVaultBuffer(vault, ref _blackBoxHandle, BufferID.FloraScatterBlackBox, TelemetryCapacity, out NativeArray<ScatterBlackBoxEntry> _))
+            if (TryReadOnlyScatterVaultBuffer(vault, ref _blackBoxHandle, BufferID.FloraScatterBlackBox, TelemetryCapacity, out NativeArray<ScatterBlackBoxEntry>.ReadOnly _))
                 return true;
 
-            if (!TryAcquireScatterVaultBuffer(vault, ref _blackBoxHandle, BufferID.FloraScatterBlackBox, TelemetryCapacity, NativeArrayOptions.ClearMemory, out NativeArray<ScatterBlackBoxEntry> _))
+            if (!TryEnsureScatterVaultBuffer(vault, ref _blackBoxHandle, BufferID.FloraScatterBlackBox, TelemetryCapacity, NativeArrayOptions.ClearMemory))
                 return false;
 
             _blackBoxCursor = 0;
@@ -2164,31 +2260,40 @@ namespace Hecton8.Rendering.Scatter
 
         private void RecordBlackBox(uint flags, int activeCount)
         {
-            if (!TryEnsureBlackBoxView(out NativeArray<ScatterBlackBoxEntry> blackBox))
+            IDataVault vault = _dataVault;
+            if (!EnsureBlackBox(vault) ||
+                !TryAcquireScatterVaultWriteBuffer(vault, ref _blackBoxHandle, BufferID.FloraScatterBlackBox, TelemetryCapacity, NativeArrayOptions.ClearMemory, out NativeArray<ScatterBlackBoxEntry> blackBox))
                 return;
 
-            flags |= _gpuReady ? BlackBoxFlagGpuReady : 0u;
-            flags |= _hasCameraSignal ? BlackBoxFlagCameraSignal : 0u;
-            flags |= _systemStress01 > 0.8f ? BlackBoxFlagStressShed : 0u;
-
-            int blackBoxLength = blackBox.Length;
-            int index = _blackBoxCursor % blackBoxLength;
-            blackBox[index] = new ScatterBlackBoxEntry
+            try
             {
-                Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
-                ActiveInstanceCount = activeCount,
-                VisibleFloraCount = _lastVisibleFloraCount,
-                CullDistanceMeters = _effectiveCullDistanceMeters,
-                SystemStress01 = _systemStress01,
-                CameraPosition = new float3(_lastCameraSignalPosition.x, _lastCameraSignalPosition.y, _lastCameraSignalPosition.z),
-                AupShiftOffset = new float3(_aupShiftOffset.x, _aupShiftOffset.y, _aupShiftOffset.z),
-                MatrixGeneration = _lastMatrixGeneration,
-                MetadataGeneration = _lastMetadataGeneration,
-                Flags = flags,
-                AuxiliaryGenerationHash = CombineGenerationHash(_lastAgeGeneration, _lastPhaseSeedGeneration),
-                VisualPayloadGeneration = _lastVisualPayloadGeneration
-            };
-            _blackBoxCursor = (_blackBoxCursor + 1) % blackBoxLength;
+                flags |= _gpuReady ? BlackBoxFlagGpuReady : 0u;
+                flags |= _hasCameraSignal ? BlackBoxFlagCameraSignal : 0u;
+                flags |= _systemStress01 > 0.8f ? BlackBoxFlagStressShed : 0u;
+
+                int blackBoxLength = blackBox.Length;
+                int index = _blackBoxCursor % blackBoxLength;
+                blackBox[index] = new ScatterBlackBoxEntry
+                {
+                    Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
+                    ActiveInstanceCount = activeCount,
+                    VisibleFloraCount = _lastVisibleFloraCount,
+                    CullDistanceMeters = _effectiveCullDistanceMeters,
+                    SystemStress01 = _systemStress01,
+                    CameraPosition = new float3(_lastCameraSignalPosition.x, _lastCameraSignalPosition.y, _lastCameraSignalPosition.z),
+                    AupShiftOffset = new float3(_aupShiftOffset.x, _aupShiftOffset.y, _aupShiftOffset.z),
+                    MatrixGeneration = _lastMatrixGeneration,
+                    MetadataGeneration = _lastMetadataGeneration,
+                    Flags = flags,
+                    AuxiliaryGenerationHash = CombineGenerationHash(_lastAgeGeneration, _lastPhaseSeedGeneration),
+                    VisualPayloadGeneration = _lastVisualPayloadGeneration
+                };
+                _blackBoxCursor = (_blackBoxCursor + 1) % blackBoxLength;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _blackBoxHandle, SystemID.Vfx);
+            }
         }
 
         private uint BuildRuntimeFlags()
@@ -2203,7 +2308,7 @@ namespace Hecton8.Rendering.Scatter
 
         private void DumpBlackBox(uint reason)
         {
-            if (_blackBoxDumped || !TryEnsureBlackBoxView(out NativeArray<ScatterBlackBoxEntry> blackBox))
+            if (_blackBoxDumped || !TryEnsureBlackBoxView(out NativeArray<ScatterBlackBoxEntry>.ReadOnly blackBox))
                 return;
 
             _blackBoxDumped = true;
@@ -2265,14 +2370,14 @@ namespace Hecton8.Rendering.Scatter
             destination[offset + 3] = (byte)(value >> 24);
         }
 
-        private bool TryEnsureBlackBoxView(out NativeArray<ScatterBlackBoxEntry> blackBox)
+        private bool TryEnsureBlackBoxView(out NativeArray<ScatterBlackBoxEntry>.ReadOnly blackBox)
         {
             blackBox = default;
             IDataVault vault = _dataVault;
             if (!EnsureBlackBox(vault))
                 return false;
 
-            return TryResolveScatterVaultBuffer(vault, ref _blackBoxHandle, BufferID.FloraScatterBlackBox, TelemetryCapacity, out blackBox);
+            return TryReadOnlyScatterVaultBuffer(vault, ref _blackBoxHandle, BufferID.FloraScatterBlackBox, TelemetryCapacity, out blackBox);
         }
 
         private bool EnsureCpuAuditBuffers(int activeCount)
@@ -2284,23 +2389,11 @@ namespace Hecton8.Rendering.Scatter
             if (vault == null)
                 return false;
 
-            if (!TryAcquireScatterVaultBuffer(vault, ref _cpuFrustumPlanesHandle, BufferID.FloraScatterCpuFrustumPlanes, FrustumPlaneCount, NativeArrayOptions.UninitializedMemory, out NativeArray<float4> _))
+            if (!TryEnsureScatterVaultBuffer(vault, ref _cpuFrustumPlanesHandle, BufferID.FloraScatterCpuFrustumPlanes, FrustumPlaneCount, NativeArrayOptions.UninitializedMemory))
                 return false;
 
             int visibilityCapacity = math.max(activeCount, instanceCapacity);
-            return TryAcquireScatterVaultBuffer(vault, ref _cpuVisibilityMaskHandle, BufferID.FloraScatterCpuVisibilityMask, visibilityCapacity, NativeArrayOptions.UninitializedMemory, out NativeArray<byte> _);
-        }
-
-        private void UploadCpuFrustumPlanes()
-        {
-            if (!TryResolveCpuFrustumPlaneView(out var frustumPlanes))
-                return;
-
-            for (int i = 0; i < FrustumPlaneCount; i++)
-            {
-                Vector4 plane = _frustumPlaneUpload[i];
-                frustumPlanes[i] = new float4(plane.x, plane.y, plane.z, plane.w);
-            }
+            return TryEnsureScatterVaultBuffer(vault, ref _cpuVisibilityMaskHandle, BufferID.FloraScatterCpuVisibilityMask, visibilityCapacity, NativeArrayOptions.UninitializedMemory);
         }
 
         private void ReleaseCpuAuditBuffers()
@@ -2606,8 +2699,8 @@ namespace Hecton8.Rendering.Scatter
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ScatterCullJob : IJobParallelFor
         {
-            [ReadOnly, NoAlias] public NativeArray<Matrix4x4> Matrices;
-            [ReadOnly, NoAlias] public NativeArray<float4> CullingPlanes;
+            [ReadOnly, NoAlias] public NativeArray<Matrix4x4>.ReadOnly Matrices;
+            [ReadOnly, NoAlias] public NativeArray<float4>.ReadOnly CullingPlanes;
             [WriteOnly, NoAlias] public NativeArray<byte> VisibilityMask;
             public int InstanceCount;
             public float3 AupShiftOffset;

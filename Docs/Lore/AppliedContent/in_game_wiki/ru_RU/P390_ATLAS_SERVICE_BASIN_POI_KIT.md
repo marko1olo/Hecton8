@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# POI-кит: Atlas Service Basin
+# Atlas Service Basin POI Kit
 
-Atlas service basin должен заземлять финальную зону в engineering. Ужас - classification failure в industrial scale.
+The Atlas service basin should ground the final zone in engineering. The horror is classification failure at industrial scale.
 
 ## Scanner
 
-POI kit: service basin. Industrial rails, living sealant и worker categories находятся в одном repair plan.
+POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.
 
 ## Terminal
 
-SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket и severance risk marker.
+SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.
 
 ## Audio
 
-Он не строил храм. Он забыл разницу между храмом и мастерской.
+It did not build a temple. It forgot the difference between temple and workshop.
 
 ## Field Note
 
-Для final-depth landmark, spoiler-gated art и ending receiver UI anchors.
+POI evidence kit: Atlas Service Basin anchors final-depth repair, spoiler-gated art, and payload receiver decisions.
 
 <!-- In-Game Wiki; generated from P390_ATLAS_SERVICE_BASIN_POI_KIT/ru_RU. -->

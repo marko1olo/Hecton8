@@ -943,8 +943,26 @@ namespace Hecton8.Player.Movement
             {
                 Vector3 position = new Vector3(output.LocalPosition.x, output.LocalPosition.y, output.LocalPosition.z);
                 Vector3 direction = new Vector3(output.CollisionNormal.x, output.CollisionNormal.y, output.CollisionNormal.z);
-                if (!CameraJuiceSignals.TryPublishImpact(output.CameraTrauma01, position, direction))
+                uint profileHash = output.CameraTrauma01 >= 0.35f
+                    ? CameraJuiceSignals.SharpKineticImpactProfileHash
+                    : CameraJuiceSignals.HighFreqToolVibrationProfileHash;
+                byte priority = output.CameraTrauma01 >= 0.55f
+                    ? CameraJuiceSignals.HighPriority
+                    : CameraJuiceSignals.NormalPriority;
+                if (!CameraJuiceSignals.TryPublishImpact(
+                        output.CameraTrauma01,
+                        position,
+                        direction,
+                        profileHash,
+                        0.95f,
+                        priority,
+                        0f,
+                        0.9f,
+                        1.1f,
+                        SourceHash))
+                {
                     RecordSignalDrop();
+                }
             }
 
             if ((output.Flags & ZeroGSolverOutputDTO.FlagHaptic) != 0u && output.CollisionImpulse > 0.0f)

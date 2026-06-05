@@ -1,0 +1,48 @@
+HECTON-8 LOCAL TASK BATCH 22: VISUAL REJECT RESPONSE
+
+Status: LOCAL ORCHESTRATION TASK FILES / PARALLEL SAFE / NO UNITY SLOT BY DEFAULT
+Date: 2026-06-04
+Source evidence: latest rejected proof packet `Docs/Screenshots/MCP/h8_1472_*.png`
+
+Objective:
+Turn the current surface/photic-shallows reject into concrete, independent, evidence-backed work packets. The visible problem is not only "water color"; the packet proves missing foam/caustics/underwater haze, weak terrain/coast detail, and active primitive planes/slabs or bad capture geometry.
+
+Global rejection basis:
+- `h8_1472_surface_coast_aegir_ui_off.png`: improved sky/Aegir/water color, but still flat ocean response and weak authored coastline.
+- `h8_1472_underwater_0_5m.png`: massive pale/yellow plane or broken underwater surface dominates the frame; no believable shallow optics.
+- `h8_1472_underwater_20_50m_route.png`: huge pale sheet, empty seabed, weak route, no Subnautica-floor caustics/foam/particulate density.
+- User latest critique: no foam, no caustics, underwater too transparent, poor/flat look versus mandatory reference images.
+
+Root authorities for all agents:
+- `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `TASTE.md`
+- `VISION_LOCKS.md`
+- `quality.md`
+- domain bible(s) listed in each task file
+- relevant `.agents-skills/` mandates listed in each task file
+
+Unity contention law:
+The visible Codex thread `Продолжить работу по логам` currently owns Unity. Agents in this batch do not take the Unity slot unless their task file explicitly says so and the slot is free. They may inspect files, logs, YAML, reports, screenshots, generated source art, and scripts. They must not run builds/import-heavy commands while Unity/compilers are active.
+
+Parallel wave law:
+All agents below can run at the same time. They must not depend on same-wave output. Any useful same-wave output is a later handoff only.
+
+Agents:
+- `2201_FOAM_CAUSTICS_UNDERWATER_ACTIVATION_AUDITOR.txt`
+  Static/source/YAML audit of existing foam, caustics, underwater haze, marine snow, water optics routes. Output: activation matrix and Unity-owner handoff.
+- `2202_UNDERWATER_PLANE_SLAB_OFFENDER_RESOLVER.txt`
+  Static scene/prefab/material scan for the pale/yellow underwater sheet and sliced slab offenders. Output: suspect list, bounds/name/material evidence, safe disable/quarantine plan.
+- `2203_PHOTIC_TEXTURE_SOURCE_AND_GEMINI_PROMPT_PACK.txt`
+  Texture source quality and Gemini prompt pack for wet basalt, shore foam, photic sand/shell substrate, caustic decals, shallow coral/algae. Output: prompt pack and intake criteria; no blind import.
+- `2204_PROCEDURAL_MESH_AND_BIOTA_QUALITY_AUDITOR.txt`
+  Inspect editor/offline generators and current generated rock/flora/fauna/proxy outputs for primitive-looking meshes and dry-land placement failures. Output: generator use plan, reject gates, placement constraints.
+- `2205_VISUAL_PROOF_PACKET_AND_RUNTIME_FAULT_AUDITOR.txt`
+  Audit screenshot/proof pipeline and Unity logs around 1465-1472 for null/forced-load/runtime faults and proof gaps. Output: proof checklist and fault matrix.
+
+Controller notes:
+- Static proof is not visual acceptance.
+- Any "looks good" claim needs screenshot/video proof.
+- Any performance claim needs profiler/GC evidence or `PENDING VERIFICATION`.
+- Any deletion/disable proposal must prove references and rollback.
+- Do not accept dark/noir/fog/post as a fix for bad surface/shallow assets.

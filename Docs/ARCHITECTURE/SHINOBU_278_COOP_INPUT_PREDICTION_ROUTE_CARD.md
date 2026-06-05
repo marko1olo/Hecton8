@@ -1,5 +1,10 @@
 ﻿# SHINOBU_278 Coop Input Prediction Route Card
 
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
+Evidence class: STATIC_DOC / STATIC_SOURCE
+Owner domain: input/netcode prediction route documentation
+Review disposition: YELLOW / STATIC_DOC_ONLY until compile/import/runtime/profiler/player proof exists.
+
 Owner: `Hecton8.Core.InputDispatcher` writes local PRE_SIMULATION input. `Hecton8.Networking.HectonRollbackNetcodeRuntime` consumes rollback snapshots and remote authoritative packets.
 
 ## Route

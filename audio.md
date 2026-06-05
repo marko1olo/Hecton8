@@ -1,6 +1,7 @@
 # HECTON-8 Audio Bible
 
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
+Evidence class: STATIC_DOC
 Scope: soundscape, sonar, hydrophones, warnings, suit voice, creatures, machinery, UI audio, music discipline, mix states, and audio performance taste.
 
 ## 0. Prime Audio Law
@@ -162,6 +163,12 @@ Critical audio must have a source fact. If the cue implies hull breach, creature
 ## 11. GlobalQualityWeight Scaling
 
 Compact preserves warning priority, sonar meaning, threat cues, suit breath, and core machine state with fewer layers and cheaper spatialization. Middle adds richer ambience and occlusion. High adds stronger hydrophone detail and mix transitions. Ultra adds dense secondary layers, richer reverb/occlusion, and cinematic detail without hiding critical cues.
+
+## First-20 Route Hook
+
+- First-20 moment: world load, first exit, swim, tool, hazard, and save/load must expose route, oxygen/pressure, sonar/signal trust, tool feedback, warning priority, and machine state through sound.
+- Route blocker removed: audio cannot be generic ambience, constant score, decorative ping, or warning spam that masks route-critical cues.
+- Proof class: Play Mode/player capture for route mix, Profiler/GCMonitor for runtime audio paths, screenshot or static cue sheet for owner/source mapping, and save/load artifact when audio-log or recovered signal state persists.
 
 ## 12. Proof Artifacts
 

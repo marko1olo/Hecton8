@@ -1,0 +1,65 @@
+<AGENT_PROMPT id="1875">
+ROLE: Resource pickup mesh source authoring implementation agent.
+
+READ FIRST:
+- C:\hades\Hecton8\AGENTS.md
+- C:\hades\Hecton8\PROJECT_BIBLES.md
+- C:\hades\Hecton8\VISION_LOCKS.md
+- C:\hades\Hecton8\TASTE.md
+- C:\hades\Hecton8\quality.md
+- C:\hades\Hecton8\inventory.md
+- C:\hades\Hecton8\world.md
+- C:\hades\Hecton8\3dmodel.md
+- C:\hades\Hecton8\3DMODEL_TEXTURES_MATERIALS.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1870_RESOURCE_PICKUP_VISUAL_SOURCE_PACKAGE.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1870_RESOURCE_PICKUP_VISUAL_SOURCE_MATRIX.csv
+- C:\hades\Hecton8\Docs\Reports\Batch18\1867_PRODUCT_FACE_PREFAB_AUDIT_GATE.md
+- Existing source patterns: `Assets/_Project/Editor/Generators/Geology/RockSculptorEngine1713.cs`, `Assets/_Project/Scripts/Editor/WorldProceduralFloraBakedStarterGenerator.cs`, and `Assets/_Project/Editor/HectonMeshGenerator.cs`.
+- Relevant .agents-skills only: QA_Evidence_Text_Filter_Audit, DATA_Inventory_Resources_Items_SOA_Layout, REND_Terrain_VirtualTexturing.
+
+OWNED WRITE SCOPE:
+- Assets/_Project/Scripts/Editor/ProductFaceResourcePickupMeshSourceAuthoring.cs
+- Assets/_Project/Scripts/Editor/ProductFaceResourcePickupMeshSourceAuthoring.cs.meta
+- Docs/Tasks/Status_1875.md
+- Docs/AgentLogs/Rationale_1875.md
+- Docs/AgentLogs/LOG_1875.md
+- Docs/Reports/Batch18/1875_RESOURCE_PICKUP_MESH_SOURCE_AUTHORING_IMPLEMENTATION.md
+
+NO PREFAB/ASSET/SCENE/BINARY EDITS.
+NO UNITY MENU, IMPORT, BAKE, PLAYMODE, PROFILER, DOTNET BUILD, OR DATA MONOLITH RUN.
+
+PARALLEL LAW:
+- You may run alongside 1874 and 1876.
+- Do not touch their files.
+- Do not depend on sibling output.
+
+TASK:
+Implement an editor-only source authoring script that can later generate non-primitive custom Mesh assets for resource pickups without running it now.
+
+Requirements:
+1. Create `ProductFaceResourcePickupMeshSourceAuthoring.cs` under `Assets/_Project/Scripts/Editor`.
+2. Include a stable `.meta` file.
+3. The script must be editor-only and not affect runtime.
+4. It must not call `GameObject.CreatePrimitive`.
+5. It must generate Mesh vertex/index data manually when run later.
+6. It must include specs for: CopperOre, FiberKelp, HydrocarbonResin, MembraneTissue, SilicaShards, SilverOre, SulfurClumps, TitaniumScrap. `Item_Titanium` is quarantine/canonical-route only; do not generate a duplicate unless explicitly marked legacy.
+7. It must output future Mesh assets under `Assets/_Project/Art/Generated/ProductFace/Resources`.
+8. It must not replace prefabs in this task.
+9. It must include deterministic irregular ore/shard/scrap/clump/frond/membrane geometry helpers.
+10. It must use continuous quality input for chips/fronds/shards/segments; no ugly low mode.
+11. It must validate finite vertices, non-empty triangles, bounds, and per-resource distinct silhouettes.
+12. It must preserve data truth: CopperOre route maps to canonical `Data_Copper.asset`; do not create fake `Data_CopperOre.asset`.
+13. It must not claim material/texture/capture acceptance.
+14. It must avoid generic recolored-rock output: row comments/specs must make each resource distinct.
+15. Keep code conservative and compile-oriented.
+
+VERIFY:
+- `git diff --check` on owned files.
+- Static source scan proving no `GameObject.CreatePrimitive`.
+- Static source scan proving required resource ids exist.
+- Do not run Unity or dotnet.
+
+REPORT:
+- Report source route created, limitations, and pending Unity proof.
+</AGENT_PROMPT>
+

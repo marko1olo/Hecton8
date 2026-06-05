@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Bathydrop interface Black Keel
+# Black Keel Bathydrop Interface
 
-HECTON-8 запирает игрока конкретной механикой: capsule systems, orbital windows, pressure-rated components and communication geometry.
+HECTON-8 traps the player with specific machinery: damaged capsule systems, orbital windows, pressure-rated components and communication geometry.
 
 ## Scanner
 
-Bathydrop interface повреждён. Surface return chain не закрывается без deep-rated parts.
+Bathydrop interface damaged. Surface return chain cannot close without deep-rated parts.
 
 ## Terminal
 
-ОТЧЁТ CAPSULE: heat shield trim цел, buoyancy gate погнут, comm mast затоплен, ascent latch заражён. Нужны pressure ceramic, sealant, relay math и проверенное окно.
+CAPSULE REPORT: heat shield trim survived, buoyancy gate bent, comm mast flooded, ascent latch contaminated. Repair requires pressure ceramic, sealant, relay math and a verified window.
 
 ## Audio
 
-Ты потерял не весь корабль. Ты потерял цепь, из-за которой корабль вообще имеет значение.
+You did not lose the whole ship. You lost the one chain that makes the ship matter.
 
 ## Field Note
 
-Для first-hour repair chain и объяснения побега.
+First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing.
 
 <!-- External Site; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/ru_RU. -->

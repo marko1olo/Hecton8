@@ -10,21 +10,21 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Public No FTL Route Article Module
+# No-FTL Route Delay
 
-No-FTL travel is part of the game's pressure. The player can receive law, debt and delayed packets long before help can arrive.
+Distance is a survival pressure in the Aegir route. Law, debt and delayed packets can reach the player long before a carrier, tender or replacement part can arrive.
 
 ## Scanner
 
-Publication module: no FTL. Distance is infrastructure, not decorative scale.
+Transit record. Aegir traffic depends on probes, beam lanes, pellet freight, braking mass, packet age and legal delay.
 
 ## Terminal
 
-PUBLIC MODULE TRANSIT: no FTL, no ansible, no instant rescue. Use probe, lane, braking and packet-delay language.
+PUBLIC ARCHIVE NODE // TRANSIT LIMIT. FTL absent. Ansible absent. Rescue route requires physical transfer, relay custody, braking architecture and a live mass window.
 
 ## Audio
 
@@ -32,6 +32,6 @@ Help can be legally present and physically years away.
 
 ## Field Note
 
-Use for public site hard-sci-fi page and wiki transit section.
+Marauder note: when the relay answers, ask how old the answer is.
 
 <!-- In-Game Wiki; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/he_IL. -->

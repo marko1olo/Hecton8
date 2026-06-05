@@ -10,17 +10,17 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Протокол имен на lockers
+# Locker Name Protocol
 
-Протокол имен на lockers дает художникам и сценаристам повторяемый human evidence object across seeds.
+Locker name plates make workers legible through objects: badge, role, route permission, and the thing left unfinished.
 
 ## Scanner
 
-Locker личный без family plot.
+A locker is personal without needing a family plot.
 
 ## Terminal
 
@@ -28,10 +28,10 @@ LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure 
 
 ## Audio
 
-Компания удалила employee. Ржавчина сохранила label.
+The company deleted the employee. The rust kept the label.
 
 ## Field Note
 
-Самый малый human trace должен пережить corporate cleanup.
+The smallest human trace should survive corporate cleanup.
 
 <!-- In-Game Wiki; generated from P158_LOCKER_NAME_PROTOCOL/ru_RU. -->

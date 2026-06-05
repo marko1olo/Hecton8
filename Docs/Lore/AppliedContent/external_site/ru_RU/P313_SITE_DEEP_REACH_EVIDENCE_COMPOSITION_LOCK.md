@@ -10,17 +10,17 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Lock композиции Deep Reach evidence
+# Deep Reach Evidence Composition Rule
 
 Deep Reach не нужна злодейская речь. Нужны risk memo, delayed rescue и waterline, который ломает memo.
 
 ## Scanner
 
-Deep Reach site lock: procedure, memo, damage, not cartoon villainy.
+Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.
 
 ## Terminal
 

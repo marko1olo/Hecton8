@@ -1,0 +1,99 @@
+HECTON-8 LOCAL TASK FILE
+ID: 2104
+Role: PRIMITIVE_NULL_DEFAULT_MATERIAL_DEBT_STATIC_VALIDATOR
+Batch: batch21_art_replacement_wave
+
+OBJECTIVE
+Improve or specify a read-only static validator/reporting route that finds primitive mesh, null material, default/package material, placeholder material, unresolved texture reference, and active-scene override debt without running Unity or modifying assets.
+
+WHY THIS EXISTS
+2019 queue row Q018 says validators can pass while active scene overrides still contain primitives/nulls. 2019 evidence reports active scene primitive refs, null material slots, and placeholder material routes. 2016 material triage warns static reports cannot close visual readiness but can rank blockers.
+
+AUTHORITY DOCS TO READ
+- AGENTS.md
+- HECTON8_ORCHESTRATOR.md
+- TASTE.md
+- VISION_LOCKS.md
+- PROJECT_BIBLES.md
+- quality.md
+- rendering.md
+- shaders.md
+- terrain.md
+- water.md
+- .agents-skills/QA_Evidence_Text_Filter_Audit.txt
+- .agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt
+- Docs/Reports/Batch20/2016_SURFACE_PHOTIC_MATERIAL_DEBT_TRIAGE.md
+- Docs/Reports/Batch20/2019_PRIMITIVE_PROXY_ART_DEBT_ELIMINATION_PLAN.md
+- Docs/Reports/Batch20/2019_PROXY_DEBT_QUEUE.csv
+- Docs/Reports/Batch20/2019_GENERATION_ROUTE_MATRIX.csv
+- Existing validator/tool docs discovered locally under Tools or Docs, only if relevant.
+
+OWNED DOMAIN
+Static validator/reporting route for art debt discovery. It does not own visual acceptance, Unity import, material relink, or scene repair.
+
+OWNED OUTPUT SCOPE
+- Docs/Reports/Batch21/2104_*
+- Tools/** only if a relevant validator exists or a narrowly scoped new validator is justified. Treat every tool path as CANDIDATE until discovered.
+- Docs/Tasks/Status_2104.md
+- Docs/AgentLogs/Rationale_2104.md only for real decisions.
+- Docs/AgentLogs/LOG_2104.md
+
+FORBIDDEN ACTIONS
+- Do not run Unity, MCP, Play Mode, profiler, imports, dotnet build, csc, or any project build.
+- Do not edit Assets, Packages, ProjectSettings, Library, Temp, UserSettings, scenes, prefabs, materials, shaders, or runtime scripts.
+- Do not modify existing Batch20 reports.
+- Do not claim a static validator proves visuals, runtime integration, import health, Frame Debugger state, profiler state, or scene appearance.
+- Do not delete or auto-fix assets.
+- Do not depend on 2101-2103 or 2105-2107.
+
+QUALITY SCALING EXPECTATION
+Low: validator must still flag primitive/default/null/proxy debt that would damage compact visual floor.
+Middle: reports must rank expected player-lane blockers, not only count files.
+High: optional deeper static classification may add material/source role hints.
+Ultra: optional richer reports may add more context, but proof class remains STATIC unless Unity artifacts exist.
+
+PHASE 0 - DISCOVERY AND EVIDENCE BOUNDARY
+01. Read required authorities and QA evidence mandate. Proof: Status_2104.md doc list.
+02. Discover existing validators/tools with targeted search for primitive, material audit, unresolved texture, placeholder, active scene, and default material terms. Proof: candidate tool list with paths. Blocker: no invented tool names.
+03. Discover relevant active reports from Batch20/Batch21 without bulk-reading unrelated archives. Proof: evidence list. Blocker: absent reports are CANDIDATE.
+04. Define evidence class boundaries: STATIC_SOURCE, STATIC_DOC, PENDING VERIFICATION. Proof: report section. Blocker: no static-to-runtime upgrade.
+05. Write Status_2104.md with tool candidates, evidence inputs, and no-Unity acknowledgment.
+06. Gate: if no validator/tool path is safe to edit, create a validator specification/report only under Docs/Reports/Batch21 and mark code edit BLOCKED BY ABSENT TOOL.
+
+PHASE 1 - STATIC VALIDATOR SPEC OR TOOL CHANGE
+07. Define required checks: Unity built-in primitive mesh refs, null material slots, default/package material refs, placeholder material paths, unresolved texture GUIDs, empty primary slots, production scene/prefab binding suspicion. Proof: check matrix.
+08. Define excluded checks: visual quality, shader runtime proof, import success, profiler, Frame Debugger, screenshot acceptance. Proof: evidence boundary section.
+09. If an existing validator exists and is safe to edit, inspect it before changes. Proof: file path and current limitation summary. Blocker: do not edit unread files.
+10. If editing a tool, implement only read-only static parsing/report output. Proof: diff/file list. Blocker: no asset writes and no Unity APIs.
+11. If no edit is safe, write a concrete implementation spec with inputs, outputs, parsing rules, false-positive handling, and command shape. Proof: spec path.
+12. Ensure output labels every row with evidence class and "visual acceptance: PENDING VERIFICATION." Proof: report or tool output schema.
+13. Add severity classification based on product route: surface/sky/photic/medium/product-face higher priority than hidden diagnostic-only debt. Proof: severity rules.
+14. Add CANDIDATE handling for unverified scenes/prefabs/material paths. Proof: schema includes status field.
+
+PHASE 2 - STATIC RUN OR SPEC VALIDATION
+15. If a safe static command can run without Unity/build/import, run it on a narrow verified scope. Proof: command line and output path. Blocker: if command would import Unity or mutate Assets, do not run.
+16. Validate that report output does not claim runtime readiness. Proof: grep/self-audit for forbidden phrases such as VERIFIED without evidence class, production ready, 0 GC, profiler. Blocker: fix wording.
+17. Confirm the validator does not write inside Assets or modify YAML. Proof: output path audit. Blocker: revert your tool change if it writes forbidden paths.
+18. Document false-positive/false-negative limits, especially YAML scene parsing and material role inference. Proof: limitations section.
+19. Define future Unity-owner validation packet: run static validator, then Unity material previews, scene captures, Frame Debugger/profiler/GC/memory/VRAM where needed. Proof: handoff section.
+20. Cross-check no same-wave dependency exists. Proof: self-audit.
+21. Cross-check no task tells agents to accept static YAML/path existence as visual proof. Proof: evidence boundary audit.
+22. Write 2104 final validator report/spec under Docs/Reports/Batch21. Proof: report path.
+
+PHASE 3 - REPORTING
+23. Update Status_2104.md with checklist, tool/spec files, commands run or skipped, and proof labels.
+24. Update Rationale_2104.md only for real decisions such as code edit vs spec-only, check inclusion/exclusion, or severity model.
+25. Append LOG_2104.md with concise final proof and residual risks.
+26. Final chat report: list tool/spec/report outputs, whether any static command ran, and why Unity visual proof remains pending.
+
+PROOF PACKET
+- STATIC VERIFIED: validator/spec exists, report schema exists, optional static run output exists.
+- PENDING VERIFICATION: Unity scene state, visual quality, material import, screenshots, profiler, GC, memory, VRAM.
+
+BLOCKER RULES
+- If tool edits would touch runtime scripts or Assets, stop that edit and write a spec instead.
+- If static parsing cannot safely identify a target, mark CANDIDATE.
+- If the validator finds debt, do not auto-fix. Queue it for future Unity owner.
+
+FINAL REPORT REQUIREMENTS
+Report exact files changed, commands run if any, and evidence labels. No fake metrics.

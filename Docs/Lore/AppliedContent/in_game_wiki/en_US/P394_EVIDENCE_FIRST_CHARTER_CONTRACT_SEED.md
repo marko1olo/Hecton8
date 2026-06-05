@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ Truth has a lower listed value until someone tries to bury it.
 
 ## Field Note
 
-Use for public-ledger replay runs and legal/notary UI.
+Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
 
 <!-- In-Game Wiki; generated from P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED/en_US. -->

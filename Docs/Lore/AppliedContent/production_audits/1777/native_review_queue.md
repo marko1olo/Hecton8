@@ -1,0 +1,1725 @@
+# Native Review Queue - 1777
+
+Evidence class: STATIC_SOURCE. This is not native review; it is a queue for human/native review.
+
+## ru_RU (ltr)
+- `P046_PUMP_ROOM_HANDSHAKE` / title: english_fallback_packet - Pump Room Handshake
+- `P047_HATCH_SEAL_LEDGER` / title: english_fallback_packet - Hatch Seal Ledger
+- `P048_CABLE_SPLICE_SCAR` / title: english_fallback_packet - Cable Splice Scar
+- `P049_SONAR_RETURN_ROUTE` / title: english_fallback_packet - Sonar Return Route
+- `P050_SALVAGE_TOOL_CUSTODY` / title: english_fallback_packet - Salvage Tool Custody
+- `P051_LIGHT_DELAY_AUTHORITY` / title: english_fallback_packet - Light-Delay Authority
+- `P052_BLACK_KEEL_TARIFF_TABLE` / title: english_fallback_packet - Black Keel Tariff Table
+- `P053_MARAUDER_GRAFFITI_MASKS` / title: english_fallback_packet - Marauder Graffiti Masks
+- `P054_RELAY_QUEUE_DRIFT` / title: english_fallback_packet - Relay Queue Drift
+- `P055_CORPORATE_RESPONSE_LEDGER` / title: english_fallback_packet - Corporate Response Ledger
+- `P075_LUYTEN_JUNCTION_PACKET_CUSTODY` / title: english_fallback_packet - Packet custody Luyten Junction
+- `P086_AEGIR_RECLAMATION_POOL` / title: english_fallback_packet - Aegir Reclamation Pool
+- `P087_KEELMARK_MUTUAL_CUSTODY` / title: english_fallback_packet - Keelmark Mutual Custody
+- `P088_TONNE_WINDOW_DEBT` / title: english_fallback_packet - Tonne-Window Debt
+- `P090_DEEP_REACH_PRIORITY_HOOK` / title: english_fallback_packet - Deep Reach Priority Hook
+- `P091_COLLISION_FRACTURED_MOON` / title: english_fallback_packet - Collision-Fractured Moon
+- `P093_ACCESSIBLE_SEAFLOOR_WINDOWS` / title: english_fallback_packet - Accessible Seafloor Windows
+- `P094_SEED_GEOLOGY_INVARIANTS` / title: english_fallback_packet - Seed Geology Invariants
+- `P095_PRESSURE_CONTAINMENT_FAILURE` / title: english_fallback_packet - Pressure Containment Failure
+- `P096_ATLAS_PERSON_BOUNDARY` / title: english_fallback_packet - Atlas Person Boundary
+- `P097_RECOVERY_COMPLIANCE_OFFICE` / title: english_fallback_packet - Recovery Compliance Office
+- `P098_FALSE_ENDING_TAXONOMY` / title: english_fallback_packet - False Ending Taxonomy
+- `P099_MARAUDER_DOSSIER_PERSISTENCE` / title: english_fallback_packet - Marauder Dossier Persistence
+- `P100_FINAL_CHOICE_PAYLOAD` / title: english_fallback_packet - Final Choice Payload
+- `P106_ILIYA_VARNEK_TIDE_MARGIN` / title: english_fallback_packet - Iliya Varnek: tide margin
+- `P108_NOOR_HALDANE_EVAC_CERT` / title: english_fallback_packet - Noor Haldane: evac cert
+- `P109_MAREK_IBARRA_LOSS_CONVERSION` / title: english_fallback_packet - Marek Ibarra: loss conversion
+- `P110_VERA_SATO_REN_RETURN_ACTION` / title: english_fallback_packet - Vera Sato-Ren: return action
+- `P112_COLD_SEALANT_PATCH_GUN` / title: english_fallback_packet - Cold sealant patch gun
+- `P113_LOW_POWER_INDUCTION_CUTTER` / title: english_fallback_packet - Low-power induction cutter
+- `P114_ACOUSTIC_PINGER_LINE` / title: english_fallback_packet - Acoustic pinger line
+- `P115_P63_FIELD_FABRICATOR` / title: english_fallback_packet - P-63 field fabricator
+- `P116_NATIVE_SULFIDE_SALT_STACK` / title: english_fallback_packet - Native sulfide salt stack
+- `P117_NOBLE_GAS_BRINE_POCKETS` / title: english_fallback_packet - Noble gas brine pockets
+- `P118_DEEP_REACH_PRESSURE_CERAMICS` / title: english_fallback_packet - Deep Reach pressure ceramics
+- `P119_ATLAS_BIOFIBER_SEALANT` / title: english_fallback_packet - Atlas biofiber sealant
+- `P120_BIOMETAL_SENSOR_TAGS` / title: english_fallback_packet - Biometal sensor tags
+- `P147_AEGIR_CONTINUITY_HOLDINGS` / title: english_fallback_packet - Aegir Continuity Holdings
+- `P149_KEELMARK_LOSS_DESK` / title: english_fallback_packet - Loss Desk Keelmark
+- `P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT` / title: draft_marker_packet - placeholder
+- `P208_ANCHOR_WORKER_NAME_SET_A` / title: english_fallback_packet - Anchor Worker Name Set A
+- `P209_ANCHOR_WORKER_NAME_SET_B` / title: english_fallback_packet - Anchor Worker Name Set B
+- `P246_BLACK_KEEL_APPROACH_AUDIO_PACKET` / title: draft_marker_packet - Draft
+- `P246_BLACK_KEEL_APPROACH_AUDIO_PACKET` / title: english_fallback_packet - Draft RU localization pending native pass. Black Keel Approach Packet
+- `P247_DROP_CAPSULE_DIAGNOSTIC_READOUT` / title: draft_marker_packet - Draft
+- `P247_DROP_CAPSULE_DIAGNOSTIC_READOUT` / title: english_fallback_packet - Draft RU localization pending native pass. Drop Capsule Diagnostic Readout
+- `P248_P63_PUMP_ROOM_FIRST_REPAIR_TASK` / title: draft_marker_packet - Draft
+- `P248_P63_PUMP_ROOM_FIRST_REPAIR_TASK` / title: english_fallback_packet - Draft RU localization pending native pass. P-63 Pump Room First Repair Task
+- `P249_SANITIZED_ACCIDENT_PACKET_BODY` / title: draft_marker_packet - Draft
+- `P249_SANITIZED_ACCIDENT_PACKET_BODY` / title: english_fallback_packet - Draft RU localization pending native pass. Sanitized Accident Packet Body
+- `P250_FIRST_ATLAS_REPAIR_TRACE_SCENE` / title: draft_marker_packet - Draft
+- `P250_FIRST_ATLAS_REPAIR_TRACE_SCENE` / title: english_fallback_packet - Draft RU localization pending native pass. First Atlas Repair Trace
+- `P286_CAPSULE_BLACKBOX_AUDIO_01` / title: draft_marker_packet - Draft
+- `P286_CAPSULE_BLACKBOX_AUDIO_01` / title: english_fallback_packet - Draft RU localization pending native pass. Capsule Blackbox Audio 01
+- `P287_P63_PUMP_ROOM_WORK_ORDER` / title: draft_marker_packet - Draft
+- `P287_P63_PUMP_ROOM_WORK_ORDER` / title: english_fallback_packet - Draft RU localization pending native pass. P-63 Pump Room Work Order
+- `P288_WORKER_LOCKER_NAMEPLATE_SAMPLE` / title: draft_marker_packet - Draft
+- `P288_WORKER_LOCKER_NAMEPLATE_SAMPLE` / title: english_fallback_packet - Draft RU localization pending native pass. Worker Locker Nameplate Sample
+- `P289_MARAUDER_CORRECTION_NOTE_SAMPLE` / title: draft_marker_packet - Draft
+- `P289_MARAUDER_CORRECTION_NOTE_SAMPLE` / title: english_fallback_packet - Draft RU localization pending native pass. Marauder Correction Note Sample
+- `P290_QUARANTINE_RELAY_FRAGMENT` / title: draft_marker_packet - Draft
+- `P290_QUARANTINE_RELAY_FRAGMENT` / title: english_fallback_packet - Draft RU localization pending native pass. Quarantine Relay Fragment
+- `P291_PHOTIC_MAT_CODEX_CARD` / title: english_fallback_packet - Codex card: photic mat
+- `P292_GLASS_GRAZER_CODEX_CARD` / title: english_fallback_packet - Codex card: glass grazer
+- `P293_LANTERN_DRIFT_CODEX_CARD` / title: english_fallback_packet - Codex card: lantern drift
+- `P294_BRINE_VANE_CODEX_CARD` / title: english_fallback_packet - Codex card: brine vane
+- `P295_SENSOR_TAGGED_FAUNA_CODEX_CARD` / title: english_fallback_packet - Codex card: sensor-tagged fauna
+- `P296_ABYSSAL_MACHINE_FIELD_WARNING` / title: draft_marker_packet - machine
+- `P297_ATLAS_BASIN_PRESSURE_GATE` / title: english_fallback_packet - Pressure gate Atlas basin
+- `P308_TERMINAL_SLOT_PROOF_CARD` / title: english_fallback_packet - Proof card terminal slot
+- `P309_DOSSIER_ENDING_RECORD_PROOF_CARD` / title: english_fallback_packet - Proof card ending record dossier
+- `P314_SITE_ATLAS_SPOILER_COMPOSITION_LOCK` / title: english_fallback_packet - Lock Atlas spoiler composition
+- `P315_SOCIAL_DEV_NOTE_COPY_LOCK` / title: english_fallback_packet - Lock social dev note copy
+- `P317_MID_DEPTH_ROUTE_PLACEMENT_PRIORITY_LOCK` / title: english_fallback_packet - Lock priority placement mid-depth route
+- `P318_ECOLOGY_SCAN_PLACEMENT_PRIORITY_LOCK` / title: english_fallback_packet - Lock priority placement ecology scan
+- `P319_FINAL_DESCENT_PLACEMENT_PRIORITY_LOCK` / title: english_fallback_packet - Lock priority placement final descent
+- `P320_TERMINAL_BACKLOG_TRIAGE_LOCK` / title: english_fallback_packet - Lock triage terminal backlog
+- `P332_ACOUSTIC_FILTER_ORGAN_RELAY` / title: english_fallback_packet - Acoustic filter organ relay
+- `P333_SHELL_SEALANT_PRESSURE_GROWTH` / title: english_fallback_packet - Shell sealant pressure growth
+- `P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP` / title: english_fallback_packet - Feedback loop sensor-tagged fauna
+- `P335_VENT_MICRONODE_POWER_NEST` / title: english_fallback_packet - Vent micronode power nest
+- `P336_MATERIAL_EXIT_RECEIPT_AUDIT` / title: english_fallback_packet - Audit receipt material exit
+- `P338_QUARANTINE_HOLD_INTERROGATION_RECORD` / title: english_fallback_packet - Record quarantine hold interrogation
+- `P339_CORPORATE_COORDINATE_CAPTURE_RECORD` / title: english_fallback_packet - Record corporate coordinate capture
+- `P340_PUBLIC_LEDGER_AFTERSHOCK_RECORD` / title: english_fallback_packet - Record aftershock public ledger
+- `P344_SYSTEM_CARRIER_TUG_STACK` / title: english_fallback_packet - System carrier tug stack
+- `P345_BLACK_KEEL_BATHYDROP_INTERFACE` / title: english_fallback_packet - Bathydrop interface Black Keel
+- `P349_HECTON8_MID_ORBIT_TIDE_ROLE` / title: english_fallback_packet - Mid-orbit tide role HECTON-8
+- `P351_DROWNED_CRUST_STRATA_GUIDE` / title: english_fallback_packet - Fieldguide drowned crust strata
+- `P352_BRINE_CANYON_DENSITY_LADDER_GUIDE` / title: english_fallback_packet - Brine canyon density ladder guide
+- `P353_VENT_FORGE_FIELD_PROCESS_GUIDE` / title: english_fallback_packet - Vent forge field process guide
+- `P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE` / title: english_fallback_packet - Blue debt pressure history guide
+- `P355_PRESSURE_GLASS_AND_SEALANT_GUIDE` / title: english_fallback_packet - Pressure glass and sealant guide
+- `P356_PRESSURE_BUNK_SHIFT_ROUTINE` / title: draft_marker_packet - Draft
+- `P356_PRESSURE_BUNK_SHIFT_ROUTINE` / title: english_fallback_packet - Draft RU localization pending native pass. Pressure Bunk Shift Routine
+- `P357_CANTEEN_WATER_LEDGER` / title: draft_marker_packet - Draft
+- `P357_CANTEEN_WATER_LEDGER` / title: english_fallback_packet - Draft RU localization pending native pass. Canteen Water Ledger
+- `P358_TOOL_CERTIFICATION_RITUALS` / title: draft_marker_packet - Draft
+- `P358_TOOL_CERTIFICATION_RITUALS` / title: english_fallback_packet - Draft RU localization pending native pass. Tool Certification Board
+- `P359_WORKER_COMMUNITY_NO_FAMILY_HOOK_RULE` / title: draft_marker_packet - Draft
+- `P359_WORKER_COMMUNITY_NO_FAMILY_HOOK_RULE` / title: english_fallback_packet - Draft RU localization pending native pass. Worker Community Notice
+- `P360_LAST_NORMAL_DAY_EVIDENCE_SET` / title: draft_marker_packet - Draft
+- `P360_LAST_NORMAL_DAY_EVIDENCE_SET` / title: english_fallback_packet - Draft RU localization pending native pass. Last Normal Day Evidence Set
+- `P384_ABYSSAL_MACHINE_FIELD_REPAIR_ACT` / title: draft_marker_packet - machine
+- `P392_STORM_WINDOW_RUSH_CONTRACT_SEED` / title: english_fallback_packet - Replay seed: storm window rush
+- `P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED` / title: english_fallback_packet - Replay seed: high custody sample
+- `P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED` / title: english_fallback_packet - Replay seed: evidence-first charter
+- `P395_RECOVERY_COMPLIANCE_BAIT_CONTRACT_SEED` / title: english_fallback_packet - Replay seed: Recovery Compliance bait
+- `P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT` / title: draft_marker_packet - Draft
+- `P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT` / title: english_fallback_packet - Draft RU localization pending native pass. Varnek Margin Memo
+- `P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT` / title: draft_marker_packet - Draft
+- `P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT` / title: english_fallback_packet - Draft RU localization pending native pass. Arendt Atlas Waiver
+- `P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT` / title: draft_marker_packet - Draft
+- `P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT` / title: english_fallback_packet - Draft RU localization pending native pass. Haldane Quarantine Hold
+- `P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT` / title: draft_marker_packet - Draft
+- `P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT` / title: english_fallback_packet - Draft RU localization pending native pass. Ibarra Loss Ledger
+- `P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT` / title: draft_marker_packet - Draft
+- `P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT` / title: english_fallback_packet - Draft RU localization pending native pass. Sato-Ren Return Packet
+- `P451_RU_NATIVE_ENCODING_QA_BRIEF` / title: english_fallback_packet - RU native encoding QA brief
+- `P452_CJK_FONT_WRAP_QA_BRIEF` / title: english_fallback_packet - CJK font wrap QA brief
+- Additional 782 candidates omitted from this summary; see `localization_issue_candidates.csv`.
+
+## ja_JP (ltr)
+- `P046_PUMP_ROOM_HANDSHAKE` / title: english_fallback_packet - Pump Room Handshake
+- `P047_HATCH_SEAL_LEDGER` / title: english_fallback_packet - Hatch Seal Ledger
+- `P048_CABLE_SPLICE_SCAR` / title: english_fallback_packet - Cable Splice Scar
+- `P049_SONAR_RETURN_ROUTE` / title: english_fallback_packet - Sonar Return Route
+- `P050_SALVAGE_TOOL_CUSTODY` / title: english_fallback_packet - Salvage Tool Custody
+- `P051_LIGHT_DELAY_AUTHORITY` / title: english_fallback_packet - Light-Delay Authority
+- `P052_BLACK_KEEL_TARIFF_TABLE` / title: english_fallback_packet - Black Keel Tariff Table
+- `P053_MARAUDER_GRAFFITI_MASKS` / title: english_fallback_packet - Marauder Graffiti Masks
+- `P054_RELAY_QUEUE_DRIFT` / title: english_fallback_packet - Relay Queue Drift
+- `P055_CORPORATE_RESPONSE_LEDGER` / title: english_fallback_packet - Corporate Response Ledger
+- `P056_EX_DEEP_REACH_MARAUDER` / title: english_fallback_packet - Ex-Deep-Reach Marauder
+- `P057_GREAT_TIDE_LIABILITY_CHAIN` / title: english_fallback_packet - Great Tide Liability Chain
+- `P058_BLACK_KEEL_CLAIM_HOOKS` / title: english_fallback_packet - Black Keel Claim Hooks
+- `P059_ESCAPE_CHAIN_ASSEMBLY` / title: english_fallback_packet - Escape Chain Assembly
+- `P060_FIRST_HOUR_SPINE` / title: english_fallback_packet - First Hour Spine
+- `P061_MAINTENANCE_ECOLOGY` / title: english_fallback_packet - Maintenance Ecology
+- `P062_MARA_VENN_TIDE_MODEL` / title: english_fallback_packet - Mara Venn Tide Model
+- `P063_JUNO_KADE_EVACUATION_HOLD` / title: english_fallback_packet - Juno Kade Evacuation Hold
+- `P064_REN_OKOYE_PUMP_63` / title: english_fallback_packet - Ren Okoye Pump 63
+- `P065_SAHANA_IQBAL_ATLAS_SAFETY` / title: english_fallback_packet - Sahana Iqbal Atlas Safety
+- `P066_LIAN_TORRES_LAST_PACKET` / title: english_fallback_packet - Lian Torres Last Packet
+- `P067_OSKAR_NEUMANN_PRESSURE_FORGE` / title: english_fallback_packet - Oskar Neumann Pressure Forge
+- `P068_AYA_MORITA_REPAIR_MEDICINE` / title: english_fallback_packet - Aya Morita Repair Medicine
+- `P069_PAVEL_SORN_PROCEDURE_HOLD` / title: english_fallback_packet - Pavel Sorn Procedure Hold
+- `P070_DEEP_REACH_PRESENT_WINDOWS` / title: english_fallback_packet - Deep Reach Present Windows
+- `P071_SOL_CORE_AUTHORITY` / title: english_fallback_packet - Sol Core Authority
+- `P072_CENTAURI_COMPACT_LEGITIMACY` / title: english_fallback_packet - Centauri Compact Legitimacy
+- `P073_BARNARD_YARDS_MARAUDER_ORIGIN` / title: english_fallback_packet - Barnard Yards Marauder Origin
+- `P074_TAU_CETI_PUBLIC_LEDGER` / title: english_fallback_packet - Tau Ceti Public Ledger
+- `P075_LUYTEN_JUNCTION_PACKET_CUSTODY` / title: english_fallback_packet - Luyten Junction Packet Custody
+- `P076_RAN_AEGIR_ANCHOR` / title: english_fallback_packet - Ran / Aegir Anchor
+- `P077_AEGIR_MOON_LADDER` / title: english_fallback_packet - Aegir Moon Ladder
+- `P078_INNER_MOON_RELAY_HAZARDS` / title: english_fallback_packet - Inner Moon Relay Hazards
+- `P079_HECTON8_ORBIT_TIDE_GEOMETRY` / title: english_fallback_packet - HECTON-8 Orbit / Tide Geometry
+- `P080_OUTER_MOON_COLD_CLAIMS` / title: english_fallback_packet - Outer Moon Cold Claims
+- `P081_GREAT_TIDE_PHYSICS_RECORD` / title: english_fallback_packet - Great Tide Physics Record
+- `P082_PRESSURE_GLASS_FORMATION` / title: english_fallback_packet - Pressure Glass Formation
+- `P083_BRINE_CANYON_ROUTE_LADDER` / title: english_fallback_packet - Brine Canyon Route Ladder
+- `P084_VENT_FORGE_GEOTHERMAL_ENGINE` / title: english_fallback_packet - Vent Forge Geothermal Engine
+- `P085_BIOMETAL_RESOURCE_STACK` / title: english_fallback_packet - Biometal Resource Stack
+- `P086_AEGIR_RECLAMATION_POOL` / title: english_fallback_packet - Aegir Reclamation Pool
+- `P087_KEELMARK_MUTUAL_CUSTODY` / title: english_fallback_packet - Keelmark Mutual Custody
+- `P088_TONNE_WINDOW_DEBT` / title: english_fallback_packet - Tonne-Window Debt
+- `P089_BLACK_KEEL_FIRST_VOICE` / title: english_fallback_packet - Black Keel First Voice
+- `P090_DEEP_REACH_PRIORITY_HOOK` / title: english_fallback_packet - Deep Reach Priority Hook
+- `P091_COLLISION_FRACTURED_MOON` / title: english_fallback_packet - Collision-Fractured Moon
+- `P092_GLOBAL_OCEAN_DEPTH_BANDS` / title: english_fallback_packet - Global Ocean Depth Bands
+- `P093_ACCESSIBLE_SEAFLOOR_WINDOWS` / title: english_fallback_packet - Accessible Seafloor Windows
+- `P094_SEED_GEOLOGY_INVARIANTS` / title: english_fallback_packet - Seed Geology Invariants
+- `P095_PRESSURE_CONTAINMENT_FAILURE` / title: english_fallback_packet - Pressure Containment Failure
+- `P096_ATLAS_PERSON_BOUNDARY` / title: english_fallback_packet - Atlas Person Boundary
+- `P097_RECOVERY_COMPLIANCE_OFFICE` / title: english_fallback_packet - Recovery Compliance Office
+- `P098_FALSE_ENDING_TAXONOMY` / title: english_fallback_packet - False Ending Taxonomy
+- `P099_MARAUDER_DOSSIER_PERSISTENCE` / title: english_fallback_packet - Marauder Dossier Persistence
+- `P100_FINAL_CHOICE_PAYLOAD` / title: english_fallback_packet - Final Choice Payload
+- `P101_NO_FTL_ROUTE_ECONOMY` / title: english_fallback_packet - No-FTL Route Economy
+- `P102_BEAM_SAIL_PROBE_ERA` / title: english_fallback_packet - Beam-Sail Probe Era
+- `P103_PELLET_FUSION_FREIGHT` / title: english_fallback_packet - Pellet-Fusion Freight
+- `P104_RAN_B_H8_PUBLIC_CATALOG` / title: english_fallback_packet - RAN-B:H8 Public Catalog
+- `P105_BLACK_KEEL_IN_SYSTEM_TENDER` / title: english_fallback_packet - Black Keel In-System Tender
+- `P106_ILIYA_VARNEK_TIDE_MARGIN` / title: english_fallback_packet - Iliya Varnek Tide Margin
+- `P107_SELENE_ARENDT_ATLAS_WEIGHTING` / title: english_fallback_packet - Selene Arendt Atlas Weighting
+- `P108_NOOR_HALDANE_EVAC_CERT` / title: english_fallback_packet - Noor Haldane Evac Cert
+- `P109_MAREK_IBARRA_LOSS_CONVERSION` / title: english_fallback_packet - Marek Ibarra Loss Conversion
+- `P110_VERA_SATO_REN_RETURN_ACTION` / title: english_fallback_packet - Vera Sato-Ren Return Action
+- `P111_MANUAL_BILGE_PUMP_KIT` / title: english_fallback_packet - Manual Bilge Pump Kit
+- `P112_COLD_SEALANT_PATCH_GUN` / title: english_fallback_packet - Cold Sealant Patch Gun
+- `P113_LOW_POWER_INDUCTION_CUTTER` / title: english_fallback_packet - Low-Power Induction Cutter
+- `P114_ACOUSTIC_PINGER_LINE` / title: english_fallback_packet - Acoustic Pinger Line
+- `P115_P63_FIELD_FABRICATOR` / title: english_fallback_packet - P-63 Field Fabricator
+- `P116_NATIVE_SULFIDE_SALT_STACK` / title: english_fallback_packet - Native Sulfide Salt Stack
+- `P117_NOBLE_GAS_BRINE_POCKETS` / title: english_fallback_packet - Noble Gas Brine Pockets
+- `P118_DEEP_REACH_PRESSURE_CERAMICS` / title: english_fallback_packet - Deep Reach Pressure Ceramics
+- `P119_ATLAS_BIOFIBER_SEALANT` / title: english_fallback_packet - Atlas Biofiber Sealant
+- `P120_BIOMETAL_SENSOR_TAGS` / title: english_fallback_packet - Biometal Sensor Tags
+- `P121_DOMAIN_CIVIC_CORPORATE_SPLIT` / title: english_fallback_packet - Domain Civic-Corporate Split
+- `P122_MARAUDER_LEGAL_LOOPHOLE` / title: english_fallback_packet - Marauder Legal Loophole
+- `P123_SALVAGE_TRUTH_EVIDENCE_STATUS` / title: english_fallback_packet - Salvage Truth Evidence Status
+- `P124_NORMAL_CITIZEN_AEGIR_MEMORY` / title: english_fallback_packet - Normal Citizen Aegir Memory
+- `P125_DEEP_REACH_ORIGIN_CHAIN` / title: english_fallback_packet - Deep Reach Origin Chain
+- `P126_ATLAS_PUBLIC_FRONT` / title: english_fallback_packet - Atlas Public Front
+- `P127_ATLAS_INSURANCE_PERSONHOOD_STATUS` / title: english_fallback_packet - Atlas Insurance Personhood Status
+- `P128_ATLAS_CLASSIFIED_WEIGHTING_LAYER` / title: english_fallback_packet - Atlas Classified Weighting Layer
+- `P129_ATLAS_SHUTDOWN_ETHIC_FRAME` / title: english_fallback_packet - Atlas Shutdown Ethic Frame
+- `P130_ATLAS_PUBLIC_MEMORY_AFTER_2147` / title: english_fallback_packet - Atlas Public Memory After 2147
+- `P131_MATERIAL_EXIT_BITTER_CREDITS` / title: english_fallback_packet - Material Exit Bitter Credits
+- `P132_PARTIAL_EXIT_SAME_SEED_RETURN` / title: english_fallback_packet - Partial Exit Same-Seed Return
+- `P133_CORPORATE_CAPTURE_BAD_END` / title: english_fallback_packet - Corporate Capture Bad End
+- `P134_QUARANTINE_HOLD_STALE_AIR` / title: english_fallback_packet - Quarantine Hold Stale Air
+- `P135_PUBLIC_LEDGER_LEAK_ROUTE` / title: english_fallback_packet - Public Ledger Leak Route
+- `P136_DOSSIER_RUMOR_UNLOCKS` / title: english_fallback_packet - Dossier Rumor Unlocks
+- `P137_RISKIER_CONTRACT_SEEDS` / title: english_fallback_packet - Riskier Contract Seeds
+- `P138_FALSE_ENDING_COUNT_LADDER` / title: english_fallback_packet - False Ending Count Ladder
+- `P139_STARTING_CLAIM_VARIANTS` / title: english_fallback_packet - Starting Claim Variants
+- `P140_DOSSIER_KNOWLEDGE_NOT_POWER` / title: english_fallback_packet - Dossier Knowledge Not Power
+- `P141_RAN_AEGIR_DISTANCE_MODEL` / title: english_fallback_packet - Ran-Aegir Distance Model
+- `P142_PROBE_PACKET_TRAVEL_TIMES` / title: english_fallback_packet - Probe Packet Travel Times
+- `P143_HEAVY_FREIGHT_STAGING_TIME` / title: english_fallback_packet - Heavy Freight Staging Time
+- `P144_HUMAN_CREW_ROTATION_TRANSIT` / title: english_fallback_packet - Human Crew Rotation Transit
+- `P145_RELAY_MESSAGE_LAG` / title: english_fallback_packet - Relay Message Lag
+- `P146_DEEP_REACH_PUBLIC_COMBINE` / title: english_fallback_packet - Deep Reach Public Combine
+- `P147_AEGIR_CONTINUITY_HOLDINGS` / title: english_fallback_packet - Aegir Continuity Holdings
+- `P148_ATLAS_CONTINUITY_OFFICE` / title: english_fallback_packet - Atlas Continuity Office
+- `P149_KEELMARK_LOSS_DESK` / title: english_fallback_packet - Keelmark Loss Desk
+- `P150_RECOVERY_COMPLIANCE_CHAIN` / title: english_fallback_packet - Recovery Compliance Chain
+- `P151_BLACK_KEEL_CONTRACT_APPROACH` / title: english_fallback_packet - Black Keel Contract Approach
+- `P152_DROP_CAPSULE_DAMAGE_SEQUENCE` / title: english_fallback_packet - Drop Capsule Damage Sequence
+- `P153_SHALLOW_ANNEX_P63_PUMP_ROOM` / title: english_fallback_packet - Shallow Annex P-63 Pump Room
+- `P154_FIRST_SANITIZED_ACCIDENT_PACKET` / title: english_fallback_packet - First Sanitized Accident Packet
+- `P155_FIRST_ATLAS_REPAIR_TRACE` / title: english_fallback_packet - First Atlas Repair Trace
+- `P156_SHIFT_CREWS_NOT_HEROES` / title: english_fallback_packet - Shift Crews Not Heroes
+- `P157_WORKER_JOB_CARDS` / title: english_fallback_packet - Worker Job Cards
+- `P158_LOCKER_NAME_PROTOCOL` / title: english_fallback_packet - Locker Name Protocol
+- `P159_MEDICAL_TRIAGE_LEDGER` / title: english_fallback_packet - Medical Triage Ledger
+- `P160_MARAUDER_CORRECTION_LAYER` / title: english_fallback_packet - Marauder Correction Layer
+- `P161_DOMAIN_DISTANCE_SCALE` / title: english_fallback_packet - Domain Distance Scale
+- `P162_DOMAIN_POPULATION_AUTHORITY_SCALE` / title: english_fallback_packet - Population And Authority Scale
+- `P163_PUBLIC_ROUTE_NAMES` / title: english_fallback_packet - Public Route Names
+- `P164_TRANSIT_DURATION_BANDS` / title: english_fallback_packet - Transit Duration Bands
+- `P165_DEEP_REACH_SUBOFFICE_REGISTRY` / title: english_fallback_packet - Deep Reach Suboffice Registry
+- Additional 6403 candidates omitted from this summary; see `localization_issue_candidates.csv`.
+
+## zh_CN (ltr)
+- `P046_PUMP_ROOM_HANDSHAKE` / title: english_fallback_packet - Pump Room Handshake
+- `P047_HATCH_SEAL_LEDGER` / title: english_fallback_packet - Hatch Seal Ledger
+- `P048_CABLE_SPLICE_SCAR` / title: english_fallback_packet - Cable Splice Scar
+- `P049_SONAR_RETURN_ROUTE` / title: english_fallback_packet - Sonar Return Route
+- `P050_SALVAGE_TOOL_CUSTODY` / title: english_fallback_packet - Salvage Tool Custody
+- `P051_LIGHT_DELAY_AUTHORITY` / title: english_fallback_packet - Light-Delay Authority
+- `P052_BLACK_KEEL_TARIFF_TABLE` / title: english_fallback_packet - Black Keel Tariff Table
+- `P053_MARAUDER_GRAFFITI_MASKS` / title: english_fallback_packet - Marauder Graffiti Masks
+- `P054_RELAY_QUEUE_DRIFT` / title: english_fallback_packet - Relay Queue Drift
+- `P055_CORPORATE_RESPONSE_LEDGER` / title: english_fallback_packet - Corporate Response Ledger
+- `P056_EX_DEEP_REACH_MARAUDER` / title: english_fallback_packet - Ex-Deep-Reach Marauder
+- `P057_GREAT_TIDE_LIABILITY_CHAIN` / title: english_fallback_packet - Great Tide Liability Chain
+- `P058_BLACK_KEEL_CLAIM_HOOKS` / title: english_fallback_packet - Black Keel Claim Hooks
+- `P059_ESCAPE_CHAIN_ASSEMBLY` / title: english_fallback_packet - Escape Chain Assembly
+- `P060_FIRST_HOUR_SPINE` / title: english_fallback_packet - First Hour Spine
+- `P061_MAINTENANCE_ECOLOGY` / title: english_fallback_packet - Maintenance Ecology
+- `P062_MARA_VENN_TIDE_MODEL` / title: english_fallback_packet - Mara Venn Tide Model
+- `P063_JUNO_KADE_EVACUATION_HOLD` / title: english_fallback_packet - Juno Kade Evacuation Hold
+- `P064_REN_OKOYE_PUMP_63` / title: english_fallback_packet - Ren Okoye Pump 63
+- `P065_SAHANA_IQBAL_ATLAS_SAFETY` / title: english_fallback_packet - Sahana Iqbal Atlas Safety
+- `P066_LIAN_TORRES_LAST_PACKET` / title: english_fallback_packet - Lian Torres Last Packet
+- `P067_OSKAR_NEUMANN_PRESSURE_FORGE` / title: english_fallback_packet - Oskar Neumann Pressure Forge
+- `P068_AYA_MORITA_REPAIR_MEDICINE` / title: english_fallback_packet - Aya Morita Repair Medicine
+- `P069_PAVEL_SORN_PROCEDURE_HOLD` / title: english_fallback_packet - Pavel Sorn Procedure Hold
+- `P070_DEEP_REACH_PRESENT_WINDOWS` / title: english_fallback_packet - Deep Reach Present Windows
+- `P071_SOL_CORE_AUTHORITY` / title: english_fallback_packet - Sol Core Authority
+- `P072_CENTAURI_COMPACT_LEGITIMACY` / title: english_fallback_packet - Centauri Compact Legitimacy
+- `P073_BARNARD_YARDS_MARAUDER_ORIGIN` / title: english_fallback_packet - Barnard Yards Marauder Origin
+- `P074_TAU_CETI_PUBLIC_LEDGER` / title: english_fallback_packet - Tau Ceti Public Ledger
+- `P075_LUYTEN_JUNCTION_PACKET_CUSTODY` / title: english_fallback_packet - Luyten Junction Packet Custody
+- `P076_RAN_AEGIR_ANCHOR` / title: english_fallback_packet - Ran / Aegir Anchor
+- `P077_AEGIR_MOON_LADDER` / title: english_fallback_packet - Aegir Moon Ladder
+- `P078_INNER_MOON_RELAY_HAZARDS` / title: english_fallback_packet - Inner Moon Relay Hazards
+- `P079_HECTON8_ORBIT_TIDE_GEOMETRY` / title: english_fallback_packet - HECTON-8 Orbit / Tide Geometry
+- `P080_OUTER_MOON_COLD_CLAIMS` / title: english_fallback_packet - Outer Moon Cold Claims
+- `P081_GREAT_TIDE_PHYSICS_RECORD` / title: english_fallback_packet - Great Tide Physics Record
+- `P082_PRESSURE_GLASS_FORMATION` / title: english_fallback_packet - Pressure Glass Formation
+- `P083_BRINE_CANYON_ROUTE_LADDER` / title: english_fallback_packet - Brine Canyon Route Ladder
+- `P084_VENT_FORGE_GEOTHERMAL_ENGINE` / title: english_fallback_packet - Vent Forge Geothermal Engine
+- `P085_BIOMETAL_RESOURCE_STACK` / title: english_fallback_packet - Biometal Resource Stack
+- `P086_AEGIR_RECLAMATION_POOL` / title: english_fallback_packet - Aegir Reclamation Pool
+- `P087_KEELMARK_MUTUAL_CUSTODY` / title: english_fallback_packet - Keelmark Mutual Custody
+- `P088_TONNE_WINDOW_DEBT` / title: english_fallback_packet - Tonne-Window Debt
+- `P089_BLACK_KEEL_FIRST_VOICE` / title: english_fallback_packet - Black Keel First Voice
+- `P090_DEEP_REACH_PRIORITY_HOOK` / title: english_fallback_packet - Deep Reach Priority Hook
+- `P091_COLLISION_FRACTURED_MOON` / title: english_fallback_packet - Collision-Fractured Moon
+- `P092_GLOBAL_OCEAN_DEPTH_BANDS` / title: english_fallback_packet - Global Ocean Depth Bands
+- `P093_ACCESSIBLE_SEAFLOOR_WINDOWS` / title: english_fallback_packet - Accessible Seafloor Windows
+- `P094_SEED_GEOLOGY_INVARIANTS` / title: english_fallback_packet - Seed Geology Invariants
+- `P095_PRESSURE_CONTAINMENT_FAILURE` / title: english_fallback_packet - Pressure Containment Failure
+- `P096_ATLAS_PERSON_BOUNDARY` / title: english_fallback_packet - Atlas Person Boundary
+- `P097_RECOVERY_COMPLIANCE_OFFICE` / title: english_fallback_packet - Recovery Compliance Office
+- `P098_FALSE_ENDING_TAXONOMY` / title: english_fallback_packet - False Ending Taxonomy
+- `P099_MARAUDER_DOSSIER_PERSISTENCE` / title: english_fallback_packet - Marauder Dossier Persistence
+- `P100_FINAL_CHOICE_PAYLOAD` / title: english_fallback_packet - Final Choice Payload
+- `P101_NO_FTL_ROUTE_ECONOMY` / title: english_fallback_packet - No-FTL Route Economy
+- `P102_BEAM_SAIL_PROBE_ERA` / title: english_fallback_packet - Beam-Sail Probe Era
+- `P103_PELLET_FUSION_FREIGHT` / title: english_fallback_packet - Pellet-Fusion Freight
+- `P104_RAN_B_H8_PUBLIC_CATALOG` / title: english_fallback_packet - RAN-B:H8 Public Catalog
+- `P105_BLACK_KEEL_IN_SYSTEM_TENDER` / title: english_fallback_packet - Black Keel In-System Tender
+- `P106_ILIYA_VARNEK_TIDE_MARGIN` / title: english_fallback_packet - Iliya Varnek Tide Margin
+- `P107_SELENE_ARENDT_ATLAS_WEIGHTING` / title: english_fallback_packet - Selene Arendt Atlas Weighting
+- `P108_NOOR_HALDANE_EVAC_CERT` / title: english_fallback_packet - Noor Haldane Evac Cert
+- `P109_MAREK_IBARRA_LOSS_CONVERSION` / title: english_fallback_packet - Marek Ibarra Loss Conversion
+- `P110_VERA_SATO_REN_RETURN_ACTION` / title: english_fallback_packet - Vera Sato-Ren Return Action
+- `P111_MANUAL_BILGE_PUMP_KIT` / title: english_fallback_packet - Manual Bilge Pump Kit
+- `P112_COLD_SEALANT_PATCH_GUN` / title: english_fallback_packet - Cold Sealant Patch Gun
+- `P113_LOW_POWER_INDUCTION_CUTTER` / title: english_fallback_packet - Low-Power Induction Cutter
+- `P114_ACOUSTIC_PINGER_LINE` / title: english_fallback_packet - Acoustic Pinger Line
+- `P115_P63_FIELD_FABRICATOR` / title: english_fallback_packet - P-63 Field Fabricator
+- `P116_NATIVE_SULFIDE_SALT_STACK` / title: english_fallback_packet - Native Sulfide Salt Stack
+- `P117_NOBLE_GAS_BRINE_POCKETS` / title: english_fallback_packet - Noble Gas Brine Pockets
+- `P118_DEEP_REACH_PRESSURE_CERAMICS` / title: english_fallback_packet - Deep Reach Pressure Ceramics
+- `P119_ATLAS_BIOFIBER_SEALANT` / title: english_fallback_packet - Atlas Biofiber Sealant
+- `P120_BIOMETAL_SENSOR_TAGS` / title: english_fallback_packet - Biometal Sensor Tags
+- `P121_DOMAIN_CIVIC_CORPORATE_SPLIT` / title: english_fallback_packet - Domain Civic-Corporate Split
+- `P122_MARAUDER_LEGAL_LOOPHOLE` / title: english_fallback_packet - Marauder Legal Loophole
+- `P123_SALVAGE_TRUTH_EVIDENCE_STATUS` / title: english_fallback_packet - Salvage Truth Evidence Status
+- `P124_NORMAL_CITIZEN_AEGIR_MEMORY` / title: english_fallback_packet - Normal Citizen Aegir Memory
+- `P125_DEEP_REACH_ORIGIN_CHAIN` / title: english_fallback_packet - Deep Reach Origin Chain
+- `P126_ATLAS_PUBLIC_FRONT` / title: english_fallback_packet - Atlas Public Front
+- `P127_ATLAS_INSURANCE_PERSONHOOD_STATUS` / title: english_fallback_packet - Atlas Insurance Personhood Status
+- `P128_ATLAS_CLASSIFIED_WEIGHTING_LAYER` / title: english_fallback_packet - Atlas Classified Weighting Layer
+- `P129_ATLAS_SHUTDOWN_ETHIC_FRAME` / title: english_fallback_packet - Atlas Shutdown Ethic Frame
+- `P130_ATLAS_PUBLIC_MEMORY_AFTER_2147` / title: english_fallback_packet - Atlas Public Memory After 2147
+- `P131_MATERIAL_EXIT_BITTER_CREDITS` / title: english_fallback_packet - Material Exit Bitter Credits
+- `P132_PARTIAL_EXIT_SAME_SEED_RETURN` / title: english_fallback_packet - Partial Exit Same-Seed Return
+- `P133_CORPORATE_CAPTURE_BAD_END` / title: english_fallback_packet - Corporate Capture Bad End
+- `P134_QUARANTINE_HOLD_STALE_AIR` / title: english_fallback_packet - Quarantine Hold Stale Air
+- `P135_PUBLIC_LEDGER_LEAK_ROUTE` / title: english_fallback_packet - Public Ledger Leak Route
+- `P136_DOSSIER_RUMOR_UNLOCKS` / title: english_fallback_packet - Dossier Rumor Unlocks
+- `P137_RISKIER_CONTRACT_SEEDS` / title: english_fallback_packet - Riskier Contract Seeds
+- `P138_FALSE_ENDING_COUNT_LADDER` / title: english_fallback_packet - False Ending Count Ladder
+- `P139_STARTING_CLAIM_VARIANTS` / title: english_fallback_packet - Starting Claim Variants
+- `P140_DOSSIER_KNOWLEDGE_NOT_POWER` / title: english_fallback_packet - Dossier Knowledge Not Power
+- `P141_RAN_AEGIR_DISTANCE_MODEL` / title: english_fallback_packet - Ran-Aegir Distance Model
+- `P142_PROBE_PACKET_TRAVEL_TIMES` / title: english_fallback_packet - Probe Packet Travel Times
+- `P143_HEAVY_FREIGHT_STAGING_TIME` / title: english_fallback_packet - Heavy Freight Staging Time
+- `P144_HUMAN_CREW_ROTATION_TRANSIT` / title: english_fallback_packet - Human Crew Rotation Transit
+- `P145_RELAY_MESSAGE_LAG` / title: english_fallback_packet - Relay Message Lag
+- `P146_DEEP_REACH_PUBLIC_COMBINE` / title: english_fallback_packet - Deep Reach Public Combine
+- `P147_AEGIR_CONTINUITY_HOLDINGS` / title: english_fallback_packet - Aegir Continuity Holdings
+- `P148_ATLAS_CONTINUITY_OFFICE` / title: english_fallback_packet - Atlas Continuity Office
+- `P149_KEELMARK_LOSS_DESK` / title: english_fallback_packet - Keelmark Loss Desk
+- `P150_RECOVERY_COMPLIANCE_CHAIN` / title: english_fallback_packet - Recovery Compliance Chain
+- `P151_BLACK_KEEL_CONTRACT_APPROACH` / title: english_fallback_packet - Black Keel Contract Approach
+- `P152_DROP_CAPSULE_DAMAGE_SEQUENCE` / title: english_fallback_packet - Drop Capsule Damage Sequence
+- `P153_SHALLOW_ANNEX_P63_PUMP_ROOM` / title: english_fallback_packet - Shallow Annex P-63 Pump Room
+- `P154_FIRST_SANITIZED_ACCIDENT_PACKET` / title: english_fallback_packet - First Sanitized Accident Packet
+- `P155_FIRST_ATLAS_REPAIR_TRACE` / title: english_fallback_packet - First Atlas Repair Trace
+- `P156_SHIFT_CREWS_NOT_HEROES` / title: english_fallback_packet - Shift Crews Not Heroes
+- `P157_WORKER_JOB_CARDS` / title: english_fallback_packet - Worker Job Cards
+- `P158_LOCKER_NAME_PROTOCOL` / title: english_fallback_packet - Locker Name Protocol
+- `P159_MEDICAL_TRIAGE_LEDGER` / title: english_fallback_packet - Medical Triage Ledger
+- `P160_MARAUDER_CORRECTION_LAYER` / title: english_fallback_packet - Marauder Correction Layer
+- `P161_DOMAIN_DISTANCE_SCALE` / title: english_fallback_packet - Domain Distance Scale
+- `P162_DOMAIN_POPULATION_AUTHORITY_SCALE` / title: english_fallback_packet - Population And Authority Scale
+- `P163_PUBLIC_ROUTE_NAMES` / title: english_fallback_packet - Public Route Names
+- `P164_TRANSIT_DURATION_BANDS` / title: english_fallback_packet - Transit Duration Bands
+- `P165_DEEP_REACH_SUBOFFICE_REGISTRY` / title: english_fallback_packet - Deep Reach Suboffice Registry
+- Additional 6403 candidates omitted from this summary; see `localization_issue_candidates.csv`.
+
+## fr_FR (ltr)
+- `P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT` / title: draft_marker_packet - Placeholder
+- `P221_PHOTIC_MAT_BASELINE` / title: draft_marker_packet - Draft
+- `P222_GLASS_GRAZER_SCHOOLS` / title: draft_marker_packet - Draft
+- `P223_LANTERN_DRIFT_BLOOM` / title: draft_marker_packet - Draft
+- `P224_SHELL_CLAMP_REEF` / title: draft_marker_packet - Draft
+- `P225_SHALLOW_PREDATOR_SHADOW_RULE` / title: draft_marker_packet - Draft
+- `P226_BRINE_VANE_FORESTS` / title: draft_marker_packet - Draft
+- `P227_DENSITY_SKATER_FAUNA` / title: draft_marker_packet - Draft
+- `P228_VENT_ANCHOR_COLONIES` / title: draft_marker_packet - Draft
+- `P229_WIDE_FILTER_BODY_TRACE` / title: draft_marker_packet - Draft
+- `P230_SILT_AMBUSHER_TELEGRAPH` / title: draft_marker_packet - Draft
+- `P231_CONDUCTIVE_BIOFILM_CABLE_SKIN` / title: draft_marker_packet - Draft
+- `P232_ACOUSTIC_FILTER_ORGAN_RELAY` / title: draft_marker_packet - Draft
+- `P233_SHELL_SEALANT_FRACTURE_GROWTH` / title: draft_marker_packet - Draft
+- `P234_SENSOR_TAGGED_FAUNA` / title: draft_marker_packet - Draft
+- `P235_VENT_MICRONODE_NESTS` / title: draft_marker_packet - Draft
+- `P236_BLACK_KEEL_TENDER_INTERIOR_LIMITS` / title: draft_marker_packet - Draft
+- `P237_DROP_CAPSULE_DAMAGE_PARTS` / title: draft_marker_packet - Draft
+- `P238_P63_FABRICATOR_AUTHORITY_LIMITS` / title: draft_marker_packet - Draft
+- `P239_PRESSURE_SUIT_SERVICE_GRADES` / title: draft_marker_packet - Draft
+- `P240_SONAR_PINGER_ROUTE_BEACONS` / title: draft_marker_packet - Draft
+- `P241_LIEN_SEVERITY_SEED_CLASS` / title: draft_marker_packet - Draft
+- `P242_STORM_WINDOW_RISK_CARD` / title: draft_marker_packet - Draft
+- `P243_SAMPLE_CUSTODY_GRADE_CARD` / title: draft_marker_packet - Draft
+- `P244_EVIDENCE_ORDER_DEPTH_CARD` / title: draft_marker_packet - Draft
+- `P245_DEEP_REACH_CLAUSE_WEIGHT_CARD` / title: draft_marker_packet - Draft
+- `P246_BLACK_KEEL_APPROACH_AUDIO_PACKET` / title: draft_marker_packet - Draft
+- `P247_DROP_CAPSULE_DIAGNOSTIC_READOUT` / title: draft_marker_packet - Draft
+- `P248_P63_PUMP_ROOM_FIRST_REPAIR_TASK` / title: draft_marker_packet - Draft
+- `P249_SANITIZED_ACCIDENT_PACKET_BODY` / title: draft_marker_packet - Draft
+- `P250_FIRST_ATLAS_REPAIR_TRACE_SCENE` / title: draft_marker_packet - Draft
+- `P251_HECTON8_PUBLIC_PRIMER_ARTICLE` / title: draft_marker_packet - Draft
+- `P252_AEGIR_SYSTEM_PUBLIC_PRIMER_ARTICLE` / title: draft_marker_packet - Draft
+- `P253_DEEP_REACH_PUBLIC_DOSSIER_ARTICLE` / title: draft_marker_packet - Draft
+- `P254_ATLAS6_SPOILER_GATED_ARTICLE` / title: draft_marker_packet - Draft
+- `P255_BLUE_DEBT_PUBLIC_RESOURCE_ARTICLE` / title: draft_marker_packet - Draft
+- `P256_PROPER_NOUN_TRANSLATION_LOCK_TABLE` / title: draft_marker_packet - Draft
+- `P257_UNIT_NUMBER_STYLE_CARD` / title: draft_marker_packet - Draft
+- `P258_TERMINAL_VOICE_REGISTER_RULE` / title: draft_marker_packet - Draft
+- `P259_AUDIO_BARK_FAMILY_RULES` / title: draft_marker_packet - Draft
+- `P260_RTL_CJK_FONT_RISK_CARD` / title: draft_marker_packet - Draft
+- `P261_RESOURCE_YIELD_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P262_INVENTORY_STACK_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P263_ESCAPE_RECIPE_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P264_CONTRACT_RISK_REWARD_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P265_ENDING_PAYOUT_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P266_DOSSIER_START_SCREEN_COPY` / title: draft_marker_packet - Draft
+- `P267_CONTRACT_CARD_FIELD_LABELS` / title: draft_marker_packet - Draft
+- `P268_RUMOR_FAMILY_UI_COPY` / title: draft_marker_packet - Draft
+- `P269_ROUTE_WARNING_UI_COPY` / title: draft_marker_packet - Draft
+- `P270_ENDING_RECORD_UI_COPY` / title: draft_marker_packet - Draft
+- `P271_MATERIAL_PAYOUT_RECORD` / title: draft_marker_packet - Draft
+- `P272_PARTIAL_RETURN_RECORD` / title: draft_marker_packet - Draft
+- `P273_PUBLIC_LEDGER_RECORD` / title: draft_marker_packet - Draft
+- `P274_ATLAS_SEVERANCE_RECORD` / title: draft_marker_packet - Draft
+- `P275_PRESERVE_QUARANTINE_RECORD` / title: draft_marker_packet - Draft
+- `P281_HECTON8_SITE_OPENING_HOOK` / title: draft_marker_packet - Draft
+- `P282_AEGIR_SITE_SYSTEM_MAP_COPY` / title: draft_marker_packet - Draft
+- `P283_DEEP_REACH_SITE_ACCOUNTABILITY_COPY` / title: draft_marker_packet - Draft
+- `P284_ATLAS6_SITE_SPOILER_GATE_COPY` / title: draft_marker_packet - Draft
+- `P285_BLUE_DEBT_SITE_RESOURCE_COPY` / title: draft_marker_packet - Draft
+- `P286_CAPSULE_BLACKBOX_AUDIO_01` / title: draft_marker_packet - Draft
+- `P287_P63_PUMP_ROOM_WORK_ORDER` / title: draft_marker_packet - Draft
+- `P288_WORKER_LOCKER_NAMEPLATE_SAMPLE` / title: draft_marker_packet - Draft
+- `P289_MARAUDER_CORRECTION_NOTE_SAMPLE` / title: draft_marker_packet - Draft
+- `P290_QUARANTINE_RELAY_FRAGMENT` / title: draft_marker_packet - Draft
+- `P291_PHOTIC_MAT_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P292_GLASS_GRAZER_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P293_LANTERN_DRIFT_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P294_BRINE_VANE_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P295_SENSOR_TAGGED_FAUNA_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P296_ABYSSAL_MACHINE_FIELD_WARNING` / title: draft_marker_packet - Draft
+- `P297_ATLAS_BASIN_PRESSURE_GATE` / title: draft_marker_packet - Draft
+- `P298_FACTORY_TEMPLE_ENTRY_FRAGMENT` / title: draft_marker_packet - Draft
+- `P299_PAYLOAD_AUTHORITY_LAST_CHECK` / title: draft_marker_packet - Draft
+- `P300_NO_CLEAN_ENDING_DOSSIER_NOTE` / title: draft_marker_packet - Draft
+- `P301_RESOURCE_YIELD_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P302_STACK_LIMIT_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P303_ESCAPE_RECIPE_COST_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P304_CONTRACT_RISK_REWARD_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P305_ENDING_PAYOUT_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P306_PDA_CODEX_STATE_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P307_SCANNER_STAGE_BINDING_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P308_TERMINAL_SLOT_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P309_DOSSIER_ENDING_RECORD_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P310_LOCALIZED_OVERFLOW_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P311_SITE_HOME_PAGE_COMPOSITION_LOCK` / title: draft_marker_packet - Draft
+- `P312_SITE_AEGIR_SYSTEM_ART_COMPOSITION_LOCK` / title: draft_marker_packet - Draft
+- `P313_SITE_DEEP_REACH_EVIDENCE_COMPOSITION_LOCK` / title: draft_marker_packet - Draft
+- `P314_SITE_ATLAS_SPOILER_COMPOSITION_LOCK` / title: draft_marker_packet - Draft
+- `P315_SOCIAL_DEV_NOTE_COPY_LOCK` / title: draft_marker_packet - Draft
+- `P316_FIRST_HOUR_PLACEMENT_PRIORITY_LOCK` / title: draft_marker_packet - Draft
+- `P317_MID_DEPTH_ROUTE_PLACEMENT_PRIORITY_LOCK` / title: draft_marker_packet - Draft
+- `P318_ECOLOGY_SCAN_PLACEMENT_PRIORITY_LOCK` / title: draft_marker_packet - Draft
+- `P319_FINAL_DESCENT_PLACEMENT_PRIORITY_LOCK` / title: draft_marker_packet - Draft
+- `P320_TERMINAL_BACKLOG_TRIAGE_LOCK` / title: draft_marker_packet - Draft
+- `P321_BLACK_KEEL_CLAIM_POOL_CHARTER` / title: draft_marker_packet - Draft
+- `P322_MASKED_DEEP_REACH_BENEFICIARY_CLAUSE` / title: draft_marker_packet - Draft
+- `P323_ORBITAL_RECOVERY_WINDOW_PROTOCOL` / title: draft_marker_packet - Draft
+- `P324_SALVAGE_CARRIER_AUTONOMY_LIMITS` / title: draft_marker_packet - Draft
+- `P325_PLAYER_LIEN_CONTRACT_START_CARD` / title: draft_marker_packet - Draft
+- `P326_SANITIZED_ACCIDENT_REPLY_WINDOW` / title: draft_marker_packet - Draft
+- `P327_LEGAL_INSURANCE_AUTOMATED_PING` / title: draft_marker_packet - Draft
+- `P328_RECOVERY_COMPLIANCE_COORDINATE_DEMAND` / title: draft_marker_packet - Draft
+- `P329_DEEP_REACH_FACTION_MESSAGE_SPLIT` / title: draft_marker_packet - Draft
+- `P330_BLACKOUT_WINDOW_SIGNAL_DECAY` / title: draft_marker_packet - Draft
+- `P331_CONDUCTIVE_BIOFILM_REPAIR_BUS` / title: draft_marker_packet - Draft
+- `P332_ACOUSTIC_FILTER_ORGAN_RELAY` / title: draft_marker_packet - Draft
+- `P333_SHELL_SEALANT_PRESSURE_GROWTH` / title: draft_marker_packet - Draft
+- `P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP` / title: draft_marker_packet - Draft
+- `P335_VENT_MICRONODE_POWER_NEST` / title: draft_marker_packet - Draft
+- `P336_MATERIAL_EXIT_RECEIPT_AUDIT` / title: draft_marker_packet - Draft
+- `P337_PARTIAL_RETURN_LIEN_EXTENSION` / title: draft_marker_packet - Draft
+- `P338_QUARANTINE_HOLD_INTERROGATION_RECORD` / title: draft_marker_packet - Draft
+- `P339_CORPORATE_COORDINATE_CAPTURE_RECORD` / title: draft_marker_packet - Draft
+- `P340_PUBLIC_LEDGER_AFTERSHOCK_RECORD` / title: draft_marker_packet - Draft
+- `P341_NEEDLEPROBE_PRECURSOR_PROGRAM` / title: draft_marker_packet - Draft
+- `P342_BEAM_SAIL_AND_PELLET_LANE` / title: draft_marker_packet - Draft
+- `P343_SEED_SHIP_BRAKING_ARCHITECTURE` / title: draft_marker_packet - Draft
+- `P344_SYSTEM_CARRIER_TUG_STACK` / title: draft_marker_packet - Draft
+- Additional 2660 candidates omitted from this summary; see `localization_issue_candidates.csv`.
+
+## es_ES (ltr)
+- `P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT` / title: draft_marker_packet - Placeholder
+- `P221_PHOTIC_MAT_BASELINE` / title: draft_marker_packet - Draft
+- `P222_GLASS_GRAZER_SCHOOLS` / title: draft_marker_packet - Draft
+- `P223_LANTERN_DRIFT_BLOOM` / title: draft_marker_packet - Draft
+- `P224_SHELL_CLAMP_REEF` / title: draft_marker_packet - Draft
+- `P225_SHALLOW_PREDATOR_SHADOW_RULE` / title: draft_marker_packet - Draft
+- `P226_BRINE_VANE_FORESTS` / title: draft_marker_packet - Draft
+- `P227_DENSITY_SKATER_FAUNA` / title: draft_marker_packet - Draft
+- `P228_VENT_ANCHOR_COLONIES` / title: draft_marker_packet - Draft
+- `P229_WIDE_FILTER_BODY_TRACE` / title: draft_marker_packet - Draft
+- `P230_SILT_AMBUSHER_TELEGRAPH` / title: draft_marker_packet - Draft
+- `P231_CONDUCTIVE_BIOFILM_CABLE_SKIN` / title: draft_marker_packet - Draft
+- `P232_ACOUSTIC_FILTER_ORGAN_RELAY` / title: draft_marker_packet - Draft
+- `P233_SHELL_SEALANT_FRACTURE_GROWTH` / title: draft_marker_packet - Draft
+- `P234_SENSOR_TAGGED_FAUNA` / title: draft_marker_packet - Draft
+- `P235_VENT_MICRONODE_NESTS` / title: draft_marker_packet - Draft
+- `P236_BLACK_KEEL_TENDER_INTERIOR_LIMITS` / title: draft_marker_packet - Draft
+- `P237_DROP_CAPSULE_DAMAGE_PARTS` / title: draft_marker_packet - Draft
+- `P238_P63_FABRICATOR_AUTHORITY_LIMITS` / title: draft_marker_packet - Draft
+- `P239_PRESSURE_SUIT_SERVICE_GRADES` / title: draft_marker_packet - Draft
+- `P240_SONAR_PINGER_ROUTE_BEACONS` / title: draft_marker_packet - Draft
+- `P241_LIEN_SEVERITY_SEED_CLASS` / title: draft_marker_packet - Draft
+- `P242_STORM_WINDOW_RISK_CARD` / title: draft_marker_packet - Draft
+- `P243_SAMPLE_CUSTODY_GRADE_CARD` / title: draft_marker_packet - Draft
+- `P244_EVIDENCE_ORDER_DEPTH_CARD` / title: draft_marker_packet - Draft
+- `P245_DEEP_REACH_CLAUSE_WEIGHT_CARD` / title: draft_marker_packet - Draft
+- `P246_BLACK_KEEL_APPROACH_AUDIO_PACKET` / title: draft_marker_packet - Draft
+- `P247_DROP_CAPSULE_DIAGNOSTIC_READOUT` / title: draft_marker_packet - Draft
+- `P248_P63_PUMP_ROOM_FIRST_REPAIR_TASK` / title: draft_marker_packet - Draft
+- `P249_SANITIZED_ACCIDENT_PACKET_BODY` / title: draft_marker_packet - Draft
+- `P250_FIRST_ATLAS_REPAIR_TRACE_SCENE` / title: draft_marker_packet - Draft
+- `P251_HECTON8_PUBLIC_PRIMER_ARTICLE` / title: draft_marker_packet - Draft
+- `P252_AEGIR_SYSTEM_PUBLIC_PRIMER_ARTICLE` / title: draft_marker_packet - Draft
+- `P253_DEEP_REACH_PUBLIC_DOSSIER_ARTICLE` / title: draft_marker_packet - Draft
+- `P254_ATLAS6_SPOILER_GATED_ARTICLE` / title: draft_marker_packet - Draft
+- `P255_BLUE_DEBT_PUBLIC_RESOURCE_ARTICLE` / title: draft_marker_packet - Draft
+- `P256_PROPER_NOUN_TRANSLATION_LOCK_TABLE` / title: draft_marker_packet - Draft
+- `P257_UNIT_NUMBER_STYLE_CARD` / title: draft_marker_packet - Draft
+- `P258_TERMINAL_VOICE_REGISTER_RULE` / title: draft_marker_packet - Draft
+- `P259_AUDIO_BARK_FAMILY_RULES` / title: draft_marker_packet - Draft
+- `P260_RTL_CJK_FONT_RISK_CARD` / title: draft_marker_packet - Draft
+- `P261_RESOURCE_YIELD_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P262_INVENTORY_STACK_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P263_ESCAPE_RECIPE_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P264_CONTRACT_RISK_REWARD_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P265_ENDING_PAYOUT_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P266_DOSSIER_START_SCREEN_COPY` / title: draft_marker_packet - Draft
+- `P267_CONTRACT_CARD_FIELD_LABELS` / title: draft_marker_packet - Draft
+- `P268_RUMOR_FAMILY_UI_COPY` / title: draft_marker_packet - Draft
+- `P269_ROUTE_WARNING_UI_COPY` / title: draft_marker_packet - Draft
+- `P270_ENDING_RECORD_UI_COPY` / title: draft_marker_packet - Draft
+- `P271_MATERIAL_PAYOUT_RECORD` / title: draft_marker_packet - Draft
+- `P272_PARTIAL_RETURN_RECORD` / title: draft_marker_packet - Draft
+- `P273_PUBLIC_LEDGER_RECORD` / title: draft_marker_packet - Draft
+- `P274_ATLAS_SEVERANCE_RECORD` / title: draft_marker_packet - Draft
+- `P275_PRESERVE_QUARANTINE_RECORD` / title: draft_marker_packet - Draft
+- `P281_HECTON8_SITE_OPENING_HOOK` / title: draft_marker_packet - Draft
+- `P282_AEGIR_SITE_SYSTEM_MAP_COPY` / title: draft_marker_packet - Draft
+- `P283_DEEP_REACH_SITE_ACCOUNTABILITY_COPY` / title: draft_marker_packet - Draft
+- `P284_ATLAS6_SITE_SPOILER_GATE_COPY` / title: draft_marker_packet - Draft
+- `P285_BLUE_DEBT_SITE_RESOURCE_COPY` / title: draft_marker_packet - Draft
+- `P286_CAPSULE_BLACKBOX_AUDIO_01` / title: draft_marker_packet - Draft
+- `P287_P63_PUMP_ROOM_WORK_ORDER` / title: draft_marker_packet - Draft
+- `P288_WORKER_LOCKER_NAMEPLATE_SAMPLE` / title: draft_marker_packet - Draft
+- `P289_MARAUDER_CORRECTION_NOTE_SAMPLE` / title: draft_marker_packet - Draft
+- `P290_QUARANTINE_RELAY_FRAGMENT` / title: draft_marker_packet - Draft
+- `P291_PHOTIC_MAT_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P292_GLASS_GRAZER_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P293_LANTERN_DRIFT_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P294_BRINE_VANE_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P295_SENSOR_TAGGED_FAUNA_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P296_ABYSSAL_MACHINE_FIELD_WARNING` / title: draft_marker_packet - Draft
+- `P297_ATLAS_BASIN_PRESSURE_GATE` / title: draft_marker_packet - Draft
+- `P298_FACTORY_TEMPLE_ENTRY_FRAGMENT` / title: draft_marker_packet - Draft
+- `P299_PAYLOAD_AUTHORITY_LAST_CHECK` / title: draft_marker_packet - Draft
+- `P300_NO_CLEAN_ENDING_DOSSIER_NOTE` / title: draft_marker_packet - Draft
+- `P301_RESOURCE_YIELD_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P302_STACK_LIMIT_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P303_ESCAPE_RECIPE_COST_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P304_CONTRACT_RISK_REWARD_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P305_ENDING_PAYOUT_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P306_PDA_CODEX_STATE_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P307_SCANNER_STAGE_BINDING_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P308_TERMINAL_SLOT_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P309_DOSSIER_ENDING_RECORD_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P310_LOCALIZED_OVERFLOW_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P311_SITE_HOME_PAGE_COMPOSITION_LOCK` / title: draft_marker_packet - Draft
+- `P312_SITE_AEGIR_SYSTEM_ART_COMPOSITION_LOCK` / title: draft_marker_packet - Draft
+- `P313_SITE_DEEP_REACH_EVIDENCE_COMPOSITION_LOCK` / title: draft_marker_packet - Draft
+- `P314_SITE_ATLAS_SPOILER_COMPOSITION_LOCK` / title: draft_marker_packet - Draft
+- `P315_SOCIAL_DEV_NOTE_COPY_LOCK` / title: draft_marker_packet - Draft
+- `P316_FIRST_HOUR_PLACEMENT_PRIORITY_LOCK` / title: draft_marker_packet - Draft
+- `P317_MID_DEPTH_ROUTE_PLACEMENT_PRIORITY_LOCK` / title: draft_marker_packet - Draft
+- `P318_ECOLOGY_SCAN_PLACEMENT_PRIORITY_LOCK` / title: draft_marker_packet - Draft
+- `P319_FINAL_DESCENT_PLACEMENT_PRIORITY_LOCK` / title: draft_marker_packet - Draft
+- `P320_TERMINAL_BACKLOG_TRIAGE_LOCK` / title: draft_marker_packet - Draft
+- `P321_BLACK_KEEL_CLAIM_POOL_CHARTER` / title: draft_marker_packet - Draft
+- `P322_MASKED_DEEP_REACH_BENEFICIARY_CLAUSE` / title: draft_marker_packet - Draft
+- `P323_ORBITAL_RECOVERY_WINDOW_PROTOCOL` / title: draft_marker_packet - Draft
+- `P324_SALVAGE_CARRIER_AUTONOMY_LIMITS` / title: draft_marker_packet - Draft
+- `P325_PLAYER_LIEN_CONTRACT_START_CARD` / title: draft_marker_packet - Draft
+- `P326_SANITIZED_ACCIDENT_REPLY_WINDOW` / title: draft_marker_packet - Draft
+- `P327_LEGAL_INSURANCE_AUTOMATED_PING` / title: draft_marker_packet - Draft
+- `P328_RECOVERY_COMPLIANCE_COORDINATE_DEMAND` / title: draft_marker_packet - Draft
+- `P329_DEEP_REACH_FACTION_MESSAGE_SPLIT` / title: draft_marker_packet - Draft
+- `P330_BLACKOUT_WINDOW_SIGNAL_DECAY` / title: draft_marker_packet - Draft
+- `P331_CONDUCTIVE_BIOFILM_REPAIR_BUS` / title: draft_marker_packet - Draft
+- `P332_ACOUSTIC_FILTER_ORGAN_RELAY` / title: draft_marker_packet - Draft
+- `P333_SHELL_SEALANT_PRESSURE_GROWTH` / title: draft_marker_packet - Draft
+- `P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP` / title: draft_marker_packet - Draft
+- `P335_VENT_MICRONODE_POWER_NEST` / title: draft_marker_packet - Draft
+- `P336_MATERIAL_EXIT_RECEIPT_AUDIT` / title: draft_marker_packet - Draft
+- `P337_PARTIAL_RETURN_LIEN_EXTENSION` / title: draft_marker_packet - Draft
+- `P338_QUARANTINE_HOLD_INTERROGATION_RECORD` / title: draft_marker_packet - Draft
+- `P339_CORPORATE_COORDINATE_CAPTURE_RECORD` / title: draft_marker_packet - Draft
+- `P340_PUBLIC_LEDGER_AFTERSHOCK_RECORD` / title: draft_marker_packet - Draft
+- `P341_NEEDLEPROBE_PRECURSOR_PROGRAM` / title: draft_marker_packet - Draft
+- `P342_BEAM_SAIL_AND_PELLET_LANE` / title: draft_marker_packet - Draft
+- `P343_SEED_SHIP_BRAKING_ARCHITECTURE` / title: draft_marker_packet - Draft
+- `P344_SYSTEM_CARRIER_TUG_STACK` / title: draft_marker_packet - Draft
+- Additional 2657 candidates omitted from this summary; see `localization_issue_candidates.csv`.
+
+## de_DE (ltr)
+- `P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT` / title: draft_marker_packet - Placeholder
+- `P221_PHOTIC_MAT_BASELINE` / title: draft_marker_packet - Draft
+- `P222_GLASS_GRAZER_SCHOOLS` / title: draft_marker_packet - Draft
+- `P223_LANTERN_DRIFT_BLOOM` / title: draft_marker_packet - Draft
+- `P224_SHELL_CLAMP_REEF` / title: draft_marker_packet - Draft
+- `P225_SHALLOW_PREDATOR_SHADOW_RULE` / title: draft_marker_packet - Draft
+- `P226_BRINE_VANE_FORESTS` / title: draft_marker_packet - Draft
+- `P227_DENSITY_SKATER_FAUNA` / title: draft_marker_packet - Draft
+- `P228_VENT_ANCHOR_COLONIES` / title: draft_marker_packet - Draft
+- `P229_WIDE_FILTER_BODY_TRACE` / title: draft_marker_packet - Draft
+- `P230_SILT_AMBUSHER_TELEGRAPH` / title: draft_marker_packet - Draft
+- `P231_CONDUCTIVE_BIOFILM_CABLE_SKIN` / title: draft_marker_packet - Draft
+- `P232_ACOUSTIC_FILTER_ORGAN_RELAY` / title: draft_marker_packet - Draft
+- `P233_SHELL_SEALANT_FRACTURE_GROWTH` / title: draft_marker_packet - Draft
+- `P234_SENSOR_TAGGED_FAUNA` / title: draft_marker_packet - Draft
+- `P235_VENT_MICRONODE_NESTS` / title: draft_marker_packet - Draft
+- `P236_BLACK_KEEL_TENDER_INTERIOR_LIMITS` / title: draft_marker_packet - Draft
+- `P237_DROP_CAPSULE_DAMAGE_PARTS` / title: draft_marker_packet - Draft
+- `P238_P63_FABRICATOR_AUTHORITY_LIMITS` / title: draft_marker_packet - Draft
+- `P239_PRESSURE_SUIT_SERVICE_GRADES` / title: draft_marker_packet - Draft
+- `P240_SONAR_PINGER_ROUTE_BEACONS` / title: draft_marker_packet - Draft
+- `P241_LIEN_SEVERITY_SEED_CLASS` / title: draft_marker_packet - Draft
+- `P242_STORM_WINDOW_RISK_CARD` / title: draft_marker_packet - Draft
+- `P243_SAMPLE_CUSTODY_GRADE_CARD` / title: draft_marker_packet - Draft
+- `P244_EVIDENCE_ORDER_DEPTH_CARD` / title: draft_marker_packet - Draft
+- `P245_DEEP_REACH_CLAUSE_WEIGHT_CARD` / title: draft_marker_packet - Draft
+- `P246_BLACK_KEEL_APPROACH_AUDIO_PACKET` / title: draft_marker_packet - Draft
+- `P247_DROP_CAPSULE_DIAGNOSTIC_READOUT` / title: draft_marker_packet - Draft
+- `P248_P63_PUMP_ROOM_FIRST_REPAIR_TASK` / title: draft_marker_packet - Draft
+- `P249_SANITIZED_ACCIDENT_PACKET_BODY` / title: draft_marker_packet - Draft
+- `P250_FIRST_ATLAS_REPAIR_TRACE_SCENE` / title: draft_marker_packet - Draft
+- `P251_HECTON8_PUBLIC_PRIMER_ARTICLE` / title: draft_marker_packet - Draft
+- `P252_AEGIR_SYSTEM_PUBLIC_PRIMER_ARTICLE` / title: draft_marker_packet - Draft
+- `P253_DEEP_REACH_PUBLIC_DOSSIER_ARTICLE` / title: draft_marker_packet - Draft
+- `P254_ATLAS6_SPOILER_GATED_ARTICLE` / title: draft_marker_packet - Draft
+- `P255_BLUE_DEBT_PUBLIC_RESOURCE_ARTICLE` / title: draft_marker_packet - Draft
+- `P256_PROPER_NOUN_TRANSLATION_LOCK_TABLE` / title: draft_marker_packet - Draft
+- `P257_UNIT_NUMBER_STYLE_CARD` / title: draft_marker_packet - Draft
+- `P258_TERMINAL_VOICE_REGISTER_RULE` / title: draft_marker_packet - Draft
+- `P259_AUDIO_BARK_FAMILY_RULES` / title: draft_marker_packet - Draft
+- `P260_RTL_CJK_FONT_RISK_CARD` / title: draft_marker_packet - Draft
+- `P261_RESOURCE_YIELD_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P262_INVENTORY_STACK_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P263_ESCAPE_RECIPE_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P264_CONTRACT_RISK_REWARD_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P265_ENDING_PAYOUT_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P266_DOSSIER_START_SCREEN_COPY` / title: draft_marker_packet - Draft
+- `P267_CONTRACT_CARD_FIELD_LABELS` / title: draft_marker_packet - Draft
+- `P268_RUMOR_FAMILY_UI_COPY` / title: draft_marker_packet - Draft
+- `P269_ROUTE_WARNING_UI_COPY` / title: draft_marker_packet - Draft
+- `P270_ENDING_RECORD_UI_COPY` / title: draft_marker_packet - Draft
+- `P271_MATERIAL_PAYOUT_RECORD` / title: draft_marker_packet - Draft
+- `P272_PARTIAL_RETURN_RECORD` / title: draft_marker_packet - Draft
+- `P273_PUBLIC_LEDGER_RECORD` / title: draft_marker_packet - Draft
+- `P274_ATLAS_SEVERANCE_RECORD` / title: draft_marker_packet - Draft
+- `P275_PRESERVE_QUARANTINE_RECORD` / title: draft_marker_packet - Draft
+- `P281_HECTON8_SITE_OPENING_HOOK` / title: draft_marker_packet - Draft
+- `P282_AEGIR_SITE_SYSTEM_MAP_COPY` / title: draft_marker_packet - Draft
+- `P283_DEEP_REACH_SITE_ACCOUNTABILITY_COPY` / title: draft_marker_packet - Draft
+- `P284_ATLAS6_SITE_SPOILER_GATE_COPY` / title: draft_marker_packet - Draft
+- `P285_BLUE_DEBT_SITE_RESOURCE_COPY` / title: draft_marker_packet - Draft
+- `P286_CAPSULE_BLACKBOX_AUDIO_01` / title: draft_marker_packet - Draft
+- `P287_P63_PUMP_ROOM_WORK_ORDER` / title: draft_marker_packet - Draft
+- `P288_WORKER_LOCKER_NAMEPLATE_SAMPLE` / title: draft_marker_packet - Draft
+- `P289_MARAUDER_CORRECTION_NOTE_SAMPLE` / title: draft_marker_packet - Draft
+- `P290_QUARANTINE_RELAY_FRAGMENT` / title: draft_marker_packet - Draft
+- `P291_PHOTIC_MAT_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P292_GLASS_GRAZER_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P293_LANTERN_DRIFT_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P294_BRINE_VANE_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P295_SENSOR_TAGGED_FAUNA_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P296_ABYSSAL_MACHINE_FIELD_WARNING` / title: draft_marker_packet - Draft
+- `P297_ATLAS_BASIN_PRESSURE_GATE` / title: draft_marker_packet - Draft
+- `P298_FACTORY_TEMPLE_ENTRY_FRAGMENT` / title: draft_marker_packet - Draft
+- `P299_PAYLOAD_AUTHORITY_LAST_CHECK` / title: draft_marker_packet - Draft
+- `P300_NO_CLEAN_ENDING_DOSSIER_NOTE` / title: draft_marker_packet - Draft
+- `P301_RESOURCE_YIELD_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P302_STACK_LIMIT_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P303_ESCAPE_RECIPE_COST_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P304_CONTRACT_RISK_REWARD_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P305_ENDING_PAYOUT_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P306_PDA_CODEX_STATE_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P307_SCANNER_STAGE_BINDING_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P308_TERMINAL_SLOT_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P309_DOSSIER_ENDING_RECORD_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P310_LOCALIZED_OVERFLOW_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P311_SITE_HOME_PAGE_COMPOSITION_LOCK` / title: draft_marker_packet - Draft
+- `P312_SITE_AEGIR_SYSTEM_ART_COMPOSITION_LOCK` / title: draft_marker_packet - Draft
+- `P313_SITE_DEEP_REACH_EVIDENCE_COMPOSITION_LOCK` / title: draft_marker_packet - Draft
+- `P314_SITE_ATLAS_SPOILER_COMPOSITION_LOCK` / title: draft_marker_packet - Draft
+- `P315_SOCIAL_DEV_NOTE_COPY_LOCK` / title: draft_marker_packet - Draft
+- `P316_FIRST_HOUR_PLACEMENT_PRIORITY_LOCK` / title: draft_marker_packet - Draft
+- `P317_MID_DEPTH_ROUTE_PLACEMENT_PRIORITY_LOCK` / title: draft_marker_packet - Draft
+- `P318_ECOLOGY_SCAN_PLACEMENT_PRIORITY_LOCK` / title: draft_marker_packet - Draft
+- `P319_FINAL_DESCENT_PLACEMENT_PRIORITY_LOCK` / title: draft_marker_packet - Draft
+- `P320_TERMINAL_BACKLOG_TRIAGE_LOCK` / title: draft_marker_packet - Draft
+- `P321_BLACK_KEEL_CLAIM_POOL_CHARTER` / title: draft_marker_packet - Draft
+- `P322_MASKED_DEEP_REACH_BENEFICIARY_CLAUSE` / title: draft_marker_packet - Draft
+- `P323_ORBITAL_RECOVERY_WINDOW_PROTOCOL` / title: draft_marker_packet - Draft
+- `P324_SALVAGE_CARRIER_AUTONOMY_LIMITS` / title: draft_marker_packet - Draft
+- `P325_PLAYER_LIEN_CONTRACT_START_CARD` / title: draft_marker_packet - Draft
+- `P326_SANITIZED_ACCIDENT_REPLY_WINDOW` / title: draft_marker_packet - Draft
+- `P327_LEGAL_INSURANCE_AUTOMATED_PING` / title: draft_marker_packet - Draft
+- `P328_RECOVERY_COMPLIANCE_COORDINATE_DEMAND` / title: draft_marker_packet - Draft
+- `P329_DEEP_REACH_FACTION_MESSAGE_SPLIT` / title: draft_marker_packet - Draft
+- `P330_BLACKOUT_WINDOW_SIGNAL_DECAY` / title: draft_marker_packet - Draft
+- `P331_CONDUCTIVE_BIOFILM_REPAIR_BUS` / title: draft_marker_packet - Draft
+- `P332_ACOUSTIC_FILTER_ORGAN_RELAY` / title: draft_marker_packet - Draft
+- `P333_SHELL_SEALANT_PRESSURE_GROWTH` / title: draft_marker_packet - Draft
+- `P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP` / title: draft_marker_packet - Draft
+- `P335_VENT_MICRONODE_POWER_NEST` / title: draft_marker_packet - Draft
+- `P336_MATERIAL_EXIT_RECEIPT_AUDIT` / title: draft_marker_packet - Draft
+- `P337_PARTIAL_RETURN_LIEN_EXTENSION` / title: draft_marker_packet - Draft
+- `P338_QUARANTINE_HOLD_INTERROGATION_RECORD` / title: draft_marker_packet - Draft
+- `P339_CORPORATE_COORDINATE_CAPTURE_RECORD` / title: draft_marker_packet - Draft
+- `P340_PUBLIC_LEDGER_AFTERSHOCK_RECORD` / title: draft_marker_packet - Draft
+- `P341_NEEDLEPROBE_PRECURSOR_PROGRAM` / title: draft_marker_packet - Draft
+- `P342_BEAM_SAIL_AND_PELLET_LANE` / title: draft_marker_packet - Draft
+- `P343_SEED_SHIP_BRAKING_ARCHITECTURE` / title: draft_marker_packet - Draft
+- `P344_SYSTEM_CARRIER_TUG_STACK` / title: draft_marker_packet - Draft
+- Additional 2644 candidates omitted from this summary; see `localization_issue_candidates.csv`.
+
+## pl_PL (ltr)
+- `P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT` / title: draft_marker_packet - Placeholder
+- `P221_PHOTIC_MAT_BASELINE` / title: draft_marker_packet - Draft
+- `P222_GLASS_GRAZER_SCHOOLS` / title: draft_marker_packet - Draft
+- `P223_LANTERN_DRIFT_BLOOM` / title: draft_marker_packet - Draft
+- `P224_SHELL_CLAMP_REEF` / title: draft_marker_packet - Draft
+- `P225_SHALLOW_PREDATOR_SHADOW_RULE` / title: draft_marker_packet - Draft
+- `P226_BRINE_VANE_FORESTS` / title: draft_marker_packet - Draft
+- `P227_DENSITY_SKATER_FAUNA` / title: draft_marker_packet - Draft
+- `P228_VENT_ANCHOR_COLONIES` / title: draft_marker_packet - Draft
+- `P229_WIDE_FILTER_BODY_TRACE` / title: draft_marker_packet - Draft
+- `P230_SILT_AMBUSHER_TELEGRAPH` / title: draft_marker_packet - Draft
+- `P231_CONDUCTIVE_BIOFILM_CABLE_SKIN` / title: draft_marker_packet - Draft
+- `P232_ACOUSTIC_FILTER_ORGAN_RELAY` / title: draft_marker_packet - Draft
+- `P233_SHELL_SEALANT_FRACTURE_GROWTH` / title: draft_marker_packet - Draft
+- `P234_SENSOR_TAGGED_FAUNA` / title: draft_marker_packet - Draft
+- `P235_VENT_MICRONODE_NESTS` / title: draft_marker_packet - Draft
+- `P236_BLACK_KEEL_TENDER_INTERIOR_LIMITS` / title: draft_marker_packet - Draft
+- `P237_DROP_CAPSULE_DAMAGE_PARTS` / title: draft_marker_packet - Draft
+- `P238_P63_FABRICATOR_AUTHORITY_LIMITS` / title: draft_marker_packet - Draft
+- `P239_PRESSURE_SUIT_SERVICE_GRADES` / title: draft_marker_packet - Draft
+- `P240_SONAR_PINGER_ROUTE_BEACONS` / title: draft_marker_packet - Draft
+- `P241_LIEN_SEVERITY_SEED_CLASS` / title: draft_marker_packet - Draft
+- `P242_STORM_WINDOW_RISK_CARD` / title: draft_marker_packet - Draft
+- `P243_SAMPLE_CUSTODY_GRADE_CARD` / title: draft_marker_packet - Draft
+- `P244_EVIDENCE_ORDER_DEPTH_CARD` / title: draft_marker_packet - Draft
+- `P245_DEEP_REACH_CLAUSE_WEIGHT_CARD` / title: draft_marker_packet - Draft
+- `P246_BLACK_KEEL_APPROACH_AUDIO_PACKET` / title: draft_marker_packet - Draft
+- `P247_DROP_CAPSULE_DIAGNOSTIC_READOUT` / title: draft_marker_packet - Draft
+- `P248_P63_PUMP_ROOM_FIRST_REPAIR_TASK` / title: draft_marker_packet - Draft
+- `P249_SANITIZED_ACCIDENT_PACKET_BODY` / title: draft_marker_packet - Draft
+- `P250_FIRST_ATLAS_REPAIR_TRACE_SCENE` / title: draft_marker_packet - Draft
+- `P251_HECTON8_PUBLIC_PRIMER_ARTICLE` / title: draft_marker_packet - Draft
+- `P252_AEGIR_SYSTEM_PUBLIC_PRIMER_ARTICLE` / title: draft_marker_packet - Draft
+- `P253_DEEP_REACH_PUBLIC_DOSSIER_ARTICLE` / title: draft_marker_packet - Draft
+- `P254_ATLAS6_SPOILER_GATED_ARTICLE` / title: draft_marker_packet - Draft
+- `P255_BLUE_DEBT_PUBLIC_RESOURCE_ARTICLE` / title: draft_marker_packet - Draft
+- `P256_PROPER_NOUN_TRANSLATION_LOCK_TABLE` / title: draft_marker_packet - Draft
+- `P257_UNIT_NUMBER_STYLE_CARD` / title: draft_marker_packet - Draft
+- `P258_TERMINAL_VOICE_REGISTER_RULE` / title: draft_marker_packet - Draft
+- `P259_AUDIO_BARK_FAMILY_RULES` / title: draft_marker_packet - Draft
+- `P260_RTL_CJK_FONT_RISK_CARD` / title: draft_marker_packet - Draft
+- `P261_RESOURCE_YIELD_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P262_INVENTORY_STACK_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P263_ESCAPE_RECIPE_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P264_CONTRACT_RISK_REWARD_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P265_ENDING_PAYOUT_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P266_DOSSIER_START_SCREEN_COPY` / title: draft_marker_packet - Draft
+- `P267_CONTRACT_CARD_FIELD_LABELS` / title: draft_marker_packet - Draft
+- `P268_RUMOR_FAMILY_UI_COPY` / title: draft_marker_packet - Draft
+- `P269_ROUTE_WARNING_UI_COPY` / title: draft_marker_packet - Draft
+- `P270_ENDING_RECORD_UI_COPY` / title: draft_marker_packet - Draft
+- `P271_MATERIAL_PAYOUT_RECORD` / title: draft_marker_packet - Draft
+- `P272_PARTIAL_RETURN_RECORD` / title: draft_marker_packet - Draft
+- `P273_PUBLIC_LEDGER_RECORD` / title: draft_marker_packet - Draft
+- `P274_ATLAS_SEVERANCE_RECORD` / title: draft_marker_packet - Draft
+- `P275_PRESERVE_QUARANTINE_RECORD` / title: draft_marker_packet - Draft
+- `P281_HECTON8_SITE_OPENING_HOOK` / title: draft_marker_packet - Draft
+- `P282_AEGIR_SITE_SYSTEM_MAP_COPY` / title: draft_marker_packet - Draft
+- `P283_DEEP_REACH_SITE_ACCOUNTABILITY_COPY` / title: draft_marker_packet - Draft
+- `P284_ATLAS6_SITE_SPOILER_GATE_COPY` / title: draft_marker_packet - Draft
+- `P285_BLUE_DEBT_SITE_RESOURCE_COPY` / title: draft_marker_packet - Draft
+- `P286_CAPSULE_BLACKBOX_AUDIO_01` / title: draft_marker_packet - Draft
+- `P287_P63_PUMP_ROOM_WORK_ORDER` / title: draft_marker_packet - Draft
+- `P288_WORKER_LOCKER_NAMEPLATE_SAMPLE` / title: draft_marker_packet - Draft
+- `P289_MARAUDER_CORRECTION_NOTE_SAMPLE` / title: draft_marker_packet - Draft
+- `P290_QUARANTINE_RELAY_FRAGMENT` / title: draft_marker_packet - Draft
+- `P291_PHOTIC_MAT_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P292_GLASS_GRAZER_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P293_LANTERN_DRIFT_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P294_BRINE_VANE_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P295_SENSOR_TAGGED_FAUNA_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P296_ABYSSAL_MACHINE_FIELD_WARNING` / title: draft_marker_packet - Draft
+- `P297_ATLAS_BASIN_PRESSURE_GATE` / title: draft_marker_packet - Draft
+- `P298_FACTORY_TEMPLE_ENTRY_FRAGMENT` / title: draft_marker_packet - Draft
+- `P299_PAYLOAD_AUTHORITY_LAST_CHECK` / title: draft_marker_packet - Draft
+- `P300_NO_CLEAN_ENDING_DOSSIER_NOTE` / title: draft_marker_packet - Draft
+- `P301_RESOURCE_YIELD_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P302_STACK_LIMIT_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P303_ESCAPE_RECIPE_COST_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P304_CONTRACT_RISK_REWARD_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P305_ENDING_PAYOUT_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P306_PDA_CODEX_STATE_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P307_SCANNER_STAGE_BINDING_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P308_TERMINAL_SLOT_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P309_DOSSIER_ENDING_RECORD_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P310_LOCALIZED_OVERFLOW_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P311_SITE_HOME_PAGE_COMPOSITION_LOCK` / title: draft_marker_packet - Draft
+- `P312_SITE_AEGIR_SYSTEM_ART_COMPOSITION_LOCK` / title: draft_marker_packet - Draft
+- `P313_SITE_DEEP_REACH_EVIDENCE_COMPOSITION_LOCK` / title: draft_marker_packet - Draft
+- `P314_SITE_ATLAS_SPOILER_COMPOSITION_LOCK` / title: draft_marker_packet - Draft
+- `P315_SOCIAL_DEV_NOTE_COPY_LOCK` / title: draft_marker_packet - Draft
+- `P316_FIRST_HOUR_PLACEMENT_PRIORITY_LOCK` / title: draft_marker_packet - Draft
+- `P317_MID_DEPTH_ROUTE_PLACEMENT_PRIORITY_LOCK` / title: draft_marker_packet - Draft
+- `P318_ECOLOGY_SCAN_PLACEMENT_PRIORITY_LOCK` / title: draft_marker_packet - Draft
+- `P319_FINAL_DESCENT_PLACEMENT_PRIORITY_LOCK` / title: draft_marker_packet - Draft
+- `P320_TERMINAL_BACKLOG_TRIAGE_LOCK` / title: draft_marker_packet - Draft
+- `P321_BLACK_KEEL_CLAIM_POOL_CHARTER` / title: draft_marker_packet - Draft
+- `P322_MASKED_DEEP_REACH_BENEFICIARY_CLAUSE` / title: draft_marker_packet - Draft
+- `P323_ORBITAL_RECOVERY_WINDOW_PROTOCOL` / title: draft_marker_packet - Draft
+- `P324_SALVAGE_CARRIER_AUTONOMY_LIMITS` / title: draft_marker_packet - Draft
+- `P325_PLAYER_LIEN_CONTRACT_START_CARD` / title: draft_marker_packet - Draft
+- `P326_SANITIZED_ACCIDENT_REPLY_WINDOW` / title: draft_marker_packet - Draft
+- `P327_LEGAL_INSURANCE_AUTOMATED_PING` / title: draft_marker_packet - Draft
+- `P328_RECOVERY_COMPLIANCE_COORDINATE_DEMAND` / title: draft_marker_packet - Draft
+- `P329_DEEP_REACH_FACTION_MESSAGE_SPLIT` / title: draft_marker_packet - Draft
+- `P330_BLACKOUT_WINDOW_SIGNAL_DECAY` / title: draft_marker_packet - Draft
+- `P331_CONDUCTIVE_BIOFILM_REPAIR_BUS` / title: draft_marker_packet - Draft
+- `P332_ACOUSTIC_FILTER_ORGAN_RELAY` / title: draft_marker_packet - Draft
+- `P333_SHELL_SEALANT_PRESSURE_GROWTH` / title: draft_marker_packet - Draft
+- `P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP` / title: draft_marker_packet - Draft
+- `P335_VENT_MICRONODE_POWER_NEST` / title: draft_marker_packet - Draft
+- `P336_MATERIAL_EXIT_RECEIPT_AUDIT` / title: draft_marker_packet - Draft
+- `P337_PARTIAL_RETURN_LIEN_EXTENSION` / title: draft_marker_packet - Draft
+- `P338_QUARANTINE_HOLD_INTERROGATION_RECORD` / title: draft_marker_packet - Draft
+- `P339_CORPORATE_COORDINATE_CAPTURE_RECORD` / title: draft_marker_packet - Draft
+- `P340_PUBLIC_LEDGER_AFTERSHOCK_RECORD` / title: draft_marker_packet - Draft
+- `P341_NEEDLEPROBE_PRECURSOR_PROGRAM` / title: draft_marker_packet - Draft
+- `P342_BEAM_SAIL_AND_PELLET_LANE` / title: draft_marker_packet - Draft
+- `P343_SEED_SHIP_BRAKING_ARCHITECTURE` / title: draft_marker_packet - Draft
+- `P344_SYSTEM_CARRIER_TUG_STACK` / title: draft_marker_packet - Draft
+- Additional 2644 candidates omitted from this summary; see `localization_issue_candidates.csv`.
+
+## uk_UA (ltr)
+- `P046_PUMP_ROOM_HANDSHAKE` / title: english_fallback_packet - Pump Room Handshake
+- `P047_HATCH_SEAL_LEDGER` / title: english_fallback_packet - Hatch Seal Ledger
+- `P048_CABLE_SPLICE_SCAR` / title: english_fallback_packet - Cable Splice Scar
+- `P049_SONAR_RETURN_ROUTE` / title: english_fallback_packet - Sonar Return Route
+- `P050_SALVAGE_TOOL_CUSTODY` / title: english_fallback_packet - Salvage Tool Custody
+- `P051_LIGHT_DELAY_AUTHORITY` / title: english_fallback_packet - Light-Delay Authority
+- `P052_BLACK_KEEL_TARIFF_TABLE` / title: english_fallback_packet - Black Keel Tariff Table
+- `P053_MARAUDER_GRAFFITI_MASKS` / title: english_fallback_packet - Marauder Graffiti Masks
+- `P054_RELAY_QUEUE_DRIFT` / title: english_fallback_packet - Relay Queue Drift
+- `P055_CORPORATE_RESPONSE_LEDGER` / title: english_fallback_packet - Corporate Response Ledger
+- `P056_EX_DEEP_REACH_MARAUDER` / title: english_fallback_packet - Ex-Deep-Reach Marauder
+- `P057_GREAT_TIDE_LIABILITY_CHAIN` / title: english_fallback_packet - Great Tide Liability Chain
+- `P058_BLACK_KEEL_CLAIM_HOOKS` / title: english_fallback_packet - Black Keel Claim Hooks
+- `P059_ESCAPE_CHAIN_ASSEMBLY` / title: english_fallback_packet - Escape Chain Assembly
+- `P060_FIRST_HOUR_SPINE` / title: english_fallback_packet - First Hour Spine
+- `P061_MAINTENANCE_ECOLOGY` / title: english_fallback_packet - Maintenance Ecology
+- `P062_MARA_VENN_TIDE_MODEL` / title: english_fallback_packet - Mara Venn Tide Model
+- `P063_JUNO_KADE_EVACUATION_HOLD` / title: english_fallback_packet - Juno Kade Evacuation Hold
+- `P064_REN_OKOYE_PUMP_63` / title: english_fallback_packet - Ren Okoye Pump 63
+- `P065_SAHANA_IQBAL_ATLAS_SAFETY` / title: english_fallback_packet - Sahana Iqbal Atlas Safety
+- `P066_LIAN_TORRES_LAST_PACKET` / title: english_fallback_packet - Lian Torres Last Packet
+- `P067_OSKAR_NEUMANN_PRESSURE_FORGE` / title: english_fallback_packet - Oskar Neumann Pressure Forge
+- `P068_AYA_MORITA_REPAIR_MEDICINE` / title: english_fallback_packet - Aya Morita Repair Medicine
+- `P069_PAVEL_SORN_PROCEDURE_HOLD` / title: english_fallback_packet - Pavel Sorn Procedure Hold
+- `P070_DEEP_REACH_PRESENT_WINDOWS` / title: english_fallback_packet - Deep Reach Present Windows
+- `P071_SOL_CORE_AUTHORITY` / title: english_fallback_packet - Sol Core Authority
+- `P072_CENTAURI_COMPACT_LEGITIMACY` / title: english_fallback_packet - Centauri Compact Legitimacy
+- `P073_BARNARD_YARDS_MARAUDER_ORIGIN` / title: english_fallback_packet - Barnard Yards Marauder Origin
+- `P074_TAU_CETI_PUBLIC_LEDGER` / title: english_fallback_packet - Tau Ceti Public Ledger
+- `P075_LUYTEN_JUNCTION_PACKET_CUSTODY` / title: english_fallback_packet - Luyten Junction Packet Custody
+- `P076_RAN_AEGIR_ANCHOR` / title: english_fallback_packet - Ran / Aegir Anchor
+- `P077_AEGIR_MOON_LADDER` / title: english_fallback_packet - Aegir Moon Ladder
+- `P078_INNER_MOON_RELAY_HAZARDS` / title: english_fallback_packet - Inner Moon Relay Hazards
+- `P079_HECTON8_ORBIT_TIDE_GEOMETRY` / title: english_fallback_packet - HECTON-8 Orbit / Tide Geometry
+- `P080_OUTER_MOON_COLD_CLAIMS` / title: english_fallback_packet - Outer Moon Cold Claims
+- `P081_GREAT_TIDE_PHYSICS_RECORD` / title: english_fallback_packet - Great Tide Physics Record
+- `P082_PRESSURE_GLASS_FORMATION` / title: english_fallback_packet - Pressure Glass Formation
+- `P083_BRINE_CANYON_ROUTE_LADDER` / title: english_fallback_packet - Brine Canyon Route Ladder
+- `P084_VENT_FORGE_GEOTHERMAL_ENGINE` / title: english_fallback_packet - Vent Forge Geothermal Engine
+- `P085_BIOMETAL_RESOURCE_STACK` / title: english_fallback_packet - Biometal Resource Stack
+- `P086_AEGIR_RECLAMATION_POOL` / title: english_fallback_packet - Aegir Reclamation Pool
+- `P087_KEELMARK_MUTUAL_CUSTODY` / title: english_fallback_packet - Keelmark Mutual Custody
+- `P088_TONNE_WINDOW_DEBT` / title: english_fallback_packet - Tonne-Window Debt
+- `P089_BLACK_KEEL_FIRST_VOICE` / title: english_fallback_packet - Black Keel First Voice
+- `P090_DEEP_REACH_PRIORITY_HOOK` / title: english_fallback_packet - Deep Reach Priority Hook
+- `P091_COLLISION_FRACTURED_MOON` / title: english_fallback_packet - Collision-Fractured Moon
+- `P092_GLOBAL_OCEAN_DEPTH_BANDS` / title: english_fallback_packet - Global Ocean Depth Bands
+- `P093_ACCESSIBLE_SEAFLOOR_WINDOWS` / title: english_fallback_packet - Accessible Seafloor Windows
+- `P094_SEED_GEOLOGY_INVARIANTS` / title: english_fallback_packet - Seed Geology Invariants
+- `P095_PRESSURE_CONTAINMENT_FAILURE` / title: english_fallback_packet - Pressure Containment Failure
+- `P096_ATLAS_PERSON_BOUNDARY` / title: english_fallback_packet - Atlas Person Boundary
+- `P097_RECOVERY_COMPLIANCE_OFFICE` / title: english_fallback_packet - Recovery Compliance Office
+- `P098_FALSE_ENDING_TAXONOMY` / title: english_fallback_packet - False Ending Taxonomy
+- `P099_MARAUDER_DOSSIER_PERSISTENCE` / title: english_fallback_packet - Marauder Dossier Persistence
+- `P100_FINAL_CHOICE_PAYLOAD` / title: english_fallback_packet - Final Choice Payload
+- `P101_NO_FTL_ROUTE_ECONOMY` / title: english_fallback_packet - No-FTL Route Economy
+- `P102_BEAM_SAIL_PROBE_ERA` / title: english_fallback_packet - Beam-Sail Probe Era
+- `P103_PELLET_FUSION_FREIGHT` / title: english_fallback_packet - Pellet-Fusion Freight
+- `P104_RAN_B_H8_PUBLIC_CATALOG` / title: english_fallback_packet - RAN-B:H8 Public Catalog
+- `P105_BLACK_KEEL_IN_SYSTEM_TENDER` / title: english_fallback_packet - Black Keel In-System Tender
+- `P106_ILIYA_VARNEK_TIDE_MARGIN` / title: english_fallback_packet - Iliya Varnek Tide Margin
+- `P107_SELENE_ARENDT_ATLAS_WEIGHTING` / title: english_fallback_packet - Selene Arendt Atlas Weighting
+- `P108_NOOR_HALDANE_EVAC_CERT` / title: english_fallback_packet - Noor Haldane Evac Cert
+- `P109_MAREK_IBARRA_LOSS_CONVERSION` / title: english_fallback_packet - Marek Ibarra Loss Conversion
+- `P110_VERA_SATO_REN_RETURN_ACTION` / title: english_fallback_packet - Vera Sato-Ren Return Action
+- `P111_MANUAL_BILGE_PUMP_KIT` / title: english_fallback_packet - Manual Bilge Pump Kit
+- `P112_COLD_SEALANT_PATCH_GUN` / title: english_fallback_packet - Cold Sealant Patch Gun
+- `P113_LOW_POWER_INDUCTION_CUTTER` / title: english_fallback_packet - Low-Power Induction Cutter
+- `P114_ACOUSTIC_PINGER_LINE` / title: english_fallback_packet - Acoustic Pinger Line
+- `P115_P63_FIELD_FABRICATOR` / title: english_fallback_packet - P-63 Field Fabricator
+- `P116_NATIVE_SULFIDE_SALT_STACK` / title: english_fallback_packet - Native Sulfide Salt Stack
+- `P117_NOBLE_GAS_BRINE_POCKETS` / title: english_fallback_packet - Noble Gas Brine Pockets
+- `P118_DEEP_REACH_PRESSURE_CERAMICS` / title: english_fallback_packet - Deep Reach Pressure Ceramics
+- `P119_ATLAS_BIOFIBER_SEALANT` / title: english_fallback_packet - Atlas Biofiber Sealant
+- `P120_BIOMETAL_SENSOR_TAGS` / title: english_fallback_packet - Biometal Sensor Tags
+- `P121_DOMAIN_CIVIC_CORPORATE_SPLIT` / title: english_fallback_packet - Domain Civic-Corporate Split
+- `P122_MARAUDER_LEGAL_LOOPHOLE` / title: english_fallback_packet - Marauder Legal Loophole
+- `P123_SALVAGE_TRUTH_EVIDENCE_STATUS` / title: english_fallback_packet - Salvage Truth Evidence Status
+- `P124_NORMAL_CITIZEN_AEGIR_MEMORY` / title: english_fallback_packet - Normal Citizen Aegir Memory
+- `P125_DEEP_REACH_ORIGIN_CHAIN` / title: english_fallback_packet - Deep Reach Origin Chain
+- `P126_ATLAS_PUBLIC_FRONT` / title: english_fallback_packet - Atlas Public Front
+- `P127_ATLAS_INSURANCE_PERSONHOOD_STATUS` / title: english_fallback_packet - Atlas Insurance Personhood Status
+- `P128_ATLAS_CLASSIFIED_WEIGHTING_LAYER` / title: english_fallback_packet - Atlas Classified Weighting Layer
+- `P129_ATLAS_SHUTDOWN_ETHIC_FRAME` / title: english_fallback_packet - Atlas Shutdown Ethic Frame
+- `P130_ATLAS_PUBLIC_MEMORY_AFTER_2147` / title: english_fallback_packet - Atlas Public Memory After 2147
+- `P131_MATERIAL_EXIT_BITTER_CREDITS` / title: english_fallback_packet - Material Exit Bitter Credits
+- `P132_PARTIAL_EXIT_SAME_SEED_RETURN` / title: english_fallback_packet - Partial Exit Same-Seed Return
+- `P133_CORPORATE_CAPTURE_BAD_END` / title: english_fallback_packet - Corporate Capture Bad End
+- `P134_QUARANTINE_HOLD_STALE_AIR` / title: english_fallback_packet - Quarantine Hold Stale Air
+- `P135_PUBLIC_LEDGER_LEAK_ROUTE` / title: english_fallback_packet - Public Ledger Leak Route
+- `P136_DOSSIER_RUMOR_UNLOCKS` / title: english_fallback_packet - Dossier Rumor Unlocks
+- `P137_RISKIER_CONTRACT_SEEDS` / title: english_fallback_packet - Riskier Contract Seeds
+- `P138_FALSE_ENDING_COUNT_LADDER` / title: english_fallback_packet - False Ending Count Ladder
+- `P139_STARTING_CLAIM_VARIANTS` / title: english_fallback_packet - Starting Claim Variants
+- `P140_DOSSIER_KNOWLEDGE_NOT_POWER` / title: english_fallback_packet - Dossier Knowledge Not Power
+- `P141_RAN_AEGIR_DISTANCE_MODEL` / title: english_fallback_packet - Ran-Aegir Distance Model
+- `P142_PROBE_PACKET_TRAVEL_TIMES` / title: english_fallback_packet - Probe Packet Travel Times
+- `P143_HEAVY_FREIGHT_STAGING_TIME` / title: english_fallback_packet - Heavy Freight Staging Time
+- `P144_HUMAN_CREW_ROTATION_TRANSIT` / title: english_fallback_packet - Human Crew Rotation Transit
+- `P145_RELAY_MESSAGE_LAG` / title: english_fallback_packet - Relay Message Lag
+- `P146_DEEP_REACH_PUBLIC_COMBINE` / title: english_fallback_packet - Deep Reach Public Combine
+- `P147_AEGIR_CONTINUITY_HOLDINGS` / title: english_fallback_packet - Aegir Continuity Holdings
+- `P148_ATLAS_CONTINUITY_OFFICE` / title: english_fallback_packet - Atlas Continuity Office
+- `P149_KEELMARK_LOSS_DESK` / title: english_fallback_packet - Keelmark Loss Desk
+- `P150_RECOVERY_COMPLIANCE_CHAIN` / title: english_fallback_packet - Recovery Compliance Chain
+- `P151_BLACK_KEEL_CONTRACT_APPROACH` / title: english_fallback_packet - Black Keel Contract Approach
+- `P152_DROP_CAPSULE_DAMAGE_SEQUENCE` / title: english_fallback_packet - Drop Capsule Damage Sequence
+- `P153_SHALLOW_ANNEX_P63_PUMP_ROOM` / title: english_fallback_packet - Shallow Annex P-63 Pump Room
+- `P154_FIRST_SANITIZED_ACCIDENT_PACKET` / title: english_fallback_packet - First Sanitized Accident Packet
+- `P155_FIRST_ATLAS_REPAIR_TRACE` / title: english_fallback_packet - First Atlas Repair Trace
+- `P156_SHIFT_CREWS_NOT_HEROES` / title: english_fallback_packet - Shift Crews Not Heroes
+- `P157_WORKER_JOB_CARDS` / title: english_fallback_packet - Worker Job Cards
+- `P158_LOCKER_NAME_PROTOCOL` / title: english_fallback_packet - Locker Name Protocol
+- `P159_MEDICAL_TRIAGE_LEDGER` / title: english_fallback_packet - Medical Triage Ledger
+- `P160_MARAUDER_CORRECTION_LAYER` / title: english_fallback_packet - Marauder Correction Layer
+- `P161_DOMAIN_DISTANCE_SCALE` / title: english_fallback_packet - Domain Distance Scale
+- `P162_DOMAIN_POPULATION_AUTHORITY_SCALE` / title: english_fallback_packet - Population And Authority Scale
+- `P163_PUBLIC_ROUTE_NAMES` / title: english_fallback_packet - Public Route Names
+- `P164_TRANSIT_DURATION_BANDS` / title: english_fallback_packet - Transit Duration Bands
+- `P165_DEEP_REACH_SUBOFFICE_REGISTRY` / title: english_fallback_packet - Deep Reach Suboffice Registry
+- Additional 6374 candidates omitted from this summary; see `localization_issue_candidates.csv`.
+
+## ar_SA (rtl)
+- `P046_PUMP_ROOM_HANDSHAKE` / title: english_fallback_packet - Pump Room Handshake
+- `P047_HATCH_SEAL_LEDGER` / title: english_fallback_packet - Hatch Seal Ledger
+- `P048_CABLE_SPLICE_SCAR` / title: english_fallback_packet - Cable Splice Scar
+- `P049_SONAR_RETURN_ROUTE` / title: english_fallback_packet - Sonar Return Route
+- `P050_SALVAGE_TOOL_CUSTODY` / title: english_fallback_packet - Salvage Tool Custody
+- `P051_LIGHT_DELAY_AUTHORITY` / title: english_fallback_packet - Light-Delay Authority
+- `P052_BLACK_KEEL_TARIFF_TABLE` / title: english_fallback_packet - Black Keel Tariff Table
+- `P053_MARAUDER_GRAFFITI_MASKS` / title: english_fallback_packet - Marauder Graffiti Masks
+- `P054_RELAY_QUEUE_DRIFT` / title: english_fallback_packet - Relay Queue Drift
+- `P055_CORPORATE_RESPONSE_LEDGER` / title: english_fallback_packet - Corporate Response Ledger
+- `P056_EX_DEEP_REACH_MARAUDER` / title: english_fallback_packet - Ex-Deep-Reach Marauder
+- `P057_GREAT_TIDE_LIABILITY_CHAIN` / title: english_fallback_packet - Great Tide Liability Chain
+- `P058_BLACK_KEEL_CLAIM_HOOKS` / title: english_fallback_packet - Black Keel Claim Hooks
+- `P059_ESCAPE_CHAIN_ASSEMBLY` / title: english_fallback_packet - Escape Chain Assembly
+- `P060_FIRST_HOUR_SPINE` / title: english_fallback_packet - First Hour Spine
+- `P061_MAINTENANCE_ECOLOGY` / title: english_fallback_packet - Maintenance Ecology
+- `P062_MARA_VENN_TIDE_MODEL` / title: english_fallback_packet - Mara Venn Tide Model
+- `P063_JUNO_KADE_EVACUATION_HOLD` / title: english_fallback_packet - Juno Kade Evacuation Hold
+- `P064_REN_OKOYE_PUMP_63` / title: english_fallback_packet - Ren Okoye Pump 63
+- `P065_SAHANA_IQBAL_ATLAS_SAFETY` / title: english_fallback_packet - Sahana Iqbal Atlas Safety
+- `P066_LIAN_TORRES_LAST_PACKET` / title: english_fallback_packet - Lian Torres Last Packet
+- `P067_OSKAR_NEUMANN_PRESSURE_FORGE` / title: english_fallback_packet - Oskar Neumann Pressure Forge
+- `P068_AYA_MORITA_REPAIR_MEDICINE` / title: english_fallback_packet - Aya Morita Repair Medicine
+- `P069_PAVEL_SORN_PROCEDURE_HOLD` / title: english_fallback_packet - Pavel Sorn Procedure Hold
+- `P070_DEEP_REACH_PRESENT_WINDOWS` / title: english_fallback_packet - Deep Reach Present Windows
+- `P071_SOL_CORE_AUTHORITY` / title: english_fallback_packet - Sol Core Authority
+- `P072_CENTAURI_COMPACT_LEGITIMACY` / title: english_fallback_packet - Centauri Compact Legitimacy
+- `P073_BARNARD_YARDS_MARAUDER_ORIGIN` / title: english_fallback_packet - Barnard Yards Marauder Origin
+- `P074_TAU_CETI_PUBLIC_LEDGER` / title: english_fallback_packet - Tau Ceti Public Ledger
+- `P075_LUYTEN_JUNCTION_PACKET_CUSTODY` / title: english_fallback_packet - Luyten Junction Packet Custody
+- `P076_RAN_AEGIR_ANCHOR` / title: english_fallback_packet - Ran / Aegir Anchor
+- `P077_AEGIR_MOON_LADDER` / title: english_fallback_packet - Aegir Moon Ladder
+- `P078_INNER_MOON_RELAY_HAZARDS` / title: english_fallback_packet - Inner Moon Relay Hazards
+- `P079_HECTON8_ORBIT_TIDE_GEOMETRY` / title: english_fallback_packet - HECTON-8 Orbit / Tide Geometry
+- `P080_OUTER_MOON_COLD_CLAIMS` / title: english_fallback_packet - Outer Moon Cold Claims
+- `P081_GREAT_TIDE_PHYSICS_RECORD` / title: english_fallback_packet - Great Tide Physics Record
+- `P082_PRESSURE_GLASS_FORMATION` / title: english_fallback_packet - Pressure Glass Formation
+- `P083_BRINE_CANYON_ROUTE_LADDER` / title: english_fallback_packet - Brine Canyon Route Ladder
+- `P084_VENT_FORGE_GEOTHERMAL_ENGINE` / title: english_fallback_packet - Vent Forge Geothermal Engine
+- `P085_BIOMETAL_RESOURCE_STACK` / title: english_fallback_packet - Biometal Resource Stack
+- `P086_AEGIR_RECLAMATION_POOL` / title: english_fallback_packet - Aegir Reclamation Pool
+- `P087_KEELMARK_MUTUAL_CUSTODY` / title: english_fallback_packet - Keelmark Mutual Custody
+- `P088_TONNE_WINDOW_DEBT` / title: english_fallback_packet - Tonne-Window Debt
+- `P089_BLACK_KEEL_FIRST_VOICE` / title: english_fallback_packet - Black Keel First Voice
+- `P090_DEEP_REACH_PRIORITY_HOOK` / title: english_fallback_packet - Deep Reach Priority Hook
+- `P091_COLLISION_FRACTURED_MOON` / title: english_fallback_packet - Collision-Fractured Moon
+- `P092_GLOBAL_OCEAN_DEPTH_BANDS` / title: english_fallback_packet - Global Ocean Depth Bands
+- `P093_ACCESSIBLE_SEAFLOOR_WINDOWS` / title: english_fallback_packet - Accessible Seafloor Windows
+- `P094_SEED_GEOLOGY_INVARIANTS` / title: english_fallback_packet - Seed Geology Invariants
+- `P095_PRESSURE_CONTAINMENT_FAILURE` / title: english_fallback_packet - Pressure Containment Failure
+- `P096_ATLAS_PERSON_BOUNDARY` / title: english_fallback_packet - Atlas Person Boundary
+- `P097_RECOVERY_COMPLIANCE_OFFICE` / title: english_fallback_packet - Recovery Compliance Office
+- `P098_FALSE_ENDING_TAXONOMY` / title: english_fallback_packet - False Ending Taxonomy
+- `P099_MARAUDER_DOSSIER_PERSISTENCE` / title: english_fallback_packet - Marauder Dossier Persistence
+- `P100_FINAL_CHOICE_PAYLOAD` / title: english_fallback_packet - Final Choice Payload
+- `P101_NO_FTL_ROUTE_ECONOMY` / title: english_fallback_packet - No-FTL Route Economy
+- `P102_BEAM_SAIL_PROBE_ERA` / title: english_fallback_packet - Beam-Sail Probe Era
+- `P103_PELLET_FUSION_FREIGHT` / title: english_fallback_packet - Pellet-Fusion Freight
+- `P104_RAN_B_H8_PUBLIC_CATALOG` / title: english_fallback_packet - RAN-B:H8 Public Catalog
+- `P105_BLACK_KEEL_IN_SYSTEM_TENDER` / title: english_fallback_packet - Black Keel In-System Tender
+- `P106_ILIYA_VARNEK_TIDE_MARGIN` / title: english_fallback_packet - Iliya Varnek Tide Margin
+- `P107_SELENE_ARENDT_ATLAS_WEIGHTING` / title: english_fallback_packet - Selene Arendt Atlas Weighting
+- `P108_NOOR_HALDANE_EVAC_CERT` / title: english_fallback_packet - Noor Haldane Evac Cert
+- `P109_MAREK_IBARRA_LOSS_CONVERSION` / title: english_fallback_packet - Marek Ibarra Loss Conversion
+- `P110_VERA_SATO_REN_RETURN_ACTION` / title: english_fallback_packet - Vera Sato-Ren Return Action
+- `P111_MANUAL_BILGE_PUMP_KIT` / title: english_fallback_packet - Manual Bilge Pump Kit
+- `P112_COLD_SEALANT_PATCH_GUN` / title: english_fallback_packet - Cold Sealant Patch Gun
+- `P113_LOW_POWER_INDUCTION_CUTTER` / title: english_fallback_packet - Low-Power Induction Cutter
+- `P114_ACOUSTIC_PINGER_LINE` / title: english_fallback_packet - Acoustic Pinger Line
+- `P115_P63_FIELD_FABRICATOR` / title: english_fallback_packet - P-63 Field Fabricator
+- `P116_NATIVE_SULFIDE_SALT_STACK` / title: english_fallback_packet - Native Sulfide Salt Stack
+- `P117_NOBLE_GAS_BRINE_POCKETS` / title: english_fallback_packet - Noble Gas Brine Pockets
+- `P118_DEEP_REACH_PRESSURE_CERAMICS` / title: english_fallback_packet - Deep Reach Pressure Ceramics
+- `P119_ATLAS_BIOFIBER_SEALANT` / title: english_fallback_packet - Atlas Biofiber Sealant
+- `P120_BIOMETAL_SENSOR_TAGS` / title: english_fallback_packet - Biometal Sensor Tags
+- `P121_DOMAIN_CIVIC_CORPORATE_SPLIT` / title: english_fallback_packet - Domain Civic-Corporate Split
+- `P122_MARAUDER_LEGAL_LOOPHOLE` / title: english_fallback_packet - Marauder Legal Loophole
+- `P123_SALVAGE_TRUTH_EVIDENCE_STATUS` / title: english_fallback_packet - Salvage Truth Evidence Status
+- `P124_NORMAL_CITIZEN_AEGIR_MEMORY` / title: english_fallback_packet - Normal Citizen Aegir Memory
+- `P125_DEEP_REACH_ORIGIN_CHAIN` / title: english_fallback_packet - Deep Reach Origin Chain
+- `P126_ATLAS_PUBLIC_FRONT` / title: english_fallback_packet - Atlas Public Front
+- `P127_ATLAS_INSURANCE_PERSONHOOD_STATUS` / title: english_fallback_packet - Atlas Insurance Personhood Status
+- `P128_ATLAS_CLASSIFIED_WEIGHTING_LAYER` / title: english_fallback_packet - Atlas Classified Weighting Layer
+- `P129_ATLAS_SHUTDOWN_ETHIC_FRAME` / title: english_fallback_packet - Atlas Shutdown Ethic Frame
+- `P130_ATLAS_PUBLIC_MEMORY_AFTER_2147` / title: english_fallback_packet - Atlas Public Memory After 2147
+- `P131_MATERIAL_EXIT_BITTER_CREDITS` / title: english_fallback_packet - Material Exit Bitter Credits
+- `P132_PARTIAL_EXIT_SAME_SEED_RETURN` / title: english_fallback_packet - Partial Exit Same-Seed Return
+- `P133_CORPORATE_CAPTURE_BAD_END` / title: english_fallback_packet - Corporate Capture Bad End
+- `P134_QUARANTINE_HOLD_STALE_AIR` / title: english_fallback_packet - Quarantine Hold Stale Air
+- `P135_PUBLIC_LEDGER_LEAK_ROUTE` / title: english_fallback_packet - Public Ledger Leak Route
+- `P136_DOSSIER_RUMOR_UNLOCKS` / title: english_fallback_packet - Dossier Rumor Unlocks
+- `P137_RISKIER_CONTRACT_SEEDS` / title: english_fallback_packet - Riskier Contract Seeds
+- `P138_FALSE_ENDING_COUNT_LADDER` / title: english_fallback_packet - False Ending Count Ladder
+- `P139_STARTING_CLAIM_VARIANTS` / title: english_fallback_packet - Starting Claim Variants
+- `P140_DOSSIER_KNOWLEDGE_NOT_POWER` / title: english_fallback_packet - Dossier Knowledge Not Power
+- `P141_RAN_AEGIR_DISTANCE_MODEL` / title: english_fallback_packet - Ran-Aegir Distance Model
+- `P142_PROBE_PACKET_TRAVEL_TIMES` / title: english_fallback_packet - Probe Packet Travel Times
+- `P143_HEAVY_FREIGHT_STAGING_TIME` / title: english_fallback_packet - Heavy Freight Staging Time
+- `P144_HUMAN_CREW_ROTATION_TRANSIT` / title: english_fallback_packet - Human Crew Rotation Transit
+- `P145_RELAY_MESSAGE_LAG` / title: english_fallback_packet - Relay Message Lag
+- `P146_DEEP_REACH_PUBLIC_COMBINE` / title: english_fallback_packet - Deep Reach Public Combine
+- `P147_AEGIR_CONTINUITY_HOLDINGS` / title: english_fallback_packet - Aegir Continuity Holdings
+- `P148_ATLAS_CONTINUITY_OFFICE` / title: english_fallback_packet - Atlas Continuity Office
+- `P149_KEELMARK_LOSS_DESK` / title: english_fallback_packet - Keelmark Loss Desk
+- `P150_RECOVERY_COMPLIANCE_CHAIN` / title: english_fallback_packet - Recovery Compliance Chain
+- `P151_BLACK_KEEL_CONTRACT_APPROACH` / title: english_fallback_packet - Black Keel Contract Approach
+- `P152_DROP_CAPSULE_DAMAGE_SEQUENCE` / title: english_fallback_packet - Drop Capsule Damage Sequence
+- `P153_SHALLOW_ANNEX_P63_PUMP_ROOM` / title: english_fallback_packet - Shallow Annex P-63 Pump Room
+- `P154_FIRST_SANITIZED_ACCIDENT_PACKET` / title: english_fallback_packet - First Sanitized Accident Packet
+- `P155_FIRST_ATLAS_REPAIR_TRACE` / title: english_fallback_packet - First Atlas Repair Trace
+- `P156_SHIFT_CREWS_NOT_HEROES` / title: english_fallback_packet - Shift Crews Not Heroes
+- `P157_WORKER_JOB_CARDS` / title: english_fallback_packet - Worker Job Cards
+- `P158_LOCKER_NAME_PROTOCOL` / title: english_fallback_packet - Locker Name Protocol
+- `P159_MEDICAL_TRIAGE_LEDGER` / title: english_fallback_packet - Medical Triage Ledger
+- `P160_MARAUDER_CORRECTION_LAYER` / title: english_fallback_packet - Marauder Correction Layer
+- `P161_DOMAIN_DISTANCE_SCALE` / title: english_fallback_packet - Domain Distance Scale
+- `P162_DOMAIN_POPULATION_AUTHORITY_SCALE` / title: english_fallback_packet - Population And Authority Scale
+- `P163_PUBLIC_ROUTE_NAMES` / title: english_fallback_packet - Public Route Names
+- `P164_TRANSIT_DURATION_BANDS` / title: english_fallback_packet - Transit Duration Bands
+- `P165_DEEP_REACH_SUBOFFICE_REGISTRY` / title: english_fallback_packet - Deep Reach Suboffice Registry
+- Additional 6374 candidates omitted from this summary; see `localization_issue_candidates.csv`.
+
+## id_ID (ltr)
+- `P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT` / title: draft_marker_packet - Placeholder
+- `P221_PHOTIC_MAT_BASELINE` / title: draft_marker_packet - Draft
+- `P222_GLASS_GRAZER_SCHOOLS` / title: draft_marker_packet - Draft
+- `P223_LANTERN_DRIFT_BLOOM` / title: draft_marker_packet - Draft
+- `P224_SHELL_CLAMP_REEF` / title: draft_marker_packet - Draft
+- `P225_SHALLOW_PREDATOR_SHADOW_RULE` / title: draft_marker_packet - Draft
+- `P226_BRINE_VANE_FORESTS` / title: draft_marker_packet - Draft
+- `P227_DENSITY_SKATER_FAUNA` / title: draft_marker_packet - Draft
+- `P228_VENT_ANCHOR_COLONIES` / title: draft_marker_packet - Draft
+- `P229_WIDE_FILTER_BODY_TRACE` / title: draft_marker_packet - Draft
+- `P230_SILT_AMBUSHER_TELEGRAPH` / title: draft_marker_packet - Draft
+- `P231_CONDUCTIVE_BIOFILM_CABLE_SKIN` / title: draft_marker_packet - Draft
+- `P232_ACOUSTIC_FILTER_ORGAN_RELAY` / title: draft_marker_packet - Draft
+- `P233_SHELL_SEALANT_FRACTURE_GROWTH` / title: draft_marker_packet - Draft
+- `P234_SENSOR_TAGGED_FAUNA` / title: draft_marker_packet - Draft
+- `P235_VENT_MICRONODE_NESTS` / title: draft_marker_packet - Draft
+- `P236_BLACK_KEEL_TENDER_INTERIOR_LIMITS` / title: draft_marker_packet - Draft
+- `P237_DROP_CAPSULE_DAMAGE_PARTS` / title: draft_marker_packet - Draft
+- `P238_P63_FABRICATOR_AUTHORITY_LIMITS` / title: draft_marker_packet - Draft
+- `P239_PRESSURE_SUIT_SERVICE_GRADES` / title: draft_marker_packet - Draft
+- `P240_SONAR_PINGER_ROUTE_BEACONS` / title: draft_marker_packet - Draft
+- `P241_LIEN_SEVERITY_SEED_CLASS` / title: draft_marker_packet - Draft
+- `P242_STORM_WINDOW_RISK_CARD` / title: draft_marker_packet - Draft
+- `P243_SAMPLE_CUSTODY_GRADE_CARD` / title: draft_marker_packet - Draft
+- `P244_EVIDENCE_ORDER_DEPTH_CARD` / title: draft_marker_packet - Draft
+- `P245_DEEP_REACH_CLAUSE_WEIGHT_CARD` / title: draft_marker_packet - Draft
+- `P246_BLACK_KEEL_APPROACH_AUDIO_PACKET` / title: draft_marker_packet - Draft
+- `P247_DROP_CAPSULE_DIAGNOSTIC_READOUT` / title: draft_marker_packet - Draft
+- `P248_P63_PUMP_ROOM_FIRST_REPAIR_TASK` / title: draft_marker_packet - Draft
+- `P249_SANITIZED_ACCIDENT_PACKET_BODY` / title: draft_marker_packet - Draft
+- `P250_FIRST_ATLAS_REPAIR_TRACE_SCENE` / title: draft_marker_packet - Draft
+- `P251_HECTON8_PUBLIC_PRIMER_ARTICLE` / title: draft_marker_packet - Draft
+- `P252_AEGIR_SYSTEM_PUBLIC_PRIMER_ARTICLE` / title: draft_marker_packet - Draft
+- `P253_DEEP_REACH_PUBLIC_DOSSIER_ARTICLE` / title: draft_marker_packet - Draft
+- `P254_ATLAS6_SPOILER_GATED_ARTICLE` / title: draft_marker_packet - Draft
+- `P255_BLUE_DEBT_PUBLIC_RESOURCE_ARTICLE` / title: draft_marker_packet - Draft
+- `P256_PROPER_NOUN_TRANSLATION_LOCK_TABLE` / title: draft_marker_packet - Draft
+- `P257_UNIT_NUMBER_STYLE_CARD` / title: draft_marker_packet - Draft
+- `P258_TERMINAL_VOICE_REGISTER_RULE` / title: draft_marker_packet - Draft
+- `P259_AUDIO_BARK_FAMILY_RULES` / title: draft_marker_packet - Draft
+- `P260_RTL_CJK_FONT_RISK_CARD` / title: draft_marker_packet - Draft
+- `P261_RESOURCE_YIELD_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P262_INVENTORY_STACK_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P263_ESCAPE_RECIPE_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P264_CONTRACT_RISK_REWARD_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P265_ENDING_PAYOUT_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P266_DOSSIER_START_SCREEN_COPY` / title: draft_marker_packet - Draft
+- `P267_CONTRACT_CARD_FIELD_LABELS` / title: draft_marker_packet - Draft
+- `P268_RUMOR_FAMILY_UI_COPY` / title: draft_marker_packet - Draft
+- `P269_ROUTE_WARNING_UI_COPY` / title: draft_marker_packet - Draft
+- `P270_ENDING_RECORD_UI_COPY` / title: draft_marker_packet - Draft
+- `P271_MATERIAL_PAYOUT_RECORD` / title: draft_marker_packet - Draft
+- `P272_PARTIAL_RETURN_RECORD` / title: draft_marker_packet - Draft
+- `P273_PUBLIC_LEDGER_RECORD` / title: draft_marker_packet - Draft
+- `P274_ATLAS_SEVERANCE_RECORD` / title: draft_marker_packet - Draft
+- `P275_PRESERVE_QUARANTINE_RECORD` / title: draft_marker_packet - Draft
+- `P281_HECTON8_SITE_OPENING_HOOK` / title: draft_marker_packet - Draft
+- `P282_AEGIR_SITE_SYSTEM_MAP_COPY` / title: draft_marker_packet - Draft
+- `P283_DEEP_REACH_SITE_ACCOUNTABILITY_COPY` / title: draft_marker_packet - Draft
+- `P284_ATLAS6_SITE_SPOILER_GATE_COPY` / title: draft_marker_packet - Draft
+- `P285_BLUE_DEBT_SITE_RESOURCE_COPY` / title: draft_marker_packet - Draft
+- `P286_CAPSULE_BLACKBOX_AUDIO_01` / title: draft_marker_packet - Draft
+- `P287_P63_PUMP_ROOM_WORK_ORDER` / title: draft_marker_packet - Draft
+- `P288_WORKER_LOCKER_NAMEPLATE_SAMPLE` / title: draft_marker_packet - Draft
+- `P289_MARAUDER_CORRECTION_NOTE_SAMPLE` / title: draft_marker_packet - Draft
+- `P290_QUARANTINE_RELAY_FRAGMENT` / title: draft_marker_packet - Draft
+- `P291_PHOTIC_MAT_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P292_GLASS_GRAZER_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P293_LANTERN_DRIFT_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P294_BRINE_VANE_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P295_SENSOR_TAGGED_FAUNA_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P296_ABYSSAL_MACHINE_FIELD_WARNING` / title: draft_marker_packet - Draft
+- `P297_ATLAS_BASIN_PRESSURE_GATE` / title: draft_marker_packet - Draft
+- `P298_FACTORY_TEMPLE_ENTRY_FRAGMENT` / title: draft_marker_packet - Draft
+- `P299_PAYLOAD_AUTHORITY_LAST_CHECK` / title: draft_marker_packet - Draft
+- `P300_NO_CLEAN_ENDING_DOSSIER_NOTE` / title: draft_marker_packet - Draft
+- `P301_RESOURCE_YIELD_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P302_STACK_LIMIT_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P303_ESCAPE_RECIPE_COST_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P304_CONTRACT_RISK_REWARD_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P305_ENDING_PAYOUT_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P306_PDA_CODEX_STATE_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P307_SCANNER_STAGE_BINDING_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P308_TERMINAL_SLOT_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P309_DOSSIER_ENDING_RECORD_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P310_LOCALIZED_OVERFLOW_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P311_SITE_HOME_PAGE_COMPOSITION_LOCK` / title: draft_marker_packet - Draft
+- `P312_SITE_AEGIR_SYSTEM_ART_COMPOSITION_LOCK` / title: draft_marker_packet - Draft
+- `P313_SITE_DEEP_REACH_EVIDENCE_COMPOSITION_LOCK` / title: draft_marker_packet - Draft
+- `P314_SITE_ATLAS_SPOILER_COMPOSITION_LOCK` / title: draft_marker_packet - Draft
+- `P315_SOCIAL_DEV_NOTE_COPY_LOCK` / title: draft_marker_packet - Draft
+- `P316_FIRST_HOUR_PLACEMENT_PRIORITY_LOCK` / title: draft_marker_packet - Draft
+- `P317_MID_DEPTH_ROUTE_PLACEMENT_PRIORITY_LOCK` / title: draft_marker_packet - Draft
+- `P318_ECOLOGY_SCAN_PLACEMENT_PRIORITY_LOCK` / title: draft_marker_packet - Draft
+- `P319_FINAL_DESCENT_PLACEMENT_PRIORITY_LOCK` / title: draft_marker_packet - Draft
+- `P320_TERMINAL_BACKLOG_TRIAGE_LOCK` / title: draft_marker_packet - Draft
+- `P321_BLACK_KEEL_CLAIM_POOL_CHARTER` / title: draft_marker_packet - Draft
+- `P322_MASKED_DEEP_REACH_BENEFICIARY_CLAUSE` / title: draft_marker_packet - Draft
+- `P323_ORBITAL_RECOVERY_WINDOW_PROTOCOL` / title: draft_marker_packet - Draft
+- `P324_SALVAGE_CARRIER_AUTONOMY_LIMITS` / title: draft_marker_packet - Draft
+- `P325_PLAYER_LIEN_CONTRACT_START_CARD` / title: draft_marker_packet - Draft
+- `P326_SANITIZED_ACCIDENT_REPLY_WINDOW` / title: draft_marker_packet - Draft
+- `P327_LEGAL_INSURANCE_AUTOMATED_PING` / title: draft_marker_packet - Draft
+- `P328_RECOVERY_COMPLIANCE_COORDINATE_DEMAND` / title: draft_marker_packet - Draft
+- `P329_DEEP_REACH_FACTION_MESSAGE_SPLIT` / title: draft_marker_packet - Draft
+- `P330_BLACKOUT_WINDOW_SIGNAL_DECAY` / title: draft_marker_packet - Draft
+- `P331_CONDUCTIVE_BIOFILM_REPAIR_BUS` / title: draft_marker_packet - Draft
+- `P332_ACOUSTIC_FILTER_ORGAN_RELAY` / title: draft_marker_packet - Draft
+- `P333_SHELL_SEALANT_PRESSURE_GROWTH` / title: draft_marker_packet - Draft
+- `P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP` / title: draft_marker_packet - Draft
+- `P335_VENT_MICRONODE_POWER_NEST` / title: draft_marker_packet - Draft
+- `P336_MATERIAL_EXIT_RECEIPT_AUDIT` / title: draft_marker_packet - Draft
+- `P337_PARTIAL_RETURN_LIEN_EXTENSION` / title: draft_marker_packet - Draft
+- `P338_QUARANTINE_HOLD_INTERROGATION_RECORD` / title: draft_marker_packet - Draft
+- `P339_CORPORATE_COORDINATE_CAPTURE_RECORD` / title: draft_marker_packet - Draft
+- `P340_PUBLIC_LEDGER_AFTERSHOCK_RECORD` / title: draft_marker_packet - Draft
+- `P341_NEEDLEPROBE_PRECURSOR_PROGRAM` / title: draft_marker_packet - Draft
+- `P342_BEAM_SAIL_AND_PELLET_LANE` / title: draft_marker_packet - Draft
+- `P343_SEED_SHIP_BRAKING_ARCHITECTURE` / title: draft_marker_packet - Draft
+- `P344_SYSTEM_CARRIER_TUG_STACK` / title: draft_marker_packet - Draft
+- Additional 2644 candidates omitted from this summary; see `localization_issue_candidates.csv`.
+
+## ko_KR (ltr)
+- `P046_PUMP_ROOM_HANDSHAKE` / title: english_fallback_packet - Pump Room Handshake
+- `P047_HATCH_SEAL_LEDGER` / title: english_fallback_packet - Hatch Seal Ledger
+- `P048_CABLE_SPLICE_SCAR` / title: english_fallback_packet - Cable Splice Scar
+- `P049_SONAR_RETURN_ROUTE` / title: english_fallback_packet - Sonar Return Route
+- `P050_SALVAGE_TOOL_CUSTODY` / title: english_fallback_packet - Salvage Tool Custody
+- `P051_LIGHT_DELAY_AUTHORITY` / title: english_fallback_packet - Light-Delay Authority
+- `P052_BLACK_KEEL_TARIFF_TABLE` / title: english_fallback_packet - Black Keel Tariff Table
+- `P053_MARAUDER_GRAFFITI_MASKS` / title: english_fallback_packet - Marauder Graffiti Masks
+- `P054_RELAY_QUEUE_DRIFT` / title: english_fallback_packet - Relay Queue Drift
+- `P055_CORPORATE_RESPONSE_LEDGER` / title: english_fallback_packet - Corporate Response Ledger
+- `P056_EX_DEEP_REACH_MARAUDER` / title: english_fallback_packet - Ex-Deep-Reach Marauder
+- `P057_GREAT_TIDE_LIABILITY_CHAIN` / title: english_fallback_packet - Great Tide Liability Chain
+- `P058_BLACK_KEEL_CLAIM_HOOKS` / title: english_fallback_packet - Black Keel Claim Hooks
+- `P059_ESCAPE_CHAIN_ASSEMBLY` / title: english_fallback_packet - Escape Chain Assembly
+- `P060_FIRST_HOUR_SPINE` / title: english_fallback_packet - First Hour Spine
+- `P061_MAINTENANCE_ECOLOGY` / title: english_fallback_packet - Maintenance Ecology
+- `P062_MARA_VENN_TIDE_MODEL` / title: english_fallback_packet - Mara Venn Tide Model
+- `P063_JUNO_KADE_EVACUATION_HOLD` / title: english_fallback_packet - Juno Kade Evacuation Hold
+- `P064_REN_OKOYE_PUMP_63` / title: english_fallback_packet - Ren Okoye Pump 63
+- `P065_SAHANA_IQBAL_ATLAS_SAFETY` / title: english_fallback_packet - Sahana Iqbal Atlas Safety
+- `P066_LIAN_TORRES_LAST_PACKET` / title: english_fallback_packet - Lian Torres Last Packet
+- `P067_OSKAR_NEUMANN_PRESSURE_FORGE` / title: english_fallback_packet - Oskar Neumann Pressure Forge
+- `P068_AYA_MORITA_REPAIR_MEDICINE` / title: english_fallback_packet - Aya Morita Repair Medicine
+- `P069_PAVEL_SORN_PROCEDURE_HOLD` / title: english_fallback_packet - Pavel Sorn Procedure Hold
+- `P070_DEEP_REACH_PRESENT_WINDOWS` / title: english_fallback_packet - Deep Reach Present Windows
+- `P071_SOL_CORE_AUTHORITY` / title: english_fallback_packet - Sol Core Authority
+- `P072_CENTAURI_COMPACT_LEGITIMACY` / title: english_fallback_packet - Centauri Compact Legitimacy
+- `P073_BARNARD_YARDS_MARAUDER_ORIGIN` / title: english_fallback_packet - Barnard Yards Marauder Origin
+- `P074_TAU_CETI_PUBLIC_LEDGER` / title: english_fallback_packet - Tau Ceti Public Ledger
+- `P075_LUYTEN_JUNCTION_PACKET_CUSTODY` / title: english_fallback_packet - Luyten Junction Packet Custody
+- `P076_RAN_AEGIR_ANCHOR` / title: english_fallback_packet - Ran / Aegir Anchor
+- `P077_AEGIR_MOON_LADDER` / title: english_fallback_packet - Aegir Moon Ladder
+- `P078_INNER_MOON_RELAY_HAZARDS` / title: english_fallback_packet - Inner Moon Relay Hazards
+- `P079_HECTON8_ORBIT_TIDE_GEOMETRY` / title: english_fallback_packet - HECTON-8 Orbit / Tide Geometry
+- `P080_OUTER_MOON_COLD_CLAIMS` / title: english_fallback_packet - Outer Moon Cold Claims
+- `P081_GREAT_TIDE_PHYSICS_RECORD` / title: english_fallback_packet - Great Tide Physics Record
+- `P082_PRESSURE_GLASS_FORMATION` / title: english_fallback_packet - Pressure Glass Formation
+- `P083_BRINE_CANYON_ROUTE_LADDER` / title: english_fallback_packet - Brine Canyon Route Ladder
+- `P084_VENT_FORGE_GEOTHERMAL_ENGINE` / title: english_fallback_packet - Vent Forge Geothermal Engine
+- `P085_BIOMETAL_RESOURCE_STACK` / title: english_fallback_packet - Biometal Resource Stack
+- `P086_AEGIR_RECLAMATION_POOL` / title: english_fallback_packet - Aegir Reclamation Pool
+- `P087_KEELMARK_MUTUAL_CUSTODY` / title: english_fallback_packet - Keelmark Mutual Custody
+- `P088_TONNE_WINDOW_DEBT` / title: english_fallback_packet - Tonne-Window Debt
+- `P089_BLACK_KEEL_FIRST_VOICE` / title: english_fallback_packet - Black Keel First Voice
+- `P090_DEEP_REACH_PRIORITY_HOOK` / title: english_fallback_packet - Deep Reach Priority Hook
+- `P091_COLLISION_FRACTURED_MOON` / title: english_fallback_packet - Collision-Fractured Moon
+- `P092_GLOBAL_OCEAN_DEPTH_BANDS` / title: english_fallback_packet - Global Ocean Depth Bands
+- `P093_ACCESSIBLE_SEAFLOOR_WINDOWS` / title: english_fallback_packet - Accessible Seafloor Windows
+- `P094_SEED_GEOLOGY_INVARIANTS` / title: english_fallback_packet - Seed Geology Invariants
+- `P095_PRESSURE_CONTAINMENT_FAILURE` / title: english_fallback_packet - Pressure Containment Failure
+- `P096_ATLAS_PERSON_BOUNDARY` / title: english_fallback_packet - Atlas Person Boundary
+- `P097_RECOVERY_COMPLIANCE_OFFICE` / title: english_fallback_packet - Recovery Compliance Office
+- `P098_FALSE_ENDING_TAXONOMY` / title: english_fallback_packet - False Ending Taxonomy
+- `P099_MARAUDER_DOSSIER_PERSISTENCE` / title: english_fallback_packet - Marauder Dossier Persistence
+- `P100_FINAL_CHOICE_PAYLOAD` / title: english_fallback_packet - Final Choice Payload
+- `P101_NO_FTL_ROUTE_ECONOMY` / title: english_fallback_packet - No-FTL Route Economy
+- `P102_BEAM_SAIL_PROBE_ERA` / title: english_fallback_packet - Beam-Sail Probe Era
+- `P103_PELLET_FUSION_FREIGHT` / title: english_fallback_packet - Pellet-Fusion Freight
+- `P104_RAN_B_H8_PUBLIC_CATALOG` / title: english_fallback_packet - RAN-B:H8 Public Catalog
+- `P105_BLACK_KEEL_IN_SYSTEM_TENDER` / title: english_fallback_packet - Black Keel In-System Tender
+- `P106_ILIYA_VARNEK_TIDE_MARGIN` / title: english_fallback_packet - Iliya Varnek Tide Margin
+- `P107_SELENE_ARENDT_ATLAS_WEIGHTING` / title: english_fallback_packet - Selene Arendt Atlas Weighting
+- `P108_NOOR_HALDANE_EVAC_CERT` / title: english_fallback_packet - Noor Haldane Evac Cert
+- `P109_MAREK_IBARRA_LOSS_CONVERSION` / title: english_fallback_packet - Marek Ibarra Loss Conversion
+- `P110_VERA_SATO_REN_RETURN_ACTION` / title: english_fallback_packet - Vera Sato-Ren Return Action
+- `P111_MANUAL_BILGE_PUMP_KIT` / title: english_fallback_packet - Manual Bilge Pump Kit
+- `P112_COLD_SEALANT_PATCH_GUN` / title: english_fallback_packet - Cold Sealant Patch Gun
+- `P113_LOW_POWER_INDUCTION_CUTTER` / title: english_fallback_packet - Low-Power Induction Cutter
+- `P114_ACOUSTIC_PINGER_LINE` / title: english_fallback_packet - Acoustic Pinger Line
+- `P115_P63_FIELD_FABRICATOR` / title: english_fallback_packet - P-63 Field Fabricator
+- `P116_NATIVE_SULFIDE_SALT_STACK` / title: english_fallback_packet - Native Sulfide Salt Stack
+- `P117_NOBLE_GAS_BRINE_POCKETS` / title: english_fallback_packet - Noble Gas Brine Pockets
+- `P118_DEEP_REACH_PRESSURE_CERAMICS` / title: english_fallback_packet - Deep Reach Pressure Ceramics
+- `P119_ATLAS_BIOFIBER_SEALANT` / title: english_fallback_packet - Atlas Biofiber Sealant
+- `P120_BIOMETAL_SENSOR_TAGS` / title: english_fallback_packet - Biometal Sensor Tags
+- `P121_DOMAIN_CIVIC_CORPORATE_SPLIT` / title: english_fallback_packet - Domain Civic-Corporate Split
+- `P122_MARAUDER_LEGAL_LOOPHOLE` / title: english_fallback_packet - Marauder Legal Loophole
+- `P123_SALVAGE_TRUTH_EVIDENCE_STATUS` / title: english_fallback_packet - Salvage Truth Evidence Status
+- `P124_NORMAL_CITIZEN_AEGIR_MEMORY` / title: english_fallback_packet - Normal Citizen Aegir Memory
+- `P125_DEEP_REACH_ORIGIN_CHAIN` / title: english_fallback_packet - Deep Reach Origin Chain
+- `P126_ATLAS_PUBLIC_FRONT` / title: english_fallback_packet - Atlas Public Front
+- `P127_ATLAS_INSURANCE_PERSONHOOD_STATUS` / title: english_fallback_packet - Atlas Insurance Personhood Status
+- `P128_ATLAS_CLASSIFIED_WEIGHTING_LAYER` / title: english_fallback_packet - Atlas Classified Weighting Layer
+- `P129_ATLAS_SHUTDOWN_ETHIC_FRAME` / title: english_fallback_packet - Atlas Shutdown Ethic Frame
+- `P130_ATLAS_PUBLIC_MEMORY_AFTER_2147` / title: english_fallback_packet - Atlas Public Memory After 2147
+- `P131_MATERIAL_EXIT_BITTER_CREDITS` / title: english_fallback_packet - Material Exit Bitter Credits
+- `P132_PARTIAL_EXIT_SAME_SEED_RETURN` / title: english_fallback_packet - Partial Exit Same-Seed Return
+- `P133_CORPORATE_CAPTURE_BAD_END` / title: english_fallback_packet - Corporate Capture Bad End
+- `P134_QUARANTINE_HOLD_STALE_AIR` / title: english_fallback_packet - Quarantine Hold Stale Air
+- `P135_PUBLIC_LEDGER_LEAK_ROUTE` / title: english_fallback_packet - Public Ledger Leak Route
+- `P136_DOSSIER_RUMOR_UNLOCKS` / title: english_fallback_packet - Dossier Rumor Unlocks
+- `P137_RISKIER_CONTRACT_SEEDS` / title: english_fallback_packet - Riskier Contract Seeds
+- `P138_FALSE_ENDING_COUNT_LADDER` / title: english_fallback_packet - False Ending Count Ladder
+- `P139_STARTING_CLAIM_VARIANTS` / title: english_fallback_packet - Starting Claim Variants
+- `P140_DOSSIER_KNOWLEDGE_NOT_POWER` / title: english_fallback_packet - Dossier Knowledge Not Power
+- `P141_RAN_AEGIR_DISTANCE_MODEL` / title: english_fallback_packet - Ran-Aegir Distance Model
+- `P142_PROBE_PACKET_TRAVEL_TIMES` / title: english_fallback_packet - Probe Packet Travel Times
+- `P143_HEAVY_FREIGHT_STAGING_TIME` / title: english_fallback_packet - Heavy Freight Staging Time
+- `P144_HUMAN_CREW_ROTATION_TRANSIT` / title: english_fallback_packet - Human Crew Rotation Transit
+- `P145_RELAY_MESSAGE_LAG` / title: english_fallback_packet - Relay Message Lag
+- `P146_DEEP_REACH_PUBLIC_COMBINE` / title: english_fallback_packet - Deep Reach Public Combine
+- `P147_AEGIR_CONTINUITY_HOLDINGS` / title: english_fallback_packet - Aegir Continuity Holdings
+- `P148_ATLAS_CONTINUITY_OFFICE` / title: english_fallback_packet - Atlas Continuity Office
+- `P149_KEELMARK_LOSS_DESK` / title: english_fallback_packet - Keelmark Loss Desk
+- `P150_RECOVERY_COMPLIANCE_CHAIN` / title: english_fallback_packet - Recovery Compliance Chain
+- `P151_BLACK_KEEL_CONTRACT_APPROACH` / title: english_fallback_packet - Black Keel Contract Approach
+- `P152_DROP_CAPSULE_DAMAGE_SEQUENCE` / title: english_fallback_packet - Drop Capsule Damage Sequence
+- `P153_SHALLOW_ANNEX_P63_PUMP_ROOM` / title: english_fallback_packet - Shallow Annex P-63 Pump Room
+- `P154_FIRST_SANITIZED_ACCIDENT_PACKET` / title: english_fallback_packet - First Sanitized Accident Packet
+- `P155_FIRST_ATLAS_REPAIR_TRACE` / title: english_fallback_packet - First Atlas Repair Trace
+- `P156_SHIFT_CREWS_NOT_HEROES` / title: english_fallback_packet - Shift Crews Not Heroes
+- `P157_WORKER_JOB_CARDS` / title: english_fallback_packet - Worker Job Cards
+- `P158_LOCKER_NAME_PROTOCOL` / title: english_fallback_packet - Locker Name Protocol
+- `P159_MEDICAL_TRIAGE_LEDGER` / title: english_fallback_packet - Medical Triage Ledger
+- `P160_MARAUDER_CORRECTION_LAYER` / title: english_fallback_packet - Marauder Correction Layer
+- `P161_DOMAIN_DISTANCE_SCALE` / title: english_fallback_packet - Domain Distance Scale
+- `P162_DOMAIN_POPULATION_AUTHORITY_SCALE` / title: english_fallback_packet - Population And Authority Scale
+- `P163_PUBLIC_ROUTE_NAMES` / title: english_fallback_packet - Public Route Names
+- `P164_TRANSIT_DURATION_BANDS` / title: english_fallback_packet - Transit Duration Bands
+- `P165_DEEP_REACH_SUBOFFICE_REGISTRY` / title: english_fallback_packet - Deep Reach Suboffice Registry
+- Additional 6374 candidates omitted from this summary; see `localization_issue_candidates.csv`.
+
+## he_IL (rtl)
+- `P046_PUMP_ROOM_HANDSHAKE` / title: english_fallback_packet - Pump Room Handshake
+- `P047_HATCH_SEAL_LEDGER` / title: english_fallback_packet - Hatch Seal Ledger
+- `P048_CABLE_SPLICE_SCAR` / title: english_fallback_packet - Cable Splice Scar
+- `P049_SONAR_RETURN_ROUTE` / title: english_fallback_packet - Sonar Return Route
+- `P050_SALVAGE_TOOL_CUSTODY` / title: english_fallback_packet - Salvage Tool Custody
+- `P051_LIGHT_DELAY_AUTHORITY` / title: english_fallback_packet - Light-Delay Authority
+- `P052_BLACK_KEEL_TARIFF_TABLE` / title: english_fallback_packet - Black Keel Tariff Table
+- `P053_MARAUDER_GRAFFITI_MASKS` / title: english_fallback_packet - Marauder Graffiti Masks
+- `P054_RELAY_QUEUE_DRIFT` / title: english_fallback_packet - Relay Queue Drift
+- `P055_CORPORATE_RESPONSE_LEDGER` / title: english_fallback_packet - Corporate Response Ledger
+- `P056_EX_DEEP_REACH_MARAUDER` / title: english_fallback_packet - Ex-Deep-Reach Marauder
+- `P057_GREAT_TIDE_LIABILITY_CHAIN` / title: english_fallback_packet - Great Tide Liability Chain
+- `P058_BLACK_KEEL_CLAIM_HOOKS` / title: english_fallback_packet - Black Keel Claim Hooks
+- `P059_ESCAPE_CHAIN_ASSEMBLY` / title: english_fallback_packet - Escape Chain Assembly
+- `P060_FIRST_HOUR_SPINE` / title: english_fallback_packet - First Hour Spine
+- `P061_MAINTENANCE_ECOLOGY` / title: english_fallback_packet - Maintenance Ecology
+- `P062_MARA_VENN_TIDE_MODEL` / title: english_fallback_packet - Mara Venn Tide Model
+- `P063_JUNO_KADE_EVACUATION_HOLD` / title: english_fallback_packet - Juno Kade Evacuation Hold
+- `P064_REN_OKOYE_PUMP_63` / title: english_fallback_packet - Ren Okoye Pump 63
+- `P065_SAHANA_IQBAL_ATLAS_SAFETY` / title: english_fallback_packet - Sahana Iqbal Atlas Safety
+- `P066_LIAN_TORRES_LAST_PACKET` / title: english_fallback_packet - Lian Torres Last Packet
+- `P067_OSKAR_NEUMANN_PRESSURE_FORGE` / title: english_fallback_packet - Oskar Neumann Pressure Forge
+- `P068_AYA_MORITA_REPAIR_MEDICINE` / title: english_fallback_packet - Aya Morita Repair Medicine
+- `P069_PAVEL_SORN_PROCEDURE_HOLD` / title: english_fallback_packet - Pavel Sorn Procedure Hold
+- `P070_DEEP_REACH_PRESENT_WINDOWS` / title: english_fallback_packet - Deep Reach Present Windows
+- `P071_SOL_CORE_AUTHORITY` / title: english_fallback_packet - Sol Core Authority
+- `P072_CENTAURI_COMPACT_LEGITIMACY` / title: english_fallback_packet - Centauri Compact Legitimacy
+- `P073_BARNARD_YARDS_MARAUDER_ORIGIN` / title: english_fallback_packet - Barnard Yards Marauder Origin
+- `P074_TAU_CETI_PUBLIC_LEDGER` / title: english_fallback_packet - Tau Ceti Public Ledger
+- `P075_LUYTEN_JUNCTION_PACKET_CUSTODY` / title: english_fallback_packet - Luyten Junction Packet Custody
+- `P076_RAN_AEGIR_ANCHOR` / title: english_fallback_packet - Ran / Aegir Anchor
+- `P077_AEGIR_MOON_LADDER` / title: english_fallback_packet - Aegir Moon Ladder
+- `P078_INNER_MOON_RELAY_HAZARDS` / title: english_fallback_packet - Inner Moon Relay Hazards
+- `P079_HECTON8_ORBIT_TIDE_GEOMETRY` / title: english_fallback_packet - HECTON-8 Orbit / Tide Geometry
+- `P080_OUTER_MOON_COLD_CLAIMS` / title: english_fallback_packet - Outer Moon Cold Claims
+- `P081_GREAT_TIDE_PHYSICS_RECORD` / title: english_fallback_packet - Great Tide Physics Record
+- `P082_PRESSURE_GLASS_FORMATION` / title: english_fallback_packet - Pressure Glass Formation
+- `P083_BRINE_CANYON_ROUTE_LADDER` / title: english_fallback_packet - Brine Canyon Route Ladder
+- `P084_VENT_FORGE_GEOTHERMAL_ENGINE` / title: english_fallback_packet - Vent Forge Geothermal Engine
+- `P085_BIOMETAL_RESOURCE_STACK` / title: english_fallback_packet - Biometal Resource Stack
+- `P086_AEGIR_RECLAMATION_POOL` / title: english_fallback_packet - Aegir Reclamation Pool
+- `P087_KEELMARK_MUTUAL_CUSTODY` / title: english_fallback_packet - Keelmark Mutual Custody
+- `P088_TONNE_WINDOW_DEBT` / title: english_fallback_packet - Tonne-Window Debt
+- `P089_BLACK_KEEL_FIRST_VOICE` / title: english_fallback_packet - Black Keel First Voice
+- `P090_DEEP_REACH_PRIORITY_HOOK` / title: english_fallback_packet - Deep Reach Priority Hook
+- `P091_COLLISION_FRACTURED_MOON` / title: english_fallback_packet - Collision-Fractured Moon
+- `P092_GLOBAL_OCEAN_DEPTH_BANDS` / title: english_fallback_packet - Global Ocean Depth Bands
+- `P093_ACCESSIBLE_SEAFLOOR_WINDOWS` / title: english_fallback_packet - Accessible Seafloor Windows
+- `P094_SEED_GEOLOGY_INVARIANTS` / title: english_fallback_packet - Seed Geology Invariants
+- `P095_PRESSURE_CONTAINMENT_FAILURE` / title: english_fallback_packet - Pressure Containment Failure
+- `P096_ATLAS_PERSON_BOUNDARY` / title: english_fallback_packet - Atlas Person Boundary
+- `P097_RECOVERY_COMPLIANCE_OFFICE` / title: english_fallback_packet - Recovery Compliance Office
+- `P098_FALSE_ENDING_TAXONOMY` / title: english_fallback_packet - False Ending Taxonomy
+- `P099_MARAUDER_DOSSIER_PERSISTENCE` / title: english_fallback_packet - Marauder Dossier Persistence
+- `P100_FINAL_CHOICE_PAYLOAD` / title: english_fallback_packet - Final Choice Payload
+- `P101_NO_FTL_ROUTE_ECONOMY` / title: english_fallback_packet - No-FTL Route Economy
+- `P102_BEAM_SAIL_PROBE_ERA` / title: english_fallback_packet - Beam-Sail Probe Era
+- `P103_PELLET_FUSION_FREIGHT` / title: english_fallback_packet - Pellet-Fusion Freight
+- `P104_RAN_B_H8_PUBLIC_CATALOG` / title: english_fallback_packet - RAN-B:H8 Public Catalog
+- `P105_BLACK_KEEL_IN_SYSTEM_TENDER` / title: english_fallback_packet - Black Keel In-System Tender
+- `P106_ILIYA_VARNEK_TIDE_MARGIN` / title: english_fallback_packet - Iliya Varnek Tide Margin
+- `P107_SELENE_ARENDT_ATLAS_WEIGHTING` / title: english_fallback_packet - Selene Arendt Atlas Weighting
+- `P108_NOOR_HALDANE_EVAC_CERT` / title: english_fallback_packet - Noor Haldane Evac Cert
+- `P109_MAREK_IBARRA_LOSS_CONVERSION` / title: english_fallback_packet - Marek Ibarra Loss Conversion
+- `P110_VERA_SATO_REN_RETURN_ACTION` / title: english_fallback_packet - Vera Sato-Ren Return Action
+- `P111_MANUAL_BILGE_PUMP_KIT` / title: english_fallback_packet - Manual Bilge Pump Kit
+- `P112_COLD_SEALANT_PATCH_GUN` / title: english_fallback_packet - Cold Sealant Patch Gun
+- `P113_LOW_POWER_INDUCTION_CUTTER` / title: english_fallback_packet - Low-Power Induction Cutter
+- `P114_ACOUSTIC_PINGER_LINE` / title: english_fallback_packet - Acoustic Pinger Line
+- `P115_P63_FIELD_FABRICATOR` / title: english_fallback_packet - P-63 Field Fabricator
+- `P116_NATIVE_SULFIDE_SALT_STACK` / title: english_fallback_packet - Native Sulfide Salt Stack
+- `P117_NOBLE_GAS_BRINE_POCKETS` / title: english_fallback_packet - Noble Gas Brine Pockets
+- `P118_DEEP_REACH_PRESSURE_CERAMICS` / title: english_fallback_packet - Deep Reach Pressure Ceramics
+- `P119_ATLAS_BIOFIBER_SEALANT` / title: english_fallback_packet - Atlas Biofiber Sealant
+- `P120_BIOMETAL_SENSOR_TAGS` / title: english_fallback_packet - Biometal Sensor Tags
+- `P121_DOMAIN_CIVIC_CORPORATE_SPLIT` / title: english_fallback_packet - Domain Civic-Corporate Split
+- `P122_MARAUDER_LEGAL_LOOPHOLE` / title: english_fallback_packet - Marauder Legal Loophole
+- `P123_SALVAGE_TRUTH_EVIDENCE_STATUS` / title: english_fallback_packet - Salvage Truth Evidence Status
+- `P124_NORMAL_CITIZEN_AEGIR_MEMORY` / title: english_fallback_packet - Normal Citizen Aegir Memory
+- `P125_DEEP_REACH_ORIGIN_CHAIN` / title: english_fallback_packet - Deep Reach Origin Chain
+- `P126_ATLAS_PUBLIC_FRONT` / title: english_fallback_packet - Atlas Public Front
+- `P127_ATLAS_INSURANCE_PERSONHOOD_STATUS` / title: english_fallback_packet - Atlas Insurance Personhood Status
+- `P128_ATLAS_CLASSIFIED_WEIGHTING_LAYER` / title: english_fallback_packet - Atlas Classified Weighting Layer
+- `P129_ATLAS_SHUTDOWN_ETHIC_FRAME` / title: english_fallback_packet - Atlas Shutdown Ethic Frame
+- `P130_ATLAS_PUBLIC_MEMORY_AFTER_2147` / title: english_fallback_packet - Atlas Public Memory After 2147
+- `P131_MATERIAL_EXIT_BITTER_CREDITS` / title: english_fallback_packet - Material Exit Bitter Credits
+- `P132_PARTIAL_EXIT_SAME_SEED_RETURN` / title: english_fallback_packet - Partial Exit Same-Seed Return
+- `P133_CORPORATE_CAPTURE_BAD_END` / title: english_fallback_packet - Corporate Capture Bad End
+- `P134_QUARANTINE_HOLD_STALE_AIR` / title: english_fallback_packet - Quarantine Hold Stale Air
+- `P135_PUBLIC_LEDGER_LEAK_ROUTE` / title: english_fallback_packet - Public Ledger Leak Route
+- `P136_DOSSIER_RUMOR_UNLOCKS` / title: english_fallback_packet - Dossier Rumor Unlocks
+- `P137_RISKIER_CONTRACT_SEEDS` / title: english_fallback_packet - Riskier Contract Seeds
+- `P138_FALSE_ENDING_COUNT_LADDER` / title: english_fallback_packet - False Ending Count Ladder
+- `P139_STARTING_CLAIM_VARIANTS` / title: english_fallback_packet - Starting Claim Variants
+- `P140_DOSSIER_KNOWLEDGE_NOT_POWER` / title: english_fallback_packet - Dossier Knowledge Not Power
+- `P141_RAN_AEGIR_DISTANCE_MODEL` / title: english_fallback_packet - Ran-Aegir Distance Model
+- `P142_PROBE_PACKET_TRAVEL_TIMES` / title: english_fallback_packet - Probe Packet Travel Times
+- `P143_HEAVY_FREIGHT_STAGING_TIME` / title: english_fallback_packet - Heavy Freight Staging Time
+- `P144_HUMAN_CREW_ROTATION_TRANSIT` / title: english_fallback_packet - Human Crew Rotation Transit
+- `P145_RELAY_MESSAGE_LAG` / title: english_fallback_packet - Relay Message Lag
+- `P146_DEEP_REACH_PUBLIC_COMBINE` / title: english_fallback_packet - Deep Reach Public Combine
+- `P147_AEGIR_CONTINUITY_HOLDINGS` / title: english_fallback_packet - Aegir Continuity Holdings
+- `P148_ATLAS_CONTINUITY_OFFICE` / title: english_fallback_packet - Atlas Continuity Office
+- `P149_KEELMARK_LOSS_DESK` / title: english_fallback_packet - Keelmark Loss Desk
+- `P150_RECOVERY_COMPLIANCE_CHAIN` / title: english_fallback_packet - Recovery Compliance Chain
+- `P151_BLACK_KEEL_CONTRACT_APPROACH` / title: english_fallback_packet - Black Keel Contract Approach
+- `P152_DROP_CAPSULE_DAMAGE_SEQUENCE` / title: english_fallback_packet - Drop Capsule Damage Sequence
+- `P153_SHALLOW_ANNEX_P63_PUMP_ROOM` / title: english_fallback_packet - Shallow Annex P-63 Pump Room
+- `P154_FIRST_SANITIZED_ACCIDENT_PACKET` / title: english_fallback_packet - First Sanitized Accident Packet
+- `P155_FIRST_ATLAS_REPAIR_TRACE` / title: english_fallback_packet - First Atlas Repair Trace
+- `P156_SHIFT_CREWS_NOT_HEROES` / title: english_fallback_packet - Shift Crews Not Heroes
+- `P157_WORKER_JOB_CARDS` / title: english_fallback_packet - Worker Job Cards
+- `P158_LOCKER_NAME_PROTOCOL` / title: english_fallback_packet - Locker Name Protocol
+- `P159_MEDICAL_TRIAGE_LEDGER` / title: english_fallback_packet - Medical Triage Ledger
+- `P160_MARAUDER_CORRECTION_LAYER` / title: english_fallback_packet - Marauder Correction Layer
+- `P161_DOMAIN_DISTANCE_SCALE` / title: english_fallback_packet - Domain Distance Scale
+- `P162_DOMAIN_POPULATION_AUTHORITY_SCALE` / title: english_fallback_packet - Population And Authority Scale
+- `P163_PUBLIC_ROUTE_NAMES` / title: english_fallback_packet - Public Route Names
+- `P164_TRANSIT_DURATION_BANDS` / title: english_fallback_packet - Transit Duration Bands
+- `P165_DEEP_REACH_SUBOFFICE_REGISTRY` / title: english_fallback_packet - Deep Reach Suboffice Registry
+- Additional 6374 candidates omitted from this summary; see `localization_issue_candidates.csv`.
+
+## pt_BR (ltr)
+- `P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT` / title: draft_marker_packet - Placeholder
+- `P221_PHOTIC_MAT_BASELINE` / title: draft_marker_packet - Draft
+- `P222_GLASS_GRAZER_SCHOOLS` / title: draft_marker_packet - Draft
+- `P223_LANTERN_DRIFT_BLOOM` / title: draft_marker_packet - Draft
+- `P224_SHELL_CLAMP_REEF` / title: draft_marker_packet - Draft
+- `P225_SHALLOW_PREDATOR_SHADOW_RULE` / title: draft_marker_packet - Draft
+- `P226_BRINE_VANE_FORESTS` / title: draft_marker_packet - Draft
+- `P227_DENSITY_SKATER_FAUNA` / title: draft_marker_packet - Draft
+- `P228_VENT_ANCHOR_COLONIES` / title: draft_marker_packet - Draft
+- `P229_WIDE_FILTER_BODY_TRACE` / title: draft_marker_packet - Draft
+- `P230_SILT_AMBUSHER_TELEGRAPH` / title: draft_marker_packet - Draft
+- `P231_CONDUCTIVE_BIOFILM_CABLE_SKIN` / title: draft_marker_packet - Draft
+- `P232_ACOUSTIC_FILTER_ORGAN_RELAY` / title: draft_marker_packet - Draft
+- `P233_SHELL_SEALANT_FRACTURE_GROWTH` / title: draft_marker_packet - Draft
+- `P234_SENSOR_TAGGED_FAUNA` / title: draft_marker_packet - Draft
+- `P235_VENT_MICRONODE_NESTS` / title: draft_marker_packet - Draft
+- `P236_BLACK_KEEL_TENDER_INTERIOR_LIMITS` / title: draft_marker_packet - Draft
+- `P237_DROP_CAPSULE_DAMAGE_PARTS` / title: draft_marker_packet - Draft
+- `P238_P63_FABRICATOR_AUTHORITY_LIMITS` / title: draft_marker_packet - Draft
+- `P239_PRESSURE_SUIT_SERVICE_GRADES` / title: draft_marker_packet - Draft
+- `P240_SONAR_PINGER_ROUTE_BEACONS` / title: draft_marker_packet - Draft
+- `P241_LIEN_SEVERITY_SEED_CLASS` / title: draft_marker_packet - Draft
+- `P242_STORM_WINDOW_RISK_CARD` / title: draft_marker_packet - Draft
+- `P243_SAMPLE_CUSTODY_GRADE_CARD` / title: draft_marker_packet - Draft
+- `P244_EVIDENCE_ORDER_DEPTH_CARD` / title: draft_marker_packet - Draft
+- `P245_DEEP_REACH_CLAUSE_WEIGHT_CARD` / title: draft_marker_packet - Draft
+- `P246_BLACK_KEEL_APPROACH_AUDIO_PACKET` / title: draft_marker_packet - Draft
+- `P247_DROP_CAPSULE_DIAGNOSTIC_READOUT` / title: draft_marker_packet - Draft
+- `P248_P63_PUMP_ROOM_FIRST_REPAIR_TASK` / title: draft_marker_packet - Draft
+- `P249_SANITIZED_ACCIDENT_PACKET_BODY` / title: draft_marker_packet - Draft
+- `P250_FIRST_ATLAS_REPAIR_TRACE_SCENE` / title: draft_marker_packet - Draft
+- `P251_HECTON8_PUBLIC_PRIMER_ARTICLE` / title: draft_marker_packet - Draft
+- `P252_AEGIR_SYSTEM_PUBLIC_PRIMER_ARTICLE` / title: draft_marker_packet - Draft
+- `P253_DEEP_REACH_PUBLIC_DOSSIER_ARTICLE` / title: draft_marker_packet - Draft
+- `P254_ATLAS6_SPOILER_GATED_ARTICLE` / title: draft_marker_packet - Draft
+- `P255_BLUE_DEBT_PUBLIC_RESOURCE_ARTICLE` / title: draft_marker_packet - Draft
+- `P256_PROPER_NOUN_TRANSLATION_LOCK_TABLE` / title: draft_marker_packet - Draft
+- `P257_UNIT_NUMBER_STYLE_CARD` / title: draft_marker_packet - Draft
+- `P258_TERMINAL_VOICE_REGISTER_RULE` / title: draft_marker_packet - Draft
+- `P259_AUDIO_BARK_FAMILY_RULES` / title: draft_marker_packet - Draft
+- `P260_RTL_CJK_FONT_RISK_CARD` / title: draft_marker_packet - Draft
+- `P261_RESOURCE_YIELD_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P262_INVENTORY_STACK_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P263_ESCAPE_RECIPE_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P264_CONTRACT_RISK_REWARD_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P265_ENDING_PAYOUT_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P266_DOSSIER_START_SCREEN_COPY` / title: draft_marker_packet - Draft
+- `P267_CONTRACT_CARD_FIELD_LABELS` / title: draft_marker_packet - Draft
+- `P268_RUMOR_FAMILY_UI_COPY` / title: draft_marker_packet - Draft
+- `P269_ROUTE_WARNING_UI_COPY` / title: draft_marker_packet - Draft
+- `P270_ENDING_RECORD_UI_COPY` / title: draft_marker_packet - Draft
+- `P271_MATERIAL_PAYOUT_RECORD` / title: draft_marker_packet - Draft
+- `P272_PARTIAL_RETURN_RECORD` / title: draft_marker_packet - Draft
+- `P273_PUBLIC_LEDGER_RECORD` / title: draft_marker_packet - Draft
+- `P274_ATLAS_SEVERANCE_RECORD` / title: draft_marker_packet - Draft
+- `P275_PRESERVE_QUARANTINE_RECORD` / title: draft_marker_packet - Draft
+- `P281_HECTON8_SITE_OPENING_HOOK` / title: draft_marker_packet - Draft
+- `P282_AEGIR_SITE_SYSTEM_MAP_COPY` / title: draft_marker_packet - Draft
+- `P283_DEEP_REACH_SITE_ACCOUNTABILITY_COPY` / title: draft_marker_packet - Draft
+- `P284_ATLAS6_SITE_SPOILER_GATE_COPY` / title: draft_marker_packet - Draft
+- `P285_BLUE_DEBT_SITE_RESOURCE_COPY` / title: draft_marker_packet - Draft
+- `P286_CAPSULE_BLACKBOX_AUDIO_01` / title: draft_marker_packet - Draft
+- `P287_P63_PUMP_ROOM_WORK_ORDER` / title: draft_marker_packet - Draft
+- `P288_WORKER_LOCKER_NAMEPLATE_SAMPLE` / title: draft_marker_packet - Draft
+- `P289_MARAUDER_CORRECTION_NOTE_SAMPLE` / title: draft_marker_packet - Draft
+- `P290_QUARANTINE_RELAY_FRAGMENT` / title: draft_marker_packet - Draft
+- `P291_PHOTIC_MAT_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P292_GLASS_GRAZER_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P293_LANTERN_DRIFT_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P294_BRINE_VANE_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P295_SENSOR_TAGGED_FAUNA_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P296_ABYSSAL_MACHINE_FIELD_WARNING` / title: draft_marker_packet - Draft
+- `P297_ATLAS_BASIN_PRESSURE_GATE` / title: draft_marker_packet - Draft
+- `P298_FACTORY_TEMPLE_ENTRY_FRAGMENT` / title: draft_marker_packet - Draft
+- `P299_PAYLOAD_AUTHORITY_LAST_CHECK` / title: draft_marker_packet - Draft
+- `P300_NO_CLEAN_ENDING_DOSSIER_NOTE` / title: draft_marker_packet - Draft
+- `P301_RESOURCE_YIELD_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P302_STACK_LIMIT_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P303_ESCAPE_RECIPE_COST_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P304_CONTRACT_RISK_REWARD_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P305_ENDING_PAYOUT_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P306_PDA_CODEX_STATE_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P307_SCANNER_STAGE_BINDING_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P308_TERMINAL_SLOT_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P309_DOSSIER_ENDING_RECORD_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P310_LOCALIZED_OVERFLOW_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P311_SITE_HOME_PAGE_COMPOSITION_LOCK` / title: draft_marker_packet - Draft
+- `P312_SITE_AEGIR_SYSTEM_ART_COMPOSITION_LOCK` / title: draft_marker_packet - Draft
+- `P313_SITE_DEEP_REACH_EVIDENCE_COMPOSITION_LOCK` / title: draft_marker_packet - Draft
+- `P314_SITE_ATLAS_SPOILER_COMPOSITION_LOCK` / title: draft_marker_packet - Draft
+- `P315_SOCIAL_DEV_NOTE_COPY_LOCK` / title: draft_marker_packet - Draft
+- `P316_FIRST_HOUR_PLACEMENT_PRIORITY_LOCK` / title: draft_marker_packet - Draft
+- `P317_MID_DEPTH_ROUTE_PLACEMENT_PRIORITY_LOCK` / title: draft_marker_packet - Draft
+- `P318_ECOLOGY_SCAN_PLACEMENT_PRIORITY_LOCK` / title: draft_marker_packet - Draft
+- `P319_FINAL_DESCENT_PLACEMENT_PRIORITY_LOCK` / title: draft_marker_packet - Draft
+- `P320_TERMINAL_BACKLOG_TRIAGE_LOCK` / title: draft_marker_packet - Draft
+- `P321_BLACK_KEEL_CLAIM_POOL_CHARTER` / title: draft_marker_packet - Draft
+- `P322_MASKED_DEEP_REACH_BENEFICIARY_CLAUSE` / title: draft_marker_packet - Draft
+- `P323_ORBITAL_RECOVERY_WINDOW_PROTOCOL` / title: draft_marker_packet - Draft
+- `P324_SALVAGE_CARRIER_AUTONOMY_LIMITS` / title: draft_marker_packet - Draft
+- `P325_PLAYER_LIEN_CONTRACT_START_CARD` / title: draft_marker_packet - Draft
+- `P326_SANITIZED_ACCIDENT_REPLY_WINDOW` / title: draft_marker_packet - Draft
+- `P327_LEGAL_INSURANCE_AUTOMATED_PING` / title: draft_marker_packet - Draft
+- `P328_RECOVERY_COMPLIANCE_COORDINATE_DEMAND` / title: draft_marker_packet - Draft
+- `P329_DEEP_REACH_FACTION_MESSAGE_SPLIT` / title: draft_marker_packet - Draft
+- `P330_BLACKOUT_WINDOW_SIGNAL_DECAY` / title: draft_marker_packet - Draft
+- `P331_CONDUCTIVE_BIOFILM_REPAIR_BUS` / title: draft_marker_packet - Draft
+- `P332_ACOUSTIC_FILTER_ORGAN_RELAY` / title: draft_marker_packet - Draft
+- `P333_SHELL_SEALANT_PRESSURE_GROWTH` / title: draft_marker_packet - Draft
+- `P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP` / title: draft_marker_packet - Draft
+- `P335_VENT_MICRONODE_POWER_NEST` / title: draft_marker_packet - Draft
+- `P336_MATERIAL_EXIT_RECEIPT_AUDIT` / title: draft_marker_packet - Draft
+- `P337_PARTIAL_RETURN_LIEN_EXTENSION` / title: draft_marker_packet - Draft
+- `P338_QUARANTINE_HOLD_INTERROGATION_RECORD` / title: draft_marker_packet - Draft
+- `P339_CORPORATE_COORDINATE_CAPTURE_RECORD` / title: draft_marker_packet - Draft
+- `P340_PUBLIC_LEDGER_AFTERSHOCK_RECORD` / title: draft_marker_packet - Draft
+- `P341_NEEDLEPROBE_PRECURSOR_PROGRAM` / title: draft_marker_packet - Draft
+- `P342_BEAM_SAIL_AND_PELLET_LANE` / title: draft_marker_packet - Draft
+- `P343_SEED_SHIP_BRAKING_ARCHITECTURE` / title: draft_marker_packet - Draft
+- `P344_SYSTEM_CARRIER_TUG_STACK` / title: draft_marker_packet - Draft
+- Additional 2649 candidates omitted from this summary; see `localization_issue_candidates.csv`.
+
+## nl_NL (ltr)
+- `P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT` / title: draft_marker_packet - Placeholder
+- `P221_PHOTIC_MAT_BASELINE` / title: draft_marker_packet - Draft
+- `P222_GLASS_GRAZER_SCHOOLS` / title: draft_marker_packet - Draft
+- `P223_LANTERN_DRIFT_BLOOM` / title: draft_marker_packet - Draft
+- `P224_SHELL_CLAMP_REEF` / title: draft_marker_packet - Draft
+- `P225_SHALLOW_PREDATOR_SHADOW_RULE` / title: draft_marker_packet - Draft
+- `P226_BRINE_VANE_FORESTS` / title: draft_marker_packet - Draft
+- `P227_DENSITY_SKATER_FAUNA` / title: draft_marker_packet - Draft
+- `P228_VENT_ANCHOR_COLONIES` / title: draft_marker_packet - Draft
+- `P229_WIDE_FILTER_BODY_TRACE` / title: draft_marker_packet - Draft
+- `P230_SILT_AMBUSHER_TELEGRAPH` / title: draft_marker_packet - Draft
+- `P231_CONDUCTIVE_BIOFILM_CABLE_SKIN` / title: draft_marker_packet - Draft
+- `P232_ACOUSTIC_FILTER_ORGAN_RELAY` / title: draft_marker_packet - Draft
+- `P233_SHELL_SEALANT_FRACTURE_GROWTH` / title: draft_marker_packet - Draft
+- `P234_SENSOR_TAGGED_FAUNA` / title: draft_marker_packet - Draft
+- `P235_VENT_MICRONODE_NESTS` / title: draft_marker_packet - Draft
+- `P236_BLACK_KEEL_TENDER_INTERIOR_LIMITS` / title: draft_marker_packet - Draft
+- `P237_DROP_CAPSULE_DAMAGE_PARTS` / title: draft_marker_packet - Draft
+- `P238_P63_FABRICATOR_AUTHORITY_LIMITS` / title: draft_marker_packet - Draft
+- `P239_PRESSURE_SUIT_SERVICE_GRADES` / title: draft_marker_packet - Draft
+- `P240_SONAR_PINGER_ROUTE_BEACONS` / title: draft_marker_packet - Draft
+- `P241_LIEN_SEVERITY_SEED_CLASS` / title: draft_marker_packet - Draft
+- `P242_STORM_WINDOW_RISK_CARD` / title: draft_marker_packet - Draft
+- `P243_SAMPLE_CUSTODY_GRADE_CARD` / title: draft_marker_packet - Draft
+- `P244_EVIDENCE_ORDER_DEPTH_CARD` / title: draft_marker_packet - Draft
+- `P245_DEEP_REACH_CLAUSE_WEIGHT_CARD` / title: draft_marker_packet - Draft
+- `P246_BLACK_KEEL_APPROACH_AUDIO_PACKET` / title: draft_marker_packet - Draft
+- `P247_DROP_CAPSULE_DIAGNOSTIC_READOUT` / title: draft_marker_packet - Draft
+- `P248_P63_PUMP_ROOM_FIRST_REPAIR_TASK` / title: draft_marker_packet - Draft
+- `P249_SANITIZED_ACCIDENT_PACKET_BODY` / title: draft_marker_packet - Draft
+- `P250_FIRST_ATLAS_REPAIR_TRACE_SCENE` / title: draft_marker_packet - Draft
+- `P251_HECTON8_PUBLIC_PRIMER_ARTICLE` / title: draft_marker_packet - Draft
+- `P252_AEGIR_SYSTEM_PUBLIC_PRIMER_ARTICLE` / title: draft_marker_packet - Draft
+- `P253_DEEP_REACH_PUBLIC_DOSSIER_ARTICLE` / title: draft_marker_packet - Draft
+- `P254_ATLAS6_SPOILER_GATED_ARTICLE` / title: draft_marker_packet - Draft
+- `P255_BLUE_DEBT_PUBLIC_RESOURCE_ARTICLE` / title: draft_marker_packet - Draft
+- `P256_PROPER_NOUN_TRANSLATION_LOCK_TABLE` / title: draft_marker_packet - Draft
+- `P257_UNIT_NUMBER_STYLE_CARD` / title: draft_marker_packet - Draft
+- `P258_TERMINAL_VOICE_REGISTER_RULE` / title: draft_marker_packet - Draft
+- `P259_AUDIO_BARK_FAMILY_RULES` / title: draft_marker_packet - Draft
+- `P260_RTL_CJK_FONT_RISK_CARD` / title: draft_marker_packet - Draft
+- `P261_RESOURCE_YIELD_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P262_INVENTORY_STACK_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P263_ESCAPE_RECIPE_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P264_CONTRACT_RISK_REWARD_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P265_ENDING_PAYOUT_AUTHORING_ROWS` / title: draft_marker_packet - Draft
+- `P266_DOSSIER_START_SCREEN_COPY` / title: draft_marker_packet - Draft
+- `P267_CONTRACT_CARD_FIELD_LABELS` / title: draft_marker_packet - Draft
+- `P268_RUMOR_FAMILY_UI_COPY` / title: draft_marker_packet - Draft
+- `P269_ROUTE_WARNING_UI_COPY` / title: draft_marker_packet - Draft
+- `P270_ENDING_RECORD_UI_COPY` / title: draft_marker_packet - Draft
+- `P271_MATERIAL_PAYOUT_RECORD` / title: draft_marker_packet - Draft
+- `P272_PARTIAL_RETURN_RECORD` / title: draft_marker_packet - Draft
+- `P273_PUBLIC_LEDGER_RECORD` / title: draft_marker_packet - Draft
+- `P274_ATLAS_SEVERANCE_RECORD` / title: draft_marker_packet - Draft
+- `P275_PRESERVE_QUARANTINE_RECORD` / title: draft_marker_packet - Draft
+- `P281_HECTON8_SITE_OPENING_HOOK` / title: draft_marker_packet - Draft
+- `P282_AEGIR_SITE_SYSTEM_MAP_COPY` / title: draft_marker_packet - Draft
+- `P283_DEEP_REACH_SITE_ACCOUNTABILITY_COPY` / title: draft_marker_packet - Draft
+- `P284_ATLAS6_SITE_SPOILER_GATE_COPY` / title: draft_marker_packet - Draft
+- `P285_BLUE_DEBT_SITE_RESOURCE_COPY` / title: draft_marker_packet - Draft
+- `P286_CAPSULE_BLACKBOX_AUDIO_01` / title: draft_marker_packet - Draft
+- `P287_P63_PUMP_ROOM_WORK_ORDER` / title: draft_marker_packet - Draft
+- `P288_WORKER_LOCKER_NAMEPLATE_SAMPLE` / title: draft_marker_packet - Draft
+- `P289_MARAUDER_CORRECTION_NOTE_SAMPLE` / title: draft_marker_packet - Draft
+- `P290_QUARANTINE_RELAY_FRAGMENT` / title: draft_marker_packet - Draft
+- `P291_PHOTIC_MAT_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P292_GLASS_GRAZER_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P293_LANTERN_DRIFT_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P294_BRINE_VANE_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P295_SENSOR_TAGGED_FAUNA_CODEX_CARD` / title: draft_marker_packet - Draft
+- `P296_ABYSSAL_MACHINE_FIELD_WARNING` / title: draft_marker_packet - Draft
+- `P297_ATLAS_BASIN_PRESSURE_GATE` / title: draft_marker_packet - Draft
+- `P298_FACTORY_TEMPLE_ENTRY_FRAGMENT` / title: draft_marker_packet - Draft
+- `P299_PAYLOAD_AUTHORITY_LAST_CHECK` / title: draft_marker_packet - Draft
+- `P300_NO_CLEAN_ENDING_DOSSIER_NOTE` / title: draft_marker_packet - Draft
+- `P301_RESOURCE_YIELD_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P302_STACK_LIMIT_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P303_ESCAPE_RECIPE_COST_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P304_CONTRACT_RISK_REWARD_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P305_ENDING_PAYOUT_ROW_CONTRACT` / title: draft_marker_packet - Draft
+- `P306_PDA_CODEX_STATE_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P307_SCANNER_STAGE_BINDING_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P308_TERMINAL_SLOT_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P309_DOSSIER_ENDING_RECORD_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P310_LOCALIZED_OVERFLOW_PROOF_CARD` / title: draft_marker_packet - Draft
+- `P311_SITE_HOME_PAGE_COMPOSITION_LOCK` / title: draft_marker_packet - Draft
+- `P312_SITE_AEGIR_SYSTEM_ART_COMPOSITION_LOCK` / title: draft_marker_packet - Draft
+- `P313_SITE_DEEP_REACH_EVIDENCE_COMPOSITION_LOCK` / title: draft_marker_packet - Draft
+- `P314_SITE_ATLAS_SPOILER_COMPOSITION_LOCK` / title: draft_marker_packet - Draft
+- `P315_SOCIAL_DEV_NOTE_COPY_LOCK` / title: draft_marker_packet - Draft
+- `P316_FIRST_HOUR_PLACEMENT_PRIORITY_LOCK` / title: draft_marker_packet - Draft
+- `P317_MID_DEPTH_ROUTE_PLACEMENT_PRIORITY_LOCK` / title: draft_marker_packet - Draft
+- `P318_ECOLOGY_SCAN_PLACEMENT_PRIORITY_LOCK` / title: draft_marker_packet - Draft
+- `P319_FINAL_DESCENT_PLACEMENT_PRIORITY_LOCK` / title: draft_marker_packet - Draft
+- `P320_TERMINAL_BACKLOG_TRIAGE_LOCK` / title: draft_marker_packet - Draft
+- `P321_BLACK_KEEL_CLAIM_POOL_CHARTER` / title: draft_marker_packet - Draft
+- `P322_MASKED_DEEP_REACH_BENEFICIARY_CLAUSE` / title: draft_marker_packet - Draft
+- `P323_ORBITAL_RECOVERY_WINDOW_PROTOCOL` / title: draft_marker_packet - Draft
+- `P324_SALVAGE_CARRIER_AUTONOMY_LIMITS` / title: draft_marker_packet - Draft
+- `P325_PLAYER_LIEN_CONTRACT_START_CARD` / title: draft_marker_packet - Draft
+- `P326_SANITIZED_ACCIDENT_REPLY_WINDOW` / title: draft_marker_packet - Draft
+- `P327_LEGAL_INSURANCE_AUTOMATED_PING` / title: draft_marker_packet - Draft
+- `P328_RECOVERY_COMPLIANCE_COORDINATE_DEMAND` / title: draft_marker_packet - Draft
+- `P329_DEEP_REACH_FACTION_MESSAGE_SPLIT` / title: draft_marker_packet - Draft
+- `P330_BLACKOUT_WINDOW_SIGNAL_DECAY` / title: draft_marker_packet - Draft
+- `P331_CONDUCTIVE_BIOFILM_REPAIR_BUS` / title: draft_marker_packet - Draft
+- `P332_ACOUSTIC_FILTER_ORGAN_RELAY` / title: draft_marker_packet - Draft
+- `P333_SHELL_SEALANT_PRESSURE_GROWTH` / title: draft_marker_packet - Draft
+- `P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP` / title: draft_marker_packet - Draft
+- `P335_VENT_MICRONODE_POWER_NEST` / title: draft_marker_packet - Draft
+- `P336_MATERIAL_EXIT_RECEIPT_AUDIT` / title: draft_marker_packet - Draft
+- `P337_PARTIAL_RETURN_LIEN_EXTENSION` / title: draft_marker_packet - Draft
+- `P338_QUARANTINE_HOLD_INTERROGATION_RECORD` / title: draft_marker_packet - Draft
+- `P339_CORPORATE_COORDINATE_CAPTURE_RECORD` / title: draft_marker_packet - Draft
+- `P340_PUBLIC_LEDGER_AFTERSHOCK_RECORD` / title: draft_marker_packet - Draft
+- `P341_NEEDLEPROBE_PRECURSOR_PROGRAM` / title: draft_marker_packet - Draft
+- `P342_BEAM_SAIL_AND_PELLET_LANE` / title: draft_marker_packet - Draft
+- `P343_SEED_SHIP_BRAKING_ARCHITECTURE` / title: draft_marker_packet - Draft
+- `P344_SYSTEM_CARRIER_TUG_STACK` / title: draft_marker_packet - Draft
+- Additional 2655 candidates omitted from this summary; see `localization_issue_candidates.csv`.

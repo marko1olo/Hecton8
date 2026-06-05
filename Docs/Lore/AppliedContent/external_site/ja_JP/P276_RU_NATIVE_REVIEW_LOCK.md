@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# JP LOC HOLD: RU Review Gate
+# Russian Operational Voice Contract
 
-JP LOC HOLD: Russian Native Review Lock describes why HECTON-8 Russian localization must stay operational and evidence-led.
+Russian localization is accepted when it reads like a working instrument and a believable corporate record, not a literary retelling.
 
 ## Scanner
 
-JP LOC HOLD: Cyrillic is not the problem. Tone drift is.
+Cyrillic width is solvable. Tone drift is the real risk.
 
 ## Terminal
 
-JP LOC HOLD: RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.
+Russian copy keeps procedure, pressure, debt, and evidence intact. No melodrama, no softened liability.
 
 ## Audio
 
-JP LOC HOLD: Do not make the machine poetic.
+The machine should sound useful before it sounds beautiful.
 
 ## Field Note
 
-JP LOC HOLD: Review gate: terse terminal language, stable proper nouns, no softened corporate guilt, no ornamental horror prose.
+Protect terse terminal language, stable proper nouns, corporate and legal terms, unit clarity, and short survival text.
 
 <!-- External Site; generated from P276_RU_NATIVE_REVIEW_LOCK/ja_JP. -->

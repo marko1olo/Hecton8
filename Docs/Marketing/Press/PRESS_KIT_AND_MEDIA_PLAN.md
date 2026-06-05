@@ -87,7 +87,7 @@ Use:
 
 - "A darker, industrial take on underwater survival."
 - "Survival where pressure, machinery, and oxygen are readable systems."
-- "Deep-sea noir instead of bright alien wonder."
+- "Beautiful alien water that turns into pressure, machinery, and deep-sea noir below the light."
 - "A single-player-first survival game with proof-first public scope."
 - "Seed Ship anomaly as systemic corruption, not cutscene lore."
 

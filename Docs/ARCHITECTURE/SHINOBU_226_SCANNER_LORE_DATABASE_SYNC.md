@@ -1,5 +1,10 @@
 ﻿# SHINOBU_226 Scanner Lore Database Sync
 
+Status: `STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING`.
+Evidence class: `STATIC_DOC` / `STATIC_SOURCE`.
+Owner domain: scanner / lore database sync.
+Review disposition: `YELLOW / STATIC_DOC_ONLY` until compile/import/runtime/profiler/player proof exists.
+
 Authority: scanner hot path uses 32-bit FNV-1a target hashes, Vault-owned DTO buffers, and unmanaged unlock bitmasks. Authored strings remain cold editor/authoring input only.
 
 Runtime route:

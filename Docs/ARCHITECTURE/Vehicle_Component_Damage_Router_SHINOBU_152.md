@@ -1,8 +1,11 @@
 ﻿# Vehicle Component Damage Router
 
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
 Owner: SHINOBU_152
+Owner domain: Echelon 5 Vehicles / localized damage truth
 
 Domain: Echelon 5 vehicle localized damage truth
+Review disposition: YELLOW / STATIC_DOC_ONLY until compile/import/runtime/profiler/player proof exists.
 
 ## Global Authority Route Card
 
@@ -86,6 +89,20 @@ Absolute AUP is never cast to `float3` before subtraction.
 ## Output Contract
 
 `VehicleDamageStateDTO` publishes thrust, buoyancy, sensor, drag, flood, fire, and structure scalars. `SubmarineDynamicsRuntime` consumes only this DTO and applies hydrodynamic penalties. It does not read grid internals.
+
+## Job Anchor - 2026-06-05
+
+Evidence class: STATIC_SOURCE only. `Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageJobs.cs` contains the active job chain for this route.
+
+- `InitializeVehicleGridJob`: seeds bounded component cells.
+- `CopyVehicleDamageSignalsJob`: copies bounded damage signals into the owned signal buffer.
+- `MapImpactToGridJob`: subtracts root AUP before local impact mapping.
+- `ApplyVehicleDamageReductionJob`: applies integrity reduction to grid cells.
+- `EvaluateVehicleSystemsJob`: resolves thrust, buoyancy, sensor, drag, flood, fire, structure, hazard flags, and `VehicleHazardSignal`.
+- `PublishVehicleDamageStateJob`: copies write state to read state for downstream consumers.
+- Telemetry: `VehicleDamageTelemetryEntry` writes through `VehicleDamageConstants.TelemetryCapacity = 300`.
+- Boundary: this route owns component damage state only. Force application remains owned by submarine/physics simulation through `VehicleDamageStateDTO` scalar consumption.
+- Proof gap: source shows black-box lanes and `GlobalTelemetryBus.TryDumpBlackboxNow(VSFT)` usage in runtime, but no fault artifact, decode output, Unity import, profiler/GC, or player-build proof is attached in this static pass.
 
 ## Component Hash Contract
 

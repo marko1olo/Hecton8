@@ -4,6 +4,12 @@ Status: future / depends on real in-game screenshots
 Public stance: single-player-first scope / proof-first campaign copy
 Runtime impact: none
 
+## Authority Boundary
+
+Static marketing plan only. Public voice routes to root `textes.md`.
+Claims about quality, release, platform support, Steam, wishlist, demo/playtest state, performance, spend, audience size, campaign readiness, or publication-readiness route through `quality.md`, `release.md`, `platform.md`, current proof artifacts, and the local permission gates named in this file.
+Rows, templates, community post drafts, screenshot slots, schedules, or gate names in this file do not approve public send, paid spend, Steam page/demo/wishlist claims, platform claims, or release claims.
+
 ## Objective
 
 Use the first screenshot pack to test whether HECTON-8 has a distinct market read before spending money or sending demo keys.
@@ -75,7 +81,7 @@ New Screenshots From Below The Light
 
 Body:
 
-This update shows HECTON-8's current visual direction: pressure-rated machinery, black-water exploration, salvage routes, and habitats that behave like survival infrastructure.
+This update shows HECTON-8's current visual direction: beautiful alien water when the route is near the light, pressure-rated machinery, black-water depth exploration, salvage routes, and habitats that behave like survival infrastructure.
 
 HECTON-8 remains single-player-first and proof-first. Public scope and performance claims stay inside measured build evidence.
 
@@ -90,7 +96,7 @@ Useful feedback:
 
 HECTON-8 is underwater survival where the base is a machine, not a house.
 
-Looking for blunt visual read: does this sell pressure, machinery, and black water, or does it look too generic?
+Looking for blunt visual read: does this sell beautiful alien water plus pressure, machinery, and black-water depth, or does it look too generic?
 
 ## Creator Micro-Outreach
 

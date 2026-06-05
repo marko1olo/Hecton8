@@ -2,6 +2,8 @@
 
 Date: 2026-05-21
 
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
+
 Owner: SHINOBU_241
 
 Domain: World Generation / Offline Voxel SDF Trench Baking

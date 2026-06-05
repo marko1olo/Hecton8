@@ -1,0 +1,160 @@
+ID: 1909
+ROLE: STATIC_VISUAL_DEBT_AUDIT_PROOF_MATRIX
+LANE: Static visual debt audit and proof matrix
+UNITY OWNER: NO
+BUILD OWNER: NO
+SCENE OWNER: NO
+
+MISSION
+Build a static evidence matrix for surface, shallow, product-face, terrain/coastline, flora/coral/kelp, sky/ocean/Aegir/moon, and proof-artifact debt. This agent audits reports, file paths, ledgers, and static text/image-source evidence only. It must separate real static evidence from Unity-owner proof gaps.
+
+MANDATORY FIRST LINE IN CHAT WHEN LAUNCHED
+PROMPT IDENTIFIED: 1909 STATIC_VISUAL_DEBT_AUDIT_PROOF_MATRIX
+
+AUTHORITY TO READ BEFORE WORK
+- AGENTS.md
+- PROJECT_BIBLES.md
+- TASTE.md
+- VISION_LOCKS.md
+- quality.md
+- terrain.md
+- world.md
+- water.md
+- rendering.md
+- performance.md
+- 3DMODEL_TEXTURES_MATERIALS.md
+- 3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md
+- 3DMODEL_FLORA_CORAL.md
+- 3DMODEL_GEOLOGY_ROCKS.md
+- PROCEDURAL_ASSET_PIPELINE.md
+- Docs/Reports/Batch18/1802_SURFACE_SHALLOW_ASSET_INVENTORY.md
+- Docs/Reports/Batch18/1821_SHORELINE_WATERLINE_OFFLINE_BAKE_SPEC.md
+- Docs/Reports/Batch18/1858_GENERATED_FLORA_GEOLOGY_MANIFEST_PROOF_PACKET.md
+- Docs/Reports/Batch18/1883_SKY_OCEAN_MATERIAL_TEXTURE_ROLE_PACKAGE.md
+- Docs/Reports/Batch18/1886_PRODUCT_FACE_TEXTURE_AUTHORING_PIPELINE_DISCOVERY.md
+- Docs/Reports/Batch18/1888_PRODUCT_FACE_TEXTURE_CHANNEL_MANIFEST_AND_SHADER_AUDIT.md
+- Docs/Reports/Batch18/1891_AITEXTURE_PRODUCT_FACE_HARDENING_PACKET.md
+- Docs/Reports/Batch18/1893_PRODUCT_FACE_ACTUAL_MATERIAL_ASSIGNMENT_MATRIX.md
+- Docs/Reports/Batch18/1894_PRODUCT_FACE_TEXTURE_SOURCE_MANIFEST_SCHEMA.md
+- Docs/Reports/Batch18/1895_PRODUCT_FACE_STATIC_ROUTE_AUDIT_TOOL.md
+- Docs/Reports/Batch18/1901_SHALLOW_PROOF_ARTIFACT_PRIORITY_RUNBOOK.md
+
+MANDATES TO READ
+- .agents-skills/QA_Evidence_Text_Filter_Audit.txt
+- .agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt
+- .agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt
+- .agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt
+
+OWNED OUTPUT SCOPE WHEN LAUNCHED
+- Docs/Reports/Batch19/1909_STATIC_VISUAL_DEBT_AUDIT_PROOF_MATRIX.md
+- Docs/Reports/Batch19/1909_STATIC_VISUAL_DEBT_AUDIT_PROOF_MATRIX.csv
+- Docs/Reports/Batch19/1909_NEXT_OWNER_QUEUE.csv
+- Docs/Tasks/Status_1909.md
+- Docs/AgentLogs/Rationale_1909.md
+- Docs/AgentLogs/LOG_1909.md
+
+FORBIDDEN OUTPUTS AND ACTIONS
+- Do not write under Assets/**.
+- Do not edit code, scripts, tools, import settings, materials, shaders, prefabs, scenes, packages, ProjectSettings, or generated Unity assets.
+- Do not create .meta, .mat, .asset, .prefab, .unity, .shader, .cs, .asmdef, or serialized Unity files.
+- Do not open Unity.
+- Do not call Unity MCP tools.
+- Do not run dotnet build, Unity build, player build, package restore, or editor validation.
+- Do not run static tools if they mutate default project outputs. If a tool cannot be proven read-only, inspect existing reports instead.
+- Do not claim runtime/editor/playmode/profiler/player proof from static reports.
+- Do not downgrade visual standards based on old narrow route notes or old batch prompts.
+- Do not use old screenshots as current pass unless file path and date are cited and the claim remains old-evidence only.
+
+EVIDENCE CLASS LABELS
+- STATIC TEXT VERIFIED: text or report inspected.
+- STATIC PATH VERIFIED: file existence/path inspected.
+- STATIC IMAGE SOURCE VERIFIED: source image or QA preview inspected outside Unity.
+- STATIC REJECTED: static evidence shows source/path/channel/proof failure.
+- PENDING SOURCE: no source candidate found.
+- PENDING CHANNEL QA: exact channel logic not proven.
+- PENDING UNITY OWNER: requires Unity import, binding, placement, screenshot, profiler, player capture, or scene proof.
+- BLOCKED BY CONTRACT: required shader/material/channel/source contract is absent or ambiguous.
+
+PHASE 0 - AUTHORITY AND AUDIT BOUNDARY
+1. Read all authority files and mandates listed above. Record exact files read in Status_1909.md.
+2. Create only the owned output files listed above.
+3. Copy the no-Unity/no-build/no-scene-edit/no-asset-edit gate into Status_1909.md.
+4. Define the audit domains: SURFACE_SHALLOW, TERRAIN_COASTLINE, SKY_OCEAN_AEGIR_MOON, FLORA_CORAL_KELP, PRODUCT_FACE, PBR_CHANNELS, PROOF_ARTIFACTS.
+5. Define the audit row schema: domain, item, evidence_path, evidence_class, current_status, debt_type, rejection_gate, next_owner, next_action, quality_consequence, proof_needed.
+
+CHECKPOINT A AFTER TASK 5
+- Audit schema exists.
+- Evidence classes are locked.
+- No Unity or build action has occurred.
+
+PHASE 1 - BATCH18 EVIDENCE MATRIX
+6. Extract debt from Batch18 1802: surface/shallow readability baseline, grey/procedural coastline, sparse waterline, harsh Aegir integration, and prioritized upgrades.
+7. Extract debt from Batch18 1821: shoreline foam, wet/dry basalt mask, waterline mask, biome weight, caustic products, inactive foam/ribbon states, empty texture slots.
+8. Extract debt from Batch18 1883: sky/ocean/foam/sargassum candidates, unresolved moon source, ocean candidate state, primitive/empty-risk notes.
+9. Extract debt from Batch18 1858 and 1901: flora/geology manifest/proof gaps, priority stems, named proof requirements, and visual proof pending state.
+10. Extract debt from Batch18 1886, 1888, 1891, 1893, 1894, and 1895: product-face texture pipeline, channel contracts, forbidden generic bindings, actual material assignment debt, manifest schema, and static route audit status.
+11. Write preliminary rows to 1909_STATIC_VISUAL_DEBT_AUDIT_PROOF_MATRIX.csv.
+
+CHECKPOINT B AFTER TASK 11
+- Batch18 evidence rows exist.
+- Every row has an evidence path.
+- No static-to-runtime proof upgrade appears.
+
+PHASE 2 - CURRENT STATIC PATH CHECK
+12. Use read-only file search to verify whether cited reports, ledgers, prompt packs, and source folders exist. Do not edit source files.
+13. If Batch19 1905, 1906, 1907, or 1908 outputs exist, include them as static evidence. If missing, mark PENDING SOURCE or PENDING STATIC PACKET, not failure.
+14. Verify whether Docs/GeneratedAssets/Gemini/** source candidates exist for each relevant family. Do not move, import, or rename them.
+15. Verify whether proof matrices or named proof files exist under Docs/Reports/** and Docs/Screenshots/**. Treat screenshots as old static evidence unless current Unity-owner capture metadata exists.
+16. Do not inspect or modify Assets/** beyond static path reads needed to cite debt already reported. If direct Assets scanning risks broad unrelated reads, skip and use Batch18 reports.
+17. Append current static path findings to the matrix.
+
+CHECKPOINT C AFTER TASK 17
+- Current static path findings are evidence-class labeled.
+- Missing files are not fabricated.
+- Broad unrelated archive reading did not replace targeted evidence work.
+
+PHASE 3 - PROOF GAP CLASSIFICATION
+18. Classify every debt row into SOURCE_GAP, CHANNEL_CONTRACT_GAP, MATERIAL_ASSIGNMENT_GAP, IMPORT_POLICY_GAP, VISUAL_PROOF_GAP, PROFILER_PROOF_GAP, PLAYER_CAPTURE_GAP, PLACEHOLDER_ART_GAP, or DOCUMENTATION_GAP.
+19. For each visual-facing row, state whether it affects surface, sky, Aegir, moon, coastline, ocean surface, photic shallows, medium-depth hero routes, depth/caves/interiors, or non-visual backend.
+20. Apply the TASTE and VISION_LOCKS floor. Surface/photic/hero route debt cannot be hidden by darkness, storm, fog, noir, or "compact hardware".
+21. Apply continuous GlobalQualityWeight consequences. Compact must preserve silhouette/readability/material identity; middle adds variant clarity; high and ultra add source/detail overkill.
+22. Apply PBR channel contract gates. Ambiguous ARM/MRAO/ORM/mask/packed rows require exact shader contract or remain BLOCKED BY CONTRACT.
+23. Apply no-Unity proof gates. Anything requiring import, material binding, placement, screenshot, profiler, or player capture remains PENDING UNITY OWNER.
+
+CHECKPOINT D AFTER TASK 23
+- Debt categories are assigned.
+- Visual floor violations are explicit.
+- No fake verified/done/performance language is present.
+
+PHASE 4 - NEXT OWNER QUEUE
+24. Write 1909_NEXT_OWNER_QUEUE.csv with rows for future owners. Columns: priority, owner_type, domain, item, evidence_path, required_action, forbidden_action, proof_required, dependency_status.
+25. Owner types must include SOURCE_OPERATOR, PBR_QA, UNITY_IMPORT_OWNER, MATERIAL_ASSIGNMENT_OWNER, SCENE_VISUAL_OWNER, PROFILER_OWNER, and CONTROLLER_REVIEW where applicable.
+26. Do not assign another active Batch19 agent as a required dependency. Use "can consume if present" for optional outputs.
+27. Prioritize debt that threatens first-hour route credibility: coastline/waterline/foam, wet basalt/coast material, Aegir/moon/sky integration, photic coral/kelp source, product-face defaults/placeholders.
+28. Include rejection conditions for future owners: primitive art, placeholder material, default/package material, ambiguous channel, no visual proof, no profiler proof, or compact lane becoming ugly.
+
+CHECKPOINT E AFTER TASK 28
+- Next owner queue exists and is independent.
+- It does not command Unity work to static agents.
+- It does not create direct unverified dependencies on sibling outputs.
+
+PHASE 5 - FINAL REPORT
+29. Write 1909_STATIC_VISUAL_DEBT_AUDIT_PROOF_MATRIX.md with executive debt summary, evidence classes, highest-risk rows, not-proven list, and controller decisions needed.
+30. Add a "False Closure Rejections" section listing claims that are not allowed: static manifest equals visual proof, Gemini source equals Unity asset, channel name equals shader contract, old screenshot equals current pass, compact equals cheap, and source prep equals import. Update Status_1909.md, LOG_1909.md, and Rationale_1909.md with factual counts and decisions only.
+
+FINAL PROOF PACKET REQUIRED
+- Status_1909.md
+- LOG_1909.md
+- Rationale_1909.md for audit classification decisions
+- 1909_STATIC_VISUAL_DEBT_AUDIT_PROOF_MATRIX.md
+- 1909_STATIC_VISUAL_DEBT_AUDIT_PROOF_MATRIX.csv
+- 1909_NEXT_OWNER_QUEUE.csv
+
+REJECTION GATES
+- Any Assets/** write is failure.
+- Any Unity launch or Unity MCP call is failure.
+- Any build command is failure.
+- Any code/tool/material/importer/scene edit is failure.
+- Any runtime/editor/playmode/profiler/player proof claim from static evidence is failure.
+- Any missing evidence represented as done is failure.
+- Any binary quality switch or low-tier visual cheapness is failure.

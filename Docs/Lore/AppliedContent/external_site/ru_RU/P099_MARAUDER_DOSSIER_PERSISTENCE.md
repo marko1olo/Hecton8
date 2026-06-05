@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
 # Marauder Dossier Persistence
 
-Marauder Dossier Persistence дает HECTON-8 replayability без roguelite power inflation: игрок сохраняет knowledge, records и contract context.
+The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power.
 
 ## Scanner
 
@@ -32,6 +32,6 @@ DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, 
 
 ## Field Note
 
-Replay meta должна уважать hard mode: никакого магического retention силы.
+The dossier remembers evidence and warnings; it does not make pressure forgiving.
 
 <!-- External Site; generated from P099_MARAUDER_DOSSIER_PERSISTENCE/ru_RU. -->

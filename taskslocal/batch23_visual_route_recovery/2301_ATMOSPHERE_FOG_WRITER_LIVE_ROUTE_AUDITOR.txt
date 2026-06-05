@@ -1,0 +1,68 @@
+ID: 2301
+ROLE: ATMOSPHERE_FOG_WRITER_LIVE_ROUTE_AUDITOR
+CHAT NAME: 2301 atmosphere fog writer
+
+MISSION
+The current surface and underwater captures still read green, flat, and poor. Determine the exact possible writers of fog color/density, underwater state, surface state, biome atmosphere, and RenderSettings presentation. Produce a live-proof checklist and a minimal source patch plan. Do not run Unity.
+
+DO NOT TAKE UNITY SLOT.
+Unity is owned by `Продолжить работу по логам`. Static audit only unless the controller later transfers the slot.
+
+AUTHORITIES TO READ
+1. `AGENTS.md`
+2. `PROJECT_BIBLES.md`
+3. `TASTE.md`
+4. `VISION_LOCKS.md`
+5. `lighting.md`
+6. `water.md`
+7. `vfx.md`
+8. `.agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`
+9. `.agents-skills/REND_Shader_Noir_Aesthetics_Dithering_Fog.txt`
+10. `.agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
+
+EVIDENCE BASIS
+- `Docs/Screenshots/MCP/h8_1473_mainrt_surface_forced_day.png`
+- `Docs/Screenshots/MCP/h8_1473_mainrt_underwater_0_5m.png`
+- `Docs/Reports/Batch22/2201_FOAM_CAUSTICS_UNDERWATER_ACTIVATION_MATRIX.md`
+- `Docs/Reports/Batch22/2205_RUNTIME_FAULT_MATRIX.md`
+- Descartes sidecar conclusion in `Docs/Orchestration/ORCHESTRATOR_DAY_20260604.md`
+
+OWNED SCOPE
+Read-only by default:
+- `Assets/_Project/Scripts/HectonAtmosphereManager.cs`
+- `Assets/_Project/Scripts/HectonUnderwaterVisuals.cs`
+- `Assets/_Project/Scripts/HectonCelestialEngine.cs`
+- `Assets/_Project/Scripts/**Atmosphere**`
+- `Assets/_Project/Scripts/**Biome**`
+- `Assets/_Project/Data/Atmosphere/**`
+- `Assets/_Project/Data/Biomes/AtmosphereProfiles/**`
+- `Assets/_Project/Scenes/02_HECTON_WORLD.unity`
+- URP renderer/settings assets relevant to fog/post.
+
+TASKS
+01. Record 2-8 relevant mandates in `Docs/Tasks/Status_2301.md`.
+02. Inventory every source writer of `RenderSettings.fog`, `RenderSettings.fogColor`, `RenderSettings.fogDensity`, `RenderSettings.ambientLight`, and global shader fog/water color parameters.
+03. Inventory every public or serialized way underwater can be forced: external flags, movement state, camera depth, player depth, explicit API, profile selection, scene YAML.
+04. Prove whether `_useAutoUnderwaterDetection: 0` in `02_HECTON_WORLD` can make screenshots falsely show surface state while camera is underwater.
+05. Identify all green/teal source colors in scene RenderSettings, underwater profile, day profile, biome profiles, and shader globals.
+06. Identify write order risks between `HectonAtmosphereManager`, `HectonUnderwaterVisuals`, `HectonCelestialEngine`, Crest underwater renderer, and post-processing.
+07. Build a matrix: writer, file/line, condition, color/density value, owner phase, risk, proof needed.
+08. Determine whether `HectonCelestialEngine` should write readable surface fog at all, or only receive/polish atmosphere state. Mark ownership risk clearly.
+09. Determine whether surface forced-day fog currently has a blue/cyan floor or a green swamp floor.
+10. Determine whether underwater fog profile is too transparent for 0-5 m and 20-50 m proof routes.
+11. Produce a minimal live logging probe plan for the Unity owner: exact values to log per frame/capture, no allocations, no hot scene search.
+12. Produce a minimal patch plan for surface state: avoid green swamp cast, keep bright readable surface, do not over-saturate.
+13. Produce a minimal patch plan for underwater state: real blue/teal depth haze, particulate/haze visibility, still bright in 0-100 m photic zone.
+14. Include tier behavior: Minimum/Low/Middle/High/Ultra for fog/haze only. Do not use binary quality switches.
+15. Include rollback plan for every proposed writer change.
+16. Include explicit reject gates: "green swamp", "transparent empty underwater", "darkness hiding weak terrain", "false underwater label".
+17. Write `Docs/Reports/Batch23/2301_ATMOSPHERE_FOG_WRITER_MATRIX.md`.
+18. Write `Docs/Reports/Batch23/2301_ATMOSPHERE_FOG_WRITER_MATRIX.csv`.
+19. Append concise facts to `Docs/AgentLogs/LOG_2301.md`.
+20. Final answer in chat: owner route, likely live fault, exact Unity-owner proof commands/checks.
+
+REJECT
+- Treating serialized profile values as live proof.
+- Moving fog ownership into an unrelated system.
+- Using darkness/fog to hide bad art.
+- Running Unity.

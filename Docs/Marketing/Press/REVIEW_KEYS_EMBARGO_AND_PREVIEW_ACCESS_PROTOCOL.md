@@ -4,6 +4,12 @@ Status: pre-key protocol / no keys ready
 Owner lane: Marketing / access control
 Runtime impact: none
 
+## Authority Boundary
+
+Static access protocol only. Public voice routes through root `textes.md`.
+Any quality, release, platform, Steam, wishlist, demo, performance, press, review-key, embargo, showcase, curator, publication, website, or presskit claim requires `quality.md`, `release.md`, `platform.md`, current proof artifacts, and the matching local permission gate.
+Draft batches, templates, logs, schedules, checklists, and strategy rows do not approve Steam page, wishlist, pricing, discount, review-key, presskit, showcase, publication, platform, or release claims.
+
 ## Source Boundary
 
 Primary current sources:

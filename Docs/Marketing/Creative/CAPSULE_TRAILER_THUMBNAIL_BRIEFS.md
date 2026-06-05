@@ -4,6 +4,11 @@ Status: creative production brief / pre-asset
 Public stance: single-player-first scope / proof-first public copy
 Runtime impact: none
 
+## Authority Boundary
+
+Static documentation only. Public capsule, trailer, thumbnail, creative, Steam, wishlist, demo, performance, platform, release, publication, and gameplay-proof claims require root `textes.md` for voice plus `quality.md`, `release.md`, and `platform.md` with current proof artifacts and the local permission gates.
+No public post, Steam news, trailer/capsule approval, creator send, community launch, platform/release claim, demo claim, capsule approval, thumbnail approval, or creative publication is authorized by drafts, examples, concepts, test questions, or plan rows in this file.
+
 ## Creative Objective
 
 Make HECTON-8 readable in one glance:
@@ -32,7 +37,7 @@ Required V7 checks before a capsule or thumbnail rough advances:
 
 | Check | Pass | Revise / kill |
 |---|---|---|
-| First read | Viewer says base pressure, salvage route, heavy machine, black water, or anomaly signal. | Viewer says pretty ocean, generic diver, blue reef, spaceship corridor, or "Subnautica but darker." |
+| First read | Viewer says beautiful alien ocean plus route cost, base pressure, salvage route, heavy machine, black water, or anomaly signal. | Viewer says generic pretty ocean, generic diver, blue reef, spaceship corridor, or "Subnautica but darker." |
 | Player scope | One isolated operator/tool relation. | Multiple player silhouettes, friend-group warmth, or co-op implication. |
 | Material truth | Salt, scratches, wet metal, labels, clamps, gauges, condensation. | Clean white plastic, smooth concept surfaces, glossy sci-fi UI. |
 | Action | Viewer can infer repair, seal, reroute, salvage, scan, evade, or abort. | The frame is mood-only and needs caption rescue. |

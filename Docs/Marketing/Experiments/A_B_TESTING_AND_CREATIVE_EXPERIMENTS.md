@@ -1,4 +1,10 @@
-﻿# HECTON-8 A/B Testing And Creative Experiments
+# HECTON-8 A/B Testing And Creative Experiments
+
+## Authority Boundary
+
+Static experiment plan only. Hypotheses, matrices, copy variants, sample thresholds, and stop rules do not prove quality, release, platform, Steam, wishlist, demo, performance, feedback, monitoring, operations, launch, or public-response readiness.
+Public voice routes to root `textes.md`. Quality, release, platform, Steam, wishlist, demo, performance, feedback, review/forum response, legal/compliance, localization, monitoring, operations, partnership, contract, and launch claims route through root `quality.md`, `release.md`, and `platform.md` with current proof artifacts plus local permission gates where present.
+No launch/release readiness, localized public use, public response, creator contract send, platform claim, Steam approval, wishlist claim, demo approval, paid-spend approval, or public send approval exists from experiment rows or static creative plans.
 
 Status: pre-asset experiment plan
 Owner lane: Marketing / marketing measurement
@@ -148,7 +154,7 @@ These briefs are the first executable experiments. They are not creative suggest
 
 | Test ID | Stage | Asset family | Hypothesis | Audience | CTA | Metric | Stop rule |
 |---|---|---|---|---|---|---|---|
-| AB-001 | Cold-reader | `PLAN-SHOT-001` vs `PLAN-SHOT-003` | Identity hero beats salvage only if the viewer can name genre and player fantasy in 5 seconds. | 15 cold readers, no project context. | "What is this game?" | 70% correct genre read and fewer than 2 "Subnautica clone only" responses. | Kill the weaker first screenshot if it is pretty but actionless. |
+| AB-001 | Cold-reader | `PLAN-SHOT-000` vs `PLAN-SHOT-003` | Identity hero beats salvage only if the viewer can name genre and player fantasy in 5 seconds. | 15 cold readers, no project context. | "What is this game?" | 70% correct genre read and fewer than 2 "Subnautica clone only" responses. | Kill the weaker first screenshot if it is pretty but actionless. |
 | AB-002 | Cold-reader | `PLAN-CAPSULE-001` rough A/B/C | Small-size capsule readability matters more than cinematic detail. | 15 Steam-adjacent players or agents. | "Which would you click on Steam?" | Winner is +20% preference and title remains readable at tiny size. | Do not commission/polish if no variant beats plain logo + hero silhouette. |
 | AB-003 | Organic micro-post | `PLAN-SHOT-005` vs `PLAN-SHOT-004` | Base risk will outperform heavy machinery only if viewers understand consequence, not just mood. | X/Bluesky/Reddit critique-safe surface after handle custody exists. | Comment question; external CTA waits for the exact destination gate plus `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`. | Useful comments naming system/verb per 100 views. | Kill if comments are mostly "looks cool" or "what do you do?" |
 | AB-004 | Copy desk test | Short description A vs B vs C | Direct pressure/salvage copy should beat NASA-punk wording until visuals teach the term. | 10 internal reads + 15 humans after first screenshot exists. | Pick what the game is. | Lowest confusion and lowest unsupported multiplayer-scope assumption wins. | Remove any copy that implies multiplayer, simulation scope, or mood-only game. |

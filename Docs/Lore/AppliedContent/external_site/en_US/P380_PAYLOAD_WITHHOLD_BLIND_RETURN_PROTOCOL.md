@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ Sometimes not sending is the only thing that still belongs to you.
 
 ## Field Note
 
-Use for no-clean ending dossier and refusal branch.
+Receiver record: withholding keeps Deep Reach blind while risking proof, payout, and clean extraction.
 
 <!-- External Site; generated from P380_PAYLOAD_WITHHOLD_BLIND_RETURN_PROTOCOL/en_US. -->

@@ -1,0 +1,40 @@
+packet_id,field,evidence,path
+P024_FALSE_EXIT_MATERIAL,field_note,A real ending can still be a bad answer.,Docs/Lore/AppliedContent/packets/RS005_CARRIER_ESCAPE_DEEP_REACH_PRESSURE.packets.json
+P098_FALSE_ENDING_TAXONOMY,scanner,Ending board. Some exits are real enough to count and wrong enough to hurt.,Docs/Lore/AppliedContent/packets/RS020_ATLAS_ENDING_AGENCY_DOSSIER.packets.json
+P098_FALSE_ENDING_TAXONOMY,field_note,False ending must not be a trick. It must be a valid bad bargain.,Docs/Lore/AppliedContent/packets/RS020_ATLAS_ENDING_AGENCY_DOSSIER.packets.json
+P100_FINAL_CHOICE_PAYLOAD,field_note,"The best ending should be defensible, not clean.",Docs/Lore/AppliedContent/packets/RS020_ATLAS_ENDING_AGENCY_DOSSIER.packets.json
+P131_MATERIAL_EXIT_BITTER_CREDITS,field_note,"This ending should be real credits, not a fake game over.",Docs/Lore/AppliedContent/packets/RS027_FALSE_EXIT_RETURN_PRESSURE.packets.json
+P178_ENDING_RECORD_PRESENTATION,scanner,"An ending record is evidence, not a trophy shelf.",Docs/Lore/AppliedContent/packets/RS036_DOSSIER_SAVE_PRESENTATION_RULES.packets.json
+P178_ENDING_RECORD_PRESENTATION,audio,The ending is not over. It is filed.,Docs/Lore/AppliedContent/packets/RS036_DOSSIER_SAVE_PRESENTATION_RULES.packets.json
+P195_BEST_ENDING_NO_CLEAN_HANDS,scanner,"The best ending should not erase cost, uncertainty or complicity.",Docs/Lore/AppliedContent/packets/RS039_FINAL_DECISION_EMOTIONAL_AXIS.packets.json
+P195_BEST_ENDING_NO_CLEAN_HANDS,field_note,A strong ending lets the player save something real and lose something real.,Docs/Lore/AppliedContent/packets/RS039_FINAL_DECISION_EMOTIONAL_AXIS.packets.json
+P265_ENDING_PAYOUT_AUTHORING_ROWS,scanner,The payout ledger is not the ending. It is the receipt.,Docs/Lore/AppliedContent/packets/RS053_NUMERIC_AUTHORING_BRIDGE_SURFACES.packets.json
+P265_ENDING_PAYOUT_AUTHORING_ROWS,field_note,"Every ending row needs receiver, payload route, evidence state, lien adjustment, consequence tag and dossier flag.",Docs/Lore/AppliedContent/packets/RS053_NUMERIC_AUTHORING_BRIDGE_SURFACES.packets.json
+P284_ATLAS6_SITE_SPOILER_GATE_COPY,field_note,"Gate label should name categories: factory-temple, repair ecology, ending payloads, worker evidence.",Docs/Lore/AppliedContent/packets/RS057_PUBLIC_SITE_READY_ARTICLE_SECTIONS.packets.json
+P299_PAYLOAD_AUTHORITY_LAST_CHECK,field_note,Use immediately before irreversible ending route selection.,Docs/Lore/AppliedContent/packets/RS060_FINAL_DESCENT_ROUTE_FRAGMENTS.packets.json
+P300_NO_CLEAN_ENDING_DOSSIER_NOTE,field_note,Use as post-ending summary seed and replay bridge; never call it perfect victory.,Docs/Lore/AppliedContent/packets/RS060_FINAL_DESCENT_ROUTE_FRAGMENTS.packets.json
+P305_ENDING_PAYOUT_ROW_CONTRACT,scanner,"Ending row: receiver, custody, evidence state, payout, consequence.",Docs/Lore/AppliedContent/packets/RS061_TABLE_VALUE_HANDOFF_CONTRACTS.packets.json
+P309_DOSSIER_ENDING_RECORD_PROOF_CARD,scanner,"Dossier proof: ending family, receiver, evidence state, route warning, unresolved cost.",Docs/Lore/AppliedContent/packets/RS062_RUNTIME_UI_PROOF_BACKLOG.packets.json
+P309_DOSSIER_ENDING_RECORD_PROOF_CARD,field_note,Use for ending record UI implementation and save-profile knowledge flags.,Docs/Lore/AppliedContent/packets/RS062_RUNTIME_UI_PROOF_BACKLOG.packets.json
+P320_TERMINAL_BACKLOG_TRIAGE_LOCK,scanner,"Placement priority: terminal rows first when they alter route, proof or ending record.",Docs/Lore/AppliedContent/packets/RS064_UNITY_PLACEMENT_PRIORITY_BACKLOG.packets.json
+P336_MATERIAL_EXIT_RECEIPT_AUDIT,field_note,Use for material ending record and replay dossier.,Docs/Lore/AppliedContent/packets/RS068_FALSE_EXIT_AFTER_ACTION_RECORDS.packets.json
+P338_QUARANTINE_HOLD_INTERROGATION_RECORD,field_note,Use as bitter partial ending and post-exit dossier item.,Docs/Lore/AppliedContent/packets/RS068_FALSE_EXIT_AFTER_ACTION_RECORDS.packets.json
+P339_CORPORATE_COORDINATE_CAPTURE_RECORD,field_note,Use as bad-material or corporate partial ending.,Docs/Lore/AppliedContent/packets/RS068_FALSE_EXIT_AFTER_ACTION_RECORDS.packets.json
+P340_PUBLIC_LEDGER_AFTERSHOCK_RECORD,field_note,Use as public truth ending record and spoiler-gated site copy.,Docs/Lore/AppliedContent/packets/RS068_FALSE_EXIT_AFTER_ACTION_RECORDS.packets.json
+P376_PAYLOAD_SELL_COORDINATES_RECEIVER_PROTOCOL,field_note,Use for material ending UI and spoiler-gated site pages.,Docs/Lore/AppliedContent/packets/RS076_ATLAS_FINAL_PAYLOAD_RECEIVER_PROTOCOLS.packets.json
+P378_PAYLOAD_PRESERVE_QUARANTINE_RECEIVER_PROTOCOL,field_note,Use for preserve/quarantine ending record and public-spoiler copy.,Docs/Lore/AppliedContent/packets/RS076_ATLAS_FINAL_PAYLOAD_RECEIVER_PROTOCOLS.packets.json
+P380_PAYLOAD_WITHHOLD_BLIND_RETURN_PROTOCOL,field_note,Use for no-clean ending dossier and refusal branch.,Docs/Lore/AppliedContent/packets/RS076_ATLAS_FINAL_PAYLOAD_RECEIVER_PROTOCOLS.packets.json
+P385_ATLAS_BASIN_PAYLOAD_ACT,scanner,Act gate: Atlas basin. Every ending is a receiver and custody decision.,Docs/Lore/AppliedContent/packets/RS077_LONG_CAMPAIGN_ACT_SPINE.packets.json
+P385_ATLAS_BASIN_PAYLOAD_ACT,field_note,"Use for final route UI, ending dossier and spoiler-gated publication branches.",Docs/Lore/AppliedContent/packets/RS077_LONG_CAMPAIGN_ACT_SPINE.packets.json
+P390_ATLAS_SERVICE_BASIN_POI_KIT,field_note,"Use for final-depth landmark, spoiler-gated art and ending receiver UI anchors.",Docs/Lore/AppliedContent/packets/RS078_MAJOR_POI_EVIDENCE_KITS.packets.json
+P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER,audio,The ending is who owns the proof afterward.,Docs/Lore/AppliedContent/packets/RS084_SITE_WIKI_NAVIGATION_CLUSTERS.packets.json
+P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER,field_note,Use for spoiler-gated site pages and unlocked in-game ending dossier.,Docs/Lore/AppliedContent/packets/RS084_SITE_WIKI_NAVIGATION_CLUSTERS.packets.json
+P429_ATLAS_LATTICE_CONTAMINATION_TAG,scanner,"Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",Docs/Lore/AppliedContent/packets/RS086_RESOURCE_ECONOMY_ARTIFACTS.packets.json
+P429_ATLAS_LATTICE_CONTAMINATION_TAG,field_note,"Use for contaminated sample scanner, ecology wiki and ending payload flags.",Docs/Lore/AppliedContent/packets/RS086_RESOURCE_ECONOMY_ARTIFACTS.packets.json
+P431_PDA_EVIDENCE_TIER_LABEL_RULE,scanner,"Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",Docs/Lore/AppliedContent/packets/RS087_PDA_CODEX_PRESENTATION_RULES.packets.json
+P434_DOSSIER_ENDING_RECORD_LAYOUT_RULE,scanner,"Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",Docs/Lore/AppliedContent/packets/RS087_PDA_CODEX_PRESENTATION_RULES.packets.json
+P434_DOSSIER_ENDING_RECORD_LAYOUT_RULE,field_note,Use for ending dossier UI and spoiler-site layout.,Docs/Lore/AppliedContent/packets/RS087_PDA_CODEX_PRESENTATION_RULES.packets.json
+P440_ENDING_RECORD_TRANSCRIPT_SEED,scanner,"Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.",Docs/Lore/AppliedContent/packets/RS088_AUDIO_TRANSCRIPT_ARTICLE_SEEDS.packets.json
+P440_ENDING_RECORD_TRANSCRIPT_SEED,field_note,"Use for ending dossier, spoiler pages and final VO captions.",Docs/Lore/AppliedContent/packets/RS088_AUDIO_TRANSCRIPT_ARTICLE_SEEDS.packets.json
+P445_ENDING_PAYOUT_VALUE_DRAFT_ROWS,scanner,"Table draft: ending payouts are receiver/custody rows, not victory scores.",Docs/Lore/AppliedContent/packets/RS089_NUMERIC_GAMEPLAY_TABLE_VALUE_DRAFTS.packets.json
+P450_TERMINAL_SLOT_PROMOTION_BRIEF,field_note,Unity pass: current TerminalOS capacity remains 27 verified slots. New rows stay NarrativeDiscovery until a terminal row has route or ending value.,Docs/Lore/AppliedContent/packets/RS090_UNITY_PLACEMENT_SCENE_BRIEFS.packets.json

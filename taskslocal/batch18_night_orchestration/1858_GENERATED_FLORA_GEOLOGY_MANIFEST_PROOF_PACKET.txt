@@ -1,0 +1,51 @@
+AGENT ID: 1858
+ROLE: GENERATED_FLORA_GEOLOGY_MANIFEST_PROOF_PACKET
+MODE: No-mutation proof/manifest implementation packet. Do not edit prefabs, assets, source, scenes, binaries, generated lore, or `.meta`.
+
+PRIMARY GOAL
+Reduce false completion risk for generated shallow/surface-adjacent flora and geology assets. The audit currently has 1281 warnings, dominated by missing manifests, missing named proof, and pending surface/shallow visual proof. Produce a concrete proof/manifest packet that future agents can execute without faking beauty or touching Unity while busy.
+
+READ
+- AGENTS.md, PROJECT_BIBLES.md, VISION_LOCKS.md, TASTE.md, quality.md
+- terrain.md, world.md, water.md, 3dmodel.md, 3DMODEL_TEXTURES_MATERIALS.md, PROCEDURAL_ASSET_PIPELINE.md if present
+- Docs/Reports/Batch18/1851_GENERATED_ASSET_PRODUCTION_AUDIT.md
+- Tools/GeneratedAssetProductionAudit.py
+- Assets/_Project/Prefabs/Nature/Flora/Baked if present
+- Assets/_Project/Art/Generated/Flora/BioForge/Shallows if present
+- Assets/_Project/Art/Meshes/WorldProceduralGeology if present
+
+OWNED OUTPUTS
+- Docs/Tasks/Status_1858.md
+- Docs/AgentLogs/Rationale_1858.md for non-trivial decisions only
+- Docs/AgentLogs/LOG_1858.md
+- Docs/Reports/Batch18/1858_GENERATED_FLORA_GEOLOGY_MANIFEST_PROOF_PACKET.md
+- Docs/Reports/Batch18/1858_PROOF_PRIORITY_MATRIX.csv
+
+HARD RULES
+- Do not run Unity, PlayMode, builds, importers, bakes, screenshots, or DataMonolith tools.
+- Do not create fake proof images or fake render claims.
+- Do not mark assets accepted because package files exist.
+- Do not edit generated assets or prefabs.
+- Do not try to clear all 1281 warnings mechanically; prioritize what matters for surface/shallow/mid-depth production.
+
+20 TASKS
+01. Create tracking files and mark evidence class STATIC_SOURCE.
+02. Read authorities and 2-8 relevant mandates from `.agents-skills`.
+03. Reconfirm audit warning counts and issue-code distribution.
+04. Identify top shallow/surface-adjacent asset families by gameplay/visual importance, not by alphabetical order.
+05. Sample representative baked flora prefabs and record whether they have material refs, LOD/proxy evidence, and obvious primitive risks.
+06. Sample representative BioForge shallow source meshes and record whether they are source-only or production-ready candidates.
+07. Sample representative WorldProceduralGeology meshes and record whether collider/proxy and material routes are present.
+08. Define manifest schema fields required for each generated visual package.
+09. Define named proof artifact naming convention that `GeneratedAssetProductionAudit.py` can find.
+10. Define screenshot/render proof requirements by use case: close inspection, gameplay distance, route composition, low/mid/high/ultra quality.
+11. Define which warnings can be cleared by static manifest/proof-file creation and which require Unity/render proof.
+12. Define first priority set of 20-40 assets for future proof pass: shallow coral/kelp, reef carriers, geology route anchors.
+13. Define second priority set for medium-depth hero routes.
+14. Define rejection criteria: blurry, muddy, flat, primitive, low-poly, crayon-like, missing material identity, no LOD, no collider/proxy where needed.
+15. Define how future agents should update audit without hiding missing visual proof.
+16. Define how to preserve performance: LODs, HLOD/impostor, material atlas/instancing, GlobalQualityWeight scaling.
+17. Build CSV priority matrix with asset stem, family, path, likely use, proof need, manifest need, risk, future owner.
+18. Define minimal no-Unity static checks future agents can run after adding manifests.
+19. Append concise LOG/Rationale.
+20. Mark PACKET_COMPLETE or BLOCKED with exact missing evidence.

@@ -1,6 +1,6 @@
 ﻿# Documentation Data Profiles
 
-Date: 2026-05-26
+Date: 2026-06-05
 Status: STATIC AUTHORING DATA
 Owner: DOCS_ACTUALIZATION
 Evidence class: STATIC_DOC / CSV_DATA
@@ -14,7 +14,19 @@ Current profiles:
 - `water_extinction_profiles.csv`
 - `water_optics_profiles.csv`
 
-These files are authoring inputs or tuning bridges. They are not runtime proof and are not Data Monolith payload authority.
+These files are authoring inputs or tuning bridges. They are not `.h8bin` payloads, runtime proof, Unity import proof, bake proof, boot proof, save/load proof, or Data Monolith payload authority. Static CSV presence only proves the authoring source exists.
+
+## Stable Authority Routes
+
+Use these project-relative paths for Data Monolith and data-bridge authority:
+
+- `Docs/ARCHITECTURE/DATA_MONOLITH_H8BIN_SPEC.md`
+- `Docs/ARCHITECTURE/DATA_MONOLITH_RUNTIME_INTEGRATION.md`
+- `Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md`
+- `data.md`
+- `authoring.md`
+
+Those documents own the binary payload, runtime integration, layout/proof, and authoring bridge rules. This profile folder does not prove `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` readiness and does not prove player runtime, import, profiler, GC, save, or load behavior.
 
 ## Schema Boundary
 

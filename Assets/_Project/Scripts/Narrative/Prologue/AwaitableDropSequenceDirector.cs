@@ -18,9 +18,12 @@ namespace Hecton8.Narrative.Prologue
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8550)]
-    public sealed class AwaitableDropSequenceDirector : MonoBehaviour, IPrologueSequenceService, IUpdatable, IGlobalRegistryHotSwapListener
+    public sealed class AwaitableDropSequenceDirector : MonoBehaviour, IPrologueSequenceService, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int TelemetryCapacity = 300;
+        private const int PrologueTelemetryEntrySizeBytes = 64;
+        private const int ReentryStateDtoSizeBytes = 32;
+        private const int NativeDtoAlignmentBytes = 8;
         private const double OrbitalSilenceSeconds = 3d;
         private const double Mach10MetersPerSecond = 3430d;
         private const double Mach10MetersPerSecondSq = Mach10MetersPerSecond * Mach10MetersPerSecond;
@@ -33,6 +36,12 @@ namespace Hecton8.Narrative.Prologue
         private const float AtmosphereEntryHeatThreshold = 0.001f;
         private const float BurnFailClosedProgress01 = 0.42f;
         private const float ManualFailClosedProgress01 = 0.82f;
+        private const float CameraPressureAmplitudeScale = 0.62f;
+        private const float CameraPressureTranslationGain = 0.28f;
+        private const float CameraPressureRotationGain = 0.82f;
+        private const float CameraPressureHighPriorityThreshold = 0.68f;
+        private const float SurvivalAbortOxygenThreshold01 = 0.0001f;
+        private const uint SurvivalAbortMaxSignalAgeFrames = 4u;
         private const uint SourceHash = PrologueSignalSourceHashes.SequenceDirector;
         private const uint AwaitHash = 0x41574149u; // AWAI
         private const uint SilenceHash = 0x53494C45u; // SILE
@@ -45,9 +54,18 @@ namespace Hecton8.Narrative.Prologue
         private const uint DevSkipHash = 0x534B4950u; // SKIP
         private const uint CancelHash = 0x43414E43u; // CANC
         private const uint FaultHash = 0x46414C54u; // FALT
+        private const uint SurvivalAbortHash = 0x53555256u; // SURV
         private const uint DumpFailedHash = 0x444D5046u; // DMPF
         private const string DumpFileName = "Dump_PROLOGUE_SEQUENCE_DIRECTOR.bin";
         private const SystemID OwnerSystemId = SystemID.PrologueSequence;
+        private static readonly int _prologueTelemetryRuntimeSizeBytes = UnsafeUtility.SizeOf<PrologueSequenceTelemetryEntry>();
+        private static readonly int _reentryStateRuntimeSizeBytes = UnsafeUtility.SizeOf<ReentryStateDTO>();
+        private static readonly bool _prologueTelemetryLayoutValid =
+            _prologueTelemetryRuntimeSizeBytes == PrologueTelemetryEntrySizeBytes &&
+            (_prologueTelemetryRuntimeSizeBytes & (NativeDtoAlignmentBytes - 1)) == 0;
+        private static readonly bool _reentryStateLayoutValid =
+            _reentryStateRuntimeSizeBytes == ReentryStateDtoSizeBytes &&
+            (_reentryStateRuntimeSizeBytes & (NativeDtoAlignmentBytes - 1)) == 0;
 
         private IDataVault _dataVault;
         private VaultGenerationHandle<PrologueSequenceTelemetryEntry> _blackBoxHandle;
@@ -74,15 +92,21 @@ namespace Hecton8.Narrative.Prologue
         private bool _hasPublishedTelemetry;
         private bool _registeredHotSwap;
         private bool _registeredUpdateLane;
+        private bool _registeredLateFrameLane;
+        private bool _pendingCameraPressureImpactDirty;
+        private float _pendingCameraPressureTrauma01;
+        private byte _pendingCameraPressurePriority;
         private double _runElapsedSeconds;
         private double _stageElapsedSeconds;
         private double _traumaPublishAccumulatorSeconds;
         private CancellationToken _runCancellationToken;
         private ReentryStateDTO _reentryState;
         private ushort _acousticStressSequence;
+        private int _lastSurvivalVitalsSequence;
+        private int _lastSurvivalDeathSequence;
         private int _signalPushDropCount;
 
-        [Header("Authored Reentry Timeline")]
+        [Header("Authored Reentry Pacing")]
         [Tooltip("Presentation-only scalar duration used for fail-closed curves when external orbital signals stall.")]
         [SerializeField] private float authoredReentryDurationSeconds = (float)DefaultAuthoredReentryDurationSeconds;
 
@@ -127,7 +151,7 @@ namespace Hecton8.Narrative.Prologue
                 if (_running)
                 {
                     ShouldStopForCancellation(cancellationToken);
-                    CompleteSequenceRun();
+                    CompleteSequenceRun(preservePendingCameraImpact: false);
                     PublishFinalizedReentryStateNoThrow();
                 }
             }
@@ -140,7 +164,7 @@ namespace Hecton8.Narrative.Prologue
                 if (_running && (cancellationToken.IsCancellationRequested || _disposed))
                 {
                     ShouldStopForCancellation(cancellationToken);
-                    CompleteSequenceRun();
+                    CompleteSequenceRun(preservePendingCameraImpact: false);
                     PublishFinalizedReentryStateNoThrow();
                 }
             }
@@ -168,6 +192,8 @@ namespace Hecton8.Narrative.Prologue
         private void OnDisable()
         {
             CancelActiveSequenceNoThrow(PrologueCancelReasons.ExplicitCancel, publishTelemetry: false);
+            ClearPendingCameraPressureImpact();
+            TryUnregisterLateFrameLane();
             TryUnregisterHotSwap();
         }
 
@@ -184,6 +210,9 @@ namespace Hecton8.Narrative.Prologue
             CancelActiveSequenceNoThrow(PrologueCancelReasons.ExplicitCancel, publishTelemetry: false);
 
             _disposed = true;
+            ClearPendingCameraPressureImpact();
+            TryUnregisterLateFrameLane();
+            TryUnregisterUpdateLane();
             TryUnregisterHotSwap();
             ReleaseBlackBox();
             ReleaseReentryStateBuffer();
@@ -211,6 +240,12 @@ namespace Hecton8.Narrative.Prologue
                     EnsureReentryStateBuffer();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    if (_registeredLateFrameLane)
+                    {
+                        GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                        _registeredLateFrameLane = false;
+                    }
+
                     if (_registeredUpdateLane)
                     {
                         GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
@@ -237,11 +272,17 @@ namespace Hecton8.Narrative.Prologue
                 if (!_running)
                     return;
 
+                if (ShouldAbortForSurvivalVitals())
+                {
+                    AbortSequenceForSurvivalVitals();
+                    return;
+                }
+
                 if (ShouldStopForCancellation(_runCancellationToken))
                 {
                     if (_running)
                     {
-                        CompleteSequenceRun();
+                        CompleteSequenceRun(preservePendingCameraImpact: false);
                         PublishFinalizedReentryStateNoThrow();
                     }
 
@@ -249,11 +290,11 @@ namespace Hecton8.Narrative.Prologue
                 }
 
                 _runtime.RefreshFrameState();
-                if (TryHandleDevelopmentSkip())
+                if (TryHandleSkipRequest())
                 {
                     if (_running)
                     {
-                        CompleteSequenceRun();
+                        CompleteSequenceRun(preservePendingCameraImpact: false);
                         PublishFinalizedReentryStateNoThrow();
                     }
 
@@ -292,6 +333,20 @@ namespace Hecton8.Narrative.Prologue
             }
         }
 
+        public void LateFrameTick()
+        {
+            if (_disposed)
+            {
+                ClearPendingCameraPressureImpact();
+                TryUnregisterLateFrameLane();
+                return;
+            }
+
+            FlushQueuedCameraPressureImpact();
+            if (!_running)
+                TryUnregisterLateFrameLane();
+        }
+
         private bool TryBeginSequenceRun(CancellationToken cancellationToken)
         {
             if (!_configured || _runtime == null || _running || _disposed)
@@ -312,6 +367,9 @@ namespace Hecton8.Narrative.Prologue
             _runElapsedSeconds = 0d;
             _stageElapsedSeconds = 0d;
             _traumaPublishAccumulatorSeconds = 0d;
+            ClearPendingCameraPressureImpact();
+            _lastSurvivalVitalsSequence = 0;
+            _lastSurvivalDeathSequence = 0;
             _runCancellationToken = cancellationToken;
             _reentryState = default;
             _acousticStressSequence = 0;
@@ -323,6 +381,7 @@ namespace Hecton8.Narrative.Prologue
                 return false;
             }
 
+            TryEnsureLateFrameLane();
             try
             {
                 _runtime.PrepareSequenceRun();
@@ -632,7 +691,51 @@ namespace Hecton8.Narrative.Prologue
 
             _traumaPublishAccumulatorSeconds = 0d;
             if (trauma01 > 0.035f)
-                CameraJuiceSignals.TryPublishImpact(trauma01, Vector3.zero, Vector3.down);
+                QueueCameraPressureImpact(trauma01);
+        }
+
+        private void QueueCameraPressureImpact(float trauma01)
+        {
+            if (!TryEnsureLateFrameLane())
+            {
+                ClearPendingCameraPressureImpact();
+                return;
+            }
+
+            float safeTrauma01 = math.saturate(math.select(0f, trauma01, math.isfinite(trauma01)));
+            _pendingCameraPressureTrauma01 = safeTrauma01;
+            _pendingCameraPressurePriority = safeTrauma01 >= CameraPressureHighPriorityThreshold
+                ? CameraJuiceSignals.HighPriority
+                : CameraJuiceSignals.NormalPriority;
+            _pendingCameraPressureImpactDirty = true;
+        }
+
+        private void FlushQueuedCameraPressureImpact()
+        {
+            if (!_pendingCameraPressureImpactDirty)
+                return;
+
+            _pendingCameraPressureImpactDirty = false;
+            float trauma01 = _pendingCameraPressureTrauma01;
+            CameraJuiceSignals.TryPublishImpact(
+                trauma01,
+                Vector3.zero,
+                Vector3.down,
+                CameraJuiceSignals.ContinuousPressureStressProfileHash,
+                CameraPressureAmplitudeScale,
+                _pendingCameraPressurePriority,
+                0f,
+                CameraPressureTranslationGain,
+                CameraPressureRotationGain,
+                SourceHash);
+            ClearPendingCameraPressureImpact();
+        }
+
+        private void ClearPendingCameraPressureImpact()
+        {
+            _pendingCameraPressureImpactDirty = false;
+            _pendingCameraPressureTrauma01 = 0f;
+            _pendingCameraPressurePriority = CameraJuiceSignals.NormalPriority;
         }
 
         private void PublishReentryAcousticStressSignal(float trauma01)
@@ -682,11 +785,15 @@ namespace Hecton8.Narrative.Prologue
             SignalBus<ReentryAcousticStressSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
-        private void CompleteSequenceRun()
+        private void CompleteSequenceRun(bool preservePendingCameraImpact = true)
         {
             _running = false;
             _runCancellationToken = default;
             TryUnregisterUpdateLane();
+            if (!preservePendingCameraImpact)
+                ClearPendingCameraPressureImpact();
+            if (!_pendingCameraPressureImpactDirty)
+                TryUnregisterLateFrameLane();
             ReleaseInputLockNoThrow();
         }
 
@@ -700,7 +807,9 @@ namespace Hecton8.Narrative.Prologue
             _cancelReason = normalizedReason;
             if (publishTelemetry)
                 RecordStage(PrologueStage.Cancelled, CancelHash, normalizedReason);
-            CompleteSequenceRun();
+            CompleteSequenceRun(preservePendingCameraImpact: false);
+            ClearPendingCameraPressureImpact();
+            TryUnregisterLateFrameLane();
             PublishFinalizedReentryStateNoThrow();
         }
 
@@ -709,7 +818,7 @@ namespace Hecton8.Narrative.Prologue
             RecordStage(PrologueStage.Faulted, FaultHash, reason);
             DumpBlackBox();
             TryDumpRuntimeBlackBox(_runtime);
-            CompleteSequenceRun();
+            CompleteSequenceRun(preservePendingCameraImpact: false);
             SanitizeReentryStateForTerminalPublish();
             PublishFinalizedReentryStateNoThrow();
         }
@@ -761,7 +870,23 @@ namespace Hecton8.Narrative.Prologue
                 return false;
 
             _registeredUpdateLane = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
-            return _registeredUpdateLane;
+            if (_registeredUpdateLane)
+                return true;
+
+            TryUnregisterUpdateLane();
+            return false;
+        }
+
+        private bool TryEnsureLateFrameLane()
+        {
+            if (_registeredLateFrameLane)
+                return true;
+
+            if (!Application.isPlaying || GlobalRegistry.TickDispatcher == null)
+                return false;
+
+            _registeredLateFrameLane = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            return _registeredLateFrameLane;
         }
 
         private void TryUnregisterUpdateLane()
@@ -771,6 +896,15 @@ namespace Hecton8.Narrative.Prologue
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registeredUpdateLane = false;
+        }
+
+        private void TryUnregisterLateFrameLane()
+        {
+            if (!_registeredLateFrameLane)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredLateFrameLane = false;
         }
 
         private bool TryResolveImpactRangeReached(out bool rangeReached, out uint stateHash, out byte flags)
@@ -875,7 +1009,7 @@ namespace Hecton8.Narrative.Prologue
             if (cancellationToken.IsCancellationRequested)
             {
                 if (_cancelReason == PrologueCancelReasons.DevSkip)
-                    TryExecuteDevelopmentSkipHandoff();
+                    TryExecuteSkipHandoff();
                 else
                     RecordStage(
                         PrologueStage.Cancelled,
@@ -887,7 +1021,7 @@ namespace Hecton8.Narrative.Prologue
             if (_cancelRequested)
             {
                 if (_cancelReason == PrologueCancelReasons.DevSkip)
-                    TryExecuteDevelopmentSkipHandoff();
+                    TryExecuteSkipHandoff();
                 else
                     RecordStage(PrologueStage.Cancelled, CancelHash, _cancelReason);
                 return true;
@@ -896,17 +1030,66 @@ namespace Hecton8.Narrative.Prologue
             return false;
         }
 
-        private bool TryHandleDevelopmentSkip()
+        private bool TryHandleSkipRequest()
         {
-            if (!_runtime.IsDevelopmentBuild || !_runtime.ShouldSkipPrologue)
+            IPrologueSequenceRuntime runtime = _runtime;
+            if (runtime == null || !runtime.ShouldSkipPrologue)
                 return false;
 
             CancelSequence(PrologueCancelReasons.DevSkip);
-            TryExecuteDevelopmentSkipHandoff();
+            TryExecuteSkipHandoff();
             return true;
         }
 
-        private bool TryExecuteDevelopmentSkipHandoff()
+        private bool ShouldAbortForSurvivalVitals()
+        {
+            if (SurvivalSignalRoute.TryGetLatestDeath(out SurvivalVitalsChangedSignal deathSignal, out int deathSequence) &&
+                deathSequence != _lastSurvivalDeathSequence &&
+                IsFreshSurvivalSignalFrame(deathSignal.Frame))
+            {
+                _lastSurvivalDeathSequence = deathSequence;
+                return true;
+            }
+
+            if (!SignalBus<SurvivalVitalsChangedSignal>.TryGetLatest(out SurvivalVitalsChangedSignal vitals, out int sequence) ||
+                sequence == _lastSurvivalVitalsSequence ||
+                !IsFreshSurvivalSignalFrame(vitals.Frame))
+            {
+                return false;
+            }
+
+            _lastSurvivalVitalsSequence = sequence;
+            bool oxygenZero =
+                (vitals.Flags & SurvivalVitalsChangedSignalFlags.Oxygen) != 0u &&
+                math.isfinite(vitals.Oxygen01) &&
+                vitals.Oxygen01 <= SurvivalAbortOxygenThreshold01;
+            bool death =
+                (vitals.Flags & SurvivalVitalsChangedSignalFlags.Death) != 0u ||
+                vitals.DeathCause != 0;
+            if (!oxygenZero && !death)
+                return false;
+
+            return true;
+        }
+
+        private bool IsFreshSurvivalSignalFrame(uint frame)
+        {
+            if (frame == 0u)
+                return false;
+
+            IPrologueSequenceRuntime runtime = _runtime;
+            uint currentFrame = runtime != null ? runtime.CurrentFrame : SystemDispatcher.CurrentFrameId;
+            return unchecked(currentFrame - frame) <= SurvivalAbortMaxSignalAgeFrames;
+        }
+
+        private void AbortSequenceForSurvivalVitals()
+        {
+            RecordStage(PrologueStage.Cancelled, SurvivalAbortHash, PrologueCancelReasons.SurvivalAbort);
+            CompleteSequenceRun(preservePendingCameraImpact: false);
+            PublishFinalizedReentryStateNoThrow();
+        }
+
+        private bool TryExecuteSkipHandoff()
         {
             if (_devSkipHandoffPublished)
                 return true;
@@ -914,7 +1097,7 @@ namespace Hecton8.Narrative.Prologue
             _devSkipHandoffPublished = true;
             try
             {
-                ExecuteDevelopmentSkipHandoff();
+                ExecuteSkipHandoff();
                 return true;
             }
             catch (Exception)
@@ -924,7 +1107,7 @@ namespace Hecton8.Narrative.Prologue
             }
         }
 
-        private void ExecuteDevelopmentSkipHandoff()
+        private void ExecuteSkipHandoff()
         {
             RecordStage(PrologueStage.DevSkip, DevSkipHash, (byte)PrologueHydrationMode.DevForcedShallowWater);
             _runtime.ForceShallowWaterHydration();
@@ -936,6 +1119,13 @@ namespace Hecton8.Narrative.Prologue
 
         private void EnsureBlackBox()
         {
+            if (!_prologueTelemetryLayoutValid)
+            {
+                ClearBlackBoxDescriptor();
+                _blackBoxCursor = 0;
+                return;
+            }
+
             IDataVault vault = CacheDataVaultCold();
             if (vault == null)
                 return;
@@ -986,6 +1176,12 @@ namespace Hecton8.Narrative.Prologue
 
         private void EnsureReentryStateBuffer()
         {
+            if (!_reentryStateLayoutValid)
+            {
+                ClearReentryStateDescriptor();
+                return;
+            }
+
             IDataVault vault = CacheDataVaultCold();
             if (vault == null)
                 return;
@@ -1036,7 +1232,8 @@ namespace Hecton8.Narrative.Prologue
         private void PublishReentryStateNoThrow()
         {
             IDataVault vault = _dataVault;
-            if (vault == null ||
+            if (!_reentryStateLayoutValid ||
+                vault == null ||
                 !IsVaultHandleCreated(in _reentryStateHandle) ||
                 vault.IsCompactionFenceActive ||
                 !vault.TryAcquireWriteLock(in _reentryStateHandle, OwnerSystemId, out NativeArray<ReentryStateDTO> stateBuffer))
@@ -1061,7 +1258,8 @@ namespace Hecton8.Narrative.Prologue
 
             IDataVault vault = _dataVault;
             IPrologueSequenceRuntime runtime = _runtime;
-            if (vault != null &&
+            if (_prologueTelemetryLayoutValid &&
+                vault != null &&
                 IsVaultHandleCreated(in _blackBoxHandle))
             {
                 uint telemetryFrame = runtime != null ? runtime.CurrentFrame : 0u;
@@ -1077,28 +1275,27 @@ namespace Hecton8.Narrative.Prologue
 
                 int blackBoxIndex = math.clamp(_blackBoxCursor, 0, TelemetryCapacity - 1);
                 int nextBlackBoxCursor = (blackBoxIndex + 1) % TelemetryCapacity;
+                PrologueSequenceTelemetryEntry entry = default;
+                entry.Frame = telemetryFrame;
+                entry.StateHash = stateHash;
+                entry.Stage = (byte)stage;
+                entry.Flags = flags;
+                entry.Sequence = telemetrySequence;
+                if (hasOrbitalSnapshot)
+                {
+                    entry.UniverseSpeedMetersPerSecond = universeSpeedMetersPerSecond;
+                    entry.PlanetDistanceMeters = planetDistanceMeters;
+                }
 
                 if (vault.TryAcquireWriteLock(in _blackBoxHandle, OwnerSystemId, out NativeArray<PrologueSequenceTelemetryEntry> blackBox))
                 {
                     try
                     {
-                        if (!blackBox.IsCreated || blackBox.Length < TelemetryCapacity)
-                            return;
-
-                        PrologueSequenceTelemetryEntry entry = default;
-                        entry.Frame = telemetryFrame;
-                        entry.StateHash = stateHash;
-                        entry.Stage = (byte)stage;
-                        entry.Flags = flags;
-                        entry.Sequence = telemetrySequence;
-                        if (hasOrbitalSnapshot)
+                        if (blackBox.IsCreated && blackBox.Length >= TelemetryCapacity)
                         {
-                            entry.UniverseSpeedMetersPerSecond = universeSpeedMetersPerSecond;
-                            entry.PlanetDistanceMeters = planetDistanceMeters;
+                            blackBox[blackBoxIndex] = entry;
+                            _blackBoxCursor = nextBlackBoxCursor;
                         }
-
-                        blackBox[blackBoxIndex] = entry;
-                        _blackBoxCursor = nextBlackBoxCursor;
                     }
                     finally
                     {
@@ -1221,7 +1418,8 @@ namespace Hecton8.Narrative.Prologue
         private void DumpBlackBox()
         {
             IDataVault vault = _dataVault;
-            if (_blackBoxDumped ||
+            if (!_prologueTelemetryLayoutValid ||
+                _blackBoxDumped ||
                 vault == null ||
                 !IsVaultHandleCreated(in _blackBoxHandle) ||
                 !vault.TryReadOnlyHandle(in _blackBoxHandle, out NativeArray<PrologueSequenceTelemetryEntry>.ReadOnly blackBox) ||

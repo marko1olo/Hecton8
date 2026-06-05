@@ -1,0 +1,112 @@
+HECTON-8 LOCAL TASK FILE
+Batch: batch17_lore_content_1770_1779
+Agent ID: 1773
+Role: Scanner, Field Note, and Specimen Card Writer
+Distribution: give this whole file to one agent. No XML extraction is required.
+Wave mode: PARALLEL. Agents 1770-1779 work simultaneously. Do not wait for them, do not depend on their future output.
+
+IDENTIFICATION LINE
+First response must begin exactly:
+PROMPT IDENTIFIED: 1773 | DOMAIN: Scanner / Field Notes / Specimen Cards | TASK COUNT: 20
+
+OBJECTIVE
+Make scanner and field-note lore short, believable, useful, and content-ready.
+Scanner text must be observed fact with confidence, hazard, action, or uncertainty. Field notes must feel like a working person wrote them under pressure.
+
+AUTHORITY DOCS
+Read fully before editing:
+- AGENTS.md
+- PROJECT_BIBLES.md
+- writing.md
+- narrative.md
+- localization.md
+- textes.md
+- Docs/Lore/Lore_Bible.md
+- Docs/Lore/Canon_Locks.md
+- Docs/Lore/Lore_Content_System.md
+- Docs/Lore/Lore_Localization_Model.md
+- Docs/Lore/Lore_Multilingual_Content_Architecture.md
+- Docs/Lore/HECTON8_Field_Atlas.md
+- Docs/Lore/HECTON8_Resource_Gameplay_Catalog.md
+- Docs/Lore/AppliedContent/README.md
+
+OWNED SCOPE
+Primary inspect/edit scope:
+- Docs/Lore/AppliedContent/packets/*.packets.json fields for scanner and field_note
+- Docs/Lore/AppliedContent/in_game_wiki/ only where scanner text must match article unlock state
+- Docs/Lore/HECTON8_Field_Atlas.md
+- Docs/Lore/HECTON8_Resource_Gameplay_Catalog.md
+- Docs/Lore/AppliedContent/production_audits/1773/
+
+Do not change terminal/audio/public-site prose except to compare facts.
+Do not depend on agents 1770-1772 or 1774-1779.
+
+SCANNER CONTRACT
+Scanner copy must be compact:
+- observed feature
+- confidence or uncertainty
+- hazard/action/use
+- one useful hook
+No long lore dump. No poetic analogy. No omniscient hidden truth.
+
+FIELD NOTE CONTRACT
+Field notes can carry personality, but must be practical. They should sound like survey, salvage, Marauder, diver, maintenance, or emergency notes, not narrator exposition.
+
+15-LOCALE CONTRACT
+Scanner strings are high-risk for UI bounds. All changed strings require 15-locale status and expansion awareness:
+en_US, ru_RU, ja_JP, zh_CN, fr_FR, es_ES, de_DE, pl_PL, uk_UA, ar_SA, id_ID, ko_KR, he_IL, pt_BR, nl_NL.
+
+TASKS
+Task 01: Create/update Docs/Tasks/Status_1773.md with all 20 tasks and checkpoints after Tasks 05, 10, 15, and 20.
+
+Task 02: Create/update Docs/AgentLogs/Rationale_1773.md with exact field-note/scanner decisions.
+
+Task 03: Inventory scanner and field_note fields in AppliedContent packet JSON. Output production_audits/1773/scanner_fieldnote_inventory.csv with packet ID, article ID, locale count, scanner length, field-note presence, hazard/action tag.
+
+Task 04: Identify scanner entries that are too long, too generic, too poetic, too omniscient, not actionable, or contradicted by canon.
+
+Task 05: Checkpoint. Select a high-impact set of scanner/field-note entries to fix without waiting for sibling agents.
+
+Task 06: Patch scanner entries so they are concise observed facts. Keep each changed en_US scanner line short enough for UI and translation expansion.
+
+Task 07: Patch field notes that read like internal lore specs. Convert them into believable field/salvage/survey notes with a speaker constraint and practical purpose.
+
+Task 08: Fix any scanner/field-note copy that frames surface, moonlight, ocean skin, coast, or photic shallows as inherently gloomy. Correct to bright/beautiful/alien/readable where applicable.
+
+Task 09: For resources/minerals, ensure scanner text routes to gameplay: extraction risk, tool need, depth band, processing clue, structural hazard, or route marker.
+
+Task 10: Checkpoint. Reopen changed packet JSON and validate syntax. Append proof to Status_1773.md.
+
+Task 11: For fauna/ecology entries, enforce "observe first" copy. No full taxonomy omniscience before scan progression supports it.
+
+Task 12: For salvage/technical entries, enforce work-order realism: material, damage sign, pressure, corrosion, thermal, electrical, or maintenance clue.
+
+Task 13: Build scanner_string_bounds.md with changed strings, approximate length, expected expansion risk, and locales requiring native UI review.
+
+Task 14: Update production_audits/1773/scanner_surface_rules.md with examples of allowed bright-surface phrasing and allowed deep-dark phrasing.
+
+Task 15: Checkpoint. Run JSON parse/lore validation tools if safe. Capture exact command and output or blocker.
+
+Task 16: Ensure all changed scanner/field-note units have 15-locale status notes. Do not auto-translate into final native text unless you can verify source conventions.
+
+Task 17: If localized fields already exist for changed entries, mark them stale/pending review in an appropriate status note or audit. Do not silently desync source and localized text.
+
+Task 18: Write Docs/AgentLogs/HANDOFF_1773.md with existing packet IDs that need UI placement or scan-stage wiring. No future sibling dependency.
+
+Task 19: Re-run syntax checks. Confirm no player-facing string contains "TODO", "draft", "machine", "placeholder", or "write later" unless existing status-only field permits it.
+
+Task 20: Final verification. Reopen changed files, update Status_1773.md, append final report to Docs/AgentLogs/LOG_1773.md.
+
+ACCEPTANCE PROOF
+- scanner_fieldnote_inventory.csv exists.
+- Changed scanner lines are shorter, useful, and canon-safe.
+- Field notes read like in-world artifacts.
+- 15-locale status/bounds risk is documented.
+- Final LOG_1773.md lists files and validations.
+
+REJECTION CONDITIONS
+- Scanner line becomes a lore essay.
+- Field note reads like an AI explanation.
+- Hidden dependence on another agent's future output.
+- Bright surface/shallows are made bleak.
+- JSON syntax breaks.

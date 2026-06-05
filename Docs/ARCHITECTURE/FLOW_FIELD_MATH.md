@@ -4,6 +4,8 @@ Date: 2026-05-07
 
 Status: PENDING VERIFICATION
 
+Owner domain: water / fluid flow-field math
+
 ## Source Anchors
 
 Evidence class: STATIC_SOURCE / FILESYSTEM path check. These anchors prove current path visibility only, not GPU dispatch, shader import, Frame Debugger, profiler, or player-build proof.

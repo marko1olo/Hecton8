@@ -1,0 +1,79 @@
+ID: 3220
+Role: RS093_EVIDENCE_GRAPH_OWNER
+
+Objective:
+Repair the next RS093 source-only audit blocker by adding an evidence graph for P461-P464 without touching RS084 navigation clusters, route cards, h8bin, Unity, or packet Markdown.
+
+Why this is needed:
+After 3217 added manual binding policy and scene placement source rows, `python Tools/AppliedLoreRuntimeAudit.py --root . --source-only` advanced to: `Evidence graph missing packets: P461_PACKET_CUSTODY_BRIDGE, P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE, P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE, P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE`.
+
+Owned scope:
+- `Docs/Lore/AppliedContent/graphs/RS093_LORE_SYSTEM_INTEGRATION_BRIDGE_evidence_graph.csv`
+- `Docs/Reports/Batch32/3220_RS093_EVIDENCE_GRAPH.md`
+- `Docs/Tasks/Status_3220.md`
+- `Docs/AgentLogs/LOG_3220.md`
+- `Docs/AgentLogs/Rationale_3220.md` only if needed
+
+Do not edit:
+- `Docs/Lore/AppliedContent/graphs/RS084_SITE_WIKI_NAVIGATION_CLUSTERS_evidence_graph.csv`
+- any existing graph file except the new RS093 graph if it does not already exist
+- route_cards
+- h8bin
+- Unity scenes/prefabs/assets
+- runtime scripts
+- production packet Markdown
+- binding maps
+- other agents' status/log/rationale files
+
+Authority docs:
+AGENTS.md, authoring.md, data.md, localization.md, writing.md, quality.md, Docs/Lore/Lore_Content_System.md, Docs/Lore/AppliedContent/graphs/README.md.
+
+Mandates:
+- QA_Evidence_Text_Filter_Audit.txt
+- UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt
+- DATA_Runtime_Struct_Layout_ARM64.txt
+- TOOL_Designer_Facades_CSV_Binary_Bridge.txt
+- OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+
+Required graph schema:
+`packet_id,arc_id,depth_band,route_moment,prereq_packet_ids,next_packet_ids,evidence_type,truth_claim,player_decision,spoiler_tier,primary_surface`
+
+Required rows:
+- P461_PACKET_CUSTODY_BRIDGE
+- P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE
+- P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE
+- P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE
+
+Graph constraints:
+- `arc_id`: `lore_system_integration_bridge`
+- `primary_surface`: must be a value accepted by `EVIDENCE_GRAPH_PRIMARY_SURFACES` in `Tools/AppliedLoreRuntimeAudit.py`.
+- `spoiler_tier`: integer 0-3.
+- No self-references.
+- Only reference packet IDs already present in the current AppliedLore source CSV.
+- Keep dependency graph acyclic.
+- Keep the chain public-to-early and bridge-oriented:
+  - P461 custody bridge can depend on early packet/custody/source context if known, or have no prereq if safer.
+  - P462 first repair bridge can depend on P461.
+  - P463 spoiler gate bridge can depend on P461/P462.
+  - P464 claim window bridge can depend on P461/P463.
+- `next_packet_ids` may point forward within P461-P464 only when acyclic, or stay empty if safer.
+- Do not add P467-P473; those are isolated STATIC_DOC candidates not admitted to source CSV.
+
+Validation:
+- Run lightweight CSV shape check.
+- If process gate is clean, run `python Tools/AppliedLoreRuntimeAudit.py --root . --source-only`.
+- If audit fails, report the exact next blocker and do not hide it.
+- Verify no route-card CSV and no h8bin were created or modified by this task.
+
+Proof packet:
+- Files changed.
+- Row count added.
+- Audit output or exact process gate blocker.
+- Evidence class STATIC_SOURCE.
+
+Rejection gates:
+- No route-card CSV creation.
+- No h8bin edit.
+- No Unity/build/dotnet.
+- No runtime/native/DataMonolith-ready claim.
+- No RS084 navigation-cluster mutation.

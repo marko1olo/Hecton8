@@ -2595,7 +2595,9 @@ namespace Hecton8.World
                     return;
 
                 _thermalColdTickAccumulator = 0f;
-                RebuildThermalMapSources();
+                if (!RebuildThermalMapSources())
+                    return;
+
                 _thermalMapDiffusionSliceCursor = ResolveThermalMapDiffusionSliceCursor();
             }
 
@@ -2676,104 +2678,83 @@ namespace Hecton8.World
                 : _thermalMapDiffusionSliceCursor & ThermalMapDiffusionSliceMask;
         }
 
-        private void RebuildThermalMapSources()
+        private bool RebuildThermalMapSources()
         {
             Vector3 center = ResolveThermalMapCenter();
             float worldSize = math.max(thermalMapWorldSizeMeters, 1f);
             _thermalMapCellSizeMeters = worldSize * math.rcp(ThermalMapResolution);
             _thermalMapOriginWS = center - new Vector3(worldSize * 0.5f, worldSize * 0.5f, worldSize * 0.5f);
 
-            RebuildThermalMapSourceTemperatures();
-            RebuildThermalMapInsulation();
+            return RebuildThermalMapSourceTemperatures() &&
+                   RebuildThermalMapInsulation();
         }
 
-        private void RebuildThermalMapSourceTemperatures()
+        private bool RebuildThermalMapSourceTemperatures()
         {
-            if (!TryAcquireThermalMapWriteBuffer(
-                    in _thermalMapSourceCelsiusHandle,
-                    ThermalMapSourceCelsiusBufferId,
-                    out NativeArray<float> sourceCelsius,
-                    out IDataVault sourceCelsiusWriteVault))
-            {
-                return;
-            }
+            if (!_thermalMapScratch.IsWriteScratchReady(ThermalMapCellCount))
+                return false;
 
-            try
+            NativeArray<float> sourceCelsius = _thermalMapScratch.WriteScratch;
+            for (int y = 0; y < ThermalGridResolution; y++)
             {
-                for (int y = 0; y < ThermalGridResolution; y++)
+                float sampleY = _thermalMapOriginWS.y + ((y + 0.5f) * _thermalMapCellSizeMeters);
+                for (int z = 0; z < ThermalGridResolution; z++)
                 {
-                    float sampleY = _thermalMapOriginWS.y + ((y + 0.5f) * _thermalMapCellSizeMeters);
-                    for (int z = 0; z < ThermalGridResolution; z++)
+                    float sampleZ = _thermalMapOriginWS.z + ((z + 0.5f) * _thermalMapCellSizeMeters);
+                    for (int x = 0; x < ThermalGridResolution; x++)
                     {
-                        float sampleZ = _thermalMapOriginWS.z + ((z + 0.5f) * _thermalMapCellSizeMeters);
-                        for (int x = 0; x < ThermalGridResolution; x++)
+                        float sampleX = _thermalMapOriginWS.x + ((x + 0.5f) * _thermalMapCellSizeMeters);
+                        Vector3 samplePosition = new Vector3(sampleX, sampleY, sampleZ);
+                        float ambientTemperature = ResolveAmbientTemperatureCelsius(samplePosition);
+                        float temperature = ambientTemperature;
+
+                        for (int i = 0; i < _activeVentCount; i++)
                         {
-                            float sampleX = _thermalMapOriginWS.x + ((x + 0.5f) * _thermalMapCellSizeMeters);
-                            Vector3 samplePosition = new Vector3(sampleX, sampleY, sampleZ);
-                            float ambientTemperature = ResolveAmbientTemperatureCelsius(samplePosition);
-                            float temperature = ambientTemperature;
+                            ThermalVentState vent = _ventStates[i];
+                            float radius = math.max(1f, vent.RadiusWS * ventHeatRadiusMultiplier);
+                            float planarDistance = ComputeAupPlanarDistance(samplePosition, vent.PositionWS);
+                            float verticalWeight = math.saturate(1f - math.abs(samplePosition.y - vent.PositionWS.y) * math.rcp(math.max(1f, vent.HeightWS)));
+                            float radialWeight = math.saturate(1f - (planarDistance * math.rcp(radius))) * verticalWeight;
+                            if (radialWeight <= 0f)
+                                continue;
 
-                            for (int i = 0; i < _activeVentCount; i++)
-                            {
-                                ThermalVentState vent = _ventStates[i];
-                                float radius = math.max(1f, vent.RadiusWS * ventHeatRadiusMultiplier);
-                                float planarDistance = ComputeAupPlanarDistance(samplePosition, vent.PositionWS);
-                                float verticalWeight = math.saturate(1f - math.abs(samplePosition.y - vent.PositionWS.y) * math.rcp(math.max(1f, vent.HeightWS)));
-                                float radialWeight = math.saturate(1f - (planarDistance * math.rcp(radius))) * verticalWeight;
-                                if (radialWeight <= 0f)
-                                    continue;
-
-                                float heatScale = ResolveVentHeatScale(i);
-                                float ventDeltaCelsius = math.max(ThermalVentInjectionDeltaCelsius, vent.HeatIntensity * ventHeatToCelsiusScale);
-                                float candidate = ambientTemperature + (ventDeltaCelsius * heatScale * radialWeight);
-                                if (candidate > temperature && math.isfinite(candidate))
-                                    temperature = candidate;
-                            }
-
-                            int index = ToThermalGridIndex(x, y, z);
-                            sourceCelsius[index] = temperature;
+                            float heatScale = ResolveVentHeatScale(i);
+                            float ventDeltaCelsius = math.max(ThermalVentInjectionDeltaCelsius, vent.HeatIntensity * ventHeatToCelsiusScale);
+                            float candidate = ambientTemperature + (ventDeltaCelsius * heatScale * radialWeight);
+                            if (candidate > temperature && math.isfinite(candidate))
+                                temperature = candidate;
                         }
+
+                        sourceCelsius[ToThermalGridIndex(x, y, z)] = temperature;
                     }
                 }
             }
-            finally
-            {
-                sourceCelsiusWriteVault.ReleaseWriteLock(in _thermalMapSourceCelsiusHandle, ThermalVaultOwnerSystem);
-            }
+
+            return CopyThermalMapScratchToBuffer(in _thermalMapSourceCelsiusHandle, ThermalMapSourceCelsiusBufferId);
         }
 
-        private void RebuildThermalMapInsulation()
+        private bool RebuildThermalMapInsulation()
         {
-            if (!TryAcquireThermalMapWriteBuffer(
-                    in _thermalMapInsulation01Handle,
-                    ThermalMapInsulationBufferId,
-                    out NativeArray<float> insulationBuffer,
-                    out IDataVault insulationWriteVault))
-            {
-                return;
-            }
+            if (!_thermalMapScratch.IsWriteScratchReady(ThermalMapCellCount))
+                return false;
 
-            try
+            NativeArray<float> insulationBuffer = _thermalMapScratch.WriteScratch;
+            for (int y = 0; y < ThermalGridResolution; y++)
             {
-                for (int y = 0; y < ThermalGridResolution; y++)
+                float sampleY = _thermalMapOriginWS.y + ((y + 0.5f) * _thermalMapCellSizeMeters);
+                for (int z = 0; z < ThermalGridResolution; z++)
                 {
-                    float sampleY = _thermalMapOriginWS.y + ((y + 0.5f) * _thermalMapCellSizeMeters);
-                    for (int z = 0; z < ThermalGridResolution; z++)
+                    float sampleZ = _thermalMapOriginWS.z + ((z + 0.5f) * _thermalMapCellSizeMeters);
+                    for (int x = 0; x < ThermalGridResolution; x++)
                     {
-                        float sampleZ = _thermalMapOriginWS.z + ((z + 0.5f) * _thermalMapCellSizeMeters);
-                        for (int x = 0; x < ThermalGridResolution; x++)
-                        {
-                            float sampleX = _thermalMapOriginWS.x + ((x + 0.5f) * _thermalMapCellSizeMeters);
-                            Vector3 samplePosition = new Vector3(sampleX, sampleY, sampleZ);
-                            insulationBuffer[ToThermalGridIndex(x, y, z)] = ResolveVoxelInsulation01(samplePosition);
-                        }
+                        float sampleX = _thermalMapOriginWS.x + ((x + 0.5f) * _thermalMapCellSizeMeters);
+                        Vector3 samplePosition = new Vector3(sampleX, sampleY, sampleZ);
+                        insulationBuffer[ToThermalGridIndex(x, y, z)] = ResolveVoxelInsulation01(samplePosition);
                     }
                 }
             }
-            finally
-            {
-                insulationWriteVault.ReleaseWriteLock(in _thermalMapInsulation01Handle, ThermalVaultOwnerSystem);
-            }
+
+            return CopyThermalMapScratchToBuffer(in _thermalMapInsulation01Handle, ThermalMapInsulationBufferId);
         }
 
         private Vector3 ResolveThermalMapCenter()
@@ -3173,12 +3154,12 @@ namespace Hecton8.World
         private void EnsureThermalMapBuffers()
         {
             float defaultThermalMapAmbient = ResolveAmbientTemperatureCelsius(ResolveThermalMapCenter());
+            _thermalMapScratch.EnsureWriteScratch(ThermalMapCellCount, defaultThermalMapAmbient);
+
             EnsureThermalFloatBuffer(ref _thermalMapReadCelsiusHandle, ThermalMapReadCelsiusBufferId, defaultThermalMapAmbient);
             EnsureThermalFloatBuffer(ref _thermalMapWriteCelsiusHandle, ThermalMapWriteCelsiusBufferId, defaultThermalMapAmbient);
             EnsureThermalFloatBuffer(ref _thermalMapSourceCelsiusHandle, ThermalMapSourceCelsiusBufferId, defaultThermalMapAmbient);
             EnsureThermalFloatBuffer(ref _thermalMapInsulation01Handle, ThermalMapInsulationBufferId, 0f);
-
-            _thermalMapScratch.EnsureWriteScratch(ThermalMapCellCount, defaultThermalMapAmbient);
 
             if (_thermalMapVisualCelsius == null || _thermalMapVisualCelsius.Length != ThermalMapPlaneCellCount)
             {
@@ -3398,6 +3379,12 @@ namespace Hecton8.World
             BufferID bufferId,
             float value)
         {
+            if (_thermalMapScratch.IsWriteScratchReady(ThermalMapCellCount))
+            {
+                _thermalMapScratch.FillWriteScratch(value);
+                return CopyThermalMapScratchToBuffer(in handle, bufferId);
+            }
+
             if (!TryAcquireThermalMapWriteBuffer(in handle, bufferId, out NativeArray<float> buffer, out IDataVault writeVault))
                 return false;
 

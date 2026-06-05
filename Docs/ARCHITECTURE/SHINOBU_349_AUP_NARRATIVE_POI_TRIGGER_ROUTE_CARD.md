@@ -1,5 +1,10 @@
 ﻿# SHINOBU_349 AUP Narrative POI Trigger Route Card
 
+Status: `STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING`
+Evidence class: `STATIC_DOC / STATIC_SOURCE`
+Owner domain: narrative/AUP POI triggers
+Review disposition: `YELLOW / STATIC_DOC_ONLY` until compile/import/runtime/profiler/player proof exists.
+
 Date: 2026-05-23
 Owner: `SystemID.NarrativePoiTriggers`
 Domain: Echelon 8 Presentation and UX / AUP Narrative Triggers

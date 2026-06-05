@@ -401,27 +401,12 @@ namespace Hecton8.World
                 return;
             }
 
-            if (!TryPrepareGprState(
-                out NativeArray<float3> hits,
-                out NativeArray<float> signalStrength,
-                out NativeArray<float> ageSeconds,
-                out NativeArray<int> oreTypes,
-                out NativeArray<float4> pingGpu,
-                out NativeArray<int> counters,
-                out NativeArray<float> maxSignalStrength,
-                out NativeArray<GroundRadarTelemetryEntry> telemetryRing))
+            if (!TryPrepareGprState() ||
+                !TryClearGprStateCold())
             {
                 return;
             }
 
-            ClearNativeArray(hits);
-            ClearNativeArray(signalStrength);
-            ClearNativeArray(ageSeconds);
-            ClearNativeArray(oreTypes);
-            ClearNativeArray(pingGpu);
-            ClearNativeArray(counters);
-            ClearNativeArray(maxSignalStrength);
-            ClearNativeArray(telemetryRing);
             _gprReadSnapshotsValid = true;
             _activeGprPings = 0;
             _highestSignalStrength = 0f;
@@ -461,25 +446,8 @@ namespace Hecton8.World
                    IsValidBuffer(_gprArgsBufferB);
         }
 
-        private bool TryPrepareGprState(
-            out NativeArray<float3> hits,
-            out NativeArray<float> signalStrength,
-            out NativeArray<float> ageSeconds,
-            out NativeArray<int> oreTypes,
-            out NativeArray<float4> pingGpu,
-            out NativeArray<int> counters,
-            out NativeArray<float> maxSignalStrength,
-            out NativeArray<GroundRadarTelemetryEntry> telemetryRing)
+        private bool TryPrepareGprState()
         {
-            hits = default;
-            signalStrength = default;
-            ageSeconds = default;
-            oreTypes = default;
-            pingGpu = default;
-            counters = default;
-            maxSignalStrength = default;
-            telemetryRing = default;
-
             IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
@@ -525,59 +493,39 @@ namespace Hecton8.World
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
 
-            return TryOpenGprStateForOwnerWrite(
-                vault,
-                out hits,
-                out signalStrength,
-                out ageSeconds,
-                out oreTypes,
-                out pingGpu,
-                out counters,
-                out maxSignalStrength,
-                out telemetryRing);
+            return AreGprHandlesCreated();
         }
 
-        private bool TryOpenGprStateForOwnerWrite(
-            out NativeArray<float3> hits,
-            out NativeArray<float> signalStrength,
-            out NativeArray<float> ageSeconds,
-            out NativeArray<int> oreTypes,
-            out NativeArray<float4> pingGpu,
-            out NativeArray<int> counters,
-            out NativeArray<float> maxSignalStrength,
-            out NativeArray<GroundRadarTelemetryEntry> telemetryRing)
+        private bool TryClearGprStateCold()
         {
-            return TryOpenGprStateForOwnerWrite(
-                _dataVault,
-                out hits,
-                out signalStrength,
-                out ageSeconds,
-                out oreTypes,
-                out pingGpu,
-                out counters,
-                out maxSignalStrength,
-                out telemetryRing);
+            IDataVault vault = _dataVault;
+            return TryClearGprVaultBufferCold(vault, in _gprHitsHandle, BufferID.GroundRadarHits, GroundRadarConstants.MaxPings) &&
+                   TryClearGprVaultBufferCold(vault, in _gprSignalStrengthHandle, BufferID.GroundRadarSignalStrength, GroundRadarConstants.MaxPings) &&
+                   TryClearGprVaultBufferCold(vault, in _gprAgeSecondsHandle, BufferID.GroundRadarAgeSeconds, GroundRadarConstants.MaxPings) &&
+                   TryClearGprVaultBufferCold(vault, in _gprOreTypesHandle, BufferID.GroundRadarOreTypes, GroundRadarConstants.MaxPings) &&
+                   TryClearGprVaultBufferCold(vault, in _gprPingGpuHandle, BufferID.GroundRadarPingGpu, GroundRadarConstants.MaxPings) &&
+                   TryClearGprVaultBufferCold(vault, in _gprCountersHandle, BufferID.GroundRadarCounters, 4) &&
+                   TryClearGprVaultBufferCold(vault, in _maxSignalStrengthHandle, BufferID.GroundRadarMaxSignalStrength, 1) &&
+                   TryClearGprVaultBufferCold(vault, in _telemetryRingHandle, BufferID.GroundRadarTelemetryRing, GroundRadarConstants.TelemetryFrames);
         }
 
-        private bool TryOpenGprStateForOwnerWrite(
+        private bool TryOpenGprStateForRead(
             IDataVault vault,
-            out NativeArray<float3> hits,
-            out NativeArray<float> signalStrength,
-            out NativeArray<float> ageSeconds,
-            out NativeArray<int> oreTypes,
-            out NativeArray<float4> pingGpu,
-            out NativeArray<int> counters,
-            out NativeArray<float> maxSignalStrength,
-            out NativeArray<GroundRadarTelemetryEntry> telemetryRing)
+            out NativeArray<float3>.ReadOnly hits,
+            out NativeArray<float>.ReadOnly signalStrength,
+            out NativeArray<float>.ReadOnly ageSeconds,
+            out NativeArray<int>.ReadOnly oreTypes,
+            out NativeArray<float4>.ReadOnly pingGpu,
+            out NativeArray<int>.ReadOnly counters,
+            out NativeArray<float>.ReadOnly maxSignalStrength)
         {
-            bool resolvedHits = TryOpenVaultBufferForOwnerWrite(vault, BufferID.GroundRadarHits, in _gprHitsHandle, GroundRadarConstants.MaxPings, out hits);
-            bool resolvedSignal = TryOpenVaultBufferForOwnerWrite(vault, BufferID.GroundRadarSignalStrength, in _gprSignalStrengthHandle, GroundRadarConstants.MaxPings, out signalStrength);
-            bool resolvedAge = TryOpenVaultBufferForOwnerWrite(vault, BufferID.GroundRadarAgeSeconds, in _gprAgeSecondsHandle, GroundRadarConstants.MaxPings, out ageSeconds);
-            bool resolvedOreTypes = TryOpenVaultBufferForOwnerWrite(vault, BufferID.GroundRadarOreTypes, in _gprOreTypesHandle, GroundRadarConstants.MaxPings, out oreTypes);
-            bool resolvedPingGpu = TryOpenVaultBufferForOwnerWrite(vault, BufferID.GroundRadarPingGpu, in _gprPingGpuHandle, GroundRadarConstants.MaxPings, out pingGpu);
-            bool resolvedCounters = TryOpenVaultBufferForOwnerWrite(vault, BufferID.GroundRadarCounters, in _gprCountersHandle, 4, out counters);
-            bool resolvedMaxSignal = TryOpenVaultBufferForOwnerWrite(vault, BufferID.GroundRadarMaxSignalStrength, in _maxSignalStrengthHandle, 1, out maxSignalStrength);
-            bool resolvedTelemetry = TryOpenVaultBufferForOwnerWrite(vault, BufferID.GroundRadarTelemetryRing, in _telemetryRingHandle, GroundRadarConstants.TelemetryFrames, out telemetryRing);
+            bool resolvedHits = TryReadVaultBuffer(vault, BufferID.GroundRadarHits, in _gprHitsHandle, GroundRadarConstants.MaxPings, out hits);
+            bool resolvedSignal = TryReadVaultBuffer(vault, BufferID.GroundRadarSignalStrength, in _gprSignalStrengthHandle, GroundRadarConstants.MaxPings, out signalStrength);
+            bool resolvedAge = TryReadVaultBuffer(vault, BufferID.GroundRadarAgeSeconds, in _gprAgeSecondsHandle, GroundRadarConstants.MaxPings, out ageSeconds);
+            bool resolvedOreTypes = TryReadVaultBuffer(vault, BufferID.GroundRadarOreTypes, in _gprOreTypesHandle, GroundRadarConstants.MaxPings, out oreTypes);
+            bool resolvedPingGpu = TryReadVaultBuffer(vault, BufferID.GroundRadarPingGpu, in _gprPingGpuHandle, GroundRadarConstants.MaxPings, out pingGpu);
+            bool resolvedCounters = TryReadVaultBuffer(vault, BufferID.GroundRadarCounters, in _gprCountersHandle, 4, out counters);
+            bool resolvedMaxSignal = TryReadVaultBuffer(vault, BufferID.GroundRadarMaxSignalStrength, in _maxSignalStrengthHandle, 1, out maxSignalStrength);
 
             return resolvedHits &&
                 resolvedSignal &&
@@ -585,8 +533,7 @@ namespace Hecton8.World
                 resolvedOreTypes &&
                 resolvedPingGpu &&
                 resolvedCounters &&
-                resolvedMaxSignal &&
-                resolvedTelemetry;
+                resolvedMaxSignal;
         }
 
         private bool TryReadGprHits(out NativeArray<float3>.ReadOnly hits)
@@ -604,20 +551,33 @@ namespace Hecton8.World
             return TryReadVaultBuffer(_dataVault, BufferID.GroundRadarPingGpu, in _gprPingGpuHandle, GroundRadarConstants.MaxPings, out pingGpu);
         }
 
-        private static bool TryOpenVaultBufferForOwnerWrite<T>(
+        private static bool TryClearGprVaultBufferCold<T>(
             IDataVault vault,
-            BufferID expectedBufferId,
             in VaultGenerationHandle<T> handle,
-            int requiredLength,
-            out NativeArray<T> buffer) where T : struct
+            BufferID expectedBufferId,
+            int requiredLength) where T : struct
         {
-            buffer = default;
             if (vault == null || requiredLength <= 0 || !IsGroundRadarVaultHandle(in handle, expectedBufferId))
                 return false;
 
-            if (!vault.TryResolveHandle(in handle, out buffer))
-                return false;
-            return buffer.IsCreated && buffer.Length >= requiredLength;
+            bool locked = false;
+            try
+            {
+                if (!vault.TryAcquireWriteLock(in handle, SystemID.WorldStreaming, out NativeArray<T> buffer))
+                    return false;
+
+                locked = true;
+                if (!buffer.IsCreated || buffer.Length < requiredLength)
+                    return false;
+
+                ClearNativeArray(buffer);
+                return true;
+            }
+            finally
+            {
+                if (locked)
+                    vault.ReleaseWriteLock(in handle, SystemID.WorldStreaming);
+            }
         }
 
         private static bool TryReadVaultBuffer<T>(
@@ -789,26 +749,25 @@ namespace Hecton8.World
 
             try
             {
-                if (!TryOpenGprStateForOwnerWrite(
+                if (!TryOpenGprStateForRead(
                     vault,
-                    out NativeArray<float3> hits,
-                    out NativeArray<float> signalStrength,
-                    out NativeArray<float> ageSeconds,
-                    out NativeArray<int> gprOreTypes,
-                    out NativeArray<float4> pingGpu,
-                    out NativeArray<int> counters,
-                    out _,
+                    out NativeArray<float3>.ReadOnly hits,
+                    out NativeArray<float>.ReadOnly signalStrength,
+                    out NativeArray<float>.ReadOnly ageSeconds,
+                    out NativeArray<int>.ReadOnly gprOreTypes,
+                    out NativeArray<float4>.ReadOnly pingGpu,
+                    out NativeArray<int>.ReadOnly counters,
                     out _))
                 {
                     return false;
                 }
 
-                NativeArray<float3>.Copy(hits, pending.Hits, GroundRadarConstants.MaxPings);
-                NativeArray<float>.Copy(signalStrength, pending.SignalStrength, GroundRadarConstants.MaxPings);
-                NativeArray<float>.Copy(ageSeconds, pending.AgeSeconds, GroundRadarConstants.MaxPings);
-                NativeArray<int>.Copy(gprOreTypes, pending.OreTypes, GroundRadarConstants.MaxPings);
-                NativeArray<float4>.Copy(pingGpu, pending.PingGpu, GroundRadarConstants.MaxPings);
-                NativeArray<int>.Copy(counters, pending.Counters, 4);
+                CopyReadOnlyBufferToPending(hits, pending.Hits, GroundRadarConstants.MaxPings);
+                CopyReadOnlyBufferToPending(signalStrength, pending.SignalStrength, GroundRadarConstants.MaxPings);
+                CopyReadOnlyBufferToPending(ageSeconds, pending.AgeSeconds, GroundRadarConstants.MaxPings);
+                CopyReadOnlyBufferToPending(gprOreTypes, pending.OreTypes, GroundRadarConstants.MaxPings);
+                CopyReadOnlyBufferToPending(pingGpu, pending.PingGpu, GroundRadarConstants.MaxPings);
+                CopyReadOnlyBufferToPending(counters, pending.Counters, 4);
                 pending.MaxSignalStrength[0] = 0f;
                 return true;
             }
@@ -1301,13 +1260,23 @@ namespace Hecton8.World
 
         private bool TryValidateScanJobBuffers(IDataVault vault)
         {
-            return TryOpenVaultBufferForOwnerWrite(vault, BufferID.GroundRadarHits, in _gprHitsHandle, GroundRadarConstants.MaxPings, out _) &&
-                   TryOpenVaultBufferForOwnerWrite(vault, BufferID.GroundRadarSignalStrength, in _gprSignalStrengthHandle, GroundRadarConstants.MaxPings, out _) &&
-                   TryOpenVaultBufferForOwnerWrite(vault, BufferID.GroundRadarAgeSeconds, in _gprAgeSecondsHandle, GroundRadarConstants.MaxPings, out _) &&
-                   TryOpenVaultBufferForOwnerWrite(vault, BufferID.GroundRadarOreTypes, in _gprOreTypesHandle, GroundRadarConstants.MaxPings, out _) &&
-                   TryOpenVaultBufferForOwnerWrite(vault, BufferID.GroundRadarPingGpu, in _gprPingGpuHandle, GroundRadarConstants.MaxPings, out _) &&
-                   TryOpenVaultBufferForOwnerWrite(vault, BufferID.GroundRadarCounters, in _gprCountersHandle, 4, out _) &&
-                   TryOpenVaultBufferForOwnerWrite(vault, BufferID.GroundRadarMaxSignalStrength, in _maxSignalStrengthHandle, 1, out _);
+            return TryReadVaultBuffer(vault, BufferID.GroundRadarHits, in _gprHitsHandle, GroundRadarConstants.MaxPings, out _) &&
+                   TryReadVaultBuffer(vault, BufferID.GroundRadarSignalStrength, in _gprSignalStrengthHandle, GroundRadarConstants.MaxPings, out _) &&
+                   TryReadVaultBuffer(vault, BufferID.GroundRadarAgeSeconds, in _gprAgeSecondsHandle, GroundRadarConstants.MaxPings, out _) &&
+                   TryReadVaultBuffer(vault, BufferID.GroundRadarOreTypes, in _gprOreTypesHandle, GroundRadarConstants.MaxPings, out _) &&
+                   TryReadVaultBuffer(vault, BufferID.GroundRadarPingGpu, in _gprPingGpuHandle, GroundRadarConstants.MaxPings, out _) &&
+                   TryReadVaultBuffer(vault, BufferID.GroundRadarCounters, in _gprCountersHandle, 4, out _) &&
+                   TryReadVaultBuffer(vault, BufferID.GroundRadarMaxSignalStrength, in _maxSignalStrengthHandle, 1, out _);
+        }
+
+        private static void CopyReadOnlyBufferToPending<T>(
+            NativeArray<T>.ReadOnly source,
+            NativeArray<T> destination,
+            int copyLength) where T : struct
+        {
+            int safeLength = math.min(copyLength, math.min(source.Length, destination.Length));
+            for (int i = 0; i < safeLength; i++)
+                destination[i] = source[i];
         }
 
         private bool TryValidatePingGpuBuffer(IDataVault vault)

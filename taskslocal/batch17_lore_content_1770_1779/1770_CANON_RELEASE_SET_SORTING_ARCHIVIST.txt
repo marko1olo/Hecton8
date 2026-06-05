@@ -1,0 +1,115 @@
+HECTON-8 LOCAL TASK FILE
+Batch: batch17_lore_content_1770_1779
+Agent ID: 1770
+Role: Canon Release-Set Sorting Archivist
+Distribution: give this whole file to one agent. No XML extraction is required.
+Wave mode: PARALLEL. Agents 1770-1779 work simultaneously. Do not wait for them, do not depend on their future output.
+
+IDENTIFICATION LINE
+First response must begin exactly:
+PROMPT IDENTIFIED: 1770 | DOMAIN: Lore Canon Sorting / Release-Set Archive | TASK COUNT: 20
+
+OBJECTIVE
+Turn the existing lore corpus into a production-facing canon and release-set sorting map.
+The result must show what exists, where it belongs, which surface can use it, which unlock/spoiler level applies, which localization state applies, and which conflicts must be fixed before content goes into game/site/wiki/runtime.
+
+AUTHORITY DOCS
+Read fully before editing:
+- AGENTS.md
+- PROJECT_BIBLES.md
+- writing.md
+- narrative.md
+- localization.md
+- Docs/Lore/Lore_Bible.md
+- Docs/Lore/Canon_Locks.md
+- Docs/Lore/Lore_Content_System.md
+- Docs/Lore/Lore_Localization_Model.md
+- Docs/Lore/Lore_Multilingual_Content_Architecture.md
+- Docs/Lore/AppliedContent/README.md
+- Docs/Lore/Website_Publication_Map.md
+- Docs/Lore/Codex_Delivery_Map.md
+- Docs/Lore/Lore_Crosslink_Graph.md
+
+OWNED SCOPE
+Primary inspect/edit scope:
+- Docs/Lore/AppliedContent/README.md
+- Docs/Lore/AppliedContent/Publication_Surface_Index.csv
+- Docs/Lore/AppliedContent/Publication_Cluster_Index.csv
+- Docs/Lore/AppliedContent/Localization_Status_Index.md
+- Docs/Lore/AppliedContent/packets/*.packets.json
+- Docs/Lore/AppliedContent/release_sets/
+- Docs/Lore/AppliedContent/binding_maps/
+- Docs/Lore/AppliedContent/route_cards/
+- Docs/Lore/AppliedContent/production_audits/1770/
+- Docs/Lore/Canon_Locks.md only if you find a proven contradiction or missing lock
+
+Do not rewrite player-facing prose wholesale unless the contradiction is small, local, and proven.
+Do not depend on agents 1771-1779. If their future work would help, write a handoff note instead.
+
+CANON LOCKS THAT MATTER HERE
+- HECTON-8 is not dark because of weak starlight. Surface, sky, moons, coast, ocean skin, and photic shallows are bright, beautiful, alien, and readable.
+- Darkness belongs to depth, caves, interiors, storms, and temporary eclipse/electrical failure windows.
+- Aegir is an extrasolar system, but not humanity's first extrasolar system.
+- No FTL, no ansible, no reactionless travel, no instant rescue.
+- Deep Reach is negligent and predatory through risk pricing, evacuation priority, and liability shielding, not cartoon evil.
+- Atlas-6 is damaged classification/repair logic, not a sadistic villain.
+
+15-LOCALE CONTRACT
+Every matrix row must account for:
+en_US, ru_RU, ja_JP, zh_CN, fr_FR, es_ES, de_DE, pl_PL, uk_UA, ar_SA, id_ID, ko_KR, he_IL, pt_BR, nl_NL.
+Mark source_ready, machine_draft, pending_native_review, missing, or blocked_from_runtime. Do not invent native approval.
+
+TASKS
+Task 01: Create/update Docs/Tasks/Status_1770.md with all 20 tasks and checkpoints after Tasks 05, 10, 15, and 20.
+
+Task 02: Create/update Docs/AgentLogs/Rationale_1770.md. Record only concrete decisions: conflict found, rule used, edit made, rejected alternative, proof path.
+
+Task 03: Inventory all AppliedContent packet bundles and release sets. Produce Docs/Lore/AppliedContent/production_audits/1770/packet_inventory.csv with packet_id, release_set_id, article_id, title_en, surfaces present, locale count, route_card_present, binding_map_present.
+
+Task 04: Inventory all release sets RS070-RS092 and any adjacent current lore release sets. Produce release_set_inventory.md with purpose, included packet IDs, expected player/site surface, and whether it is actual content or only a brief.
+
+Task 05: Checkpoint. Read your own inventory. Verify that no row depends on future sibling work. Append checkpoint notes to Status_1770.md.
+
+Task 06: Build a canon conflict audit focused on surface brightness, moon/sky depiction, Deep Reach guilt model, Atlas-6 nature, no-FTL travel, Aegir system status, moon ladder, player origin, and Black Keel/debt. Output canon_conflict_audit.md.
+
+Task 07: For every conflict, classify severity as BLOCK_RUNTIME, BLOCK_PUBLIC_SITE, FIX_SOURCE_TEXT, LOCALIZATION_ONLY, or ACCEPTABLE_VARIANT. Give exact file/packet/page path.
+
+Task 08: Patch only small, certain contradictions in indexes or docs. For larger contradictions, write a handoff entry, not a speculative rewrite.
+
+Task 09: Build surface_ownership_matrix.csv. Columns: article_id, packet_id, canonical_owner_doc, allowed_surfaces, forbidden_surfaces, spoiler_level, unlock_gate, in_world_voice_options, runtime_layer.
+
+Task 10: Checkpoint. Validate that surface_ownership_matrix.csv does not assign omniscient knowledge to scanner/audio/survivor notes. Append proof to Status_1770.md.
+
+Task 11: Build a 15-locale coverage matrix for all packets: locale present, required fields present, player-visible draft markers, RTL flag, CJK flag, suspected mojibake flag, title mismatch flag.
+
+Task 12: Cross-check Publication_Surface_Index.csv against actual files in external_site and in_game_wiki. Report missing pages, orphan pages, duplicate packet IDs, wrong locale folders, and inconsistent titles.
+
+Task 13: Cross-check Publication_Cluster_Index.csv against Website_Publication_Map.md and Lore_Crosslink_Graph.md. Report clusters that are public-safe, spoiler-gated, in-game-only, or unclear.
+
+Task 14: Cross-check route_cards and binding_maps against packet IDs. Report packets with no plausible game placement, no unlock route, or no source voice.
+
+Task 15: Checkpoint. Run a source-only Applied Lore audit if safe: python Tools/AppliedLoreRuntimeAudit.py --root . --source-only. If it fails due environment, capture exact error.
+
+Task 16: Create/update Docs/Lore/AppliedContent/production_audits/1770/lore_sorting_decisions.md. This is the compact controller-readable map: what is production-ready, what needs writer work, what needs localization, what needs runtime binding, what must not ship.
+
+Task 17: Add a short pointer from Docs/Lore/AppliedContent/README.md to the new 1770 audit folder only if the folder is useful and current. Do not inflate README.
+
+Task 18: Write Docs/AgentLogs/HANDOFF_1770.md with non-blocking notes for site, wiki, scanner, audio, localization, runtime, and reader agents. Each note must reference existing artifacts only.
+
+Task 19: Re-read Lore_Bible.md and Canon_Locks.md sections on bright surface/shallows. Confirm no current sorting text reintroduces dark/miserable surface framing.
+
+Task 20: Final verification. Reopen every file you edited, run basic CSV/JSON parse checks if applicable, update Status_1770.md, append final report to Docs/AgentLogs/LOG_1770.md.
+
+ACCEPTANCE PROOF
+- packet_inventory.csv exists and is based on real packet files.
+- canon_conflict_audit.md exists and contains exact paths.
+- surface_ownership_matrix.csv exists and separates player-facing surfaces correctly.
+- 15-locale coverage matrix exists and does not claim unproven native review.
+- Final LOG_1770.md contains edited files, validation commands, blockers, and handoffs.
+
+REJECTION CONDITIONS
+- Any dependency on 1771-1779 output.
+- Any invented packet ID, article ID, route card, or locale.
+- Any dark/miserable surface rule.
+- Any wholesale prose rewrite not backed by canon proof.
+- Any player-visible "machine translated" disclaimer added to content.

@@ -1,0 +1,46 @@
+<SUB_AGENT_PROMPT id="2903_SHORELINE_FOAM_CAUSTIC_TEXTURE_PROMPT_AND_QA_PACK">
+Role: Specialist - Generated texture prompt and QA pack author.
+
+Mission:
+Create a prompt pack and QA intake checklist for shoreline wet basalt, shell/sand substrate, foam/salt/wet-contact masks, and shallow caustic masks. This is for Gemini/browser generation later. Do not generate images yourself.
+
+Context:
+- Current shoreline proof is rejected: no good foam, no caustics, weak shell/black terrain.
+- Current generated wet basalt/shell/sand candidates are rejected or reference-only.
+- New candidates must stay outside Assets.
+
+Must read:
+- AGENTS.md
+- TASTE.md
+- water.md
+- terrain.md
+- rendering.md
+- shaders.md
+- 3DMODEL_TEXTURES_MATERIALS.md
+- 3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md
+- PROCEDURAL_ASSET_PIPELINE.md
+- Docs/Reports/Batch28/2803_SHORELINE_FOAM_PHOTIC_TERRAIN_STATIC_ART_ROUTE_AUDIT.md
+- .agents-skills/REND_Shader_Noir_Aesthetics_Dithering_Fog.txt
+- .agents-skills/QA_Evidence_Text_Filter_Audit.txt
+
+Write only:
+- Docs/GeneratedAssets/Gemini/Prompts/Batch29/2903_SHORELINE_FOAM_CAUSTIC_TEXTURE_PROMPT_AND_QA_PACK.md
+
+Required output:
+- English prompts for each texture family;
+- negative prompts;
+- required dimensions and tileability;
+- channel contracts;
+- intended meters-per-tile;
+- QA steps for 2x2 and 3x3 previews;
+- reject criteria;
+- exact staging paths under Docs/GeneratedAssets/Gemini/Outputs/Batch29/2903;
+- no Assets import instructions until READY_FOR_UNITY_IMPORT;
+- Low/Middle/High/Ultra texture consequences through continuous GlobalQualityWeight.
+
+Forbidden:
+- no image generation in this task;
+- no Assets writes;
+- no import-ready claim;
+- no using darkness/noir to hide weak material identity.
+</SUB_AGENT_PROMPT>

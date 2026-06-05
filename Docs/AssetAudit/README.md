@@ -1,0 +1,163 @@
+# Asset Audit Start Here
+
+Status: `PENDING VERIFICATION`.
+Evidence class: `STATIC_DOC`, `STATIC_SOURCE`, `STATIC_IMAGE_QA`, `AUDIO_WAVEFORM_QA`.
+Scope: textures, music/audio, meshes, prefabs, materials, UI sprites, generated source packs, and Addressables planning.
+First-20 route moment: bright surface exit, sky/Aegir/moons, ocean contact, photic shallows, player breath/audio continuity, HUD oxygen readability, and medium-depth route dressing.
+
+This directory is the current asset-front control surface. It is not Unity acceptance. No current file here proves import quality, material binding, Crest state, Addressables residency, VRAM safety, mix behavior, GC, frame time, or in-game visual quality.
+
+## Mandates Followed
+
+- `QA_Evidence_Text_Filter_Audit`
+- `STRM_Asset_Lifecycle_Addressables_Loading_Memory`
+- `STRM_Async_Asset_Upload_Texture_Settings`
+- `REND_URP_Graphics_HotPath_Optimization_HLOD`
+- `AUD_DSP_Audio_Synthesis_ThreadSafe_SPSC`
+
+## Read Order
+
+1. `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md`
+2. `Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md`
+3. `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`
+4. `Docs/AssetAudit/ASSET_ACTION_QUEUE_20260605.md`
+5. `Docs/AssetAudit/ASSET_ACTION_QUEUE_20260605.csv`
+6. `taskslocal/asset_system_20260605/README.md`
+7. `taskslocal/asset_system_20260605/ASSET_OWNER_06_UNITY_READBACK_EXECUTION_PACKET.md`
+8. `taskslocal/asset_system_20260605/ASSET_OWNER_07_TOOL_AND_ROUTE_EXECUTION_PACKET.md`
+9. `taskslocal/asset_system_20260605/ASSET_OWNER_08_AUDIO_DIRECT_REF_UNWIRING_PACKET.md`
+10. `taskslocal/asset_system_20260605/ASSET_OWNER_09_TEXTURE_MATERIAL_IMPORT_BLOCKERS_PACKET.md`
+11. `taskslocal/asset_system_20260605/ASSET_OWNER_10_MUSICDIRECTOR_AUDIO_ROUTING_PACKET.md`
+12. `taskslocal/asset_system_20260605/ASSET_OWNER_11_WATER_FOAM_CONTACT_AUTHORING_PACKET.md`
+13. `taskslocal/asset_system_20260605/ASSET_OWNER_12_FLORA_PROXY_MATERIAL_REPLACEMENT_PACKET.md`
+14. `taskslocal/asset_system_20260605/ASSET_OWNER_13_PRODUCT_FACE_PREFAB_PRIMITIVE_REPLACEMENT_PACKET.md`
+15. `taskslocal/asset_system_20260605/ASSET_OWNER_14_SKY_AEGIR_CLOUD_SLOT_PROOF_PACKET.md`
+16. `taskslocal/asset_system_20260605/ASSET_OWNER_15_ADDRESSABLES_ASSET_GROUP_EXECUTION_BLOCKERS_PACKET.md`
+17. `taskslocal/asset_system_20260605/ASSET_OWNER_16_TERRAIN_GEOLOGY_PBR_AUTHORING_PACKET.md`
+18. `taskslocal/asset_system_20260605/ASSET_OWNER_17_UI_OXYGEN_SPRITE_ATLAS_PACKET.md`
+19. `taskslocal/asset_system_20260605/ASSET_OWNER_18_PRODUCT_FACE_VALIDATOR_EVIDENCE_PACKET.md`
+20. `taskslocal/asset_system_20260605/ASSET_OWNER_19_AUDIO_IMPORT_AUTHORITY_ADOPTION_PACKET.md`
+21. `taskslocal/asset_system_20260605/ASSET_OWNER_20_OCEAN_CREST_CONTACT_PROOF_PACKET.md`
+22. `taskslocal/asset_system_20260605/ASSET_OWNER_21_TEXTURE_STREAMING_MIP_STATIC_RISK_PACKET.md`
+23. `taskslocal/asset_system_20260605/ASSET_OWNER_22_PREFAB_COLLIDER_LOD_ROW_RISK_PACKET.md`
+24. `taskslocal/asset_system_20260605/ASSET_OWNER_23_AUDIO_SOURCE_TECHNICAL_REMEDIATION_PACKET.md`
+
+## Current P0 Blockers
+
+| Domain | Static Fact | Required Next Owner |
+|---|---|---|
+| water_visual | `foam.png` is visually rejected but serialized-reachable through active world/ocean users. | Unity material readback plus texture authoring |
+| flora_materials | Four `WorldProceduralProxy` flora/coral/kelp materials are serialized in `02_HECTON_WORLD.unity`. | Unity material readback plus mesh/prefab owner |
+| audio_routing | `MusicDirectorConfig_Global.asset` has null music and stinger mixer group refs in static evidence. | Audio/MusicDirector owner |
+| audio_lifecycle | `Player.prefab` has direct AudioClip refs without owner/release/Addressables proof. | Audio lifecycle owner |
+
+## Route Queues
+
+Use these files before assigning or doing asset work:
+
+- Existing proof-adjacent artifact map: `ASSET_PROOF_ARTIFACT_INDEX_20260605.md`.
+- Existing proof-adjacent artifact CSV: `ASSET_PROOF_ARTIFACT_INDEX_20260605.csv`.
+- Generated source pack inventory: `GENERATED_SOURCE_PACK_FILE_INVENTORY_20260605.md` and `.csv`.
+- Current static validation summary: `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`.
+- Cross-domain static row blocker summary: `ASSET_STATIC_ROW_BLOCKER_SUMMARY_20260605.md` and `.csv`.
+- Asset-front file map: `ASSET_FRONT_FILE_MAP_20260605.md` and `.csv`.
+- Consolidated next-action board: `ASSET_NEXT_ACTION_BOARD_20260605.md` and `.csv`.
+- Local authoring/tool inventory: `ASSET_AUTHORING_TOOL_INVENTORY_20260605.md` and `.csv`.
+- Audio taxonomy: `AUDIO_ASSET_TAXONOMY_20260605.md` and `.csv`.
+- Audio source folder matrix: `AUDIO_SOURCE_FOLDER_ROUTE_MATRIX_20260605.md` and `.csv`.
+- Audio source technical probe matrix: `AUDIO_FILE_TECHNICAL_PROPERTIES_20260605.md` and `.csv`.
+- Audio loudness/source dynamics matrix: `AUDIO_LOUDNESS_TECHNICAL_PROPERTIES_20260605.md` and `.csv`.
+- Audio profile/cue route matrix: `AUDIO_PROFILE_ROUTE_MATRIX_20260605.md` and `.csv`.
+- Visual/mesh taxonomy: `VISUAL_MESH_ASSET_TAXONOMY_20260605.md` and `.csv`.
+- Model/source import risk matrix: `MODEL_FILE_IMPORT_RISK_MATRIX_20260605.md` and `.csv`.
+- Prefab source technical token matrix: `PREFAB_FILE_TECHNICAL_PROPERTIES_20260605.md` and `.csv`.
+- Texture/material family route matrix: `TEXTURE_MATERIAL_FAMILY_ROUTE_MATRIX_20260605.md` and `.csv`.
+- Texture source folder matrix: `TEXTURE_SOURCE_FOLDER_ROUTE_MATRIX_20260605.md` and `.csv`.
+- Texture source technical probe matrix: `TEXTURE_FILE_TECHNICAL_PROPERTIES_20260605.md` and `.csv`.
+- Texture duplicate/hash matrix: `TEXTURE_DUPLICATE_HASH_MATRIX_20260605.md` and `.csv`.
+- Texture active-route blocker detail: `TEXTURE_ACTIVE_ROUTE_BLOCKER_DETAIL_20260605.md` and `.csv`.
+- Material serialized risk matrix: `MATERIAL_FILE_TECHNICAL_PROPERTIES_20260605.md` and `.csv`.
+- Audio direct-ref detail: `AUDIO_DIRECT_REF_DETAIL_20260605.md` and `.csv`.
+- Texture import/meta planning: `TEXTURE_IMPORT_ROLE_MATRIX_20260605.md` and `.csv`.
+- Addressables planning: `ADDRESSABLES_ASSET_GROUP_PLAN_20260605.md` and `.csv`.
+- Audio import-policy exception planning: `AUDIO_IMPORT_POLICY_EXCEPTION_TABLE_20260605.md` and `.csv`.
+- Audio listening/remediation order: `AUDIO_LISTENING_PASS_QUEUE_20260605.md` and `.csv`.
+- Visual inspection order: `VISUAL_ASSET_REVIEW_QUEUE_20260605.md` and `.csv`.
+- Mesh/prefab inspection order: `MESH_PREFAB_REVIEW_QUEUE_20260605.md` and `.csv`.
+- Mesh/prefab source folder matrix: `MESH_PREFAB_SOURCE_FOLDER_ROUTE_MATRIX_20260605.md` and `.csv`.
+- Audio row-level remediation: `Docs/Audio/audio_remediation_matrix_20260605.csv`.
+
+## Source-Only Packs
+
+Generated and cleaned source packs live under `Docs/GeneratedAssets/AssetSystem_20260605/`. They are reference/source material only. Do not import them as product art without a named authoring owner, cleaned PBR/channel role, import settings, material route, Unity readback, screenshot, stats, and memory proof.
+
+Current source-only reviews:
+
+- `GENERATED_SOURCE_PACK_FILE_INVENTORY_20260605.md` and `.csv`
+- `SOURCE_PROTOTYPE_REVIEW_20260605.md`
+- `SOURCE_PROTOTYPE_CLEANUP_REVIEW_20260605.md`
+- `Docs/GeneratedAssets/AssetSystem_20260605/CleanupPass_20260605/CleanupPass_MANIFEST_20260605.md`
+
+## Hard Rejections
+
+- Do not mutate `Assets` during static audit work.
+- Do not raw YAML patch `.mat`, `.prefab`, `.unity`, or `.asset` files.
+- Do not clone, wrap, or runtime-instantiate Crest materials.
+- Do not promote `WorldProceduralProxy` or `WorldRuntime/ProceduralPlaceholders` into visible route content.
+- Do not call generated source packs final art.
+- Do not create Addressables groups, labels, keys, catalogs, or settings from planning docs alone.
+- Do not claim audio runtime behavior from waveform/contact-sheet review.
+- Do not claim visual acceptance from static source inspection.
+
+## Process Gate
+
+Unity readback, import, build, Play Mode, prefab edit, scene save, Addressables build, or project-setting work is blocked unless a fresh gate has:
+
+- CPU samples below 50 percent.
+- No active `dotnet`, `csc`, `MSBuild`, `Unity.ILPP.Runner`, `UnityShaderCompiler`, or `UnityPackageManager`.
+- Unity idle and safe for read-only inspection, or Unity closed.
+
+If the gate is red, continue static/source documentation only.
+
+## Asset Owner Map
+
+- Unity readback owner: `ASSET_OWNER_06_UNITY_READBACK_EXECUTION_PACKET.md`.
+- Texture authoring owner: `TEXTURE_AUTHORING_RECIPES_20260605.md`, cleanup reviews, and `TEXTURE_IMPORT_ROLE_MATRIX_20260605.csv`.
+- Texture/material route owner: `TEXTURE_MATERIAL_FAMILY_ROUTE_MATRIX_20260605.csv` before any family promotion or material-route edit.
+- Audio owner: `AUDIO_SOURCE_FOLDER_ROUTE_MATRIX_20260605.csv`, `AUDIO_ROUTING_REMEDIATION_SPEC_20260605.md`, `AUDIO_IMPORT_POLICY_EXCEPTION_TABLE_20260605.csv`, `AUDIO_LISTENING_PASS_QUEUE_20260605.csv`, and `audio_remediation_matrix_20260605.csv`.
+- Audio profile owner: `AUDIO_PROFILE_ROUTE_MATRIX_20260605.csv` before any MusicDirector/profile/cue route edit.
+- Audio direct-ref owner: `ASSET_OWNER_08_AUDIO_DIRECT_REF_UNWIRING_PACKET.md` and `AUDIO_DIRECT_REF_DETAIL_20260605.csv` before touching `Player.prefab` audio refs.
+- MusicDirector owner: `ASSET_OWNER_10_MUSICDIRECTOR_AUDIO_ROUTING_PACKET.md` plus `AUDIO_PROFILE_ROUTE_MATRIX_20260605.csv` before profile/mixer/cue route edits.
+- Texture/material blocker owner: `TEXTURE_SOURCE_FOLDER_ROUTE_MATRIX_20260605.csv`, `ASSET_OWNER_09_TEXTURE_MATERIAL_IMPORT_BLOCKERS_PACKET.md`, and `TEXTURE_ACTIVE_ROUTE_BLOCKER_DETAIL_20260605.csv` before import/material route edits.
+- Water foam/contact owner: `ASSET_OWNER_11_WATER_FOAM_CONTACT_AUTHORING_PACKET.md` before any foam/contact source authoring, import, Crest/ocean material binding, or screenshot proof pass.
+- Flora/coral proxy material owner: `ASSET_OWNER_12_FLORA_PROXY_MATERIAL_REPLACEMENT_PACKET.md` before any active-world `WorldProceduralProxy` flora/coral/kelp material replacement.
+- Product-face prefab owner: `ASSET_OWNER_13_PRODUCT_FACE_PREFAB_PRIMITIVE_REPLACEMENT_PACKET.md` before any visible tool, pickup, construction, transport, building, or support prefab primitive-mesh replacement.
+- Sky/Aegir/cloud owner: `ASSET_OWNER_14_SKY_AEGIR_CLOUD_SLOT_PROOF_PACKET.md` before any skybox, Aegir, cloud, moon, or bright-surface hero slot acceptance or replacement pass.
+- Addressables owner: `ASSET_OWNER_15_ADDRESSABLES_ASSET_GROUP_EXECUTION_BLOCKERS_PACKET.md`, `ADDRESSABLES_ASSET_GROUP_PLAN_20260605.csv`, and `ASSET_PLANNING_CONSOLIDATION_3222_20260605.md`.
+- Terrain/geology PBR owner: `ASSET_OWNER_16_TERRAIN_GEOLOGY_PBR_AUTHORING_PACKET.md` before any first-exit/photic/medium-depth terrain or geology PBR source promotion.
+- UI oxygen sprite/atlas owner: `ASSET_OWNER_17_UI_OXYGEN_SPRITE_ATLAS_PACKET.md` before any oxygen sprite, atlas, HUD binding, or import-route change.
+- Product-face validator owner: `ASSET_OWNER_18_PRODUCT_FACE_VALIDATOR_EVIDENCE_PACKET.md` before running or interpreting the product-face material, prefab, or sky-ocean source validators.
+- Audio authority adoption owner: `ASSET_OWNER_19_AUDIO_IMPORT_AUTHORITY_ADOPTION_PACKET.md` before any stable authority patch or import-policy exception promotion.
+- Ocean/Crest contact owner: `ASSET_OWNER_20_OCEAN_CREST_CONTACT_PROOF_PACKET.md` before any ocean surface, Crest contact, foam/contact source, or waterline proof pass.
+- Texture streaming/mip owner: `ASSET_OWNER_21_TEXTURE_STREAMING_MIP_STATIC_RISK_PACKET.md` before any streaming mip, sRGB/name-risk, large-source, or hero-scale texture import work.
+- Prefab collider/LOD owner: `ASSET_OWNER_22_PREFAB_COLLIDER_LOD_ROW_RISK_PACKET.md` before any prefab collider, LOD, built-in primitive mesh, no-renderer, or proxy/placeholder row remediation.
+- Audio source technical owner: `ASSET_OWNER_23_AUDIO_SOURCE_TECHNICAL_REMEDIATION_PACKET.md` before any source-rate, channel, long-bed, import, lifecycle, Addressables, listening, or DSP route remediation.
+- Mesh/prefab owner: `PREFAB_FILE_TECHNICAL_PROPERTIES_20260605.csv`, `MESH_PREFAB_SOURCE_FOLDER_ROUTE_MATRIX_20260605.csv`, `MESH_PREFAB_REVIEW_QUEUE_20260605.csv`, and `MESH_PREFAB_PROMOTION_STATIC_TABLE_3214_20260605.md`.
+- UI sprite owner: `UI_SPRITE_ROUTE_STATIC_TABLE_3216_20260605.md`.
+
+## Scalability Consequences
+
+- Low: preserve premium silhouette, material identity, water/sky readability, baked AO, and route legibility; reduce cadence/residency only through owner-approved continuous `GlobalQualityWeight` paths.
+- Middle: use stable material stacks, controlled texture residency, and conservative LOD proof; no proxy pools or flat water/sky substitutes.
+- High: spend saved frame time on richer material detail, stronger contact art, denser near-field dressing, and better audio routing, not idle budget.
+- Ultra: extend LOD residency, shader detail, reflection/lighting quality, and ambience layering after measured proof; do not change gameplay truth or asset ownership route.
+
+## Regression Model
+
+- CPU: static docs only; no runtime CPU improvement or regression claimed.
+- GC: no runtime code touched; no `0 B/frame` claim.
+- Memory/VRAM: source size and planning risk only; no residency proof.
+- Cadence: no runtime cadence changed.
+- Correctness: blocker ownership is clearer; acceptance remains blocked by Unity/runtime proof.
+
+Final status: `PENDING VERIFICATION`.

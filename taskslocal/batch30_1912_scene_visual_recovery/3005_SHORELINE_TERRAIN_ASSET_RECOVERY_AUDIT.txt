@@ -1,0 +1,45 @@
+ID: 3005_SHORELINE_TERRAIN_ASSET_RECOVERY_AUDIT
+Role: Shoreline / Terrain / Generated Asset Recovery Auditor
+
+Objective:
+Find current shoreline/terrain/generated asset candidates that could replace the black shell/placeholder look, and define a staged recovery path that keeps generated assets in `Docs/GeneratedAssets` until QA passes.
+
+Authority docs:
+- `AGENTS.md`
+- `TASTE.md`
+- `VISION_LOCKS.md`
+- `terrain.md`
+- `world.md`
+- `3dmodel.md`
+- `3DMODEL_GEOLOGY_ROCKS.md`
+- `3DMODEL_TEXTURES_MATERIALS.md`
+- `3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md`
+- `quality.md`
+
+Evidence basis:
+- `Docs/Screenshots/MCP/h8_1912_surface_edit_main.png`
+- `Docs/Screenshots/MCP/h8_1912_surface_quarantine.txt`
+- `Docs/GeneratedAssets/Gemini/TX_H8_WetBasaltShoreline_1428_MANIFEST.md`
+- `Docs/GeneratedAssets/Gemini/QA/WetBasalt1428/GeminiTextureIntakeAudit.md`
+- `Docs/GeneratedAssets/Gemini/QA/1906/TX_H8_WetBasaltShoreline_1428_static_channel_QA_metrics.txt`
+
+Owned scope:
+- Read-only: generated asset docs, QA reports, material/texture candidates.
+- Write: `Docs/Reports/Batch30/3005_SHORELINE_TERRAIN_ASSET_RECOVERY_AUDIT.md`.
+
+Tasks:
+1. Read authority docs.
+2. Inspect the generated wet basalt/shoreline QA artifacts.
+3. Identify which assets are candidates, duplicates, rejects, or ready for controlled Unity-owner import.
+4. Identify why current visible terrain/rocks fail: black shell, weak material, no wetness/strata/sediment/scale witnesses.
+5. Propose a staging path from `Docs/GeneratedAssets` to controlled import, without dumping random downloads into `Assets`.
+6. Include material/mesh proof requirements.
+7. Include low/middle/high/ultra consequences.
+8. Do not edit `Assets`.
+9. Create report.
+
+Rejection gates:
+- No accepting AI textures with baked lighting/random noise/false PBR.
+- No import-ready claim without manifest and QA.
+- No cheap placeholder terrain in surface/photic views.
+

@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Блок native-review для русского
+# Russian Operational Voice Contract
 
-Эта статья объясняет, почему русская локализация HECTON-8 должна оставаться операционной и evidence-led.
+Russian localization is accepted when it reads like a working instrument and a believable corporate record, not a literary retelling.
 
 ## Scanner
 
-Кириллица не проблема. Проблема - drift тона.
+Cyrillic width is solvable. Tone drift is the real risk.
 
 ## Terminal
 
-RU REVIEW: сохранить процедуру, давление, долг и evidence. Мелодраму отклонить.
+Russian copy keeps procedure, pressure, debt, and evidence intact. No melodrama, no softened liability.
 
 ## Audio
 
-Не делай машину поэтичной.
+The machine should sound useful before it sounds beautiful.
 
 ## Field Note
 
-Review gate: сухой terminal language, стабильные proper nouns, без смягчения корпоративной вины, без ornamental horror prose.
+Protect terse terminal language, stable proper nouns, corporate and legal terms, unit clarity, and short survival text.
 
 <!-- External Site; generated from P276_RU_NATIVE_REVIEW_LOCK/ru_RU. -->

@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Публичные имена маршрутов
+# Public Route Names
 
-Публичные имена маршрутов дают контрактам, карте, грузовым записям и статьям единый язык без принуждения игрока учить полный атлас.
+Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.
 
 ## Scanner
 
-Имена маршрутов делают полет сначала чьей-то собственностью, а уже потом приключением.
+Route names make travel feel owned before it feels adventurous.
 
 ## Terminal
 
-ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane и Ran Long Claim - рабочие публичные ярлыки.
+ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.
 
 ## Audio
 
-Маршрут становится дорогой только после того, как задержку продали дважды.
+A route is a road only after somebody sells the delay twice.
 
 ## Field Note
 
-Каждое имя маршрута должно звучать как тариф, а не как чудо.
+Every route name should sound like a tariff, not a wonder.
 
 <!-- In-Game Wiki; generated from P163_PUBLIC_ROUTE_NAMES/ru_RU. -->

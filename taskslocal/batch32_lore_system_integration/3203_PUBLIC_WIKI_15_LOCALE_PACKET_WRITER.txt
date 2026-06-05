@@ -1,0 +1,41 @@
+ID: 3203
+Role: PUBLIC_WIKI_15_LOCALE_PACKET_WRITER
+
+Objective:
+Write one new source-locked production packet for public/wiki/in-game use with real 15-locale draft rows, not English clones.
+
+Why this is needed:
+The project has wide AppliedContent coverage, but current non-English pages mostly preserve English with pending status. The system needs actual draft text rows while remaining honest about native review.
+
+Owned scope:
+- Create exactly one new file under `Docs/Lore/AppliedContent/production_packets/`.
+- Recommended packet: `P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE.production.md`.
+- Do not edit P461 or P462. P462 is owned by another worker.
+
+Authority docs:
+AGENTS.md, PROJECT_BIBLES.md, TASTE.md, writing.md, narrative.md, localization.md, Docs/Lore/Canon_Locks.md, Docs/Lore/Lore_Bible.md, Docs/Lore/Website_Publication_Map.md, Docs/Lore/Codex_Delivery_Map.md.
+
+Tasks:
+1. Read authority docs and do a narrow canon extraction.
+2. Create source brief before prose.
+3. Topic: public/wiki spoiler gate that explains what public articles may say before release and what in-game discovery must unlock later.
+4. English authority text must include external site/wiki, in-game codex, scanner short, terminal/document, audio, Marauder field note, and QA.
+5. Produce all 15 locale rows for title, site teaser, scanner, field note, and audio.
+6. Mark en_US `source_authority`; mark all other rows `draft_machine_or_llm`.
+7. Preserve names: HECTON-8, Aegir, Black Keel, Deep Reach, Atlas-6, Xenon-Omega.
+8. Avoid final payload spoilers and family-revenge hook.
+9. Add Runtime/Monolith placement notes as authoring intent only: LocIDs, layer, surfaces, unlock route, relation tags, and explicit no-runtime-markdown boundary.
+10. Run a static anti-AI prose pass: remove banned phrases from writing.md.
+11. Report file path, statuses, and residual risks.
+
+Proof packet:
+- Canon sources used.
+- Locale roster present.
+- Native-review/runtime status honest.
+- Evidence class STATIC_DOC.
+
+Rejection gates:
+- No English clone rows.
+- No native-reviewed/runtime-ready claim.
+- No marketing claims about release/optimization/platform readiness.
+- No AI-style article summary prose.

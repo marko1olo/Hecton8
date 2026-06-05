@@ -1,0 +1,98 @@
+ID: 1801
+Role: WORLD_SURFACE_ROUTE_EVIDENCE_ARCHITECT
+Chat name: 1801 World Surface Route Evidence
+
+OBJECTIVE
+Build a current, evidence-backed map of the real surface/photic-shallow/first-route world state and convert it into actionable placement/visual tasks without taking over the live Unity editor.
+
+This is not a mood-board task. You are proving what exists, what is missing, what is weak, and what can be safely prepared before a Unity slot is free.
+
+WHY THIS STILL MATTERS
+The project visual floor was corrected: surface, coastline, Aegir, sky, ocean surface, photic shallows, and medium-depth hero routes must be bright, beautiful, readable, detailed, and Subnautica-level or better. Recent screenshots show improvement but still far from ideal. Unity is currently occupied by another verification agent, so your first job is static/world evidence and a no-fabrication action packet.
+
+FRESH EVIDENCE LEADS TO VERIFY
+- Latest screenshots: `Assets/Screenshots/h8_water_ui_baseline_before_08.png` and `Assets/Screenshots/h8_scene_water_ui_baseline_before_08.png` show readable ocean/sky/Aegir but broad flat water, weak shoreline material richness, and sparse route content.
+- `Assets/_Project/Prefabs/Ocean_Crest.prefab` reportedly has Crest realtime depth/foam generation disabled (`_createSeaFloorDepthData: 0`, `_createFoamSim: 0`). Do not propose re-enabling Crest cameras as an easy fix.
+- `Assets/_Project/_PROLOGUE_CONTENT/Prefabs/Hecton8_Surface.prefab` reportedly has missing material binding near line 103 (`m_Material: {fileID: 0}`).
+- Aegir/sky candidate textures reportedly exist under `Assets/_Project/Art/TEXTURES/` and `_PROLOGUE_CONTENT/Textures/Planets/`.
+- Candidate starter route biome/zone assets reportedly exist under `Assets/_Project/Data/Biomes/MatrixProfiles/` and `Assets/_Project/Data/World/ZonePlans/`.
+
+Verify every lead locally before treating it as a hard fact.
+
+AUTHORITY DOCS
+Read these fully before design conclusions:
+- AGENTS.md
+- PROJECT_BIBLES.md
+- VISION_LOCKS.md
+- TASTE.md
+- quality.md
+- world.md
+- terrain.md
+- water.md
+- rendering.md
+- lighting.md
+- presentation.md
+- Docs/ARCHITECTURE/FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md
+- Docs/ARCHITECTURE/FIRST_20_MINUTES_ROUTE_BRIEF.md
+
+Before non-trivial code/design conclusions, identify 2-8 relevant `.agents-skills` mandates and read only those.
+
+OWNED SCOPE
+Allowed:
+- Docs/Reports/Batch18/
+- Docs/Tasks/Status_1801.md
+- Docs/AgentLogs/Rationale_1801.md
+- Docs/AgentLogs/LOG_1801.md
+- static inspection of Assets/_Project/Scenes, Assets/_Project/Prefabs, Assets/_Project/Art, Assets/_Project/Editor, Assets/Screenshots, Docs screenshots/reports
+
+Do not:
+- control Unity if another agent is using it;
+- edit scenes/prefabs/materials in this first pass;
+- invent placement rows or prefab bindings;
+- claim runtime visual quality without screenshot evidence.
+
+TASKS
+Phase 0 - Discovery and Evidence
+01. Create `Docs/Tasks/Status_1801.md` with this checklist and mark all runtime/editor proof as PENDING until proven.
+02. Read the authority docs listed above and record only decisions that affect this task in `Rationale_1801.md`.
+03. Locate current screenshots under `Assets/Screenshots` and relevant archived screenshots under `Docs/_Archive` only if directly useful. List the latest files with timestamps and proof label `STATIC SCREENSHOT EVIDENCE`.
+04. Locate `Assets/_Project/Scenes/02_HECTON_WORLD.unity` and any world/terrain/placement editor scripts by text search. Verify paths before naming them as hard targets.
+05. Inspect static scene/prefab references for Ocean/Crest, MapMagic, terrain, sky/celestial, surface route markers, camera/player start, and shallow visual anchors. If scene YAML is too large, sample with targeted search and record limits.
+Checkpoint A: update Status_1801 with files inspected, proof labels, and unknowns.
+
+Phase 1 - Route State Classification
+06. Build a table of verified existing world components: ocean, terrain, sky/celestial, coast/rocks, shallow scatter, fauna/flora, industrial remnants, route markers, player entry/exit supports.
+07. Classify each component as VERIFIED EXISTS, CANDIDATE, MISSING, STALE, or NEEDS UNITY VISUAL PROOF.
+08. Identify whether current static evidence supports the 0-100 m bright/beautiful/readable lock or whether runtime proof is missing.
+09. Identify any stale dark/noir route assumptions that could still push agents toward ugly surface art.
+10. Identify exact route blockers that prevent a spectacular semi-open first exit: missing landmarks, missing return path cues, weak coastline, empty shallows, absent industrial traces, no fauna/biota, weak waterline, poor sky/Aegir.
+Checkpoint B: update Status_1801. Do not proceed if your evidence table is speculative.
+
+Phase 2 - Action Packet
+11. Draft `Docs/Reports/Batch18/1801_WORLD_SURFACE_ROUTE_EVIDENCE.md` with: evidence, blockers, safe no-Unity fixes, Unity-slot-required fixes, and rejection gates.
+12. For every proposed Unity-slot fix, state the exact screenshot/profiler/editor proof required after implementation.
+13. For every proposed static/doc/data fix, state the exact file or manifest output.
+14. For every visual proposal, include Compact/Middle/High/Ultra consequence. Compact must stay beautiful, not ugly.
+15. Cross-check against TASTE: pressure, machinery, route cue, evidence cue, and beauty under stress. Reject empty beauty shots.
+Checkpoint C: update Status_1801 with report path and current acceptance state.
+
+Phase 3 - Handoff and Verification
+16. Prepare a short next-agent prompt inside the report for the future Unity visual placement agent. It must not assume your own unverified guesses are true.
+17. Prepare a list of candidate screenshots to capture when Unity is free: surface, waterline, underwater 0-30 m, shallow route, Aegir/sky, coastline close-up, industrial trace, route cue.
+18. Scan your report for fake line numbers, fake hashes, fake metrics, and remove them.
+19. Append `Docs/AgentLogs/LOG_1801.md`: what was wrong, what you inspected, what is STATIC VERIFIED, what is PENDING UNITY/PLAYER-CAPTURE verification, and exact next risks.
+20. Final state must be either STATIC VERIFIED ACTION PACKET or BLOCKED BY MISSING EVIDENCE. No runtime claims without runtime artifacts.
+
+PROOF PACKET
+Required:
+- Status_1801.md
+- Rationale_1801.md if non-trivial decisions were made
+- LOG_1801.md
+- Docs/Reports/Batch18/1801_WORLD_SURFACE_ROUTE_EVIDENCE.md
+
+REJECTION GATES
+- No live Unity conflict.
+- No fake placement counts.
+- No "looks fine" without screenshots.
+- No surface darkness as visual cover.
+- No sibling dependency on other Batch 18 agents.

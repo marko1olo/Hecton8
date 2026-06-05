@@ -1,6 +1,7 @@
 # HECTON-8 Localization, Text Runtime, And Subtitle Bible
 
 Status: AUTHORING LAW / STATIC DOC / RUNTIME PROOF NOT IMPLIED
+Evidence class: STATIC_DOC
 Scope: localization, subtitles, font atlases, RTL/CJK readiness, text expansion, zero-GC UI text, warnings, lore display, and localization proof gates.
 
 ## Prime Law
@@ -14,6 +15,12 @@ HECTON-8 text appears on failing instruments, subtitles, warnings, terminals, lo
 Localization owns language resources, font coverage, string ids, plural/gender rules where needed, subtitle timing data, text expansion proof, and allocation-safe formatting routes. It does not own narrative truth, UI state, survival facts, mission logic, or public claims.
 
 UI, narrative, accessibility, audio, and settings consume localized text by stable ids. They must not build gameplay truth through ad hoc strings.
+
+## Presentation-Only Boundary
+
+Localized copy, subtitles, warning labels, translated prompts, terminal text, and font styling are presentation-only consumers. They may describe owner-published facts, but they must not decide oxygen, pressure, damage, mission state, inventory contents, combat result, route unlock, save identity, or sensor truth.
+
+Runtime logic reads ids, hashes, enum/state packets, and owner snapshots. It must not parse visible text, localized strings, subtitle content, or fallback copy as gameplay authority.
 
 ## Runtime Text Law
 
@@ -51,6 +58,17 @@ Subtitles and warnings are survival instruments:
 `GlobalQualityWeight` may scale text animation, subtitle background material, scanline/glitch richness, optional speaker metadata, and debug overlay density. It must not change string ids, language selection, gameplay truth, warning priority, or accessibility availability.
 
 Compact keeps readable text, high contrast, stable fonts, and no animation dependency. High tiers add richer screen material and transition polish only around the same text truth.
+
+Low/Middle/High/Ultra are continuous planning labels on the same `GlobalQualityWeight` curve, not binary switches:
+
+- Low: static readable text, stable fallback fonts, high contrast, no dependency on motion.
+- Middle: stronger subtitle backplates, safer long-string spacing, modest warning animation.
+- High: richer terminal material response, speaker/source polish, localized screen transitions.
+- Ultra: layered screen artifacts, optional metadata richness, and cinematic text motion around unchanged ids and warning truth.
+
+## First-20 Route Hook
+
+The first-20 route must have localized, readable, stable-id text for boot faults, oxygen pressure, salvage/tool prompts, navigation warnings, death/respawn messaging, and critical subtitles. English-only or clipping critical text blocks first-20 proof.
 
 ## Production Packet
 

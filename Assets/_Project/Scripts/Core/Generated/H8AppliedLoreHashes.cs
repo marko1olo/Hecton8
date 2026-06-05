@@ -466,6 +466,10 @@ namespace Hecton8.Core.Generated
         public const uint P458_DEEP_REACH_LIABILITY_LONGFORM_BRIEF = 0x298F79C3u;
         public const uint P459_ATLAS_SPOILER_LONGFORM_BRIEF = 0xD383EA54u;
         public const uint P460_BLUE_DEBT_RESOURCE_LONGFORM_BRIEF = 0x75A42B95u;
+        public const uint P461_PACKET_CUSTODY_BRIDGE = 0xB9E31203u;
+        public const uint P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE = 0x39EB648Eu;
+        public const uint P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE = 0x64DCA3D4u;
+        public const uint P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE = 0x6893BE85u;
 
         public const uint Locale_en_US = 0x6C199F07u;
         public const uint Locale_ru_RU = 0x5FBC7928u;

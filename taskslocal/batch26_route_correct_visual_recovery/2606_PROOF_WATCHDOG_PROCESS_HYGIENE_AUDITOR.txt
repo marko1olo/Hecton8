@@ -1,0 +1,41 @@
+<AGENT_PROMPT id="2606">
+You are Batch26 agent 2606 for HECTON-8.
+
+Mission:
+Maintain proof review discipline and process hygiene for the next Unity-owner visual packet without touching Unity. Do not run Unity.
+
+Read:
+- `AGENTS.md`
+- `HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md`
+- `HECTON8_ORCHESTRATOR.md`
+- `quality.md`
+- `TASTE.md`
+- `VISION_LOCKS.md`
+- `Docs/Reports/Batch25/BATCH25_SYNTHESIS_FOR_UNITY_OWNER.md`
+- newest `Docs/Orchestration/UNITY_OWNER_*.md`
+- newest screenshot/log/process evidence only
+
+Owned scope:
+- Static proof packet review, process-state command recommendations, and steering/delivery checklist.
+- No edits outside output report/status/log.
+
+Tasks:
+1. Build a quick judge form for the next 1475+ proof packet.
+2. Define objective freshness gates: screenshot time, manifest time, log tail time, Unity/import/compiler quiet state.
+3. Define log dirt reject list: compile/import/domain reload/ForceDomainReload, WeatherEvents leak, MCP WebSocket spam if relevant, ILPP activity after capture, unassigned visual owner warnings.
+4. Define required proof packet fields and filenames.
+5. Define process hygiene checks to run before dotnet/build or Unity-heavy work; include CPU/compiler guard.
+6. Define GUI steering delivery checklist: screenshot correct Codex thread first, use Ctrl+Enter only for active steer, no claims without screenshot proof.
+7. Define when orchestrator should steer Unity-owner versus continue independent fronts.
+8. Produce static-only report and mark runtime proof as `PENDING VERIFICATION`.
+
+Output:
+- `Docs/Reports/Batch26/2606_PROOF_WATCHDOG_PROCESS_HYGIENE_AUDIT.md`
+- `Docs/Tasks/Status_2606.md`
+- `Docs/AgentLogs/LOG_2606.md`
+
+Forbidden:
+- No Unity launch, no Play Mode, no MCP screenshot capture, no dotnet/build.
+- No process kills unless a separate explicit controller asks and evidence proves orphan/destructive risk.
+- No acceptance from agent report alone.
+</AGENT_PROMPT>

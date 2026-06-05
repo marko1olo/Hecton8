@@ -35,7 +35,11 @@ namespace Hecton8.Core
         private const byte CriticalMemoryPressureSeverity = 2;
         private const float ForcedMemoryPressureThreshold01 = 0.85f;
         private const float MassiveImpactSeverity = 1f;
+        private const float MassiveImpactCameraAmplitudeScale = 1.45f;
+        private const float MassiveImpactCameraTranslationGain = 1.20f;
+        private const float MassiveImpactCameraRotationGain = 1.55f;
         private const float ReentryHeatStartThreshold01 = 0.001f;
+        private const double SkipHoldSeconds = 1.5d;
 
         [SerializeField] private MonoBehaviour sequenceComponent;
         [SerializeField] private bool autoRunOnEnable = true;
@@ -61,6 +65,8 @@ namespace Hecton8.Core
         private float _lastObservedSurvivalProxyPressure01;
         private bool _lastObservedForcedLowMemory;
         private bool _skipRequested;
+        private double _skipHoldSeconds;
+        private int _skipHoldFrameIndex = -1;
         private bool _observedHighResSurfaceReady;
         private bool _observedProxySurfaceReady;
         private bool _standaloneOrbitSceneActive;
@@ -115,7 +121,7 @@ namespace Hecton8.Core
         {
             get
             {
-                return IsDevelopmentBuild && _skipRequested;
+                return _skipRequested;
             }
         }
 
@@ -368,23 +374,19 @@ namespace Hecton8.Core
 
         public void RefreshFrameState()
         {
-            if (!_isDevelopmentBuild || _skipRequested)
+            if (_skipRequested)
                 return;
 
             ConsumeSkipInputSignals();
             if (_skipRequested)
                 return;
 
-            if (IsImmediateSkipInputHeld())
-                _skipRequested = true;
+            RefreshSkipHoldState(ResolveSkipHoldDeltaSeconds());
         }
 
         public Awaitable DelayDilatedAsync(float seconds, CancellationToken cancellationToken)
         {
-            if (!IsDevelopmentBuild)
-                return AwaitableExtension.DelayDilated(seconds, cancellationToken);
-
-            return DelayDilatedDevelopmentInterruptibleAsync(seconds, cancellationToken);
+            return DelayDilatedInterruptibleAsync(seconds, cancellationToken);
         }
 
         public Awaitable NextFrameAsync(CancellationToken cancellationToken)
@@ -473,7 +475,17 @@ namespace Hecton8.Core
 
         public void PublishMassiveImpact()
         {
-            CameraJuiceSignals.TryPublishImpact(MassiveImpactSeverity, Vector3.zero, Vector3.down);
+            CameraJuiceSignals.TryPublishImpact(
+                MassiveImpactSeverity,
+                Vector3.zero,
+                Vector3.down,
+                CameraJuiceSignals.SharpKineticImpactProfileHash,
+                MassiveImpactCameraAmplitudeScale,
+                CameraJuiceSignals.CriticalPriority,
+                0f,
+                MassiveImpactCameraTranslationGain,
+                MassiveImpactCameraRotationGain,
+                SourceHash);
         }
 
         public void PublishOceanHandoff()
@@ -665,9 +677,10 @@ namespace Hecton8.Core
 
         private void HandleSkipRequested()
         {
-            if (!IsDevelopmentBuild)
+            if (_skipRequested)
                 return;
 
+            _skipHoldSeconds = 0d;
             _skipRequested = true;
             RequestRunCancellation(PrologueCancelReasons.DevSkip);
         }
@@ -684,18 +697,56 @@ namespace Hecton8.Core
                     continue;
 
                 _lastPlayerInputSignalSequence = signal.Sequence;
-                HandleSkipRequested();
                 return;
             }
         }
 
-        private bool IsImmediateSkipInputHeld()
+        private void RefreshSkipHoldState(double deltaSeconds)
+        {
+            if (!IsSkipInputHeld())
+            {
+                _skipHoldSeconds = 0d;
+                return;
+            }
+
+            if (deltaSeconds <= 0d)
+                return;
+
+            _skipHoldSeconds += deltaSeconds;
+            if (_skipHoldSeconds >= SkipHoldSeconds)
+                HandleSkipRequested();
+        }
+
+        private double ResolveSkipHoldDeltaSeconds()
+        {
+            int frame = SystemDispatcher.CurrentFrameIndex;
+            if (_skipHoldFrameIndex == frame)
+                return 0d;
+
+            ITickDispatcher dispatcher = _tickDispatcher;
+            double deltaSeconds = dispatcher != null
+                ? dispatcher.TimeSnapshot.DeltaTime
+                : SystemDispatcher.CurrentFrameDeltaTime;
+            if (!math.isfinite(deltaSeconds) || deltaSeconds <= 0d)
+                return 0d;
+
+            _skipHoldFrameIndex = frame;
+            return deltaSeconds > SkipHoldSeconds ? SkipHoldSeconds : deltaSeconds;
+        }
+
+        private bool IsSkipInputHeld()
         {
             IInputService input = _inputService;
             if (input == null || !input.IsInitialized)
                 return false;
 
             PlayerInputState state = input.GetState();
+            return state.HasAction(PlayerInputAction.Cancel) ||
+                   (IsDevelopmentBuild && IsDevelopmentSkipChordHeld(in state));
+        }
+
+        private static bool IsDevelopmentSkipChordHeld(in PlayerInputState state)
+        {
             return state.HasAction(PlayerInputAction.Dash) &&
                    state.HasAction(PlayerInputAction.PrimaryFire) &&
                    state.HasAction(PlayerInputAction.SecondaryFire);
@@ -1011,7 +1062,7 @@ namespace Hecton8.Core
             }
         }
 
-        private async Awaitable DelayDilatedDevelopmentInterruptibleAsync(float seconds, CancellationToken cancellationToken)
+        private async Awaitable DelayDilatedInterruptibleAsync(float seconds, CancellationToken cancellationToken)
         {
             if (!math.isfinite(seconds) || seconds <= 0f)
                 return;
@@ -1043,6 +1094,8 @@ namespace Hecton8.Core
         private void ResetTransientSequenceState()
         {
             _skipRequested = false;
+            _skipHoldSeconds = 0d;
+            _skipHoldFrameIndex = -1;
             _observedHighResSurfaceReady = false;
             _observedProxySurfaceReady = false;
             _atmosphereSnapshotFrame = -1;

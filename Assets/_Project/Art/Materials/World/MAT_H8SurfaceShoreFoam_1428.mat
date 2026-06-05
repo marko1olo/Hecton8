@@ -8,18 +8,17 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: MAT_H8SurfaceShoreFoam_1428
-  m_Shader: {fileID: 4800000, guid: 650dd9526735d5b46b79224bc6e94025, type: 3}
+  m_Shader: {fileID: 4800000, guid: 293b5e809b0a2ff44a3044c7de1e5636, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords:
+  m_ValidKeywords: []
+  m_InvalidKeywords:
   - _SURFACE_TYPE_TRANSPARENT
-  m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 1
-  m_CustomRenderQueue: 3000
-  stringTagMap:
-    RenderType: Transparent
+  m_CustomRenderQueue: 3012
+  stringTagMap: {}
   disabledShaderPasses:
   - MOTIONVECTORS
   - DepthOnly
@@ -39,6 +38,7 @@ Material:
     m_Ints: []
     m_Floats:
     - _AddPrecomputedVelocity: 0
+    - _Alpha: 1
     - _AlphaClip: 0
     - _AlphaToMask: 0
     - _Blend: 0
@@ -47,16 +47,22 @@ Material:
     - _Cutoff: 0.5
     - _DstBlend: 10
     - _DstBlendAlpha: 10
+    - _EdgeFade: 0.08
     - _QueueOffset: 0
     - _SampleGI: 0
+    - _Softness: 0.52
     - _SrcBlend: 5
     - _SrcBlendAlpha: 1
     - _Surface: 1
+    - _Threshold: 0.08
     - _XRMotionVectorsPass: 1
     - _ZWrite: 0
     m_Colors:
     - _BaseColor: {r: 0.66, g: 0.94, b: 0.9, a: 0.3}
     - _Color: {r: 0.65999997, g: 0.94, b: 0.9, a: 0.3}
+    - _FoamColor: {r: 0.94, g: 1, b: 0.97, a: 1}
+    - _TilingA: {r: 3.4, g: 0.88, b: 0.012, a: 0.005}
+    - _TilingB: {r: 6.7, g: 1.72, b: -0.015, a: 0.007}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!114 &272800674358757083

@@ -1,5 +1,10 @@
 ﻿# SHINOBU_302 Utility AI Cognition Route
 
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
+Evidence class: STATIC_DOC / STATIC_SOURCE
+Owner domain: UTILITY_AI_COGNITION_CORE
+Review disposition: YELLOW / STATIC_DOC_ONLY until compile/import/runtime/profiler/player proof exists.
+
 Owner: SHINOBU_302
 Domain: UTILITY_AI_COGNITION_CORE
 Runtime route: SignalBus snapshots -> owner-staged cognition signal DTOs -> UtilityAICognitionVault -> Burst jobs -> ActionHash outputs.

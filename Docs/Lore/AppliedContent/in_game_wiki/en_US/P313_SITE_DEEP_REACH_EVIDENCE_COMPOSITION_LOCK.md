@@ -10,17 +10,17 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
-# Site Deep Reach Evidence Composition Lock
+# Deep Reach Evidence Composition Rule
 
-Site Deep Reach Evidence Composition Lock keeps corporate guilt procedural and evidence-led.
+Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.
 
 ## Scanner
 
-Deep Reach site lock: procedure, memo, damage, not cartoon villainy.
+Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.
 
 ## Terminal
 

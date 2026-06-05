@@ -1,7 +1,14 @@
 # HECTON-8 Celestial, Tide, And Macro Cycle Bible
 
 Status: AUTHORING LAW / STATIC DOC / RUNTIME PROOF NOT IMPLIED
+Evidence class: STATIC_DOC
 Scope: moon/planet cycles, tides, day/night GI relay, seismic timing, macro schedules, celestial visual cues, biome lighting cycles, and macro-cycle proof gates.
+
+## First-20 Route Hook
+
+- First-20 moment: world load and first exit need bright surface/shallow sky, Aegir/moon context, tide or light timing cues, and macro-cycle summaries the player can notice through instruments or water response.
+- Route blocker removed: prevents the opening route from treating celestial work as decorative skybox art with no underwater route timing, visibility, tide, sound, or hazard consequence.
+- Proof class: STATIC_DOC only; route acceptance still requires surface/shallow capture, cycle readability proof, save/load phase proof if persistent, and profiler/GC evidence for runtime macro-cycle code.
 
 ## Prime Law
 
@@ -16,6 +23,10 @@ The sky, Aegir, moons, cloud decks, and surface relay light are spectacle and na
 Eclipse is a temporary route, communication, and lighting occlusion scalar. It may dim, color-shift, interrupt signals, and stage urgency, but it must not become a permanent black skybox or a standing dark-surface art direction.
 
 Celestial visuals must use authored project textures, proven asset sources, or controlled offline generation with reviewable results. Muddy bands, random sine stripes, low-resolution blobs, and crayon-like moon textures are rejected. `GlobalQualityWeight` scales cloud depth, reflection, atmosphere, texture resolution, and secondary shafts; it does not scale the surface into ugliness.
+
+Aegir visual lock: the current blue/purple/methane-rich direction is allowed when texture quality, cloud bands, atmospheric softness, scale, and route context are premium and believable. Do not reject it merely for being unusual. Reject it only when it looks muddy, low-resolution, procedurally scribbled, or disconnected from lighting/water route context.
+
+Storm design remains open. Storms may create temporary danger, dimming, signal trouble, wave state, route timing, and spectacle, but normal surface art must not become permanently dark or ugly because storm/noir language exists.
 
 ## Truth Ownership
 

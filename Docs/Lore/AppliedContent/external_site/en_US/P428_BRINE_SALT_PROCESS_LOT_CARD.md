@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -20,7 +20,7 @@ Brine canyons are not scenery; they are moving process layers that change naviga
 
 ## Scanner
 
-Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.
+Brine salt lot: density origin, vent exposure and filtration risk logged. Corrosion hazard likely.
 
 ## Terminal
 
@@ -32,6 +32,6 @@ The salt is a route record. Taste it and you are reading the wrong way.
 
 ## Field Note
 
-Use for brine canyon scanner cards and resource article.
+Keep brine lots off clean fittings. One bad bag can eat a clamp overnight.
 
 <!-- External Site; generated from P428_BRINE_SALT_PROCESS_LOT_CARD/en_US. -->

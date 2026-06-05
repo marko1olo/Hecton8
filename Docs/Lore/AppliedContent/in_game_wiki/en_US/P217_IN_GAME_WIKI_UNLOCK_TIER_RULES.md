@@ -10,13 +10,13 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
-# In-Game Wiki Unlock Tier Rules
+# PDA Unlock Tier Rules
 
-In-Game Wiki Unlock Tier Rules keep the PDA tied to exploration and evidence.
+PDA Unlock Tier Rules keep the codex tied to exploration and evidence instead of revealing truth before the object is found.
 
 ## Scanner
 

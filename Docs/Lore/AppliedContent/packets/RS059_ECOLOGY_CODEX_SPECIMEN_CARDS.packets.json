@@ -29,10 +29,10 @@
         "en_US": {
           "title": "Photic Mat Codex Card",
           "scanner": "Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.",
-          "field_note": "Codex card should be bright, useful and slightly unstable; not horror-only.",
-          "terminal": "SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.",
+          "field_note": "Cut samples only from loose edges. If the mat is sealing a crack, it is already doing a job you may need later.",
+          "terminal": "SPECIMEN: photic mat. Oxygen-positive, pressure-fragile. Do not harvest large sheets near sealed seams.",
           "audio": "Light here is work, not comfort.",
-          "in_game_wiki": "Photic Mat Codex Card defines the first living system as beauty, oxygen and route risk.",
+          "in_game_wiki": "A photic mat is a living oxygen surface, not decoration. It brightens shallow routes, feeds glass grazers, and flags places where mineral film, pressure chemistry, and life are meeting too quickly. Small samples are useful. Tearing a sheet near a sealed seam can release trapped gas, wake grazers, or turn a safe-looking patch into a route hazard.",
           "external_site": "The photic shelf is bright because life is doing work under pressure, not because HECTON-8 is safe."
         },
         "ru_RU": {
@@ -184,10 +184,10 @@
         "en_US": {
           "title": "Glass Grazer Codex Card",
           "scanner": "Glass grazer: non-hostile. If the school freezes, leave the open water.",
-          "field_note": "Use as tutorial for absence-as-warning without UI exposition.",
+          "field_note": "When the school locks still, stop treating the clearing as safe. Something is reading the same water you are.",
           "terminal": "SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.",
           "audio": "When they stop eating, you stop moving.",
-          "in_game_wiki": "Glass Grazer Codex Card turns a benign animal into a readable safety instrument.",
+          "in_game_wiki": "Glass grazers are non-hostile, but their movement is useful evidence. Active feeding usually means low immediate predator pressure. A frozen or vanished school means the clearing has changed faster than the scanner can explain.",
           "external_site": "HECTON-8's harmless life is part of the survival interface: movement, absence and damage tell the player what a meter cannot."
         },
         "ru_RU": {
@@ -339,10 +339,10 @@
         "en_US": {
           "title": "Lantern Drift Codex Card",
           "scanner": "Lantern drift: useful light. Verify current, charge and residue before following.",
-          "field_note": "Card teaches that beauty can be route information and route deception.",
+          "field_note": "Follow the glow only after current and residue agree. Pretty light is not a route plan.",
           "terminal": "SPECIMEN: lantern drift. Storm charge raises false-positive route glow.",
           "audio": "Pretty is not safe. Pretty is a reading.",
-          "in_game_wiki": "Lantern Drift Codex Card links visual wonder with storm-window route pressure.",
+          "in_game_wiki": "Lantern drift can make a route readable, but the same bloom can hide small hazards or pull predators toward tool noise. Treat bright water as a signal first, scenery second.",
           "external_site": "The shallow ocean's light can guide or mislead; HECTON-8 makes beauty part of navigation, not a postcard."
         },
         "ru_RU": {
@@ -493,11 +493,11 @@
       "localized": {
         "en_US": {
           "title": "Brine Vane Codex Card",
-          "scanner": "Brine vane: roots in density shear. Follow aligned edges, not open glow.",
-          "field_note": "Use as mid-depth codex: beautiful vertical structures that are also navigation logic.",
+          "scanner": "Brine vane: density-shear root. Follow aligned edges; avoid open glow and false-floor returns.",
+          "field_note": "Vertical beauty, bad floor. Keep one vane edge in sight and one hand on buoyancy trim.",
           "terminal": "SPECIMEN: brine vane. Stable shear marker; hull contact not advised.",
           "audio": "The plant is not pointing up. It is pointing through.",
-          "in_game_wiki": "Brine Vane Codex Card turns mid-depth flora into route-reading evidence.",
+          "in_game_wiki": "Brine vanes grow along density shear and make the canyon readable. Aligned edges can guide descent. Open glow and false-floor sonar returns are not safe routes.",
           "external_site": "In the brine canyons, ecology becomes a map because only pressure-adapted growth can survive the route."
         },
         "ru_RU": {
@@ -649,10 +649,10 @@
         "en_US": {
           "title": "Sensor Tagged Fauna Codex Card",
           "scanner": "Sensor-tagged fauna: living carrier, old tag, partial Atlas route echo.",
-          "field_note": "Do not write as possession. It is damaged maintenance using animal movement.",
+          "field_note": "The tag is a scar, not a leash. Expect dirty telemetry and a nervous animal.",
           "terminal": "SPECIMEN: biometal tag growth detected. Animal movement overlaps maintenance route.",
           "audio": "It is not obeying. It is being used.",
-          "in_game_wiki": "Sensor-Tagged Fauna Codex Card clarifies Atlas repair ecology without making the ocean a mind.",
+          "in_game_wiki": "Some animals carry old biometal tags in scar tissue or shell growth. The tag can echo Atlas repair traffic, but the animal is still an animal. Treat the signal as contaminated telemetry, not intent.",
           "external_site": "Atlas' horror is procedural: it routes repair through growth, sound and movement until a living animal becomes infrastructure by accident."
         },
         "ru_RU": {

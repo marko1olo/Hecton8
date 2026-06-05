@@ -84,6 +84,8 @@ namespace Hecton8.World
         private bool _runtimeRegistered;
         private bool _hotSwapRegistered;
         private bool _localProxyLightsDirty;
+        private DepthZoneProfile _activeDepthZone;
+        private float _activeZoneBiolumIntensity;
         private IPlayerRuntimeContext _playerRuntimeContext;
 
         public ServiceHeartbeatState HeartbeatState => _runtimeRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
@@ -110,7 +112,6 @@ namespace Hecton8.World
             TryRegister();
 
             CachePlayerRuntimeContext(GlobalRegistry.Player, null);
-            TryBindSurvivalSystemFromPlayerContext();
 
             EclipseGameplayEvents.Register(this);
             AtlasSignalEvents.Register(this);
@@ -123,6 +124,8 @@ namespace Hecton8.World
             _targetEclipseMultiplier = 1f;
             _atlasPulseBurst = 0f;
             _sonarPulseBurst = 0f;
+            _activeDepthZone = null;
+            _activeZoneBiolumIntensity = 0f;
             _localProxyLightsDirty = true;
         }
 
@@ -148,7 +151,11 @@ namespace Hecton8.World
 
             _targetEclipseMultiplier = 1f;
             _currentEclipseMultiplier = 1f;
-            ApplyLocalProxyLights();
+            _atlasPulseBurst = 0f;
+            _sonarPulseBurst = 0f;
+            _activeDepthZone = null;
+            _activeZoneBiolumIntensity = 0f;
+            RestoreLocalProxyLightBaselines();
         }
 
         private void OnDestroy()
@@ -160,7 +167,9 @@ namespace Hecton8.World
             AtlasSignalEvents.Unregister(this);
             DepthZoneEvents.Unregister(this);
             SpectrumEvents.UnregisterSonarPulseListener(this);
-
+            _activeDepthZone = null;
+            _activeZoneBiolumIntensity = 0f;
+            RestoreLocalProxyLightBaselines();
         }
 
         public void OnServiceShutdown()
@@ -172,12 +181,15 @@ namespace Hecton8.World
             AtlasSignalEvents.Unregister(this);
             DepthZoneEvents.Unregister(this);
             SpectrumEvents.UnregisterSonarPulseListener(this);
-            _localProxyLightBaseIntensities = null;
+            RestoreLocalProxyLightBaselines();
             _playerRuntimeContext = null;
             _atlasPulseBurst = 0f;
             _sonarPulseBurst = 0f;
             _targetEclipseMultiplier = 1f;
             _currentEclipseMultiplier = 1f;
+            _activeDepthZone = null;
+            _activeZoneBiolumIntensity = 0f;
+            _localProxyLightBaseIntensities = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -186,9 +198,6 @@ namespace Hecton8.World
 
         public void SlowTick()
         {
-            if (survivalSystem == null && !TryBindSurvivalSystemFromPlayerContext())
-                return;
-
             const float dt = 0.5f;
 
             // Vychislyaem tselevuyu intensivnost
@@ -199,13 +208,12 @@ namespace Hecton8.World
                 depthFactor = 0f;
 
             float target = baseIntensity + (deepIntensity - baseIntensity) * depthFactor;
+            target = math.max(target, _activeZoneBiolumIntensity);
 
             _currentEclipseMultiplier = MoveTowardsFast(
                 _currentEclipseMultiplier,
                 _targetEclipseMultiplier,
                 eclipseMultiplierSmoothRate * dt);
-
-            target *= _currentEclipseMultiplier;
 
             _targetIntensity = target;
 
@@ -222,7 +230,7 @@ namespace Hecton8.World
                 _sonarPulseBurst = math.max(0f, _sonarPulseBurst - pulseDecayRate * dt);
             }
 
-            ApplyLocalProxyLights();
+            QueueLocalProxyLightPresentation();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -251,7 +259,14 @@ namespace Hecton8.World
             for (int i = 0; i < count; i++)
             {
                 Light proxyLight = localProxyLights[i];
-                _localProxyLightBaseIntensities[i] = proxyLight != null ? proxyLight.intensity : 0f;
+                if (proxyLight == null)
+                {
+                    _localProxyLightBaseIntensities[i] = 0f;
+                    continue;
+                }
+
+                proxyLight.shadows = LightShadows.None;
+                _localProxyLightBaseIntensities[i] = proxyLight.intensity;
             }
         }
 
@@ -261,6 +276,7 @@ namespace Hecton8.World
             if (count <= 0 || _localProxyLightBaseIntensities == null)
                 return;
 
+            float multiplier = ResolveLocalProxyLightMultiplier();
             int limit = Mathf.Min(count, _localProxyLightBaseIntensities.Length);
             for (int i = 0; i < limit; i++)
             {
@@ -268,8 +284,35 @@ namespace Hecton8.World
                 if (proxyLight == null)
                     continue;
 
-                proxyLight.intensity = _localProxyLightBaseIntensities[i] * _currentEclipseMultiplier;
+                proxyLight.intensity = _localProxyLightBaseIntensities[i] * multiplier;
             }
+        }
+
+        private void RestoreLocalProxyLightBaselines()
+        {
+            int count = localProxyLights != null ? localProxyLights.Length : 0;
+            if (count <= 0 || _localProxyLightBaseIntensities == null)
+                return;
+
+            int limit = Mathf.Min(count, _localProxyLightBaseIntensities.Length);
+            for (int i = 0; i < limit; i++)
+            {
+                Light proxyLight = localProxyLights[i];
+                if (proxyLight != null)
+                    proxyLight.intensity = _localProxyLightBaseIntensities[i];
+            }
+        }
+
+        private float ResolveLocalProxyLightMultiplier()
+        {
+            float glowReaction = math.max(0f, _currentIntensity + _atlasPulseBurst + _sonarPulseBurst);
+            float eclipse = math.max(0f, _currentEclipseMultiplier);
+            return (1f + glowReaction) * eclipse;
+        }
+
+        private void QueueLocalProxyLightPresentation()
+        {
+            _localProxyLightsDirty = true;
         }
 
         private void HandleEclipsePhase(bool active)
@@ -286,12 +329,8 @@ namespace Hecton8.World
             _targetEclipseMultiplier = clampedMultiplier;
             if (clampedMultiplier >= Mathf.Max(1f, eclipseMultiplier) - 0.001f)
             {
-                float previousMultiplier = Mathf.Max(0.001f, _currentEclipseMultiplier);
-                float baseIntensityWithoutEclipse = _currentIntensity / previousMultiplier;
                 _currentEclipseMultiplier = clampedMultiplier;
-                _currentIntensity = Mathf.Max(_currentIntensity, baseIntensityWithoutEclipse * clampedMultiplier);
-                _targetIntensity = Mathf.Max(_targetIntensity, baseIntensityWithoutEclipse * clampedMultiplier);
-                _localProxyLightsDirty = true;
+                QueueLocalProxyLightPresentation();
             }
         }
 
@@ -322,7 +361,7 @@ namespace Hecton8.World
         private void HandleSignalPulse(float intensity)
         {
             _atlasPulseBurst = Mathf.Max(_atlasPulseBurst, signalPulseBoost * intensity);
-            _localProxyLightsDirty = true;
+            QueueLocalProxyLightPresentation();
         }
 
         private void HandleSonarPulse(float radius)
@@ -334,6 +373,7 @@ namespace Hecton8.World
             }
 
             _sonarPulseBurst = Mathf.Max(_sonarPulseBurst, sonarPulseBoost * normalizedRadius);
+            QueueLocalProxyLightPresentation();
         }
 
         void ISonarPulseEventListener.OnSonarPulse(float radius)
@@ -343,31 +383,23 @@ namespace Hecton8.World
 
         private void HandleDepthZoneEntered(DepthZoneProfile zone)
         {
-            if (zone == null) return;
-            // Zone-specific biolum intensity from profile
-            float zoneBiolum = zone.ambience.biolumIntensity;
-            if (zoneBiolum > 0.01f)
-            {
-                // Blend zone biolum with current depth-based intensity
-                _targetIntensity = Mathf.Max(_targetIntensity, zoneBiolum);
-            }
+            if (zone == null)
+                return;
+
+            _activeDepthZone = zone;
+            _activeZoneBiolumIntensity = math.saturate(zone.ambience.biolumIntensity);
+            _targetIntensity = math.max(_targetIntensity, _activeZoneBiolumIntensity);
+            QueueLocalProxyLightPresentation();
         }
 
-        private bool TryBindSurvivalSystemFromPlayerContext()
+        private void HandleDepthZoneExited(DepthZoneProfile zone)
         {
-            if (survivalSystem != null)
-                return true;
+            if (zone != null && !ReferenceEquals(zone, _activeDepthZone))
+                return;
 
-            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-            if (playerContext == null)
-                return false;
-
-            HectonSurvivalSystem contextSurvival = playerContext.SurvivalSystem;
-            if (contextSurvival == null)
-                return false;
-
-            survivalSystem = contextSurvival;
-            return true;
+            _activeDepthZone = null;
+            _activeZoneBiolumIntensity = 0f;
+            QueueLocalProxyLightPresentation();
         }
 
         private void CachePlayerRuntimeContext(
@@ -396,6 +428,7 @@ namespace Hecton8.World
 
         void IDepthZoneEventListener.OnDepthZoneExited(DepthZoneProfile zone)
         {
+            HandleDepthZoneExited(zone);
         }
 
         private void TryRegister()

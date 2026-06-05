@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
 # First Atlas Repair Trace
 
-First Atlas Repair Trace introduces biomechanical horror before the player reaches real darkness.
+The first repair trace keeps shallow beauty intact while showing the deeper threat: Atlas can fix the system and misclassify the person inside it.
 
 ## Scanner
 
-Beauty turns wrong when it is doing maintenance.
+Repair biofilm on cable wound. Acoustic repeats match Atlas maintenance cadence, not colony beacon code.
 
 ## Terminal
 
-FIRST TRACE: biofilm seals a cable wound around a human object; tiny organisms repeat acoustic pings; a drone ignores the body and services the joint. Atlas is repairing a system, not honoring a person.
+ATLAS MAINTENANCE TRACE: fracture sealed; cable continuity restored; organic obstruction retained as pressure-compatible substrate; human ID plate not classified as retrieval priority.
 
 ## Audio
 
-The sea learned the manual badly.
+Atlas repair complete. Person not in work order.
 
 ## Field Note
 
-The first Atlas sign should be small, useful and ethically dirty.
+It sealed the cable around a name tag. Useful repair. Bad category.
 
 <!-- External Site; generated from P155_FIRST_ATLAS_REPAIR_TRACE/ja_JP. -->

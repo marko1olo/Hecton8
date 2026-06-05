@@ -1,0 +1,54 @@
+ID: 3103
+Role: WATER_CREST_FOAM_CAUSTIC_OWNER
+Objective: recover a credible owner-correct water, foam, and caustic route without Crest material clones or flat green sheet hacks.
+
+Why this exists:
+- Current water reads as toxic flat green surface/underwater fill.
+- Foam is unproven or appears as transparent ribbon, not waterline contact.
+- Caustics are unproven or disabled; unsupported sheet caustics are rejected.
+
+Authority docs:
+- AGENTS.md
+- TASTE.md
+- VISION_LOCKS.md
+- quality.md
+- water.md
+- rendering.md
+- shaders.md
+- Docs/Reports/Batch30/3004_WATER_FOAM_CAUSTIC_ROUTE_AUDIT.md
+- Docs/Reports/Batch31/MATERIAL_TEXTURE_CRITICALS_20260605.md
+- Docs/Reports/Batch31/CREST_TERRAIN_GUID_RESOLUTION_20260605.md
+- .agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt
+- .agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt
+- .agents-skills/REND_VFX_Fluid_Aesthetics_Compute_Particles.txt
+
+Owned scope:
+- Assets/Crest/Crest/Materials/Ocean.mat
+- Assets/Crest/Crest/Materials/Ocean-Underwater.mat
+- Assets/Crest/Crest/Materials/Ocean_UnderwaterCurtain.mat
+- Assets/_Project/Scripts/HectonUnderwaterVisuals.cs
+- water/foam/caustic materials already referenced by Batch30 report
+- Report output: Docs/Reports/Batch31/3103_WATER_CREST_FOAM_CAUSTIC_OWNER.md
+
+Tasks:
+1. Read authority and Batch30 3004.
+2. Verify active serialized ocean material route from prefab/scene.
+3. Verify underwater material route and runtime overwrite risk.
+4. Identify green sheet/curtain/slab objects and keep them rejected unless a real owner gate exists.
+5. Classify missing/unresolved Crest/wave-data/sky material GUIDs as stale runtime slots versus real missing texture slots. Current static evidence says Crest `_WD_*` missing GUIDs are probable runtime/stale wave-data slots replicated in canonical Crest materials; do not replace them with artist textures.
+6. Define Crest foam proof path: foam input, ocean sampling, shoreline close proof, sorting/overdraw check.
+7. Define caustic proof path: light/depth/receiver gate, shallow route only, fade by depth/storm/cave.
+8. Propose smallest safe material/source changes; do not clone Crest materials at runtime.
+9. State compact/middle/high/ultra consequences through continuous GlobalQualityWeight.
+10. If Unity is available and assigned by controller, test through Unity. Otherwise report static plan only.
+11. Write Status_3103.md, Rationale_3103.md, LOG_3103.md, and Batch31 report.
+
+Proof packet:
+- STATIC VERIFIED for source/material route.
+- PLAYER-CAPTURE/PROFILER only with actual artifacts.
+
+Reject if:
+- Water remains flat green.
+- Foam is a detached strip.
+- Caustics appear without light reason.
+- Crest runtime material clones are introduced.

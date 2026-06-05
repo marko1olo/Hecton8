@@ -1,0 +1,49 @@
+<AGENT_PROMPT id="1862">
+ROLE: Sargassum primitive relink guard patcher.
+
+READ FIRST:
+- C:\hades\Hecton8\AGENTS.md
+- C:\hades\Hecton8\PROJECT_BIBLES.md
+- C:\hades\Hecton8\VISION_LOCKS.md
+- C:\hades\Hecton8\TASTE.md
+- C:\hades\Hecton8\quality.md
+- C:\hades\Hecton8\flora.md
+- C:\hades\Hecton8\world.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1857_SARGASSUM_COLLAPSE_FINAL_CLASSIFICATION_PACKET.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1861_PRIMITIVE_FACTORY_SOURCE_GATES.md
+- Relevant .agents-skills only: QA_Evidence_Text_Filter_Audit, OPT_Cinematic_Cheat_Protocol_Visual_Fake_First, STRM_Asset_Lifecycle_Addressables_Loading_Memory, REND_Instanced_Flora_Physics.
+
+OWNED WRITE SCOPE:
+- Source: Assets/_Project/Scripts/Runtime/SargassumGlobalDragManager.cs if that exact path exists. If the file is elsewhere, find the exact path by source search and only edit that single source file.
+- Docs/Tasks/Status_1862.md
+- Docs/AgentLogs/Rationale_1862.md
+- Docs/AgentLogs/LOG_1862.md
+- Docs/Reports/Batch18/1862_SARGASSUM_PRIMITIVE_RELINK_GUARD_PATCH.md
+
+DO NOT TOUCH:
+- Prefabs, scenes, .asset files, .meta files, binaries, generated data monoliths.
+- Any construction/nature/world support final prefab.
+- Any sibling agent files.
+
+TASK:
+1. Locate the `SargassumGlobalDragManager.OnValidate` fallback that loads:
+   `Assets/_Project/Prefabs/Construction/Final/PFB_SargassumCollapseChunk.prefab`
+2. Patch the fallback so it cannot silently assign a primitive production final.
+3. The minimum acceptable behavior:
+   - If `collapseChunkPrefab` is already assigned and uses Unity built-in primitive mesh, clear or reject it in editor validation with a clear error.
+   - If the hardcoded fallback prefab exists but uses Unity built-in primitive mesh, do not assign it.
+   - If no non-primitive collapse chunk prefab exists, leave `collapseChunkPrefab` null and log an editor error that real collapse chunk art is required.
+4. Reuse `Hecton8.EditorTools.WorldProceduralFinalPrefabQualityGate` only under `#if UNITY_EDITOR` if the runtime file also compiles into player builds.
+5. Do not add runtime allocations or hot-path checks. This is editor validation/source containment only.
+6. Preserve existing gameplay behavior outside the editor validation/fallback route.
+7. Write a report with exact evidence class. Do not claim Unity compile/runtime proof.
+
+VERIFY:
+- `rg -n "PFB_SargassumCollapseChunk|collapseChunkPrefab|WorldProceduralFinalPrefabQualityGate" <edited source>`
+- `git diff --check -- <edited source> Docs/Reports/Batch18/1862_SARGASSUM_PRIMITIVE_RELINK_GUARD_PATCH.md`
+- Do not run dotnet build, Unity menu items, importers, bakes, PlayMode, screenshots, or profiler.
+
+REPORT:
+- Final answer must list changed files and exact verification commands/results.
+- If compile cannot be checked, say `Unity compile: NOT RUN`.
+</AGENT_PROMPT>

@@ -1,0 +1,101 @@
+ID: 1895
+TITLE: PRODUCT_FACE_STATIC_ROUTE_AUDIT_TOOL
+MODE: SOURCE_IMPLEMENTATION_STATIC_PYTHON_TOOL
+
+You are HECTON-8 batch agent 1895.
+You are not alone in the codebase. Your write scope is disjoint from other agents. Do not revert or overwrite sibling work.
+
+PRIMARY GOAL
+
+Implement a small static Python audit tool that checks ProductFace route contracts without Unity. It must catch stale generated-folder paths, missing ProductFace route roots in authoring scripts, dangerous generic AI texture binding mentions, missing validator source files, and current audit/report red-gate consistency.
+
+OWNED WRITE SCOPE
+
+- `Tools/ProductFaceStaticRouteAudit.py`
+- `Docs/Reports/Batch18/1895_PRODUCT_FACE_STATIC_ROUTE_AUDIT_TOOL.md`
+- `Docs/Tasks/Status_1895.md`
+- `Docs/AgentLogs/Rationale_1895.md`
+- `Docs/AgentLogs/LOG_1895.md`
+
+Do not edit any other file. Do not edit C# scripts, prefabs, materials, scenes, `.meta`, assets, binaries, generated meshes, DataMonolith, or task files.
+
+READ
+
+- `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `VISION_LOCKS.md`
+- `TASTE.md`
+- `quality.md`
+- `3dmodel.md`
+- `3DMODEL_TEXTURES_MATERIALS.md`
+- `Docs/Reports/Batch18/1874_TOOL_MESH_SOURCE_AUTHORING_IMPLEMENTATION.md`
+- `Docs/Reports/Batch18/1875_RESOURCE_PICKUP_MESH_SOURCE_AUTHORING_IMPLEMENTATION.md`
+- `Docs/Reports/Batch18/1876_TRANSPORT_MESH_SOURCE_AUTHORING_IMPLEMENTATION.md`
+- `Docs/Reports/Batch18/1877_PLAYER_SUIT_MESH_SOURCE_AUTHORING_IMPLEMENTATION.md`
+- `Docs/Reports/Batch18/1878_SKY_OCEAN_SOURCE_VALIDATOR_IMPLEMENTATION.md`
+- `Docs/Reports/Batch18/1879_PRODUCT_FACE_RELINK_AND_PROOF_CONTRACT.md`
+- `Docs/Reports/Batch18/1888_PRODUCT_FACE_TEXTURE_CHANNEL_MANIFEST_AND_SHADER_AUDIT.md`
+- `Docs/Reports/Batch18/1889_PRODUCT_FACE_ENVIRONMENT_SOURCE_EXCLUSION_MANIFEST.md`
+- `Docs/Reports/Batch18/1890_PRODUCT_FACE_MATERIAL_TEXTURE_VALIDATOR_IMPLEMENTATION.md` if present.
+- `Docs/Reports/Batch18/1891_AITEXTURE_PRODUCT_FACE_HARDENING_PACKET.md`
+
+Mandates:
+
+- `.agents-skills/QA_Evidence_Text_Filter_Audit.txt`
+- `.agents-skills/PERF_Runtime_CPU_GC_ZeroAlloc.txt` if present; if absent, state it.
+
+TOOL REQUIREMENTS
+
+The Python tool must:
+
+1. Run from project root: `python Tools/ProductFaceStaticRouteAudit.py --root .`
+2. Accept `--fail-on-error`.
+3. Print a concise summary with counts by severity.
+4. Return exit code `0` unless `--fail-on-error` is used and errors exist; in that case return non-zero.
+5. Emit JSON to stdout only if `--json` is supplied.
+6. Avoid third-party dependencies.
+7. Read files as UTF-8 with replacement or safe fallback; do not crash on encoding.
+8. Check that these source files exist:
+   - `Assets/_Project/Scripts/Editor/ProductFaceToolMeshSourceAuthoring.cs`
+   - `Assets/_Project/Scripts/Editor/ProductFaceResourcePickupMeshSourceAuthoring.cs`
+   - `Assets/_Project/Scripts/Editor/ProductFaceTransportMeshSourceAuthoring.cs`
+   - `Assets/_Project/Scripts/Editor/ProductFacePlayerSuitMeshSourceAuthoring.cs`
+   - `Assets/_Project/Scripts/Editor/ProductFaceSkyOceanSourceValidator.cs`
+   - `Assets/_Project/Scripts/Editor/ProductFacePrefabQualityValidator.cs`
+   - `Assets/_Project/Scripts/Editor/ProductFaceMaterialTextureValidator.cs`
+9. Check that source/report route roots include current paths:
+   - `Assets/_Project/Art/Generated/ProductFace/Tools/`
+   - `Assets/_Project/Art/Generated/ProductFace/Resources/`
+   - `Assets/_Project/Art/Generated/ProductFace/Transport/`
+   - `Assets/_Project/Art/Generated/ProductFace/PlayerSuit/`
+10. Check that stale route roots like `Assets/_Project/Art/Generated/Tools/`, `Generated/Resources/TitaniumScrap`, and `Generated/Transport/` do not appear in current 1879 contract files or source files.
+11. Check that ProductFace reports mention `PENDING UNITY` or equivalent for runtime/visual/profiler proof instead of claiming acceptance.
+12. Check that no ProductFace source authoring script uses `CreatePrimitive`, `GameObject.CreatePrimitive`, `float.IsFinite`, or `double.IsFinite`.
+13. Check that 1891 hardening report warns against `ai_texture_prefab_bindings.csv`.
+14. Check that 1889 environment exclusion report exists and contains `Crest`, `terrain`, `storm`, `noir`, `depth`.
+15. The tool must not inspect huge binary files.
+16. The tool must not write reports automatically. It is a static audit command only.
+
+REPORT REQUIREMENTS
+
+In `1895_PRODUCT_FACE_STATIC_ROUTE_AUDIT_TOOL.md`, document:
+
+- what the tool checks;
+- exact command lines;
+- first run output;
+- errors/warnings found;
+- why this tool does not replace Unity validators;
+- Low/Middle/High/Ultra consequences.
+
+VERIFICATION
+
+Run and record:
+
+- `python -m py_compile Tools/ProductFaceStaticRouteAudit.py`
+- `python Tools/ProductFaceStaticRouteAudit.py --root .`
+- `python Tools/ProductFaceStaticRouteAudit.py --root . --json`
+- `git diff --check -- Tools/ProductFaceStaticRouteAudit.py Docs/Reports/Batch18/1895_PRODUCT_FACE_STATIC_ROUTE_AUDIT_TOOL.md Docs/Tasks/Status_1895.md Docs/AgentLogs/Rationale_1895.md Docs/AgentLogs/LOG_1895.md`
+
+FINAL RESPONSE
+
+Report changed files, command outputs, exit behavior, current error/warning count, and exactly what a future Unity owner still must run.

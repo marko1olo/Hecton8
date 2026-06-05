@@ -546,6 +546,8 @@ namespace Hecton8.UI
                 case GameLanguage.Hindi: writer.Append("HINDI".AsSpan()); break;
                 case GameLanguage.Indonesian: writer.Append("INDONESIAN".AsSpan()); break;
                 case GameLanguage.Arabic: writer.Append("ARABIC".AsSpan()); break;
+                case GameLanguage.Hebrew: writer.Append("HEBREW".AsSpan()); break;
+                case GameLanguage.Dutch: writer.Append("DUTCH".AsSpan()); break;
                 default: writer.Append("UNKNOWN".AsSpan()); break;
             }
         }

@@ -1,0 +1,111 @@
+HECTON-8 LOCAL TASK FILE
+Batch: batch17_lore_content_1770_1779
+Agent ID: 1772
+Role: In-Game Wiki / PDA Encyclopedia Editor
+Distribution: give this whole file to one agent. No XML extraction is required.
+Wave mode: PARALLEL. Agents 1770-1779 work simultaneously. Do not wait for them, do not depend on their future output.
+
+IDENTIFICATION LINE
+First response must begin exactly:
+PROMPT IDENTIFIED: 1772 | DOMAIN: In-Game Wiki / PDA / Encyclopedia Lore | TASK COUNT: 20
+
+OBJECTIVE
+Make in-game wiki, PDA, and encyclopedia content useful, earned, unlock-aware, and player-facing.
+The writing must be real in-world knowledge after discovery, not a design specification and not a public marketing page.
+
+AUTHORITY DOCS
+Read fully before editing:
+- AGENTS.md
+- PROJECT_BIBLES.md
+- writing.md
+- narrative.md
+- localization.md
+- textes.md
+- Docs/Lore/Lore_Bible.md
+- Docs/Lore/Canon_Locks.md
+- Docs/Lore/Lore_Content_System.md
+- Docs/Lore/Lore_Localization_Model.md
+- Docs/Lore/Lore_Multilingual_Content_Architecture.md
+- Docs/Lore/Codex_Delivery_Map.md
+- Docs/Lore/AppliedContent/README.md
+- Docs/Lore/Encyclopedia/README.md if present
+- Docs/Lore/Encyclopedia/Article_Index.md if present
+
+OWNED SCOPE
+Primary inspect/edit scope:
+- Docs/Lore/AppliedContent/in_game_wiki/
+- Docs/Lore/AppliedContent/packets/*.packets.json
+- Docs/Lore/Encyclopedia/
+- Docs/Lore/Codex_Delivery_Map.md
+- Docs/Lore/AppliedContent/Publication_Surface_Index.csv
+- Docs/Lore/AppliedContent/production_audits/1772/
+
+Do not edit external_site pages except to compare spoiler and tone separation.
+Do not depend on agents 1770-1771 or 1773-1779.
+
+IN-GAME SURFACE RULES
+- PDA/codex text is recovered useful knowledge after unlock.
+- It can be technical, but must still be readable by a player.
+- It must not reveal facts the player has not earned.
+- It must route to player decisions: hazard, repair, route, resource, faction, evidence, creature, station, engine, debt, moon, signal, ship.
+- It must respect text bounds and translation expansion.
+
+15-LOCALE CONTRACT
+Every touched article needs all 15 locales accounted:
+en_US, ru_RU, ja_JP, zh_CN, fr_FR, es_ES, de_DE, pl_PL, uk_UA, ar_SA, id_ID, ko_KR, he_IL, pt_BR, nl_NL.
+If only source text is improved, update localization status and translation unit notes instead of pretending all locales are native-final.
+
+TASKS
+Task 01: Create/update Docs/Tasks/Status_1772.md with all 20 tasks and checkpoints after Tasks 05, 10, 15, and 20.
+
+Task 02: Create/update Docs/AgentLogs/Rationale_1772.md. Record exact source article decisions and rejected internal-spec prose.
+
+Task 03: Inventory in_game_wiki pages for all locales. Output production_audits/1772/ingame_wiki_inventory.csv with locale, page path, packet ID, article ID, title, unlock gate, source voice, status.
+
+Task 04: Inventory Docs/Lore/Encyclopedia and compare it to AppliedContent in_game_wiki. Identify duplicates, missing packet mapping, stale articles, and articles that exist only as design notes.
+
+Task 05: Checkpoint. Select a small high-impact set of existing entries to improve. Do not create a giant rewrite plan. Append chosen set to Status_1772.md.
+
+Task 06: Audit selected entries for wrong tone: internal specification, generic encyclopedia filler, neural phrasing, fake analogies, omniscient narrator. Patch concrete bad passages.
+
+Task 07: Audit selected entries for gameplay usefulness. Each article must answer what the player can do, avoid, repair, scan, track, extract, triangulate, or distrust.
+
+Task 08: Fix any selected entry that makes surface/shallows/sky/moons inherently dark or bleak. Preserve correct darkness for depth/caves/interiors/storms.
+
+Task 09: Split or label content by unlock state when a page mixes early-safe, midgame, and late spoiler facts. Update index/status rows if needed.
+
+Task 10: Checkpoint. Reopen changed articles and confirm they read as player-facing PDA/codex text, not writer notes.
+
+Task 11: For each changed article, define stable translation units: title, short summary, body paragraphs, related links, unlock note, scanner bridge if present.
+
+Task 12: Update or create production_audits/1772/ingame_translation_status.md with all 15 locales for changed articles and exact readiness state.
+
+Task 13: Verify LocID or packet field consistency against Lore_Localization_Model.md. Do not invent a runtime key format if existing packets use a different one.
+
+Task 14: Cross-check Codex_Delivery_Map.md for delivery routes. If a changed article has no route, mark CANDIDATE_ROUTE_NEEDED rather than inventing a Unity reference.
+
+Task 15: Checkpoint. Run existing text-bound or lore validation tools if safe and relevant. If not safe, record exact reason.
+
+Task 16: Improve article related-links/crosslinks only where existing article IDs or packet IDs are verified.
+
+Task 17: Create production_audits/1772/pda_article_quality_report.md with before/after issues, fixed pages, remaining weak pages, and no-sibling dependency notes.
+
+Task 18: Write Docs/AgentLogs/HANDOFF_1772.md for scanner/audio/runtime agents with existing packet IDs only. Do not require them to have completed work.
+
+Task 19: Re-run parse/sanity checks for edited Markdown/JSON/CSV files. Capture command and output.
+
+Task 20: Final verification. Reopen edited files, update Status_1772.md, append final report to Docs/AgentLogs/LOG_1772.md.
+
+ACCEPTANCE PROOF
+- in_game_wiki_inventory.csv exists.
+- Selected pages are measurably less spec-like and more useful to the player.
+- Changed articles have 15-locale status notes.
+- Unlock/spoiler state is explicit.
+- Final LOG_1772.md lists exact files and validation.
+
+REJECTION CONDITIONS
+- In-game article reads like an internal design doc.
+- Article spoils late facts before unlock.
+- Future dependency on sibling agents.
+- Text tells the player the surface/shallows are inherently dark or ugly.
+- Localization status is falsified.

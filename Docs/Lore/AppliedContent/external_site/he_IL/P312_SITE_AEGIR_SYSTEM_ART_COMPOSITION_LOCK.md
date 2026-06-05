@@ -10,17 +10,17 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Site Aegir System Art Composition Lock
+# Aegir System Art Rule
 
 Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.
 
 ## Scanner
 
-Aegir art lock: orbital window, moon ladder, relay shadow, not fantasy skybox.
+Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.
 
 ## Terminal
 

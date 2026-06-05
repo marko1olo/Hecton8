@@ -1,5 +1,11 @@
 ﻿# HECTON-8 Daily Agent Marketing Task Loop
 
+## Authority Boundary
+
+Static operations workflow only. Agent roles, quotas, loops, validation cuts, reports, and task rows do not prove quality, release, platform, Steam, wishlist, demo, performance, feedback, legal/compliance, localization, monitoring, launch, asset-public-use, or public-response readiness.
+Public voice routes to root `textes.md`. Quality, release, platform, Steam, wishlist, demo, performance, feedback, review/forum response, legal/compliance, localization, monitoring, operations, partnership, contract, and launch claims route through root `quality.md`, `release.md`, and `platform.md` with current proof artifacts plus local permission gates where present.
+No launch/release readiness, localized public use, public response, creator contract send, platform claim, Steam approval, wishlist claim, demo approval, spend approval, task completion approval, or public send approval exists from daily loop rows or static agent reports.
+
 Status: executable agent workflow
 Owner lane: Marketing / agent operations
 Runtime impact: none

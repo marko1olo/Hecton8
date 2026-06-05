@@ -5141,6 +5141,9 @@ MonoBehaviour:
   - {fileID: 4800000, guid: fdac643fbeb24374ba9ea1e341842908, type: 3}
   runtimeShaderReferenceCatalog: {fileID: 11400000, guid: 66443d0a1f184aef87c6fd729fd8f401, type: 2}
   shaderGraphicsStateCollectionPaths: []
+  forceNewGame: 0
+  prewarmProceduralScatterBeforePlayerActivation: 0
+  scatterBootstrapPrimePasses: 1
 --- !u!1 &1948758945
 GameObject:
   m_ObjectHideFlags: 0

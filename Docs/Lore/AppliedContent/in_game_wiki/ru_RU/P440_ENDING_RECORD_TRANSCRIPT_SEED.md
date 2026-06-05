@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Seed транскрипта ending record
+# Транскрипт финальной записи
 
-Ending record transcripts делают каждый outcome loggable и replay-comparable, не превращая knowledge в inherited power.
+Транскрипты финальных записей делают исходы логируемыми и сравнимыми при replay, не превращая знание в наследуемую силу.
 
 ## Scanner
 
-Ending transcript seed: after-action records itemize receiver, proof custody и unresolved cost.
+Фрагмент финальной записи перечисляет приемника, хэш полезной нагрузки, состояние долга и неурегулированную цену.
 
 ## Terminal
 
-AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.
+ПОСЛЕОПЕРАЦИОННАЯ ЗАПИСЬ: приемник подтвердил прием; хэш полезной нагрузки сохранен; требование закрыто для учета; состояние правды не решено; флаг подавления неизвестен.
 
 ## Audio
 
-Dossier entry: claim closed for accounting. Truth status unresolved by design.
+Послеоперационная запись. Приемник принял хэш полезной нагрузки. Требование закрыто для учета. Флаг подавления нечитаем. Цепочка правды не решена.
 
 ## Field Note
 
-Для ending dossier, spoiler pages и final VO captions.
+Финальная запись досье. Должна назвать приемника, хранение и неурегулированную цену, а не чистое моральное закрытие.
 
 <!-- In-Game Wiki; generated from P440_ENDING_RECORD_TRANSCRIPT_SEED/ru_RU. -->

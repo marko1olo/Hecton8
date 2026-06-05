@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Audit receipt material exit
+# Material Exit Receipt Audit
 
-False endings HECTON-8 - не fake fail screens. Это реальные outcomes, показывающие, что игрок выбрал ценить.
+HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.
 
 ## Scanner
 
@@ -28,10 +28,10 @@ AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. D
 
 ## Audio
 
-Тебе заплатили. Это не то же самое, что выйти чистым.
+You got paid. That is not the same as getting out clean.
 
 ## Field Note
 
-Для material ending record и replay dossier.
+After-action record: payout and recovery can close while evidence custody and worker names remain unresolved.
 
 <!-- External Site; generated from P336_MATERIAL_EXIT_RECEIPT_AUDIT/ru_RU. -->

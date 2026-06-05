@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Social Dev Note Copy Lock
+# Public Note Copy Rule
 
-A good HECTON-8 dev note can be one sentence: the pump works, the gauge lies, the return route got worse.
+A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.
 
 ## Scanner
 
@@ -24,7 +24,7 @@ Public note lock: one concrete build fact, no fake hype.
 
 ## Terminal
 
-PUBLIC COPY: social/dev notes should name one physical problem, one visible detail and no unsupported demo/platform/release claim.
+PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.
 
 ## Audio
 
@@ -32,6 +32,6 @@ One real thing. No chorus.
 
 ## Field Note
 
-Use for captions and creator-facing snippets only after matching visual asset exists.
+Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out.
 
 <!-- External Site; generated from P315_SOCIAL_DEV_NOTE_COPY_LOCK/he_IL. -->

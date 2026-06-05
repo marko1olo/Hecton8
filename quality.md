@@ -1,6 +1,7 @@
 # HECTON-8 Quality Gates Bible
 
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
+Evidence class: STATIC_DOC
 Scope: cross-system acceptance gates, proof artifacts, screenshot review, profiler proof, taste review, low-tier validation, and anti-fake reporting.
 
 ## 0. Prime Quality Law
@@ -148,6 +149,10 @@ Reject or patch a controller/batch instruction if it:
 - omits the surface/photic-shallows/medium-depth Subnautica-level visual floor for visual work.
 
 A valid controller prompt preserves inspect-first autonomy, the relevant root bibles, exact proof labels, three-pillar acceptance, continuous `GlobalQualityWeight`, active-ID logging rules, and the requirement that cheap paths still look premium.
+
+For serious user-distributed HECTON-8 agent waves, 20-30 task prompts are valid and preferred when they are phase-gated, evidence-based, and domain-owned. Reject large prompts only when they broaden scope without proof, create sibling dependencies, fake metrics, or skip checkpoints.
+
+Controller prompts must also preserve `VISION_LOCKS.md`: spectacular semi-open first route, broad parallel production, cozy but industrial bases, Subnautica-level visual floor, useful Subnautica-like map/sonar, honest 15-locale status, and the user's current stance on modding/XR/platform foundations.
 
 ## 10. Final Report Shape
 

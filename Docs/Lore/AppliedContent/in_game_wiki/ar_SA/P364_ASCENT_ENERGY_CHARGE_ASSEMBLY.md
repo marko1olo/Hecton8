@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ Every gram here is either escape, evidence, or money. You do not get all three.
 
 ## Field Note
 
-Use for vent forge / blue debt route where escape and payout decisions overlap.
+The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout.
 
 <!-- In-Game Wiki; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/ar_SA. -->

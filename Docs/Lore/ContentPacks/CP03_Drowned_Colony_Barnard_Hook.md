@@ -49,7 +49,7 @@ Key evidence. People became routing problems.
 ## Seeded Variants
 
 Barnard Connection:
-Toolmaker, old crew, salvage school, debt broker, family name, mentor, rival yard, union mark.
+Toolmaker, old crew, salvage school, debt broker, mentor, rival yard, union mark, employer mark, revoked work contact. No family-revenge or missing-relative hook.
 
 Colony Space:
 Kitchen, locker hall, pressure bunk row, tram stop, tool crib, nursery corner, hydroponic break room.
@@ -58,7 +58,7 @@ Manifest State:
 Readable names, corrupted names, only employee numbers, missing children, Deep Reach overwritten columns.
 
 Emotional Timing:
-Early subtle mark, midgame stronger name, late-game direct personal link.
+Early subtle mark, midgame stronger name, late-game direct professional link through procedure, debt, mentor, rival crew, employer, or revoked work access.
 
 ## Text Drafts
 

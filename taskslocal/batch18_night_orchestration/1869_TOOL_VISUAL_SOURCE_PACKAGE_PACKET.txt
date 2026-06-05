@@ -1,0 +1,84 @@
+<AGENT_PROMPT id="1869">
+ROLE: Held/world tool visual source package architect.
+
+READ FIRST:
+- C:\hades\Hecton8\AGENTS.md
+- C:\hades\Hecton8\PROJECT_BIBLES.md
+- C:\hades\Hecton8\VISION_LOCKS.md
+- C:\hades\Hecton8\TASTE.md
+- C:\hades\Hecton8\quality.md
+- C:\hades\Hecton8\tools.md
+- C:\hades\Hecton8\3dmodel.md
+- C:\hades\Hecton8\3DMODEL_TEXTURES_MATERIALS.md
+- C:\hades\Hecton8\inventory.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1864_PRODUCT_FACE_PRIMITIVE_REPLACEMENT_QUEUE.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1864_PRODUCT_FACE_REPLACEMENT_MATRIX.csv
+- C:\hades\Hecton8\Docs\Reports\Batch18\1867_PRODUCT_FACE_PREFAB_AUDIT_GATE.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1868_PRODUCT_FACE_UNITY_VALIDATOR_GATE.md
+- Relevant .agents-skills only: QA_Evidence_Text_Filter_Audit, CORE_Tools_Equipment_Interaction_Raycast_Heat, DATA_Inventory_Resources_Items_SOA_Layout, REND_URP_Graphics_HotPath_Optimization_HLOD.
+
+OWNED WRITE SCOPE:
+- Docs/Tasks/Status_1869.md
+- Docs/AgentLogs/Rationale_1869.md
+- Docs/AgentLogs/LOG_1869.md
+- Docs/Reports/Batch18/1869_TOOL_VISUAL_SOURCE_PACKAGE.md
+- Docs/Reports/Batch18/1869_TOOL_VISUAL_SOURCE_MATRIX.csv
+
+NO SOURCE/PREFAB/ASSET/SCENE/META/BINARY EDITS.
+NO UNITY MENU, IMPORT, BAKE, PLAYMODE, PROFILER, DOTNET BUILD, OR DATA MONOLITH RUN.
+
+PARALLEL LAW:
+- You are running simultaneously with 1870, 1871, 1872, and 1873.
+- Do not wait for sibling output.
+- Do not modify files outside your owned write scope.
+
+TASK:
+Build a concrete source package for replacing product-face primitive tool visuals. Scope includes both held and world pickup variants:
+- Tool_BeaconDeployer
+- Tool_Builder
+- Tool_EnvAnalyzer
+- Tool_Flashlight
+- Tool_HarpoonLauncher
+- Tool_Knife
+- Tool_LaserCutter
+- Tool_Propulsion
+- Tool_Repair
+- Tool_SalvageSampler
+- Tool_Scanner
+- Tool_StunPistol
+
+Required work:
+1. Enumerate current held prefab paths and world pickup prefab paths.
+2. For each tool, verify current primitive mesh evidence from prefab YAML.
+3. Resolve current material GUIDs to concrete material paths when possible.
+4. Resolve current tool metadata assets and item data assets when possible.
+5. Search for existing non-primitive meshes, shaders, materials, or generator routes that can support tool replacement. Do not assume; verify paths.
+6. Distinguish viable reusable assets from placeholder, proxy, diagnostic, or primitive assets.
+7. Define one shared held/world visual source package per tool: mesh parts, material slots, anchor names, collider/proxy split, and LODs.
+8. For first-person held tools, specify exact hero silhouette requirements and what the player must read in hand.
+9. For world pickup variants, specify how the same asset reads when dropped or collected.
+10. Define required transform/anchor preservation: grip, ray origin, muzzle/nozzle/emitter, scan origin, tether anchor, pickup trigger, and AUP route where applicable.
+11. Define material/texture identity: normal, MRAO/packed masks, glass/emissive, rubber/metal, grime/wetness, decals/labels.
+12. Define collider/proxy split with named `COL_*` expectations. No visual MeshCollider for LOD0 unless proven safe.
+13. Define Low/Middle/High/Ultra consequences using continuous `GlobalQualityWeight`; no ugly low mode.
+14. Define exactly which proof artifacts close each row: prefab YAML, mesh path, material path, screenshot, player capture, profiler if runtime render path changes.
+15. Mark every row `READY_FOR_AUTHORING`, `NEEDS_SOURCE_ASSET`, `NEEDS_DECISION`, or `QUARANTINE_LEGACY`.
+16. Identify the first 3 tools that should be authored first for first-20-minute gameplay and why.
+17. Identify any tool with unresolved material GUIDs or missing data route.
+18. Identify any current source route that would regenerate primitive tool prefabs. If found, report only; do not patch.
+19. Do not propose relinking to `WorldProceduralProxy`.
+20. Do not accept one generic mesh for all tools. Each tool needs distinct silhouette and material read.
+21. Do not claim visual acceptance without screenshots.
+22. Do not claim Unity/runtime proof.
+
+OUTPUTS:
+- Markdown packet with exact findings, owner route, priority, risks, and proof ladder.
+- CSV with one row per held/world tool pair and columns:
+  `tool_id,path_held,path_world,current_primitive_evidence,current_material_paths,data_owner_paths,reusable_source_candidates,required_mesh_parts,required_material_slots,required_anchors,collider_proxy_split,lod_expectation,quality_scaling,proof_needed,status,next_owner`
+
+VERIFY:
+- Use static file reads/searches only.
+- Run `git diff --check` only on your owned outputs.
+- Final answer must list outputs and the no-edit/no-Unity guarantee.
+</AGENT_PROMPT>
+

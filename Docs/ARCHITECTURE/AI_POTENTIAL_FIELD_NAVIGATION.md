@@ -4,6 +4,8 @@ Date: 2026-05-15
 
 Status: PENDING UNITY VERIFICATION
 
+Owner domain: AI navigation / potential-field steering
+
 ## Scope
 
 This contract owns flow-aware steering for fauna moving through `AbyssalFlowField` currents.

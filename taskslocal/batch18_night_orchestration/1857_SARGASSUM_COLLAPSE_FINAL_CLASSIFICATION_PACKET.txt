@@ -1,0 +1,51 @@
+AGENT ID: 1857
+ROLE: SARGASSUM_COLLAPSE_FINAL_CLASSIFICATION_PACKET
+MODE: No-mutation classification and replacement packet. Do not edit prefabs, assets, source, scenes, binaries, or `.meta`.
+
+PRIMARY GOAL
+Classify `PFB_SargassumCollapseChunk.prefab`, which is now caught by the direct production `Final` prefab scan but was not caught as a current final-ready family link. Determine whether it belongs in production `Final`, should move to dev/proxy quarantine, or needs a non-primitive rebuild. Produce exact future mutation steps and validation gates.
+
+READ
+- AGENTS.md, PROJECT_BIBLES.md, VISION_LOCKS.md, TASTE.md, quality.md
+- world.md, water.md, vfx.md, terrain.md, 3dmodel.md, PROCEDURAL_ASSET_PIPELINE.md if present
+- Docs/Reports/Batch18/1851_GENERATED_ASSET_PRODUCTION_AUDIT.md
+- Docs/Reports/Batch18/1852_PROCEDURAL_PLACEHOLDER_FINAL_GATE.md
+- Docs/Reports/Batch18/1853_PRIMITIVE_FINAL_REPLACEMENT_PLAN.md
+- Assets/_Project/Prefabs/Construction/Final/PFB_SargassumCollapseChunk.prefab
+- Any sargassum/debris/collapse family assets or scripts you can find by narrow search.
+
+OWNED OUTPUTS
+- Docs/Tasks/Status_1857.md
+- Docs/AgentLogs/Rationale_1857.md for non-trivial decisions only
+- Docs/AgentLogs/LOG_1857.md
+- Docs/Reports/Batch18/1857_SARGASSUM_COLLAPSE_FINAL_CLASSIFICATION_PACKET.md
+- Optional: Docs/Reports/Batch18/1857_SARGASSUM_REFERENCE_MATRIX.csv
+
+HARD RULES
+- Do not run Unity, PlayMode, builds, importers, bakes, or DataMonolith tools.
+- Do not edit or move `PFB_SargassumCollapseChunk.prefab`.
+- Do not assume unlinked means safe.
+- Do not assume production `Final` folder is dev-only.
+- Do not call a primitive chunk acceptable just because it is small, distant, or hidden in water.
+
+20 TASKS
+01. Create tracking files and mark evidence class STATIC_SOURCE.
+02. Read authorities and 2-8 relevant mandates from `.agents-skills`.
+03. Reconfirm direct audit error for `PFB_SargassumCollapseChunk.prefab`.
+04. Count built-in primitive mesh refs and inspect visible child/object structure.
+05. Search for references to the prefab path and GUID.
+06. Search for sargassum/collapse/debris family assets and source scripts.
+07. Determine whether this prefab is currently linked into runtime, family scatter, scene placement, or only orphaned.
+08. Classify current risk: production visible final, latent relink risk, orphaned artifact, or dev/proxy misplaced.
+09. If production visible, define required non-primitive collapse chunk rebuild.
+10. If latent/orphaned, define safe quarantine or removal path with `.meta` and reference proof.
+11. If dev/proxy, define destination folder and naming that makes it impossible to pass production audits.
+12. Define visual expectations if rebuilt: sargassum mass, torn organic debris, wet fibers, foam/algae contact, LOD/proxy policy.
+13. Define material/texture candidates or required generated textures.
+14. Define validation gates before any future move/delete/rebuild.
+15. Define rollback plan for each possible mutation.
+16. Define how `GeneratedAssetProductionAudit.py` should continue to catch this class of issue.
+17. Define how family validators should treat future sargassum/collapse finals.
+18. Build optional reference matrix with file, reference type, risk, action.
+19. Append concise LOG/Rationale.
+20. Mark CLASSIFICATION_COMPLETE or BLOCKED with exact missing evidence.

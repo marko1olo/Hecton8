@@ -1,6 +1,7 @@
 ﻿# Kinematics AUP Integration
 
 Date: 2026-05-24
+Owner domain: player/physics kinematics AUP integration
 Status: PENDING VERIFICATION
 Evidence class: STATIC_SOURCE / STATIC_DOC
 

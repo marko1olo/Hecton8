@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -20,7 +20,7 @@ HECTON-8's bright shallows are readable, but never innocent.
 
 ## Scanner
 
-Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.
+Lantern drift lane: oxygen, signal noise or displaced predators possible. Verify current before following.
 
 ## Terminal
 
@@ -32,6 +32,6 @@ Light is not mercy. It is data your suit has not learned to separate.
 
 ## Field Note
 
-Use for scanner ambiguity and low-visibility pathing.
+Bright water lies three ways here: current, bait, or panic. Check pinger return before you trust it.
 
 <!-- External Site; generated from P413_LANTERN_DRIFT_FALSE_SAFE_ENCOUNTER_GRAMMAR/en_US. -->

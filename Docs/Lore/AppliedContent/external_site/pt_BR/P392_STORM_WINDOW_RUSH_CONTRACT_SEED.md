@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ This contract pays because it hates waiting.
 
 ## Field Note
 
-Use for high-pressure replay contract and route warning UI.
+Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour.
 
 <!-- External Site; generated from P392_STORM_WINDOW_RUSH_CONTRACT_SEED/pt_BR. -->

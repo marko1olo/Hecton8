@@ -1,7 +1,14 @@
 # HECTON-8 Runtime Systems Bible
 
 Status: AUTHORING LAW / STATIC DOC / RUNTIME PROOF NOT IMPLIED
+Evidence class: STATIC_DOC
 Scope: runtime architecture, execution phases, ownership, event routes, data access, hot-path discipline, and proof expectations.
+
+## First-20 Route Hook
+
+- First-20 moment: boot -> world load -> swim/orient -> interact -> hazard -> save/load must run through phase-owned systems, not scene search or presentation-side truth.
+- Route blocker removed: ambiguous owners, hot registry polling, hidden job completion, and unmanaged signal routes that can corrupt opening-route state.
+- Proof class: `STATIC_DOC` until route owner packets, Unity Console, Play Mode/player run, profiler, GC, save/load, and black-box artifacts exist.
 
 ## Prime Law
 

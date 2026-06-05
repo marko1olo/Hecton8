@@ -10,8 +10,8 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
 # Распад сигнала в blackout window
@@ -32,6 +32,6 @@ BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persis
 
 ## Field Note
 
-Использовать как comms cadence rule.
+Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both.
 
 <!-- External Site; generated from P330_BLACKOUT_WINDOW_SIGNAL_DECAY/ru_RU. -->

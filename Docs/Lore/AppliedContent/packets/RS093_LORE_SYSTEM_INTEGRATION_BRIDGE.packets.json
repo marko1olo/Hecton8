@@ -1,0 +1,740 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS093_LORE_SYSTEM_INTEGRATION_BRIDGE",
+  "status": "canonical_source_candidate_pending_manifest_wiring_native_localization_and_bake",
+  "evidence_class": "STATIC_SOURCE",
+  "runtime_contract": {
+    "authoring_only": true,
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_ready": false,
+    "native_localization_ready": false,
+    "data_monolith_ready": false,
+    "runtime_expected_shape": "baked packet headers, LocID hashes, surface enums, unlock flags, relation records, spoiler bytes, and localized string-pool rows"
+  },
+  "packets": [
+    {
+      "packet_id": "P461_PACKET_CUSTODY_BRIDGE",
+      "release_set_id": "RS093_LORE_SYSTEM_INTEGRATION_BRIDGE",
+      "article_id": "applied_lore.packet_custody_bridge",
+      "title_key": "LORE_PACKET_CUSTODY_PUBLIC_TITLE",
+      "status": "source_candidate_pending_native_localization",
+      "canon_owner": [
+        "Docs/Lore/Canon_Locks.md",
+        "Docs/Lore/Lore_Bible.md",
+        "Docs/Lore/AppliedContent/production_packets/P461_PACKET_CUSTODY_BRIDGE.production.md"
+      ],
+      "runtime_contract": {
+        "authoring_only": true,
+        "runtime_reads_json": false,
+        "runtime_reads_markdown": false,
+        "runtime_ready": false,
+        "data_monolith_ready": false
+      },
+      "surfaces": [
+        "scanner",
+        "terminal",
+        "audio",
+        "in_game_wiki",
+        "external_site",
+        "field_note"
+      ],
+      "unlock": {
+        "primary": "unlock.packet_custody_bridge",
+        "secondary": [
+          "unlock.first_black_keel_packet_seal_scan"
+        ],
+        "poi_tags": [
+          "poi.packet_seal",
+          "poi.black_keel_window",
+          "poi.p63_repair_loop"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.codex",
+          "biome.photic_shelf"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Packet Custody",
+          "scanner": "PACKET SEAL // Witness hash strip damaged but readable. Preserve before salvage cut. Unsealed evidence converts to claim material.",
+          "terminal": "KEELMARK PACKET NOTARY // Preserve seal plate, witness hash, route stamp, and connector tag before transfer. Unstamped material may be processed as claim loss.",
+          "audio": "Black Keel relay: Cargo is mass. Proof is custody. Bring both, or the window bills you for the difference.",
+          "in_game_wiki": "Recovered packet seal. Black Keel can receive cargo, but proof needs source, seal, witness hash, relay mark, receiver lane, and damage state. Preserve custody tags before stripping hardware.",
+          "external_site": "A message from HECTON-8 matters only when its route, seal, receiver, and damage state survive with it. Packet custody lets a fact cross Aegir delay, claimant pressure, and physical extraction without becoming disposable cargo.",
+          "field_note": "Seal first, cut second. A clean sample with a broken tag belongs to whoever owns the ledger."
+        },
+        "ru_RU": {
+          "title": "Draft RU localization pending native pass. Цепочка сохранности пакета",
+          "scanner": "Draft RU localization pending native pass. ПЛОМБА ПАКЕТА // Полоса witness hash повреждена, но читается. Сохрани до реза. Незапечатанное доказательство станет материалом претензии.",
+          "terminal": "Draft RU localization pending native pass. НОТАРИЙ KEELMARK // Сохранить пломбу, witness hash, маршрутный штамп и разъемный тег до передачи. Материал без штампа уйдет как убыток по претензии.",
+          "audio": "Draft RU localization pending native pass. Ретранслятор Black Keel: груз это масса. Доказательство это сохранность. Принеси оба, иначе окно выставит счет за разницу.",
+          "in_game_wiki": "Draft RU localization pending native pass. Найдена пломба пакета. Black Keel принимает груз, но доказательству нужны источник, пломба, witness hash, метка реле, линия получателя и состояние повреждений. Не снимай теги сохранности перед разбором.",
+          "external_site": "Draft RU localization pending native pass. Сообщение с HECTON-8 имеет вес только вместе с маршрутом, пломбой, получателем и следами повреждений. Цепочка сохранности проводит факт через задержки Aegir, давление претендентов и физическую эвакуацию, не превращая его в простой груз.",
+          "field_note": "Draft RU localization pending native pass. Сначала пломба, потом рез. Чистый образец со сломанным тегом принадлежит тому, у кого реестр."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. パケット保管",
+          "scanner": "Draft JA localization pending native pass. パケット封印 // 証人ハッシュ帯は損傷しているが読める。サルベージ切断前に保全。未封印の証拠は請求材料になる。",
+          "terminal": "Draft JA localization pending native pass. KEELMARKパケット公証 // 転送前に封印板、証人ハッシュ、経路印、コネクタタグを保全。無印の材料は請求損失として処理される。",
+          "audio": "Draft JA localization pending native pass. Black Keel中継: 貨物は質量だ。証拠は保管だ。両方持ち帰れ。でなければ窓口が差額を請求する。",
+          "in_game_wiki": "Draft JA localization pending native pass. パケット封印を回収。Black Keelは貨物を受け取れるが、証拠には出所、封印、証人ハッシュ、中継印、受信レーン、損傷状態が必要だ。機材を剥がす前に保管タグを守る。",
+          "external_site": "Draft JA localization pending native pass. HECTON-8からの通信は、経路、封印、受信者、損傷状態が一緒に残って初めて意味を持つ。パケット保管は、Aegirの遅延、請求者の圧力、物理回収を越えて事実を単なる貨物にしない。",
+          "field_note": "Draft JA localization pending native pass. 先に封印、切るのは後。壊れたタグ付きの清潔なサンプルは、台帳を持つ者のものになる。"
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. 数据包保管链",
+          "scanner": "Draft ZH localization pending native pass. 数据包封签 // 见证哈希带受损但可读。打捞切割前必须保留。未封签证据会转为索赔材料。",
+          "terminal": "Draft ZH localization pending native pass. KEELMARK 数据包公证 // 转移前保留封签板、见证哈希、路线戳和接头标签。无戳材料可按索赔损失处理。",
+          "audio": "Draft ZH localization pending native pass. Black Keel中继：货物是质量。证据是保管链。两者都带回，否则窗口会按差额计费。",
+          "in_game_wiki": "Draft ZH localization pending native pass. 已回收数据包封签。Black Keel能接收货物，但证据需要来源、封签、见证哈希、中继标记、接收通道和损伤状态。拆硬件前先保留保管标签。",
+          "external_site": "Draft ZH localization pending native pass. 来自 HECTON-8 的信息只有在路线、封签、接收方和损伤状态一起保存时才有意义。数据包保管链让事实穿过 Aegir 延迟、索赔压力和实物回收，而不变成可丢弃的货物。",
+          "field_note": "Draft ZH localization pending native pass. 先封签，再切割。带断裂标签的干净样本，属于掌握账本的人。"
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Garde du paquet",
+          "scanner": "Draft FR localization pending native pass. SCEAU DE PAQUET // Bande de hash témoin abîmée mais lisible. Préserver avant la coupe. Une preuve sans sceau devient matériau de réclamation.",
+          "terminal": "Draft FR localization pending native pass. NOTAIRE KEELMARK // Préserver plaque de sceau, hash témoin, tampon de route et tag de connecteur avant transfert. Le matériau non tamponné peut devenir perte de réclamation.",
+          "audio": "Draft FR localization pending native pass. Relais Black Keel : la cargaison est une masse. La preuve est une garde. Rapporte les deux, sinon la fenêtre facture l'écart.",
+          "in_game_wiki": "Draft FR localization pending native pass. Sceau de paquet récupéré. Black Keel peut recevoir la cargaison, mais la preuve exige source, sceau, hash témoin, marque de relais, voie de réception et état des dégâts. Préserve les tags avant de dépouiller le matériel.",
+          "external_site": "Draft FR localization pending native pass. Un message venu de HECTON-8 ne vaut que si sa route, son sceau, son destinataire et son état de dommage survivent avec lui. La garde du paquet garde le fait intact face au délai d'Aegir, aux réclamants et à l'extraction.",
+          "field_note": "Draft FR localization pending native pass. Sceau d'abord, coupe ensuite. Un échantillon propre avec un tag cassé appartient à celui qui tient le registre."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Custodia del paquete",
+          "scanner": "Draft ES localization pending native pass. SELLO DE PAQUETE // Tira de hash testigo dañada pero legible. Preservar antes del corte. La prueba sin sello pasa a material de reclamación.",
+          "terminal": "Draft ES localization pending native pass. NOTARÍA KEELMARK // Conservar placa de sello, hash testigo, sello de ruta y etiqueta de conector antes de transferir. El material sin sello puede procesarse como pérdida de reclamación.",
+          "audio": "Draft ES localization pending native pass. Relé Black Keel: la carga es masa. La prueba es custodia. Trae ambas, o la ventana cobrará la diferencia.",
+          "in_game_wiki": "Draft ES localization pending native pass. Sello de paquete recuperado. Black Keel puede recibir carga, pero la prueba necesita origen, sello, hash testigo, marca de relé, carril receptor y estado de daño. Conserva las etiquetas antes de desmontar hardware.",
+          "external_site": "Draft ES localization pending native pass. Un mensaje de HECTON-8 solo importa si sobreviven su ruta, sello, receptor y estado de daño. La custodia del paquete permite que un hecho cruce el retraso de Aegir, las reclamaciones y la extracción física sin volverse carga desechable.",
+          "field_note": "Draft ES localization pending native pass. Primero el sello, luego el corte. Una muestra limpia con una etiqueta rota pertenece a quien tenga el libro."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Paketverwahrung",
+          "scanner": "Draft DE localization pending native pass. PAKETSIEGEL // Zeugenhash-Streifen beschädigt, aber lesbar. Vor dem Bergungsschnitt sichern. Ungesiegelte Beweise werden Anspruchsmaterial.",
+          "terminal": "Draft DE localization pending native pass. KEELMARK PAKETNOTAR // Siegelplatte, Zeugenhash, Routenstempel und Steckertag vor Transfer sichern. Ungestempeltes Material kann als Anspruchsverlust laufen.",
+          "audio": "Draft DE localization pending native pass. Black-Keel-Relais: Fracht ist Masse. Beweis ist Verwahrung. Bring beides, sonst berechnet das Fenster die Differenz.",
+          "in_game_wiki": "Draft DE localization pending native pass. Paketsiegel geborgen. Black Keel kann Fracht empfangen, aber Beweis braucht Quelle, Siegel, Zeugenhash, Relaismarke, Empfängerbahn und Schadenszustand. Verwahrungstags vor dem Ausschlachten sichern.",
+          "external_site": "Draft DE localization pending native pass. Eine Nachricht von HECTON-8 zählt nur, wenn Route, Siegel, Empfänger und Schadenszustand mit ihr überleben. Paketverwahrung trägt einen Fakt durch Aegir-Verzug, Anspruchsdruck und Bergung, ohne ihn zu Wegwerffracht zu machen.",
+          "field_note": "Draft DE localization pending native pass. Erst siegeln, dann schneiden. Eine saubere Probe mit gebrochenem Tag gehört dem, der das Ledger besitzt."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Kustodia pakietu",
+          "scanner": "Draft PL localization pending native pass. PIECZĘĆ PAKIETU // Pasek hash świadka uszkodzony, ale czytelny. Zachować przed cięciem. Dowód bez pieczęci staje się materiałem roszczenia.",
+          "terminal": "Draft PL localization pending native pass. NOTARIUSZ KEELMARK // Przed transferem zachować płytę pieczęci, hash świadka, stempel trasy i tag złącza. Materiał bez stempla może zostać stratą roszczeniową.",
+          "audio": "Draft PL localization pending native pass. Przekaźnik Black Keel: ładunek to masa. Dowód to kustodia. Przynieś oba, inaczej okno naliczy różnicę.",
+          "in_game_wiki": "Draft PL localization pending native pass. Odzyskano pieczęć pakietu. Black Keel przyjmie ładunek, ale dowód wymaga źródła, pieczęci, hasha świadka, znaku przekaźnika, kanału odbiorcy i stanu uszkodzeń. Zachowaj tagi przed demontażem.",
+          "external_site": "Draft PL localization pending native pass. Wiadomość z HECTON-8 ma znaczenie tylko wtedy, gdy przetrwa z nią trasa, pieczęć, odbiorca i stan uszkodzeń. Kustodia przenosi fakt przez opóźnienie Aegir, nacisk roszczeń i fizyczny odzysk, nie zmieniając go w zwykły ładunek.",
+          "field_note": "Draft PL localization pending native pass. Najpierw pieczęć, potem cięcie. Czysta próbka ze złamanym tagiem należy do tego, kto trzyma rejestr."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Ланцюг збереження пакета",
+          "scanner": "Draft UK localization pending native pass. ПЛОМБА ПАКЕТА // Смуга witness hash пошкоджена, але читається. Зберегти до різу. Доказ без пломби стане матеріалом претензії.",
+          "terminal": "Draft UK localization pending native pass. НОТАРІЙ KEELMARK // До передачі зберегти пломбу, witness hash, маршрутний штамп і тег роз'єму. Матеріал без штампа може піти як претензійна втрата.",
+          "audio": "Draft UK localization pending native pass. Ретранслятор Black Keel: вантаж це маса. Доказ це збереження. Принеси обидва, інакше вікно виставить рахунок за різницю.",
+          "in_game_wiki": "Draft UK localization pending native pass. Знайдено пломбу пакета. Black Keel приймає вантаж, але доказу потрібні джерело, пломба, witness hash, позначка реле, лінія отримувача і стан пошкоджень. Збережи теги перед розбором.",
+          "external_site": "Draft UK localization pending native pass. Повідомлення з HECTON-8 важить лише разом із маршрутом, пломбою, отримувачем і станом пошкоджень. Ланцюг збереження проводить факт крізь затримку Aegir, тиск претендентів і фізичне вилучення, не роблячи його звичайним вантажем.",
+          "field_note": "Draft UK localization pending native pass. Спершу пломба, потім різ. Чистий зразок зі зламаним тегом належить тому, хто тримає реєстр."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. حيازة الحزمة",
+          "scanner": "Draft AR localization pending native pass. ختم حزمة // شريط hash الشاهد متضرر لكنه مقروء. احفظه قبل قطع الخردة. الدليل بلا ختم يتحول إلى مادة مطالبة.",
+          "terminal": "Draft AR localization pending native pass. موثق KEELMARK // احفظ لوحة الختم و hash الشاهد وختم المسار ووسم الموصل قبل النقل. المادة بلا ختم يمكن أن تسجل كخسارة مطالبة.",
+          "audio": "Draft AR localization pending native pass. ترحيل Black Keel: الشحنة كتلة. الدليل حيازة. أحضر الاثنين، وإلا ستحاسبك النافذة على الفرق.",
+          "in_game_wiki": "Draft AR localization pending native pass. تم العثور على ختم حزمة. يستطيع Black Keel استقبال الشحنة، لكن الدليل يحتاج مصدرا وختما و hash شاهد وعلامة ترحيل ومسار مستقبل وحالة ضرر. احفظ وسوم الحيازة قبل تفكيك العتاد.",
+          "external_site": "Draft AR localization pending native pass. لا تهم رسالة من HECTON-8 إلا إذا بقي معها المسار والختم والمستقبل وحالة الضرر. حيازة الحزمة تنقل الحقيقة عبر تأخير Aegir وضغط المطالبين والاستخراج المادي من دون أن تصبح شحنة قابلة للرمي.",
+          "field_note": "Draft AR localization pending native pass. الختم أولا، القطع ثانيا. العينة النظيفة ذات الوسم المكسور تخص من يملك الدفتر."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Kustodi Paket",
+          "scanner": "Draft ID localization pending native pass. SEGEL PAKET // Strip hash saksi rusak tetapi masih terbaca. Simpan sebelum potong salvase. Bukti tanpa segel berubah jadi material klaim.",
+          "terminal": "Draft ID localization pending native pass. NOTARIS PAKET KEELMARK // Simpan pelat segel, hash saksi, cap rute, dan tag konektor sebelum transfer. Material tanpa cap bisa diproses sebagai rugi klaim.",
+          "audio": "Draft ID localization pending native pass. Relay Black Keel: kargo adalah massa. Bukti adalah kustodi. Bawa keduanya, atau jendela menagih selisihnya.",
+          "in_game_wiki": "Draft ID localization pending native pass. Segel paket ditemukan. Black Keel dapat menerima kargo, tetapi bukti perlu sumber, segel, hash saksi, tanda relay, jalur penerima, dan status kerusakan. Simpan tag kustodi sebelum membongkar perangkat.",
+          "external_site": "Draft ID localization pending native pass. Pesan dari HECTON-8 baru berarti jika rute, segel, penerima, dan status kerusakannya ikut selamat. Kustodi paket membawa fakta melewati jeda Aegir, tekanan klaim, dan ekstraksi fisik tanpa menjadi kargo buangan.",
+          "field_note": "Draft ID localization pending native pass. Segel dulu, potong kemudian. Sampel bersih dengan tag patah menjadi milik siapa pun yang memegang ledger."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. 패킷 보관",
+          "scanner": "Draft KO localization pending native pass. 패킷 봉인 // 증인 해시 스트립은 손상됐지만 판독 가능. 인양 절단 전에 보존. 봉인 없는 증거는 청구 재료가 된다.",
+          "terminal": "Draft KO localization pending native pass. KEELMARK 패킷 공증 // 이전 전에 봉인판, 증인 해시, 경로 도장, 커넥터 태그를 보존. 도장 없는 물자는 청구 손실로 처리될 수 있다.",
+          "audio": "Draft KO localization pending native pass. Black Keel 중계: 화물은 질량이다. 증거는 보관이다. 둘 다 가져와라. 아니면 창구가 차액을 청구한다.",
+          "in_game_wiki": "Draft KO localization pending native pass. 패킷 봉인을 회수했다. Black Keel은 화물을 받을 수 있지만 증거에는 출처, 봉인, 증인 해시, 중계 표식, 수신 레인, 손상 상태가 필요하다. 장비를 벗기기 전에 보관 태그를 지켜라.",
+          "external_site": "Draft KO localization pending native pass. HECTON-8의 메시지는 경로, 봉인, 수신자, 손상 상태가 함께 살아남을 때만 의미가 있다. 패킷 보관은 Aegir 지연, 청구 압력, 물리적 회수를 지나 사실을 폐기 화물로 만들지 않는다.",
+          "field_note": "Draft KO localization pending native pass. 먼저 봉인하고, 다음에 자른다. 부러진 태그가 붙은 깨끗한 샘플은 장부를 가진 쪽의 것이다."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. משמורת חבילה",
+          "scanner": "Draft HE localization pending native pass. חותם חבילה // רצועת hash עדות פגומה אך קריאה. שמור לפני חיתוך חילוץ. ראיה בלי חותם הופכת לחומר תביעה.",
+          "terminal": "Draft HE localization pending native pass. נוטריון KEELMARK // שמור לוח חותם, hash עדות, חותמת מסלול ותג מחבר לפני העברה. חומר בלי חותמת עשוי להפוך להפסד תביעה.",
+          "audio": "Draft HE localization pending native pass. ממסר Black Keel: מטען הוא מסה. הוכחה היא משמורת. הבא את שניהם, או שהחלון יחייב על ההפרש.",
+          "in_game_wiki": "Draft HE localization pending native pass. חותם חבילה נמצא. Black Keel יכול לקבל מטען, אבל הוכחה דורשת מקור, חותם, hash עדות, סימן ממסר, נתיב מקבל ומצב נזק. שמור תגי משמורת לפני פירוק חומרה.",
+          "external_site": "Draft HE localization pending native pass. הודעה מ-HECTON-8 חשובה רק אם המסלול, החותם, המקבל ומצב הנזק שורדים איתה. משמורת חבילה מעבירה עובדה דרך עיכוב Aegir, לחץ תביעות וחילוץ פיזי בלי להפוך אותה למטען חד-פעמי.",
+          "field_note": "Draft HE localization pending native pass. קודם חותם, אחר כך חיתוך. דגימה נקייה עם תג שבור שייכת למי שמחזיק את הספר."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Custódia do pacote",
+          "scanner": "Draft PT localization pending native pass. SELO DE PACOTE // Faixa de hash testemunha danificada mas legível. Preservar antes do corte. Evidência sem selo vira material de reivindicação.",
+          "terminal": "Draft PT localization pending native pass. NOTÁRIO KEELMARK // Preserve placa de selo, hash testemunha, carimbo de rota e tag do conector antes da transferência. Material sem carimbo pode virar perda de reivindicação.",
+          "audio": "Draft PT localization pending native pass. Relé Black Keel: carga é massa. Prova é custódia. Traga as duas, ou a janela cobrará a diferença.",
+          "in_game_wiki": "Draft PT localization pending native pass. Selo de pacote recuperado. Black Keel pode receber carga, mas prova exige fonte, selo, hash testemunha, marca de relé, faixa receptora e estado de dano. Preserve as tags antes de desmontar hardware.",
+          "external_site": "Draft PT localization pending native pass. Uma mensagem de HECTON-8 só importa quando rota, selo, receptor e estado de dano sobrevivem com ela. A custódia do pacote leva um fato pelo atraso de Aegir, pressão de reivindicação e extração física sem virar carga descartável.",
+          "field_note": "Draft PT localization pending native pass. Selo primeiro, corte depois. Uma amostra limpa com tag quebrada pertence a quem possui o livro."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Pakketbewaring",
+          "scanner": "Draft NL localization pending native pass. PAKKETZEGEL // Getuige-hashstrip beschadigd maar leesbaar. Bewaren vóór de salvage-snede. Ongeseald bewijs wordt claimmateriaal.",
+          "terminal": "Draft NL localization pending native pass. KEELMARK PAKKETNOTARIS // Bewaar zegelplaat, getuige-hash, routestempel en connectortag voor overdracht. Ongestempeld materiaal kan als claimverlies worden verwerkt.",
+          "audio": "Draft NL localization pending native pass. Black Keel-relais: vracht is massa. Bewijs is bewaring. Breng beide, anders rekent het venster het verschil af.",
+          "in_game_wiki": "Draft NL localization pending native pass. Pakketzegel teruggevonden. Black Keel kan vracht ontvangen, maar bewijs vereist bron, zegel, getuige-hash, relaismerk, ontvangerbaan en schadestatus. Bewaar bewaringstags vóór het strippen.",
+          "external_site": "Draft NL localization pending native pass. Een bericht van HECTON-8 telt alleen als route, zegel, ontvanger en schadestatus mee overleven. Pakketbewaring draagt een feit door Aegir-vertraging, claimdruk en fysieke berging zonder wegwerpvracht te worden.",
+          "field_note": "Draft NL localization pending native pass. Eerst zegel, dan snijden. Een schoon monster met gebroken tag is van wie het ledger bezit."
+        }
+      }
+    },
+    {
+      "packet_id": "P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE",
+      "release_set_id": "RS093_LORE_SYSTEM_INTEGRATION_BRIDGE",
+      "article_id": "applied_lore.pressure_seal_first_repair_bridge",
+      "title_key": "LORE_PRESSURE_SEAL_FIRST_REPAIR_PUBLIC_TITLE",
+      "status": "source_candidate_pending_native_localization",
+      "canon_owner": [
+        "Docs/Lore/Canon_Locks.md",
+        "Docs/Lore/Lore_Bible.md",
+        "Docs/Lore/AppliedContent/production_packets/P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE.production.md"
+      ],
+      "runtime_contract": {
+        "authoring_only": true,
+        "runtime_reads_json": false,
+        "runtime_reads_markdown": false,
+        "runtime_ready": false,
+        "data_monolith_ready": false
+      },
+      "surfaces": [
+        "scanner",
+        "terminal",
+        "audio",
+        "in_game_wiki",
+        "external_site",
+        "field_note"
+      ],
+      "unlock": {
+        "primary": "unlock.p63_pressure_seal_first_repair",
+        "secondary": [
+          "unlock.first_pressureseal_craft",
+          "unlock.fiberkelp_scan"
+        ],
+        "poi_tags": [
+          "poi.shallow_annex_p63",
+          "poi.p63_collar_leak",
+          "poi.damaged_bathydrop_boundary"
+        ],
+        "biome_tags": [
+          "biome.photic_shelf",
+          "resource.fiberkelp",
+          "component.pressureseal"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "PressureSeal First Repair",
+          "scanner": "PRESSURESEAL TARGET // P-63 collar leak. FiberMesh carrier compatible. Local stabilization only; ascent certification denied.",
+          "terminal": "DEEP REACH P-63 TOLERANCE NOTE // Defer collar replacement. Apply approved soft seal carrier where leakage remains within local-service threshold.",
+          "audio": "Black Keel relay: P-63 patch reads local-safe, not ascent-safe. Take the seal, keep the serial.",
+          "in_game_wiki": "Recovered P-63 repair note. FiberKelp can be worked into FiberMesh and used as the carrier layer for a temporary PressureSeal. The seal can slow a local leak, but it is not ascent-rated.",
+          "external_site": "The first useful repair at Shallow Annex P-63 starts in daylight. FiberKelp from the bright shelf can become FiberMesh, and FiberMesh can carry a temporary PressureSeal for a leaking collar or service socket. It buys time and route safety, not escape.",
+          "field_note": "Bright water outside. Wet collar inside. Deep Reach called that nominal because the word costs less than a clamp ring."
+        },
+        "ru_RU": {
+          "title": "Draft RU localization pending native pass. Первый ремонт PressureSeal",
+          "scanner": "Draft RU localization pending native pass. ЦЕЛЬ PRESSURESEAL // течь воротника P-63. Носитель FiberMesh совместим. Только локальная стабилизация; сертификация подъема отклонена.",
+          "terminal": "Draft RU localization pending native pass. ЗАМЕТКА DEEP REACH P-63 // Отложить замену воротника. Применить мягкий носитель уплотнения, если течь остается в пределах локального обслуживания.",
+          "audio": "Draft RU localization pending native pass. Ретранслятор Black Keel: патч P-63 читается как локально безопасный, не подъемный. Забери уплотнение, сохрани серийник.",
+          "in_game_wiki": "Draft RU localization pending native pass. Найдена ремонтная заметка P-63. FiberKelp перерабатывается в FiberMesh и служит несущим слоем временного PressureSeal. Уплотнение замедляет местную течь, но не годится для подъема.",
+          "external_site": "Draft RU localization pending native pass. Первый полезный ремонт в Shallow Annex P-63 начинается при свете. FiberKelp с яркого шельфа становится FiberMesh, а тот несет временный PressureSeal для протекающего воротника или сервисного гнезда. Это покупает время и безопасность маршрута, не побег.",
+          "field_note": "Draft RU localization pending native pass. Снаружи светлая вода. Внутри мокрый воротник. Deep Reach назвала это штатным, потому что слово дешевле зажимного кольца."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. 最初のPressureSeal修理",
+          "scanner": "Draft JA localization pending native pass. PRESSURESEAL対象 // P-63カラー漏れ。FiberMeshキャリア適合。局所安定のみ。上昇認証は拒否。",
+          "terminal": "Draft JA localization pending native pass. DEEP REACH P-63許容記録 // カラー交換を延期。漏れが局所整備閾値内なら承認済み軟質シールキャリアを適用。",
+          "audio": "Draft JA localization pending native pass. Black Keel中継: P-63パッチは局所安全、上昇安全ではない。シールを持ち、シリアルを残せ。",
+          "in_game_wiki": "Draft JA localization pending native pass. P-63修理メモを回収。FiberKelpはFiberMeshに加工でき、一時PressureSealのキャリア層になる。シールは局所漏れを遅らせるが、上昇認証品ではない。",
+          "external_site": "Draft JA localization pending native pass. Shallow Annex P-63で最初に役立つ修理は昼光の中で始まる。明るい棚のFiberKelpはFiberMeshになり、漏れたカラーやサービスソケット用の一時PressureSealを支える。買えるのは時間と経路安全で、脱出ではない。",
+          "field_note": "Draft JA localization pending native pass. 外は明るい水。中は濡れたカラー。Deep Reachはそれを正常と呼んだ。言葉の方がクランプリングより安いからだ。"
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. 第一次PressureSeal修理",
+          "scanner": "Draft ZH localization pending native pass. PRESSURESEAL目标 // P-63密封环泄漏。FiberMesh载体兼容。仅限局部稳定；上升认证被拒。",
+          "terminal": "Draft ZH localization pending native pass. DEEP REACH P-63容差记录 // 推迟更换密封环。泄漏仍在本地服务阈值内时，使用获批软密封载体。",
+          "audio": "Draft ZH localization pending native pass. Black Keel中继：P-63补丁只读作本地安全，不是上升安全。拿走密封件，保留序列号。",
+          "in_game_wiki": "Draft ZH localization pending native pass. 已回收P-63维修记录。FiberKelp可加工成FiberMesh，作为临时PressureSeal的载体层。它能减缓局部泄漏，但没有上升认证。",
+          "external_site": "Draft ZH localization pending native pass. Shallow Annex P-63 的第一次有用修理从日光里开始。明亮浅架的 FiberKelp 能变成 FiberMesh，支撑用于漏环或服务插口的临时 PressureSeal。它买到的是时间和路线安全，不是逃离。",
+          "field_note": "Draft ZH localization pending native pass. 外面是亮水。里面是湿环。Deep Reach把它叫作正常，因为一个词比夹环便宜。"
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Première réparation PressureSeal",
+          "scanner": "Draft FR localization pending native pass. CIBLE PRESSURESEAL // Fuite au collier P-63. Support FiberMesh compatible. Stabilisation locale seulement; certification d'ascension refusée.",
+          "terminal": "Draft FR localization pending native pass. NOTE DE TOLÉRANCE DEEP REACH P-63 // Reporter le remplacement du collier. Appliquer un support de sceau souple approuvé si la fuite reste sous le seuil local.",
+          "audio": "Draft FR localization pending native pass. Relais Black Keel : le patch P-63 est local-sûr, pas ascension-sûr. Prends le sceau, garde le numéro.",
+          "in_game_wiki": "Draft FR localization pending native pass. Note de réparation P-63 récupérée. Le FiberKelp peut devenir du FiberMesh et porter un PressureSeal temporaire. Le sceau ralentit une fuite locale, mais il n'est pas certifié pour l'ascension.",
+          "external_site": "Draft FR localization pending native pass. La première réparation utile à Shallow Annex P-63 commence en plein jour. Le FiberKelp du plateau clair devient FiberMesh, puis supporte un PressureSeal temporaire pour collier ou prise de service. Il achète du temps et une route plus sûre, pas une fuite.",
+          "field_note": "Draft FR localization pending native pass. Eau claire dehors. Collier mouillé dedans. Deep Reach a appelé ça nominal parce que le mot coûte moins qu'un anneau de serrage."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Primera reparación PressureSeal",
+          "scanner": "Draft ES localization pending native pass. OBJETIVO PRESSURESEAL // Fuga en collar P-63. Portador FiberMesh compatible. Solo estabilización local; certificación de ascenso denegada.",
+          "terminal": "Draft ES localization pending native pass. NOTA DE TOLERANCIA DEEP REACH P-63 // Aplazar reemplazo del collar. Aplicar portador de sello blando aprobado si la fuga queda dentro del umbral local.",
+          "audio": "Draft ES localization pending native pass. Relé Black Keel: el parche P-63 es seguro local, no seguro para ascenso. Toma el sello y conserva el número.",
+          "in_game_wiki": "Draft ES localization pending native pass. Nota de reparación P-63 recuperada. FiberKelp puede trabajarse en FiberMesh y servir de capa portadora para un PressureSeal temporal. Frena una fuga local, pero no está certificado para ascenso.",
+          "external_site": "Draft ES localization pending native pass. La primera reparación útil en Shallow Annex P-63 empieza con luz. El FiberKelp de la repisa brillante puede volverse FiberMesh y llevar un PressureSeal temporal para un collar o toma de servicio. Compra tiempo y seguridad de ruta, no escape.",
+          "field_note": "Draft ES localization pending native pass. Agua brillante fuera. Collar mojado dentro. Deep Reach lo llamó nominal porque la palabra cuesta menos que un anillo de sujeción."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Erste PressureSeal-Reparatur",
+          "scanner": "Draft DE localization pending native pass. PRESSURESEAL-ZIEL // Leck am P-63-Kragen. FiberMesh-Träger kompatibel. Nur lokale Stabilisierung; Aufstiegszertifizierung verweigert.",
+          "terminal": "Draft DE localization pending native pass. DEEP REACH P-63 TOLERANZNOTIZ // Kragenersatz verschieben. Zugelassenen weichen Dichtungsträger anwenden, solange das Leck im lokalen Servicegrenzwert bleibt.",
+          "audio": "Draft DE localization pending native pass. Black-Keel-Relais: P-63-Patch liest lokal sicher, nicht aufstiegssicher. Nimm die Dichtung, behalte die Seriennummer.",
+          "in_game_wiki": "Draft DE localization pending native pass. P-63-Reparaturnotiz geborgen. FiberKelp kann zu FiberMesh verarbeitet werden und als Trägerschicht für ein temporäres PressureSeal dienen. Die Dichtung bremst ein lokales Leck, ist aber nicht aufstiegszertifiziert.",
+          "external_site": "Draft DE localization pending native pass. Die erste nützliche Reparatur in Shallow Annex P-63 beginnt bei Tageslicht. FiberKelp vom hellen Schelf wird FiberMesh und trägt ein temporäres PressureSeal für Kragen oder Servicesockel. Es kauft Zeit und Routensicherheit, keine Flucht.",
+          "field_note": "Draft DE localization pending native pass. Helles Wasser draußen. Nasser Kragen drinnen. Deep Reach nannte das nominal, weil das Wort weniger kostet als ein Klemmring."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Pierwsza naprawa PressureSeal",
+          "scanner": "Draft PL localization pending native pass. CEL PRESSURESEAL // Wyciek kołnierza P-63. Nośnik FiberMesh zgodny. Tylko lokalna stabilizacja; certyfikacja wznoszenia odrzucona.",
+          "terminal": "Draft PL localization pending native pass. NOTA TOLERANCJI DEEP REACH P-63 // Odroczyć wymianę kołnierza. Użyć zatwierdzonego miękkiego nośnika uszczelnienia, jeśli wyciek mieści się w progu lokalnym.",
+          "audio": "Draft PL localization pending native pass. Przekaźnik Black Keel: łatka P-63 jest lokalnie bezpieczna, nie wznoszeniowa. Weź uszczelnienie, zachowaj numer seryjny.",
+          "in_game_wiki": "Draft PL localization pending native pass. Odzyskano notę naprawy P-63. FiberKelp można przerobić na FiberMesh i użyć jako warstwy nośnej tymczasowego PressureSeal. Uszczelnienie spowalnia lokalny wyciek, ale nie ma certyfikacji wznoszenia.",
+          "external_site": "Draft PL localization pending native pass. Pierwsza użyteczna naprawa w Shallow Annex P-63 zaczyna się w świetle. FiberKelp z jasnej półki staje się FiberMesh, który niesie tymczasowy PressureSeal dla cieknącego kołnierza lub gniazda. Kupuje czas i bezpieczeństwo trasy, nie ucieczkę.",
+          "field_note": "Draft PL localization pending native pass. Jasna woda na zewnątrz. Mokry kołnierz w środku. Deep Reach nazwało to nominalnym, bo słowo kosztuje mniej niż pierścień zaciskowy."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Перший ремонт PressureSeal",
+          "scanner": "Draft UK localization pending native pass. ЦІЛЬ PRESSURESEAL // витік коміра P-63. Носій FiberMesh сумісний. Лише локальна стабілізація; сертифікацію підйому відхилено.",
+          "terminal": "Draft UK localization pending native pass. НОТАТКА DEEP REACH P-63 // Відкласти заміну коміра. Застосувати схвалений м'який носій ущільнення, якщо витік лишається в межах локального порога.",
+          "audio": "Draft UK localization pending native pass. Ретранслятор Black Keel: латка P-63 локально безпечна, але не підйомна. Забери ущільнення, збережи серійник.",
+          "in_game_wiki": "Draft UK localization pending native pass. Знайдено ремонтну нотатку P-63. FiberKelp можна переробити на FiberMesh і використати як носій тимчасового PressureSeal. Ущільнення сповільнює локальний витік, але не має сертифікації підйому.",
+          "external_site": "Draft UK localization pending native pass. Перший корисний ремонт у Shallow Annex P-63 починається при світлі. FiberKelp з яскравого шельфу стає FiberMesh і несе тимчасовий PressureSeal для коміра чи сервісного гнізда. Він купує час і безпечніший маршрут, не втечу.",
+          "field_note": "Draft UK localization pending native pass. Зовні світла вода. Усередині мокрий комір. Deep Reach назвала це штатним, бо слово дешевше за затискне кільце."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. أول إصلاح PressureSeal",
+          "scanner": "Draft AR localization pending native pass. هدف PRESSURESEAL // تسرب في طوق P-63. حامل FiberMesh متوافق. تثبيت محلي فقط؛ اعتماد الصعود مرفوض.",
+          "terminal": "Draft AR localization pending native pass. ملاحظة تحمل DEEP REACH P-63 // تأجيل استبدال الطوق. طبق حامل ختم لين معتمد حيث يبقى التسرب ضمن حد الخدمة المحلي.",
+          "audio": "Draft AR localization pending native pass. ترحيل Black Keel: رقعة P-63 آمنة محليا لا للصعود. خذ الختم واحتفظ بالرقم التسلسلي.",
+          "in_game_wiki": "Draft AR localization pending native pass. تم العثور على مذكرة إصلاح P-63. يمكن تحويل FiberKelp إلى FiberMesh ليحمل PressureSeal مؤقتا. يبطئ الختم تسربا محليا، لكنه غير معتمد للصعود.",
+          "external_site": "Draft AR localization pending native pass. يبدأ أول إصلاح مفيد في Shallow Annex P-63 تحت الضوء. يتحول FiberKelp من الرف المضيء إلى FiberMesh يحمل PressureSeal مؤقتا لطوق أو مقبس خدمة. إنه يشتري وقتا وأمان مسار، لا هروبا.",
+          "field_note": "Draft AR localization pending native pass. ماء مضيء في الخارج. طوق مبتل في الداخل. سمته Deep Reach اسميا لأن الكلمة أرخص من حلقة مشبك."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Perbaikan PressureSeal Pertama",
+          "scanner": "Draft ID localization pending native pass. TARGET PRESSURESEAL // Kebocoran collar P-63. Pembawa FiberMesh cocok. Stabilisasi lokal saja; sertifikasi naik ditolak.",
+          "terminal": "Draft ID localization pending native pass. CATATAN TOLERANSI DEEP REACH P-63 // Tunda penggantian collar. Terapkan pembawa segel lunak yang disetujui jika bocor masih dalam ambang layanan lokal.",
+          "audio": "Draft ID localization pending native pass. Relay Black Keel: tambalan P-63 terbaca aman lokal, bukan aman naik. Ambil segel, simpan serialnya.",
+          "in_game_wiki": "Draft ID localization pending native pass. Catatan perbaikan P-63 ditemukan. FiberKelp dapat diolah menjadi FiberMesh sebagai lapisan pembawa PressureSeal sementara. Segel itu memperlambat bocor lokal, tetapi bukan sertifikasi naik.",
+          "external_site": "Draft ID localization pending native pass. Perbaikan berguna pertama di Shallow Annex P-63 dimulai dalam cahaya. FiberKelp dari paparan terang menjadi FiberMesh, lalu membawa PressureSeal sementara untuk collar atau soket layanan yang bocor. Itu membeli waktu dan keamanan rute, bukan pelarian.",
+          "field_note": "Draft ID localization pending native pass. Air terang di luar. Collar basah di dalam. Deep Reach menyebutnya nominal karena kata itu lebih murah daripada clamp ring."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. 첫 PressureSeal 수리",
+          "scanner": "Draft KO localization pending native pass. PRESSURESEAL 대상 // P-63 칼라 누출. FiberMesh 캐리어 호환. 국소 안정화만 가능; 상승 인증 거부.",
+          "terminal": "Draft KO localization pending native pass. DEEP REACH P-63 허용 기록 // 칼라 교체 연기. 누출이 국소 서비스 한계 안에 있으면 승인된 연성 실 캐리어를 적용.",
+          "audio": "Draft KO localization pending native pass. Black Keel 중계: P-63 패치는 국소 안전이지 상승 안전이 아니다. 실을 가져가고 시리얼을 보존하라.",
+          "in_game_wiki": "Draft KO localization pending native pass. P-63 수리 기록 회수. FiberKelp는 FiberMesh로 가공되어 임시 PressureSeal의 캐리어 층이 된다. 실은 국소 누출을 늦추지만 상승 인증품은 아니다.",
+          "external_site": "Draft KO localization pending native pass. Shallow Annex P-63의 첫 쓸모 있는 수리는 빛 속에서 시작된다. 밝은 선반의 FiberKelp는 FiberMesh가 되고, 누수 칼라나 서비스 소켓용 임시 PressureSeal을 운반한다. 그것은 시간과 경로 안전을 살 뿐 탈출은 아니다.",
+          "field_note": "Draft KO localization pending native pass. 밖은 밝은 물. 안은 젖은 칼라. Deep Reach는 그것을 정상이라 불렀다. 그 말이 클램프 링보다 싸기 때문이다."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. תיקון PressureSeal ראשון",
+          "scanner": "Draft HE localization pending native pass. יעד PRESSURESEAL // דליפה בטבעת P-63. נשא FiberMesh תואם. ייצוב מקומי בלבד; אישור עלייה נדחה.",
+          "terminal": "Draft HE localization pending native pass. הערת סבילות DEEP REACH P-63 // לדחות החלפת טבעת. להחיל נשא איטום רך מאושר כשהדליפה נשארת בסף שירות מקומי.",
+          "audio": "Draft HE localization pending native pass. ממסר Black Keel: טלאי P-63 נקרא בטוח מקומי, לא בטוח לעלייה. קח את האטם ושמור את המספר.",
+          "in_game_wiki": "Draft HE localization pending native pass. נמצאה הערת תיקון P-63. אפשר לעבד FiberKelp ל-FiberMesh כשכבת נשא ל-PressureSeal זמני. האטם מאט דליפה מקומית, אבל אינו מאושר לעלייה.",
+          "external_site": "Draft HE localization pending native pass. התיקון השימושי הראשון ב-Shallow Annex P-63 מתחיל באור יום. FiberKelp מהמדף הבהיר הופך ל-FiberMesh שנושא PressureSeal זמני לטבעת או שקע שירות דולפים. הוא קונה זמן ובטיחות מסלול, לא בריחה.",
+          "field_note": "Draft HE localization pending native pass. מים בהירים בחוץ. טבעת רטובה בפנים. Deep Reach קראה לזה תקין כי המילה זולה יותר מטבעת הידוק."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Primeiro reparo PressureSeal",
+          "scanner": "Draft PT localization pending native pass. ALVO PRESSURESEAL // Vazamento no colar P-63. Suporte FiberMesh compatível. Apenas estabilização local; certificação de subida negada.",
+          "terminal": "Draft PT localization pending native pass. NOTA DE TOLERÂNCIA DEEP REACH P-63 // Adiar troca do colar. Aplicar suporte de selo macio aprovado onde o vazamento ficar no limite local.",
+          "audio": "Draft PT localization pending native pass. Relé Black Keel: o remendo P-63 é seguro local, não seguro para subida. Pegue o selo, guarde o serial.",
+          "in_game_wiki": "Draft PT localization pending native pass. Nota de reparo P-63 recuperada. FiberKelp pode virar FiberMesh e servir de camada de suporte para um PressureSeal temporário. O selo reduz vazamento local, mas não é certificado para subida.",
+          "external_site": "Draft PT localization pending native pass. O primeiro reparo útil em Shallow Annex P-63 começa na luz. FiberKelp da plataforma clara vira FiberMesh e leva um PressureSeal temporário para colar ou tomada de serviço com vazamento. Ele compra tempo e segurança de rota, não fuga.",
+          "field_note": "Draft PT localization pending native pass. Água clara fora. Colar molhado dentro. Deep Reach chamou isso de nominal porque a palavra custa menos que um anel de fixação."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Eerste PressureSeal-reparatie",
+          "scanner": "Draft NL localization pending native pass. PRESSURESEAL-DOEL // Lek in P-63-kraag. FiberMesh-drager compatibel. Alleen lokale stabilisatie; opstijgcertificering geweigerd.",
+          "terminal": "Draft NL localization pending native pass. DEEP REACH P-63 TOLERANTIENOTA // Kraagvervanging uitstellen. Goedgekeurde zachte zegeldrager toepassen zolang lekkage binnen lokale servicedrempel blijft.",
+          "audio": "Draft NL localization pending native pass. Black Keel-relais: P-63-patch leest lokaal veilig, niet opstijgveilig. Neem het zegel, bewaar het serienummer.",
+          "in_game_wiki": "Draft NL localization pending native pass. P-63-reparatienota teruggevonden. FiberKelp kan tot FiberMesh worden verwerkt als draaglaag voor een tijdelijke PressureSeal. De seal vertraagt een lokaal lek, maar is niet opstijggecertificeerd.",
+          "external_site": "Draft NL localization pending native pass. De eerste nuttige reparatie in Shallow Annex P-63 begint in daglicht. FiberKelp van de heldere plaat wordt FiberMesh en draagt een tijdelijke PressureSeal voor een lekkende kraag of servicesocket. Het koopt tijd en routeveiligheid, geen ontsnapping.",
+          "field_note": "Draft NL localization pending native pass. Helder water buiten. Natte kraag binnen. Deep Reach noemde dat nominaal omdat het woord minder kost dan een klemring."
+        }
+      }
+    },
+    {
+      "packet_id": "P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE",
+      "release_set_id": "RS093_LORE_SYSTEM_INTEGRATION_BRIDGE",
+      "article_id": "applied_lore.public_wiki_spoiler_gate_bridge",
+      "title_key": "LORE_PUBLIC_WIKI_GATE_TITLE",
+      "status": "source_candidate_pending_native_localization",
+      "canon_owner": [
+        "Docs/Lore/Canon_Locks.md",
+        "Docs/Lore/Lore_Bible.md",
+        "Docs/Lore/AppliedContent/production_packets/P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE.production.md"
+      ],
+      "runtime_contract": {
+        "authoring_only": true,
+        "runtime_reads_json": false,
+        "runtime_reads_markdown": false,
+        "runtime_ready": false,
+        "data_monolith_ready": false
+      },
+      "surfaces": [
+        "scanner",
+        "terminal",
+        "audio",
+        "in_game_wiki",
+        "external_site",
+        "field_note"
+      ],
+      "unlock": {
+        "primary": "unlock.public_wiki_spoiler_gate_bridge",
+        "secondary": [
+          "unlock.packet_custody_bridge",
+          "unlock.public_archive_index"
+        ],
+        "poi_tags": [
+          "poi.public_archive_gate",
+          "poi.packet_seal",
+          "poi.public_accident_packet"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.codex",
+          "biome.spoiler_gate"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Spoiler Gate",
+          "scanner": "PUBLIC ARCHIVE GATE // Spoiler tier 0/1. Public context only. Deep evidence requires recovered custody before codex expansion.",
+          "terminal": "PUBLIC/WIKI EXPORT FILTER // Allowed before evidence: setting, route pressure, public accident language, known institutions, and early salvage premise. Hold deep evidence until recovered.",
+          "audio": "Black Keel relay: Public copy names the moon. Proof needs a seal. Bring the seal.",
+          "in_game_wiki": "Public archive gate. External and wiki pages may name HECTON-8, Aegir, Black Keel, Deep Reach, Atlas-6 public history, and Xenon-Omega rumors. Stronger entries unlock only after recovered custody.",
+          "external_site": "Public HECTON-8 pages may name the job without giving away the evidence. The open layer gives safe context; packet seals, route stamps, scans, terminal fragments, worker tags, and black-box records unlock stronger claims later.",
+          "field_note": "The public page tells you where to dive. It does not tell you who paid to keep the door shut."
+        },
+        "ru_RU": {
+          "title": "Draft RU localization pending native pass. Спойлерный шлюз",
+          "scanner": "Draft RU localization pending native pass. ШЛЮЗ ПУБЛИЧНОГО АРХИВА // спойлер 0/1. Только общий контекст. Глубокие улики требуют восстановленной сохранности до расширения кодекса.",
+          "terminal": "Draft RU localization pending native pass. ФИЛЬТР PUBLIC/WIKI // До доказательств разрешены сеттинг, давление маршрута, публичная аварийная формулировка, известные организации и ранняя завязка. Глубокие улики удерживать.",
+          "audio": "Draft RU localization pending native pass. Ретранслятор Black Keel: публичный текст называет луну. Доказательству нужна пломба. Принеси пломбу.",
+          "in_game_wiki": "Draft RU localization pending native pass. Шлюз публичного архива. Внешние страницы могут называть HECTON-8, Aegir, Black Keel, Deep Reach, публичную историю Atlas-6 и слухи о Xenon-Omega. Более сильные записи открываются только после найденной цепочки сохранности.",
+          "external_site": "Draft RU localization pending native pass. Публичные страницы HECTON-8 могут назвать работу, не раскрывая доказательство. Открытый слой дает безопасный контекст; пломбы, маршрутные штампы, сканы, терминалы, теги работников и black-box записи открывают более сильные утверждения позже.",
+          "field_note": "Draft RU localization pending native pass. Публичная страница говорит, куда нырять. Она не говорит, кто заплатил, чтобы дверь оставалась закрытой."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. スポイラーゲート",
+          "scanner": "Draft JA localization pending native pass. 公開アーカイブゲート // ネタバレ階層0/1。公開文脈のみ。深い証拠はコデックス拡張前に回収済み保管が必要。",
+          "terminal": "Draft JA localization pending native pass. PUBLIC/WIKI出力フィルタ // 証拠前に許可: 舞台、経路圧、公開事故文、既知機関、初期サルベージ前提。深い証拠は保留。",
+          "audio": "Draft JA localization pending native pass. Black Keel中継: 公開文は月の名を出せる。証拠には封印が要る。封印を持ってこい。",
+          "in_game_wiki": "Draft JA localization pending native pass. 公開アーカイブゲート。外部ページとwikiはHECTON-8、Aegir、Black Keel、Deep Reach、Atlas-6の公開史、Xenon-Omegaの噂を名指しできる。強い項目は保管証拠の回収後に開く。",
+          "external_site": "Draft JA localization pending native pass. 公開HECTON-8ページは、証拠を明かさずに仕事を名指しできる。開いた層は安全な文脈だけを与え、封印、経路印、スキャン、端末断片、作業者タグ、ブラックボックス記録が後の強い主張を開く。",
+          "field_note": "Draft JA localization pending native pass. 公開ページは潜る場所を教える。誰が扉を閉じたままにしたかは教えない。"
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. 剧透门控",
+          "scanner": "Draft ZH localization pending native pass. 公共档案门控 // 剧透层级0/1。仅限公开背景。深层证据在图鉴扩展前需要已回收的保管链。",
+          "terminal": "Draft ZH localization pending native pass. PUBLIC/WIKI导出过滤器 // 证据前允许：设定、路线压力、公开事故语言、已知机构和早期打捞前提。深层证据保留。",
+          "audio": "Draft ZH localization pending native pass. Black Keel中继：公开文案可以说出这颗月的名字。证明需要封签。把封签带回来。",
+          "in_game_wiki": "Draft ZH localization pending native pass. 公共档案门控。外部和wiki页面可提到 HECTON-8、Aegir、Black Keel、Deep Reach、Atlas-6 公共历史和 Xenon-Omega 传闻。更强条目只在回收保管证据后解锁。",
+          "external_site": "Draft ZH localization pending native pass. 公开 HECTON-8 页面可以命名工作而不泄露证据。开放层提供安全背景；封签、路线戳、扫描、终端碎片、工人标签和黑匣子记录会在之后解锁更强声明。",
+          "field_note": "Draft ZH localization pending native pass. 公开页面告诉你往哪儿潜。它不告诉你是谁付钱让门保持关闭。"
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Porte anti-divulgation",
+          "scanner": "Draft FR localization pending native pass. PORTE D'ARCHIVE PUBLIQUE // Niveau spoiler 0/1. Contexte public seulement. Les preuves profondes exigent une garde récupérée avant l'extension du codex.",
+          "terminal": "Draft FR localization pending native pass. FILTRE PUBLIC/WIKI // Autorisé avant preuve : décor, pression de route, langage d'accident public, institutions connues et prémisse de salvage. Retenir les preuves profondes.",
+          "audio": "Draft FR localization pending native pass. Relais Black Keel : le texte public nomme la lune. La preuve a besoin d'un sceau. Rapporte le sceau.",
+          "in_game_wiki": "Draft FR localization pending native pass. Porte d'archive publique. Les pages externes et wiki peuvent nommer HECTON-8, Aegir, Black Keel, Deep Reach, l'histoire publique d'Atlas-6 et les rumeurs Xenon-Omega. Les entrées fortes s'ouvrent après garde récupérée.",
+          "external_site": "Draft FR localization pending native pass. Les pages publiques HECTON-8 peuvent nommer le travail sans livrer la preuve. La couche ouverte donne le contexte sûr; sceaux, tampons, scans, terminaux, tags ouvriers et boîtes noires ouvrent ensuite les affirmations fortes.",
+          "field_note": "Draft FR localization pending native pass. La page publique te dit où plonger. Elle ne dit pas qui a payé pour garder la porte fermée."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Compuerta de spoilers",
+          "scanner": "Draft ES localization pending native pass. COMPUERTA DE ARCHIVO PÚBLICO // Nivel de spoiler 0/1. Solo contexto público. La evidencia profunda requiere custodia recuperada antes de ampliar el códice.",
+          "terminal": "Draft ES localization pending native pass. FILTRO PUBLIC/WIKI // Antes de la evidencia se permite: escenario, presión de ruta, lenguaje público del accidente, instituciones conocidas y premisa de salvamento. Retener evidencia profunda.",
+          "audio": "Draft ES localization pending native pass. Relé Black Keel: el texto público nombra la luna. La prueba necesita un sello. Trae el sello.",
+          "in_game_wiki": "Draft ES localization pending native pass. Compuerta de archivo público. Páginas externas y wiki pueden nombrar HECTON-8, Aegir, Black Keel, Deep Reach, historia pública de Atlas-6 y rumores Xenon-Omega. Entradas más fuertes se desbloquean tras custodia recuperada.",
+          "external_site": "Draft ES localization pending native pass. Las páginas públicas de HECTON-8 pueden nombrar el trabajo sin entregar la evidencia. La capa abierta da contexto seguro; sellos, marcas de ruta, escaneos, terminales, etiquetas de trabajadores y cajas negras abren afirmaciones más fuertes después.",
+          "field_note": "Draft ES localization pending native pass. La página pública te dice dónde bucear. No te dice quién pagó para mantener cerrada la puerta."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Spoiler-Sperre",
+          "scanner": "Draft DE localization pending native pass. ÖFFENTLICHES ARCHIVTOR // Spoilerstufe 0/1. Nur öffentlicher Kontext. Tiefe Beweise brauchen geborgene Verwahrung vor Codex-Erweiterung.",
+          "terminal": "Draft DE localization pending native pass. PUBLIC/WIKI EXPORTFILTER // Vor Beweis erlaubt: Setting, Routendruck, öffentliche Unfallformel, bekannte Institutionen und frühe Bergungsprämisse. Tiefe Beweise halten.",
+          "audio": "Draft DE localization pending native pass. Black-Keel-Relais: Öffentlicher Text nennt den Mond. Beweis braucht ein Siegel. Bring das Siegel.",
+          "in_game_wiki": "Draft DE localization pending native pass. Öffentliches Archivtor. Externe und Wiki-Seiten dürfen HECTON-8, Aegir, Black Keel, Deep Reach, Atlas-6-Industriegeschichte und Xenon-Omega-Gerüchte nennen. Stärkere Einträge öffnen erst nach geborgener Verwahrung.",
+          "external_site": "Draft DE localization pending native pass. Öffentliche HECTON-8-Seiten dürfen den Auftrag nennen, ohne den Beweis auszuliefern. Die offene Ebene gibt sicheren Kontext; Siegel, Routenstempel, Scans, Terminalfragmente, Arbeitertags und Black-Box-Zeilen öffnen spätere stärkere Ansprüche.",
+          "field_note": "Draft DE localization pending native pass. Die öffentliche Seite sagt dir, wo du tauchen sollst. Sie sagt nicht, wer dafür bezahlt hat, dass die Tür geschlossen blieb."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Brama spoilerów",
+          "scanner": "Draft PL localization pending native pass. BRAMA ARCHIWUM PUBLICZNEGO // Poziom spoilera 0/1. Tylko kontekst publiczny. Głębokie dowody wymagają odzyskanej kustodii przed rozszerzeniem kodeksu.",
+          "terminal": "Draft PL localization pending native pass. FILTR PUBLIC/WIKI // Przed dowodem wolno: tło, presję trasy, publiczny język wypadku, znane instytucje i wczesną przesłankę salvage. Głębokie dowody zatrzymać.",
+          "audio": "Draft PL localization pending native pass. Przekaźnik Black Keel: tekst publiczny nazywa księżyc. Dowód potrzebuje pieczęci. Przynieś pieczęć.",
+          "in_game_wiki": "Draft PL localization pending native pass. Brama archiwum publicznego. Strony zewnętrzne i wiki mogą nazwać HECTON-8, Aegir, Black Keel, Deep Reach, publiczną historię Atlas-6 i pogłoski Xenon-Omega. Silniejsze wpisy otwierają się dopiero po odzyskanej kustodii.",
+          "external_site": "Draft PL localization pending native pass. Publiczne strony HECTON-8 mogą nazwać zlecenie bez oddawania dowodu. Warstwa otwarta daje bezpieczny kontekst; pieczęcie, stemple trasy, skany, terminale, tagi robotników i black-boxy otwierają później mocniejsze twierdzenia.",
+          "field_note": "Draft PL localization pending native pass. Publiczna strona mówi, gdzie nurkować. Nie mówi, kto zapłacił za zamknięte drzwi."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Спойлерний шлюз",
+          "scanner": "Draft UK localization pending native pass. ШЛЮЗ ПУБЛІЧНОГО АРХІВУ // рівень спойлера 0/1. Лише публічний контекст. Глибокі докази потребують відновленого збереження до розширення кодексу.",
+          "terminal": "Draft UK localization pending native pass. ФІЛЬТР PUBLIC/WIKI // До доказів дозволені сетинг, тиск маршруту, публічна аварійна мова, відомі установи і рання зав'язка salvage. Глибокі докази утримати.",
+          "audio": "Draft UK localization pending native pass. Ретранслятор Black Keel: публічний текст називає місяць. Доказу потрібна пломба. Принеси пломбу.",
+          "in_game_wiki": "Draft UK localization pending native pass. Шлюз публічного архіву. Зовнішні та wiki-сторінки можуть називати HECTON-8, Aegir, Black Keel, Deep Reach, публічну історію Atlas-6 і чутки Xenon-Omega. Сильніші записи відкриваються після знайденої цепочки збереження.",
+          "external_site": "Draft UK localization pending native pass. Публічні сторінки HECTON-8 можуть назвати роботу без видачі доказу. Відкритий шар дає безпечний контекст; пломби, маршрутні штампи, скани, термінали, теги працівників і black-box записи відкривають сильніші твердження пізніше.",
+          "field_note": "Draft UK localization pending native pass. Публічна сторінка каже, куди пірнати. Вона не каже, хто заплатив, щоб двері лишалися зачиненими."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. بوابة حجب الحرق",
+          "scanner": "Draft AR localization pending native pass. بوابة الأرشيف العام // مستوى حرق 0/1. سياق عام فقط. الأدلة العميقة تحتاج حيازة مستعادة قبل توسيع الكودكس.",
+          "terminal": "Draft AR localization pending native pass. مرشح PUBLIC/WIKI // قبل الدليل يسمح بذكر المكان وضغط المسار ولغة الحادث العامة والمؤسسات المعروفة وبداية salvage. الأدلة العميقة تبقى محجوبة.",
+          "audio": "Draft AR localization pending native pass. ترحيل Black Keel: النص العام يسمي القمر. الإثبات يحتاج ختما. أحضر الختم.",
+          "in_game_wiki": "Draft AR localization pending native pass. بوابة أرشيف عامة. تستطيع الصفحات الخارجية والويكي ذكر HECTON-8 وAegir وBlack Keel وDeep Reach وتاريخ Atlas-6 العام وشائعات Xenon-Omega. الإدخالات الأقوى تفتح بعد استعادة الحيازة.",
+          "external_site": "Draft AR localization pending native pass. يمكن لصفحات HECTON-8 العامة تسمية العمل من دون تسليم الدليل. الطبقة المفتوحة تقدم سياقا آمنا؛ الأختام وطوابع المسار والمسوح وقطع الطرفيات ووسوم العمال وسجلات الصندوق الأسود تفتح ادعاءات أقوى لاحقا.",
+          "field_note": "Draft AR localization pending native pass. الصفحة العامة تخبرك أين تغوص. لا تخبرك من دفع كي يبقى الباب مغلقا."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Gerbang Spoiler",
+          "scanner": "Draft ID localization pending native pass. GERBANG ARSIP PUBLIK // Tingkat spoiler 0/1. Hanya konteks publik. Bukti dalam butuh kustodi pulih sebelum perluasan kodeks.",
+          "terminal": "Draft ID localization pending native pass. FILTER PUBLIC/WIKI // Sebelum bukti: setting, tekanan rute, bahasa kecelakaan publik, institusi dikenal, dan premis salvase awal boleh tampil. Bukti dalam ditahan.",
+          "audio": "Draft ID localization pending native pass. Relay Black Keel: teks publik menyebut nama bulan. Bukti butuh segel. Bawa segelnya.",
+          "in_game_wiki": "Draft ID localization pending native pass. Gerbang arsip publik. Halaman eksternal dan wiki boleh menyebut HECTON-8, Aegir, Black Keel, Deep Reach, sejarah publik Atlas-6, dan rumor Xenon-Omega. Entri lebih kuat terbuka hanya setelah kustodi dipulihkan.",
+          "external_site": "Draft ID localization pending native pass. Halaman publik HECTON-8 boleh menyebut pekerjaan tanpa membocorkan bukti. Lapisan terbuka memberi konteks aman; segel, cap rute, scan, fragmen terminal, tag pekerja, dan rekaman black-box membuka klaim yang lebih kuat nanti.",
+          "field_note": "Draft ID localization pending native pass. Halaman publik memberi tahu tempat menyelam. Ia tidak memberi tahu siapa yang membayar agar pintu tetap tertutup."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. 스포일러 게이트",
+          "scanner": "Draft KO localization pending native pass. 공개 아카이브 게이트 // 스포일러 등급 0/1. 공개 맥락만 제공. 심층 증거는 코덱스 확장 전 회수된 보관 기록이 필요하다.",
+          "terminal": "Draft KO localization pending native pass. PUBLIC/WIKI 출력 필터 // 증거 전 허용: 배경, 경로 압력, 공개 사고 문구, 알려진 기관, 초기 인양 전제. 심층 증거는 보류.",
+          "audio": "Draft KO localization pending native pass. Black Keel 중계: 공개 문구는 달의 이름을 말한다. 증거에는 봉인이 필요하다. 봉인을 가져와라.",
+          "in_game_wiki": "Draft KO localization pending native pass. 공개 아카이브 게이트. 외부와 위키 페이지는 HECTON-8, Aegir, Black Keel, Deep Reach, Atlas-6 공개 역사, Xenon-Omega 소문을 말할 수 있다. 더 강한 항목은 회수된 보관 증거 뒤에만 열린다.",
+          "external_site": "Draft KO localization pending native pass. 공개 HECTON-8 페이지는 증거를 내주지 않고 일을 명명할 수 있다. 열린 층은 안전한 맥락만 주며 봉인, 경로 도장, 스캔, 터미널 조각, 노동자 태그, 블랙박스 기록이 나중의 강한 주장을 연다.",
+          "field_note": "Draft KO localization pending native pass. 공개 페이지는 어디로 잠수할지 말한다. 누가 문을 닫아 두려고 돈을 냈는지는 말하지 않는다."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. שער ספוילרים",
+          "scanner": "Draft HE localization pending native pass. שער ארכיון ציבורי // דרגת ספוילר 0/1. הקשר ציבורי בלבד. ראיות עמוקות דורשות משמורת שנמצאה לפני הרחבת הקודקס.",
+          "terminal": "Draft HE localization pending native pass. מסנן PUBLIC/WIKI // לפני ראיה מותר: תפאורה, לחץ מסלול, לשון תאונה ציבורית, מוסדות ידועים והנחת salvage מוקדמת. להחזיק ראיות עמוקות.",
+          "audio": "Draft HE localization pending native pass. ממסר Black Keel: טקסט ציבורי אומר את שם הירח. הוכחה צריכה חותם. הבא את החותם.",
+          "in_game_wiki": "Draft HE localization pending native pass. שער ארכיון ציבורי. דפים חיצוניים וויקי יכולים לציין HECTON-8, Aegir, Black Keel, Deep Reach, היסטוריה ציבורית של Atlas-6 ושמועות Xenon-Omega. ערכים חזקים יותר נפתחים רק אחרי משמורת שנמצאה.",
+          "external_site": "Draft HE localization pending native pass. דפי HECTON-8 ציבוריים יכולים לקרוא לעבודה בלי למסור את הראיה. השכבה הפתוחה נותנת הקשר בטוח; חותמים, חותמות מסלול, סריקות, קטעי מסוף, תגי עובדים ורשומות קופסה שחורה פותחים טענות חזקות יותר בהמשך.",
+          "field_note": "Draft HE localization pending native pass. העמוד הציבורי אומר איפה לצלול. הוא לא אומר מי שילם כדי שהדלת תישאר סגורה."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Portão de spoilers",
+          "scanner": "Draft PT localization pending native pass. PORTÃO DE ARQUIVO PÚBLICO // Nível de spoiler 0/1. Apenas contexto público. Evidência profunda exige custódia recuperada antes da expansão do códice.",
+          "terminal": "Draft PT localization pending native pass. FILTRO PUBLIC/WIKI // Antes da prova: cenário, pressão de rota, linguagem pública do acidente, instituições conhecidas e premissa inicial de salvamento. Segurar evidência profunda.",
+          "audio": "Draft PT localization pending native pass. Relé Black Keel: o texto público nomeia a lua. A prova precisa de um selo. Traga o selo.",
+          "in_game_wiki": "Draft PT localization pending native pass. Portão de arquivo público. Páginas externas e wiki podem citar HECTON-8, Aegir, Black Keel, Deep Reach, história pública da Atlas-6 e rumores Xenon-Omega. Entradas mais fortes abrem só após custódia recuperada.",
+          "external_site": "Draft PT localization pending native pass. Páginas públicas de HECTON-8 podem nomear o trabalho sem entregar a prova. A camada aberta dá contexto seguro; selos, carimbos de rota, scans, fragmentos de terminal, tags de trabalhadores e caixas-pretas abrem declarações mais fortes depois.",
+          "field_note": "Draft PT localization pending native pass. A página pública diz onde mergulhar. Ela não diz quem pagou para manter a porta fechada."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Spoilerpoort",
+          "scanner": "Draft NL localization pending native pass. OPENBARE ARCHIEFPOORT // Spoilerniveau 0/1. Alleen openbare context. Diepe bewijzen vereisen herstelde bewaring vóór codex-uitbreiding.",
+          "terminal": "Draft NL localization pending native pass. PUBLIC/WIKI EXPORTFILTER // Toegestaan vóór bewijs: setting, routedruk, openbare ongevalstaal, bekende instellingen en vroege salvage-premisse. Diep bewijs vasthouden.",
+          "audio": "Draft NL localization pending native pass. Black Keel-relais: publieke tekst noemt de maan. Bewijs heeft een zegel nodig. Breng het zegel.",
+          "in_game_wiki": "Draft NL localization pending native pass. Openbare archiefpoort. Externe en wiki-pagina's mogen HECTON-8, Aegir, Black Keel, Deep Reach, publieke Atlas-6-geschiedenis en Xenon-Omega-geruchten noemen. Sterkere items openen pas na herstelde bewaring.",
+          "external_site": "Draft NL localization pending native pass. Openbare HECTON-8-pagina's mogen de klus noemen zonder het bewijs weg te geven. De open laag geeft veilige context; zegels, routestempels, scans, terminalfragmenten, werkertags en black-boxregels openen later sterkere claims.",
+          "field_note": "Draft NL localization pending native pass. De openbare pagina zegt waar je moet duiken. Ze zegt niet wie betaalde om de deur dicht te houden."
+        }
+      }
+    },
+    {
+      "packet_id": "P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE",
+      "release_set_id": "RS093_LORE_SYSTEM_INTEGRATION_BRIDGE",
+      "article_id": "applied_lore.black_keel_claim_window_bridge",
+      "title_key": "LORE_BLACK_KEEL_CLAIM_WINDOW_PUBLIC_TITLE",
+      "status": "source_candidate_pending_native_localization",
+      "canon_owner": [
+        "Docs/Lore/Canon_Locks.md",
+        "Docs/Lore/Lore_Bible.md",
+        "Docs/Lore/AppliedContent/production_packets/P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE.production.md"
+      ],
+      "runtime_contract": {
+        "authoring_only": true,
+        "runtime_reads_json": false,
+        "runtime_reads_markdown": false,
+        "runtime_ready": false,
+        "data_monolith_ready": false
+      },
+      "surfaces": [
+        "scanner",
+        "terminal",
+        "audio",
+        "in_game_wiki",
+        "external_site",
+        "field_note"
+      ],
+      "unlock": {
+        "primary": "unlock.black_keel_claim_window_bridge",
+        "secondary": [
+          "unlock.first_black_keel_relay",
+          "unlock.p63_claim_window_panel"
+        ],
+        "poi_tags": [
+          "poi.claim_window_panel",
+          "poi.aegir_relay_timestamp",
+          "poi.p63_relay_board"
+        ],
+        "biome_tags": [
+          "biome.carrier_link",
+          "biome.shallow_annex",
+          "biome.photic_shelf"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Black Keel Claim Window",
+          "scanner": "CLAIM WINDOW // Aegir relay predicts receive window only. Recovery requires ascent package, quarantine handshake, and tonne-window allocation.",
+          "terminal": "KEELMARK CUSTODY NOTICE // Operator signal received. Recovery priority unresolved. Receipt of signal or evidence packet does not guarantee operator recovery.",
+          "audio": "Black Keel relay: Operator signal priced. Recovery window pending. Do not confuse receipt with lift.",
+          "in_game_wiki": "Recovered Black Keel claim-window notice. Carrier contact means a signal reached the Aegir relay lane; it does not mean recovery is available. Extraction needs ascent hardware, quarantine handshake, accepted payload state, and tonne-window allocation.",
+          "external_site": "Black Keel can hear a signal before it can lift a body. In Aegir, a carrier response is a priced lane through relay geometry, weather, quarantine review, payload acceptance, and mass recovery. Contact is a route fact. Rescue is a completed chain.",
+          "field_note": "If Black Keel answers, count the bill, not the rescue. A received packet is only a place in the queue until mass, seal, quarantine, and weather agree."
+        },
+        "ru_RU": {
+          "title": "Draft RU localization pending native pass. Окно претензии Black Keel",
+          "scanner": "Draft RU localization pending native pass. ОКНО ПРЕТЕНЗИИ // ретранслятор Aegir показывает только окно приема. Для возврата нужны подъемный пакет, карантинное согласование и лимит tonne-window.",
+          "terminal": "Draft RU localization pending native pass. УВЕДОМЛЕНИЕ KEELMARK // сигнал оператора получен. Приоритет возврата не решен. Прием сигнала или пакета доказательств не гарантирует возврат оператора.",
+          "audio": "Draft RU localization pending native pass. Ретранслятор Black Keel: сигнал оператора оценен. Окно возврата ожидает. Не путай прием с подъемом.",
+          "in_game_wiki": "Draft RU localization pending native pass. Найдено уведомление окна претензии Black Keel. Контакт с носителем значит, что сигнал дошел до линии Aegir; возврат еще недоступен. Нужны подъемное оборудование, карантин, принятый груз и лимит tonne-window.",
+          "external_site": "Draft RU localization pending native pass. Black Keel может услышать сигнал раньше, чем поднимет тело. В Aegir ответ носителя это платная полоса через геометрию реле, погоду, карантин, прием груза и возврат массы. Контакт это факт маршрута. Спасение это завершенная цепь.",
+          "field_note": "Draft RU localization pending native pass. Если Black Keel отвечает, считай счет, а не спасение. Принятый пакет это только место в очереди, пока масса, пломба, карантин и погода не совпадут."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Black Keel請求ウィンドウ",
+          "scanner": "Draft JA localization pending native pass. 請求ウィンドウ // Aegir中継は受信窓のみ予測。回収には上昇パッケージ、検疫ハンドシェイク、tonne-window割当が必要。",
+          "terminal": "Draft JA localization pending native pass. KEELMARK保管通知 // 作業者信号受信。回収優先度未解決。信号や証拠パケットの受領は作業者回収を保証しない。",
+          "audio": "Draft JA localization pending native pass. Black Keel中継: 作業者信号を価格登録。回収窓は保留。受信を引き上げと混同するな。",
+          "in_game_wiki": "Draft JA localization pending native pass. Black Keel請求窓通知を回収。キャリア接触は信号がAegir中継レーンに届いたことを示すだけで、回収可能を意味しない。抽出には上昇ハード、検疫、受理済みペイロード、tonne-window割当が要る。",
+          "external_site": "Draft JA localization pending native pass. Black Keelは体を引き上げる前に信号を聞ける。Aegirでのキャリア応答は、中継幾何、天候、検疫審査、ペイロード受理、質量回収を通る有料レーンだ。接触は経路の事実。救助は完了した鎖だ。",
+          "field_note": "Draft JA localization pending native pass. Black Keelが返答したら、救助ではなく請求を数えろ。受信済みパケットは、質量、封印、検疫、天候が揃うまで待ち行列の席でしかない。"
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Black Keel索赔窗口",
+          "scanner": "Draft ZH localization pending native pass. 索赔窗口 // Aegir中继只预测接收窗口。回收需要上升包、隔离握手和tonne-window分配。",
+          "terminal": "Draft ZH localization pending native pass. KEELMARK保管通知 // 操作员信号已收到。回收优先级未解决。收到信号或证据包不保证操作员回收。",
+          "audio": "Draft ZH localization pending native pass. Black Keel中继：操作员信号已计价。回收窗口待定。不要把接收当成吊升。",
+          "in_game_wiki": "Draft ZH localization pending native pass. 已回收Black Keel索赔窗口通知。航母联系只说明信号抵达Aegir中继通道，不代表可回收。撤离需要上升硬件、隔离握手、已接受载荷和tonne-window分配。",
+          "external_site": "Draft ZH localization pending native pass. Black Keel能先听到信号，却不能立刻吊起身体。在Aegir，航母回应是穿过中继几何、天气、隔离审查、载荷接收和质量回收的计价通道。联系是路线事实。救援是完成的链条。",
+          "field_note": "Draft ZH localization pending native pass. Black Keel回应时，先数账单，别当成救援。收到的数据包只是队列里的位置，直到质量、封签、隔离和天气一致。"
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Fenêtre de réclamation Black Keel",
+          "scanner": "Draft FR localization pending native pass. FENÊTRE DE RÉCLAMATION // Le relais Aegir prédit seulement une réception. Récupération: paquet d'ascension, accord de quarantaine et attribution tonne-window requis.",
+          "terminal": "Draft FR localization pending native pass. AVIS DE GARDE KEELMARK // Signal opérateur reçu. Priorité de récupération non résolue. La réception d'un signal ou d'un paquet de preuve ne garantit pas la récupération.",
+          "audio": "Draft FR localization pending native pass. Relais Black Keel : signal opérateur tarifé. Fenêtre de récupération en attente. Ne confonds pas réception et levage.",
+          "in_game_wiki": "Draft FR localization pending native pass. Avis de fenêtre Black Keel récupéré. Le contact carrier signifie qu'un signal a atteint la voie relais Aegir; il ne signifie pas que la récupération est disponible. Il faut matériel d'ascension, quarantaine, charge acceptée et attribution tonne-window.",
+          "external_site": "Draft FR localization pending native pass. Black Keel peut entendre un signal avant de remonter un corps. Dans Aegir, une réponse carrier est une voie tarifée à travers géométrie relais, météo, quarantaine, acceptation de charge et récupération de masse. Le contact est un fait de route. Le sauvetage est une chaîne terminée.",
+          "field_note": "Draft FR localization pending native pass. Si Black Keel répond, compte la facture, pas le sauvetage. Un paquet reçu n'est qu'une place en file tant que masse, sceau, quarantaine et météo ne s'accordent pas."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Ventana de reclamación de Black Keel",
+          "scanner": "Draft ES localization pending native pass. VENTANA DE RECLAMACIÓN // El relé de Aegir solo predice recepción. La recuperación exige paquete de ascenso, acuerdo de cuarentena y asignación tonne-window.",
+          "terminal": "Draft ES localization pending native pass. AVISO DE CUSTODIA KEELMARK // Señal del operador recibida. Prioridad de recuperación sin resolver. Recibir una señal o paquete de evidencia no garantiza recuperar al operador.",
+          "audio": "Draft ES localization pending native pass. Relé Black Keel: señal del operador tasada. Ventana de recuperación pendiente. No confundas recepción con izado.",
+          "in_game_wiki": "Draft ES localization pending native pass. Aviso de ventana Black Keel recuperado. El contacto con el carrier significa que una señal llegó al carril Aegir; no significa recuperación disponible. La extracción exige hardware de ascenso, cuarentena, carga aceptada y asignación tonne-window.",
+          "external_site": "Draft ES localization pending native pass. Black Keel puede oír una señal antes de izar un cuerpo. En Aegir, una respuesta carrier es un carril tasado por geometría de relé, clima, cuarentena, aceptación de carga y recuperación de masa. El contacto es un hecho de ruta. El rescate es una cadena completa.",
+          "field_note": "Draft ES localization pending native pass. Si Black Keel responde, cuenta la factura, no el rescate. Un paquete recibido solo es un puesto en la cola hasta que masa, sello, cuarentena y clima coincidan."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Black Keel Anspruchsfenster",
+          "scanner": "Draft DE localization pending native pass. ANSPRUCHSFENSTER // Aegir-Relay sagt nur Empfangsfenster voraus. Bergung braucht Aufstiegspaket, Quarantäne-Handshake und tonne-window-Zuteilung.",
+          "terminal": "Draft DE localization pending native pass. KEELMARK VERWAHRUNGSHINWEIS // Operatorsignal empfangen. Bergungspriorität ungeklärt. Empfang von Signal oder Beweispaket garantiert keine Operatorbergung.",
+          "audio": "Draft DE localization pending native pass. Black-Keel-Relais: Operatorsignal bepreist. Bergungsfenster ausstehend. Empfang ist kein Lift.",
+          "in_game_wiki": "Draft DE localization pending native pass. Black-Keel-Anspruchsfenster geborgen. Carrierkontakt heißt, dass ein Signal die Aegir-Relaybahn erreicht hat; es heißt nicht, dass Bergung verfügbar ist. Extraktion braucht Aufstiegshardware, Quarantäne, akzeptierte Nutzlast und tonne-window-Zuteilung.",
+          "external_site": "Draft DE localization pending native pass. Black Keel kann ein Signal hören, bevor es einen Körper hebt. In Aegir ist eine Carrierantwort eine bezahlte Spur durch Relaisgeometrie, Wetter, Quarantäneprüfung, Nutzlastannahme und Masserückgewinnung. Kontakt ist Routenfakt. Rettung ist eine abgeschlossene Kette.",
+          "field_note": "Draft DE localization pending native pass. Wenn Black Keel antwortet, zähl die Rechnung, nicht die Rettung. Ein empfangenes Paket ist nur ein Platz in der Warteschlange, bis Masse, Siegel, Quarantäne und Wetter passen."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Okno roszczenia Black Keel",
+          "scanner": "Draft PL localization pending native pass. OKNO ROSZCZENIA // Przekaźnik Aegir przewiduje tylko okno odbioru. Odzysk wymaga pakietu wznoszenia, uzgodnienia kwarantanny i przydziału tonne-window.",
+          "terminal": "Draft PL localization pending native pass. ZAWIADOMIENIE KEELMARK // Sygnał operatora odebrany. Priorytet odzysku nierozstrzygnięty. Odbiór sygnału lub pakietu dowodu nie gwarantuje odzysku operatora.",
+          "audio": "Draft PL localization pending native pass. Przekaźnik Black Keel: sygnał operatora wyceniony. Okno odzysku w toku. Nie myl odbioru z podniesieniem.",
+          "in_game_wiki": "Draft PL localization pending native pass. Odzyskano zawiadomienie Black Keel. Kontakt z carrierem znaczy, że sygnał dotarł do linii Aegir; nie znaczy, że odzysk jest dostępny. Ekstrakcja wymaga sprzętu wznoszenia, kwarantanny, zaakceptowanego ładunku i przydziału tonne-window.",
+          "external_site": "Draft PL localization pending native pass. Black Keel może usłyszeć sygnał, zanim podniesie ciało. W Aegir odpowiedź carriera to opłacony pas przez geometrię przekaźników, pogodę, kwarantannę, akceptację ładunku i odzysk masy. Kontakt jest faktem trasy. Ratunek jest ukończonym łańcuchem.",
+          "field_note": "Draft PL localization pending native pass. Jeśli Black Keel odpowiada, licz rachunek, nie ratunek. Odebrany pakiet to tylko miejsce w kolejce, dopóki masa, pieczęć, kwarantanna i pogoda się nie zgodzą."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Вікно претензії Black Keel",
+          "scanner": "Draft UK localization pending native pass. ВІКНО ПРЕТЕНЗІЇ // ретранслятор Aegir показує лише вікно прийому. Для повернення потрібні підйомний пакет, карантинне узгодження і ліміт tonne-window.",
+          "terminal": "Draft UK localization pending native pass. ПОВІДОМЛЕННЯ KEELMARK // сигнал оператора отримано. Пріоритет повернення не вирішено. Прийом сигналу чи пакета доказів не гарантує повернення оператора.",
+          "audio": "Draft UK localization pending native pass. Ретранслятор Black Keel: сигнал оператора оцінено. Вікно повернення очікує. Не плутай прийом із підйомом.",
+          "in_game_wiki": "Draft UK localization pending native pass. Знайдено повідомлення Black Keel. Контакт із носієм означає, що сигнал дійшов до лінії Aegir; це не означає доступне повернення. Потрібні підйомне обладнання, карантин, прийнятий вантаж і ліміт tonne-window.",
+          "external_site": "Draft UK localization pending native pass. Black Keel може почути сигнал раніше, ніж підніме тіло. В Aegir відповідь носія це платна смуга крізь геометрію реле, погоду, карантин, прийом вантажу і повернення маси. Контакт це факт маршруту. Порятунок це завершений ланцюг.",
+          "field_note": "Draft UK localization pending native pass. Якщо Black Keel відповідає, рахуй рахунок, не порятунок. Прийнятий пакет це лише місце в черзі, доки маса, пломба, карантин і погода не зійдуться."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. نافذة مطالبة Black Keel",
+          "scanner": "Draft AR localization pending native pass. نافذة مطالبة // ترحيل Aegir يتوقع نافذة استقبال فقط. الاسترداد يحتاج حزمة صعود ومصافحة حجر وتخصيص tonne-window.",
+          "terminal": "Draft AR localization pending native pass. إشعار حيازة KEELMARK // تم استقبال إشارة العامل. أولوية الاسترداد غير محسومة. استقبال إشارة أو حزمة دليل لا يضمن استرداد العامل.",
+          "audio": "Draft AR localization pending native pass. ترحيل Black Keel: تم تسعير إشارة العامل. نافذة الاسترداد معلقة. لا تخلط بين الاستلام والرفع.",
+          "in_game_wiki": "Draft AR localization pending native pass. تم العثور على إشعار نافذة Black Keel. اتصال الحاملة يعني أن الإشارة وصلت إلى ممر Aegir؛ لا يعني أن الاسترداد متاح. الاستخراج يحتاج عتاد صعود ومصافحة حجر وحمولة مقبولة وتخصيص tonne-window.",
+          "external_site": "Draft AR localization pending native pass. يستطيع Black Keel سماع إشارة قبل أن يرفع جسدا. في Aegir، استجابة الحاملة ممر مسعر عبر هندسة الترحيل والطقس ومراجعة الحجر وقبول الحمولة واسترداد الكتلة. الاتصال حقيقة مسار. الإنقاذ سلسلة مكتملة.",
+          "field_note": "Draft AR localization pending native pass. إذا أجاب Black Keel فاحسب الفاتورة لا الإنقاذ. الحزمة المستلمة مجرد مكان في الطابور حتى تتفق الكتلة والختم والحجر والطقس."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Jendela Klaim Black Keel",
+          "scanner": "Draft ID localization pending native pass. JENDELA KLAIM // Relay Aegir hanya memprediksi jendela terima. Pemulihan butuh paket naik, salaman karantina, dan alokasi tonne-window.",
+          "terminal": "Draft ID localization pending native pass. PEMBERITAHUAN KEELMARK // Sinyal operator diterima. Prioritas pemulihan belum selesai. Penerimaan sinyal atau paket bukti tidak menjamin operator dipulihkan.",
+          "audio": "Draft ID localization pending native pass. Relay Black Keel: sinyal operator telah dinilai. Jendela pemulihan tertunda. Jangan samakan penerimaan dengan pengangkatan.",
+          "in_game_wiki": "Draft ID localization pending native pass. Pemberitahuan jendela klaim Black Keel ditemukan. Kontak carrier berarti sinyal mencapai jalur relay Aegir; bukan berarti pemulihan tersedia. Ekstraksi butuh perangkat naik, karantina, muatan diterima, dan alokasi tonne-window.",
+          "external_site": "Draft ID localization pending native pass. Black Keel dapat mendengar sinyal sebelum bisa mengangkat tubuh. Di Aegir, respons carrier adalah jalur berbayar melalui geometri relay, cuaca, karantina, penerimaan muatan, dan pemulihan massa. Kontak adalah fakta rute. Penyelamatan adalah rantai yang selesai.",
+          "field_note": "Draft ID localization pending native pass. Jika Black Keel menjawab, hitung tagihannya, bukan penyelamatan. Paket diterima hanya tempat antrean sampai massa, segel, karantina, dan cuaca sepakat."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Black Keel 청구 창",
+          "scanner": "Draft KO localization pending native pass. 청구 창 // Aegir 릴레이는 수신 창만 예측한다. 회수에는 상승 패키지, 격리 핸드셰이크, tonne-window 배정이 필요하다.",
+          "terminal": "Draft KO localization pending native pass. KEELMARK 보관 통지 // 운용자 신호 수신. 회수 우선순위 미해결. 신호나 증거 패킷 수신은 운용자 회수를 보장하지 않는다.",
+          "audio": "Draft KO localization pending native pass. Black Keel 중계: 운용자 신호 가격 책정. 회수 창 보류. 수신을 인양으로 착각하지 마라.",
+          "in_game_wiki": "Draft KO localization pending native pass. Black Keel 청구 창 통지 회수. 캐리어 접촉은 신호가 Aegir 릴레이 레인에 도달했다는 뜻이지 회수가 가능하다는 뜻이 아니다. 추출에는 상승 장비, 격리, 수락된 탑재물, tonne-window 배정이 필요하다.",
+          "external_site": "Draft KO localization pending native pass. Black Keel은 몸을 들어 올리기 전에 신호를 들을 수 있다. Aegir에서 캐리어 응답은 릴레이 기하, 날씨, 격리 심사, 탑재물 수락, 질량 회수를 지나는 유료 레인이다. 접촉은 경로 사실이다. 구조는 완성된 사슬이다.",
+          "field_note": "Draft KO localization pending native pass. Black Keel이 답하면 구조가 아니라 청구서를 세어라. 받은 패킷은 질량, 봉인, 격리, 날씨가 맞을 때까지 줄의 자리일 뿐이다."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. חלון תביעה של Black Keel",
+          "scanner": "Draft HE localization pending native pass. חלון תביעה // ממסר Aegir חוזה חלון קבלה בלבד. חילוץ דורש חבילת עלייה, לחיצת הסגר והקצאת tonne-window.",
+          "terminal": "Draft HE localization pending native pass. הודעת משמורת KEELMARK // אות מפעיל התקבל. עדיפות חילוץ לא הוכרעה. קבלת אות או חבילת ראיה אינה מבטיחה החזרת מפעיל.",
+          "audio": "Draft HE localization pending native pass. ממסר Black Keel: אות מפעיל תומחר. חלון חילוץ ממתין. אל תבלבל קבלה עם הרמה.",
+          "in_game_wiki": "Draft HE localization pending native pass. נמצאה הודעת חלון תביעה של Black Keel. קשר עם carrier אומר שאות הגיע לנתיב ממסר Aegir; הוא לא אומר שחילוץ זמין. הוצאה דורשת חומרת עלייה, הסגר, מטען שהתקבל והקצאת tonne-window.",
+          "external_site": "Draft HE localization pending native pass. Black Keel יכול לשמוע אות לפני שהוא מרים גוף. ב-Aegir, תגובת carrier היא נתיב מתומחר דרך גאומטריית ממסר, מזג אוויר, בדיקת הסגר, קבלת מטען והשבת מסה. קשר הוא עובדת מסלול. הצלה היא שרשרת שהושלמה.",
+          "field_note": "Draft HE localization pending native pass. אם Black Keel עונה, ספור את החשבון, לא את ההצלה. חבילה שהתקבלה היא רק מקום בתור עד שמסה, חותם, הסגר ומזג אוויר מסתדרים."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Janela de reivindicação do Black Keel",
+          "scanner": "Draft PT localization pending native pass. JANELA DE REIVINDICAÇÃO // O relé de Aegir prevê só recebimento. Recuperação exige pacote de subida, acordo de quarentena e alocação tonne-window.",
+          "terminal": "Draft PT localization pending native pass. AVISO DE CUSTÓDIA KEELMARK // Sinal do operador recebido. Prioridade de recuperação não resolvida. Receber sinal ou pacote de prova não garante recuperação do operador.",
+          "audio": "Draft PT localization pending native pass. Relé Black Keel: sinal do operador precificado. Janela de recuperação pendente. Não confunda recebimento com içamento.",
+          "in_game_wiki": "Draft PT localization pending native pass. Aviso de janela Black Keel recuperado. Contato com carrier quer dizer que o sinal chegou à faixa Aegir; não quer dizer recuperação disponível. Extração exige hardware de subida, quarentena, carga aceita e alocação tonne-window.",
+          "external_site": "Draft PT localization pending native pass. Black Keel pode ouvir um sinal antes de içar um corpo. Em Aegir, resposta de carrier é uma faixa tarifada por geometria de relé, clima, quarentena, aceitação de carga e recuperação de massa. Contato é fato de rota. Resgate é cadeia completa.",
+          "field_note": "Draft PT localization pending native pass. Se Black Keel responder, conte a cobrança, não o resgate. Um pacote recebido é só lugar na fila até massa, selo, quarentena e clima concordarem."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Black Keel-claimvenster",
+          "scanner": "Draft NL localization pending native pass. CLAIMVENSTER // Aegir-relais voorspelt alleen ontvangst. Berging vereist stijgpakket, quarantaine-handshake en tonne-window-toewijzing.",
+          "terminal": "Draft NL localization pending native pass. KEELMARK BEWARINGSBERICHT // Operatorsignaal ontvangen. Bergingsprioriteit onopgelost. Ontvangst van signaal of bewijspakket garandeert geen operatorberging.",
+          "audio": "Draft NL localization pending native pass. Black Keel-relais: operatorsignaal geprijsd. Bergingsvenster wacht. Verwar ontvangst niet met optillen.",
+          "in_game_wiki": "Draft NL localization pending native pass. Black Keel-claimvenster teruggevonden. Carriercontact betekent dat een signaal de Aegir-relaisbaan bereikte; het betekent niet dat berging beschikbaar is. Extractie vereist stijghardware, quarantaine, geaccepteerde lading en tonne-window-toewijzing.",
+          "external_site": "Draft NL localization pending native pass. Black Keel kan een signaal horen voordat het een lichaam optilt. In Aegir is een carrierantwoord een geprijsde baan door relaisgeometrie, weer, quarantainecontrole, ladingacceptatie en massaberging. Contact is een routefeit. Redding is een voltooide keten.",
+          "field_note": "Draft NL localization pending native pass. Als Black Keel antwoordt, tel de rekening, niet de redding. Een ontvangen pakket is alleen een plek in de rij tot massa, zegel, quarantaine en weer kloppen."
+        }
+      }
+    }
+  ]
+}

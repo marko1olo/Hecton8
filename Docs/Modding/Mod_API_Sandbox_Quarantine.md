@@ -3,6 +3,10 @@
 Date: 2026-05-19
 Status: ENVELOPE-ONLY RUNTIME QUARANTINE / SDK AUTHORING REQUIRED / PENDING RUNTIME VERIFICATION
 
+## Authority Boundary
+
+Root `modding.md` owns the public modding boundary. This quarantine file is static/source-route documentation, not runtime loader readiness, platform readiness, release proof, or public API approval. Authoring, local discovery, validator, sandbox, and envelope plans remain `PENDING RUNTIME VERIFICATION` until `Docs/Modding/Runtime_Verification_Playbook.md` passes with current proof artifacts; platform and release claims still require `platform.md` and `release.md`.
+
 Runtime UGC command execution is binary-only. Managed mod entry points are disabled at load time; boot-registered managed factories are rejected while envelope-only mode is active. Mods must serialize fixed 64-byte `FutureCommandEnvelope` packets and submit them through `HectonAPI.Commands.RequestFuture`.
 
 `RequestFuture` is still an owned public facade, not an anonymous pipe. It requires an active `ModExecutionScope`, and the envelope `ModderSignature` must match the active mod hash. Engine package-loader and editor bulk paths use internal validator routes. `FutureCommandSandboxConstants` is internal control-plane data; mods may use only `FutureCommandEnvelope.SizeBytes` for the 64-byte packet layout fact, not runtime budgets, fault hashes, or tuning caps.

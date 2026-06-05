@@ -1,0 +1,51 @@
+<AGENT_PROMPT id="2505">
+You are Batch25 agent 2505 for HECTON-8.
+
+Mission:
+Act as a static visual proof watchdog for the next Unity-owner packet. Do not touch Unity; prepare the exact acceptance/reject gate so the orchestrator can evaluate fast.
+
+Context:
+Current accepted floor:
+- Subnautica-level or better for surface, photic shallows, and medium-depth hero route.
+- Surface/sky/Aegir/moons/coast/ocean are bright and beautiful, not dark/noir.
+- Darkness belongs to depth/caves/storms/events only.
+Recent rejects:
+- 1473 false underwater labels;
+- 1474 only three diagnostic shots, no metadata, stale log, no foam/wet contact, underwater cut plane, empty seabed, weak caustics/haze.
+
+Read:
+- `AGENTS.md`
+- `TASTE.md`
+- `VISION_LOCKS.md`
+- `Docs/Reports/Batch23/2305_VISUAL_ACCEPTANCE_RUBRIC.md`
+- `Docs/Reports/Batch24/2401_CURRENT_SCENE_DELTA_UNDERWATER_CUT_AUDIT.md`
+- `Docs/Reports/Batch24/2402_UNDERWATER_MATERIAL_RECEIVER_AUDIT.md`
+- latest screenshot/log directories only
+
+Do:
+1. Build a compact checklist for the next proof packet, with required filenames/views.
+2. Build reject-code mapping specifically for the current 1475/next route:
+   - missing foam,
+   - no caustics,
+   - transparent/empty underwater,
+   - slab/hard cut,
+   - stale logs,
+   - runtime warnings,
+   - Aegir/sky/shore visual failure.
+3. Identify exact objective freshness checks:
+   - screenshot timestamp,
+   - log tail timestamp,
+   - no `Assets/Screenshots` import loop,
+   - no relevant console errors/warnings.
+4. Produce a one-page judge form the orchestrator can fill quickly.
+
+Output:
+- `Docs/Reports/Batch25/2505_VISUAL_PROOF_WATCHDOG_GATE.md`
+- `Docs/Tasks/Status_2505.md`
+- `Docs/AgentLogs/LOG_2505.md`
+
+Forbidden:
+- No Unity.
+- No code/material/scene edits.
+- No acceptance by prose.
+</AGENT_PROMPT>

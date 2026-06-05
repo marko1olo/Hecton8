@@ -10,28 +10,20 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Site Wiki Endings Spoiler Cluster
+# Endings and Payload Custody
 
-Endings spoiler hub: HECTON-8's outcomes are defined by custody, evidence, Atlas' future and the price of leaving.
+Every known HECTON-8 outcome begins before the final ascent. The decisive object is not only the body in the capsule, but the payload attached to it: coordinates, samples, Atlas records, worker evidence, quarantine status and the legal chain that decides who can call the recovery legitimate.
 
-## Scanner
+Black Keel can lift a survivor and still sell the truth badly. Deep Reach can receive coordinates and bury them under recovery compliance. A public ledger can damage the company without returning the dead. Quarantine can be medically rational and politically useful in the same hour. Material payout can be real money and still leave the ocean holding the important proof.
 
-Publication cluster: endings spoiler gate. Payload receivers, false exits and after-action records.
+Atlas makes the custody problem worse. Severance can end a dangerous repair network, but it can also destroy the last system that remembers the colony as more than an insurance case. Preservation can protect records, but it leaves a damaged maintenance intelligence inside a living ocean-machine. Coordinate sale can end a debt and deliver the most valuable witness to the least trustworthy office.
 
-## Terminal
+The false exits are not failures of courage. They are exits where one chain closes and another remains unpaid. The body leaves, the claim remains. The sample leaves, the worker record does not. The ledger leaks, but the carrier still owns the mass window. The quarantine hold preserves evidence until someone else decides what evidence means.
 
-SITE NAV: hide final payload pages behind spoiler gates. Organize by receiver, custody, public truth, Atlas continuity and escape cost.
-
-## Audio
-
-The ending is not what you press. It is who gets to own the proof afterward.
-
-## Field Note
-
-Use for spoiler-gated site pages and unlocked in-game ending dossier.
+No ending removes custody from the story. The final question is who owns the proof when HECTON-8 falls silent again.
 
 <!-- External Site; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/uk_UA. -->

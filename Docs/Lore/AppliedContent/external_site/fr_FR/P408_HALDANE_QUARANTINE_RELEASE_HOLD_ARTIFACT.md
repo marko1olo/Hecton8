@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# FR LOC: Haldane Quarantine Hold
+# Haldane Quarantine Hold
 
-FR LOC HOLD: HECTON-8's horror is administrative as much as mechanical: correct language can still arrive too late.
+HECTON-8 horror is administrative as much as mechanical: correct language can still arrive too late.
 
 ## Scanner
 
-FR LOC HOLD: Deep Reach artifact: quarantine release hold. Evacuation files stayed correct and late.
+Quarantine release hold. Evacuation files stayed correct and late.
 
 ## Terminal
 
-FR LOC: HALDANE HOLD. Keep survivor count provisional until Atlas continuity resolves.
+QUARANTINE HOLD DESK / HALDANE / RELEASE HOLD: survivor counts remain provisional. External extraction waits on contamination review, custody chain and Atlas log reconciliation.
 
 ## Audio
 
-FR LOC HOLD: The folder was orderly. That was the problem.
+The folder was orderly. That was the problem.
 
 ## Field Note
 
-FR LOC HOLD: Bind to queue terminals and quarantine-release article sections.
+Haldane kept the folder clean. Survivor count provisional. Release pending. Door clocks kept moving while certification waited.
 
 <!-- External Site; generated from P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT/fr_FR. -->

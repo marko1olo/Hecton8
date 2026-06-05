@@ -10,13 +10,13 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Протокол приемника: сохранить и карантинировать
+# Payload Preserve Quarantine Receiver Protocol
 
-Preserve route защищает ocean-machine ecology от прямого corporate reclamation, но quarantine может стать другой формой custody.
+The preserve route protects the ocean-machine ecology from direct corporate reclamation, but quarantine can become another form of custody.
 
 ## Scanner
 
@@ -28,10 +28,10 @@ PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological 
 
 ## Audio
 
-Сохранить живым не значит сохранить свободным.
+Keeping it alive does not mean keeping it free.
 
 ## Field Note
 
-Для preserve/quarantine ending record и public-spoiler copy.
+Receiver record: preservation blocks direct corporate transfer while risking quarantine as another custody system.
 
 <!-- In-Game Wiki; generated from P378_PAYLOAD_PRESERVE_QUARANTINE_RECEIVER_PROTOCOL/ru_RU. -->

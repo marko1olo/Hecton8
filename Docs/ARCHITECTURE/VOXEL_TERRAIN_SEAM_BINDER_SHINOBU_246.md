@@ -1,5 +1,10 @@
 ﻿# Voxel Terrain Seam Binder SHINOBU_246
 
+Status: `STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING`
+Evidence class: `STATIC_DOC / STATIC_SOURCE`
+Owner domain: voxels/terrain seam baking
+Review disposition: `YELLOW / STATIC_DOC_ONLY` until compile/import/runtime/profiler/player proof exists.
+
 Scope: offline/editor seam baking between heightmap terrain meshes and voxel cave meshes.
 
 Runtime authority: none. Runtime loads baked mesh assets and does not run spatial hashing, vertex snapping, normal blending, texture alpha baking, CSV parsing, preview drawing, or scanners.

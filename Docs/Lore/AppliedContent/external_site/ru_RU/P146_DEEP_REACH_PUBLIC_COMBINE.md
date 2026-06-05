@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Публичный комбинат Deep Reach
+# Deep Reach Public Combine
 
-Публичный комбинат Deep Reach дает сайту/wiki публичную корпорацию без смешивания всех shell в одно.
+Deep Reach Public Combine is the public shell name players see first: broad enough for contracts, narrow enough to keep subsidiary offices distinct.
 
 ## Scanner
 
-Публичное имя звучит как development, потому что exploitation не пройдет procurement.
+The public name sounds like development because exploitation would not pass procurement.
 
 ## Terminal
 
-PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine - respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.
+PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.
 
 ## Audio
 
-Чистый титул - самый дешевый pressure suit.
+A clean title is the cheapest pressure suit.
 
 ## Field Note
 
-Печать чистая. Комнаты под ней - нет.
+The seal is clean. The rooms under it are not.
 
 <!-- External Site; generated from P146_DEEP_REACH_PUBLIC_COMBINE/ru_RU. -->

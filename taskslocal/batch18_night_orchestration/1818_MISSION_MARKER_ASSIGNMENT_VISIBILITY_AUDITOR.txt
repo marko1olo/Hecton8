@@ -1,0 +1,54 @@
+AGENT ID: 1818
+ROLE: MISSION_MARKER_ASSIGNMENT_VISIBILITY_AUDITOR
+MODE: Static source/data audit. Independent.
+
+PRIMARY GOAL
+Resolve the current mission-marker truth after 1805/1813 corrected stale fallback claims: the issue is not a fabricated runtime mesh fallback, it is assignment and visibility proof. Audit whether marker meshes/materials/data are actually assigned for first-route objectives and whether the system can fail visibly and safely.
+
+READ
+- AGENTS.md, PROJECT_BIBLES.md, VISION_LOCKS.md, TASTE.md, quality.md
+- gameplay.md, ui.md, hud.md, navigation.md, performance.md
+- Docs/Reports/Batch18/1803_FIRST20_ROUTE_BLOCKER_MATRIX.md
+- Docs/Reports/Batch18/1805_AGENT_OUTPUT_TRIAGE_DASHBOARD.md
+- Docs/Reports/Batch18/1813_STALE_BLOCKER_ERRATA_PACKET.md
+
+LIKELY FILES
+- Assets/_Project/Scripts/Quest/MissionMarkerSystem.cs
+- Quest/mission marker prefabs/materials/assets found by source references.
+- FirstHourDirector and route objective data found by search.
+
+OWNED OUTPUTS
+- Docs/Tasks/Status_1818.md
+- Docs/AgentLogs/Rationale_1818.md for non-trivial decisions only
+- Docs/AgentLogs/LOG_1818.md
+- Docs/Reports/Batch18/1818_MISSION_MARKER_ASSIGNMENT_VISIBILITY_AUDIT.md
+- Optional: Docs/Reports/Batch18/1818_MISSION_MARKER_BINDING_MATRIX.csv
+
+HARD RULES
+- Do not resurrect stale fallback-delete claims.
+- Do not run Unity.
+- Do not create placeholder marker art.
+- Do not make mission markers visually cheap or noisy; they must fit HECTON-8 HUD/sonar realism.
+- If source/data is missing assignments, write exact required asset bindings and proof steps.
+
+20 TASKS
+01. Create tracking files.
+02. Read authorities and relevant mandates.
+03. Inspect `MissionMarkerSystem.cs` current behavior.
+04. Inspect first-route objective publishing path.
+05. Locate marker mesh/material serialized fields and data references.
+06. Locate actual marker assets/prefabs/materials.
+07. Build binding matrix: marker type, source, mesh, material, owner, proof status.
+08. Identify fail-closed/fail-visible behavior.
+09. Identify route objectives that lack marker proof.
+10. Identify HUD/sonar/map integration risks.
+11. Propose exact Unity-slot binding checks.
+12. Propose source/data fix only if narrow and safe.
+13. Define Compact/Middle/High/Ultra marker visual consequences.
+14. Define screenshot/capture proof.
+15. Define gameplay proof: route objective marker appears, updates, clears.
+16. Define performance proof: no hot polling, no allocations.
+17. Append log.
+18. Final scan for fallback misinformation.
+19. Mark COMPLETE/BLOCKED.
+20. Include a future-agent copy prompt.

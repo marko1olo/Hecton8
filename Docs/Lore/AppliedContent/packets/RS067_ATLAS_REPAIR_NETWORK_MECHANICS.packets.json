@@ -498,7 +498,7 @@
           "audio": "It is not hunting you. It may still report you.",
           "in_game_wiki": "Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.",
           "external_site": "The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.",
-          "field_note": "Use for scanner clues, not boss telegraphs."
+          "field_note": "Scanner returns remain environmental evidence: tag, migration, repair priority, and no explicit predator command."
         },
         "ru_RU": {
           "title": "Feedback loop sensor-tagged fauna",
@@ -507,7 +507,7 @@
           "audio": "Оно не охотится на тебя. Но оно все равно может тебя доложить.",
           "in_game_wiki": "Feedback loop sensor-tagged fauna объясняет, почему животные меняют route pressure. Это не управляемые солдаты, а шумные data points в сломанной maintenance system.",
           "external_site": "Океан остается чужим, не превращаясь в говорящий разум. Atlas читает жизнь как telemetry и повреждает ее использованием.",
-          "field_note": "Для scanner clues, не boss telegraphs."
+          "field_note": "Draft RU localization pending native pass. Scanner returns remain environmental evidence: tag, migration, repair priority, and no explicit predator command."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Sensor-Tagged Fauna Feedback Loop",
@@ -516,7 +516,7 @@
           "audio": "Draft JA localization pending native pass. It is not hunting you. It may still report you.",
           "in_game_wiki": "Draft JA localization pending native pass. Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.",
           "external_site": "Draft JA localization pending native pass. The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.",
-          "field_note": "Draft JA localization pending native pass. Use for scanner clues, not boss telegraphs."
+          "field_note": "Draft JP localization pending native pass. Scanner returns remain environmental evidence: tag, migration, repair priority, and no explicit predator command."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Sensor-Tagged Fauna Feedback Loop",
@@ -525,7 +525,7 @@
           "audio": "Draft ZH localization pending native pass. It is not hunting you. It may still report you.",
           "in_game_wiki": "Draft ZH localization pending native pass. Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.",
           "external_site": "Draft ZH localization pending native pass. The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.",
-          "field_note": "Draft ZH localization pending native pass. Use for scanner clues, not boss telegraphs."
+          "field_note": "Draft CN localization pending native pass. Scanner returns remain environmental evidence: tag, migration, repair priority, and no explicit predator command."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Sensor-Tagged Fauna Feedback Loop",
@@ -534,7 +534,7 @@
           "audio": "Draft FR localization pending native pass. It is not hunting you. It may still report you.",
           "in_game_wiki": "Draft FR localization pending native pass. Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.",
           "external_site": "Draft FR localization pending native pass. The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.",
-          "field_note": "Draft FR localization pending native pass. Use for scanner clues, not boss telegraphs."
+          "field_note": "Draft FR localization pending native pass. Scanner returns remain environmental evidence: tag, migration, repair priority, and no explicit predator command."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Sensor-Tagged Fauna Feedback Loop",
@@ -543,7 +543,7 @@
           "audio": "Draft ES localization pending native pass. It is not hunting you. It may still report you.",
           "in_game_wiki": "Draft ES localization pending native pass. Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.",
           "external_site": "Draft ES localization pending native pass. The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.",
-          "field_note": "Draft ES localization pending native pass. Use for scanner clues, not boss telegraphs."
+          "field_note": "Draft ES localization pending native pass. Scanner returns remain environmental evidence: tag, migration, repair priority, and no explicit predator command."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Sensor-Tagged Fauna Feedback Loop",
@@ -552,7 +552,7 @@
           "audio": "Draft DE localization pending native pass. It is not hunting you. It may still report you.",
           "in_game_wiki": "Draft DE localization pending native pass. Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.",
           "external_site": "Draft DE localization pending native pass. The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.",
-          "field_note": "Draft DE localization pending native pass. Use for scanner clues, not boss telegraphs."
+          "field_note": "Draft DE localization pending native pass. Scanner returns remain environmental evidence: tag, migration, repair priority, and no explicit predator command."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Sensor-Tagged Fauna Feedback Loop",
@@ -561,7 +561,7 @@
           "audio": "Draft PL localization pending native pass. It is not hunting you. It may still report you.",
           "in_game_wiki": "Draft PL localization pending native pass. Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.",
           "external_site": "Draft PL localization pending native pass. The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.",
-          "field_note": "Draft PL localization pending native pass. Use for scanner clues, not boss telegraphs."
+          "field_note": "Draft PL localization pending native pass. Scanner returns remain environmental evidence: tag, migration, repair priority, and no explicit predator command."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Sensor-Tagged Fauna Feedback Loop",
@@ -570,7 +570,7 @@
           "audio": "Draft UK localization pending native pass. It is not hunting you. It may still report you.",
           "in_game_wiki": "Draft UK localization pending native pass. Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.",
           "external_site": "Draft UK localization pending native pass. The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.",
-          "field_note": "Draft UK localization pending native pass. Use for scanner clues, not boss telegraphs."
+          "field_note": "Draft UA localization pending native pass. Scanner returns remain environmental evidence: tag, migration, repair priority, and no explicit predator command."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Sensor-Tagged Fauna Feedback Loop",
@@ -579,7 +579,7 @@
           "audio": "Draft AR localization pending native pass. It is not hunting you. It may still report you.",
           "in_game_wiki": "Draft AR localization pending native pass. Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.",
           "external_site": "Draft AR localization pending native pass. The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.",
-          "field_note": "Draft AR localization pending native pass. Use for scanner clues, not boss telegraphs."
+          "field_note": "Draft AR localization pending native pass. Scanner returns remain environmental evidence: tag, migration, repair priority, and no explicit predator command."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Sensor-Tagged Fauna Feedback Loop",
@@ -588,7 +588,7 @@
           "audio": "Draft ID localization pending native pass. It is not hunting you. It may still report you.",
           "in_game_wiki": "Draft ID localization pending native pass. Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.",
           "external_site": "Draft ID localization pending native pass. The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.",
-          "field_note": "Draft ID localization pending native pass. Use for scanner clues, not boss telegraphs."
+          "field_note": "Draft ID localization pending native pass. Scanner returns remain environmental evidence: tag, migration, repair priority, and no explicit predator command."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Sensor-Tagged Fauna Feedback Loop",
@@ -597,7 +597,7 @@
           "audio": "Draft KO localization pending native pass. It is not hunting you. It may still report you.",
           "in_game_wiki": "Draft KO localization pending native pass. Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.",
           "external_site": "Draft KO localization pending native pass. The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.",
-          "field_note": "Draft KO localization pending native pass. Use for scanner clues, not boss telegraphs."
+          "field_note": "Draft KO localization pending native pass. Scanner returns remain environmental evidence: tag, migration, repair priority, and no explicit predator command."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Sensor-Tagged Fauna Feedback Loop",
@@ -606,7 +606,7 @@
           "audio": "Draft HE localization pending native pass. It is not hunting you. It may still report you.",
           "in_game_wiki": "Draft HE localization pending native pass. Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.",
           "external_site": "Draft HE localization pending native pass. The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.",
-          "field_note": "Draft HE localization pending native pass. Use for scanner clues, not boss telegraphs."
+          "field_note": "Draft HE localization pending native pass. Scanner returns remain environmental evidence: tag, migration, repair priority, and no explicit predator command."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Sensor-Tagged Fauna Feedback Loop",
@@ -615,7 +615,7 @@
           "audio": "Draft PT localization pending native pass. It is not hunting you. It may still report you.",
           "in_game_wiki": "Draft PT localization pending native pass. Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.",
           "external_site": "Draft PT localization pending native pass. The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.",
-          "field_note": "Draft PT localization pending native pass. Use for scanner clues, not boss telegraphs."
+          "field_note": "Draft PT localization pending native pass. Scanner returns remain environmental evidence: tag, migration, repair priority, and no explicit predator command."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Sensor-Tagged Fauna Feedback Loop",
@@ -624,7 +624,7 @@
           "audio": "Draft NL localization pending native pass. It is not hunting you. It may still report you.",
           "in_game_wiki": "Draft NL localization pending native pass. Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.",
           "external_site": "Draft NL localization pending native pass. The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.",
-          "field_note": "Draft NL localization pending native pass. Use for scanner clues, not boss telegraphs."
+          "field_note": "Draft NL localization pending native pass. Scanner returns remain environmental evidence: tag, migration, repair priority, and no explicit predator command."
         }
       }
     },

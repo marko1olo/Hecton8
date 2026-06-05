@@ -71,9 +71,9 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _AtmosphereInscatterWeight: 0.78
-    - _AtmosphereTransmittanceWeight: 0.92
-    - _BacklitIntensity: 0.11
+    - _AtmosphereInscatterWeight: 0.18
+    - _AtmosphereTransmittanceWeight: 0.28
+    - _BacklitIntensity: 0.08
     - _CelestialOcclusionDetailFade: 0.75
     - _CelestialOcclusionHorizonBoost: 1.4
     - _CelestialOcclusionScrollSpeed: 0.001
@@ -96,7 +96,7 @@ Material:
     - _PolarMultiplier: 0
     - _QueueControl: 0
     - _QueueOffset: 0
-    - _StormEmission: 3.1
+    - _StormEmission: 0.65
     - _StormSpeed: 0.01
     - _SunBacklitFactor: 0.445
     - _SurfaceDetailContrast: 0.82

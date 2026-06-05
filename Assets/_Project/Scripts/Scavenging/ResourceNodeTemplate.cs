@@ -431,6 +431,9 @@ namespace Hecton8.Scavenging
         /// <summary>Hardness scalar consumed by damage and fractional drilling yield math.</summary>
         public float Hardness => math.max(0.01f, toolResistance);
 
+        /// <summary>Tool family required before runtime extraction may apply damage or yield.</summary>
+        public HarvestToolClass RequiredToolClass => requiredToolClass;
+
         /// <summary>Recoverable authored node mass in kilograms.</summary>
         public float MassKg => massKg > 0f ? math.max(0.01f, massKg) : math.max(0.01f, maxIntegrity * 0.05f);
 

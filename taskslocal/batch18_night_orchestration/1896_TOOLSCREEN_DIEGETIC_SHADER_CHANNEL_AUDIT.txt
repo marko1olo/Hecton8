@@ -1,0 +1,76 @@
+ID: 1896
+TITLE: TOOLSCREEN_DIEGETIC_SHADER_CHANNEL_AUDIT
+MODE: REPORT_ONLY_STATIC_SHADER_CONTRACT_AUDIT
+
+You are HECTON-8 batch agent 1896.
+Do not edit source, assets, prefabs, scenes, binaries, `.meta`, generated meshes, DataMonolith, task files, or sibling outputs.
+
+PRIMARY GOAL
+
+Close the `Hecton_ToolScreenDiegetic` channel-contract gap identified by 1888 if enough source exists. If the shader/source does not exist or is incomplete, produce a precise blocked contract and implementation requirement. Do not guess.
+
+READ
+
+- `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `VISION_LOCKS.md`
+- `TASTE.md`
+- `quality.md`
+- `3dmodel.md`
+- `3DMODEL_TEXTURES_MATERIALS.md`
+- `shaders.md`
+- `rendering.md`
+- `tools.md`
+- `Docs/Reports/Batch18/1880_TOOL_MATERIAL_TEXTURE_ROLE_PACKAGE.md`
+- `Docs/Reports/Batch18/1888_PRODUCT_FACE_TEXTURE_CHANNEL_MANIFEST_AND_SHADER_AUDIT.md`
+- `Docs/Reports/Batch18/1890_PRODUCT_FACE_MATERIAL_TEXTURE_VALIDATOR_IMPLEMENTATION.md` if present.
+
+Mandates:
+
+- `.agents-skills/QA_Evidence_Text_Filter_Audit.txt`
+- `.agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt`
+
+OUTPUTS YOU OWN
+
+- `Docs/Reports/Batch18/1896_TOOLSCREEN_DIEGETIC_SHADER_CHANNEL_AUDIT.md`
+- `Docs/Reports/Batch18/1896_TOOLSCREEN_DIEGETIC_SHADER_CHANNEL_MATRIX.csv`
+- `Docs/Tasks/Status_1896.md`
+- `Docs/AgentLogs/Rationale_1896.md`
+- `Docs/AgentLogs/LOG_1896.md`
+
+CSV COLUMNS
+
+- `shader_or_material`
+- `source_path`
+- `slot_or_property`
+- `observed_semantics`
+- `accepted_channel_contract`
+- `missing_contract_piece`
+- `tool_family_impact`
+- `future_material_rule`
+- `status`
+
+REQUIRED WORK
+
+1. Search for `Hecton_ToolScreenDiegetic`, `ToolScreenDiegetic`, `Diegetic`, `ToolScreen`, and related material names.
+2. Inspect shader/HLSL/material source by targeted reads.
+3. Determine exact texture slots and packed-map semantics only if source proves them.
+4. If source is absent or ambiguous, keep status `BLOCKED_CHANNEL_CONTRACT_REQUIRED`.
+5. Define how tool screens can look premium on Low/Middle/High/Ultra without fake flat emissive rectangles.
+6. Define what screen effects are allowed: scanlines, scratches, grime, wetness, emissive glyph masks, depth readout, oxygen/sonar hints, but only with texture/material proof.
+7. Reject placeholder UI screenshots, default emission, package material, and crayon/noise screen textures.
+8. Define how this contract interacts with handheld tools and cockpit readability.
+9. Do not edit shaders or materials.
+10. Do not claim runtime/screenshot acceptance.
+
+VERIFICATION
+
+Run and record:
+
+- `git diff --check -- Docs/Reports/Batch18/1896_TOOLSCREEN_DIEGETIC_SHADER_CHANNEL_AUDIT.md Docs/Reports/Batch18/1896_TOOLSCREEN_DIEGETIC_SHADER_CHANNEL_MATRIX.csv Docs/Tasks/Status_1896.md Docs/AgentLogs/Rationale_1896.md Docs/AgentLogs/LOG_1896.md`
+- `Import-Csv Docs/Reports/Batch18/1896_TOOLSCREEN_DIEGETIC_SHADER_CHANNEL_MATRIX.csv | Measure-Object`
+- static term cross-check for `ToolScreenDiegetic`, `emission`, `scanline`, `scratch`, `wetness`, `packed`, `Subnautica`, `PENDING UNITY`.
+
+FINAL RESPONSE
+
+Report changed files, CSV row count, whether the channel contract is accepted or still blocked, and exact future shader/material requirements.

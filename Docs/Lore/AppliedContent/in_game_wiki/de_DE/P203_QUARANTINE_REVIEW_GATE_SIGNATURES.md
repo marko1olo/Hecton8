@@ -10,21 +10,21 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Quarantine Review Gate Signatures
+# Quarantine Hold Signatures
 
-Quarantine Review Gate signatures keep Deep Reach guilty through delay, not cartoon murder.
+Quarantine hold signatures keep Deep Reach guilty through delay, not cartoon murder.
 
 ## Scanner
 
-The gate does not need malice. It needs one unresolved hazard field.
+The hold does not need malice. It needs one unresolved hazard field.
 
 ## Terminal
 
-SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Function: holds extraction pending pressure-biology certification and external review.
+SIGNATURE SEED: Ikenna Sor, Quarantine Hold Desk. Function: holds extraction pending pressure-biology certification and external review.
 
 ## Audio
 
@@ -32,6 +32,6 @@ Pending review is still a locked door.
 
 ## Field Note
 
-Quarantine signatures should be physically paired with broken evacuation hardware or locked survivor routes.
+Quarantine hold signatures belong beside broken evacuation hardware or locked survivor routes.
 
 <!-- In-Game Wiki; generated from P203_QUARANTINE_REVIEW_GATE_SIGNATURES/de_DE. -->

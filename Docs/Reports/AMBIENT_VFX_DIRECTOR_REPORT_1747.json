@@ -1,0 +1,319 @@
+{
+  "agent_id": "1747",
+  "role": "AMBIENT_PARTICLE_AND_MARINE_SNOW_SCATTER_DIRECTOR",
+  "status": "STATIC_DONE_WITH_PENDING_RUNTIME_PROOF",
+  "generated_local_date": "2026-06-03",
+  "runtime_code_changed": false,
+  "authority_read": [
+    "AGENTS.md",
+    "PROJECT_BIBLES.md",
+    "TASTE.md",
+    "quality.md",
+    "rendering.md",
+    "lighting.md",
+    "water.md",
+    "presentation.md",
+    "performance.md",
+    "systems.md",
+    "data.md",
+    "telemetry.md"
+  ],
+  "mandates_read": [
+    ".agents-skills/REND_VFX_Fluid_Aesthetics_Compute_Particles.txt",
+    ".agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt",
+    ".agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt",
+    ".agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt",
+    ".agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt",
+    ".agents-skills/ARCH_Execution_Phases.txt",
+    ".agents-skills/ARCH_Global_Registry_ServiceLocator_DI_Init.txt",
+    ".agents-skills/CORE_Weather_Abyssal_FlowField_Currents.txt"
+  ],
+  "generated_artifacts": [
+    {
+      "path": "Docs/Tasks/Status_1747.md",
+      "sha256": "66841DCA1522A1EA49BC8C3AE397C6E63907458CCE7E7CBDD534AB2E2EB0AF82"
+    },
+    {
+      "path": "Docs/AgentLogs/Rationale_1747.md",
+      "sha256": "2020BE88FC91110E39B9DEAEA1042DBF7662C818E7F640C22F1236AD15F8B3BA"
+    },
+    {
+      "path": "Docs/AgentLogs/LOG_1747.md",
+      "sha256": "C3AF0EE3007E806905152870C2000C0D63CB04E584ADF41CED4A9B693702E553"
+    }
+  ],
+  "inspected_source_hashes": [
+    {
+      "path": "Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs",
+      "sha256": "81F88ABF891467577C8850DFE489C06B94E2D6C7222FD57B4794B1DCED82FBB3"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs",
+      "sha256": "84A9EEBB28E80EC04FDA746EE5EE47D9260C9D5AB8FD8BA131D17EBF01343F8E"
+    },
+    {
+      "path": "Assets/_Project/Art/Shaders/Hecton_MarineSnow.compute",
+      "sha256": "2329E329430BBCED3A60E7E5E8B3D01878BEE2CD4A669F61A7DF83A7076A2C11"
+    },
+    {
+      "path": "Assets/_Project/Art/Shaders/Hecton_MarineSnow.shader",
+      "sha256": "ABA61C1ACF19A6CA020B4625F2D357634862BE8086F2A3C33AEEC86464671E24"
+    },
+    {
+      "path": "Assets/_Project/Scripts/VFX/VfxComputeParticleBudgetCatalog.cs",
+      "sha256": "04A3CFAB5668FB14C2936074CCCF2CEFC9D7876F86AC0C74D5C80F0F150B5E1F"
+    }
+  ],
+  "owner_resolution": {
+    "primary_runtime_owner": "Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs",
+    "publisher": "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs",
+    "compute_shader": "Assets/_Project/Art/Shaders/Hecton_MarineSnow.compute",
+    "render_shader": "Assets/_Project/Art/Shaders/Hecton_MarineSnow.shader",
+    "budget_catalog": "Assets/_Project/Scripts/VFX/VfxComputeParticleBudgetCatalog.cs",
+    "missing_candidate": "Assets/_Project/Scripts/WorldProceduralScatterDirector.Bridge.cs",
+    "rejected_candidate": "WreckageScatterManager.cs is not the ambient marine-snow owner."
+  },
+  "static_checks": {
+    "marine_snow_owner_forbidden_calls": {
+      "files": [
+        "Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs",
+        "Assets/_Project/Scripts/VFX/VolumetricSiltContracts.cs",
+        "Assets/_Project/Scripts/VFX/VfxComputeParticleBudgetCatalog.cs"
+      ],
+      "get_particles": false,
+      "set_particles": false,
+      "particle_system_hot_owner": false,
+      "new_game_object": false,
+      "instantiate": false,
+      "resources_load": false,
+      "global_registry_get_generic": false,
+      "proof": "Scoped rg scan returned no forbidden hot-route tokens in the GPU marine-snow owner and its VFX DTO/budget files."
+    },
+    "candidate_scatter_instantiation_notes": [
+      {
+        "path": "Assets/_Project/Scripts/WorldProceduralScatterDirector.cs",
+        "matches": [
+          "new GameObject at 4220",
+          "Instantiate at 7943",
+          "new GameObject at 7951",
+          "new GameObject at 11304"
+        ],
+        "interpretation": "World/procedural placement and service-root creation paths, not the ambient marine-snow renderer."
+      }
+    ],
+    "global_registry_hot_polling": {
+      "status": "STATIC_VERIFIED",
+      "details": "No GlobalRegistry.Get< call was found in the scoped marine-snow owner. Registry property reads are in enable, hotswap, cached dependency, or cold rebind paths.",
+      "evidence": [
+        "HectonMarineSnowRenderer.cs:1082",
+        "HectonMarineSnowRenderer.cs:1047",
+        "HectonMarineSnowRenderer.cs:1334"
+      ]
+    }
+  },
+  "implemented_existing_route": {
+    "execution_phase": {
+      "status": "STATIC_VERIFIED",
+      "details": "Renderer implements ILateFrameTickable and runs marine-snow simulation/render in LateFrameTick/RunMarineSnowVisualTick.",
+      "evidence": [
+        "HectonMarineSnowRenderer.cs:32",
+        "HectonMarineSnowRenderer.cs:1215",
+        "HectonMarineSnowRenderer.cs:1262"
+      ]
+    },
+    "camera_bound_particles": {
+      "status": "STATIC_VERIFIED",
+      "details": "Draw bounds are centered on target camera and sized by the configured shell; particles wrap around the camera shell in compute.",
+      "evidence": [
+        "HectonMarineSnowRenderer.cs:4657",
+        "HectonMarineSnowRenderer.cs:4670",
+        "Hecton_MarineSnow.compute:1049",
+        "Hecton_MarineSnow.compute:1387"
+      ]
+    },
+    "density_and_turbidity": {
+      "status": "STATIC_VERIFIED",
+      "details": "Publisher builds target emission from depth, biome turbidity, darkness, clear-water daylight, ecology multiplier, adaptive scale, bottom silt, submerge impulse, and FrameTimeWatchdog particle scale. It normalizes this to densityScale and calls SetUnderwaterState.",
+      "evidence": [
+        "HectonUnderwaterVisuals.cs:5617",
+        "HectonUnderwaterVisuals.cs:5634",
+        "HectonUnderwaterVisuals.cs:5652",
+        "HectonUnderwaterVisuals.cs:5669",
+        "HectonUnderwaterVisuals.cs:5682",
+        "HectonUnderwaterVisuals.cs:7638"
+      ]
+    },
+    "flow_and_wake_velocity": {
+      "status": "STATIC_VERIFIED",
+      "details": "Compute path blends flow field, dynamic wakes, propwash, shallow-water velocity, curl-noise fake, mock acoustic impulse, flow synchrony, propwash sand force, and maelstrom force into particle velocity.",
+      "evidence": [
+        "Hecton_MarineSnow.compute:441",
+        "Hecton_MarineSnow.compute:462",
+        "Hecton_MarineSnow.compute:546",
+        "Hecton_MarineSnow.compute:616",
+        "Hecton_MarineSnow.compute:1267",
+        "Hecton_MarineSnow.compute:1275",
+        "Hecton_MarineSnow.compute:1286"
+      ]
+    },
+    "flipbook_and_material": {
+      "status": "STATIC_VERIFIED",
+      "details": "Shader uses baked mask and normal atlases, atlas columns/rows defaults of 8x8, life/time-driven flipbook UVs, and water-extinction lighting.",
+      "evidence": [
+        "Hecton_MarineSnow.shader:7",
+        "Hecton_MarineSnow.shader:8",
+        "Hecton_MarineSnow.shader:9",
+        "Hecton_MarineSnow.shader:154",
+        "Hecton_MarineSnow.shader:248"
+      ]
+    },
+    "fill_rate_controls": {
+      "status": "STATIC_VERIFIED_PENDING_FRAME_DEBUGGER",
+      "details": "Shader is AlphaTest/TransparentCutout with AlphaToMask and dithered coverage; compute appends visible particles only. Measured overdraw is pending Frame Debugger.",
+      "evidence": [
+        "Hecton_MarineSnow.shader:17",
+        "Hecton_MarineSnow.shader:24",
+        "Hecton_MarineSnow.shader:243",
+        "Hecton_MarineSnow.compute:959",
+        "Hecton_MarineSnow.compute:1402"
+      ]
+    },
+    "clear_water_bypass": {
+      "status": "STATIC_VERIFIED",
+      "details": "Effective density below epsilon clears active count and sonar/fog globals, then returns before GPU dispatch.",
+      "evidence": [
+        "HectonMarineSnowRenderer.cs:1270",
+        "HectonMarineSnowRenderer.cs:1311"
+      ]
+    },
+    "data_vault_compaction": {
+      "status": "STATIC_VERIFIED",
+      "details": "DataVault binding and buffer resolution fail closed when compaction is active; native readiness is cleared and rebind is retried by cadence.",
+      "evidence": [
+        "HectonMarineSnowRenderer.cs:1334",
+        "HectonMarineSnowRenderer.cs:1370",
+        "HectonMarineSnowRenderer.cs:1677",
+        "HectonMarineSnowRenderer.cs:1727"
+      ]
+    },
+    "black_box": {
+      "status": "STATIC_VERIFIED",
+      "details": "MarineSnowTelemetryEntry ring is 300 frames. Non-finite state or estimated high GPU cost dumps the ring through NativeFaultDumpWriter.",
+      "evidence": [
+        "HectonMarineSnowRenderer.cs:4940",
+        "HectonMarineSnowRenderer.cs:5007",
+        "HectonMarineSnowRenderer.cs:5057",
+        "HectonMarineSnowRenderer.cs:5077"
+      ]
+    }
+  },
+  "budget_and_scaling": {
+    "source_of_truth": "Assets/_Project/Scripts/VFX/VfxComputeParticleBudgetCatalog.cs",
+    "marine_snow_counts": {
+      "minimum": 8000,
+      "middle": 14336,
+      "maximum": 100000,
+      "overkill": 100000
+    },
+    "continuous_controls": [
+      "HomeostasisBrain.GlobalQualityWeight",
+      "HomeostasisBrain.PressureLevel",
+      "Homeostasis kill-switch mask",
+      "DynamicResolutionScaler.CurrentRenderScale",
+      "IVramBudgetReadModel.PressureStateCode",
+      "effective density scale",
+      "biolume surge",
+      "bubble trail/exhale scalar"
+    ],
+    "rejected_task_assumption": "The stale 500/5000 hard-cap wording was not applied because it conflicts with the existing continuous budget catalog and root GlobalQualityWeight doctrine.",
+    "evidence": [
+      "VfxComputeParticleBudgetCatalog.cs:43",
+      "VfxComputeParticleBudgetCatalog.cs:46",
+      "VfxComputeParticleBudgetCatalog.cs:49",
+      "VfxComputeParticleBudgetCatalog.cs:52",
+      "HectonMarineSnowRenderer.cs:4869",
+      "HectonMarineSnowRenderer.cs:5190",
+      "HectonMarineSnowRenderer.cs:5257",
+      "HectonMarineSnowRenderer.cs:5395"
+    ]
+  },
+  "three_pillar_acceptance": {
+    "graphics": {
+      "status": "STATIC_ROUTE_VERIFIED_PENDING_SCREENSHOT",
+      "details": "Textured atlas, normal atlas, water extinction, headlight boost, flow-tinted propwash, and camera-bound shell are present. Actual visual quality screenshot is pending."
+    },
+    "optimization": {
+      "status": "STATIC_ROUTE_VERIFIED_PENDING_PROFILER",
+      "details": "GPU compute state, indirect draw, density early-out, visible-index list, continuous budget compression, and no scoped GetParticles/SetParticles were verified. Runtime timing and GC are pending."
+    },
+    "gameplay": {
+      "status": "STATIC_ROUTE_VERIFIED",
+      "details": "Presentation responds to biome turbidity, bottom silt, player movement, exhale impulse, weather biolume, flow, wakes, and propwash without changing gameplay authority."
+    }
+  },
+  "device_scaling_consequences": {
+    "low": "Density early-out, pressure budgets, render-scale compression, VRAM pressure response, kill-switch masks, reduced flow/depth quality lanes, and alpha-clipped atlas particles preserve readable particulate without global emitters.",
+    "middle": "More active particles, periodic flow sampling, bubble/debris response, and clear biome contrast while maintaining the same GPU buffer/DTO route.",
+    "high": "Higher flow, collision, atlas normal, and wake detail can run within the same camera-bound shell and indirect draw route.",
+    "ultra": "Visual-overkill count and quality lanes spend saved performance on dense, textured, flow-reactive marine snow without changing gameplay truth, save identity, or DTO layout."
+  },
+  "validation": {
+    "dotnet_build": {
+      "status": "NOT_RUN",
+      "reason": "No runtime C# source was changed; no compile-impacting edit required a build. CPU/compiler gate was therefore not invoked."
+    },
+    "unity_validate_script": {
+      "status": "NOT_RUN",
+      "reason": "No runtime C# source was changed."
+    },
+    "profiler_gc_allocation": {
+      "status": "PENDING_PROFILER_PROOF",
+      "claim_zero_bytes": false
+    },
+    "frame_debugger_fill_rate": {
+      "status": "PENDING_FRAME_DEBUGGER_PROOF"
+    },
+    "visual_screenshots": {
+      "status": "PENDING_SCREENSHOT_PROOF"
+    }
+  },
+  "task_state_summary": {
+    "done": [
+      "01",
+      "02",
+      "03",
+      "04",
+      "05",
+      "06",
+      "07",
+      "09",
+      "10",
+      "11",
+      "12",
+      "13",
+      "14",
+      "16",
+      "17",
+      "18",
+      "20",
+      "21",
+      "24"
+    ],
+    "not_applicable": [
+      "08",
+      "15",
+      "19"
+    ],
+    "pending_verification": [
+      "22",
+      "23"
+    ],
+    "blocked": []
+  },
+  "residual_risks": [
+    "No Unity runtime screenshot was captured, so visual floor is not measured.",
+    "No Unity Profiler or Memory Profiler capture was run, so 0 B/frame and frame-time claims are pending.",
+    "No Frame Debugger capture was run, so fill-rate and overdraw reduction are pending measured proof.",
+    "Collision-impact and damage-router VFX signal expansion were not edited because no owned ambient marine-snow defect was found."
+  ]
+}

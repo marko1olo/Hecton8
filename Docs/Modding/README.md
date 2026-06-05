@@ -6,6 +6,7 @@ Status: ENVELOPE-ONLY MODDING AUTHORITY / SDK PLAN ADDED / RUNTIME_PENDING
 ## Authority Boundary
 
 Static documentation only. Current source, active architecture contracts, fresh proof artifacts, and official platform rules override dated claims in this file. No runtime, profiler, memory, render, platform, public-page, or ship-readiness proof is implied by this file alone.
+Root `modding.md` owns the public modding boundary: envelope-only public API planning until the runtime verification playbook proves otherwise. Local starter kit, discovery, install, diagnosis, Workbench, CLI, and submission flows are authoring/discovery states, not runtime loader readiness, SDK readiness, platform readiness, or release proof. Runtime pending remains the default label.
 
 Owner domain: Modding API static contract
 

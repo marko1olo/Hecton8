@@ -2,9 +2,13 @@
 
 
 
+WARNING: NON-BINDING SUPPORTING/HISTORICAL DUPLICATE.
+
+The binding procedural asset package route bible is root `PROCEDURAL_ASSET_PIPELINE.md`. Use this `Docs/PROCEDURAL_ASSET_PIPELINE.md` file only as supporting historical context when a task explicitly cites it. It must not override `PROJECT_BIBLES.md`, `Docs/README.md`, or root `PROCEDURAL_ASSET_PIPELINE.md`.
+
 Date: 2026-05-21
 
-Status: ACTIVE STATIC CONTRACT / RUNTIME PENDING
+Status: NON-BINDING SUPPORTING/HISTORICAL DUPLICATE / RUNTIME PENDING
 
 Evidence class: STATIC_DOC / STATIC_SOURCE orientation only.
 

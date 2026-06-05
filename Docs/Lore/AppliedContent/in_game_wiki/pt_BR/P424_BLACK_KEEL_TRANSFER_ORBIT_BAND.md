@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# PT-BR LOC: Black Keel Transfer Band
+# Black Keel Transfer Band
 
-PT LOC HOLD: The carrier's orbit explains why contact, payload pickup and human extraction are different problems.
+The carrier's orbit explains why contact, payload pickup and human extraction are different problems.
 
 ## Scanner
 
-PT-BR LOC: Carrier band: Black Keel loiters high, not above HECTON-8.
+Carrier band: Black Keel loiters high, not above HECTON-8.
 
 ## Terminal
 
-PT-BR LOC: CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.
+CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.
 
 ## Audio
 
-PT LOC HOLD: It is not parked above you. It is waiting where insurance allows it to wait.
+It is not parked above you. It is waiting where insurance allows it to wait.
 
 ## Field Note
 
-PT LOC HOLD: Use for ship page, escape route UI and partial-exit explanation.
+Carrier orbit record: Black Keel can receive payloads before it can retrieve people; that gap drives partial-exit logic.
 
 <!-- In-Game Wiki; generated from P424_BLACK_KEEL_TRANSFER_ORBIT_BAND/pt_BR. -->

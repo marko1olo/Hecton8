@@ -1,0 +1,51 @@
+AGENT ID: 1821
+ROLE: SHORELINE_WATERLINE_BAKE_SPEC_REPLACEMENT
+MODE: No-Unity static bake spec. Replacement for stalled 1807; do not depend on 1807.
+
+PRIMARY GOAL
+Produce the missing shoreline/waterline offline bake specification and input CSV that 1807 failed to finish. This is a static/offline packet only: contact foam, wet basalt masks, sediment bands, caustic edge overlays, material slots, existing tools/assets first, and explicit Unity-slot proof requirements.
+
+READ
+- AGENTS.md, PROJECT_BIBLES.md, VISION_LOCKS.md, TASTE.md, quality.md
+- water.md, world.md, terrain.md, rendering.md, shaders.md, performance.md
+- Docs/Reports/Batch18/1801_WORLD_SURFACE_ROUTE_EVIDENCE.md
+- Docs/Reports/Batch18/1802_SURFACE_SHALLOW_ASSET_INVENTORY.md
+- Docs/Reports/Batch18/1806_SURFACE_ROUTE_ACTION_MANIFEST.md
+- Docs/Reports/Batch18/1816_SURFACE_ROUTE_UNITY_SLOT_PACKET.md
+
+OWNED OUTPUTS
+- Docs/Tasks/Status_1821.md
+- Docs/AgentLogs/Rationale_1821.md for non-trivial decisions only
+- Docs/AgentLogs/LOG_1821.md
+- Docs/Reports/Batch18/1821_SHORELINE_WATERLINE_OFFLINE_BAKE_SPEC.md
+- Docs/Reports/Batch18/1821_SHORELINE_WATERLINE_BAKE_INPUTS.csv
+
+HARD RULES
+- Do not run Unity, PlayMode, profiler, builds, or live screenshots.
+- Do not edit materials, shaders, prefabs, scenes, or package assets.
+- Do not wait for 1807.
+- Do not enable Crest realtime depth/foam cameras blindly.
+- Do not use flat foam, flat wet edge, muddy single-color waterline, or darkness/noir cover-up as an acceptable result.
+- Compact tier still needs premium waterline read.
+
+20 TASKS
+01. Create tracking files.
+02. Read authorities and 2-8 relevant mandates.
+03. Inspect candidate shoreline/waterline material paths from 1802.
+04. Inspect first-party water/ocean material candidates and shader names.
+05. Inspect foam, wet basalt, caustic, ripple, sediment, and shoreline mesh/texture candidates.
+06. Identify third-party package boundaries that must not be mutated.
+07. Build bake input CSV with material/mesh/texture/tool/path/role/risk columns.
+08. Define offline bake products: foam edge masks, wet/dry masks, sediment bands, caustic edge overlays, long-swell read cards, contact foam ribbons.
+09. Define existing editor/offline generation route using project tools first.
+10. Define missing texture/mask generation prompt if assets are absent.
+11. Define material-slot assignment plan for future Unity owner.
+12. Define shoreline route angles: glancing water, vertical waterline, close wet rock, wide coast, underwater edge.
+13. Define Compact/Middle/High/Ultra consequences.
+14. Define rejection gates.
+15. Define profiler/Frame Debugger proof needed later.
+16. Define exact Unity-slot implementer prompt.
+17. Mark unsafe/rejected placeholder assets.
+18. Append log.
+19. Final scan for fake Unity proof and darkness cover-up.
+20. Mark STATIC BAKE SPEC COMPLETE or BLOCKED with exact missing static tooling.

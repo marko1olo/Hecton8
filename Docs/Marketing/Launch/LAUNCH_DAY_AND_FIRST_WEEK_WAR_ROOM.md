@@ -1,5 +1,11 @@
 ﻿# HECTON-8 Launch Day And First Week War Room
 
+## Authority Boundary
+
+Static launch operations template only. Timelines, roles, dry-run rows, metrics, alerts, and holding statements do not prove quality, release, platform, Steam, wishlist, demo, performance, legal/compliance, localization, monitoring, operations, launch, support-route, or public-response readiness.
+Public voice routes to root `textes.md`. Quality, release, platform, Steam, wishlist, demo, performance, feedback, review/forum response, legal/compliance, localization, monitoring, operations, partnership, contract, and launch claims route through root `quality.md`, `release.md`, and `platform.md` with current proof artifacts plus local permission gates where present.
+No launch/release readiness, localized public use, public response, creator contract send, platform claim, Steam approval, wishlist claim, demo approval, launch approval, or public send approval exists from war-room planning rows or static launch templates.
+
 Status: launch operations template / no launch scheduled
 Owner lane: Marketing / launch ops
 Runtime impact: none

@@ -41,6 +41,15 @@ Surface and photic-zone terrain must read as wet, bright, geologically shaped, a
 
 Dark, oppressive terrain treatment belongs to abyssal depth, caves, interior voids, storms, and temporary route events. Compact may reduce scatter density and texture resolution, but surface terrain still needs the Subnautica-level floor for beauty, clarity, material richness, and scenic composition.
 
+Depth/light lock:
+
+- 0-100 m terrain is mostly bright, wet, colorful, and readable.
+- Shallow cave interiors can be dark, but open shallow terrain cannot be treated as abyss terrain.
+- 200-400 m terrain becomes more subdued and twilight-like.
+- 400-500 m and below can become truly dark, provided landmarks, silhouettes, and collision/traversal reads remain clear.
+
+Surface and shallow terrain should include alien biota and coral-like growth where the biome supports it, plus visible colony/industrial leftovers in selected areas. Do not make photic terrain a pristine aquarium or a dead empty rock field.
+
 ## Biome And Scatter Rules
 
 Scatter is an ecological/geological consequence:
@@ -63,6 +72,14 @@ Terrain collision must be practical:
 - navigation masks align with visible terrain;
 - underwater vehicle clearance is considered.
 
+## 2026-06-05 Static Source Anchors
+
+Evidence class: STATIC_SOURCE only. Compile, Unity import, terrain capture, profiler, GC, player traversal, and player-build proof remain PENDING VERIFICATION.
+
+| Runtime | Owner / boundary | Static route | GlobalQualityWeight consequence | Missing proof |
+|---|---|---|---|---|
+| `Assets/_Project/Scripts/World/HectonAnomalyEngine.cs` | `Hecton8.World`; static terrain/anomaly/SDF processor. It owns no persistent runtime state, no DataVault handle, no scene object, no signal lane, and no GPU resource; caller owns buffers, phase, completion, and proof. | Schedules closed-basin detection/flood-fill, terrain-to-SDF top-surface snap, ridge/fissure feature detection, mega-pillar SDF injection, deep fissure SDF injection, and lateral SDF displacement over caller-provided `NativeArray`/`NativeQueue` storage. | No direct `GlobalQualityWeight` read is visible in this source. Callers must scale operation budgets continuously before invoking it and must preserve terrain truth, biome/resource IDs, and navigation authority. | No caller route card, DataVault ownership proof, job completion window, profiler, GCMonitor, terrain visual capture, or runtime traversal proof was provided by this static audit. |
+
 ## GlobalQualityWeight Scaling
 
 `GlobalQualityWeight` may scale scatter density, decal density, terrain material detail, HLOD distance, fog reveal distance, optional small props, and diagnostic overlays. It must not change terrain truth, resource ids, save identity, biome ownership, or navigation authority.
@@ -83,6 +100,12 @@ Any terrain, biome mask, scatter, traversal, or geology-placement change must de
 - profiler/GC proof when runtime terrain or scatter code changes.
 
 Terrain that reads as random noise, flat dressing, or low-poly filler is rejected even if it technically covers space.
+
+## First-20 Route Hook
+
+- First-20 moment: world load, first exit, swim, and resource approach across a semi-open shallow terrain route with landmarks, safe return geometry, and readable traversal surfaces.
+- Route blocker removed: terrain cannot be random scatter, flat rock, hidden collision, or unproven traversal for the selected opening route.
+- Proof class: screenshot from gameplay height, Play Mode/player capture for traversal and return path, Profiler/GCMonitor for runtime scatter or terrain code, import log for generated/imported terrain assets, and static-only manifest for masks/seeds when no runtime path changed.
 
 ## Proof Artifacts
 

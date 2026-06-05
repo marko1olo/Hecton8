@@ -68,7 +68,13 @@ namespace Hecton8.Gameplay
 
         [Header("── Known Tool Prefabs ────────────────────────")]
         [Tooltip("Polnyy reestr held-tool prefab'ov dlya PDA / quick-slot assignment.")]
-        [SerializeField] private GameObject[] knownToolPrefabs = new GameObject[12];
+        [SerializeField] private GameObject[] knownToolPrefabs = new GameObject[13];
+
+        [Header("Production Starter Loadout")]
+        [Tooltip("When playing, grant missing inventory items for authored quick-slot prefabs once. Dev provisioner remains editor/development-only.")]
+        [SerializeField] private bool grantAssignedToolItemsOnRuntimeStart = true;
+        [Tooltip("Maximum authored quick-slot tool items that runtime start may add to the inventory.")]
+        [SerializeField, Min(0)] private int runtimeStartToolGrantBudget = 4;
 
         [Header("â”€â”€ Pool Warmup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("ÐŸÑ€Ð¾Ð³Ñ€ÐµÐ²Ð°ÐµÑ‚ assigned held-tool pools Ð¿Ñ€Ð¸ Ð²ÐºÐ»ÑŽÑ‡ÐµÐ½Ð¸Ð¸ Ð¼ÐµÐ½ÐµÐ´Ð¶ÐµÑ€Ð°, Ñ‡Ñ‚Ð¾Ð±Ñ‹ ÑƒÐ±Ñ€Ð°Ñ‚ÑŒ runtime Instantiate Ð¿Ñ€Ð¸ Ð¿ÐµÑ€Ð²Ð¾Ð¼ ÑÐºÐ¸Ð¿Ðµ.")]
@@ -88,6 +94,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private int _debugCurrentSlot = -1;
         [SerializeField] private string _debugStateName;
         [SerializeField] private bool toolDebugLogging;
+        [SerializeField] private int _debugRuntimeStartToolGrants;
 
         // SlotKeys removed — handled by InputManager events
 
@@ -130,6 +137,7 @@ namespace Hecton8.Gameplay
         private uint _lastPlayerInputSignalSequence;
         private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
         private bool _assignedPoolsWarmed;
+        private bool _runtimeStartToolGrantCompleted;
         private bool _handlingEquippedToolBreak;
         private bool _registeredToTick;
         private bool _registeredToLateFrame;
@@ -261,6 +269,7 @@ namespace Hecton8.Gameplay
             SubscribeModuleStatusEvents();
             ClearInteriorCarrierCache();
             WarmRuntimePoolsIfNeeded();
+            TryGrantAssignedToolItemsOnRuntimeStart();
             BaselineInventoryChangedSignalRevision();
         }
 
@@ -1156,6 +1165,60 @@ namespace Hecton8.Gameplay
             WarmAssignedToolPoolsIfNeeded();
         }
 
+        private void TryGrantAssignedToolItemsOnRuntimeStart()
+        {
+            if (!Application.isPlaying ||
+                _runtimeStartToolGrantCompleted ||
+                !grantAssignedToolItemsOnRuntimeStart)
+            {
+                return;
+            }
+
+            if (playerInventory == null || toolPrefabs == null)
+                return;
+
+            int grantBudget = math.min(math.max(runtimeStartToolGrantBudget, 0), toolPrefabs.Length);
+            if (grantBudget <= 0)
+            {
+                _runtimeStartToolGrantCompleted = true;
+                return;
+            }
+
+            int granted = 0;
+            _suppressInventoryChangedHandling = true;
+            try
+            {
+                for (int i = 0; i < toolPrefabs.Length && granted < grantBudget; i++)
+                {
+                    GameObject prefab = toolPrefabs[i];
+                    if (prefab == null || !TryGetCachedToolForPrefab(prefab, out PlayerTool tool))
+                        continue;
+
+                    ItemData item = tool.ToolData;
+                    if (item == null || string.IsNullOrWhiteSpace(item.PersistentId))
+                        continue;
+
+                    int itemHash = LocHash.Compute(item.PersistentId);
+                    if (itemHash == 0 || playerInventory.CountAvailableTotal(itemHash) > 0)
+                        continue;
+
+                    if (playerInventory.TryAddItem(itemHash, 1))
+                        granted++;
+                }
+            }
+            finally
+            {
+                _suppressInventoryChangedHandling = false;
+                BaselineInventoryChangedSignalRevision();
+            }
+
+            _debugRuntimeStartToolGrants += granted;
+            _runtimeStartToolGrantCompleted = true;
+
+            if (granted > 0)
+                PublishToolLoadoutChanged(ToolLoadoutChangedSignal.ReasonAssignmentsChanged);
+        }
+
         private void WarmAssignedToolPoolsIfNeeded()
         {
             if (_assignedPoolsWarmed || !warmupAssignedToolPoolsOnEnable)
@@ -1307,6 +1370,8 @@ namespace Hecton8.Gameplay
                     _anchorLoweredPosition = _anchorRestPosition + lowerOffset;
                 }
             }
+
+            TryGrantAssignedToolItemsOnRuntimeStart();
         }
 
         private void CacheRegistryServicesCold(bool forceRefresh = false)
@@ -2575,7 +2640,8 @@ namespace Hecton8.Gameplay
                 "Assets/_Project/Prefabs/Tools/Held/Tool_EnvAnalyzer_Held.prefab",
                 "Assets/_Project/Prefabs/Tools/Held/Tool_Knife_Held.prefab",
                 "Assets/_Project/Prefabs/Tools/Held/Tool_StunPistol_Held.prefab",
-                "Assets/_Project/Prefabs/Tools/Held/Tool_HarpoonLauncher_Held.prefab"
+                "Assets/_Project/Prefabs/Tools/Held/Tool_HarpoonLauncher_Held.prefab",
+                "Assets/_Project/Prefabs/Tools/Held/Tool_SeafloorDrill_Held.prefab"
             };
 
             if (knownToolPrefabs == null || knownToolPrefabs.Length != prefabPaths.Length)

@@ -1,0 +1,53 @@
+<AGENT_PROMPT id="1880">
+ROLE: Tool material and texture role package auditor.
+
+READ FIRST:
+- C:\hades\Hecton8\AGENTS.md
+- C:\hades\Hecton8\PROJECT_BIBLES.md
+- C:\hades\Hecton8\VISION_LOCKS.md
+- C:\hades\Hecton8\TASTE.md
+- C:\hades\Hecton8\quality.md
+- C:\hades\Hecton8\tools.md
+- C:\hades\Hecton8\3dmodel.md
+- C:\hades\Hecton8\3DMODEL_TEXTURES_MATERIALS.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1869_TOOL_VISUAL_SOURCE_PACKAGE.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1874_TOOL_MESH_SOURCE_AUTHORING_IMPLEMENTATION.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1879_PRODUCT_FACE_RELINK_AND_PROOF_CONTRACT.md
+- Relevant .agents-skills only: QA_Evidence_Text_Filter_Audit, CORE_Tools_Equipment_Interaction_Raycast_Heat, REND_URP_Graphics_HotPath_Optimization_HLOD.
+
+OWNED WRITE SCOPE:
+- Docs/Tasks/Status_1880.md
+- Docs/AgentLogs/Rationale_1880.md
+- Docs/AgentLogs/LOG_1880.md
+- Docs/Reports/Batch18/1880_TOOL_MATERIAL_TEXTURE_ROLE_PACKAGE.md
+- Docs/Reports/Batch18/1880_TOOL_MATERIAL_TEXTURE_MATRIX.csv
+
+NO SOURCE/PREFAB/ASSET/SCENE/META/BINARY EDITS.
+NO UNITY MENU, IMPORT, BAKE, PLAYMODE, PROFILER, DOTNET BUILD, OR DATA MONOLITH RUN.
+
+PARALLEL LAW:
+- You may run alongside 1877, 1881, 1882, and 1883.
+- Do not depend on sibling output.
+
+TASK:
+Build the concrete material/texture role package for the 12 product-face tool families so future generated meshes cannot be relinked as flat colored shapes.
+
+Requirements:
+1. Inspect actual project-owned material, shader, texture, and tool prefab references. Use static file reads/searches only.
+2. Cover all 12 tool ids from 1869/1874.
+3. For each tool, define required material roles: casing, rubber/grip, metal/nozzle/blade, glass/lens/screen, emissive trim, labels/decals, wear/dirt/heat/residue where relevant.
+4. Map each role to an existing project-owned candidate path if one exists.
+5. If a role has no credible existing candidate, mark `MISSING_SOURCE_REQUIRED`, not "use color".
+6. Identify forbidden assignments: default package material, `Lit.mat`, placeholder blockout material, primitive debug materials, raw flat color-only substitutes.
+7. Include shader candidates and required texture-map semantics: albedo/base, normal, packed MRAO, emission/mask, detail/wear/label.
+8. Define continuous `GlobalQualityWeight` consequences for material richness without binary low/ultra switches.
+9. State exact future Unity proof: material import, mesh assignment, held/world screenshots, frame/debugger/profiler only where acceptance is claimed.
+10. Do not claim visual acceptance.
+
+VERIFY:
+- `git diff --check` on owned report/log/status files.
+- CSV parse check with `Import-Csv`.
+- Static cross-check that all 12 tool ids appear in the report and CSV.
+- Do not run Unity or dotnet.
+</AGENT_PROMPT>
+

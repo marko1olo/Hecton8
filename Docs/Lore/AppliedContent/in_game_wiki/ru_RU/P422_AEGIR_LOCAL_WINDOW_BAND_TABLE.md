@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Окна Aegir
+# Aegir Window Bands
 
-Локальные окна превращают орбитальную механику в игровое давление. Даже починенной капсуле нужны timing, relay и weather permission.
+Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.
 
 ## Scanner
 
-Локальная полоса: подъем ждет окон часы-дни.
+Local band: ascent waits on hours-to-days windows, not instant rescue.
 
 ## Terminal
 
-WINDOW BAND. Заслон, затмение, реле, шторм, фаза и право должны сойтись.
+WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.
 
 ## Audio
 
-Carrier может тебя слышать и все равно быть не в том небе.
+The carrier can hear you and still be in the wrong sky.
 
 ## Field Note
 
-Для Black Keel timing UI, in-game wiki и spoiler-light страницы системы.
+Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints.
 
 <!-- In-Game Wiki; generated from P422_AEGIR_LOCAL_WINDOW_BAND_TABLE/ru_RU. -->

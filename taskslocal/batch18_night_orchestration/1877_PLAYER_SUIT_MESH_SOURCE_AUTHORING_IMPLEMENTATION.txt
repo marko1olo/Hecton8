@@ -1,0 +1,83 @@
+<AGENT_PROMPT id="1877">
+ROLE: Player suit mesh source authoring implementation agent.
+
+READ FIRST:
+- C:\hades\Hecton8\AGENTS.md
+- C:\hades\Hecton8\PROJECT_BIBLES.md
+- C:\hades\Hecton8\VISION_LOCKS.md
+- C:\hades\Hecton8\TASTE.md
+- C:\hades\Hecton8\quality.md
+- C:\hades\Hecton8\player.md
+- C:\hades\Hecton8\tools.md
+- C:\hades\Hecton8\survival.md
+- C:\hades\Hecton8\3dmodel.md
+- C:\hades\Hecton8\3DMODEL_TEXTURES_MATERIALS.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1872_PLAYER_BODY_VISUAL_SOURCE_PACKAGE.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1872_PLAYER_BODY_VISUAL_SOURCE_MATRIX.csv
+- C:\hades\Hecton8\Docs\Reports\Batch18\1867_PRODUCT_FACE_PREFAB_AUDIT_GATE.md
+- Existing source patterns:
+  - Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs
+  - Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.Body.cs
+  - Assets/_Project/Scripts/Gameplay/PlayerSwimPresentationController.cs
+  - Assets/_Project/Editor/HectonMeshGenerator.cs
+  - Assets/_Project/Scripts/Editor/WorldProceduralGeologyFinalAuthoring.cs
+- Relevant .agents-skills only: QA_Evidence_Text_Filter_Audit, CORE_Tools_Equipment_Interaction_Raycast_Heat, REND_URP_Graphics_HotPath_Optimization_HLOD, MATH_AUP_Determinism_Sync.
+
+OWNED WRITE SCOPE:
+- Assets/_Project/Scripts/Editor/ProductFacePlayerSuitMeshSourceAuthoring.cs
+- Assets/_Project/Scripts/Editor/ProductFacePlayerSuitMeshSourceAuthoring.cs.meta
+- Docs/Tasks/Status_1877.md
+- Docs/AgentLogs/Rationale_1877.md
+- Docs/AgentLogs/LOG_1877.md
+- Docs/Reports/Batch18/1877_PLAYER_SUIT_MESH_SOURCE_AUTHORING_IMPLEMENTATION.md
+
+NO PREFAB/ASSET/SCENE/BINARY EDITS.
+NO UNITY MENU, IMPORT, BAKE, PLAYMODE, PROFILER, DOTNET BUILD, OR DATA MONOLITH RUN.
+
+PARALLEL LAW:
+- You may run alongside 1874, 1875, 1876, 1878, and 1879.
+- Do not touch their files.
+- Do not depend on sibling output.
+
+TASK:
+Implement an editor-only source authoring script that can later generate non-primitive custom Mesh assets for the player suit, first-person hands/arms, fins, and visor housing without running it now.
+
+Requirements:
+1. Create `ProductFacePlayerSuitMeshSourceAuthoring.cs` under `Assets/_Project/Scripts/Editor`.
+2. Include a stable `.meta` file for the new script.
+3. The script must be editor-only and must not affect runtime.
+4. It must not call `GameObject.CreatePrimitive`.
+5. It must generate Mesh vertex/index data manually when run later.
+6. It must include a menu item or callable method for a future Unity owner, but DO NOT execute it.
+7. It must define distinct source specs for:
+   - first-person left glove/forearm
+   - first-person right glove/forearm
+   - left shoulder/chest edge
+   - right shoulder/chest edge
+   - torso hard-shell
+   - pelvis harness
+   - left thigh/calf/fin
+   - right thigh/calf/fin
+   - helmet/visor housing
+   - visor glass support rim
+8. It must output future Mesh assets under `Assets/_Project/Art/Generated/ProductFace/PlayerSuit`.
+9. It must write only Mesh assets when run later; no prefab replacement in this task.
+10. It must include geometry helpers for tapered capsule-like limb shells, beveled hard plates, curved visor rim bands, straps/hoses, fins, latch blocks, and instrument trim strips.
+11. It must validate no empty mesh, finite vertices, non-zero triangles, bounds, and distinct source names.
+12. It must use continuous quality input for segment/detail counts and trim density, not a binary low/ultra switch.
+13. It must preserve player truth: no gameplay collider ownership, no movement/camera/HUD/tool anchor changes, no `HandAnchor` mutation, no runtime search.
+14. It must name/comment generated parts so a future relink owner can map them to `Swim_*Attachment`, `HandAnchor`, `Suit_Visor`, and HUD projection roots without guessing.
+15. It must fail closed if required material/source assumptions are missing, but must not create materials in this task.
+16. It must not claim visual acceptance; it is only a mesh-source authoring route.
+17. Keep code conservative, compile-oriented, deterministic, and scoped.
+
+VERIFY:
+- `git diff --check` on owned source/report/log/status files.
+- Static source scan proving no `GameObject.CreatePrimitive` in the new script.
+- Static source scan proving required player suit part ids exist in the spec table.
+- Do not run Unity or dotnet.
+
+REPORT:
+- Report what source route now exists, what it does not do, exact pending Unity proof, and the remaining prefab relink/collider/material obligations.
+</AGENT_PROMPT>
+

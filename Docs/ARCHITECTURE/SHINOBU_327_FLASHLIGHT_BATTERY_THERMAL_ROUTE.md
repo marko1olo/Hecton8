@@ -1,5 +1,10 @@
 ﻿# SHINOBU_327 Flashlight Battery Thermal Route
 
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
+Evidence class: STATIC_DOC / STATIC_SOURCE
+Owner domain: equipment illumination battery thermal route documentation
+Review disposition: YELLOW / STATIC_DOC_ONLY until compile/import/runtime/profiler/player proof exists.
+
 ## Owner
 
 `ModularEquipmentEngine` owns handheld illumination battery and diode thermal truth.

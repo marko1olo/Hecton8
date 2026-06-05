@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Beam-sail и pellet-lane
+# Beam Sail and Pellet Lane
 
-Beam-sail и pellet-lane объясняют, почему межзвёздные рейсы возможны, но всё ещё жестоки по цене и времени.
+Beam sails and pellet lanes explain why interstellar travel is possible but still punishing. Speed comes from infrastructure, not FTL.
 
 ## Scanner
 
-Запись транзитной линии. Медленный freight живёт потому, что ускорение делает инфраструктура.
+Transit lane record. Slow freight survives because infrastructure does the acceleration math.
 
 ## Terminal
 
-ЗАМЕТКА МАРШРУТА: внутренние домены толкают зонды и freight beam-sail assist, pellet streams и fusion catch stages. Aegir дорог, потому что пропущенное окно стоит лет.
+ROUTE NOTE: inner domains push probes and freight with beam-sail assists, pellet streams and fusion catch stages. Aegir remains expensive because every missed window turns into years.
 
 ## Audio
 
-Корабль быстрый не из-за магии. Половина скорости спрятана в инфраструктуре маршрута.
+The ship is not fast by magic. It is fast because half the route is machinery you never see.
 
 ## Field Note
 
-Для статьи о кораблях и UI маршрута.
+Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year.
 
 <!-- In-Game Wiki; generated from P342_BEAM_SAIL_AND_PELLET_LANE/ru_RU. -->

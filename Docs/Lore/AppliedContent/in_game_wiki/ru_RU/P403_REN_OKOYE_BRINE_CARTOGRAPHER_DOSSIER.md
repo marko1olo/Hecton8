@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Рен Окойе/рассолы
+# Ren Okoye/Brine Map
 
-Досье Рена Окойе объясняет, почему рассольные маршруты принадлежат рабочему знанию. Плотности, доски и штампы превращают враждебный слой в сеть неполных дорог.
+Ren Okoye's dossier explains why brine traversal belongs to worker knowledge. Density ladders, pinboards and pressure stamps turn a hostile fluid layer into an imperfect route network.
 
 ## Scanner
 
-Досье: Рен Окойе. Планшет и доска меток показывают рассол как дорогу.
+Dossier: Ren Okoye. Slate and pinboard show brine as a road.
 
 ## Terminal
 
-РЕН ОКОЙЕ/РАССОЛЫ. Безопасные течения обгоняли допуски; закон отставал от воды.
+REN OKOYE/BRINE MAP. Safe currents moved faster than permits; legal routes lagged water.
 
 ## Audio
 
-Окойе рисовал дороги, которые двигались, пока руководство спорило о разрешениях.
+Okoye drew roads that moved while management argued about permission.
 
 ## Field Note
 
-Использовать как scanner-first доказательство на подходах к рассольному каньону.
+Brine approach evidence: scanner-first cartography turns salt gradients, route marks, and worker traces into Ren Okoye's record.
 
 <!-- In-Game Wiki; generated from P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER/ru_RU. -->

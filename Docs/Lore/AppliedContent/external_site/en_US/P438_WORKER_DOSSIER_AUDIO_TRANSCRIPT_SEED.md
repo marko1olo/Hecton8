@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
-# Worker Dossier Audio Transcript Seed
+# Worker Dossier Audio Transcript
 
-The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.
+The dead colony reads as a workplace that failed under physics and policy, not a melodrama prop.
 
 ## Scanner
 
-Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.
+Worker audio ties pump cadence to route safety and shift fatigue.
 
 ## Terminal
 
-TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.
+WORKER AUDIO M-VENN-07: pump cadence clean; upper route safe only while sump climbs under mark six.
 
 ## Audio
 
-Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.
+Mara Venn, pump chief. If the pump sings clean, log it. If it coughs twice, stop arguing and take the upper stairs.
 
 ## Field Note
 
-Use for VO fragments, dossier pages and prop evidence.
+Recovered worker voice. Keep the human detail inside job pressure, route safety and worn equipment.
 
 <!-- External Site; generated from P438_WORKER_DOSSIER_AUDIO_TRANSCRIPT_SEED/en_US. -->

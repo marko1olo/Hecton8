@@ -1,0 +1,76 @@
+ID: 3238
+Role: STATIC_SOURCE candidate builder.
+Task: Create RS096 canonical packet JSON candidate for validated lower-office/public-consequence packets.
+
+Scope:
+- Write exactly these files:
+  Docs/Lore/AppliedContent/release_sets/RS096_LOWER_OFFICE_PUBLIC_CONSEQUENCE_BRIDGE.md
+  Docs/Lore/AppliedContent/release_sets/RS096_LOWER_OFFICE_PUBLIC_CONSEQUENCE_BRIDGE_manifest.json
+  Docs/Lore/AppliedContent/packets/RS096_LOWER_OFFICE_PUBLIC_CONSEQUENCE_BRIDGE.packets.json
+  Docs/Tasks/Status_3238.md
+  Docs/AgentLogs/LOG_3238.md
+  Docs/AgentLogs/Rationale_3238.md
+  Docs/Reports/Batch32/3238_RS096_CANONICAL_PACKET_JSON.md
+
+Input packets:
+- Docs/Lore/AppliedContent/production_packets/P480_CONTRACT_CONTINUITY_DESK_RECOVERY_LANGUAGE_BRIDGE.production.md
+- Docs/Lore/AppliedContent/production_packets/P481_PACKET_NOTARY_INTERFACE_WITNESS_HASH_BRIDGE.production.md
+- Docs/Lore/AppliedContent/production_packets/P482_QUARANTINE_REVIEW_GATE_DELAY_BRIDGE.production.md
+- Docs/Lore/AppliedContent/production_packets/P483_ASSET_SILENCE_BOARD_SUPPRESSION_BRIDGE.production.md
+- Docs/Lore/AppliedContent/production_packets/P484_PUBLIC_LEDGER_RELEASE_GATE_BRIDGE.production.md
+- Docs/Lore/AppliedContent/production_packets/P485_CORPORATE_QUARANTINE_HOLD_BRIDGE.production.md
+- Docs/Lore/AppliedContent/production_packets/P486_MATERIAL_PAYOUT_CLAIM_CONVERSION_BRIDGE.production.md
+- Docs/Lore/AppliedContent/production_packets/P487_PARTIAL_RETURN_CONTRACT_DEBRIEF_BRIDGE.production.md
+
+Authority to read:
+- AGENTS.md
+- writing.md
+- narrative.md
+- localization.md
+- data.md
+- authoring.md
+- quality.md
+- Docs/Lore/Canon_Locks.md
+- Docs/Lore/Lore_Bible.md
+- Docs/Lore/Lore_Content_System.md
+- Docs/Lore/Lore_Localization_Model.md
+- Docs/Lore/AppliedContent/packets/RS095_CORPORATE_PRESSURE_CHAIN_BRIDGE.packets.json
+- Docs/Lore/AppliedContent/release_sets/RS095_CORPORATE_PRESSURE_CHAIN_BRIDGE_manifest.json
+- .agents-skills/QA_Evidence_Text_Filter_Audit.txt
+- .agents-skills/UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt
+- .agents-skills/DATA_Runtime_Struct_Layout_ARM64.txt
+- .agents-skills/TOOL_Designer_Facades_CSV_Binary_Bridge.txt
+- .agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+
+JSON shape:
+- Use RS095 packet JSON as schema reference.
+- Top-level packet JSON keys: schema, release_set_id, status, evidence_class, runtime_contract, packets.
+- Each packet object must use `localized` dict with 15 locale keys, not `localization`.
+- Required localized surface keys per locale: title, scanner, terminal, audio, in_game_wiki, external_site, field_note.
+- Runtime flags must remain false:
+  authoring_only=true
+  runtime_reads_json=false
+  runtime_reads_markdown=false
+  runtime_ready=false
+  native_localization_ready=false
+  data_monolith_ready=false
+- Manifest must include `authoring_packet_sources`, `canonical_importer_ready=false`, `runtime_ready=false`, `evidence_class=STATIC_SOURCE`.
+- Manifest must NOT include `packet_sources` or `canonical_importer_sources`.
+
+Forbidden:
+- Do not edit production packet markdown files.
+- Do not include P488 or later packet IDs in RS096.
+- Do not edit source CSV, route cards, graphs, binding maps, generated pages/hashes, h8bin, Unity assets, runtime scripts, or BATCH_INDEX.
+- Do not run dotnet build, Unity, h8bin bake, source importer/exporter.
+- Do not claim any positive importer/runtime/DataMonolith/native/publication/Unity/acceptance/h8bin readiness state.
+
+Validation before final:
+- JSON parses.
+- Packet count = 8.
+- Manifest packet count = 8 or packets list length = 8.
+- Locale count = 15 per packet.
+- Required localized surface keys present.
+- U+FFFD = 0.
+- P488+ absent.
+- Positive runtime/native/DataMonolith/importer/publication readiness claim scan must remain false/absent.
+- Protected source/runtime/generated paths must remain untouched by this agent.

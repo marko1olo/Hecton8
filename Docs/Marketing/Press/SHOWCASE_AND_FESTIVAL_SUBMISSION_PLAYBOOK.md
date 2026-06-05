@@ -5,6 +5,12 @@ Owner lane: Marketing / press and showcase ops
 Public stance: single player first
 Runtime impact: none
 
+## Authority Boundary
+
+Static showcase planning document only. Public voice routes through root `textes.md`.
+Any quality, release, platform, Steam, wishlist, demo, performance, press, review-key, embargo, showcase, curator, publication, website, or presskit claim requires `quality.md`, `release.md`, `platform.md`, current proof artifacts, and the matching local permission gate.
+Draft plans, tracker rows, schedules, checklists, and strategy rows do not approve Steam page, wishlist, pricing, discount, review-key, presskit, showcase, publication, platform, or release claims.
+
 ## Source Boundary
 
 Primary current sources checked on 2026 05 19:
@@ -67,7 +73,7 @@ Minimum package:
 
 | Asset | Requirement | HECTON-8 note |
 |---|---|---|
-| 1 line pitch | 120 characters or less | Single player deep sea survival about pressure, salvage, machinery, and the Seed Ship anomaly. |
+| 1 line pitch | 120 characters or less | Single player underwater survival about beautiful alien water, pressure, salvage, machinery, and the Seed Ship anomaly. |
 | Short description | 50 80 words | Must include player verbs. |
 | Long description | 200 350 words | No roadmap fantasy. |
 | Trailer | 45 75s | Show player action by second 10. |
@@ -139,7 +145,7 @@ Submit only if score is 13/18 or higher. Exceptions require written rationale.
 ```text
 HECTON-8 is a single player first deep sea survival game about pressure, salvage, machinery, and a buried Seed Ship anomaly.
 
-The player survives below the light by repairing industrial systems, scavenging hostile routes, and keeping bases and machines alive under pressure. The tone is NASA punk / deep sea noir: corrosion, black water, acoustic dread, heavy hardware, and failure states that are readable before they are fatal.
+The player survives a beautiful alien ocean that becomes hostile below the light by repairing industrial systems, scavenging routes, and keeping bases and machines alive under pressure. The tone is NASA punk / deep sea noir: surface/photic beauty under pressure, corrosion, black water at depth, acoustic dread, heavy hardware, and failure states that are readable before they are fatal.
 
 Current build status:
 [honest build/demo state]
@@ -153,7 +159,7 @@ single player first scope, no live service progression promise, no unproved perf
 
 ## Trailer Beat For Showcase
 
-1. 0 3s: black water, pressure sound, machine light.
+1. 0 3s: bright photic route beauty or black-water depth, pressure sound, machine light.
 2. 3 8s: player action: repair, salvage, route, hatch, tool.
 3. 8 18s: base/system pressure.
 4. 18 30s: hostile route and environmental threat with a visible player decision.

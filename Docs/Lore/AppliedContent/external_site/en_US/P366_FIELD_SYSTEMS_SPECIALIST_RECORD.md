@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ You were never the person who signed the lie. You knew the language that made it
 
 ## Field Note
 
-Use as dossier origin card and contract-start context.
+The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible.
 
 <!-- External Site; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/en_US. -->

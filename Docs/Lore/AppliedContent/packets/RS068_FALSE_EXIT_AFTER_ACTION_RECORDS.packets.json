@@ -33,16 +33,16 @@
           "audio": "You got paid. That is not the same as getting out clean.",
           "in_game_wiki": "Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
           "external_site": "HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
-          "field_note": "Use for material ending record and replay dossier."
+          "field_note": "After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
         },
         "ru_RU": {
-          "title": "Audit receipt material exit",
-          "scanner": "Exit receipt valid. Evidence custody incomplete. Names unreconciled.",
-          "terminal": "AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.",
-          "audio": "Тебе заплатили. Это не то же самое, что выйти чистым.",
-          "in_game_wiki": "Audit receipt material exit делает денежную концовку настоящей и горькой. Игрок может выиграть материально и оставить ложь Deep Reach почти целой.",
-          "external_site": "False endings HECTON-8 - не fake fail screens. Это реальные outcomes, показывающие, что игрок выбрал ценить.",
-          "field_note": "Для material ending record и replay dossier."
+          "title": "Draft RU localization pending native pass. Material Exit Receipt Audit",
+          "scanner": "Draft RU localization pending native pass. Exit receipt valid. Evidence custody incomplete. Names unreconciled.",
+          "terminal": "Draft RU localization pending native pass. AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.",
+          "audio": "Draft RU localization pending native pass. You got paid. That is not the same as getting out clean.",
+          "in_game_wiki": "Draft RU localization pending native pass. Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
+          "external_site": "Draft RU localization pending native pass. HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
+          "field_note": "Draft RU localization pending native pass. After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Material Exit Receipt Audit",
@@ -51,7 +51,7 @@
           "audio": "Draft JA localization pending native pass. You got paid. That is not the same as getting out clean.",
           "in_game_wiki": "Draft JA localization pending native pass. Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
           "external_site": "Draft JA localization pending native pass. HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
-          "field_note": "Draft JA localization pending native pass. Use for material ending record and replay dossier."
+          "field_note": "Draft JA localization pending native pass. After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Material Exit Receipt Audit",
@@ -60,7 +60,7 @@
           "audio": "Draft ZH localization pending native pass. You got paid. That is not the same as getting out clean.",
           "in_game_wiki": "Draft ZH localization pending native pass. Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
           "external_site": "Draft ZH localization pending native pass. HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
-          "field_note": "Draft ZH localization pending native pass. Use for material ending record and replay dossier."
+          "field_note": "Draft ZH localization pending native pass. After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Material Exit Receipt Audit",
@@ -69,7 +69,7 @@
           "audio": "Draft FR localization pending native pass. You got paid. That is not the same as getting out clean.",
           "in_game_wiki": "Draft FR localization pending native pass. Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
           "external_site": "Draft FR localization pending native pass. HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
-          "field_note": "Draft FR localization pending native pass. Use for material ending record and replay dossier."
+          "field_note": "Draft FR localization pending native pass. After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Material Exit Receipt Audit",
@@ -78,7 +78,7 @@
           "audio": "Draft ES localization pending native pass. You got paid. That is not the same as getting out clean.",
           "in_game_wiki": "Draft ES localization pending native pass. Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
           "external_site": "Draft ES localization pending native pass. HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
-          "field_note": "Draft ES localization pending native pass. Use for material ending record and replay dossier."
+          "field_note": "Draft ES localization pending native pass. After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Material Exit Receipt Audit",
@@ -87,7 +87,7 @@
           "audio": "Draft DE localization pending native pass. You got paid. That is not the same as getting out clean.",
           "in_game_wiki": "Draft DE localization pending native pass. Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
           "external_site": "Draft DE localization pending native pass. HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
-          "field_note": "Draft DE localization pending native pass. Use for material ending record and replay dossier."
+          "field_note": "Draft DE localization pending native pass. After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Material Exit Receipt Audit",
@@ -96,7 +96,7 @@
           "audio": "Draft PL localization pending native pass. You got paid. That is not the same as getting out clean.",
           "in_game_wiki": "Draft PL localization pending native pass. Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
           "external_site": "Draft PL localization pending native pass. HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
-          "field_note": "Draft PL localization pending native pass. Use for material ending record and replay dossier."
+          "field_note": "Draft PL localization pending native pass. After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Material Exit Receipt Audit",
@@ -105,7 +105,7 @@
           "audio": "Draft UK localization pending native pass. You got paid. That is not the same as getting out clean.",
           "in_game_wiki": "Draft UK localization pending native pass. Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
           "external_site": "Draft UK localization pending native pass. HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
-          "field_note": "Draft UK localization pending native pass. Use for material ending record and replay dossier."
+          "field_note": "Draft UK localization pending native pass. After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Material Exit Receipt Audit",
@@ -114,7 +114,7 @@
           "audio": "Draft AR localization pending native pass. You got paid. That is not the same as getting out clean.",
           "in_game_wiki": "Draft AR localization pending native pass. Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
           "external_site": "Draft AR localization pending native pass. HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
-          "field_note": "Draft AR localization pending native pass. Use for material ending record and replay dossier."
+          "field_note": "Draft AR localization pending native pass. After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Material Exit Receipt Audit",
@@ -123,7 +123,7 @@
           "audio": "Draft ID localization pending native pass. You got paid. That is not the same as getting out clean.",
           "in_game_wiki": "Draft ID localization pending native pass. Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
           "external_site": "Draft ID localization pending native pass. HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
-          "field_note": "Draft ID localization pending native pass. Use for material ending record and replay dossier."
+          "field_note": "Draft ID localization pending native pass. After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Material Exit Receipt Audit",
@@ -132,7 +132,7 @@
           "audio": "Draft KO localization pending native pass. You got paid. That is not the same as getting out clean.",
           "in_game_wiki": "Draft KO localization pending native pass. Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
           "external_site": "Draft KO localization pending native pass. HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
-          "field_note": "Draft KO localization pending native pass. Use for material ending record and replay dossier."
+          "field_note": "Draft KO localization pending native pass. After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Material Exit Receipt Audit",
@@ -141,7 +141,7 @@
           "audio": "Draft HE localization pending native pass. You got paid. That is not the same as getting out clean.",
           "in_game_wiki": "Draft HE localization pending native pass. Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
           "external_site": "Draft HE localization pending native pass. HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
-          "field_note": "Draft HE localization pending native pass. Use for material ending record and replay dossier."
+          "field_note": "Draft HE localization pending native pass. After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Material Exit Receipt Audit",
@@ -150,7 +150,7 @@
           "audio": "Draft PT localization pending native pass. You got paid. That is not the same as getting out clean.",
           "in_game_wiki": "Draft PT localization pending native pass. Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
           "external_site": "Draft PT localization pending native pass. HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
-          "field_note": "Draft PT localization pending native pass. Use for material ending record and replay dossier."
+          "field_note": "Draft PT localization pending native pass. After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Material Exit Receipt Audit",
@@ -159,7 +159,7 @@
           "audio": "Draft NL localization pending native pass. You got paid. That is not the same as getting out clean.",
           "in_game_wiki": "Draft NL localization pending native pass. Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
           "external_site": "Draft NL localization pending native pass. HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
-          "field_note": "Draft NL localization pending native pass. Use for material ending record and replay dossier."
+          "field_note": "Draft NL localization pending native pass. After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
         }
       }
     },
@@ -188,16 +188,16 @@
           "audio": "The route remembers what you proved. The ocean does not owe you your tools.",
           "in_game_wiki": "Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
           "external_site": "HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
-          "field_note": "Use for same-seed return UI and meta dossier."
+          "field_note": "Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
         },
         "ru_RU": {
-          "title": "Продление lien при partial return",
-          "scanner": "Return authorized under lien extension. Equipment not carried forward.",
-          "terminal": "PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.",
-          "audio": "Маршрут помнит, что ты доказал. Океан не должен вернуть тебе инструменты.",
-          "in_game_wiki": "Partial return lien extension фиксирует replay persistence как знание, не power. Игрок может вернуться, потому что изменились debt и dossier, а не потому что мир стал легче.",
-          "external_site": "Replayability HECTON-8 держит длинную campaign значимой и позволяет partial exits стать горькими, полезными records.",
-          "field_note": "Для same-seed return UI и meta dossier."
+          "title": "Draft RU localization pending native pass. Partial Return Lien Extension",
+          "scanner": "Draft RU localization pending native pass. Return authorized under lien extension. Equipment not carried forward.",
+          "terminal": "Draft RU localization pending native pass. PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.",
+          "audio": "Draft RU localization pending native pass. The route remembers what you proved. The ocean does not owe you your tools.",
+          "in_game_wiki": "Draft RU localization pending native pass. Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
+          "external_site": "Draft RU localization pending native pass. HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
+          "field_note": "Draft RU localization pending native pass. Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Partial Return Lien Extension",
@@ -206,7 +206,7 @@
           "audio": "Draft JA localization pending native pass. The route remembers what you proved. The ocean does not owe you your tools.",
           "in_game_wiki": "Draft JA localization pending native pass. Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
           "external_site": "Draft JA localization pending native pass. HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
-          "field_note": "Draft JA localization pending native pass. Use for same-seed return UI and meta dossier."
+          "field_note": "Draft JA localization pending native pass. Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Partial Return Lien Extension",
@@ -215,7 +215,7 @@
           "audio": "Draft ZH localization pending native pass. The route remembers what you proved. The ocean does not owe you your tools.",
           "in_game_wiki": "Draft ZH localization pending native pass. Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
           "external_site": "Draft ZH localization pending native pass. HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
-          "field_note": "Draft ZH localization pending native pass. Use for same-seed return UI and meta dossier."
+          "field_note": "Draft ZH localization pending native pass. Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Partial Return Lien Extension",
@@ -224,7 +224,7 @@
           "audio": "Draft FR localization pending native pass. The route remembers what you proved. The ocean does not owe you your tools.",
           "in_game_wiki": "Draft FR localization pending native pass. Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
           "external_site": "Draft FR localization pending native pass. HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
-          "field_note": "Draft FR localization pending native pass. Use for same-seed return UI and meta dossier."
+          "field_note": "Draft FR localization pending native pass. Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Partial Return Lien Extension",
@@ -233,7 +233,7 @@
           "audio": "Draft ES localization pending native pass. The route remembers what you proved. The ocean does not owe you your tools.",
           "in_game_wiki": "Draft ES localization pending native pass. Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
           "external_site": "Draft ES localization pending native pass. HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
-          "field_note": "Draft ES localization pending native pass. Use for same-seed return UI and meta dossier."
+          "field_note": "Draft ES localization pending native pass. Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Partial Return Lien Extension",
@@ -242,7 +242,7 @@
           "audio": "Draft DE localization pending native pass. The route remembers what you proved. The ocean does not owe you your tools.",
           "in_game_wiki": "Draft DE localization pending native pass. Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
           "external_site": "Draft DE localization pending native pass. HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
-          "field_note": "Draft DE localization pending native pass. Use for same-seed return UI and meta dossier."
+          "field_note": "Draft DE localization pending native pass. Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Partial Return Lien Extension",
@@ -251,7 +251,7 @@
           "audio": "Draft PL localization pending native pass. The route remembers what you proved. The ocean does not owe you your tools.",
           "in_game_wiki": "Draft PL localization pending native pass. Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
           "external_site": "Draft PL localization pending native pass. HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
-          "field_note": "Draft PL localization pending native pass. Use for same-seed return UI and meta dossier."
+          "field_note": "Draft PL localization pending native pass. Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Partial Return Lien Extension",
@@ -260,7 +260,7 @@
           "audio": "Draft UK localization pending native pass. The route remembers what you proved. The ocean does not owe you your tools.",
           "in_game_wiki": "Draft UK localization pending native pass. Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
           "external_site": "Draft UK localization pending native pass. HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
-          "field_note": "Draft UK localization pending native pass. Use for same-seed return UI and meta dossier."
+          "field_note": "Draft UK localization pending native pass. Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Partial Return Lien Extension",
@@ -269,7 +269,7 @@
           "audio": "Draft AR localization pending native pass. The route remembers what you proved. The ocean does not owe you your tools.",
           "in_game_wiki": "Draft AR localization pending native pass. Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
           "external_site": "Draft AR localization pending native pass. HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
-          "field_note": "Draft AR localization pending native pass. Use for same-seed return UI and meta dossier."
+          "field_note": "Draft AR localization pending native pass. Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Partial Return Lien Extension",
@@ -278,7 +278,7 @@
           "audio": "Draft ID localization pending native pass. The route remembers what you proved. The ocean does not owe you your tools.",
           "in_game_wiki": "Draft ID localization pending native pass. Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
           "external_site": "Draft ID localization pending native pass. HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
-          "field_note": "Draft ID localization pending native pass. Use for same-seed return UI and meta dossier."
+          "field_note": "Draft ID localization pending native pass. Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Partial Return Lien Extension",
@@ -287,7 +287,7 @@
           "audio": "Draft KO localization pending native pass. The route remembers what you proved. The ocean does not owe you your tools.",
           "in_game_wiki": "Draft KO localization pending native pass. Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
           "external_site": "Draft KO localization pending native pass. HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
-          "field_note": "Draft KO localization pending native pass. Use for same-seed return UI and meta dossier."
+          "field_note": "Draft KO localization pending native pass. Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Partial Return Lien Extension",
@@ -296,7 +296,7 @@
           "audio": "Draft HE localization pending native pass. The route remembers what you proved. The ocean does not owe you your tools.",
           "in_game_wiki": "Draft HE localization pending native pass. Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
           "external_site": "Draft HE localization pending native pass. HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
-          "field_note": "Draft HE localization pending native pass. Use for same-seed return UI and meta dossier."
+          "field_note": "Draft HE localization pending native pass. Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Partial Return Lien Extension",
@@ -305,7 +305,7 @@
           "audio": "Draft PT localization pending native pass. The route remembers what you proved. The ocean does not owe you your tools.",
           "in_game_wiki": "Draft PT localization pending native pass. Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
           "external_site": "Draft PT localization pending native pass. HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
-          "field_note": "Draft PT localization pending native pass. Use for same-seed return UI and meta dossier."
+          "field_note": "Draft PT localization pending native pass. Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Partial Return Lien Extension",
@@ -314,7 +314,7 @@
           "audio": "Draft NL localization pending native pass. The route remembers what you proved. The ocean does not owe you your tools.",
           "in_game_wiki": "Draft NL localization pending native pass. Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
           "external_site": "Draft NL localization pending native pass. HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
-          "field_note": "Draft NL localization pending native pass. Use for same-seed return UI and meta dossier."
+          "field_note": "Draft NL localization pending native pass. Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
         }
       }
     },
@@ -343,16 +343,16 @@
           "audio": "They saved the body first because the body knew the route.",
           "in_game_wiki": "Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
           "external_site": "A HECTON-8 exit can be physically successful and politically catastrophic.",
-          "field_note": "Use as bitter partial ending and post-exit dossier item."
+          "field_note": "Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
         },
         "ru_RU": {
-          "title": "Record quarantine hold interrogation",
-          "scanner": "Recovered biological claimant held pending contamination and evidence custody review.",
-          "terminal": "QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.",
-          "audio": "Они спасли тело первым, потому что тело знало маршрут.",
-          "in_game_wiki": "Record quarantine hold interrogation делает rescue неприятным. Survival настоящий, но custody, contamination и evidence control все еще могут наказать игрока.",
-          "external_site": "Выход из HECTON-8 может быть физически успешным и политически катастрофическим.",
-          "field_note": "Для bitter partial ending и post-exit dossier item."
+          "title": "Draft RU localization pending native pass. Quarantine Hold Interrogation Record",
+          "scanner": "Draft RU localization pending native pass. Recovered biological claimant held pending contamination and evidence custody review.",
+          "terminal": "Draft RU localization pending native pass. QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.",
+          "audio": "Draft RU localization pending native pass. They saved the body first because the body knew the route.",
+          "in_game_wiki": "Draft RU localization pending native pass. Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
+          "external_site": "Draft RU localization pending native pass. A HECTON-8 exit can be physically successful and politically catastrophic.",
+          "field_note": "Draft RU localization pending native pass. Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Quarantine Hold Interrogation Record",
@@ -361,7 +361,7 @@
           "audio": "Draft JA localization pending native pass. They saved the body first because the body knew the route.",
           "in_game_wiki": "Draft JA localization pending native pass. Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
           "external_site": "Draft JA localization pending native pass. A HECTON-8 exit can be physically successful and politically catastrophic.",
-          "field_note": "Draft JA localization pending native pass. Use as bitter partial ending and post-exit dossier item."
+          "field_note": "Draft JA localization pending native pass. Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Quarantine Hold Interrogation Record",
@@ -370,7 +370,7 @@
           "audio": "Draft ZH localization pending native pass. They saved the body first because the body knew the route.",
           "in_game_wiki": "Draft ZH localization pending native pass. Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
           "external_site": "Draft ZH localization pending native pass. A HECTON-8 exit can be physically successful and politically catastrophic.",
-          "field_note": "Draft ZH localization pending native pass. Use as bitter partial ending and post-exit dossier item."
+          "field_note": "Draft ZH localization pending native pass. Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Quarantine Hold Interrogation Record",
@@ -379,7 +379,7 @@
           "audio": "Draft FR localization pending native pass. They saved the body first because the body knew the route.",
           "in_game_wiki": "Draft FR localization pending native pass. Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
           "external_site": "Draft FR localization pending native pass. A HECTON-8 exit can be physically successful and politically catastrophic.",
-          "field_note": "Draft FR localization pending native pass. Use as bitter partial ending and post-exit dossier item."
+          "field_note": "Draft FR localization pending native pass. Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Quarantine Hold Interrogation Record",
@@ -388,7 +388,7 @@
           "audio": "Draft ES localization pending native pass. They saved the body first because the body knew the route.",
           "in_game_wiki": "Draft ES localization pending native pass. Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
           "external_site": "Draft ES localization pending native pass. A HECTON-8 exit can be physically successful and politically catastrophic.",
-          "field_note": "Draft ES localization pending native pass. Use as bitter partial ending and post-exit dossier item."
+          "field_note": "Draft ES localization pending native pass. Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Quarantine Hold Interrogation Record",
@@ -397,7 +397,7 @@
           "audio": "Draft DE localization pending native pass. They saved the body first because the body knew the route.",
           "in_game_wiki": "Draft DE localization pending native pass. Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
           "external_site": "Draft DE localization pending native pass. A HECTON-8 exit can be physically successful and politically catastrophic.",
-          "field_note": "Draft DE localization pending native pass. Use as bitter partial ending and post-exit dossier item."
+          "field_note": "Draft DE localization pending native pass. Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Quarantine Hold Interrogation Record",
@@ -406,7 +406,7 @@
           "audio": "Draft PL localization pending native pass. They saved the body first because the body knew the route.",
           "in_game_wiki": "Draft PL localization pending native pass. Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
           "external_site": "Draft PL localization pending native pass. A HECTON-8 exit can be physically successful and politically catastrophic.",
-          "field_note": "Draft PL localization pending native pass. Use as bitter partial ending and post-exit dossier item."
+          "field_note": "Draft PL localization pending native pass. Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Quarantine Hold Interrogation Record",
@@ -415,7 +415,7 @@
           "audio": "Draft UK localization pending native pass. They saved the body first because the body knew the route.",
           "in_game_wiki": "Draft UK localization pending native pass. Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
           "external_site": "Draft UK localization pending native pass. A HECTON-8 exit can be physically successful and politically catastrophic.",
-          "field_note": "Draft UK localization pending native pass. Use as bitter partial ending and post-exit dossier item."
+          "field_note": "Draft UK localization pending native pass. Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Quarantine Hold Interrogation Record",
@@ -424,7 +424,7 @@
           "audio": "Draft AR localization pending native pass. They saved the body first because the body knew the route.",
           "in_game_wiki": "Draft AR localization pending native pass. Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
           "external_site": "Draft AR localization pending native pass. A HECTON-8 exit can be physically successful and politically catastrophic.",
-          "field_note": "Draft AR localization pending native pass. Use as bitter partial ending and post-exit dossier item."
+          "field_note": "Draft AR localization pending native pass. Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Quarantine Hold Interrogation Record",
@@ -433,7 +433,7 @@
           "audio": "Draft ID localization pending native pass. They saved the body first because the body knew the route.",
           "in_game_wiki": "Draft ID localization pending native pass. Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
           "external_site": "Draft ID localization pending native pass. A HECTON-8 exit can be physically successful and politically catastrophic.",
-          "field_note": "Draft ID localization pending native pass. Use as bitter partial ending and post-exit dossier item."
+          "field_note": "Draft ID localization pending native pass. Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Quarantine Hold Interrogation Record",
@@ -442,7 +442,7 @@
           "audio": "Draft KO localization pending native pass. They saved the body first because the body knew the route.",
           "in_game_wiki": "Draft KO localization pending native pass. Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
           "external_site": "Draft KO localization pending native pass. A HECTON-8 exit can be physically successful and politically catastrophic.",
-          "field_note": "Draft KO localization pending native pass. Use as bitter partial ending and post-exit dossier item."
+          "field_note": "Draft KO localization pending native pass. Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Quarantine Hold Interrogation Record",
@@ -451,7 +451,7 @@
           "audio": "Draft HE localization pending native pass. They saved the body first because the body knew the route.",
           "in_game_wiki": "Draft HE localization pending native pass. Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
           "external_site": "Draft HE localization pending native pass. A HECTON-8 exit can be physically successful and politically catastrophic.",
-          "field_note": "Draft HE localization pending native pass. Use as bitter partial ending and post-exit dossier item."
+          "field_note": "Draft HE localization pending native pass. Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Quarantine Hold Interrogation Record",
@@ -460,7 +460,7 @@
           "audio": "Draft PT localization pending native pass. They saved the body first because the body knew the route.",
           "in_game_wiki": "Draft PT localization pending native pass. Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
           "external_site": "Draft PT localization pending native pass. A HECTON-8 exit can be physically successful and politically catastrophic.",
-          "field_note": "Draft PT localization pending native pass. Use as bitter partial ending and post-exit dossier item."
+          "field_note": "Draft PT localization pending native pass. Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Quarantine Hold Interrogation Record",
@@ -469,7 +469,7 @@
           "audio": "Draft NL localization pending native pass. They saved the body first because the body knew the route.",
           "in_game_wiki": "Draft NL localization pending native pass. Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
           "external_site": "Draft NL localization pending native pass. A HECTON-8 exit can be physically successful and politically catastrophic.",
-          "field_note": "Draft NL localization pending native pass. Use as bitter partial ending and post-exit dossier item."
+          "field_note": "Draft NL localization pending native pass. Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
         }
       }
     },
@@ -498,16 +498,16 @@
           "audio": "You opened the door from the inside.",
           "in_game_wiki": "Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
           "external_site": "The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
-          "field_note": "Use as bad-material or corporate partial ending."
+          "field_note": "Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
         },
         "ru_RU": {
-          "title": "Record corporate coordinate capture",
-          "scanner": "Coordinate payload accepted. Deep Reach receiver priority confirmed.",
-          "terminal": "COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.",
-          "audio": "Ты открыл дверь изнутри.",
-          "in_game_wiki": "Record corporate coordinate capture - самый ясный sellout route. Игрок может сбежать, но disaster site возвращается институту, который его провалил.",
-          "external_site": "Вопрос не только в том, покинет ли игрок HECTON-8. Вопрос - кто получит карту после ухода.",
-          "field_note": "Для bad-material или corporate partial ending."
+          "title": "Draft RU localization pending native pass. Corporate Coordinate Capture Record",
+          "scanner": "Draft RU localization pending native pass. Coordinate payload accepted. Deep Reach receiver priority confirmed.",
+          "terminal": "Draft RU localization pending native pass. COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.",
+          "audio": "Draft RU localization pending native pass. You opened the door from the inside.",
+          "in_game_wiki": "Draft RU localization pending native pass. Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
+          "external_site": "Draft RU localization pending native pass. The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
+          "field_note": "Draft RU localization pending native pass. Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Corporate Coordinate Capture Record",
@@ -516,7 +516,7 @@
           "audio": "Draft JA localization pending native pass. You opened the door from the inside.",
           "in_game_wiki": "Draft JA localization pending native pass. Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
           "external_site": "Draft JA localization pending native pass. The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
-          "field_note": "Draft JA localization pending native pass. Use as bad-material or corporate partial ending."
+          "field_note": "Draft JA localization pending native pass. Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Corporate Coordinate Capture Record",
@@ -525,7 +525,7 @@
           "audio": "Draft ZH localization pending native pass. You opened the door from the inside.",
           "in_game_wiki": "Draft ZH localization pending native pass. Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
           "external_site": "Draft ZH localization pending native pass. The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
-          "field_note": "Draft ZH localization pending native pass. Use as bad-material or corporate partial ending."
+          "field_note": "Draft ZH localization pending native pass. Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Corporate Coordinate Capture Record",
@@ -534,7 +534,7 @@
           "audio": "Draft FR localization pending native pass. You opened the door from the inside.",
           "in_game_wiki": "Draft FR localization pending native pass. Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
           "external_site": "Draft FR localization pending native pass. The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
-          "field_note": "Draft FR localization pending native pass. Use as bad-material or corporate partial ending."
+          "field_note": "Draft FR localization pending native pass. Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Corporate Coordinate Capture Record",
@@ -543,7 +543,7 @@
           "audio": "Draft ES localization pending native pass. You opened the door from the inside.",
           "in_game_wiki": "Draft ES localization pending native pass. Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
           "external_site": "Draft ES localization pending native pass. The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
-          "field_note": "Draft ES localization pending native pass. Use as bad-material or corporate partial ending."
+          "field_note": "Draft ES localization pending native pass. Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Corporate Coordinate Capture Record",
@@ -552,7 +552,7 @@
           "audio": "Draft DE localization pending native pass. You opened the door from the inside.",
           "in_game_wiki": "Draft DE localization pending native pass. Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
           "external_site": "Draft DE localization pending native pass. The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
-          "field_note": "Draft DE localization pending native pass. Use as bad-material or corporate partial ending."
+          "field_note": "Draft DE localization pending native pass. Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Corporate Coordinate Capture Record",
@@ -561,7 +561,7 @@
           "audio": "Draft PL localization pending native pass. You opened the door from the inside.",
           "in_game_wiki": "Draft PL localization pending native pass. Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
           "external_site": "Draft PL localization pending native pass. The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
-          "field_note": "Draft PL localization pending native pass. Use as bad-material or corporate partial ending."
+          "field_note": "Draft PL localization pending native pass. Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Corporate Coordinate Capture Record",
@@ -570,7 +570,7 @@
           "audio": "Draft UK localization pending native pass. You opened the door from the inside.",
           "in_game_wiki": "Draft UK localization pending native pass. Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
           "external_site": "Draft UK localization pending native pass. The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
-          "field_note": "Draft UK localization pending native pass. Use as bad-material or corporate partial ending."
+          "field_note": "Draft UK localization pending native pass. Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Corporate Coordinate Capture Record",
@@ -579,7 +579,7 @@
           "audio": "Draft AR localization pending native pass. You opened the door from the inside.",
           "in_game_wiki": "Draft AR localization pending native pass. Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
           "external_site": "Draft AR localization pending native pass. The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
-          "field_note": "Draft AR localization pending native pass. Use as bad-material or corporate partial ending."
+          "field_note": "Draft AR localization pending native pass. Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Corporate Coordinate Capture Record",
@@ -588,7 +588,7 @@
           "audio": "Draft ID localization pending native pass. You opened the door from the inside.",
           "in_game_wiki": "Draft ID localization pending native pass. Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
           "external_site": "Draft ID localization pending native pass. The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
-          "field_note": "Draft ID localization pending native pass. Use as bad-material or corporate partial ending."
+          "field_note": "Draft ID localization pending native pass. Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Corporate Coordinate Capture Record",
@@ -597,7 +597,7 @@
           "audio": "Draft KO localization pending native pass. You opened the door from the inside.",
           "in_game_wiki": "Draft KO localization pending native pass. Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
           "external_site": "Draft KO localization pending native pass. The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
-          "field_note": "Draft KO localization pending native pass. Use as bad-material or corporate partial ending."
+          "field_note": "Draft KO localization pending native pass. Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Corporate Coordinate Capture Record",
@@ -606,7 +606,7 @@
           "audio": "Draft HE localization pending native pass. You opened the door from the inside.",
           "in_game_wiki": "Draft HE localization pending native pass. Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
           "external_site": "Draft HE localization pending native pass. The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
-          "field_note": "Draft HE localization pending native pass. Use as bad-material or corporate partial ending."
+          "field_note": "Draft HE localization pending native pass. Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Corporate Coordinate Capture Record",
@@ -615,7 +615,7 @@
           "audio": "Draft PT localization pending native pass. You opened the door from the inside.",
           "in_game_wiki": "Draft PT localization pending native pass. Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
           "external_site": "Draft PT localization pending native pass. The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
-          "field_note": "Draft PT localization pending native pass. Use as bad-material or corporate partial ending."
+          "field_note": "Draft PT localization pending native pass. Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Corporate Coordinate Capture Record",
@@ -624,7 +624,7 @@
           "audio": "Draft NL localization pending native pass. You opened the door from the inside.",
           "in_game_wiki": "Draft NL localization pending native pass. Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
           "external_site": "Draft NL localization pending native pass. The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
-          "field_note": "Draft NL localization pending native pass. Use as bad-material or corporate partial ending."
+          "field_note": "Draft NL localization pending native pass. Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
         }
       }
     },
@@ -653,16 +653,16 @@
           "audio": "Truth left the room. It did not ask where to go next.",
           "in_game_wiki": "Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
           "external_site": "HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
-          "field_note": "Use as public truth ending record and spoiler-gated site copy."
+          "field_note": "Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
         },
         "ru_RU": {
-          "title": "Record aftershock public ledger",
-          "scanner": "Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.",
-          "terminal": "PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.",
-          "audio": "Правда вышла из комнаты. Она не спросила, куда идти дальше.",
-          "in_game_wiki": "Record aftershock public ledger не дает truth ending стать clean win button. Publication ломает erasure, но игрок теряет control over use, panic, exploitation и retaliation.",
-          "external_site": "Truth ending HECTON-8 - не purity. Это решение усложнить сокрытие и принять uncontrolled consequence.",
-          "field_note": "Для public truth ending record и spoiler-gated site copy."
+          "title": "Draft RU localization pending native pass. Public Ledger Aftershock Record",
+          "scanner": "Draft RU localization pending native pass. Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.",
+          "terminal": "Draft RU localization pending native pass. PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.",
+          "audio": "Draft RU localization pending native pass. Truth left the room. It did not ask where to go next.",
+          "in_game_wiki": "Draft RU localization pending native pass. Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
+          "external_site": "Draft RU localization pending native pass. HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
+          "field_note": "Draft RU localization pending native pass. Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Public Ledger Aftershock Record",
@@ -671,7 +671,7 @@
           "audio": "Draft JA localization pending native pass. Truth left the room. It did not ask where to go next.",
           "in_game_wiki": "Draft JA localization pending native pass. Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
           "external_site": "Draft JA localization pending native pass. HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
-          "field_note": "Draft JA localization pending native pass. Use as public truth ending record and spoiler-gated site copy."
+          "field_note": "Draft JA localization pending native pass. Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Public Ledger Aftershock Record",
@@ -680,7 +680,7 @@
           "audio": "Draft ZH localization pending native pass. Truth left the room. It did not ask where to go next.",
           "in_game_wiki": "Draft ZH localization pending native pass. Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
           "external_site": "Draft ZH localization pending native pass. HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
-          "field_note": "Draft ZH localization pending native pass. Use as public truth ending record and spoiler-gated site copy."
+          "field_note": "Draft ZH localization pending native pass. Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Public Ledger Aftershock Record",
@@ -689,7 +689,7 @@
           "audio": "Draft FR localization pending native pass. Truth left the room. It did not ask where to go next.",
           "in_game_wiki": "Draft FR localization pending native pass. Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
           "external_site": "Draft FR localization pending native pass. HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
-          "field_note": "Draft FR localization pending native pass. Use as public truth ending record and spoiler-gated site copy."
+          "field_note": "Draft FR localization pending native pass. Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Public Ledger Aftershock Record",
@@ -698,7 +698,7 @@
           "audio": "Draft ES localization pending native pass. Truth left the room. It did not ask where to go next.",
           "in_game_wiki": "Draft ES localization pending native pass. Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
           "external_site": "Draft ES localization pending native pass. HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
-          "field_note": "Draft ES localization pending native pass. Use as public truth ending record and spoiler-gated site copy."
+          "field_note": "Draft ES localization pending native pass. Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Public Ledger Aftershock Record",
@@ -707,7 +707,7 @@
           "audio": "Draft DE localization pending native pass. Truth left the room. It did not ask where to go next.",
           "in_game_wiki": "Draft DE localization pending native pass. Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
           "external_site": "Draft DE localization pending native pass. HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
-          "field_note": "Draft DE localization pending native pass. Use as public truth ending record and spoiler-gated site copy."
+          "field_note": "Draft DE localization pending native pass. Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Public Ledger Aftershock Record",
@@ -716,7 +716,7 @@
           "audio": "Draft PL localization pending native pass. Truth left the room. It did not ask where to go next.",
           "in_game_wiki": "Draft PL localization pending native pass. Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
           "external_site": "Draft PL localization pending native pass. HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
-          "field_note": "Draft PL localization pending native pass. Use as public truth ending record and spoiler-gated site copy."
+          "field_note": "Draft PL localization pending native pass. Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Public Ledger Aftershock Record",
@@ -725,7 +725,7 @@
           "audio": "Draft UK localization pending native pass. Truth left the room. It did not ask where to go next.",
           "in_game_wiki": "Draft UK localization pending native pass. Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
           "external_site": "Draft UK localization pending native pass. HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
-          "field_note": "Draft UK localization pending native pass. Use as public truth ending record and spoiler-gated site copy."
+          "field_note": "Draft UK localization pending native pass. Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Public Ledger Aftershock Record",
@@ -734,7 +734,7 @@
           "audio": "Draft AR localization pending native pass. Truth left the room. It did not ask where to go next.",
           "in_game_wiki": "Draft AR localization pending native pass. Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
           "external_site": "Draft AR localization pending native pass. HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
-          "field_note": "Draft AR localization pending native pass. Use as public truth ending record and spoiler-gated site copy."
+          "field_note": "Draft AR localization pending native pass. Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Public Ledger Aftershock Record",
@@ -743,7 +743,7 @@
           "audio": "Draft ID localization pending native pass. Truth left the room. It did not ask where to go next.",
           "in_game_wiki": "Draft ID localization pending native pass. Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
           "external_site": "Draft ID localization pending native pass. HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
-          "field_note": "Draft ID localization pending native pass. Use as public truth ending record and spoiler-gated site copy."
+          "field_note": "Draft ID localization pending native pass. Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Public Ledger Aftershock Record",
@@ -752,7 +752,7 @@
           "audio": "Draft KO localization pending native pass. Truth left the room. It did not ask where to go next.",
           "in_game_wiki": "Draft KO localization pending native pass. Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
           "external_site": "Draft KO localization pending native pass. HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
-          "field_note": "Draft KO localization pending native pass. Use as public truth ending record and spoiler-gated site copy."
+          "field_note": "Draft KO localization pending native pass. Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Public Ledger Aftershock Record",
@@ -761,7 +761,7 @@
           "audio": "Draft HE localization pending native pass. Truth left the room. It did not ask where to go next.",
           "in_game_wiki": "Draft HE localization pending native pass. Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
           "external_site": "Draft HE localization pending native pass. HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
-          "field_note": "Draft HE localization pending native pass. Use as public truth ending record and spoiler-gated site copy."
+          "field_note": "Draft HE localization pending native pass. Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Public Ledger Aftershock Record",
@@ -770,7 +770,7 @@
           "audio": "Draft PT localization pending native pass. Truth left the room. It did not ask where to go next.",
           "in_game_wiki": "Draft PT localization pending native pass. Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
           "external_site": "Draft PT localization pending native pass. HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
-          "field_note": "Draft PT localization pending native pass. Use as public truth ending record and spoiler-gated site copy."
+          "field_note": "Draft PT localization pending native pass. Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Public Ledger Aftershock Record",
@@ -779,7 +779,7 @@
           "audio": "Draft NL localization pending native pass. Truth left the room. It did not ask where to go next.",
           "in_game_wiki": "Draft NL localization pending native pass. Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
           "external_site": "Draft NL localization pending native pass. HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
-          "field_note": "Draft NL localization pending native pass. Use as public truth ending record and spoiler-gated site copy."
+          "field_note": "Draft NL localization pending native pass. Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
         }
       }
     }

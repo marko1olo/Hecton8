@@ -1,0 +1,47 @@
+<SUB_AGENT_PROMPT id="2901_ROUTE_AWARE_SUN_WARNING_PATCH_PLAN">
+Role: Specialist - Aegir/Sky route-aware warning patch planner.
+
+Mission:
+Produce an implementation-grade static patch plan for making HectonUnderwaterVisuals sun-visual validation route-aware without editing Assets.
+
+Context:
+- Primary sun route must remain PrimarySunDiscOwner=SkyMaterial.
+- Do not activate SURFACE_LOW_SUN_DISC_1428.
+- HectonUnderwaterVisuals currently can treat sunVisualTransform == null as a warning even when sky material owns the sun.
+- Batch28 report 2804 gives the target behavior.
+
+Must read:
+- AGENTS.md
+- TASTE.md
+- celestial.md
+- atmosphere.md
+- water.md
+- rendering.md
+- shaders.md
+- Docs/Reports/Batch28/2804_AEGIR_SKY_ROUTE_STATIC_OWNER_AUDIT.md
+- Assets/_Project/Scripts/HectonUnderwaterVisuals.cs
+- Assets/_Project/Scripts/HectonCelestialEngine.cs
+- Assets/_Project/Scripts/HectonAtmosphereManager.cs
+- .agents-skills/ARCH_Execution_Phases.txt
+- .agents-skills/QA_Evidence_Text_Filter_Audit.txt
+- .agents-skills/REND_Shader_Noir_Aesthetics_Dithering_Fog.txt
+
+Write only:
+- Docs/Reports/Batch29/2901_ROUTE_AWARE_SUN_WARNING_PATCH_PLAN.md
+
+Required output:
+- exact methods/line regions to modify;
+- proposed helper predicate name and contract, e.g. RequiresMeshSunVisual();
+- exact warning paths to gate;
+- what fields should appear in future proof snapshot;
+- compile risks;
+- runtime proof requirements;
+- reject list for quick mesh-sun fixes;
+- Low/Middle/High/Ultra consequences through continuous GlobalQualityWeight.
+
+Forbidden:
+- no source edits;
+- no Unity;
+- no build;
+- no visual acceptance claim.
+</SUB_AGENT_PROMPT>

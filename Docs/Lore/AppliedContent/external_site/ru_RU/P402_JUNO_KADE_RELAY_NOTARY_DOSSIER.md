@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Джуно Кейд/связь
+# Juno Kade/Relay
 
-Джуно Кейд превращает задержку связи в человеческую профессию: сохранение доказательств, пока помощь физически отсутствует.
+Juno Kade turns communication delay into a human job: preserving evidence when help is physically absent.
 
 ## Scanner
 
-Досье: Джуно Кейд. Печать, лоток и лента свидетелей совпадают.
+Dossier: Juno Kade. Seal, packet tray and witness tape agree.
 
 ## Terminal
 
-ДЖУНО КЕЙД/СВЯЗЬ. Лотки штамповали после окон связи; цепь осталась уликой.
+JUNO KADE/RELAY. Stamped witness trays after each comm window; custody stayed evidence.
 
 ## Audio
 
-Кейд заверял факты, которые придут поздно и все равно должны иметь вес.
+Kade certified facts that would arrive late and still have to matter.
 
 ## Field Note
 
-Использовать на объектах релейного двора и в статьях о законе расстояния.
+Relay-yard objects and law-of-distance records should stay paired: seal, tray, packet ladder, and the late fact that still matters.
 
 <!-- External Site; generated from P402_JUNO_KADE_RELAY_NOTARY_DOSSIER/ru_RU. -->

@@ -10,21 +10,21 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Site Home Page Composition Lock
+# Public Opening Composition Rule
 
 HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.
 
 ## Scanner
 
-Site home lock: one real machine/route image before lore explanation.
+Public opening: one real machine or route image before lore explanation.
 
 ## Terminal
 
-PUBLIC COMPOSITION: home page must lead with pressure, machinery, salvage and a bad return path; no demo, platform or release claims without proof.
+PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.
 
 ## Audio
 
@@ -32,6 +32,6 @@ Show the route before the myth.
 
 ## Field Note
 
-Use textes.md rules: no hype calendar, no wishlist/release/demo claim without proof.
+No hype calendar, wishlist, release, or demo claim appears without proof.
 
 <!-- External Site; generated from P311_SITE_HOME_PAGE_COMPOSITION_LOCK/zh_CN. -->

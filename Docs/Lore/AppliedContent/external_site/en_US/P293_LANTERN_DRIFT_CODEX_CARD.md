@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ Pretty is not safe. Pretty is a reading.
 
 ## Field Note
 
-Card teaches that beauty can be route information and route deception.
+Follow the glow only after current and residue agree. Pretty light is not a route plan.
 
 <!-- External Site; generated from P293_LANTERN_DRIFT_CODEX_CARD/en_US. -->

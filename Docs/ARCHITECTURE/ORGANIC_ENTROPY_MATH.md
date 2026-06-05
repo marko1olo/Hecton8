@@ -2,6 +2,8 @@
 
 Date: 2026-05-07
 
+Owner domain: world/organic entropy and regrowth math
+
 Status: PENDING VERIFICATION
 
 ## Source Anchors

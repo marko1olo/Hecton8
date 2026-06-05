@@ -3,6 +3,12 @@
 Status: AUTHORING LAW / STATIC DOC / RUNTIME PROOF NOT IMPLIED
 Scope: URP shaders, Shader Graph/HLSL, material variants, shader keywords, SRP Batcher, GPU instancing, triplanar materials, wetness, corrosion, flora sway, UI shaders, and shader proof gates.
 
+## First-20 Route Hook
+
+- First-20 moment: world load, first exit, resource pickup, tool interaction, and first hazard response need material truth for wet rock, ocean-facing geometry, instruments, tools, damage, biolum cues, and readable shallow-route assets.
+- Route blocker removed: prevents opening-route visuals from relying on generic glow, material clones, random noise, or shader tricks that hide primitive meshes and missing PBR identity.
+- Proof class: STATIC_DOC only; route acceptance still requires compact/high captures, Frame Debugger or RenderGraph proof for runtime rendering changes, shader variant proof, and GPU/profiler evidence for costly features.
+
 ## Prime Law
 
 Shaders sell material truth. They do not rescue bad meshes, fake systems, or broken art direction.
@@ -75,6 +81,15 @@ Any shader, material runtime, keyword, variant, or material-data change must dec
 - Frame Debugger/GPU/profiler proof for costly features.
 
 A shader that hides bad topology, clones materials, or changes gameplay perception without owner state is rejected.
+
+## 2026-06-05 Static Source Anchors
+
+Evidence class: STATIC_SOURCE only. Compile, Unity import, Frame Debugger, GPU profiler, GC, screenshot, and player-build proof remain PENDING VERIFICATION.
+
+| Runtime | Owner / boundary | Static data route | GlobalQualityWeight consequence | Missing proof |
+|---|---|---|---|---|
+| `Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs` | `Hecton8.Graphics.Materials`, `SystemID.GraphicsMaterials`; material-aging owner for pressure corrosion, scorch, deformation, temperature mirroring, and UberNoir degradation. It does not own hull truth, thermodynamics truth, or gameplay damage. | Registers dispatcher phase adapters for PreSimulation, Simulation, PostSimulation, and VisualSync. Owns DataVault buffers `VisualPressureAging*`, `UberNoirInstanceDegradation`, and 300-frame telemetry rings; borrows `ThermodynamicsTemperatureFrontMirror` and `StructuralIntegrity*` buffers. Uploads double-buffered `GraphicsBuffer` data into shader globals `_GlobalBaseAgingParams`, `_GlobalBaseAgingRuntime`, `_GlobalUberNoirDegradation`, and `_GlobalUberNoirDegradationRuntime`. | Reads global quality and scales sample/update budget and visual degradation cadence. It must not alter structural authority, DTO layout, save identity, or damage truth. | No visual capture, Frame Debugger, GPU/profiler, GCMonitor, Unity import, or runtime dump artifact was provided by this static audit. |
+| `Assets/_Project/Scripts/Graphics/Materials/ShinobuMaterialResponseRuntime.cs` | `Hecton8.Graphics.Materials`, `SystemID.GraphicsMaterials`; material-response owner for biome/pressure/wear/material state presentation. It does not own inventory, ecology, terrain, or damage authority. | Registers PreSimulation, Simulation, PostSimulation, VisualSync, and cold tick. Owns DataVault buffers `ShinobuMaterialStates`, `ShinobuMaterialPowers`, `ShinobuMaterialVisiblePayload`, `ShinobuMaterialConstants`, `ShinobuMaterialWearRates`, texture mappings, CSV scratch, and a 300-entry telemetry ring. Uses double-buffered `GraphicsBuffer` routes for `_H8UberNoirMaterialStates` and `H8UberNoirMaterialGlobals`. | Reads `HomeostasisBrain.GlobalQualityWeight`; scales simulation budget, cadence, telemetry sampling, shader quality weight, triplanar pixels, texture array memory, and moss-layer cost. Material identity and gameplay truth must remain stable. | No compiled shader variant count, SRP Batcher/instancing proof, GPU/profiler capture, GCMonitor, Unity import, or runtime visual artifact was provided by this static audit. |
 
 ## Proof Artifacts
 

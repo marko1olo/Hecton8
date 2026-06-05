@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -20,7 +20,7 @@ The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows 
 
 ## Scanner
 
-Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.
+Pressure glass fracture sealed by Atlas chemistry. Safe lens stock only if the seal map stays intact.
 
 ## Terminal
 
@@ -32,6 +32,6 @@ The repair network reads fractures the way you read a map.
 
 ## Field Note
 
-Use for Atlas repair-network explanation and geology crosslink.
+Do not grind the pretty edge. Follow the fracture map and cut from the dead side of the seal.
 
 <!-- External Site; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/en_US. -->

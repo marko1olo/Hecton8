@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Фрагмент quarantine relay
+# Quarantine Relay Fragment
 
-Концовки HECTON-8 могут спасти тело игрока и одновременно сохранить системы, из-за которых спуск стал необходимым.
+HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there.
 
 ## Scanner
 
-Relay fragment одновременно разрешает extraction и отказывает clean release.
+Relay fragment approves extraction and denies clean release in the same packet.
 
 ## Terminal
 
-RELAY HOLD: extraction accepted. Release denied pending sample custody, air review and claimant dispute.
+RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.
 
 ## Audio
 
-Ты вышел из воды. Ты не вышел из custody.
+You are out of the water. You are not out of custody.
 
 ## Field Note
 
-Использовать после partial exit/corporate rescue routes; legal, cold, bitter.
+Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.
 
 <!-- External Site; generated from P290_QUARANTINE_RELAY_FRAGMENT/ru_RU. -->

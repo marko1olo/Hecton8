@@ -30,6 +30,9 @@ Relevant mandates read:
 - [x] Task 12 - CSV tuning import lock flattening. DOD: `TryApplyDroneSpecsCsv` now reads into `stackalloc Span<byte>` and parses outside DataVault write locks; removed the obsolete vault CSV scratch handle/buffer/method so no nested tuning/chassis write-lock can occur from the import route. Alternative rejected: keeping a 16 KB DataVault scratch buffer as dead cold memory. Static estimate: removes file IO and two CSV passes from DataVault critical sections.
 - [x] Task 13 - Factory proof-I/O and collision layer polish. DOD: removed the optional JSON report disk writer/toggle from `DronePrefabFactory` and forced primitive proxy assignment through the existing `World_Dynamic` layer route instead of preferring an invented `Drone_Collision` layer. Alternative rejected: keeping a disabled JSON proof path or adding a new collision layer contract. Runtime estimate: 0 us; editor I/O surface reduced.
 - [x] Task 14 - Metadata layout validation reflection purge. DOD: removed `System.Reflection`, `FieldInfo`, `UnsafeUtility.GetFieldOffset`, and `OffsetOfRuntime` from bone/attachment metadata; `ValidateStaticLayout()` is now pure `UnsafeUtility.SizeOf<T>()` plus 8-byte alignment against explicit-layout DTO sizes. Alternative rejected: editor-only field-offset reflection called from runtime integration checks. Static estimate: removes managed reflection route from metadata validation.
+- [x] Task 15 - Factory hard-surface normal preservation. DOD: `DronePrefabFactory` now preserves authored mesh normals during bone mesh combine and only calls `RecalculateNormals()` when a source mesh lacks the normal vertex attribute. Alternative rejected: blind normal rebuild that erases weighted/hard-surface authoring on drone chassis meshes. Runtime estimate: 0 us; editor-only visual quality gate.
+- [x] Task 16 - Direct-index SOA contract hardening. DOD: removed the unused linear `TryGetJointByBoneIndex` API and made bone/attachment validation reject tables where row index does not equal `BoneIndex`/`AnchorIndex`; bone parents must be parent-before-child, solver weights and quality weights must be clamped to 0..1, and negative stiffness/damping is rejected. Alternative rejected: leaving a public O(n) lookup route for future IK code. Static estimate: removes one API-level search vector.
+- [x] Task 17 - Authoring bone topology normalization. DOD: `DronePrefabFactory` now normalizes JSON-authored bones in-place so parent rows precede child rows before prefab bake; unresolved parents or cycles reject the authoring file and fall back to the deterministic default rig. Alternative rejected: baking authoring order directly and forcing runtime remap/search tables. Runtime estimate: 0 us; editor-only route.
 
 ## Loop Log
 
@@ -44,15 +47,18 @@ Loop 08: Verification gate. Result: three Unity script validations clean; manage
 Loop 09: CSV lock pass. Result: CSV import uses stack scratch; obsolete vault scratch buffer removed; CPU 100% and active external `dotnet` processes still block project build.
 Loop 10: Factory polish pass. Result: JSON report writer removed; collision layer route pinned to `World_Dynamic`; Unity MCP standard validation clean for factory and basic validation clean for manager.
 Loop 11: DTO validation polish. Result: reflection removed from metadata layout validators; Unity MCP standard validation clean for both metadata scripts and basic validation clean for manager.
+Loop 12: Factory visual quality pass. Result: combined drone meshes preserve authored normals unless the source mesh has no normal vertex attribute; Unity MCP standard validation clean for factory.
+Loop 13: Metadata SOA contract pass. Result: direct-index bone/attachment tables are enforced at validation; Unity MCP standard validation clean for bone metadata, attachment metadata, and factory.
+Loop 14: Authoring topology pass. Result: JSON bone order is normalized before bake; cycles/unresolved parents fall back to deterministic default rig; Unity MCP standard validation clean for factory.
 
 ## Proof
 
 - Current batch extract: `EXPLICIT_TASK_COUNT=23` by `^Task\s+\d+:` inside `<AGENT_PROMPT id="1738">`.
-- `DronePrefabFactory.cs` SHA256: `2065A138A4D5B217E2DEA8C8FA9778426E26B75E858DCCB0C52D7BF7B7F42E4A`
-- `DroneBoneMetadata.cs` SHA256: `491A99699D1E741C6AE839FBFDA4136ACB5C6C7350321EFAEDE8BBC787C5C5AD`
-- `DroneAttachmentMetadata.cs` SHA256: `02BA90C07FF0A61DCC514A0FF7C6F9705FD46AAEAF68760FCFF7D5F620C71704`
+- `DronePrefabFactory.cs` SHA256: `720C1E098BC00BF42E3F5A4C59EAC735BB2B33255CFE30B05BFA0F45507AFF86`
+- `DroneBoneMetadata.cs` SHA256: `B3F64E8C60BFFC8AB02444AB59AD15F01DC17F110E0A3D0C564A3F03D6E2E4CF`
+- `DroneAttachmentMetadata.cs` SHA256: `68A875BB72A984D93A4D628B52BD629729EE5FEEE8A599AD8BDA0DC1E19638C3`
 - `DroneFleetManager.cs` SHA256: `F317C790A6391D314CBD36F6CD85A8BD85725735C7794B4F6DF2FEC33F1D7BB2`
-- `git diff --check`: no whitespace errors; Git warned only about future CRLF normalization for `DroneFleetManager.cs`.
+- `git diff --check -- <1738 files>`: no whitespace errors; Git warned only about future CRLF normalization. Full-repo `git diff --check` is blocked by pre-existing trailing whitespace in `Assets/_Project/Scenes/02_HECTON_WORLD.unity` lines 26200/26204.
 - Orphan `.meta` scan: `ORPHAN_META_COUNT=0`.
 - Hot lookup scan: no `GlobalRegistry.Get<`, `GetComponent()`, `GetComponentInChildren`, `GameObject.Find`, `.Complete()`, `WaitForCompletion`, or LINQ tokens in touched files; only two cold `TryGetComponent` prefab-cache calls remain.
 - CSV lock scan: `File.OpenRead` is separate from all `TryAcquireDroneVaultWriteBuffer`/`ReleaseWriteLock` sites in `DroneFleetManager`; removed all `DroneSpecsCsvScratch` references.

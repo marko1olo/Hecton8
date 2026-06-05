@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Правило worker community без family hook
+# Worker Community Notice
 
-Пакет защищает канон игрока: former Deep Reach, now independent marauder. Колония важна без поиска родни.
+Worker community notices keep colony stakes grounded in labor, proximity and obligation. The dead matter through work evidence, not a rescue-family premise.
 
 ## Scanner
 
-Story boundary. Мотив игрока - professional guilt and curiosity, не lost-family melodrama.
+Notice board fragment. It records work contacts, not bloodline drama.
 
 ## Terminal
 
-AUTHORING LOCK: игрок бывший Deep Reach, теперь marauder. Не привязывать parent, spouse или child rescue motive. Stakes идут через worker evidence and corporate negligence.
+COMMUNITY NOTICE: emergency contact updates due before pump tone 3. Route leads sign work-contact columns. Personal calls queue behind relay traffic.
 
 ## Audio
 
-Ты вернулся, потому что знал форму этой работы. Этого достаточно.
+They built a roster, not a legend.
 
 ## Field Note
 
-Narrative guardrail для quests, wiki and marketing copy.
+NOTICE BOARD: swap shifts through crew lead. Mark bunk row, route, meal token and work contact. Personal calls wait for relay window.
 
 <!-- In-Game Wiki; generated from P359_WORKER_COMMUNITY_NO_FAMILY_HOOK_RULE/ru_RU. -->

@@ -1,6 +1,9 @@
 ﻿# TERRAIN_CHUNK_PAGING_SYSTEM - SHINOBU_245
 
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
 Evidence class: STATIC_SOURCE / FILESYSTEM.
+Owner domain: Echelon 2 World Generation & Terrain / terrain streaming
+Review disposition: YELLOW / STATIC_DOC_ONLY until compile/import/runtime/profiler/player proof exists.
 
 Pending proof: Unity import, script compile, Play Mode, profiler, GCMonitor, Memory Profiler, payload validator, streaming boot, fault tests, player build.
 

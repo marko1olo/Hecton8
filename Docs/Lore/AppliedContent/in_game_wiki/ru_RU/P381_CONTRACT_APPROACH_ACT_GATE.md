@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Акт: вход через контракт
+# Contract Approach Act Gate
 
-Первый акт должен показывать HECTON-8 как профессиональный salvage до того, как правда становится личной. Игрок не турист и не мстит за родню.
+The opening act should frame HECTON-8 as professional salvage before the truth becomes personal. The player is not a tourist and not a family avenger.
 
 ## Scanner
 
-Гейт акта: контракт принят. Давление долга и старый порядок Deep Reach уже видны.
+Act gate: contract accepted. Lien pressure and old Deep Reach procedure are already visible.
 
 ## Terminal
 
-АКТ КОНТРАКТА: Black Keel принимает claim transfer, lien exposure и окно bathydrop. Возврат условный.
+CAMPAIGN ACT CONTRACT: Black Keel accepts claim transfer, lien exposure and bathydrop timing. Recovery is conditional.
 
 ## Audio
 
-Ты пришел за работой. Бумаги уже знают, что ты работал на Deep Reach.
+You came for work. The paperwork already knows you worked for Deep Reach.
 
 ## Field Note
 
-Для контрактного борда, start UI, аудио Black Keel и spoiler-light публикационной завязки.
+Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears.
 
 <!-- In-Game Wiki; generated from P381_CONTRACT_APPROACH_ACT_GATE/ru_RU. -->

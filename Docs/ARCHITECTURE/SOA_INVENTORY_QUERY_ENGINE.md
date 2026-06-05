@@ -3,6 +3,7 @@
 Owner: `PlayerInventory`
 Agent: `SHINOBU_316`
 Status: pending Unity compile/profiler verification.
+Review disposition: YELLOW / STATIC_DOC_ONLY until compile/import/runtime/profiler/player proof exists.
 
 ## Route
 

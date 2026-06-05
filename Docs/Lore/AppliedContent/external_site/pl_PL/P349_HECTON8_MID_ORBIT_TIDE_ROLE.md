@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ It sits in the part of the ladder where work looks possible until the water star
 
 ## Field Note
 
-Use for HECTON-8 system article and orbital map.
+HECTON-8 atlas record: mid-orbit tides make ocean work possible and catastrophe credible.
 
 <!-- External Site; generated from P349_HECTON8_MID_ORBIT_TIDE_ROLE/pl_PL. -->

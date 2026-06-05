@@ -1,4 +1,9 @@
 ﻿- # SHINOBU_212 HLOD Impostor Pipeline
+Status: `STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING`.
+Evidence class: `STATIC_DOC` / `STATIC_SOURCE`.
+Owner domain: offline Editor-only HLOD impostor generation.
+Review disposition: `YELLOW / STATIC_DOC_ONLY` until compile/import/runtime/profiler/player proof exists.
+
 Domain: offline Editor-only HLOD impostor generation for giant far-horizon structures.  Runtime contract:
 - Runtime does not capture objects into RenderTextures.
 - Runtime consumes baked albedo-depth atlas, normal-XY atlas, quad mesh, material, and `HectonOctahedralImpostorData`.

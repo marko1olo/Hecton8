@@ -10,21 +10,21 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Sonar Return Route
 
-Sonar Return Route defines navigation pressure. The player is not lost because the map is empty; the player is pressured because the known route decays.
+A return beacon is not a promise. It records what the route sounded like when it was last safe. Storm surge, loose cable, moving silt, fauna, and salvage cuts can change the echo without erasing the path. Ping before you load up. If the return tone has shifted, cache the cargo or mark a second line.
 
 ## Scanner
 
-The beacon does not point home. It measures how badly the way back changed since the last safe ping.
+Return beacon stale. Compare old safe ping to current echo before carrying cargo or diving deeper.
 
 ## Terminal
 
-Sonar route: last clean echo invalid. Black Keel ping accepted. Local obstruction drift exceeds mapped tolerance.
+SONAR ROUTE: last clean echo invalid. Black Keel ping accepted. Local obstruction drift exceeds mapped tolerance.
 
 ## Audio
 
@@ -32,6 +32,6 @@ The way back is not gone. It is different enough to kill you.
 
 ## Field Note
 
-Return route is a living cost, not a minimap line.
+Never trust an old clean echo with new weight on your back.
 
 <!-- In-Game Wiki; generated from P049_SONAR_RETURN_ROUTE/en_US. -->

@@ -1,5 +1,5 @@
 // ============================================================================
-// SHINOBU_354 - procedural camera shake impulse.
+// CameraJuiceSystem - procedural camera shake impulse.
 // Burst damped sinusoids + AUP epicenter trauma. Runtime camera hierarchy stays static.
 // ============================================================================
 
@@ -36,13 +36,23 @@ namespace Hecton8.VFX
         private const BufferID CameraJuiceTuningBufferId = (BufferID)73376;
         private const BufferID CameraJuiceProfilesBufferId = (BufferID)73377;
         private const BufferID CameraJuiceMockSignalsBufferId = (BufferID)73378;
-#if UNITY_EDITOR
-        private const BufferID CameraJuiceCsvScratchBufferId = (BufferID)73379;
-#endif
         private const float CameraJuiceProjectionTranslationScale = 0.035f;
         private const float CameraJuiceProjectionRotationScale = 0.00125f;
         private const float CameraJuiceProjectionRollScale = 0.0015f;
         private const float CameraJuiceBurstBudgetMicroseconds = 100f;
+        private const float CameraJuiceMaximumSignalAmplitudeScale = 4f;
+        private const float CameraJuiceMaximumSignalGain = 4f;
+        private const float CameraJuiceMinimumSignalGain = 0f;
+        private const int CameraJuiceSignalLowPriorityThreshold = 1;
+        private const int CameraJuiceSignalNormalPriorityThreshold = 96;
+        private const int CameraJuiceSignalHighPriorityThreshold = 160;
+        private const int CameraJuiceSignalCriticalPriorityThreshold = 224;
+        private const int CameraJuicePriorityActiveShift = 8;
+        private const int CameraJuicePriorityHoldShift = 16;
+        private const int CameraJuiceLowPriorityHoldFrames = 2;
+        private const int CameraJuiceNormalPriorityHoldFrames = 4;
+        private const int CameraJuiceHighPriorityHoldFrames = 7;
+        private const int CameraJuiceCriticalPriorityHoldFrames = 12;
         private const uint CameraJuiceFlagXrSuppressed = 1u << 0;
         private const uint CameraJuiceFlagNanSanitized = 1u << 1;
         private const uint CameraJuiceFlagNoPlayerAup = 1u << 2;
@@ -56,9 +66,6 @@ namespace Hecton8.VFX
         private VaultGenerationHandle<CameraJuiceTuningDTO> _cameraJuiceTuningHandle;
         private VaultGenerationHandle<CameraTraumaProfileDTO> _cameraJuiceProfilesHandle;
         private VaultGenerationHandle<CameraJuiceMockSignalDTO> _cameraJuiceMockSignalsHandle;
-#if UNITY_EDITOR
-        private VaultGenerationHandle<byte> _cameraJuiceCsvScratchHandle;
-#endif
         private VaultGenerationHandle<LockstepPlayerKinematicState> _cameraJuicePlayerKinematicStateHandle;
         private bool _ownsCameraJuiceStateBuffer;
         private bool _ownsCameraJuiceImpulseBuffer;
@@ -66,11 +73,9 @@ namespace Hecton8.VFX
         private bool _ownsCameraJuiceTuningBuffer;
         private bool _ownsCameraJuiceProfilesBuffer;
         private bool _ownsCameraJuiceMockSignalsBuffer;
-#if UNITY_EDITOR
-        private bool _ownsCameraJuiceCsvScratchBuffer;
-#endif
         private bool _cameraJuiceBuffersSeeded;
         private bool _cameraJuiceMockSignalsEnabled;
+        private bool _cameraJuiceNativeStateDirty;
         private int _cameraJuiceMockSignalCount;
         private float _cameraJuiceMockSeverity01 = 0.65f;
         private float _cameraJuiceMockRadiusMeters = 18f;
@@ -79,6 +84,7 @@ namespace Hecton8.VFX
         private float3 _cameraJuiceProjectionTranslation;
         private float3 _cameraJuiceProjectionRotationDegrees;
         private bool _cameraJuiceProjectionDirty;
+        private bool _cameraJuiceProjectionResetDirty;
         private float _cameraJuiceLastTraumaScalar;
         private float _cameraJuiceLastMaxTranslationMagnitude;
         private float _cameraJuiceLastBurstExecutionMicros;
@@ -98,7 +104,7 @@ namespace Hecton8.VFX
             [FieldOffset(28)] public float TimeAccumulator;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 72)]
         private struct CameraJuiceImpulseDTO
         {
             [FieldOffset(0)] public float3 DirectionalImpulse;
@@ -110,9 +116,11 @@ namespace Hecton8.VFX
             [FieldOffset(40)] public float MaxSignalMagnitude;
             [FieldOffset(44)] public float DistanceAttenuation;
             [FieldOffset(48)] public uint Sequence;
-            [FieldOffset(52)] public float Reserved0;
-            [FieldOffset(56)] public uint Reserved1;
-            [FieldOffset(60)] public uint Reserved2;
+            [FieldOffset(52)] public float RotationGain;
+            [FieldOffset(56)] public uint DominantProfileHash;
+            [FieldOffset(60)] public uint PriorityAndFlags;
+            [FieldOffset(64)] public float DominantProfileDecayPerSecond;
+            [FieldOffset(68)] public float DominantProfileFrequencyHz;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -181,16 +189,7 @@ namespace Hecton8.VFX
         {
 #if UNITY_EDITOR
             if (CameraJuiceBurstMath.ValidateLayoutSizes() != 0u)
-                Hecton8.Core.H8Debug.LogError("[SHINOBU_354] Camera juice ABI violation.");
-#endif
-            NativeArray<CameraJuiceStateDTO> state = default;
-            NativeArray<CameraJuiceImpulseDTO> impulse = default;
-            NativeArray<CameraJuiceProjectionDTO> projection = default;
-            NativeArray<CameraJuiceTuningDTO> tuning = default;
-            NativeArray<CameraTraumaProfileDTO> profiles = default;
-            NativeArray<CameraJuiceMockSignalDTO> mockSignals = default;
-#if UNITY_EDITOR
-            NativeArray<byte> cameraJuiceCsvScratch = default;
+                Hecton8.Core.H8Debug.LogError("[CameraJuiceSystem] Camera juice ABI violation.");
 #endif
             bool ready =
                 AcquireCameraJuiceBuffer(
@@ -198,64 +197,45 @@ namespace Hecton8.VFX
                     ref _ownsCameraJuiceStateBuffer,
                     CameraJuiceStateBufferId,
                     1,
-                    NativeArrayOptions.UninitializedMemory,
-                    out state) &&
+                    NativeArrayOptions.UninitializedMemory) &&
                 AcquireCameraJuiceBuffer(
                     ref _cameraJuiceImpulseHandle,
                     ref _ownsCameraJuiceImpulseBuffer,
                     CameraJuiceImpulseBufferId,
                     1,
-                    NativeArrayOptions.UninitializedMemory,
-                    out impulse) &&
+                    NativeArrayOptions.UninitializedMemory) &&
                 AcquireCameraJuiceBuffer(
                     ref _cameraJuiceProjectionHandle,
                     ref _ownsCameraJuiceProjectionBuffer,
                     CameraJuiceProjectionBufferId,
                     1,
-                    NativeArrayOptions.UninitializedMemory,
-                    out projection) &&
+                    NativeArrayOptions.UninitializedMemory) &&
                 AcquireCameraJuiceBuffer(
                     ref _cameraJuiceTuningHandle,
                     ref _ownsCameraJuiceTuningBuffer,
                     CameraJuiceTuningBufferId,
                     1,
-                    NativeArrayOptions.UninitializedMemory,
-                    out tuning) &&
+                    NativeArrayOptions.UninitializedMemory) &&
                 AcquireCameraJuiceBuffer(
                     ref _cameraJuiceProfilesHandle,
                     ref _ownsCameraJuiceProfilesBuffer,
                     CameraJuiceProfilesBufferId,
                     CameraJuiceProfileCapacity,
-                    NativeArrayOptions.UninitializedMemory,
-                    out profiles) &&
+                    NativeArrayOptions.UninitializedMemory) &&
                 AcquireCameraJuiceBuffer(
                     ref _cameraJuiceMockSignalsHandle,
                     ref _ownsCameraJuiceMockSignalsBuffer,
                     CameraJuiceMockSignalsBufferId,
                     CameraJuiceMockSignalCapacity,
-                    NativeArrayOptions.UninitializedMemory,
-                    out mockSignals);
-#if UNITY_EDITOR
-            ready = ready &&
-                AcquireCameraJuiceBuffer(
-                    ref _cameraJuiceCsvScratchHandle,
-                    ref _ownsCameraJuiceCsvScratchBuffer,
-                    CameraJuiceCsvScratchBufferId,
-                    CameraJuiceCsvScratchBytes,
-                    NativeArrayOptions.UninitializedMemory,
-                    out cameraJuiceCsvScratch);
-#endif
-
+                    NativeArrayOptions.UninitializedMemory);
             if (!ready)
                 return false;
 
             if (!_cameraJuiceBuffersSeeded)
             {
-#if UNITY_EDITOR
-                SeedProceduralCameraJuiceBuffers(state, impulse, projection, tuning, profiles, mockSignals, cameraJuiceCsvScratch);
-#else
-                SeedProceduralCameraJuiceBuffers(state, impulse, projection, tuning, profiles, mockSignals);
-#endif
+                if (!SeedProceduralCameraJuiceBuffers())
+                    return false;
+
                 _cameraJuiceBuffersSeeded = true;
             }
 
@@ -270,11 +250,9 @@ namespace Hecton8.VFX
             ReleaseCameraJuiceBuffer(ref _cameraJuiceTuningHandle, ref _ownsCameraJuiceTuningBuffer);
             ReleaseCameraJuiceBuffer(ref _cameraJuiceProfilesHandle, ref _ownsCameraJuiceProfilesBuffer);
             ReleaseCameraJuiceBuffer(ref _cameraJuiceMockSignalsHandle, ref _ownsCameraJuiceMockSignalsBuffer);
-#if UNITY_EDITOR
-            ReleaseCameraJuiceBuffer(ref _cameraJuiceCsvScratchHandle, ref _ownsCameraJuiceCsvScratchBuffer);
-#endif
             _cameraJuicePlayerKinematicStateHandle = default;
             _cameraJuiceBuffersSeeded = false;
+            _cameraJuiceNativeStateDirty = false;
             ClearProceduralCameraJuiceProjection();
         }
 
@@ -287,12 +265,25 @@ namespace Hecton8.VFX
                 return;
             }
 
+            if (vault.IsCompactionFenceActive)
+            {
+                _cameraJuicePlayerKinematicStateHandle = default;
+                return;
+            }
+
             if (_cameraJuicePlayerKinematicStateHandle.BufferID != 0u &&
                 _cameraJuicePlayerKinematicStateHandle.Generation != 0u &&
                 vault.TryReadOnlyHandle(in _cameraJuicePlayerKinematicStateHandle, out NativeArray<LockstepPlayerKinematicState>.ReadOnly cachedStates) &&
+                !vault.IsCompactionFenceActive &&
                 cachedStates.IsCreated &&
                 cachedStates.Length > 0)
             {
+                return;
+            }
+
+            if (vault.IsCompactionFenceActive)
+            {
+                _cameraJuicePlayerKinematicStateHandle = default;
                 return;
             }
 
@@ -300,6 +291,12 @@ namespace Hecton8.VFX
                     BufferID.PlayerKinematicState,
                     out VaultGenerationHandle<LockstepPlayerKinematicState> playerHandle))
             {
+                if (vault.IsCompactionFenceActive)
+                {
+                    _cameraJuicePlayerKinematicStateHandle = default;
+                    return;
+                }
+
                 _cameraJuicePlayerKinematicStateHandle = playerHandle;
                 return;
             }
@@ -312,26 +309,31 @@ namespace Hecton8.VFX
             ref bool ownsHandle,
             BufferID bufferId,
             int count,
-            NativeArrayOptions options,
-            out NativeArray<T> buffer)
+            NativeArrayOptions options)
             where T : unmanaged
         {
-            buffer = default;
             IDataVault vault = _dataVault;
             if (vault == null || vault.IsCompactionFenceActive || count <= 0)
                 return false;
 
             if (handle.BufferID != 0u &&
                 handle.Generation != 0u &&
-                vault.TryResolveHandle(in handle, out buffer) &&
+                vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly buffer) &&
+                !vault.IsCompactionFenceActive &&
                 buffer.IsCreated &&
                 buffer.Length >= count)
             {
                 return true;
             }
 
+            if (vault.IsCompactionFenceActive)
+            {
+                return false;
+            }
+
             if (vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> borrowedHandle) &&
-                vault.TryResolveHandle(in borrowedHandle, out buffer) &&
+                vault.TryReadOnlyHandle(in borrowedHandle, out buffer) &&
+                !vault.IsCompactionFenceActive &&
                 buffer.IsCreated &&
                 buffer.Length >= count)
             {
@@ -340,8 +342,15 @@ namespace Hecton8.VFX
                 return true;
             }
 
-            if (vault.IsAllocationLocked)
+            if (vault.IsCompactionFenceActive)
+            {
                 return false;
+            }
+
+            if (vault.IsAllocationLocked)
+            {
+                return false;
+            }
 
             VaultGenerationHandle<T> acquiredHandle = vault.EnsureGenerationHandle<T>(
                 bufferId,
@@ -350,7 +359,8 @@ namespace Hecton8.VFX
                 options);
             if (acquiredHandle.BufferID == 0u ||
                 acquiredHandle.Generation == 0u ||
-                !vault.TryResolveHandle(in acquiredHandle, out buffer) ||
+                !vault.TryReadOnlyHandle(in acquiredHandle, out buffer) ||
+                vault.IsCompactionFenceActive ||
                 !buffer.IsCreated ||
                 buffer.Length < count)
             {
@@ -375,32 +385,28 @@ namespace Hecton8.VFX
             ownsHandle = false;
         }
 
-        private void SeedProceduralCameraJuiceBuffers(
-            NativeArray<CameraJuiceStateDTO> state,
-            NativeArray<CameraJuiceImpulseDTO> impulse,
-            NativeArray<CameraJuiceProjectionDTO> projection,
-            NativeArray<CameraJuiceTuningDTO> tuning,
-            NativeArray<CameraTraumaProfileDTO> profiles,
-            NativeArray<CameraJuiceMockSignalDTO> mockSignals
-#if UNITY_EDITOR
-            , NativeArray<byte> cameraJuiceCsvScratch
-#endif
-            )
+        private bool SeedProceduralCameraJuiceBuffers()
         {
             float quality = ResolveCameraJuiceGlobalQualityWeight();
-            SeedCameraJuiceBuffersJob job = default;
-            job.State = state;
-            job.Impulse = impulse;
-            job.Projection = projection;
-            job.Tuning = tuning;
-            job.Profiles = profiles;
-            job.MockSignals = mockSignals;
-            job.GlobalQualityWeight01 = quality;
-            job.Execute();
+            CameraJuiceProjectionDTO projection = new CameraJuiceProjectionDTO
+            {
+                ComfortRotation = quaternion.identity,
+                GlobalQualityWeight01 = quality,
+                StateHash = 0u
+            };
+            bool ready =
+                TryWriteCameraJuiceBufferValue(in _cameraJuiceStateHandle, default(CameraJuiceStateDTO)) &
+                TryWriteCameraJuiceBufferValue(in _cameraJuiceImpulseHandle, default(CameraJuiceImpulseDTO)) &
+                TryWriteCameraJuiceBufferValue(in _cameraJuiceProjectionHandle, in projection) &
+                TryWriteCameraJuiceBufferValue(in _cameraJuiceTuningHandle, CameraJuiceBurstMath.DefaultTuning(quality)) &
+                TrySeedCameraJuiceProfiles() &
+                TryClearCameraJuiceMockSignals();
 
 #if UNITY_EDITOR
-            TryLoadCameraJuiceTraumaProfilesFromCsv(profiles, cameraJuiceCsvScratch, tuning);
+            if (ready)
+                TryLoadCameraJuiceTraumaProfilesFromCsv();
 #endif
+            return ready;
         }
 
         private void InitializeCameraJuiceTelemetryRing(NativeArray<CameraJuiceTelemetryEntry> telemetry)
@@ -411,6 +417,63 @@ namespace Hecton8.VFX
             InitializeCameraJuiceTelemetryJob job = default;
             job.Telemetry = telemetry;
             job.Execute();
+        }
+
+        private bool CanSkipProceduralCameraJuiceFrame()
+        {
+            if (!_cameraJuiceBuffersSeeded ||
+                _cameraJuiceMockSignalsEnabled ||
+                _cameraJuiceNativeStateDirty ||
+                _cameraJuiceProjectionDirty ||
+                _cameraJuiceProjectionResetDirty ||
+                _cameraJuiceLastTraumaScalar > 0.0001f ||
+                _cameraJuiceManualTrauma01 > 0.0001f ||
+                math.lengthsq(_cameraJuiceManualDirectionalImpulseLocal) > 0.000001f)
+            {
+                return false;
+            }
+
+            return !HasProceduralCameraJuiceSignalSnapshot();
+        }
+
+        private static bool HasProceduralCameraJuiceSignalSnapshot()
+        {
+            NativeArray<ImpactSignal>.ReadOnly impactSignals = SignalBus<ImpactSignal>.GetFrameSnapshotArray();
+            if (impactSignals.IsCreated && impactSignals.Length > 0)
+                return true;
+
+            NativeArray<HighSpeedImpactSignal>.ReadOnly highSpeedImpactSignals = SignalBus<HighSpeedImpactSignal>.GetFrameSnapshotArray();
+            if (highSpeedImpactSignals.IsCreated && highSpeedImpactSignals.Length > 0)
+                return true;
+
+            NativeArray<CombatDamageSignal>.ReadOnly combatDamageSignals = SignalBus<CombatDamageSignal>.GetFrameSnapshotArray();
+            if (combatDamageSignals.IsCreated && combatDamageSignals.Length > 0)
+                return true;
+
+            NativeArray<SeismicSignal>.ReadOnly seismicSignals = SignalBus<SeismicSignal>.GetFrameSnapshotArray();
+            if (seismicSignals.IsCreated && seismicSignals.Length > 0)
+                return true;
+
+            NativeArray<CameraJuiceImpactSignal>.ReadOnly cameraImpactSignals = SignalBus<CameraJuiceImpactSignal>.GetFrameSnapshotArray();
+            return cameraImpactSignals.IsCreated && cameraImpactSignals.Length > 0;
+        }
+
+        private void MarkProceduralCameraJuiceCalmFrame()
+        {
+            _cameraJuiceLastFlags = 0u;
+            _cameraJuiceLastTraumaScalar = 0f;
+            _cameraJuiceLastMaxTranslationMagnitude = 0f;
+            _cameraJuiceLastBurstExecutionMicros = 0f;
+            _cameraJuiceLastQualityWeight = ResolveCameraJuiceGlobalQualityWeight();
+            _cameraJuiceLastDirectionalImpulseMagnitude = 0f;
+            _cameraJuiceLastIncomingSignalCount = 0;
+            CameraJuiceStateDTO calmState = default;
+            _cameraJuiceLastStateHash = CameraJuiceBurstMath.HashState(in calmState, _cameraJuiceLastQualityWeight);
+            _cameraJuiceNativeStateDirty = false;
+            _trauma = 0f;
+            _shakeOffset = Vector3.zero;
+            _proceduralShakeTranslation = float3.zero;
+            _proceduralShakeRotationDegrees = float3.zero;
         }
 
         private void RunProceduralCameraJuice(float dt, float effectiveShakeScale)
@@ -428,34 +491,47 @@ namespace Hecton8.VFX
                 return;
             }
 
-            if (!OpenCameraJuiceBuffer(in _cameraJuiceStateHandle, 1, out NativeArray<CameraJuiceStateDTO> state) ||
-                !OpenCameraJuiceBuffer(in _cameraJuiceImpulseHandle, 1, out NativeArray<CameraJuiceImpulseDTO> impulse) ||
-                !OpenCameraJuiceBuffer(in _cameraJuiceProjectionHandle, 1, out NativeArray<CameraJuiceProjectionDTO> projection) ||
-                !OpenCameraJuiceBuffer(in _cameraJuiceTuningHandle, 1, out NativeArray<CameraJuiceTuningDTO> tuning) ||
-                !OpenCameraJuiceBuffer(in _cameraJuiceMockSignalsHandle, CameraJuiceMockSignalCapacity, out NativeArray<CameraJuiceMockSignalDTO> mockSignals))
+            if (!OpenCameraJuiceBufferReadOnly(in _cameraJuiceStateHandle, 1, out NativeArray<CameraJuiceStateDTO>.ReadOnly state) ||
+                !OpenCameraJuiceBufferReadOnly(in _cameraJuiceImpulseHandle, 1, out NativeArray<CameraJuiceImpulseDTO>.ReadOnly impulse) ||
+                !OpenCameraJuiceBufferReadOnly(in _cameraJuiceTuningHandle, 1, out NativeArray<CameraJuiceTuningDTO>.ReadOnly tuning) ||
+                !OpenCameraJuiceBufferReadOnly(in _cameraJuiceProfilesHandle, CameraJuiceProfileCapacity, out NativeArray<CameraTraumaProfileDTO>.ReadOnly profiles))
             {
                 FailClosedProceduralCameraJuiceFrame(CameraJuiceFlagVaultUnavailable);
                 return;
             }
 
             float quality = ResolveCameraJuiceGlobalQualityWeight();
-            ref CameraJuiceTuningDTO tuningValue = ref UnsafeUtility.AsRef<CameraJuiceTuningDTO>(
-                NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(tuning));
+            CameraJuiceStateDTO stateValue = state[0];
+            CameraJuiceImpulseDTO impulseValue = impulse[0];
+            CameraJuiceTuningDTO tuningValue = tuning[0];
             tuningValue.QualityWeight01 = quality;
+            float fluidDrag01 = ResolveCameraJuiceFluidDrag01();
+            if (fluidDrag01 > 0.0001f)
+            {
+                float dragT = EvaluateSmoothStep01(fluidDrag01);
+                tuningValue.TraumaDecayPerSecond *= math.lerp(1f, 0.66f, dragT);
+                tuningValue.BaseFrequencyHz *= math.lerp(1f, 0.72f, dragT);
+                tuningValue.HighOctaveGain *= math.lerp(1f, 0.65f, dragT);
+            }
             uint frameSequence = _cameraJuiceSequence;
 
             int mockCount = 0;
+            NativeArray<CameraJuiceMockSignalDTO>.ReadOnly mockSignals = default;
             if (_cameraJuiceMockSignalsEnabled)
             {
                 uint seed = math.hash(new uint2(frameSequence, 0x53483335u));
-                GenerateMockTraumaSpikesJob mockJob = default;
-                mockJob.MockSignals = mockSignals;
-                mockJob.PlayerAup = playerAup;
-                mockJob.Frame = frameSequence;
-                mockJob.Seed = seed;
-                mockJob.Severity01 = math.saturate(_cameraJuiceMockSeverity01);
-                mockJob.RadiusMeters = math.max(1f, _cameraJuiceMockRadiusMeters);
-                mockJob.Execute();
+                if (!TryWriteCameraJuiceMockSignals(
+                        playerAup,
+                        frameSequence,
+                        seed,
+                        math.saturate(_cameraJuiceMockSeverity01),
+                        math.max(1f, _cameraJuiceMockRadiusMeters)) ||
+                    !OpenCameraJuiceBufferReadOnly(in _cameraJuiceMockSignalsHandle, CameraJuiceMockSignalCapacity, out mockSignals))
+                {
+                    FailClosedProceduralCameraJuiceFrame(CameraJuiceFlagVaultUnavailable);
+                    return;
+                }
+
                 mockCount = math.clamp(_cameraJuiceMockSignalCount <= 0 ? 4 : _cameraJuiceMockSignalCount, 1, CameraJuiceMockSignalCapacity);
             }
 
@@ -468,9 +544,10 @@ namespace Hecton8.VFX
             evaluateJob.CombatDamageSignals = SignalBus<CombatDamageSignal>.GetFrameSnapshotArray();
             evaluateJob.SeismicSignals = SignalBus<SeismicSignal>.GetFrameSnapshotArray();
             evaluateJob.CameraImpactSignals = SignalBus<CameraJuiceImpactSignal>.GetFrameSnapshotArray();
-            evaluateJob.MockSignals = mockSignals.AsReadOnly();
-            evaluateJob.Tuning = tuning.AsReadOnly();
-            evaluateJob.Impulse = impulse;
+            evaluateJob.MockSignals = mockSignals;
+            evaluateJob.Tuning = tuningValue;
+            evaluateJob.Profiles = profiles;
+            evaluateJob.InputImpulse = impulseValue;
             evaluateJob.PlayerAup = playerAup;
             evaluateJob.CameraRight = right;
             evaluateJob.CameraUp = up;
@@ -482,47 +559,39 @@ namespace Hecton8.VFX
             evaluateJob.Frame = frameSequence;
             evaluateJob.MaxSignalsPerFrame = PROCEDURAL_MAX_IMPACTS_PER_FRAME;
             evaluateJob.Execute();
+            impulseValue = evaluateJob.ResultImpulse;
 
             IntegrateProceduralShakeJob integrateJob = default;
-            integrateJob.State = state;
-            integrateJob.Impulse = impulse;
-            integrateJob.Projection = projection;
-            integrateJob.Tuning = tuning.AsReadOnly();
+            integrateJob.InputState = stateValue;
+            integrateJob.InputImpulse = impulseValue;
+            integrateJob.Tuning = tuningValue;
             integrateJob.DeltaTime = math.clamp(math.isfinite(dt) ? dt : 0f, 0f, 0.1f);
             integrateJob.EffectiveShakeScale = effectiveShakeScale;
             integrateJob.GlobalQualityWeight01 = quality;
             integrateJob.XrActive = HectonXRRuntimeState.IsXRActive ? 1u : 0u;
             integrateJob.Sequence = frameSequence;
             integrateJob.Execute();
+            stateValue = integrateJob.ResultState;
+            impulseValue = integrateJob.ResultImpulse;
+            CameraJuiceProjectionDTO projectionValue = integrateJob.ResultProjection;
             _cameraJuiceSequence = frameSequence + 1u;
             _cameraJuiceLastBurstExecutionMicros = (float)((Stopwatch.GetTimestamp() - startTicks) * 1000000.0 / Stopwatch.Frequency);
             if (_cameraJuiceLastBurstExecutionMicros > CameraJuiceBurstBudgetMicroseconds)
             {
-                CameraJuiceProjectionDTO projectionValue = projection[0];
                 projectionValue.Flags |= CameraJuiceFlagBurstBudgetExceeded;
-                projection[0] = projectionValue;
                 _cameraJuiceTelemetryDumpRequested = true;
             }
 
             ClearPendingProceduralCameraJuiceManualImpulse();
 
-            PublishCameraJuiceStateFromNative(state, impulse, projection, quality);
-        }
+            PublishCameraJuiceStateFromValues(ref stateValue, ref impulseValue, ref projectionValue, quality);
 
-        private bool OpenCameraJuiceBuffer<T>(
-            in VaultGenerationHandle<T> handle,
-            int requiredCount,
-            out NativeArray<T> buffer)
-            where T : unmanaged
-        {
-            buffer = default;
-            IDataVault vault = _dataVault;
-            return vault != null &&
-                   handle.BufferID != 0u &&
-                   handle.Generation != 0u &&
-                   vault.TryResolveHandle(in handle, out buffer) &&
-                   buffer.IsCreated &&
-                   buffer.Length >= requiredCount;
+            bool committed =
+                TryWriteCameraJuiceBufferValue(in _cameraJuiceStateHandle, in stateValue) &
+                TryWriteCameraJuiceBufferValue(in _cameraJuiceImpulseHandle, in impulseValue) &
+                TryWriteCameraJuiceBufferValue(in _cameraJuiceProjectionHandle, in projectionValue);
+            if (!committed)
+                _cameraJuiceLastFlags |= CameraJuiceFlagVaultUnavailable;
         }
 
         private bool OpenCameraJuiceBufferReadOnly<T>(
@@ -533,23 +602,195 @@ namespace Hecton8.VFX
         {
             buffer = default;
             IDataVault vault = _dataVault;
-            return vault != null &&
-                   handle.BufferID != 0u &&
-                   handle.Generation != 0u &&
-                   vault.TryReadOnlyHandle(in handle, out buffer) &&
-                   buffer.IsCreated &&
-                   buffer.Length >= requiredCount;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                handle.BufferID == 0u ||
+                handle.Generation == 0u ||
+                !vault.TryReadOnlyHandle(in handle, out buffer) ||
+                vault.IsCompactionFenceActive ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredCount)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
         }
 
-        private void PublishCameraJuiceStateFromNative(
-            NativeArray<CameraJuiceStateDTO> state,
-            NativeArray<CameraJuiceImpulseDTO> impulse,
-            NativeArray<CameraJuiceProjectionDTO> projection,
+        private bool TryWriteCameraJuiceBufferValue<T>(
+            in VaultGenerationHandle<T> handle,
+            in T value)
+            where T : unmanaged
+        {
+            IDataVault vault = _dataVault;
+            NativeArray<T> buffer = default;
+            bool acquired = false;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                handle.BufferID == 0u ||
+                handle.Generation == 0u)
+            {
+                return false;
+            }
+
+            try
+            {
+                acquired = vault.TryAcquireWriteLock(in handle, CameraJuiceOwnerSystemId, out buffer);
+                if (!acquired ||
+                    vault.IsCompactionFenceActive ||
+                    !buffer.IsCreated ||
+                    buffer.Length == 0)
+                {
+                    return false;
+                }
+
+                buffer[0] = value;
+                return true;
+            }
+            finally
+            {
+                if (acquired)
+                    vault.ReleaseWriteLock(in handle, CameraJuiceOwnerSystemId);
+            }
+        }
+
+        private bool TryWriteCameraJuiceMockSignals(
+            double3 playerAup,
+            uint frameSequence,
+            uint seed,
+            float severity01,
+            float radiusMeters)
+        {
+            Span<CameraJuiceMockSignalDTO> generated = stackalloc CameraJuiceMockSignalDTO[CameraJuiceMockSignalCapacity];
+            for (int i = 0; i < generated.Length; i++)
+            {
+                uint hash = math.hash(new uint3(seed, (uint)i, frameSequence));
+                float angle = ((hash & 1023u) * (math.PI * 2f)) * math.rcp(1024f);
+                float ring = math.lerp(3f, math.max(3f, radiusMeters), ((hash >> 10) & 255u) * math.rcp(255f));
+                int yQuantized = (int)((hash >> 18) & 31u) - 15;
+                MathLodApproximation.ApproxSinCosBhaskara(angle, out float angleSin, out float angleCos);
+                float3 offset = new float3(angleCos * ring, yQuantized * 0.05f, angleSin * ring);
+                generated[i] = new CameraJuiceMockSignalDTO
+                {
+                    EpicenterAup = playerAup + new double3(offset.x, offset.y, offset.z),
+                    Direction = -NormalizeSafe(offset, new float3(0f, 0f, -1f)),
+                    Severity01 = math.saturate(severity01),
+                    RadiusMeters = math.max(1f, radiusMeters),
+                    Frame = frameSequence,
+                    Seed = hash,
+                    Flags = 1u
+                };
+            }
+
+            IDataVault vault = _dataVault;
+            NativeArray<CameraJuiceMockSignalDTO> mockSignals = default;
+            bool acquired = false;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                _cameraJuiceMockSignalsHandle.BufferID == 0u ||
+                _cameraJuiceMockSignalsHandle.Generation == 0u)
+            {
+                return false;
+            }
+
+            try
+            {
+                acquired = vault.TryAcquireWriteLock(in _cameraJuiceMockSignalsHandle, CameraJuiceOwnerSystemId, out mockSignals);
+                if (!acquired ||
+                    vault.IsCompactionFenceActive ||
+                    !mockSignals.IsCreated ||
+                    mockSignals.Length < CameraJuiceMockSignalCapacity)
+                {
+                    return false;
+                }
+
+                for (int i = 0; i < generated.Length; i++)
+                    mockSignals[i] = generated[i];
+                return true;
+            }
+            finally
+            {
+                if (acquired)
+                    vault.ReleaseWriteLock(in _cameraJuiceMockSignalsHandle, CameraJuiceOwnerSystemId);
+            }
+        }
+
+        private bool TrySeedCameraJuiceProfiles()
+        {
+            IDataVault vault = _dataVault;
+            NativeArray<CameraTraumaProfileDTO> profiles = default;
+            bool acquired = false;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                _cameraJuiceProfilesHandle.BufferID == 0u ||
+                _cameraJuiceProfilesHandle.Generation == 0u)
+            {
+                return false;
+            }
+
+            try
+            {
+                acquired = vault.TryAcquireWriteLock(in _cameraJuiceProfilesHandle, CameraJuiceOwnerSystemId, out profiles);
+                if (!acquired ||
+                    vault.IsCompactionFenceActive ||
+                    !profiles.IsCreated ||
+                    profiles.Length < CameraJuiceProfileCapacity)
+                {
+                    return false;
+                }
+
+                CameraJuiceBurstMath.WriteDefaultProfiles(profiles);
+                return true;
+            }
+            finally
+            {
+                if (acquired)
+                    vault.ReleaseWriteLock(in _cameraJuiceProfilesHandle, CameraJuiceOwnerSystemId);
+            }
+        }
+
+        private bool TryClearCameraJuiceMockSignals()
+        {
+            IDataVault vault = _dataVault;
+            NativeArray<CameraJuiceMockSignalDTO> mockSignals = default;
+            bool acquired = false;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                _cameraJuiceMockSignalsHandle.BufferID == 0u ||
+                _cameraJuiceMockSignalsHandle.Generation == 0u)
+            {
+                return false;
+            }
+
+            try
+            {
+                acquired = vault.TryAcquireWriteLock(in _cameraJuiceMockSignalsHandle, CameraJuiceOwnerSystemId, out mockSignals);
+                if (!acquired ||
+                    vault.IsCompactionFenceActive ||
+                    !mockSignals.IsCreated ||
+                    mockSignals.Length < CameraJuiceMockSignalCapacity)
+                {
+                    return false;
+                }
+
+                for (int i = 0; i < mockSignals.Length; i++)
+                    mockSignals[i] = default;
+                return true;
+            }
+            finally
+            {
+                if (acquired)
+                    vault.ReleaseWriteLock(in _cameraJuiceMockSignalsHandle, CameraJuiceOwnerSystemId);
+            }
+        }
+
+        private void PublishCameraJuiceStateFromValues(
+            ref CameraJuiceStateDTO stateValue,
+            ref CameraJuiceImpulseDTO impulseValue,
+            ref CameraJuiceProjectionDTO projectionValue,
             float quality)
         {
-            CameraJuiceStateDTO stateValue = state[0];
-            CameraJuiceImpulseDTO impulseValue = impulse[0];
-            CameraJuiceProjectionDTO projectionValue = projection[0];
             bool invalid =
                 !math.all(math.isfinite(stateValue.CurrentTranslationalOffset)) ||
                 !math.all(math.isfinite(stateValue.CurrentRotationalOffset)) ||
@@ -563,18 +804,20 @@ namespace Hecton8.VFX
                 stateValue.CurrentTranslationalOffset = float3.zero;
                 stateValue.CurrentRotationalOffset = float3.zero;
                 stateValue.TraumaScalar = 0f;
-                state[0] = stateValue;
                 projectionValue.TranslationOffset = float3.zero;
                 projectionValue.RotationDegrees = float3.zero;
                 projectionValue.TraumaScalar = 0f;
                 projectionValue.Flags |= CameraJuiceFlagNanSanitized;
-                projection[0] = projectionValue;
             }
 
+            bool previousProjectionDirty = _cameraJuiceProjectionDirty;
             _cameraJuiceProjectionTranslation = projectionValue.TranslationOffset;
             _cameraJuiceProjectionRotationDegrees = projectionValue.RotationDegrees;
-            _cameraJuiceProjectionDirty = math.lengthsq(_cameraJuiceProjectionTranslation) > 0.0000001f ||
-                                          math.lengthsq(_cameraJuiceProjectionRotationDegrees) > 0.0000001f;
+            bool nextProjectionDirty = math.lengthsq(_cameraJuiceProjectionTranslation) > 0.0000001f ||
+                                       math.lengthsq(_cameraJuiceProjectionRotationDegrees) > 0.0000001f;
+            _cameraJuiceProjectionDirty = nextProjectionDirty;
+            if (previousProjectionDirty && !nextProjectionDirty)
+                _cameraJuiceProjectionResetDirty = true;
             _proceduralShakeTranslation = stateValue.CurrentTranslationalOffset;
             _proceduralShakeRotationDegrees = stateValue.CurrentRotationalOffset;
             _shakeOffset = Vector3.zero;
@@ -585,26 +828,63 @@ namespace Hecton8.VFX
             _cameraJuiceLastIncomingSignalCount = impulseValue.SignalCount;
             _cameraJuiceLastDirectionalImpulseMagnitude = math.length(impulseValue.DirectionalMemory);
             _cameraJuiceLastStateHash = projectionValue.StateHash;
-            _cameraJuiceLastFlags |= projectionValue.Flags | CameraJuiceFlagVRSomaticWriteRejected;
+            _cameraJuiceLastFlags |= projectionValue.Flags;
+            _cameraJuiceNativeStateDirty =
+                _cameraJuiceLastTraumaScalar > 0.0001f ||
+                _cameraJuiceLastIncomingSignalCount > 0 ||
+                _cameraJuiceProjectionDirty ||
+                impulseValue.PriorityAndFlags != 0u;
+            ApplyImpactFovPunchFromImpulse(in impulseValue);
             if (invalid)
             {
                 RecordCameraJuiceTelemetry();
-                DumpCameraJuiceTelemetry();
+                RequestDeferredCameraJuiceTelemetryDump();
             }
+        }
+
+        private void ApplyImpactFovPunchFromImpulse(in CameraJuiceImpulseDTO impulse)
+        {
+            if (!_fovEnabled || HectonXRRuntimeState.IsXRActive || impulse.SignalCount <= 0)
+                return;
+
+            float severity = math.saturate(math.isfinite(impulse.MaxSignalMagnitude) ? impulse.MaxSignalMagnitude : 0f);
+            byte priority = (byte)(impulse.PriorityAndFlags & 0xFFu);
+            if (severity < PROCEDURAL_IMPACT_FOV_MIN_SEVERITY && priority < CameraJuiceSignals.HighPriority)
+                return;
+
+            float quality = math.saturate(math.isfinite(_cameraJuiceLastQualityWeight) ? _cameraJuiceLastQualityWeight : 1f);
+            float qualityT = EvaluateSmoothStep01(quality);
+            if (qualityT <= 0.0001f)
+                return;
+
+            float severityT = EvaluateSmoothStep01(math.saturate((severity - PROCEDURAL_IMPACT_FOV_MIN_SEVERITY) * math.rcp(1f - PROCEDURAL_IMPACT_FOV_MIN_SEVERITY)));
+            float priorityT = math.saturate(priority * math.rcp(255f));
+            float priorityBoost = math.lerp(0.85f, 1.2f, priorityT);
+            float amount = math.clamp(math.lerp(0.75f, PROCEDURAL_IMPACT_FOV_MAX_DEGREES, severityT) * priorityBoost * qualityT, 0f, PROCEDURAL_IMPACT_FOV_MAX_DEGREES);
+            if (amount <= 0.001f)
+                return;
+
+            float duration = math.lerp(PROCEDURAL_IMPACT_FOV_DURATION * 0.65f, PROCEDURAL_IMPACT_FOV_DURATION, qualityT);
+            TriggerFOVKick(amount, duration);
         }
 
         private void PublishProceduralCameraJuiceProjection()
         {
-            if (_cameraJuiceProjectionDirty)
+            if (_cameraJuiceProjectionDirty || _cameraJuiceProjectionResetDirty)
+            {
                 ApplyCameraJuiceProjectionToCamera();
+                _cameraJuiceProjectionResetDirty = false;
+            }
         }
 
         private void ClearProceduralCameraJuiceProjection()
         {
+            bool projectionWasApplied = _cameraJuiceProjectionDirty || _cameraJuiceProjectionResetDirty;
             _shakeOffset = Vector3.zero;
             _cameraJuiceProjectionTranslation = float3.zero;
             _cameraJuiceProjectionRotationDegrees = float3.zero;
             _cameraJuiceProjectionDirty = false;
+            _cameraJuiceProjectionResetDirty = false;
             _proceduralShakeTranslation = float3.zero;
             _proceduralShakeRotationDegrees = float3.zero;
             _cameraJuiceLastTraumaScalar = 0f;
@@ -612,7 +892,7 @@ namespace Hecton8.VFX
             _cameraJuiceLastIncomingSignalCount = 0;
             _cameraJuiceLastDirectionalImpulseMagnitude = 0f;
             _cameraJuiceLastStateHash = 0u;
-            if (_mainCamera != null && !_mainCamera.orthographic)
+            if (projectionWasApplied && _mainCamera != null && !_mainCamera.orthographic)
                 ApplyCameraJuiceProjectionToCamera();
         }
 
@@ -632,7 +912,20 @@ namespace Hecton8.VFX
             ClearProceduralCameraJuiceProjection();
             ClearProceduralCameraJuiceNativeState(flags);
             RecordCameraJuiceTelemetry();
-            DumpCameraJuiceTelemetry();
+            RequestDeferredCameraJuiceTelemetryDump();
+        }
+
+        private void ClearSuppressedProceduralCameraJuiceState(uint flags)
+        {
+            if (!_cameraJuiceNativeStateDirty &&
+                _cameraJuiceManualTrauma01 <= 0.0001f &&
+                math.lengthsq(_cameraJuiceManualDirectionalImpulseLocal) <= 0.000001f)
+            {
+                return;
+            }
+
+            ClearPendingProceduralCameraJuiceManualImpulse();
+            ClearProceduralCameraJuiceNativeState(flags);
         }
 
         private void ClearPendingProceduralCameraJuiceManualImpulse()
@@ -643,21 +936,17 @@ namespace Hecton8.VFX
 
         private void ClearProceduralCameraJuiceNativeState(uint flags)
         {
-            if (!OpenCameraJuiceBuffer(in _cameraJuiceStateHandle, 1, out NativeArray<CameraJuiceStateDTO> state) ||
-                !OpenCameraJuiceBuffer(in _cameraJuiceImpulseHandle, 1, out NativeArray<CameraJuiceImpulseDTO> impulse) ||
-                !OpenCameraJuiceBuffer(in _cameraJuiceProjectionHandle, 1, out NativeArray<CameraJuiceProjectionDTO> projection))
-            {
-                return;
-            }
-
-            state[0] = default;
-            impulse[0] = default;
-            projection[0] = new CameraJuiceProjectionDTO
+            CameraJuiceProjectionDTO projection = new CameraJuiceProjectionDTO
             {
                 ComfortRotation = quaternion.identity,
                 Flags = flags | CameraJuiceFlagVRSomaticWriteRejected,
                 GlobalQualityWeight01 = _cameraJuiceLastQualityWeight
             };
+
+            _ = TryWriteCameraJuiceBufferValue(in _cameraJuiceStateHandle, default(CameraJuiceStateDTO)) &
+                TryWriteCameraJuiceBufferValue(in _cameraJuiceImpulseHandle, default(CameraJuiceImpulseDTO)) &
+                TryWriteCameraJuiceBufferValue(in _cameraJuiceProjectionHandle, in projection);
+            _cameraJuiceNativeStateDirty = false;
         }
 
         private void ApplyCameraJuiceProjectionToCamera()
@@ -710,9 +999,11 @@ namespace Hecton8.VFX
             playerAup = default;
             IDataVault vault = _dataVault;
             if (vault != null &&
+                !vault.IsCompactionFenceActive &&
                 _cameraJuicePlayerKinematicStateHandle.BufferID != 0u &&
                 _cameraJuicePlayerKinematicStateHandle.Generation != 0u &&
                 vault.TryReadOnlyHandle(in _cameraJuicePlayerKinematicStateHandle, out NativeArray<LockstepPlayerKinematicState>.ReadOnly states) &&
+                !vault.IsCompactionFenceActive &&
                 states.IsCreated &&
                 states.Length > 0)
             {
@@ -729,26 +1020,76 @@ namespace Hecton8.VFX
         }
 
 #if UNITY_EDITOR
-        private bool TryLoadCameraJuiceTraumaProfilesFromCsv(
-            NativeArray<CameraTraumaProfileDTO> profiles,
-            NativeArray<byte> csvScratch,
-            NativeArray<CameraJuiceTuningDTO> tuning)
+        private bool TryLoadCameraJuiceTraumaProfilesFromCsv()
         {
-            if (!profiles.IsCreated || profiles.Length == 0 || !csvScratch.IsCreated || csvScratch.Length == 0)
-                return false;
-
             string path = Path.GetFullPath(Path.Combine(Application.dataPath, "_Project", "Data", "VFX", CameraJuiceTraumaProfilesFileName));
             if (!File.Exists(path))
                 return false;
 
-            int byteCount = 0;
+            Span<byte> csvScratch = stackalloc byte[CameraJuiceCsvScratchBytes];
+            if (!TryReadCameraJuiceCsvBytes(path, csvScratch, out int byteCount))
+                return false;
+
+            Span<CameraTraumaProfileDTO> parsedProfiles = stackalloc CameraTraumaProfileDTO[CameraJuiceProfileCapacity];
+            int loaded = CameraJuiceBurstMath.ParseProfilesCsv(csvScratch.Slice(0, byteCount), parsedProfiles);
+            if (loaded <= 0)
+                return false;
+
+            CameraTraumaProfileDTO firstProfile = parsedProfiles[0];
+            float lastRadiusMeters = parsedProfiles[loaded - 1].RadiusMeters;
+            IDataVault vault = _dataVault;
+            NativeArray<CameraTraumaProfileDTO> profiles = default;
+            bool acquired = false;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                _cameraJuiceProfilesHandle.BufferID == 0u ||
+                _cameraJuiceProfilesHandle.Generation == 0u)
+            {
+                return false;
+            }
+
+            try
+            {
+                acquired = vault.TryAcquireWriteLock(in _cameraJuiceProfilesHandle, CameraJuiceOwnerSystemId, out profiles);
+                if (!acquired ||
+                    vault.IsCompactionFenceActive ||
+                    !profiles.IsCreated ||
+                    profiles.Length < CameraJuiceProfileCapacity)
+                {
+                    return false;
+                }
+
+                for (int i = 0; i < profiles.Length; i++)
+                    profiles[i] = i < loaded ? parsedProfiles[i] : default;
+            }
+            finally
+            {
+                if (acquired)
+                    vault.ReleaseWriteLock(in _cameraJuiceProfilesHandle, CameraJuiceOwnerSystemId);
+            }
+
+            CameraJuiceTuningDTO tuningValue = CameraJuiceBurstMath.DefaultTuning(ResolveCameraJuiceGlobalQualityWeight());
+            tuningValue.ProfileCount = (uint)loaded;
+            tuningValue.MaxTranslationMeters = math.max(0.001f, PROCEDURAL_TRANSLATION_AMPLITUDE_METERS * math.max(0.1f, firstProfile.TranslationGain));
+            tuningValue.MaxRotationDegrees = math.max(0.01f, PROCEDURAL_ROTATION_AMPLITUDE_DEGREES * math.max(0.1f, firstProfile.RotationGain));
+            tuningValue.TraumaDecayPerSecond = math.max(0.1f, firstProfile.DecayPerSecond);
+            tuningValue.BaseFrequencyHz = math.max(1f, firstProfile.FrequencyHz);
+            tuningValue.LowTierRadiusMeters = math.max(1f, firstProfile.RadiusMeters);
+            tuningValue.UltraRadiusMeters = math.max(tuningValue.LowTierRadiusMeters, lastRadiusMeters);
+            return TryWriteCameraJuiceBufferValue(in _cameraJuiceTuningHandle, in tuningValue);
+        }
+
+        private static bool TryReadCameraJuiceCsvBytes(string path, Span<byte> destination, out int byteCount)
+        {
+            byteCount = 0;
+            if (destination.Length == 0)
+                return false;
+
             try
             {
                 using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
-                    byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(csvScratch);
-                    Span<byte> destination = new Span<byte>(scratchPtr, csvScratch.Length);
-                    while (byteCount < csvScratch.Length)
+                    while (byteCount < destination.Length)
                     {
                         int read = stream.Read(destination.Slice(byteCount));
                         if (read <= 0)
@@ -767,30 +1108,7 @@ namespace Hecton8.VFX
                 return false;
             }
 
-            if (byteCount <= 0)
-                return false;
-
-            byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(csvScratch);
-            int loaded = CameraJuiceBurstMath.ParseProfilesCsv(new ReadOnlySpan<byte>(ptr, byteCount), profiles);
-            if (loaded <= 0)
-                return false;
-
-            if (tuning.IsCreated && tuning.Length > 0)
-            {
-                ref CameraJuiceTuningDTO tuningValue = ref UnsafeUtility.AsRef<CameraJuiceTuningDTO>(
-                    NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(tuning));
-                tuningValue.ProfileCount = (uint)loaded;
-                CameraTraumaProfileDTO firstProfile = profiles[0];
-                tuningValue.MaxTranslationMeters = math.max(0.001f, PROCEDURAL_TRANSLATION_AMPLITUDE_METERS * math.max(0.1f, firstProfile.TranslationGain));
-                tuningValue.MaxRotationDegrees = math.max(0.01f, PROCEDURAL_ROTATION_AMPLITUDE_DEGREES * math.max(0.1f, firstProfile.RotationGain));
-                tuningValue.TraumaDecayPerSecond = math.max(0.1f, firstProfile.DecayPerSecond);
-                tuningValue.BaseFrequencyHz = math.max(1f, firstProfile.FrequencyHz);
-                tuningValue.LowTierRadiusMeters = math.max(1f, firstProfile.RadiusMeters);
-                if (loaded > 1)
-                    tuningValue.UltraRadiusMeters = math.max(tuningValue.LowTierRadiusMeters, profiles[loaded - 1].RadiusMeters);
-            }
-
-            return true;
+            return byteCount > 0;
         }
 #endif
 
@@ -838,18 +1156,40 @@ namespace Hecton8.VFX
 
         public void EditorSetProceduralCameraJuiceTuning(float translationMeters, float rotationDegrees, float decayPerSecond, float frequencyHz)
         {
-            if (!EnsureProceduralCameraJuiceBuffers() ||
-                !OpenCameraJuiceBuffer(in _cameraJuiceTuningHandle, 1, out NativeArray<CameraJuiceTuningDTO> tuning))
+            if (!EnsureProceduralCameraJuiceBuffers())
             {
                 return;
             }
 
-            ref CameraJuiceTuningDTO value = ref UnsafeUtility.AsRef<CameraJuiceTuningDTO>(
-                NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(tuning));
-            value.MaxTranslationMeters = math.clamp(translationMeters, 0.001f, 0.25f);
-            value.MaxRotationDegrees = math.clamp(rotationDegrees, 0.01f, 12f);
-            value.TraumaDecayPerSecond = math.clamp(decayPerSecond, 0.1f, 8f);
-            value.BaseFrequencyHz = math.clamp(frequencyHz, 1f, 55f);
+            IDataVault vault = _dataVault;
+            NativeArray<CameraJuiceTuningDTO> tuning = default;
+            bool acquired = false;
+            if (vault == null || vault.IsCompactionFenceActive)
+                return;
+
+            try
+            {
+                acquired = vault.TryAcquireWriteLock(in _cameraJuiceTuningHandle, CameraJuiceOwnerSystemId, out tuning);
+                if (!acquired ||
+                    vault.IsCompactionFenceActive ||
+                    !tuning.IsCreated ||
+                    tuning.Length == 0)
+                {
+                    return;
+                }
+
+                CameraJuiceTuningDTO value = tuning[0];
+                value.MaxTranslationMeters = math.clamp(translationMeters, 0.001f, 0.25f);
+                value.MaxRotationDegrees = math.clamp(rotationDegrees, 0.01f, 12f);
+                value.TraumaDecayPerSecond = math.clamp(decayPerSecond, 0.1f, 8f);
+                value.BaseFrequencyHz = math.clamp(frequencyHz, 1f, 55f);
+                tuning[0] = value;
+            }
+            finally
+            {
+                if (acquired)
+                    vault.ReleaseWriteLock(in _cameraJuiceTuningHandle, CameraJuiceOwnerSystemId);
+            }
         }
 
         public int EditorCopyCameraJuiceTelemetry(float[] trauma, float[] signalCount, float[] burstMicros, int maxSamples)
@@ -943,69 +1283,6 @@ namespace Hecton8.VFX
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct SeedCameraJuiceBuffersJob : IJob
-        {
-            [NoAlias] public NativeArray<CameraJuiceStateDTO> State;
-            [NoAlias] public NativeArray<CameraJuiceImpulseDTO> Impulse;
-            [NoAlias] public NativeArray<CameraJuiceProjectionDTO> Projection;
-            [NoAlias] public NativeArray<CameraJuiceTuningDTO> Tuning;
-            [NoAlias] public NativeArray<CameraTraumaProfileDTO> Profiles;
-            [NoAlias] public NativeArray<CameraJuiceMockSignalDTO> MockSignals;
-            public float GlobalQualityWeight01;
-
-            public void Execute()
-            {
-                State[0] = default;
-                Impulse[0] = default;
-                Projection[0] = new CameraJuiceProjectionDTO
-                {
-                    ComfortRotation = quaternion.identity,
-                    Flags = CameraJuiceFlagVRSomaticWriteRejected,
-                    GlobalQualityWeight01 = math.saturate(GlobalQualityWeight01)
-                };
-                Tuning[0] = CameraJuiceBurstMath.DefaultTuning(GlobalQualityWeight01);
-                CameraJuiceBurstMath.WriteDefaultProfiles(Profiles);
-                for (int i = 0; i < MockSignals.Length; i++)
-                    MockSignals[i] = default;
-            }
-        }
-
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct GenerateMockTraumaSpikesJob : IJob
-        {
-            [NoAlias] public NativeArray<CameraJuiceMockSignalDTO> MockSignals;
-            public double3 PlayerAup;
-            public uint Frame;
-            public uint Seed;
-            public float Severity01;
-            public float RadiusMeters;
-
-            public void Execute()
-            {
-                int count = MockSignals.Length;
-                for (int i = 0; i < count; i++)
-                {
-                    uint hash = math.hash(new uint3(Seed, (uint)i, Frame));
-                    float angle = ((hash & 1023u) * (math.PI * 2f)) * math.rcp(1024f);
-                    float ring = math.lerp(3f, math.max(3f, RadiusMeters), ((hash >> 10) & 255u) * math.rcp(255f));
-                    int yQuantized = (int)((hash >> 18) & 31u) - 15;
-                    MathLodApproximation.ApproxSinCosBhaskara(angle, out float angleSin, out float angleCos);
-                    float3 offset = new float3(angleCos * ring, yQuantized * 0.05f, angleSin * ring);
-                    MockSignals[i] = new CameraJuiceMockSignalDTO
-                    {
-                        EpicenterAup = PlayerAup + new double3(offset.x, offset.y, offset.z),
-                        Direction = -NormalizeSafe(offset, new float3(0f, 0f, -1f)),
-                        Severity01 = math.saturate(Severity01),
-                        RadiusMeters = math.max(1f, RadiusMeters),
-                        Frame = Frame,
-                        Seed = hash,
-                        Flags = 1u
-                    };
-                }
-            }
-        }
-
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct EvaluateCameraTraumaJob : IJob
         {
             [ReadOnly, NoAlias] public NativeArray<ImpactSignal>.ReadOnly ImpactSignals;
@@ -1014,8 +1291,10 @@ namespace Hecton8.VFX
             [ReadOnly, NoAlias] public NativeArray<SeismicSignal>.ReadOnly SeismicSignals;
             [ReadOnly, NoAlias] public NativeArray<CameraJuiceImpactSignal>.ReadOnly CameraImpactSignals;
             [ReadOnly, NoAlias] public NativeArray<CameraJuiceMockSignalDTO>.ReadOnly MockSignals;
-            [ReadOnly, NoAlias] public NativeArray<CameraJuiceTuningDTO>.ReadOnly Tuning;
-            [NoAlias] public NativeArray<CameraJuiceImpulseDTO> Impulse;
+            [ReadOnly, NoAlias] public NativeArray<CameraTraumaProfileDTO>.ReadOnly Profiles;
+            public CameraJuiceTuningDTO Tuning;
+            public CameraJuiceImpulseDTO InputImpulse;
+            public CameraJuiceImpulseDTO ResultImpulse;
             public double3 PlayerAup;
             public float3 CameraRight;
             public float3 CameraUp;
@@ -1029,7 +1308,21 @@ namespace Hecton8.VFX
 
             public void Execute()
             {
-                CameraJuiceImpulseDTO impulse = Impulse[0];
+                CameraJuiceImpulseDTO impulse = InputImpulse;
+                byte activePriorityFloor = UnpackActivePriority(InputImpulse.PriorityAndFlags);
+                int activePriorityHoldFrames = UnpackPriorityHoldFrames(InputImpulse.PriorityAndFlags);
+                if (activePriorityHoldFrames > 0)
+                    activePriorityHoldFrames--;
+                if (activePriorityHoldFrames <= 0)
+                    activePriorityFloor = 0;
+
+                uint carriedProfileHash = activePriorityFloor != 0 ? InputImpulse.DominantProfileHash : 0u;
+                float carriedProfileDecay = activePriorityFloor != 0 && math.isfinite(InputImpulse.DominantProfileDecayPerSecond)
+                    ? math.max(0f, InputImpulse.DominantProfileDecayPerSecond)
+                    : 0f;
+                float carriedProfileFrequency = activePriorityFloor != 0 && math.isfinite(InputImpulse.DominantProfileFrequencyHz)
+                    ? math.max(0f, InputImpulse.DominantProfileFrequencyHz)
+                    : 0f;
                 impulse.DirectionalImpulse = float3.zero;
                 impulse.TraumaDelta = 0f;
                 impulse.SignalCount = 0;
@@ -1037,6 +1330,11 @@ namespace Hecton8.VFX
                 impulse.MaxSignalMagnitude = 0f;
                 impulse.DistanceAttenuation = 0f;
                 impulse.Sequence = Frame;
+                impulse.RotationGain = 1f;
+                impulse.DominantProfileHash = carriedProfileHash;
+                impulse.DominantProfileDecayPerSecond = carriedProfileDecay;
+                impulse.DominantProfileFrequencyHz = carriedProfileFrequency;
+                impulse.PriorityAndFlags = PackPriorityState(0, activePriorityFloor, activePriorityHoldFrames);
 
                 bool manualDirectionFinite = math.all(math.isfinite(ManualDirectionalImpulseLocal));
                 bool manualDirectionClamped = manualDirectionFinite && math.any(math.abs(ManualDirectionalImpulseLocal) > 8f);
@@ -1048,37 +1346,121 @@ namespace Hecton8.VFX
                 float3 manualDirection = manualDirectionFinite
                     ? math.clamp(ManualDirectionalImpulseLocal, new float3(-8f), new float3(8f))
                     : float3.zero;
+                byte manualPriority = ResolveSignalPriorityFromSeverity(trauma);
+                if (ShouldRejectBelowActivePriority(manualPriority, activePriorityFloor))
+                {
+                    trauma = 0f;
+                    manualDirection = float3.zero;
+                }
+
                 float manualDirectionSq = math.lengthsq(manualDirection);
                 float3 direction = manualDirectionSq > 0.000001f ? manualDirection : float3.zero;
                 int count = manualDirectionSq > 0.000001f || trauma > 0f ? 1 : 0;
                 float maxMagnitude = trauma;
                 float attenuationSum = count > 0 ? 1f : 0f;
                 int maxSignals = math.max(1, MaxSignalsPerFrame);
+                float rotationGainSum = 0f;
+                float rotationGainWeight = 0f;
+                byte dominantPriority = count > 0 ? manualPriority : (byte)0;
+                uint dominantProfileHash = carriedProfileHash;
+                float dominantProfileWeight = count > 0 ? trauma : 0f;
+                float dominantProfileDecay = carriedProfileDecay;
+                float dominantProfileFrequency = carriedProfileFrequency;
                 if (!math.isfinite(GlobalQualityWeight01))
                     impulse.Flags |= CameraJuiceFlagNanSanitized;
                 float quality = math.saturate(math.isfinite(GlobalQualityWeight01) ? GlobalQualityWeight01 : 1f);
                 float lowRadiusMeters = 32f;
                 float ultraRadiusMeters = 120f;
-                if (Tuning.IsCreated && Tuning.Length > 0)
-                {
-                    CameraJuiceTuningDTO tuning = Tuning[0];
-                    if (!math.isfinite(tuning.LowTierRadiusMeters) || !math.isfinite(tuning.UltraRadiusMeters))
-                        impulse.Flags |= CameraJuiceFlagNanSanitized;
-                    lowRadiusMeters = math.max(1f, math.isfinite(tuning.LowTierRadiusMeters) ? tuning.LowTierRadiusMeters : lowRadiusMeters);
-                    ultraRadiusMeters = math.max(lowRadiusMeters, math.isfinite(tuning.UltraRadiusMeters) ? tuning.UltraRadiusMeters : ultraRadiusMeters);
-                }
+                if (!math.isfinite(Tuning.LowTierRadiusMeters) || !math.isfinite(Tuning.UltraRadiusMeters))
+                    impulse.Flags |= CameraJuiceFlagNanSanitized;
+                lowRadiusMeters = math.max(1f, math.isfinite(Tuning.LowTierRadiusMeters) ? Tuning.LowTierRadiusMeters : lowRadiusMeters);
+                ultraRadiusMeters = math.max(lowRadiusMeters, math.isfinite(Tuning.UltraRadiusMeters) ? Tuning.UltraRadiusMeters : ultraRadiusMeters);
                 float radius = math.lerp(lowRadiusMeters, ultraRadiusMeters, quality);
                 if (sanitizedManual)
                     impulse.Flags |= CameraJuiceFlagNanSanitized;
 
                 if (CameraImpactSignals.IsCreated)
                 {
-                    int signalLimit = CameraImpactSignals.Length;
-                    for (int i = 0; i < signalLimit && count < maxSignals; i++)
+                    AccumulateCameraImpactSignalsByPriority(
+                        CameraJuiceSignalCriticalPriorityThreshold,
+                        256,
+                        activePriorityFloor,
+                        radius,
+                        ref trauma,
+                        ref direction,
+                        ref count,
+                        ref maxMagnitude,
+                        ref attenuationSum,
+                        ref rotationGainSum,
+                        ref rotationGainWeight,
+                        ref dominantPriority,
+                        ref dominantProfileHash,
+                        ref dominantProfileWeight,
+                        ref dominantProfileDecay,
+                        ref dominantProfileFrequency,
+                        ref impulse.Flags);
+                    if (dominantPriority < CameraJuiceSignals.CriticalPriority)
                     {
-                        CameraJuiceImpactSignal signal = CameraImpactSignals[i];
-                        float severity = MaxFinite(signal.Severity, signal.Impact.Intensity, ref impulse.Flags);
-                        AccumulateAupImpulse(signal.Impact.PointAup, severity, radius, ref trauma, ref direction, ref count, ref maxMagnitude, ref attenuationSum, ref impulse.Flags);
+                        AccumulateCameraImpactSignalsByPriority(
+                            CameraJuiceSignalHighPriorityThreshold,
+                            CameraJuiceSignalCriticalPriorityThreshold,
+                            activePriorityFloor,
+                            radius,
+                            ref trauma,
+                            ref direction,
+                            ref count,
+                            ref maxMagnitude,
+                            ref attenuationSum,
+                            ref rotationGainSum,
+                            ref rotationGainWeight,
+                            ref dominantPriority,
+                            ref dominantProfileHash,
+                            ref dominantProfileWeight,
+                            ref dominantProfileDecay,
+                            ref dominantProfileFrequency,
+                            ref impulse.Flags);
+                    }
+                    if (dominantPriority < CameraJuiceSignals.HighPriority)
+                    {
+                        AccumulateCameraImpactSignalsByPriority(
+                            CameraJuiceSignalNormalPriorityThreshold,
+                            CameraJuiceSignalHighPriorityThreshold,
+                            activePriorityFloor,
+                            radius,
+                            ref trauma,
+                            ref direction,
+                            ref count,
+                            ref maxMagnitude,
+                            ref attenuationSum,
+                            ref rotationGainSum,
+                            ref rotationGainWeight,
+                            ref dominantPriority,
+                            ref dominantProfileHash,
+                            ref dominantProfileWeight,
+                            ref dominantProfileDecay,
+                            ref dominantProfileFrequency,
+                            ref impulse.Flags);
+                    }
+                    if (dominantPriority < CameraJuiceSignals.NormalPriority)
+                    {
+                        AccumulateCameraImpactSignalsByPriority(
+                            CameraJuiceSignalLowPriorityThreshold,
+                            CameraJuiceSignalNormalPriorityThreshold,
+                            activePriorityFloor,
+                            radius,
+                            ref trauma,
+                            ref direction,
+                            ref count,
+                            ref maxMagnitude,
+                            ref attenuationSum,
+                            ref rotationGainSum,
+                            ref rotationGainWeight,
+                            ref dominantPriority,
+                            ref dominantProfileHash,
+                            ref dominantProfileWeight,
+                            ref dominantProfileDecay,
+                            ref dominantProfileFrequency,
+                            ref impulse.Flags);
                     }
                 }
 
@@ -1090,7 +1472,12 @@ namespace Hecton8.VFX
                         ImpactSignal signal = ImpactSignals[i];
                         float force = SanitizeSignalScalar(signal.Force, ref impulse.Flags);
                         float severity = MaxFinite(signal.Intensity, math.abs(force) * 0.01f, ref impulse.Flags);
-                        AccumulateAupImpulse(signal.PointAup, severity, radius, ref trauma, ref direction, ref count, ref maxMagnitude, ref attenuationSum, ref impulse.Flags);
+                        byte priority = ResolveSignalPriorityFromSeverity(severity);
+                        if (ShouldRejectBelowActivePriority(priority, activePriorityFloor))
+                            continue;
+
+                        if (AccumulateAupImpulse(signal.PointAup, severity, radius, ref trauma, ref direction, ref count, ref maxMagnitude, ref attenuationSum, ref impulse.Flags))
+                            dominantPriority = MaxPriority(dominantPriority, priority);
                     }
                 }
 
@@ -1103,7 +1490,12 @@ namespace Hecton8.VFX
                         float speed = SanitizeSignalScalar(signal.ImpactSpeed, ref impulse.Flags);
                         float kinetic = SanitizeSignalScalar(signal.KineticEnergy, ref impulse.Flags);
                         float severity = math.max(speed * 0.035f, kinetic * 0.00002f);
-                        AccumulateAupImpulse(signal.PointAup, severity, radius, ref trauma, ref direction, ref count, ref maxMagnitude, ref attenuationSum, ref impulse.Flags);
+                        byte priority = ResolveSignalPriorityFromSeverity(severity);
+                        if (ShouldRejectBelowActivePriority(priority, activePriorityFloor))
+                            continue;
+
+                        if (AccumulateAupImpulse(signal.PointAup, severity, radius, ref trauma, ref direction, ref count, ref maxMagnitude, ref attenuationSum, ref impulse.Flags))
+                            dominantPriority = MaxPriority(dominantPriority, priority);
                     }
                 }
 
@@ -1114,7 +1506,12 @@ namespace Hecton8.VFX
                     {
                         CombatDamageSignal signal = CombatDamageSignals[i];
                         float severity = SanitizeSignalScalar(signal.Magnitude, ref impulse.Flags) * 0.1f;
-                        AccumulateAbsoluteImpulse(signal.ImpactAup, severity, radius, ref trauma, ref direction, ref count, ref maxMagnitude, ref attenuationSum, ref impulse.Flags);
+                        byte priority = ResolveSignalPriorityFromSeverity(severity);
+                        if (ShouldRejectBelowActivePriority(priority, activePriorityFloor))
+                            continue;
+
+                        if (AccumulateAbsoluteImpulse(signal.ImpactAup, severity, radius, ref trauma, ref direction, ref count, ref maxMagnitude, ref attenuationSum, ref impulse.Flags))
+                            dominantPriority = MaxPriority(dominantPriority, priority);
                     }
                 }
 
@@ -1130,7 +1527,12 @@ namespace Hecton8.VFX
                         float severity = jitter * math.max(0.1f, amplitude);
                         float waveRadius = MaxFinite(signal.SWaveRadiusMeters, signal.PWaveRadiusMeters, ref impulse.Flags);
                         float seismicRadius = math.max(radius, waveRadius);
-                        AccumulateAbsoluteImpulse(signal.EpicenterAUP, severity, seismicRadius, ref trauma, ref direction, ref count, ref maxMagnitude, ref attenuationSum, ref impulse.Flags);
+                        byte priority = ResolveSignalPriorityFromSeverity(severity);
+                        if (ShouldRejectBelowActivePriority(priority, activePriorityFloor))
+                            continue;
+
+                        if (AccumulateAbsoluteImpulse(signal.EpicenterAUP, severity, seismicRadius, ref trauma, ref direction, ref count, ref maxMagnitude, ref attenuationSum, ref impulse.Flags))
+                            dominantPriority = MaxPriority(dominantPriority, priority);
                     }
                 }
 
@@ -1140,7 +1542,12 @@ namespace Hecton8.VFX
                     CameraJuiceMockSignalDTO signal = MockSignals[i];
                     float severity = SanitizeSignalScalar(signal.Severity01, ref impulse.Flags);
                     float mockRadius = math.max(radius, SanitizeSignalScalar(signal.RadiusMeters, ref impulse.Flags));
-                    AccumulateAbsoluteImpulse(signal.EpicenterAup, severity, mockRadius, ref trauma, ref direction, ref count, ref maxMagnitude, ref attenuationSum, ref impulse.Flags);
+                    byte priority = ResolveSignalPriorityFromSeverity(severity);
+                    if (ShouldRejectBelowActivePriority(priority, activePriorityFloor))
+                        continue;
+
+                    if (AccumulateAbsoluteImpulse(signal.EpicenterAup, severity, mockRadius, ref trauma, ref direction, ref count, ref maxMagnitude, ref attenuationSum, ref impulse.Flags))
+                        dominantPriority = MaxPriority(dominantPriority, priority);
                 }
 
                 float directionSq = math.lengthsq(direction);
@@ -1170,7 +1577,20 @@ namespace Hecton8.VFX
                 impulse.SignalCount = count;
                 impulse.MaxSignalMagnitude = maxMagnitude;
                 impulse.DistanceAttenuation = count > 0 ? attenuationSum * math.rcp(count) : 0f;
-                Impulse[0] = impulse;
+                impulse.RotationGain = rotationGainWeight > 0.000001f
+                    ? math.clamp(rotationGainSum * math.rcp(rotationGainWeight), CameraJuiceMinimumSignalGain, CameraJuiceMaximumSignalGain)
+                    : 1f;
+                impulse.DominantProfileHash = dominantProfileHash;
+                impulse.DominantProfileDecayPerSecond = dominantProfileDecay;
+                impulse.DominantProfileFrequencyHz = dominantProfileFrequency;
+                if (dominantPriority >= activePriorityFloor && dominantPriority > 0)
+                {
+                    activePriorityFloor = dominantPriority;
+                    activePriorityHoldFrames = ResolvePriorityHoldFrames(dominantPriority);
+                }
+
+                impulse.PriorityAndFlags = PackPriorityState(dominantPriority, activePriorityFloor, activePriorityHoldFrames);
+                ResultImpulse = impulse;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1189,7 +1609,273 @@ namespace Hecton8.VFX
                 return math.max(SanitizeSignalScalar(a, ref flags), SanitizeSignalScalar(b, ref flags));
             }
 
-            private void AccumulateAupImpulse(
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static byte UnpackActivePriority(uint priorityAndFlags)
+            {
+                return (byte)((priorityAndFlags >> CameraJuicePriorityActiveShift) & 0xFFu);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static int UnpackPriorityHoldFrames(uint priorityAndFlags)
+            {
+                return (int)((priorityAndFlags >> CameraJuicePriorityHoldShift) & 0xFFFFu);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static uint PackPriorityState(byte currentPriority, byte activePriority, int holdFrames)
+            {
+                uint clampedHoldFrames = (uint)math.clamp(holdFrames, 0, 0xFFFF);
+                return currentPriority |
+                       ((uint)activePriority << CameraJuicePriorityActiveShift) |
+                       (clampedHoldFrames << CameraJuicePriorityHoldShift);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static byte MaxPriority(byte a, byte b)
+            {
+                return a >= b ? a : b;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static bool ShouldRejectBelowActivePriority(byte signalPriority, byte activePriorityFloor)
+            {
+                return activePriorityFloor != 0 && signalPriority < activePriorityFloor;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static int ResolvePriorityHoldFrames(byte priority)
+            {
+                if (priority >= CameraJuiceSignals.CriticalPriority)
+                    return CameraJuiceCriticalPriorityHoldFrames;
+                if (priority >= CameraJuiceSignals.HighPriority)
+                    return CameraJuiceHighPriorityHoldFrames;
+                if (priority >= CameraJuiceSignals.NormalPriority)
+                    return CameraJuiceNormalPriorityHoldFrames;
+                return CameraJuiceLowPriorityHoldFrames;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static byte ResolveSignalPriorityFromSeverity(float severity01)
+            {
+                float severity = math.saturate(math.isfinite(severity01) ? severity01 : 0f);
+                if (severity >= 0.85f)
+                    return CameraJuiceSignals.CriticalPriority;
+                if (severity >= 0.55f)
+                    return CameraJuiceSignals.HighPriority;
+                if (severity >= 0.25f)
+                    return CameraJuiceSignals.NormalPriority;
+                return CameraJuiceSignals.LowPriority;
+            }
+
+            private void AccumulateCameraImpactSignalsByPriority(
+                int priorityMin,
+                int priorityMaxExclusive,
+                byte activePriorityFloor,
+                float baseRadiusMeters,
+                ref float trauma,
+                ref float3 direction,
+                ref int count,
+                ref float maxMagnitude,
+                ref float attenuationSum,
+                ref float rotationGainSum,
+                ref float rotationGainWeight,
+                ref byte dominantPriority,
+                ref uint dominantProfileHash,
+                ref float dominantProfileWeight,
+                ref float dominantProfileDecay,
+                ref float dominantProfileFrequency,
+                ref uint flags)
+            {
+                int maxSignals = math.max(1, MaxSignalsPerFrame);
+                int effectivePriorityMin = math.max(priorityMin, activePriorityFloor);
+                int signalLimit = CameraImpactSignals.Length;
+                for (int i = 0; i < signalLimit && count < maxSignals; i++)
+                {
+                    CameraJuiceImpactSignal signal = CameraImpactSignals[i];
+                    byte priority = ResolveSignalPriority(in signal, ref flags);
+                    if (priority < effectivePriorityMin || priority >= priorityMaxExclusive)
+                        continue;
+
+                    AccumulateCameraImpactSignal(
+                        in signal,
+                        priority,
+                        baseRadiusMeters,
+                        ref trauma,
+                        ref direction,
+                        ref count,
+                        ref maxMagnitude,
+                        ref attenuationSum,
+                        ref rotationGainSum,
+                        ref rotationGainWeight,
+                        ref dominantPriority,
+                        ref dominantProfileHash,
+                        ref dominantProfileWeight,
+                        ref dominantProfileDecay,
+                        ref dominantProfileFrequency,
+                        ref flags);
+                }
+            }
+
+            private void AccumulateCameraImpactSignal(
+                in CameraJuiceImpactSignal signal,
+                byte priority,
+                float baseRadiusMeters,
+                ref float trauma,
+                ref float3 direction,
+                ref int count,
+                ref float maxMagnitude,
+                ref float attenuationSum,
+                ref float rotationGainSum,
+                ref float rotationGainWeight,
+                ref byte dominantPriority,
+                ref uint dominantProfileHash,
+                ref float dominantProfileWeight,
+                ref float dominantProfileDecay,
+                ref float dominantProfileFrequency,
+                ref uint flags)
+            {
+                float rawSeverity = MaxFinite(signal.Severity, signal.Impact.Intensity, ref flags);
+                if (rawSeverity <= 0.0001f)
+                    return;
+
+                uint profileHash = signal.ProfileHash != 0u
+                    ? signal.ProfileHash
+                    : CameraJuiceImpactSignal.ProfileSharpKineticImpactHash;
+                CameraTraumaProfileDTO profile = ResolveCameraTraumaProfile(profileHash);
+                float amplitudeScale = SanitizePositiveSignalScalar(signal.AmplitudeScale, 1f, CameraJuiceMaximumSignalAmplitudeScale, ref flags);
+                float translationGain = SanitizePositiveSignalScalar(signal.TranslationGain, 1f, CameraJuiceMaximumSignalGain, ref flags);
+                float rotationGain = SanitizePositiveSignalScalar(signal.RotationGain, 1f, CameraJuiceMaximumSignalGain, ref flags);
+                float profileTranslationGain = SanitizePositiveSignalScalar(profile.TranslationGain, 1f, CameraJuiceMaximumSignalGain, ref flags);
+                float profileRotationGain = SanitizePositiveSignalScalar(profile.RotationGain, 1f, CameraJuiceMaximumSignalGain, ref flags);
+                float profileRadius = SanitizePositiveSignalScalar(profile.RadiusMeters, baseRadiusMeters, 512f, ref flags);
+                float profileDecay = SanitizePositiveSignalScalar(profile.DecayPerSecond, PROCEDURAL_TRAUMA_DECAY_RATE, 8f, ref flags);
+                float profileFrequency = SanitizePositiveSignalScalar(profile.FrequencyHz, PROCEDURAL_SHAKE_FREQUENCY, 55f, ref flags);
+                float radiusOverride = SanitizeSignalScalar(signal.RadiusOverrideMeters, ref flags);
+                float radius = radiusOverride > 0.0001f ? math.min(radiusOverride, 512f) : math.max(1f, profileRadius);
+                float severity = math.saturate(rawSeverity * amplitudeScale * translationGain * profileTranslationGain);
+                if (severity <= 0.0001f)
+                    return;
+
+                bool accepted;
+                if (TryResolveSignalLocalDirection(signal.Direction, ref flags, out float3 localDirection))
+                {
+                    accepted = AccumulateAupImpulseWithLocalDirection(
+                        signal.Impact.PointAup,
+                        severity,
+                        radius,
+                        localDirection,
+                        ref trauma,
+                        ref direction,
+                        ref count,
+                        ref maxMagnitude,
+                        ref attenuationSum,
+                        ref flags);
+                }
+                else
+                {
+                    accepted = AccumulateAupImpulse(
+                        signal.Impact.PointAup,
+                        severity,
+                        radius,
+                        ref trauma,
+                        ref direction,
+                        ref count,
+                        ref maxMagnitude,
+                        ref attenuationSum,
+                        ref flags);
+                }
+
+                if (!accepted)
+                    return;
+
+                float gainWeight = math.max(0.0001f, severity);
+                rotationGainSum += math.clamp(rotationGain * profileRotationGain, CameraJuiceMinimumSignalGain, CameraJuiceMaximumSignalGain) * gainWeight;
+                rotationGainWeight += gainWeight;
+                if (priority > dominantPriority || (priority == dominantPriority && severity >= dominantProfileWeight))
+                {
+                    dominantPriority = priority;
+                    dominantProfileHash = profile.ProfileHash != 0u ? profile.ProfileHash : profileHash;
+                    dominantProfileWeight = severity;
+                    dominantProfileDecay = profileDecay;
+                    dominantProfileFrequency = profileFrequency;
+                }
+            }
+
+            private CameraTraumaProfileDTO ResolveCameraTraumaProfile(uint profileHash)
+            {
+                if (Profiles.IsCreated)
+                {
+                    int count = Profiles.Length;
+                    for (int i = 0; i < count; i++)
+                    {
+                        CameraTraumaProfileDTO profile = Profiles[i];
+                        if (profile.ProfileHash == profileHash && profile.ProfileHash != 0u)
+                            return profile;
+                    }
+                }
+
+                return CameraJuiceBurstMath.FallbackProfile(profileHash);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static byte ResolveSignalPriority(in CameraJuiceImpactSignal signal, ref uint flags)
+            {
+                if (signal.Priority != 0)
+                    return signal.Priority;
+
+                float severity = math.saturate(MaxFinite(signal.Severity, signal.Impact.Intensity, ref flags));
+                return ResolveSignalPriorityFromSeverity(severity);
+            }
+
+            private bool TryResolveSignalLocalDirection(float3 worldDirection, ref uint flags, out float3 localDirection)
+            {
+                localDirection = float3.zero;
+                if (!math.all(math.isfinite(worldDirection)))
+                {
+                    flags |= CameraJuiceFlagNanSanitized;
+                    return false;
+                }
+
+                float lengthSq = math.lengthsq(worldDirection);
+                if (lengthSq <= 0.000001f)
+                    return false;
+
+                float3 normalized = worldDirection * math.rsqrt(math.max(lengthSq, 0.000001f));
+                localDirection = new float3(
+                    math.dot(normalized, CameraRight),
+                    math.dot(normalized, CameraUp),
+                    math.dot(normalized, CameraForward));
+                if (!math.all(math.isfinite(localDirection)))
+                {
+                    localDirection = float3.zero;
+                    flags |= CameraJuiceFlagNanSanitized;
+                    return false;
+                }
+
+                float localLengthSq = math.lengthsq(localDirection);
+                if (localLengthSq <= 0.000001f)
+                    return false;
+
+                localDirection *= math.rsqrt(math.max(localLengthSq, 0.000001f));
+                return true;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static float SanitizePositiveSignalScalar(float value, float fallback, float max, ref uint flags)
+            {
+                if (!math.isfinite(value))
+                {
+                    flags |= CameraJuiceFlagNanSanitized;
+                    return math.clamp(fallback, 0f, math.max(0f, max));
+                }
+
+                if (value <= 0f)
+                    return math.clamp(fallback, 0f, math.max(0f, max));
+
+                return math.clamp(value, 0f, math.max(0f, max));
+            }
+
+            private bool AccumulateAupImpulse(
                 in AbsoluteUniversePosition epicenter,
                 float severity01,
                 float radiusMeters,
@@ -1203,13 +1889,44 @@ namespace Hecton8.VFX
                 if (!AbsoluteUniversePosition.IsFinite(in epicenter))
                 {
                     flags |= CameraJuiceFlagNanSanitized;
-                    return;
+                    return false;
                 }
 
-                AccumulateAbsoluteImpulse(ToAbsoluteDouble3Job(in epicenter), severity01, radiusMeters, ref trauma, ref direction, ref count, ref maxMagnitude, ref attenuationSum, ref flags);
+                return AccumulateAbsoluteImpulse(ToAbsoluteDouble3Job(in epicenter), severity01, radiusMeters, ref trauma, ref direction, ref count, ref maxMagnitude, ref attenuationSum, ref flags);
             }
 
-            private void AccumulateAbsoluteImpulse(
+            private bool AccumulateAupImpulseWithLocalDirection(
+                in AbsoluteUniversePosition epicenter,
+                float severity01,
+                float radiusMeters,
+                float3 localDirection,
+                ref float trauma,
+                ref float3 direction,
+                ref int count,
+                ref float maxMagnitude,
+                ref float attenuationSum,
+                ref uint flags)
+            {
+                if (!AbsoluteUniversePosition.IsFinite(in epicenter))
+                {
+                    flags |= CameraJuiceFlagNanSanitized;
+                    return false;
+                }
+
+                return AccumulateAbsoluteImpulseWithLocalDirection(
+                    ToAbsoluteDouble3Job(in epicenter),
+                    severity01,
+                    radiusMeters,
+                    localDirection,
+                    ref trauma,
+                    ref direction,
+                    ref count,
+                    ref maxMagnitude,
+                    ref attenuationSum,
+                    ref flags);
+            }
+
+            private bool AccumulateAbsoluteImpulse(
                 double3 epicenter,
                 float severity01,
                 float radiusMeters,
@@ -1220,42 +1937,9 @@ namespace Hecton8.VFX
                 ref float attenuationSum,
                 ref uint flags)
             {
-                if (!math.all(math.isfinite(PlayerAup)) || !math.all(math.isfinite(epicenter)))
-                {
-                    flags |= CameraJuiceFlagNanSanitized;
-                    return;
-                }
+                if (!TryResolveImpulseAttenuation(epicenter, severity01, radiusMeters, ref flags, out float severity, out float attenuation, out float3 delta, out float invDist, out float distSq))
+                    return false;
 
-                if (!math.isfinite(severity01) || !math.isfinite(radiusMeters))
-                    flags |= CameraJuiceFlagNanSanitized;
-                float severity = math.saturate(math.isfinite(severity01) ? severity01 : 0f);
-                if (severity <= 0.0001f)
-                    return;
-
-                double3 deltaD = PlayerAup - epicenter;
-                if (!math.all(math.isfinite(deltaD)))
-                {
-                    flags |= CameraJuiceFlagNanSanitized;
-                    return;
-                }
-
-                const double maxLocalMeters = 262144.0;
-                deltaD = math.clamp(deltaD, new double3(-maxLocalMeters), new double3(maxLocalMeters));
-                float3 delta = new float3((float)deltaD.x, (float)deltaD.y, (float)deltaD.z);
-                float distSq = math.lengthsq(delta);
-                float safeRadius = math.max(1f, math.isfinite(radiusMeters) ? radiusMeters : 1f);
-                float invDist = math.rsqrt(math.max(0.0001f, distSq));
-                float distance = distSq * invDist;
-                float attenuation = math.saturate(1f - (distance * math.rcp(safeRadius)));
-                if (!math.isfinite(attenuation))
-                {
-                    flags |= CameraJuiceFlagNanSanitized;
-                    return;
-                }
-                if (attenuation <= 0.0001f)
-                    return;
-
-                float weight = severity * attenuation;
                 float3 worldDirection = distSq > 0.0001f ? delta * invDist : new float3(0f, 0f, -1f);
                 float3 localDirection = new float3(
                     math.dot(worldDirection, CameraRight),
@@ -1266,6 +1950,102 @@ namespace Hecton8.VFX
                     localDirection = CameraJuiceBurstMath.SanitizeFloat3(localDirection);
                     flags |= CameraJuiceFlagNanSanitized;
                 }
+
+                AccumulateResolvedLocalImpulse(severity, attenuation, localDirection, ref trauma, ref direction, ref count, ref maxMagnitude, ref attenuationSum);
+                return true;
+            }
+
+            private bool AccumulateAbsoluteImpulseWithLocalDirection(
+                double3 epicenter,
+                float severity01,
+                float radiusMeters,
+                float3 localDirectionOverride,
+                ref float trauma,
+                ref float3 direction,
+                ref int count,
+                ref float maxMagnitude,
+                ref float attenuationSum,
+                ref uint flags)
+            {
+                if (!math.all(math.isfinite(localDirectionOverride)))
+                {
+                    flags |= CameraJuiceFlagNanSanitized;
+                    return false;
+                }
+
+                if (!TryResolveImpulseAttenuation(epicenter, severity01, radiusMeters, ref flags, out float severity, out float attenuation, out _, out _, out _))
+                    return false;
+
+                AccumulateResolvedLocalImpulse(severity, attenuation, localDirectionOverride, ref trauma, ref direction, ref count, ref maxMagnitude, ref attenuationSum);
+                return true;
+            }
+
+            private bool TryResolveImpulseAttenuation(
+                double3 epicenter,
+                float severity01,
+                float radiusMeters,
+                ref uint flags,
+                out float severity,
+                out float attenuation,
+                out float3 delta,
+                out float invDist,
+                out float distSq)
+            {
+                severity = 0f;
+                attenuation = 0f;
+                delta = float3.zero;
+                invDist = 0f;
+                distSq = 0f;
+
+                if (!math.all(math.isfinite(PlayerAup)) || !math.all(math.isfinite(epicenter)))
+                {
+                    flags |= CameraJuiceFlagNanSanitized;
+                    return false;
+                }
+
+                if (!math.isfinite(severity01) || !math.isfinite(radiusMeters))
+                    flags |= CameraJuiceFlagNanSanitized;
+
+                severity = math.saturate(math.isfinite(severity01) ? severity01 : 0f);
+                if (severity <= 0.0001f)
+                    return false;
+
+                double3 deltaD = PlayerAup - epicenter;
+                if (!math.all(math.isfinite(deltaD)))
+                {
+                    flags |= CameraJuiceFlagNanSanitized;
+                    return false;
+                }
+
+                const double maxLocalMeters = 262144.0;
+                deltaD = math.clamp(deltaD, new double3(-maxLocalMeters), new double3(maxLocalMeters));
+                delta = new float3((float)deltaD.x, (float)deltaD.y, (float)deltaD.z);
+                distSq = math.lengthsq(delta);
+                float safeRadius = math.max(1f, math.isfinite(radiusMeters) ? radiusMeters : 1f);
+                invDist = math.rsqrt(math.max(0.0001f, distSq));
+                float distance = distSq * invDist;
+                attenuation = math.saturate(1f - (distance * math.rcp(safeRadius)));
+                if (!math.isfinite(attenuation))
+                {
+                    flags |= CameraJuiceFlagNanSanitized;
+                    return false;
+                }
+
+                return attenuation > 0.0001f;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static void AccumulateResolvedLocalImpulse(
+                float severity,
+                float attenuation,
+                float3 localDirection,
+                ref float trauma,
+                ref float3 direction,
+                ref int count,
+                ref float maxMagnitude,
+                ref float attenuationSum)
+            {
+                float weight = severity * attenuation;
                 direction += localDirection * weight;
                 trauma = math.saturate(trauma + (weight * 0.45f));
                 maxMagnitude = math.max(maxMagnitude, severity);
@@ -1277,10 +2057,12 @@ namespace Hecton8.VFX
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct IntegrateProceduralShakeJob : IJob
         {
-            [NoAlias] public NativeArray<CameraJuiceStateDTO> State;
-            [NoAlias] public NativeArray<CameraJuiceImpulseDTO> Impulse;
-            [NoAlias] public NativeArray<CameraJuiceProjectionDTO> Projection;
-            [ReadOnly, NoAlias] public NativeArray<CameraJuiceTuningDTO>.ReadOnly Tuning;
+            public CameraJuiceStateDTO InputState;
+            public CameraJuiceImpulseDTO InputImpulse;
+            public CameraJuiceTuningDTO Tuning;
+            public CameraJuiceStateDTO ResultState;
+            public CameraJuiceImpulseDTO ResultImpulse;
+            public CameraJuiceProjectionDTO ResultProjection;
             public float DeltaTime;
             public float EffectiveShakeScale;
             public float GlobalQualityWeight01;
@@ -1289,9 +2071,9 @@ namespace Hecton8.VFX
 
             public void Execute()
             {
-                CameraJuiceStateDTO state = State[0];
-                CameraJuiceImpulseDTO impulse = Impulse[0];
-                CameraJuiceTuningDTO tuning = Tuning[0];
+                CameraJuiceStateDTO state = InputState;
+                CameraJuiceImpulseDTO impulse = InputImpulse;
+                CameraJuiceTuningDTO tuning = Tuning;
                 bool sanitizedScalarInput =
                     !math.isfinite(DeltaTime) ||
                     !math.isfinite(EffectiveShakeScale) ||
@@ -1306,16 +2088,24 @@ namespace Hecton8.VFX
                     !math.isfinite(tuning.ProjectionRotationScale) ||
                     !math.isfinite(tuning.LowTierRadiusMeters) ||
                     !math.isfinite(tuning.UltraRadiusMeters) ||
-                    !math.isfinite(tuning.HighOctaveGain);
+                    !math.isfinite(tuning.HighOctaveGain) ||
+                    !math.isfinite(impulse.RotationGain) ||
+                    !math.isfinite(impulse.DominantProfileDecayPerSecond) ||
+                    !math.isfinite(impulse.DominantProfileFrequencyHz);
                 float dt = math.clamp(math.isfinite(DeltaTime) ? DeltaTime : 0f, 0f, 0.1f);
                 float quality = math.saturate(math.isfinite(GlobalQualityWeight01) ? GlobalQualityWeight01 : 1f);
                 float effectiveScale = math.isfinite(EffectiveShakeScale) ? math.max(0f, EffectiveShakeScale) : 0f;
-                float decay = math.max(0.01f, math.isfinite(tuning.TraumaDecayPerSecond) ? tuning.TraumaDecayPerSecond : PROCEDURAL_TRAUMA_DECAY_RATE);
+                float tuningDecay = math.max(0.01f, math.isfinite(tuning.TraumaDecayPerSecond) ? tuning.TraumaDecayPerSecond : PROCEDURAL_TRAUMA_DECAY_RATE);
+                float profileDecay = math.isfinite(impulse.DominantProfileDecayPerSecond) && impulse.DominantProfileDecayPerSecond > 0f
+                    ? impulse.DominantProfileDecayPerSecond
+                    : tuningDecay;
+                float decay = math.clamp(profileDecay, 0.01f, 8f);
                 float maxTranslationMeters = math.max(0f, math.isfinite(tuning.MaxTranslationMeters) ? tuning.MaxTranslationMeters : 0f);
                 float maxRotationDegrees = math.max(0f, math.isfinite(tuning.MaxRotationDegrees) ? tuning.MaxRotationDegrees : 0f);
                 float maxRollDegrees = math.max(0f, math.isfinite(tuning.MaxRollDegrees) ? tuning.MaxRollDegrees : 0f);
                 float directionalBiasSeconds = math.max(0f, math.isfinite(tuning.DirectionalBiasSeconds) ? tuning.DirectionalBiasSeconds : PROCEDURAL_DIRECTIONAL_BIAS_SECONDS);
                 float highOctaveGain = math.max(0f, math.isfinite(tuning.HighOctaveGain) ? tuning.HighOctaveGain : 0f);
+                float rotationGain = math.clamp(math.isfinite(impulse.RotationGain) && impulse.RotationGain > 0f ? impulse.RotationGain : 1f, CameraJuiceMinimumSignalGain, CameraJuiceMaximumSignalGain);
                 bool directionalMemoryFinite = math.all(math.isfinite(impulse.DirectionalMemory));
                 bool directionalMemoryOutOfRange = directionalMemoryFinite && math.any(math.abs(impulse.DirectionalMemory) > 1f);
                 bool directionalTimerFinite = math.isfinite(impulse.DirectionalTimer);
@@ -1344,7 +2134,13 @@ namespace Hecton8.VFX
                     state.TraumaScalar = math.isfinite(state.TraumaScalar) ? math.max(0f, state.TraumaScalar - (decay * dt)) : 0f;
                     impulse.DirectionalTimer = 0f;
                     impulse.DirectionalMemory = float3.zero;
-                    Projection[0] = new CameraJuiceProjectionDTO
+                    if (state.TraumaScalar <= 0.0001f)
+                    {
+                        state.TraumaScalar = 0f;
+                        impulse.PriorityAndFlags = 0u;
+                    }
+
+                    ResultProjection = new CameraJuiceProjectionDTO
                     {
                         ComfortRotation = quaternion.identity,
                         TraumaScalar = state.TraumaScalar,
@@ -1353,12 +2149,16 @@ namespace Hecton8.VFX
                         GlobalQualityWeight01 = quality,
                         StateHash = CameraJuiceBurstMath.HashState(in state, quality)
                     };
-                    State[0] = state;
-                    Impulse[0] = impulse;
+                    ResultState = state;
+                    ResultImpulse = impulse;
                     return;
                 }
 
-                float frequency = math.max(0.1f, math.isfinite(tuning.BaseFrequencyHz) ? tuning.BaseFrequencyHz : PROCEDURAL_SHAKE_FREQUENCY) * math.lerp(0.55f, 1.35f, quality);
+                float tuningFrequency = math.max(0.1f, math.isfinite(tuning.BaseFrequencyHz) ? tuning.BaseFrequencyHz : PROCEDURAL_SHAKE_FREQUENCY);
+                float profileFrequency = math.isfinite(impulse.DominantProfileFrequencyHz) && impulse.DominantProfileFrequencyHz > 0f
+                    ? impulse.DominantProfileFrequencyHz
+                    : tuningFrequency;
+                float frequency = math.clamp(profileFrequency, 0.1f, 55f) * math.lerp(0.55f, 1.35f, quality);
                 state.TimeAccumulator = CameraJuiceBurstMath.WrapPhase(state.TimeAccumulator + (dt * frequency));
                 float trauma = math.saturate(state.TraumaScalar);
                 float intensity = trauma * trauma * effectiveScale;
@@ -1399,8 +2199,8 @@ namespace Hecton8.VFX
                     CameraJuiceBurstMath.TriangleSigned((phase * 0.91f) + 0.13f),
                     MathLodApproximation.ApproxSinBhaskara((phase * 5.497787f) + 2.4f),
                     -directional.x + (MathLodApproximation.ApproxSinBhaskara((phase * 3.1415927f) + 0.8f) * 0.35f));
-                float3 rotation = rotLow * (maxRotationDegrees * intensity);
-                rotation.z += -directional.x * maxRollDegrees * intensity;
+                float3 rotation = rotLow * (maxRotationDegrees * intensity * rotationGain);
+                rotation.z += -directional.x * maxRollDegrees * intensity * rotationGain;
 
                 bool sanitizedOutput = !math.all(math.isfinite(translation)) || !math.all(math.isfinite(rotation));
                 translation = CameraJuiceBurstMath.SanitizeFloat3(translation);
@@ -1410,19 +2210,21 @@ namespace Hecton8.VFX
                 state.CurrentRotationalOffset = rotation;
                 state.TraumaScalar = math.isfinite(trauma) ? math.max(0f, trauma - (decay * dt)) : 0f;
                 if (state.TraumaScalar <= 0.0001f)
+                {
                     state.TraumaScalar = 0f;
+                    impulse.PriorityAndFlags = 0u;
+                }
 
                 impulse.DirectionalTimer = math.max(0f, impulse.DirectionalTimer - dt);
                 if (impulse.DirectionalTimer <= 0.0001f)
                     impulse.DirectionalMemory = float3.zero;
-                Impulse[0] = impulse;
 
                 quaternion comfortRotation = quaternion.EulerXYZ(math.radians(rotation * 0.1f));
-                uint flags = CameraJuiceFlagVRSomaticWriteRejected;
+                uint flags = 0u;
                 if (sanitizedInput || sanitizedOutput || !math.isfinite(state.TraumaScalar))
                     flags |= CameraJuiceFlagNanSanitized;
                 uint stateHash = CameraJuiceBurstMath.HashState(in state, quality) ^ math.hash(new uint2(Sequence, impulse.Sequence));
-                Projection[0] = new CameraJuiceProjectionDTO
+                ResultProjection = new CameraJuiceProjectionDTO
                 {
                     TranslationOffset = translation,
                     RotationDegrees = rotation,
@@ -1434,7 +2236,8 @@ namespace Hecton8.VFX
                     GlobalQualityWeight01 = quality,
                     DirectionalImpulseMagnitude = math.length(impulse.DirectionalMemory)
                 };
-                State[0] = state;
+                ResultState = state;
+                ResultImpulse = impulse;
             }
         }
 
@@ -1458,7 +2261,7 @@ namespace Hecton8.VFX
                     UltraRadiusMeters = 120f,
                     HighOctaveGain = math.lerp(0.15f, 0.85f, safeQuality),
                     QualityWeight01 = safeQuality,
-                    ProfileCount = 3u,
+                    ProfileCount = 4u,
                     Flags = 0u
                 };
             }
@@ -1468,11 +2271,13 @@ namespace Hecton8.VFX
                 for (int i = 0; i < profiles.Length; i++)
                     profiles[i] = default;
                 if (profiles.Length > 0)
-                    profiles[0] = DefaultProfile(0x4C4F5754u, 0.6f, 0.5f, 32f, 1.9f, 12f);
+                    profiles[0] = FallbackProfile(CameraJuiceImpactSignal.ProfileSharpKineticImpactHash);
                 if (profiles.Length > 1)
-                    profiles[1] = DefaultProfile(0x4D494454u, 1.0f, 1.0f, 72f, 1.65f, 18f);
+                    profiles[1] = FallbackProfile(CameraJuiceImpactSignal.ProfileLowFreqSeismicHeaveHash);
                 if (profiles.Length > 2)
-                    profiles[2] = DefaultProfile(0x554C5452u, 1.35f, 1.6f, 120f, 1.25f, 26f);
+                    profiles[2] = FallbackProfile(CameraJuiceImpactSignal.ProfileHighFreqToolVibrationHash);
+                if (profiles.Length > 3)
+                    profiles[3] = FallbackProfile(CameraJuiceImpactSignal.ProfileContinuousPressureStressHash);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1489,10 +2294,27 @@ namespace Hecton8.VFX
                 };
             }
 
-#if UNITY_EDITOR
-            public static int ParseProfilesCsv(ReadOnlySpan<byte> csv, NativeArray<CameraTraumaProfileDTO> profiles)
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static CameraTraumaProfileDTO FallbackProfile(uint hash)
             {
-                if (csv.Length == 0 || !profiles.IsCreated || profiles.Length == 0)
+                switch (hash)
+                {
+                    case CameraJuiceImpactSignal.ProfileHighFreqToolVibrationHash:
+                        return DefaultProfile(hash, 0.55f, 0.75f, 24f, 2.4f, 28f);
+                    case CameraJuiceImpactSignal.ProfileLowFreqSeismicHeaveHash:
+                        return DefaultProfile(hash, 1.10f, 1.35f, 120f, 1.20f, 9f);
+                    case CameraJuiceImpactSignal.ProfileContinuousPressureStressHash:
+                        return DefaultProfile(hash, 0.85f, 0.95f, 72f, 0.95f, 14f);
+                    case CameraJuiceImpactSignal.ProfileSharpKineticImpactHash:
+                    default:
+                        return DefaultProfile(CameraJuiceImpactSignal.ProfileSharpKineticImpactHash, 1.0f, 1.15f, 56f, 1.65f, 20f);
+                }
+            }
+
+#if UNITY_EDITOR
+            public static int ParseProfilesCsv(ReadOnlySpan<byte> csv, Span<CameraTraumaProfileDTO> profiles)
+            {
+                if (csv.Length == 0 || profiles.Length == 0)
                     return 0;
 
                 int written = 0;
@@ -1570,13 +2392,21 @@ namespace Hecton8.VFX
             public static uint ValidateLayoutSizes()
             {
                 uint error = 0u;
-                error |= UnsafeUtility.SizeOf<CameraJuiceStateDTO>() == 32 ? 0u : 1u;
-                error |= UnsafeUtility.SizeOf<CameraJuiceImpulseDTO>() == 64 ? 0u : 2u;
-                error |= UnsafeUtility.SizeOf<CameraJuiceProjectionDTO>() == 64 ? 0u : 4u;
-                error |= UnsafeUtility.SizeOf<CameraJuiceTuningDTO>() == 64 ? 0u : 8u;
-                error |= UnsafeUtility.SizeOf<CameraTraumaProfileDTO>() == 32 ? 0u : 16u;
-                error |= UnsafeUtility.SizeOf<CameraJuiceMockSignalDTO>() == 64 ? 0u : 32u;
+                error |= ValidateSizeMultipleOf8<CameraJuiceStateDTO>(32, 1u);
+                error |= ValidateSizeMultipleOf8<CameraJuiceImpulseDTO>(72, 2u);
+                error |= ValidateSizeMultipleOf8<CameraJuiceProjectionDTO>(64, 4u);
+                error |= ValidateSizeMultipleOf8<CameraJuiceTuningDTO>(64, 8u);
+                error |= ValidateSizeMultipleOf8<CameraTraumaProfileDTO>(32, 16u);
+                error |= ValidateSizeMultipleOf8<CameraJuiceMockSignalDTO>(64, 32u);
+                error |= ValidateSizeMultipleOf8<CameraJuiceImpactSignal>(128, 64u);
                 return error;
+            }
+
+            private static uint ValidateSizeMultipleOf8<T>(int expectedBytes, uint errorBit)
+                where T : struct
+            {
+                int actualBytes = UnsafeUtility.SizeOf<T>();
+                return actualBytes == expectedBytes && (actualBytes & 7) == 0 ? 0u : errorBit;
             }
 
 #if UNITY_EDITOR

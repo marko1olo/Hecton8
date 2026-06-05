@@ -1,6 +1,7 @@
 ﻿# Hecton Phi Static Metric
 
 Date: 2026-05-24
+Owner domain: architecture/static metric audit
 Status: STATIC METRIC CONTRACT / RUNTIME PROOF REQUIRED
 Evidence class: STATIC_SOURCE
 

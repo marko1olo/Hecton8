@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
-# CJK Review Gate
+# CJK Font And Width Contract
 
-CJK Review Lock explains the font and layout proof required before HECTON-8 CJK publication.
+CJK publication must survive actual panels and subtitles, including dense characters beside Latin names, route numbers, and pressure units.
 
 ## Scanner
 
@@ -24,14 +24,14 @@ A missing glyph can erase an alarm.
 
 ## Terminal
 
-CJK REVIEW: prove font, wrap, unit, name and terminal-width behavior before publication.
+CJK copy must fit PDA, scanner, terminal, subtitle, and web surfaces without hiding numbers or names.
 
 ## Audio
 
-Short text can still overflow if the grid is wrong.
+Short text can still fail when the grid is wrong.
 
 ## Field Note
 
-Review gate: glyph subset, overflow proof, mixed Latin names, meters/tonne-window labels and spoiler-tier article lengths.
+Check glyph coverage, line wrapping, mixed Latin names, meter and tonne-window labels, terminal monospace alternatives, and article length.
 
 <!-- External Site; generated from P277_CJK_REVIEW_LOCK/en_US. -->

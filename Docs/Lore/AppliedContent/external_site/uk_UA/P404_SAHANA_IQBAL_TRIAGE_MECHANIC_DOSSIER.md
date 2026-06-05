@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# UK LOC: Sahana Iqbal/Triage
+# Sahana Iqbal/Triage
 
-UK LOC HOLD: Sahana Iqbal makes Deep Reach's delay concrete: rescue paperwork appears beside torque limits.
+Sahana Iqbal makes Deep Reach's delay concrete: rescue paperwork appears beside torque limits.
 
 ## Scanner
 
-UK LOC: Dossier: Sahana Iqbal. Torque board and triage tags match.
+Dossier: Sahana Iqbal. Torque board and triage tags match.
 
 ## Terminal
 
-UK LOC: SAHANA IQBAL/TRIAGE. Torque limits and cots shared one board; people and machines waited.
+SAHANA IQBAL/TRIAGE. Torque limits and cots shared one board; people and machines waited.
 
 ## Audio
 
-UK LOC HOLD: Iqbal fixed what she could reach. The system kept moving the reach line.
+Iqbal fixed what she could reach. The system kept moving the reach line.
 
 ## Field Note
 
-UK LOC HOLD: Use in evacuation queue terminal and quarantine repair loops.
+Use in evacuation queue terminal and quarantine repair loops.
 
 <!-- External Site; generated from P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER/uk_UA. -->

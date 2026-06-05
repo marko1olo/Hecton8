@@ -4,6 +4,8 @@ Date: 2026-05-12
 
 Status: STATIC_SOURCE REVIEWED / RUNTIME PENDING
 
+Owner domain: core memory / arena allocator
+
 ## Source Anchors
 
 Evidence class: STATIC_SOURCE / FILESYSTEM path check. These anchors prove current path visibility only, not GCMonitor, NativeMemorySentinel, allocation telemetry, or player-build proof.

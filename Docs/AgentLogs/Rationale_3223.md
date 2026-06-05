@@ -1,0 +1,4 @@
+# Rationale 3223
+Decision: use P467-P474 production packet English authority bodies for en_US terminal and in-game wiki surfaces; use each packet's localized short rows for non-English title/scanner/audio/field_note/external_site, and source-derived short draft text for non-English terminal/in_game_wiki where full translated body rows do not exist.
+Reason: task requires RS093 surface keys per locale, but production packets only provide full English authority bodies plus short locale rows. Creating native-quality long-form terminal/codex translations here would be fake review. The bundle labels every non-English non-authority row with a draft/native-pass prefix and keeps native_localization_ready=false.
+Evidence class: STATIC_SOURCE. No runtime, importer, h8bin, Unity, publication, or native-review proof claimed.

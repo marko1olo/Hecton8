@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
 # RAN-B:H8 Public Catalog
 
-RAN-B:H8 Public Catalog gives the website/wiki a hard-sci-fi label while preserving HECTON-8 as the game's emotional and legal name. It also lets future astronomy pages distinguish real-system inspiration from fictional moon content.
+RAN-B:H8 is the hard astronomy label for the HECTON-8 destination: a real-scale route name beside the survivor-facing moon name.
 
 ## Scanner
 

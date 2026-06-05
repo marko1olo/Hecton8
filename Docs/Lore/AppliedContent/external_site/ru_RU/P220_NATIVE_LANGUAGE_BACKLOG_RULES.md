@@ -10,21 +10,21 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Правила native language backlog
+# Native Language Release Rules
 
-Правила native language backlog задают localization backlog HECTON-8 для сайта, wiki и in-game text.
+Native language release depends on readable fonts, subtitle timing, baked text, native review, and publication status across every supported locale.
 
 ## Scanner
 
-Draft rows это source coverage. Native review это release gate.
+Draft rows are coverage. Native review is the release boundary.
 
 ## Terminal
 
-LANGUAGE BACKLOG: locale + native reviewer + RTL/font proof + subtitle pass + string-pool bake + publication status. Runtime never translates live.
+LANGUAGE RELEASE: locale owner, native reviewer, script direction, font atlas, subtitle proof, baked text rows, and publication status. Live translation is rejected.
 
 ## Audio
 
@@ -32,6 +32,6 @@ Coverage не quality. Bake it, read it, prove it.
 
 ## Field Note
 
-Отслеживать locale, owner, script direction, font atlas proof, subtitle proof и page publication status.
+Every locale needs owner, direction proof, font proof, subtitle proof, baked text proof, and publication status before release.
 
 <!-- External Site; generated from P220_NATIVE_LANGUAGE_BACKLOG_RULES/ru_RU. -->

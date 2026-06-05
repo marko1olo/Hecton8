@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -20,7 +20,7 @@ Repair materials on HECTON-8 carry history: the same shard can sell a claim or f
 
 ## Scanner
 
-Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.
+Pressure glass certificate: usable as salvage, sealant feedstock or escape proof if fracture state passes.
 
 ## Terminal
 
@@ -32,6 +32,6 @@ A clean shard is worth less than a shard that proves it held.
 
 ## Field Note
 
-Use for scanner, fabrication UI copy and fieldguide article.
+A clear pane is not a safe pane. Stamp the crack map before the cutter touches it.
 
 <!-- External Site; generated from P427_PRESSURE_GLASS_FIELD_CERTIFICATE/en_US. -->

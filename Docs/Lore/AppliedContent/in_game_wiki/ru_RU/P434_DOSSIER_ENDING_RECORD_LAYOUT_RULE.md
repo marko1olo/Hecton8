@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Правило layout для dossier ending record
+# Dossier Ending Record Layout Rule
 
-Ending dossier layout делает outcomes сравнимыми, не сводя их к good/bad endings.
+Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.
 
 ## Scanner
 
-Dossier rule: ending records показывают receiver, custody, proof state, Atlas continuity, player survival и debt outcome.
+Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.
 
 ## Terminal
 
-ENDING RECORD: не показывать clean victory stamp. Показывать payload receiver, suppressed/open evidence, survival route и unresolved cost.
+ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.
 
 ## Audio
 
-Record не поздравляет. Он перечисляет, что перешло из рук в руки.
+The record does not congratulate you. It itemizes what changed hands.
 
 ## Field Note
 
-Для ending dossier UI и spoiler-site layout.
+Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression.
 
 <!-- In-Game Wiki; generated from P434_DOSSIER_ENDING_RECORD_LAYOUT_RULE/ru_RU. -->

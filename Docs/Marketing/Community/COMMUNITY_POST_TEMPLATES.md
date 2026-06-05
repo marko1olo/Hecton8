@@ -1,4 +1,4 @@
-﻿# Community Post Templates
+# Community Post Templates
 
 ## Authority Boundary
 
@@ -233,7 +233,7 @@ Not linking it in this thread. This post is only for critique on readability/mec
 If asked "Subnautica clone?"
 
 ```text
-That is the exact risk I am testing against. The intended lane is single-player industrial depth: pressure, machinery, salvage, sonar, black water, and route decisions. Which part still reads too close?
+That is the exact risk I am testing against. The intended lane is single-player underwater survival: beautiful alien water under pressure, machinery, salvage, sonar, black-water depth, and route decisions. Which part still reads too close?
 ```
 
 Russian variant:
@@ -478,7 +478,7 @@ Use only after the matching route in `Community/COMMUNITY_TARGETS_AND_RULES.md` 
 Use for a long-lived devlog thread. Do not make a new thread for every asset.
 
 ```text
-Working on HECTON-8, a single-player deep-sea survival project focused on pressure, machinery, salvage, and black water.
+Working on HECTON-8, a single-player underwater survival project focused on beautiful alien water, pressure, machinery, salvage, and black-water depth.
 
 This thread is for WIP critique, not wishlist traffic.
 
@@ -608,7 +608,7 @@ Hard rule: no automatic key approval. Every request stays manual until the recip
 Use only on event day after account custody, asset proof, and post gate.
 
 ```text
-HECTON-8 is a single-player deep-sea survival game about pressure, salvage, machinery, and black water.
+HECTON-8 is a single-player underwater survival game about beautiful alien water, pressure, salvage, machinery, and black-water depth.
 
 [One real gif/video/image]
 
@@ -655,7 +655,7 @@ Decision: HOLD / FACTUAL_UPDATE_READY / KILL
 
 - The ocean is infrastructure under pressure.
 - HECTON-8 is underwater survival where the safest room is still trying to fail.
-- Proof-first scope. No competitor war. Just pressure, machines, salvage, and black water.
+- Proof-first scope. No competitor war. Just beautiful alien water, pressure, machines, salvage, and black-water depth.
 - A base down here is a pressure machine that has to keep saying no to the ocean.
 - One floodlight. Too much depth. Not enough oxygen.
 - Deep-sea noir survival: less wonder, more pressure.

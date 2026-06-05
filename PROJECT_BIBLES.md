@@ -1,6 +1,7 @@
 # HECTON-8 Project Bibles Index
 
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
+Evidence class: STATIC_DOC
 Scope: root routing index for taste, bootstrap, gameplay, survival physiology, combat/damage contact, input, camera, sonar/navigation, logistics/power networks, world, terrain/biomes, ecosystem simulation, atmosphere, celestial cycles, water, inventory/economy, drones/automation, audio, visual presentation, cinematics, lighting, VFX, shaders/material runtime, rendering, performance, GPU compute, XR, UI, settings, localization, generated assets, AI, creature behavior, vehicles, networking/rollback, authoring/data bridge, data architecture, runtime architecture, math/determinism, telemetry, modding/SDK/API, platform readiness, release readiness, testing/CI, physics, animation, streaming, persistence, voxels, public writing, and quality gates.
 
 ## Prime Rule
@@ -25,7 +26,11 @@ If a route bible does not force an agent to make a better object, scene, system,
 
 ## Authority Scope
 
-Only files listed in `Routes` below are standing root bibles. Other root markdown files may be work plans, issue lists, generated playbooks, temporary reports, or historical snapshots; read them only when the task, a route bible, or the edited file directly references them.
+Only this index, `VISION_LOCKS.md`, and files listed in `Routes` below are standing root bible authorities. Other root markdown files may be work plans, issue lists, generated playbooks, temporary reports, or historical snapshots; read them only when the task, a route bible, or the edited file directly references them.
+
+This is the explicit documentation-governance exception for standing root route bibles. It does not allow root reports, prompts, status files, work logs, generated evidence, task-progress prose, or temporary scan counters.
+
+Procedural asset package pipeline authority is root `PROCEDURAL_ASSET_PIPELINE.md`. `Docs/PROCEDURAL_ASSET_PIPELINE.md` is a non-binding supporting/historical duplicate unless a later source-backed governance patch promotes or removes it.
 
 Do not bulk-read every root `.md` file as a substitute for judgment. For ordinary work, choose `PROJECT_BIBLES.md`, `TASTE.md` when player-facing taste is involved, `quality.md` when acceptance/proof is involved, and the narrow set of matching domain bibles. More documents require a concrete reason.
 
@@ -36,7 +41,8 @@ Planning snapshots such as `BUILD_PLAYTEST_ISSUES.md` and `MASTER_RELEASE_WORK_P
 ## Routes
 
 - Project taste and rejection language: `TASTE.md`
-- Procedural asset package pipeline: `PROCEDURAL_ASSET_PIPELINE.md`
+- User product vision locks and ambiguity resolutions: `VISION_LOCKS.md`
+- Procedural asset package pipeline binding route bible: `PROCEDURAL_ASSET_PIPELINE.md`
 - Generated meshes, textures, materials, LODs, and collision: `3dmodel.md`
 - Hero generated models: `3DMODEL_HERO_REALISM_OVERKILL.md`
 - Texture family generation: `3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md`

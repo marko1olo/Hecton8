@@ -1,0 +1,68 @@
+ID: 3241
+Role: STATIC_DOC lore packet writer.
+Task: Create P490 Data Monolith admission receipt production packet.
+
+Write exactly:
+- Docs/Lore/AppliedContent/production_packets/P490_DATA_MONOLITH_ADMISSION_RECEIPT_BRIDGE.production.md
+- Docs/Tasks/Status_3241.md
+- Docs/AgentLogs/LOG_3241.md
+- Docs/AgentLogs/Rationale_3241.md
+
+Authority to read:
+- AGENTS.md
+- VISION_LOCKS.md
+- TASTE.md
+- writing.md
+- narrative.md
+- localization.md
+- data.md
+- authoring.md
+- quality.md
+- Docs/Lore/Canon_Locks.md
+- Docs/Lore/Lore_Bible.md
+- Docs/Lore/Lore_Content_System.md
+- Docs/Lore/Lore_Localization_Model.md
+- Docs/Lore/Codex_Delivery_Map.md
+- .agents-skills/QA_Evidence_Text_Filter_Audit.txt
+- .agents-skills/UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt
+- .agents-skills/DATA_Runtime_Struct_Layout_ARM64.txt
+- .agents-skills/TOOL_Designer_Facades_CSV_Binary_Bridge.txt
+- .agents-skills/STRM_ModuleDTO_LZ4_Dictionary.txt
+- .agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+
+Packet content:
+- Packet ID: P490_DATA_MONOLITH_ADMISSION_RECEIPT_BRIDGE.
+- Article ID: DATA_MONOLITH_ADMISSION_RECEIPT_BRIDGE.
+- Loc namespace: LORE_EVIDENCE_DATA_MONOLITH_ADMISSION_RECEIPT_BRIDGE.
+- Topic: future in-game/source-bake lore surface describing a receipt that a packet is eligible for offline static-data admission, while clearly stating no runtime binary or h8bin readiness exists yet.
+- Must connect packet custody, LocID hashes, spoiler byte, string-pool row, relation record, and claimant-independent proof.
+- Must be written as player-facing/in-world technical lore, not a developer checklist.
+- Must not imply the project DataMonolith payload exists or was baked.
+
+Required packet shape:
+- Header metadata.
+- Source Brief.
+- Surface Texts: scanner receipt, terminal receipt, codex receipt, Marauder annotation.
+- Future Integration Notes with proposed LocIDs.
+- GlobalQualityWeight presentation density with Low/Compact, Middle, High, Ultra consequences.
+- Localization section with exactly 15 locale headings:
+  en_US, ar_SA, de_DE, es_ES, fr_FR, he_IL, id_ID, ja_JP, ko_KR, nl_NL, pl_PL, pt_BR, ru_RU, uk_UA, zh_CN.
+- `en_US` must be `Status: source_authority`.
+- All non-English rows must be `Status: draft_machine_or_llm`.
+- Write natural language, not placeholders. Non-English may be machine/LLM draft but must be coherent draft text, not empty boilerplate.
+
+Forbidden:
+- Do not edit P461-P489.
+- Do not edit DataMonolith files, source CSV, route cards, graphs, binding maps, generated pages, h8bin, Unity assets, runtime scripts, or BATCH_INDEX.
+- Do not run dotnet build, Unity, h8bin bake, source importer/exporter.
+- Do not claim any positive native/runtime/DataMonolith/h8bin/Unity/publication/acceptance/import/binary readiness state.
+- Do not use the forbidden static-proof phrase.
+
+Validation before final:
+- UTF-8 strict read passes.
+- Exactly 15 unique exact `### locale` headings.
+- Exactly 1 source_authority row and 14 draft_machine_or_llm rows.
+- U+FFFD = 0.
+- Explicit mojibake marker/codepoint scan = 0.
+- Bracketed locale/status headings = 0.
+- Positive readiness claim scan = 0.

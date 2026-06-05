@@ -1,0 +1,84 @@
+ID: 1904
+TITLE: PRODUCT_FACE_RESOURCE_FLAT_MATERIAL_RELINK_DRY_RUN_PACKET
+MODE: REPORT_ONLY_STATIC_RELINK_DRY_RUN_PACKET
+
+You are HECTON-8 batch agent 1904.
+Do not edit source, assets, prefabs, materials, scenes, binaries, `.meta`, generated meshes, DataMonolith, task files, or sibling outputs.
+
+PRIMARY GOAL
+
+Create the static dry-run relink packet for the 8 current ProductFace resource flat-color/empty-texture material assignments found by 1893. This must align resources with canonical data ownership, material channel contracts, and future pickup mesh source routes.
+
+READ
+
+- `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `VISION_LOCKS.md`
+- `TASTE.md`
+- `quality.md`
+- `inventory.md`
+- `3dmodel.md`
+- `3DMODEL_TEXTURES_MATERIALS.md`
+- `Docs/Reports/Batch18/1870_RESOURCE_PICKUP_VISUAL_SOURCE_PACKAGE.md`
+- `Docs/Reports/Batch18/1875_RESOURCE_PICKUP_MESH_SOURCE_AUTHORING_IMPLEMENTATION.md`
+- `Docs/Reports/Batch18/1881_RESOURCE_MATERIAL_TEXTURE_ROLE_PACKAGE.md`
+- `Docs/Reports/Batch18/1885_PRODUCT_FACE_PREFAB_ANCHOR_REFERENCE_STATIC_SNAPSHOT.md`
+- `Docs/Reports/Batch18/1888_PRODUCT_FACE_TEXTURE_CHANNEL_MANIFEST_AND_SHADER_AUDIT.md`
+- `Docs/Reports/Batch18/1890_PRODUCT_FACE_MATERIAL_TEXTURE_VALIDATOR_IMPLEMENTATION.md`
+- `Docs/Reports/Batch18/1892_PRODUCT_FACE_SINGLE_UNITY_OWNER_RUNBOOK.md`
+- `Docs/Reports/Batch18/1893_PRODUCT_FACE_ACTUAL_MATERIAL_ASSIGNMENT_MATRIX.md`
+- `Docs/Reports/Batch18/1893_PRODUCT_FACE_ACTUAL_MATERIAL_ASSIGNMENT_MATRIX.csv`
+- `Docs/Reports/Batch18/1894_PRODUCT_FACE_TEXTURE_SOURCE_MANIFEST_SCHEMA.md`
+- `Docs/Reports/Batch18/1897_TITANIUM_CANONICAL_RESOURCE_ROUTE_DECISION_PACKET.md` if present.
+
+Mandates:
+
+- `.agents-skills/QA_Evidence_Text_Filter_Audit.txt`
+- `.agents-skills/DATA_Inventory_Resources_Items_SOA_Layout.txt` if present; if absent, state it.
+- `.agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt`
+
+OUTPUTS YOU OWN
+
+- `Docs/Reports/Batch18/1904_PRODUCT_FACE_RESOURCE_FLAT_MATERIAL_RELINK_DRY_RUN_PACKET.md`
+- `Docs/Reports/Batch18/1904_PRODUCT_FACE_RESOURCE_FLAT_MATERIAL_RELINK_DRY_RUN_MATRIX.csv`
+- `Docs/Tasks/Status_1904.md`
+- `Docs/AgentLogs/Rationale_1904.md`
+- `Docs/AgentLogs/LOG_1904.md`
+
+CSV COLUMNS
+
+- `resource_family`
+- `prefab_path`
+- `current_material`
+- `current_data_owner`
+- `future_material_family`
+- `required_texture_manifest_row`
+- `canonical_identity_constraint`
+- `relink_allowed_now`
+- `proof_required`
+- `status`
+
+REQUIRED WORK
+
+1. Use 1893 CSV as current YAML/material truth.
+2. Include all rows flagged `RESOURCE_FLAT_COLOR_EMPTY_TEXTURE_SLOTS`.
+3. Cross-check canonical resource ownership from 1881 and 1897 where relevant.
+4. Define future material family per resource: ore/mineral, scrap, organic, membrane, resin, fiber, silica/sulfur/silver/copper.
+5. Define shader/channel choice as blocked unless 1888/1894 prove it.
+6. Mark `relink_allowed_now=false` for every row.
+7. Define DataMonolith/static-data constraints.
+8. Preserve pickup prefab/data references from 1885.
+9. Do not edit prefabs or materials.
+10. Do not claim Unity proof.
+
+VERIFICATION
+
+Run and record:
+
+- `git diff --check -- Docs/Reports/Batch18/1904_PRODUCT_FACE_RESOURCE_FLAT_MATERIAL_RELINK_DRY_RUN_PACKET.md Docs/Reports/Batch18/1904_PRODUCT_FACE_RESOURCE_FLAT_MATERIAL_RELINK_DRY_RUN_MATRIX.csv Docs/Tasks/Status_1904.md Docs/AgentLogs/Rationale_1904.md Docs/AgentLogs/LOG_1904.md`
+- `Import-Csv Docs/Reports/Batch18/1904_PRODUCT_FACE_RESOURCE_FLAT_MATERIAL_RELINK_DRY_RUN_MATRIX.csv | Measure-Object`
+- static term cross-check for `RESOURCE_FLAT_COLOR_EMPTY_TEXTURE_SLOTS`, `Data_Copper`, `TitaniumScrap`, `Mat_Resource`, `DataMonolith`, `PENDING UNITY`.
+
+FINAL RESPONSE
+
+Report changed files, CSV row count, affected resource families, and first future relink group.

@@ -1,0 +1,162 @@
+{
+  "assetImportBusy": false,
+  "blockers": [
+    "DIRTY_LOG_TOKENS_FOUND",
+    "RAW_PNG_SET_NO_MANIFEST"
+  ],
+  "buildBusy": false,
+  "compileBusy": false,
+  "createdLocal": "2026-06-04T22:49:16.238179+04:00",
+  "createdUtc": "2026-06-04T18:49:16.238179Z",
+  "dirtyTokenSummary": {
+    "dirtyLogTokensFound": true,
+    "firstHitByCode": {
+      "DIRTY_LOG_COMPILE": {
+        "line": 422,
+        "path": "Docs/Logs/UnityCapture_1912_surface_after_quarantine_unique.log",
+        "token": "CompileScripts"
+      },
+      "DIRTY_LOG_DOMAIN_RELOAD": {
+        "line": 137,
+        "path": "Docs/Logs/UnityCapture_1912_surface_after_quarantine_unique.log",
+        "token": "Domain Reload"
+      },
+      "DIRTY_LOG_ERROR": {
+        "line": 80,
+        "path": "Docs/Logs/UnityCapture_1912_surface_after_quarantine_unique.log",
+        "token": "Error"
+      },
+      "DIRTY_LOG_ILPP": {
+        "line": 261,
+        "path": "Docs/Logs/UnityCapture_1912_surface_after_quarantine_unique.log",
+        "token": "ILPP"
+      },
+      "DIRTY_LOG_IMPORT": {
+        "line": 307,
+        "path": "Docs/Logs/UnityCapture_1912_surface_after_quarantine_unique.log",
+        "token": "not valid. Loading of assembly skipped"
+      },
+      "DIRTY_LOG_LEAK": {
+        "line": 3036,
+        "path": "Docs/AgentLogs/UnityEditor_visual_audit_restart_1474b.log",
+        "token": "Found 1 leak"
+      },
+      "DIRTY_LOG_WARNING": {
+        "line": 852,
+        "path": "Docs/Logs/UnityLaunch_1912.log",
+        "token": "Warning"
+      }
+    },
+    "scanMode": "FULL_FILE_STATIC_SCAN",
+    "scannedFiles": [
+      "Docs/Logs/UnityCapture_1912_surface_after_quarantine_unique.log",
+      "Docs/Logs/UnityCapture_1912_surface_after_quarantine_b.log",
+      "Docs/Logs/UnityQuarantine_1912_surface_b.log",
+      "Docs/Logs/UnityCapture_1912_surface_after_quarantine.log",
+      "Docs/Logs/UnityQuarantine_1912_surface.log",
+      "Docs/Logs/UnityCapture_1912_surface.log",
+      "Docs/Logs/UnityLaunch_1912.log",
+      "Docs/Logs/UnityLaunch_1911.log",
+      "Docs/Logs/UnityLaunch_1910.log",
+      "Docs/Logs/UnityLaunch_1909.log",
+      "Docs/Logs/UnityLaunch_1908.log",
+      "Docs/AgentLogs/UnityEditor_visual_audit_restart_1474b.log"
+    ],
+    "tokenCountsByCode": {
+      "DIRTY_LOG_COMPILE": 27,
+      "DIRTY_LOG_DOMAIN_RELOAD": 116,
+      "DIRTY_LOG_ERROR": 332,
+      "DIRTY_LOG_ILPP": 33,
+      "DIRTY_LOG_IMPORT": 3104,
+      "DIRTY_LOG_LEAK": 92,
+      "DIRTY_LOG_WARNING": 40
+    }
+  },
+  "evidenceClass": "STATIC_PROCESS_SAMPLE",
+  "latestLogs": [
+    "Docs/Logs/UnityCapture_1912_surface_after_quarantine_unique.log",
+    "Docs/Logs/UnityCapture_1912_surface_after_quarantine_b.log",
+    "Docs/Logs/UnityQuarantine_1912_surface_b.log",
+    "Docs/Logs/UnityCapture_1912_surface_after_quarantine.log",
+    "Docs/Logs/UnityQuarantine_1912_surface.log",
+    "Docs/Logs/UnityCapture_1912_surface.log",
+    "Docs/Logs/UnityLaunch_1912.log",
+    "Docs/Logs/UnityLaunch_1911.log",
+    "Docs/Logs/UnityLaunch_1910.log",
+    "Docs/Logs/UnityLaunch_1909.log",
+    "Docs/Logs/UnityLaunch_1908.log",
+    "Docs/AgentLogs/UnityEditor_visual_audit_restart_1474b.log"
+  ],
+  "latestProofGateResult": {},
+  "latestProofPacketCandidate": {},
+  "latestRawScreenshot": {
+    "byteSize": 1235268,
+    "fileName": "h8_1912_surface_after_quarantine_b.png",
+    "hasMetaSibling": false,
+    "isUnderAssets": false,
+    "lastWriteUtc": "2026-06-04T18:48:57.603240Z",
+    "path": "Docs/Screenshots/MCP/h8_1912_surface_after_quarantine_b.png",
+    "prefixGroup": "h8_1912",
+    "proofUse": "DIAGNOSTIC_ONLY"
+  },
+  "mayClaimRuntimeProof": false,
+  "mayClaimVisualAccepted": false,
+  "newestCompleteRawGroup": {
+    "count": 9,
+    "evidenceClass": "STATIC_FILESYSTEM_RAW_PNG_ONLY",
+    "hasAllRequiredRouteNames": true,
+    "newestLastWriteUtc": "2026-06-04T15:25:31.664320Z",
+    "paths": [
+      "Docs/Screenshots/MCP/h8_1474_aegir_celestial_long.png",
+      "Docs/Screenshots/MCP/h8_1474_diag_shore_foam_from_mcp.png",
+      "Docs/Screenshots/MCP/h8_1474_diag_surface_from_mcp.png",
+      "Docs/Screenshots/MCP/h8_1474_diag_underwater_route_from_mcp.png",
+      "Docs/Screenshots/MCP/h8_1474_regression_low_oblique.png",
+      "Docs/Screenshots/MCP/h8_1474_shoreline_close_1m.png",
+      "Docs/Screenshots/MCP/h8_1474_surface_coast_aegir_ui_off.png",
+      "Docs/Screenshots/MCP/h8_1474_underwater_0_5m.png",
+      "Docs/Screenshots/MCP/h8_1474_underwater_20_50m_route.png"
+    ],
+    "prefix": "h8_1474",
+    "requiredRouteNameHits": {
+      "aegir_celestial_long": true,
+      "regression_low_oblique": true,
+      "shoreline_close_1m": true,
+      "surface_coast_aegir_ui_off": true,
+      "underwater_0_5m": true,
+      "underwater_20_50m_route": true
+    }
+  },
+  "newestRawGroup": {
+    "count": 2,
+    "evidenceClass": "STATIC_FILESYSTEM_RAW_PNG_ONLY",
+    "hasAllRequiredRouteNames": false,
+    "newestLastWriteUtc": "2026-06-04T18:48:57.603240Z",
+    "paths": [
+      "Docs/Screenshots/MCP/h8_1912_surface_after_quarantine_b.png",
+      "Docs/Screenshots/MCP/h8_1912_surface_edit_main.png"
+    ],
+    "prefix": "h8_1912",
+    "requiredRouteNameHits": {
+      "aegir_celestial_long": false,
+      "regression_low_oblique": false,
+      "shoreline_close_1m": false,
+      "surface_coast_aegir_ui_off": false,
+      "underwater_0_5m": false,
+      "underwater_20_50m_route": false
+    }
+  },
+  "processes": [],
+  "proofGateAvailable": true,
+  "proofPacketCandidateFound": false,
+  "rawScreenshotOnly": true,
+  "repoRoot": ".",
+  "schema": "hecton8.unity_process_proof_watchdog.v1",
+  "shaderCompileBusy": false,
+  "status": "STATIC_BLOCKED",
+  "unityBusy": false,
+  "unitySlotRecommendation": "NO_BUSY_PROCESS_SEEN_STATIC_SAMPLE",
+  "warnings": [
+    "Latest screenshot is raw/static unless manifest-bound packet exists."
+  ]
+}

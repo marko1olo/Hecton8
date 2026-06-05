@@ -1,5 +1,9 @@
 ﻿# Radiation Mutation Link SHINOBU_324
 
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
+
+Evidence class: STATIC_DOC
+
 Owner: Physiology / GameplayPlayer dispatcher route.
 
 `ShinobuRadiationMutationRuntime` reads Agent 274 `RadiationStateDTO` through `Hecton8.Core.Contracts.Physiology`.

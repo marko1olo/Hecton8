@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ You came for salvage. The ocean will make that motive too small.
 
 ## Field Note
 
-Use as the spoiler-light root for site/wiki navigation.
+Spoiler-light navigation starts here: premise first, evidence second, endings only after the player earns them.
 
 <!-- In-Game Wiki; generated from P416_SITE_WIKI_START_HERE_CLUSTER/en_US. -->

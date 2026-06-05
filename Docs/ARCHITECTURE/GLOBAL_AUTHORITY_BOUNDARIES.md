@@ -31,6 +31,46 @@ proof.
 
 The `160` value is a mod/API boundary fact, not total active signal count.
 
+## 2026-06-05 VaultMemoryContracts Anchor
+
+Evidence class: STATIC_SOURCE. This anchor documents current source shape only; runtime DataVault health, allocation behavior, telemetry dumps, and platform behavior remain PENDING VERIFICATION.
+
+Source: `Assets/_Project/Scripts/Core/Memory/VaultMemoryContracts.cs`.
+
+Owner:
+
+- Owner domain: Core DataVault memory sovereignty.
+- Owner id in source: `SystemID.CoreDataVault`.
+- Global route: `IDataVault` generation handles and read/write locks. This file is not a permission slip for domain systems to allocate private persistent `NativeArray` fields.
+
+Static DataVault records:
+
+- Explicit layout DTOs: `VaultMemoryLayoutConfig` 64 B, `VaultAup64` 48 B, `VaultAupSectorLocal32` 64 B, `VaultHotEntityData` 64 B, `VaultColdEntityData` 64 B, `VaultTransformAlias` 32 B, `VaultSovereigntyTelemetryEntry` 64 B, `VaultMemoryAddressShiftRecord` 64 B, `VaultBufferContract` 64 B, and `VaultSovereigntyMaintenanceStats` 32 B.
+- `VaultBufferContract` binds Core-owned buffer IDs including `VaultMemoryLayoutConfig`, `VaultHotEntityData`, `VaultColdEntityData`, `VaultAup64`, `VaultAupSectorLocal32`, `VaultSovereigntyTelemetryRing`, `VaultSovereigntyActiveEntityCount`, `VaultMemoryProfileCsvScratch`, `VaultMemoryAddressShiftRecords`, and `VaultMemoryAddressShiftCount`.
+- `VaultSovereigntyMaintenance` source states Core `PRE_SIMULATION` FrostTick maintenance for AUP sector wrapping and O(1) swap-pop compaction.
+- `RunPreSimulationFrost` acquires `TryAcquireMutationGuard(...)` and releases `ReleaseMutationGuard(...)` in `finally`.
+
+Signal and fault boundary:
+
+- Memory ownership changes are represented as `VaultMemoryAddressShiftRecord` in DataVault buffers and published elsewhere as typed signal payloads. This file owns the record layout, not the signal publication cadence.
+- `VaultSovereigntyTelemetry` owns a 300-entry `BufferID.VaultSovereigntyTelemetryRing` and dump target `Docs/AgentLogs/Dump_SHINOBU_100.bin`.
+- `GlobalQualityWeight` is consumed as a continuous scalar for maintenance sweep budget and telemetry detail. It must not change DTO layout, buffer identity, or save authority.
+
+Hot-path prohibitions:
+
+- No consumer may call DataVault `Ensure*` allocation or buffer growth from hot gameplay loops.
+- No read-looking helper may publish, allocate, complete jobs, search scenes, or mutate global state.
+- No stale handle may be used after generation mismatch, relocation, compaction fence, or scene release.
+
+Missing proof artifacts:
+
+- ABI/layout report with offsets and `UnsafeUtility.SizeOf<T>()` results.
+- Unity compile/import proof for Core memory contracts.
+- mutation-guard stress result and stale-handle fault repro.
+- telemetry dump artifact for `Dump_SHINOBU_100.bin`.
+- GC/profiler proof for `RunPreSimulationFrost` at low, middle, high, and ultra quality weights.
+- player/platform proof for DataVault relocation and shutdown/disposal behavior.
+
 ## Route Rules
 
 1. Pick one route before coding: cold lookup, hot broadcast, persistent shared memory, mod event, telemetry, or debug.

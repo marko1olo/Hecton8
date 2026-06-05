@@ -2,6 +2,10 @@
 
 Owner: ECHELON 4 / Hydrodynamic Drag & Buoyancy.
 
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
+
+Review disposition: YELLOW / STATIC_DOC_ONLY until compile/import/runtime/profiler/player proof exists.
+
 ## Route
 
 - Producer phase: `AnalyticalGerstnerWaveRuntime.FixedTick`.
@@ -23,6 +27,17 @@ Owner: ECHELON 4 / Hydrodynamic Drag & Buoyancy.
 - Counters: evaluated, coarse, nonfinite, stale-origin.
 - Each mutated lane is one cache line to prevent false sharing.
 - Four rows clear synchronously in locked owner window, not tiny scheduled job.
+
+## OceanKinematicsVaultRuntime Anchor (2026-06-05)
+
+Evidence class: STATIC_SOURCE only. `Assets/_Project/Scripts/Plugins/Crest/OceanKinematics/OceanKinematicsVaultRuntime.cs` is the current ocean-kinematics Vault anchor adjacent to this Gerstner solver route.
+
+- Source owner/system: `SystemID.Fluid`.
+- Buffer IDs: `OceanKinematicsBufferIds` `72940` through `72950` for requests, results, Gerstner waves, tuning, macro state, telemetry ring/cursor, GPU cached results, CSV scratch, queue counters, and rollback fence.
+- Capacity: `RequestCapacity = 50000`, `WaveCapacity = 8`, `TelemetryCapacity = 300`.
+- Black-box route: `OceanKinematicsTelemetryEntry[300]`; source dump target is `Docs/AgentLogs/Dump_SHINOBU_261.bin`.
+- Boundary: this is not a Crest material clone, not a runtime Crest material wrapper, and not authority for rendering material assignment. Crest asset materials remain assigned through the asset/scene route.
+- Proof gap: no Unity import, Play Mode, profiler/GC, Frame Debugger/RenderGraph, Crest scene binding, runtime dump artifact, or visual water proof is claimed by this static anchor.
 
 ## Math Rules
 

@@ -4,6 +4,10 @@ Date: 2026-05-07
 
 Status: PENDING VERIFICATION
 
+Evidence class: STATIC_DOC
+
+Owner domain: architecture/static route documentation
+
 ## Mandates Followed
 
 - `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`

@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ When the sky closes, the paperwork keeps breathing.
 
 ## Field Note
 
-Use as the comms cadence rule.
+Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both.
 
 <!-- External Site; generated from P330_BLACKOUT_WINDOW_SIGNAL_DECAY/en_US. -->

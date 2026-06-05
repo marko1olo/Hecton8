@@ -1303,7 +1303,15 @@ namespace Hecton8.Animation.Locomotion
 
             try
             {
-                DispatcherJobFence.TryComplete(ref _solveHandle, forceComplete: true);
+                DispatcherJobFence.BeginLateFrameSwapWindow();
+                try
+                {
+                    DispatcherJobFence.TryComplete(ref _solveHandle, forceComplete: true);
+                }
+                finally
+                {
+                    DispatcherJobFence.EndLateFrameSwapWindow();
+                }
             }
             finally
             {

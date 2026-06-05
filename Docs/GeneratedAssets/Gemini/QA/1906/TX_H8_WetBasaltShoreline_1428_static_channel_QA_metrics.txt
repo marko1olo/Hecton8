@@ -1,0 +1,7 @@
+Evidence class: STATIC_SOURCE image processing only; no Unity/import/material proof.
+Source: Docs/GeneratedAssets/Gemini/QA/Gemini_Downloaded_PNG_preview.png
+Dimensions: 1024x1024
+Mode source: RGBA flattened to RGB for QA preview; alpha extrema=(255, 255)
+Luma mean/stddev: 85.97/46.97
+Edge seam mean absolute RGB diff left-right/top-bottom: 30.78/33.40
+Generated maps are QA-only previews, not production normal/AO/roughness/MRAO assets.

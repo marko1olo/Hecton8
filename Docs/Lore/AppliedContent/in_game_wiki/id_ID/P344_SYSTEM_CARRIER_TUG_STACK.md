@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ The carrier is not your home. It is a machine that knows who owns your debt.
 
 ## Field Note
 
-Use for carrier ownership and player start clarity.
+Carrier ownership record: Black Keel is industrial custody hardware, not a personal rescue ship.
 
 <!-- In-Game Wiki; generated from P344_SYSTEM_CARRIER_TUG_STACK/id_ID. -->

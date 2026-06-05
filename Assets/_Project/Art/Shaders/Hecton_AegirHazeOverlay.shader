@@ -53,6 +53,7 @@ Shader "HECTON/Sky/Hecton_AegirHazeOverlay"
             Cull Front
             ZWrite Off
             ZTest LEqual
+            Blend SrcAlpha OneMinusSrcAlpha
 
             HLSLPROGRAM
             #pragma vertex OverlayVert
@@ -194,9 +195,8 @@ Shader "HECTON/Sky/Hecton_AegirHazeOverlay"
                 half alpha = saturate(discMask * _OverlayAlpha * (baseVeil + edgeVeil * _DiscEdgeVeil));
                 half3 atmosphericColor = lerp(_HazeColor.rgb, skyGradient, 0.55h + horizonVeil * 0.25h);
                 atmosphericColor = lerp(atmosphericColor, _SkyColorHorizon.rgb, horizonVeil * 0.45h + _NightBlend * 0.15h);
-                clip(alpha - ResolveIgnThreshold(input.positionCS));
-
-                return half4(atmosphericColor * hazeSunTint, 1.0h);
+                half dither = (ResolveIgnThreshold(input.positionCS) - 0.5h) * 0.035h;
+                return half4(atmosphericColor * hazeSunTint, saturate(alpha + dither));
             }
             ENDHLSL
         }

@@ -1,0 +1,288 @@
+# Generated Asset Production Audit 1851
+
+Evidence class: SOURCE_ONLY_STATIC_AUDIT. No Unity import, render, profiler, or runtime proof is claimed.
+
+Purpose: reject generated visual output as production-ready unless its package has LODs, collider/prefab/material routing where required, manifest, and proof artifacts.
+Family-link scan: procedural family assets are also checked so final-ready/non-proxy variants cannot point at placeholder or Unity primitive prefabs.
+Final-prefab root scan: production Final prefab folders are checked directly so unlinked primitive finals cannot remain hidden for later relinking.
+Product-face prefab scan: player, tool, pickup, transport, sky, and ocean prefabs are checked so first-minute visible blockout art cannot hide outside Final folders.
+
+## Summary
+
+- Packages scanned: 434
+- Fatal issues: 0
+- Error issues: 83
+- Warning issues: 1281
+
+## By Family
+
+- baked_flora_prefabs: packages=89, fatal=0, error=0, warn=267
+- bioforge_shallow_source_meshes: packages=200, fatal=0, error=0, warn=800
+- final_prefab_roots: packages=21, fatal=0, error=21, warn=0
+- procedural_family_links: packages=33, fatal=0, error=20, warn=18
+- product_face_prefabs: packages=42, fatal=0, error=42, warn=0
+- world_procedural_geology_meshes: packages=49, fatal=0, error=0, warn=196
+
+## Issue Codes
+
+- MISSING_MANIFEST: 338
+- MISSING_NAMED_PROOF: 338
+- SURFACE_SHALLOW_VISUAL_PROOF_PENDING: 338
+- SOURCE_ONLY_PACKAGE: 249
+- PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH: 42
+- FINAL_PREFAB_BUILTIN_PRIMITIVE_MESH: 21
+- FAMILY_FINAL_READY_BUILTIN_PRIMITIVE_MESH: 20
+- FAMILY_NO_REAL_FINAL_LINKS: 18
+
+## Fatal And Error Issues
+
+- [ERROR] FINAL_PREFAB_BUILTIN_PRIMITIVE_MESH | final_prefab_roots/PFB_Debris_ScrapCluster: Assets/_Project/Prefabs/Construction/Final/PFB_Debris_ScrapCluster.prefab uses Unity built-in primitive mesh ids; production Final prefabs need authored/generated meshes.
+- [ERROR] FINAL_PREFAB_BUILTIN_PRIMITIVE_MESH | final_prefab_roots/PFB_Debris_WreckField: Assets/_Project/Prefabs/Construction/Final/PFB_Debris_WreckField.prefab uses Unity built-in primitive mesh ids; production Final prefabs need authored/generated meshes.
+- [ERROR] FINAL_PREFAB_BUILTIN_PRIMITIVE_MESH | final_prefab_roots/PFB_Module_Corridor: Assets/_Project/Prefabs/Construction/Final/PFB_Module_Corridor.prefab uses Unity built-in primitive mesh ids; production Final prefabs need authored/generated meshes.
+- [ERROR] FINAL_PREFAB_BUILTIN_PRIMITIVE_MESH | final_prefab_roots/PFB_Module_CurrentTurbine: Assets/_Project/Prefabs/Construction/Final/PFB_Module_CurrentTurbine.prefab uses Unity built-in primitive mesh ids; production Final prefabs need authored/generated meshes.
+- [ERROR] FINAL_PREFAB_BUILTIN_PRIMITIVE_MESH | final_prefab_roots/PFB_Module_Foundation: Assets/_Project/Prefabs/Construction/Final/PFB_Module_Foundation.prefab uses Unity built-in primitive mesh ids; production Final prefabs need authored/generated meshes.
+- [ERROR] FINAL_PREFAB_BUILTIN_PRIMITIVE_MESH | final_prefab_roots/PFB_Module_Pylon: Assets/_Project/Prefabs/Construction/Final/PFB_Module_Pylon.prefab uses Unity built-in primitive mesh ids; production Final prefabs need authored/generated meshes.
+- [ERROR] FINAL_PREFAB_BUILTIN_PRIMITIVE_MESH | final_prefab_roots/PFB_Module_ServicePump: Assets/_Project/Prefabs/Construction/Final/PFB_Module_ServicePump.prefab uses Unity built-in primitive mesh ids; production Final prefabs need authored/generated meshes.
+- [ERROR] FINAL_PREFAB_BUILTIN_PRIMITIVE_MESH | final_prefab_roots/PFB_Organic_EggCluster: Assets/_Project/Prefabs/Nature/OrganicMisc/Final/PFB_Organic_EggCluster.prefab uses Unity built-in primitive mesh ids; production Final prefabs need authored/generated meshes.
+- [ERROR] FINAL_PREFAB_BUILTIN_PRIMITIVE_MESH | final_prefab_roots/PFB_Organic_PlantGiant: Assets/_Project/Prefabs/Nature/OrganicMisc/Final/PFB_Organic_PlantGiant.prefab uses Unity built-in primitive mesh ids; production Final prefabs need authored/generated meshes.
+- [ERROR] FINAL_PREFAB_BUILTIN_PRIMITIVE_MESH | final_prefab_roots/PFB_Ruin_ClusterMedium: Assets/_Project/Prefabs/Construction/Final/PFB_Ruin_ClusterMedium.prefab uses Unity built-in primitive mesh ids; production Final prefabs need authored/generated meshes.
+- [ERROR] FINAL_PREFAB_BUILTIN_PRIMITIVE_MESH | final_prefab_roots/PFB_Ruin_Megastructure: Assets/_Project/Prefabs/Construction/Final/PFB_Ruin_Megastructure.prefab uses Unity built-in primitive mesh ids; production Final prefabs need authored/generated meshes.
+- [ERROR] FINAL_PREFAB_BUILTIN_PRIMITIVE_MESH | final_prefab_roots/PFB_SargassumCollapseChunk: Assets/_Project/Prefabs/Construction/Final/PFB_SargassumCollapseChunk.prefab uses Unity built-in primitive mesh ids; production Final prefabs need authored/generated meshes.
+- [ERROR] FINAL_PREFAB_BUILTIN_PRIMITIVE_MESH | final_prefab_roots/PFB_Support_CreatureSpawn_Passive: Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_CreatureSpawn_Passive.prefab uses Unity built-in primitive mesh ids; production Final prefabs need authored/generated meshes.
+- [ERROR] FINAL_PREFAB_BUILTIN_PRIMITIVE_MESH | final_prefab_roots/PFB_Support_CreatureSpawn_Predator: Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_CreatureSpawn_Predator.prefab uses Unity built-in primitive mesh ids; production Final prefabs need authored/generated meshes.
+- [ERROR] FINAL_PREFAB_BUILTIN_PRIMITIVE_MESH | final_prefab_roots/PFB_Support_Pocket_Hazard: Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Pocket_Hazard.prefab uses Unity built-in primitive mesh ids; production Final prefabs need authored/generated meshes.
+- [ERROR] FINAL_PREFAB_BUILTIN_PRIMITIVE_MESH | final_prefab_roots/PFB_Support_Pocket_Resource: Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Pocket_Resource.prefab uses Unity built-in primitive mesh ids; production Final prefabs need authored/generated meshes.
+- [ERROR] FINAL_PREFAB_BUILTIN_PRIMITIVE_MESH | final_prefab_roots/PFB_Support_Pocket_Safe: Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Pocket_Safe.prefab uses Unity built-in primitive mesh ids; production Final prefabs need authored/generated meshes.
+- [ERROR] FINAL_PREFAB_BUILTIN_PRIMITIVE_MESH | final_prefab_roots/PFB_Support_Zone_AbyssApex: Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Zone_AbyssApex.prefab uses Unity built-in primitive mesh ids; production Final prefabs need authored/generated meshes.
+- [ERROR] FINAL_PREFAB_BUILTIN_PRIMITIVE_MESH | final_prefab_roots/PFB_Support_Zone_LargeThreat: Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Zone_LargeThreat.prefab uses Unity built-in primitive mesh ids; production Final prefabs need authored/generated meshes.
+- [ERROR] FINAL_PREFAB_BUILTIN_PRIMITIVE_MESH | final_prefab_roots/PFB_Support_Zone_ReefApex: Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Zone_ReefApex.prefab uses Unity built-in primitive mesh ids; production Final prefabs need authored/generated meshes.
+- [ERROR] FINAL_PREFAB_BUILTIN_PRIMITIVE_MESH | final_prefab_roots/PFB_Support_Zone_RuinApex: Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Zone_RuinApex.prefab uses Unity built-in primitive mesh ids; production Final prefabs need authored/generated meshes.
+- [ERROR] FAMILY_FINAL_READY_BUILTIN_PRIMITIVE_MESH | procedural_family_links/family.creature.spawn.passive: family.creature.spawn.passive.final.school_anchor points at prefab Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_CreatureSpawn_Passive.prefab using Unity built-in primitive mesh ids.
+- [ERROR] FAMILY_FINAL_READY_BUILTIN_PRIMITIVE_MESH | procedural_family_links/family.creature.spawn.predator: family.creature.spawn.predator.final.predator_lair points at prefab Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_CreatureSpawn_Predator.prefab using Unity built-in primitive mesh ids.
+- [ERROR] FAMILY_FINAL_READY_BUILTIN_PRIMITIVE_MESH | procedural_family_links/family.creature.zone.abyss_apex: family.creature.zone.abyss_apex.final.ownership_zone points at prefab Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Zone_AbyssApex.prefab using Unity built-in primitive mesh ids.
+- [ERROR] FAMILY_FINAL_READY_BUILTIN_PRIMITIVE_MESH | procedural_family_links/family.creature.zone.large_threat: family.creature.zone.large_threat.final.ownership_zone points at prefab Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Zone_LargeThreat.prefab using Unity built-in primitive mesh ids.
+- [ERROR] FAMILY_FINAL_READY_BUILTIN_PRIMITIVE_MESH | procedural_family_links/family.creature.zone.reef_apex: family.creature.zone.reef_apex.final.ownership_zone points at prefab Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Zone_ReefApex.prefab using Unity built-in primitive mesh ids.
+- [ERROR] FAMILY_FINAL_READY_BUILTIN_PRIMITIVE_MESH | procedural_family_links/family.creature.zone.ruin_apex: family.creature.zone.ruin_apex.final.ownership_zone points at prefab Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Zone_RuinApex.prefab using Unity built-in primitive mesh ids.
+- [ERROR] FAMILY_FINAL_READY_BUILTIN_PRIMITIVE_MESH | procedural_family_links/family.debris.field: family.debris.field.final.wreck_field points at prefab Assets/_Project/Prefabs/Construction/Final/PFB_Debris_WreckField.prefab using Unity built-in primitive mesh ids.
+- [ERROR] FAMILY_FINAL_READY_BUILTIN_PRIMITIVE_MESH | procedural_family_links/family.debris.scatter: family.debris.scatter.final.scrap_cluster points at prefab Assets/_Project/Prefabs/Construction/Final/PFB_Debris_ScrapCluster.prefab using Unity built-in primitive mesh ids.
+- [ERROR] FAMILY_FINAL_READY_BUILTIN_PRIMITIVE_MESH | procedural_family_links/family.egg.cluster: family.egg.cluster.final.nest_cluster points at prefab Assets/_Project/Prefabs/Nature/OrganicMisc/Final/PFB_Organic_EggCluster.prefab using Unity built-in primitive mesh ids.
+- [ERROR] FAMILY_FINAL_READY_BUILTIN_PRIMITIVE_MESH | procedural_family_links/family.plant.giant: family.plant.giant.final.silhouette points at prefab Assets/_Project/Prefabs/Nature/OrganicMisc/Final/PFB_Organic_PlantGiant.prefab using Unity built-in primitive mesh ids.
+- [ERROR] FAMILY_FINAL_READY_BUILTIN_PRIMITIVE_MESH | procedural_family_links/family.pocket.hazard: family.pocket.hazard.final.vent_cluster points at prefab Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Pocket_Hazard.prefab using Unity built-in primitive mesh ids.
+- [ERROR] FAMILY_FINAL_READY_BUILTIN_PRIMITIVE_MESH | procedural_family_links/family.pocket.resource: family.pocket.resource.final.cache points at prefab Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Pocket_Resource.prefab using Unity built-in primitive mesh ids.
+- [ERROR] FAMILY_FINAL_READY_BUILTIN_PRIMITIVE_MESH | procedural_family_links/family.pocket.safe: family.pocket.safe.final.shelter points at prefab Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Pocket_Safe.prefab using Unity built-in primitive mesh ids.
+- [ERROR] FAMILY_FINAL_READY_BUILTIN_PRIMITIVE_MESH | procedural_family_links/family.route.power: family.route.power.final.pylon points at prefab Assets/_Project/Prefabs/Construction/Final/PFB_Module_Pylon.prefab using Unity built-in primitive mesh ids.
+- [ERROR] FAMILY_FINAL_READY_BUILTIN_PRIMITIVE_MESH | procedural_family_links/family.route.power: family.route.power.final.current_turbine points at prefab Assets/_Project/Prefabs/Construction/Final/PFB_Module_CurrentTurbine.prefab using Unity built-in primitive mesh ids.
+- [ERROR] FAMILY_FINAL_READY_BUILTIN_PRIMITIVE_MESH | procedural_family_links/family.ruin.cluster.medium: family.ruin.cluster.medium.final.cluster_medium points at prefab Assets/_Project/Prefabs/Construction/Final/PFB_Ruin_ClusterMedium.prefab using Unity built-in primitive mesh ids.
+- [ERROR] FAMILY_FINAL_READY_BUILTIN_PRIMITIVE_MESH | procedural_family_links/family.ruin.megastructure: family.ruin.megastructure.final.megastructure points at prefab Assets/_Project/Prefabs/Construction/Final/PFB_Ruin_Megastructure.prefab using Unity built-in primitive mesh ids.
+- [ERROR] FAMILY_FINAL_READY_BUILTIN_PRIMITIVE_MESH | procedural_family_links/family.ruin.module.single: family.ruin.module.single.final.foundation points at prefab Assets/_Project/Prefabs/Construction/Final/PFB_Module_Foundation.prefab using Unity built-in primitive mesh ids.
+- [ERROR] FAMILY_FINAL_READY_BUILTIN_PRIMITIVE_MESH | procedural_family_links/family.ruin.module.single: family.ruin.module.single.final.corridor points at prefab Assets/_Project/Prefabs/Construction/Final/PFB_Module_Corridor.prefab using Unity built-in primitive mesh ids.
+- [ERROR] FAMILY_FINAL_READY_BUILTIN_PRIMITIVE_MESH | procedural_family_links/family.service.scar: family.service.scar.final.service_pump points at prefab Assets/_Project/Prefabs/Construction/Final/PFB_Module_ServicePump.prefab using Unity built-in primitive mesh ids.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/Cube: Assets/_Project/Prefabs/Buildings/Cube.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/Item_Titanium: Assets/_Project/Prefabs/Item_Titanium.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/Item_Tool_BeaconDeployer_World: Assets/_Project/Prefabs/Items/Tools/Item_Tool_BeaconDeployer_World.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/Item_Tool_Builder_World: Assets/_Project/Prefabs/Items/Tools/Item_Tool_Builder_World.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/Item_Tool_EnvAnalyzer_World: Assets/_Project/Prefabs/Items/Tools/Item_Tool_EnvAnalyzer_World.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/Item_Tool_Flashlight_World: Assets/_Project/Prefabs/Items/Tools/Item_Tool_Flashlight_World.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/Item_Tool_HarpoonLauncher_World: Assets/_Project/Prefabs/Items/Tools/Item_Tool_HarpoonLauncher_World.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/Item_Tool_Knife_World: Assets/_Project/Prefabs/Items/Tools/Item_Tool_Knife_World.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/Item_Tool_LaserCutter_World: Assets/_Project/Prefabs/Items/Tools/Item_Tool_LaserCutter_World.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/Item_Tool_Propulsion_World: Assets/_Project/Prefabs/Items/Tools/Item_Tool_Propulsion_World.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/Item_Tool_Repair_World: Assets/_Project/Prefabs/Items/Tools/Item_Tool_Repair_World.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/Item_Tool_SalvageSampler_World: Assets/_Project/Prefabs/Items/Tools/Item_Tool_SalvageSampler_World.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/Item_Tool_Scanner_World: Assets/_Project/Prefabs/Items/Tools/Item_Tool_Scanner_World.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/Item_Tool_StunPistol_World: Assets/_Project/Prefabs/Items/Tools/Item_Tool_StunPistol_World.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/Ocean_Crest: Assets/_Project/Prefabs/Ocean_Crest.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/PFB_CargoSled_Transport: Assets/_Project/Prefabs/Transport/PFB_CargoSled_Transport.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/PFB_Exosuit_Frame_Transport: Assets/_Project/Prefabs/Transport/PFB_Exosuit_Frame_Transport.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/PFB_MicroSub_Transport: Assets/_Project/Prefabs/Transport/PFB_MicroSub_Transport.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/PFB_Resource_CopperOre: Assets/_Project/Prefabs/Resources/Pickups/PFB_Resource_CopperOre.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/PFB_Resource_FiberKelp: Assets/_Project/Prefabs/Resources/Pickups/PFB_Resource_FiberKelp.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/PFB_Resource_HydrocarbonResin: Assets/_Project/Prefabs/Resources/Pickups/PFB_Resource_HydrocarbonResin.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/PFB_Resource_MembraneTissue: Assets/_Project/Prefabs/Resources/Pickups/PFB_Resource_MembraneTissue.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/PFB_Resource_SilicaShards: Assets/_Project/Prefabs/Resources/Pickups/PFB_Resource_SilicaShards.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/PFB_Resource_SilverOre: Assets/_Project/Prefabs/Resources/Pickups/PFB_Resource_SilverOre.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/PFB_Resource_SulfurClumps: Assets/_Project/Prefabs/Resources/Pickups/PFB_Resource_SulfurClumps.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/PFB_Resource_TitaniumScrap: Assets/_Project/Prefabs/Resources/Pickups/PFB_Resource_TitaniumScrap.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/PFB_ScoutGlider_Transport: Assets/_Project/Prefabs/Transport/PFB_ScoutGlider_Transport.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/Player: Assets/_Project/Prefabs/Player.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/STRUCTURES: Assets/_Project/Prefabs/STRUCTURES.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/Sky_System: Assets/_Project/Prefabs/Sky_System.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/Tool_BeaconDeployer_Held: Assets/_Project/Prefabs/Tools/Held/Tool_BeaconDeployer_Held.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/Tool_Builder_Held: Assets/_Project/Prefabs/Tools/Held/Tool_Builder_Held.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/Tool_EnvAnalyzer_Held: Assets/_Project/Prefabs/Tools/Held/Tool_EnvAnalyzer_Held.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/Tool_Flashlight_Held: Assets/_Project/Prefabs/Tools/Held/Tool_Flashlight_Held.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/Tool_HarpoonLauncher_Held: Assets/_Project/Prefabs/Tools/Held/Tool_HarpoonLauncher_Held.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/Tool_Knife_Held: Assets/_Project/Prefabs/Tools/Held/Tool_Knife_Held.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/Tool_LaserCutter_Held: Assets/_Project/Prefabs/Tools/Held/Tool_LaserCutter_Held.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/Tool_Propulsion_Held: Assets/_Project/Prefabs/Tools/Held/Tool_Propulsion_Held.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/Tool_Repair_Held: Assets/_Project/Prefabs/Tools/Held/Tool_Repair_Held.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/Tool_SalvageSampler_Held: Assets/_Project/Prefabs/Tools/Held/Tool_SalvageSampler_Held.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/Tool_Scanner_Held: Assets/_Project/Prefabs/Tools/Held/Tool_Scanner_Held.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+- [ERROR] PRODUCT_FACE_PREFAB_BUILTIN_PRIMITIVE_MESH | product_face_prefabs/Tool_StunPistol_Held: Assets/_Project/Prefabs/Tools/Held/Tool_StunPistol_Held.prefab uses Unity built-in primitive mesh ids; player-facing art needs authored/generated meshes or hidden input-only proof.
+
+## First 160 Warning Samples
+
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_branching__bouquet: GEN_family_coral_branching__bouquet has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_branching__bouquet: GEN_family_coral_branching__bouquet has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_branching__bouquet: GEN_family_coral_branching__bouquet is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_branching__branch: GEN_family_coral_branching__branch has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_branching__branch: GEN_family_coral_branching__branch has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_branching__branch: GEN_family_coral_branching__branch is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_branching__crest: GEN_family_coral_branching__crest has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_branching__crest: GEN_family_coral_branching__crest has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_branching__crest: GEN_family_coral_branching__crest is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_branching__fan: GEN_family_coral_branching__fan has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_branching__fan: GEN_family_coral_branching__fan has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_branching__fan: GEN_family_coral_branching__fan is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_branching__mass: GEN_family_coral_branching__mass has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_branching__mass: GEN_family_coral_branching__mass has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_branching__mass: GEN_family_coral_branching__mass is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_branching__thicket: GEN_family_coral_branching__thicket has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_branching__thicket: GEN_family_coral_branching__thicket has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_branching__thicket: GEN_family_coral_branching__thicket is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_brittle__candelabra: GEN_family_coral_brittle__candelabra has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_brittle__candelabra: GEN_family_coral_brittle__candelabra has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_brittle__candelabra: GEN_family_coral_brittle__candelabra is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_brittle__cathedral: GEN_family_coral_brittle__cathedral has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_brittle__cathedral: GEN_family_coral_brittle__cathedral has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_brittle__cathedral: GEN_family_coral_brittle__cathedral is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_brittle__crown: GEN_family_coral_brittle__crown has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_brittle__crown: GEN_family_coral_brittle__crown has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_brittle__crown: GEN_family_coral_brittle__crown is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_brittle__fan: GEN_family_coral_brittle__fan has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_brittle__fan: GEN_family_coral_brittle__fan has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_brittle__fan: GEN_family_coral_brittle__fan is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_brittle__halo: GEN_family_coral_brittle__halo has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_brittle__halo: GEN_family_coral_brittle__halo has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_brittle__halo: GEN_family_coral_brittle__halo is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_brittle__lace: GEN_family_coral_brittle__lace has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_brittle__lace: GEN_family_coral_brittle__lace has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_brittle__lace: GEN_family_coral_brittle__lace is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_brittle__spire: GEN_family_coral_brittle__spire has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_brittle__spire: GEN_family_coral_brittle__spire has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_brittle__spire: GEN_family_coral_brittle__spire is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_brittle__sprig: GEN_family_coral_brittle__sprig has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_brittle__sprig: GEN_family_coral_brittle__sprig has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_brittle__sprig: GEN_family_coral_brittle__sprig is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_brittle__thicket: GEN_family_coral_brittle__thicket has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_brittle__thicket: GEN_family_coral_brittle__thicket has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_brittle__thicket: GEN_family_coral_brittle__thicket is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_brittle__wreath: GEN_family_coral_brittle__wreath has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_brittle__wreath: GEN_family_coral_brittle__wreath has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_brittle__wreath: GEN_family_coral_brittle__wreath is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_low__bed: GEN_family_coral_low__bed has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_low__bed: GEN_family_coral_low__bed has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_low__bed: GEN_family_coral_low__bed is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_low__knoll: GEN_family_coral_low__knoll has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_low__knoll: GEN_family_coral_low__knoll has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_low__knoll: GEN_family_coral_low__knoll is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_low__mound: GEN_family_coral_low__mound has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_low__mound: GEN_family_coral_low__mound has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_low__mound: GEN_family_coral_low__mound is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_low__plate: GEN_family_coral_low__plate has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_low__plate: GEN_family_coral_low__plate has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_low__plate: GEN_family_coral_low__plate is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_low__saucer: GEN_family_coral_low__saucer has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_low__saucer: GEN_family_coral_low__saucer has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_low__saucer: GEN_family_coral_low__saucer is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_low__spread: GEN_family_coral_low__spread has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_low__spread: GEN_family_coral_low__spread has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_low__spread: GEN_family_coral_low__spread is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_massive__boulder: GEN_family_coral_massive__boulder has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_massive__boulder: GEN_family_coral_massive__boulder has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_massive__boulder: GEN_family_coral_massive__boulder is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_massive__buttress: GEN_family_coral_massive__buttress has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_massive__buttress: GEN_family_coral_massive__buttress has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_massive__buttress: GEN_family_coral_massive__buttress is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_massive__dome: GEN_family_coral_massive__dome has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_massive__dome: GEN_family_coral_massive__dome has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_massive__dome: GEN_family_coral_massive__dome is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_massive__head: GEN_family_coral_massive__head has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_massive__head: GEN_family_coral_massive__head has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_massive__head: GEN_family_coral_massive__head is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_massive__lobed: GEN_family_coral_massive__lobed has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_massive__lobed: GEN_family_coral_massive__lobed has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_massive__lobed: GEN_family_coral_massive__lobed is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_massive__porous: GEN_family_coral_massive__porous has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_massive__porous: GEN_family_coral_massive__porous has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_massive__porous: GEN_family_coral_massive__porous is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_plate__bastion: GEN_family_coral_plate__bastion has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_plate__bastion: GEN_family_coral_plate__bastion has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_plate__bastion: GEN_family_coral_plate__bastion is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_plate__canopy: GEN_family_coral_plate__canopy has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_plate__canopy: GEN_family_coral_plate__canopy has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_plate__canopy: GEN_family_coral_plate__canopy is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_plate__ledge: GEN_family_coral_plate__ledge has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_plate__ledge: GEN_family_coral_plate__ledge has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_plate__ledge: GEN_family_coral_plate__ledge is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_plate__shelf: GEN_family_coral_plate__shelf has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_plate__shelf: GEN_family_coral_plate__shelf has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_plate__shelf: GEN_family_coral_plate__shelf is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_plate__stack: GEN_family_coral_plate__stack has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_plate__stack: GEN_family_coral_plate__stack has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_plate__stack: GEN_family_coral_plate__stack is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_coral_plate__terrace: GEN_family_coral_plate__terrace has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_coral_plate__terrace: GEN_family_coral_plate__terrace has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_coral_plate__terrace: GEN_family_coral_plate__terrace is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_kelp_abyssal__braid: GEN_family_kelp_abyssal__braid has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_kelp_abyssal__braid: GEN_family_kelp_abyssal__braid has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_kelp_abyssal__braid: GEN_family_kelp_abyssal__braid is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_kelp_abyssal__cathedral__s140-240: GEN_family_kelp_abyssal__cathedral__s140-240 has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_kelp_abyssal__cathedral__s140-240: GEN_family_kelp_abyssal__cathedral__s140-240 has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_kelp_abyssal__cathedral__s140-240: GEN_family_kelp_abyssal__cathedral__s140-240 is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_kelp_abyssal__cowl__s110-180: GEN_family_kelp_abyssal__cowl__s110-180 has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_kelp_abyssal__cowl__s110-180: GEN_family_kelp_abyssal__cowl__s110-180 has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_kelp_abyssal__cowl__s110-180: GEN_family_kelp_abyssal__cowl__s110-180 is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_kelp_abyssal__lantern__s100-180: GEN_family_kelp_abyssal__lantern__s100-180 has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_kelp_abyssal__lantern__s100-180: GEN_family_kelp_abyssal__lantern__s100-180 has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_kelp_abyssal__lantern__s100-180: GEN_family_kelp_abyssal__lantern__s100-180 is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_kelp_abyssal__mantle: GEN_family_kelp_abyssal__mantle has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_kelp_abyssal__mantle: GEN_family_kelp_abyssal__mantle has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_kelp_abyssal__mantle: GEN_family_kelp_abyssal__mantle is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_kelp_abyssal__nodule: GEN_family_kelp_abyssal__nodule has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_kelp_abyssal__nodule: GEN_family_kelp_abyssal__nodule has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_kelp_abyssal__nodule: GEN_family_kelp_abyssal__nodule is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_kelp_abyssal__pennant: GEN_family_kelp_abyssal__pennant has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_kelp_abyssal__pennant: GEN_family_kelp_abyssal__pennant has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_kelp_abyssal__pennant: GEN_family_kelp_abyssal__pennant is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_kelp_abyssal__petal__s100-170: GEN_family_kelp_abyssal__petal__s100-170 has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_kelp_abyssal__petal__s100-170: GEN_family_kelp_abyssal__petal__s100-170 has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_kelp_abyssal__petal__s100-170: GEN_family_kelp_abyssal__petal__s100-170 is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_kelp_abyssal__reed__s80-140: GEN_family_kelp_abyssal__reed__s80-140 has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_kelp_abyssal__reed__s80-140: GEN_family_kelp_abyssal__reed__s80-140 has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_kelp_abyssal__reed__s80-140: GEN_family_kelp_abyssal__reed__s80-140 is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_kelp_abyssal__shroud: GEN_family_kelp_abyssal__shroud has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_kelp_abyssal__shroud: GEN_family_kelp_abyssal__shroud has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_kelp_abyssal__shroud: GEN_family_kelp_abyssal__shroud is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_kelp_abyssal__strap: GEN_family_kelp_abyssal__strap has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_kelp_abyssal__strap: GEN_family_kelp_abyssal__strap has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_kelp_abyssal__strap: GEN_family_kelp_abyssal__strap is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_kelp_abyssal__tatterveil__s110-185: GEN_family_kelp_abyssal__tatterveil__s110-185 has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_kelp_abyssal__tatterveil__s110-185: GEN_family_kelp_abyssal__tatterveil__s110-185 has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_kelp_abyssal__tatterveil__s110-185: GEN_family_kelp_abyssal__tatterveil__s110-185 is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_kelp_abyssal__veilwall__s150-240: GEN_family_kelp_abyssal__veilwall__s150-240 has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_kelp_abyssal__veilwall__s150-240: GEN_family_kelp_abyssal__veilwall__s150-240 has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_kelp_abyssal__veilwall__s150-240: GEN_family_kelp_abyssal__veilwall__s150-240 is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_kelp_abyssal__whip: GEN_family_kelp_abyssal__whip has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_kelp_abyssal__whip: GEN_family_kelp_abyssal__whip has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_kelp_abyssal__whip: GEN_family_kelp_abyssal__whip is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_kelp_canopy__crown: GEN_family_kelp_canopy__crown has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_kelp_canopy__crown: GEN_family_kelp_canopy__crown has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_kelp_canopy__crown: GEN_family_kelp_canopy__crown is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_kelp_canopy__fan: GEN_family_kelp_canopy__fan has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_kelp_canopy__fan: GEN_family_kelp_canopy__fan has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_kelp_canopy__fan: GEN_family_kelp_canopy__fan is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_kelp_canopy__featherfan__s120-200: GEN_family_kelp_canopy__featherfan__s120-200 has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_kelp_canopy__featherfan__s120-200: GEN_family_kelp_canopy__featherfan__s120-200 has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_kelp_canopy__featherfan__s120-200: GEN_family_kelp_canopy__featherfan__s120-200 is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_kelp_canopy__frond: GEN_family_kelp_canopy__frond has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_kelp_canopy__frond: GEN_family_kelp_canopy__frond has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_kelp_canopy__frond: GEN_family_kelp_canopy__frond is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_kelp_canopy__laminaria__s105-165: GEN_family_kelp_canopy__laminaria__s105-165 has no local MANIFEST file.
+- [WARN] MISSING_NAMED_PROOF | baked_flora_prefabs/GEN_family_kelp_canopy__laminaria__s105-165: GEN_family_kelp_canopy__laminaria__s105-165 has no filename-matched report/screenshot proof.
+- [WARN] SURFACE_SHALLOW_VISUAL_PROOF_PENDING | baked_flora_prefabs/GEN_family_kelp_canopy__laminaria__s105-165: GEN_family_kelp_canopy__laminaria__s105-165 is shallow/surface-adjacent; Subnautica-level visual claim remains pending without screenshot/render proof.
+- [WARN] MISSING_MANIFEST | baked_flora_prefabs/GEN_family_kelp_canopy__mantle: GEN_family_kelp_canopy__mantle has no local MANIFEST file.
+
+## Acceptance Rule
+
+This report cannot prove beauty. It only prevents package-level false completion. Any surface, shallow, coast, or hero-route asset still needs render/screenshot proof against TASTE.md and the Subnautica-level visual floor.

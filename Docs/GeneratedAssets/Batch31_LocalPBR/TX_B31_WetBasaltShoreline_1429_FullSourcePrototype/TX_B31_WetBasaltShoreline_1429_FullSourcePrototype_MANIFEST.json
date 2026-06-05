@@ -1,0 +1,24 @@
+{
+  "id": "TX_B31_WetBasaltShoreline_1429_FullSourcePrototype",
+  "evidence_class": "LOCAL_SOURCE_BAKE_STATIC_ONLY",
+  "source": "Docs/GeneratedAssets/Gemini/TX_H8_WetBasaltShoreline_Albedo_1429.png",
+  "policy": "No destructive crop. User can remove small Gemini mark later. Temporary prototype use allowed; final acceptance requires cleanup and Unity proof.",
+  "not_unity_imported": true,
+  "not_visual_acceptance": true,
+  "outputs": {
+    "source_full": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_WetBasaltShoreline_1429_FullSourcePrototype/TX_B31_WetBasaltShoreline_1429_FullSourcePrototype_SourceFull.png",
+    "albedo": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_WetBasaltShoreline_1429_FullSourcePrototype/TX_B31_WetBasaltShoreline_1429_FullSourcePrototype_AlbedoSource.png",
+    "height": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_WetBasaltShoreline_1429_FullSourcePrototype/TX_B31_WetBasaltShoreline_1429_FullSourcePrototype_HeightSource.png",
+    "normal": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_WetBasaltShoreline_1429_FullSourcePrototype/TX_B31_WetBasaltShoreline_1429_FullSourcePrototype_NormalSource.png",
+    "mrao": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_WetBasaltShoreline_1429_FullSourcePrototype/TX_B31_WetBasaltShoreline_1429_FullSourcePrototype_MRAOSource.png",
+    "tile2x2": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_WetBasaltShoreline_1429_FullSourcePrototype/TX_B31_WetBasaltShoreline_1429_FullSourcePrototype_Albedo_tile2x2.png"
+  },
+  "sha256": {
+    "source_full": "5de8081965a7925365e13705c30f51f8c072fa4de2faa10e7dc9a98cb3f5c2ae",
+    "albedo": "265e8b579513dea2c0c807b4b295bad37fbf1fd3afcde00d2429d500251519b2",
+    "height": "800652016c8ccc59f7e6cde5c6e6bddf5f28477860a20a0d673f8417d5f9e94a",
+    "normal": "cf62eb206940a05fae11efe27917f33a2a82341f18608d665b98d1b695a960fe",
+    "mrao": "689d359f09c3f9d81be765229e827037fe6a298e8e6a32e7d4ae46cbebc84065",
+    "tile2x2": "e7ea1791216cc56122314a7f22de8f21aa86c9032e0f4af094ceeba480fc0a21"
+  }
+}

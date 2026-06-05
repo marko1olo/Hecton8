@@ -17,9 +17,16 @@ Shader "HECTON/Celestial/H8_AegirGasGiantImpostor_1428"
         _PhaseCenter ("Phase Center", Range(0.0, 1.0)) = 0.56
         _PhaseSoftness ("Phase Softness", Range(0.05, 1.0)) = 0.42
         _Rotation ("Band Rotation", Range(0.0, 1.0)) = 0.08
+        _GlobalRotation ("Global Rotation Sync", Float) = 0.0
+        _GameTime ("Game Time Sync", Float) = 0.0
+        _AutoRotationSpeed ("Auto Rotation Speed", Range(0.0, 0.02)) = 0.0022
         _DetailTiling ("Detail Tiling", Vector) = (2.2, 2.2, 0, 0)
         _StormTiling ("Storm Tiling", Vector) = (1.4, 1.4, 0, 0)
         _LightDirection ("Local Light Direction", Vector) = (-0.38, 0.28, 0.88, 0)
+        [HDR] _AtmosphereVeilColor ("Atmosphere Veil Color", Color) = (0.62, 0.78, 0.94, 1)
+        _HorizonVeilStrength ("Horizon Veil Strength", Range(0.0, 1.0)) = 0.46
+        _HorizonVeilStart ("Horizon Veil Start", Range(-0.20, 0.35)) = 0.03
+        _HorizonVeilEnd ("Horizon Veil End", Range(0.02, 0.55)) = 0.24
     }
 
     SubShader
@@ -77,9 +84,17 @@ Shader "HECTON/Celestial/H8_AegirGasGiantImpostor_1428"
                 half _PhaseCenter;
                 half _PhaseSoftness;
                 half _Rotation;
+                float _GlobalRotation;
+                float _GameTime;
+                half _AutoRotationSpeed;
+                half _pad0;
                 float4 _DetailTiling;
                 float4 _StormTiling;
                 float4 _LightDirection;
+                half4 _AtmosphereVeilColor;
+                half _HorizonVeilStrength;
+                half _HorizonVeilStart;
+                half _HorizonVeilEnd;
             CBUFFER_END
 
             struct Attributes
@@ -126,7 +141,8 @@ Shader "HECTON/Celestial/H8_AegirGasGiantImpostor_1428"
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
                 float2 baseUv = input.uv;
-                baseUv.x = frac(baseUv.x + _Rotation);
+                float syncTime = max(_GameTime, _Time.y);
+                baseUv.x = frac(baseUv.x + _Rotation + _GlobalRotation + syncTime * _AutoRotationSpeed);
 
                 half3 baseSample = (half3)SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, TRANSFORM_TEX(baseUv, _MainTex)).rgb;
 
@@ -159,6 +175,19 @@ Shader "HECTON/Celestial/H8_AegirGasGiantImpostor_1428"
                 half3 color = bandColor * lerp(0.42h, 1.0h, phase);
                 color += _RimTint.rgb * rim;
                 color *= _Exposure;
+
+                half3 viewRay = normalize((half3)(input.positionWS - _WorldSpaceCameraPos.xyz));
+                half veilRange = max(_HorizonVeilEnd - _HorizonVeilStart, 0.001h);
+                half horizonVeil = 1.0h - smoothstep(
+                    _HorizonVeilStart,
+                    _HorizonVeilStart + veilRange,
+                    viewRay.y);
+                half atmosphericDepth = saturate(horizonVeil * _HorizonVeilStrength);
+                half edgeBleed = saturate(rim * 0.32h + atmosphericDepth * 0.68h);
+                half3 veilColor = lerp(_AtmosphereVeilColor.rgb * 0.92h, _AtmosphereVeilColor.rgb * 1.14h, phase);
+                half limbVeil = pow(saturate(1.0h - dot(normalWS, viewDir)), 0.72h);
+                half atmosphereMask = saturate(atmosphericDepth + edgeBleed * 0.20h + limbVeil * 0.34h);
+                color = lerp(color, veilColor, atmosphereMask);
 
                 return half4(max(color, half3(0.0h, 0.0h, 0.0h)), 1.0h);
             }

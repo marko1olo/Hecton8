@@ -10,13 +10,13 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
 # Quarantine Relay Fragment
 
-Quarantine Relay Fragment defines the administrative texture of partial exits.
+Quarantine relay fragments make partial exits bitter: extraction can save a body while keeping the witness under custody.
 
 ## Scanner
 
@@ -24,7 +24,7 @@ Relay fragment approves extraction and denies clean release in the same packet.
 
 ## Terminal
 
-RELAY HOLD: extraction accepted. Release denied pending sample custody, air review and claimant dispute.
+RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.
 
 ## Audio
 
@@ -32,6 +32,6 @@ You are out of the water. You are not out of custody.
 
 ## Field Note
 
-Use after partial exit/corporate rescue routes; keep it legal, cold and bitter.
+Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.
 
 <!-- In-Game Wiki; generated from P290_QUARANTINE_RELAY_FRAGMENT/ja_JP. -->

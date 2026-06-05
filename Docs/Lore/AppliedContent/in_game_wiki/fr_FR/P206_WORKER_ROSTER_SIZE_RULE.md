@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -24,7 +24,7 @@ The colony roster is large enough to feel inhabited and small enough to stay aut
 
 ## Terminal
 
-ROSTER RULE: 72 authored worker identities. Anchor names may recur across lockers, ledgers and audio. Seed-role identities vary object pairing by run.
+ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.
 
 ## Audio
 
@@ -32,6 +32,6 @@ A name is evidence only when the room can prove the job.
 
 ## Field Note
 
-Lock 72 worker identities: 24 anchor names for recurring evidence, 48 seed-role names for replay variation.
+The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.
 
 <!-- In-Game Wiki; generated from P206_WORKER_ROSTER_SIZE_RULE/fr_FR. -->

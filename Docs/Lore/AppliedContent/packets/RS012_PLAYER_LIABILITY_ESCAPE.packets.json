@@ -648,11 +648,11 @@
       "localized": {
         "en_US": {
           "title": "First Hour Spine",
-          "scanner": "Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.",
-          "field_note": "The opening must be beautiful before it becomes accusing.",
-          "terminal": "SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.",
+          "scanner": "First-hour chain logged: damaged drop, air, bright shelf, pump shelter, sanitized accident packet, repair scar.",
+          "field_note": "The bright shelf is not a trick. It is the reason people wanted this place before the paperwork made it lethal.",
+          "terminal": "SHALLOW ANNEX: pump restart valid. Incident packet cached. Atlas repair growth found around cable, tool fragment, residue.",
           "audio": "The first safe room is not clean. It is only holding its breath better than you are.",
-          "in_game_wiki": "First Hour Spine defines the opening rhythm: Black Keel approach, damaged descent, first survival repair, bright shallow contrast, first safe module, first corporate lie and first evidence that Atlas repair logic has entered biology.",
+          "in_game_wiki": "The first hour leaves a practical trail. The drop is damaged, the shelf is bright enough to read, the pump annex can hold pressure, and the first Deep Reach packet is too clean for the room around it. When you find the repair scar around cable, tool fragment, and biological residue, treat it as useful evidence first. Atlas repair logic has entered life, but the PDA does not know how far yet.",
           "external_site": "First Hour Spine is the early-game dramaturgy guide for HECTON-8. It ensures the player begins with tangible engineering tasks and visual wonder before the colony crime and Atlas maintenance ecology appear."
         },
         "ru_RU": {

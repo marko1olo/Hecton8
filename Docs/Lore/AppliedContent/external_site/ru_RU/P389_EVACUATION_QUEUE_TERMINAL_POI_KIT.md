@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# POI-кит: Evacuation Queue Terminal
+# Evacuation Queue Terminal POI Kit
 
-Ответственность Deep Reach лучше всего показывать процедурой. Очередь может быть сильнее признания.
+Deep Reach liability is best shown through procedure. A queue can be more damning than a confession.
 
 ## Scanner
 
-POI kit: queue terminal доказывает delay через door state, clock drift и missing route capacity.
+POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.
 
 ## Terminal
 
-QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch и salvage conflict.
+QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.
 
 ## Audio
 
-Очередь - это body count с более чистым форматированием.
+A queue is a body count with cleaner formatting.
 
 ## Field Note
 
-Для evidence rooms, где salvage и proof preservation конфликтуют.
+POI evidence kit: Evacuation Queue Terminal frames rooms where salvage value and proof preservation conflict.
 
 <!-- External Site; generated from P389_EVACUATION_QUEUE_TERMINAL_POI_KIT/ru_RU. -->

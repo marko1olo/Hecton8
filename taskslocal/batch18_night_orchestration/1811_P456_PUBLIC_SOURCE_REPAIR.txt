@@ -1,0 +1,61 @@
+AGENT ID: 1811
+ROLE: P456_PUBLIC_SOURCE_REPAIR
+MODE: No-Unity content/source repair. Do not run in parallel with 1812 or any AppliedLore exporter/bake task.
+
+PRIMARY GOAL
+Repair `P456_SITE_HOME_LONGFORM_BRIEF` at source level so it stops being a production brief masquerading as public/site lore. The output must be real player/public-facing HECTON-8 copy, not instructions for another writer.
+
+AUTHORITIES TO READ
+- C:\hades\Hecton8\AGENTS.md
+- C:\hades\Hecton8\PROJECT_BIBLES.md
+- C:\hades\Hecton8\VISION_LOCKS.md
+- C:\hades\Hecton8\TASTE.md
+- C:\hades\Hecton8\quality.md
+- C:\hades\Hecton8\writing.md
+- C:\hades\Hecton8\narrative.md
+- C:\hades\Hecton8\localization.md
+- C:\hades\Hecton8\Docs\Lore\WriterScenarioAgentPrompt.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1804_APPLIED_LORE_DATAMONOLITH_RECONCILE.md
+
+LIKELY FILES
+- Assets/_SourceData/DataMonolith/Narrative/applied_lore_packets.csv
+- Docs/Lore/AppliedContent/external_site/en_US/P456_SITE_HOME_LONGFORM_BRIEF.md
+- Docs/Lore/AppliedContent/external_site/ru_RU/P456_SITE_HOME_LONGFORM_BRIEF.md
+- Docs/Lore/AppliedContent/in_game_wiki/en_US/P456_SITE_HOME_LONGFORM_BRIEF.md
+- Docs/Lore/AppliedContent/in_game_wiki/ru_RU/P456_SITE_HOME_LONGFORM_BRIEF.md
+- Docs/Lore/AppliedContent/Publication_Surface_Index.csv
+
+OWNED OUTPUTS
+- Docs/Tasks/Status_1811.md
+- Docs/AgentLogs/Rationale_1811.md for non-trivial decisions only
+- Docs/AgentLogs/LOG_1811.md
+- Docs/Reports/Batch18/1811_P456_PUBLIC_SOURCE_REPAIR.md
+
+HARD RULES
+- Do not run Unity, dotnet build, DataMonolith bake, or broad exporters unless task evidence proves safe and no concurrent AppliedLore writer/exporter task is running.
+- Preserve `packet_id`, `article_id`, `unlock_id`, `release_set_id`, route-card identity, locale identity, and CSV schema.
+- Do not claim native-final translation. Mark non-native/non-reviewed locales honestly.
+- The text must sound like a human/public artifact or in-game encyclopedia/log note. No "Longform spine", "Public brief", "SITE HOME", "Assemble for website", TODO, placeholder, AI meta, production-instruction language.
+- If generated pages cannot be safely regenerated, repair source and write exact re-export instructions.
+
+20 TASKS
+01. Create status/log/rationale files.
+02. Read authorities and 2-8 relevant writing/localization/data mandates.
+03. Inspect current P456 source rows in CSV for all 15 locales.
+04. Inspect generated P456 pages for external_site and in_game_wiki.
+05. Identify exact fields containing production-brief residue.
+06. Write source-safe replacement content for en_US first.
+07. Update ru_RU only if you can write clean Russian without mojibake; otherwise keep honest draft status and write a native-review queue item.
+08. For other locales, do not fabricate native prose unless already present and clean; preserve status honesty.
+09. Apply minimal CSV source edits only to P456 rows/fields if safe.
+10. If editing generated pages is safe and source is repaired, update only corresponding P456 pages; otherwise leave generated pages and document re-export.
+11. Ensure no CSV quoting/schema break.
+12. Search P456 output for banned residue terms.
+13. Search all AppliedLore source for same residue terms and list next candidates; do not bulk edit.
+14. Update publication/index status only if source/status rules require it and exporter ownership is clear.
+15. Produce before/after excerpt report.
+16. Produce locale status table.
+17. Run static source-only audit if safe; record exact output.
+18. Append log.
+19. Final scan for fake runtime/native-review claims.
+20. Mark COMPLETE, PARTIAL, or BLOCKED with exact blocker.

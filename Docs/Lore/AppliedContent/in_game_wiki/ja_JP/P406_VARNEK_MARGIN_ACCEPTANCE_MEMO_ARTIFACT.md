@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# JA LOC: Varnek Margin Memo
+# Varnek Margin Memo
 
-JA LOC HOLD: The Varnek memo is the cleanest liability artifact: physics caused the Great Tide, but Deep Reach accepted a dangerous margin because the shutdown cost was higher.
+The Varnek memo is evidence that the hazard was real and known. Deep Reach kept the schedule because expected shutdown cost beat modeled tail risk.
 
 ## Scanner
 
-JA LOC HOLD: Deep Reach artifact: margin memo. The flood risk was not invented, but it was priced.
+Aegir Operations Risk memo. Tide margin was accepted as payable exposure.
 
 ## Terminal
 
-JA LOC: VARNEK MEMO. Flood risk was priced; shutdown cost lost to Atlas continuity.
+AEGIR OPS RISK / VARNEK / TIDE-MARGIN REVIEW: average model remains billable. Tail exposure accepted under Atlas continuity cost. Independent shutdown not recommended.
 
 ## Audio
 
-JA LOC HOLD: No one signed a murder order. They signed a margin.
+No murder order. A margin acceptance.
 
 ## Field Note
 
-JA LOC HOLD: Use as public nuance anchor and late proof terminal.
+Varnek did not deny the water. He moved it into a cost column and stamped continuity exposure over the evacuation reserve.
 
 <!-- In-Game Wiki; generated from P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT/ja_JP. -->

@@ -8,10 +8,8 @@ using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using TMPro;
-using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -271,8 +269,6 @@ namespace Hecton8.UI.Navigation
 
         private IDataVault _vault;
         private IPlayerRuntimeContext _playerContext;
-        private JobHandle _jobHandle;
-        private bool _jobPending;
         private bool _registeredSlowTick;
         private bool _registeredLateFrame;
         private bool _registeredService;
@@ -352,7 +348,6 @@ namespace Hecton8.UI.Navigation
 
         private void OnDisable()
         {
-            CompletePendingJob(forceComplete: true);
             FlushQueuedBlackBoxDump();
             TryUnregisterTickables();
             TryUnregisterService();
@@ -362,7 +357,6 @@ namespace Hecton8.UI.Navigation
 
         private void OnDestroy()
         {
-            CompletePendingJob(forceComplete: true);
             FlushQueuedBlackBoxDump();
             ReleaseIndirectBuffers();
         }
@@ -385,18 +379,23 @@ namespace Hecton8.UI.Navigation
         {
             _manualRecalibrationRequested = true;
             _manualRecalibrationHold01 = 1f;
-            if (_jobPending)
+
+            if (!TryAcquireStateWriteBuffer(out NativeArray<CompassStateDTO> stateBuffer, out IDataVault writeVault))
                 return;
 
-            if (!TryGetCompassBuffers(out var stateBuffer, out _, out _))
-                return;
-
-            CompassStateDTO state = stateBuffer[0];
-            state.Flags |= FlagCalibrationRequested;
-            state.RecalibrationHold01 = 1f;
-            stateBuffer[0] = state;
-            _manualRecalibrationRequested = false;
-            _manualRecalibrationHold01 = 0f;
+            try
+            {
+                CompassStateDTO state = stateBuffer[0];
+                state.Flags |= FlagCalibrationRequested;
+                state.RecalibrationHold01 = 1f;
+                stateBuffer[0] = state;
+                _manualRecalibrationRequested = false;
+                _manualRecalibrationHold01 = 0f;
+            }
+            finally
+            {
+                ReleaseStateWriteBuffer(writeVault);
+            }
         }
 
         /// <inheritdoc />
@@ -404,34 +403,31 @@ namespace Hecton8.UI.Navigation
         {
             progress01 = 0f;
             float safeDeltaTime = SanitizeDeltaTime(deltaTime);
-            if (_jobPending)
-            {
-                _manualRecalibrationHold01 = math.saturate(
-                    _manualRecalibrationHold01 + safeDeltaTime * math.rcp(RecalibrationHoldSeconds));
-                if (_manualRecalibrationHold01 >= 1f)
-                    _manualRecalibrationRequested = true;
 
-                progress01 = _manualRecalibrationHold01;
-                return true;
-            }
-
-            if (!TryGetCompassBuffers(out var stateBuffer, out _, out _))
+            if (!TryAcquireStateWriteBuffer(out NativeArray<CompassStateDTO> stateBuffer, out IDataVault writeVault))
                 return false;
 
-            CompassStateDTO state = stateBuffer[0];
-            SanitizeCompassStateScalars(ref state);
-            state.RecalibrationHold01 = math.saturate(
-                math.max(state.RecalibrationHold01, _manualRecalibrationHold01) +
-                safeDeltaTime * math.rcp(RecalibrationHoldSeconds));
-            progress01 = state.RecalibrationHold01;
-            if (state.RecalibrationHold01 >= 1f)
+            try
             {
-                state.Flags |= FlagCalibrationRequested;
-                _manualRecalibrationRequested = false;
-            }
+                CompassStateDTO state = stateBuffer[0];
+                SanitizeCompassStateScalars(ref state);
+                state.RecalibrationHold01 = math.saturate(
+                    math.max(state.RecalibrationHold01, _manualRecalibrationHold01) +
+                    safeDeltaTime * math.rcp(RecalibrationHoldSeconds));
+                progress01 = state.RecalibrationHold01;
+                if (state.RecalibrationHold01 >= 1f)
+                {
+                    state.Flags |= FlagCalibrationRequested;
+                    _manualRecalibrationRequested = false;
+                }
 
-            stateBuffer[0] = state;
-            _manualRecalibrationHold01 = 0f;
+                stateBuffer[0] = state;
+                _manualRecalibrationHold01 = 0f;
+            }
+            finally
+            {
+                ReleaseStateWriteBuffer(writeVault);
+            }
 
             return true;
         }
@@ -441,15 +437,20 @@ namespace Hecton8.UI.Navigation
         {
             _manualRecalibrationRequested = false;
             _manualRecalibrationHold01 = 0f;
-            if (_jobPending)
+
+            if (!TryAcquireStateWriteBuffer(out NativeArray<CompassStateDTO> stateBuffer, out IDataVault writeVault))
                 return;
 
-            if (!TryGetCompassBuffers(out var stateBuffer, out _, out _))
-                return;
-
-            CompassStateDTO state = stateBuffer[0];
-            state.RecalibrationHold01 = 0f;
-            stateBuffer[0] = state;
+            try
+            {
+                CompassStateDTO state = stateBuffer[0];
+                state.RecalibrationHold01 = 0f;
+                stateBuffer[0] = state;
+            }
+            finally
+            {
+                ReleaseStateWriteBuffer(writeVault);
+            }
         }
 
         /// <summary>
@@ -573,7 +574,6 @@ namespace Hecton8.UI.Navigation
             if (_indirectBuffersDirty)
                 return;
 
-            CompletePendingJob(forceComplete: false);
             ApplyPresentation();
         }
 
@@ -600,17 +600,14 @@ namespace Hecton8.UI.Navigation
 
         private bool TryResolveVaultBuffers()
         {
-            bool compassReady = TryPrepareCompassBuffersCold(out _, out _, out _);
-            bool presentationReady = TryPreparePresentationBufferCold(out _);
+            bool compassReady = TryPrepareCompassBuffersCold();
+            bool presentationReady = TryPreparePresentationBufferCold();
             return compassReady && presentationReady;
         }
 
         private bool TryReadCompassState(out CompassStateDTO state)
         {
             state = default;
-            if (_jobPending)
-                return false;
-
             if (!TryGetExistingStateBuffer(out var stateBuffer))
                 return false;
 
@@ -620,104 +617,109 @@ namespace Hecton8.UI.Navigation
             return true;
         }
 
-        private bool TryGetExistingStateBuffer(out NativeSlice<CompassStateDTO> stateBuffer)
+        private bool TryGetExistingStateBuffer(out NativeArray<CompassStateDTO>.ReadOnly stateBuffer)
         {
             stateBuffer = default;
-            if (!TryOpenExistingLane(
+            return TryReadExistingLane(
                     ref _stateLane,
                     BufferID.CompassState,
                     StateLength,
-                    out NativeArray<CompassStateDTO> buffer))
-                return false;
-
-            stateBuffer = buffer.Slice();
-            return true;
+                    out stateBuffer);
         }
 
-        private bool TryGetExistingPresentationBuffer(out NativeSlice<CompassPresentationStateDTO> presentationBuffer)
+        private bool TryGetExistingPresentationBuffer(out NativeArray<CompassPresentationStateDTO>.ReadOnly presentationBuffer)
         {
             presentationBuffer = default;
-            if (!TryOpenExistingLane(
+            return TryReadExistingLane(
                     ref _presentationLane,
                     BufferID.CompassPresentationState,
                     StateLength,
-                    out NativeArray<CompassPresentationStateDTO> buffer))
-                return false;
-
-            presentationBuffer = buffer.Slice();
-            return true;
+                    out presentationBuffer);
         }
 
-        private bool TryGetPresentationBuffer(out NativeSlice<CompassPresentationStateDTO> presentationBuffer)
+        private bool TryGetPresentationBuffer(out NativeArray<CompassPresentationStateDTO>.ReadOnly presentationBuffer)
         {
             presentationBuffer = default;
-            if (!TryOpenExistingLane(
+            return TryReadExistingLane(
                     ref _presentationLane,
                     BufferID.CompassPresentationState,
                     StateLength,
-                    out NativeArray<CompassPresentationStateDTO> buffer))
-                return false;
-
-            presentationBuffer = buffer.Slice();
-            return true;
+                    out presentationBuffer);
         }
 
-        private bool TryPreparePresentationBufferCold(out NativeSlice<CompassPresentationStateDTO> presentationBuffer)
+        private bool TryPreparePresentationBufferCold()
         {
-            presentationBuffer = default;
-            if (!TryOpenOrAcquireLane(
+            IDataVault vault = _vault;
+            return TryBindOrAcquireLane(
+                    vault,
                     ref _presentationLane,
                     BufferID.CompassPresentationState,
                     StateLength,
-                    NativeArrayOptions.ClearMemory,
-                    out NativeArray<CompassPresentationStateDTO> buffer))
-                return false;
-
-            presentationBuffer = buffer.Slice();
-            return true;
+                    NativeArrayOptions.ClearMemory);
         }
 
         private void ResetPresentationState(bool resetDialMatrix)
         {
-            if (!TryPreparePresentationBufferCold(out var presentationBuffer))
+            if (!TryAcquireOrCreatePresentationWriteBuffer(out NativeArray<CompassPresentationStateDTO> presentationBuffer, out IDataVault writeVault))
                 return;
 
-            CompassPresentationStateDTO presentation = presentationBuffer[0];
-            presentation.LastPresentedHeadingDegrees = 0f;
-            presentation.LastCompassGlassChromatic01 = 0f;
-            presentation.LastCompassPower01 = 0f;
-            presentation.LastCompassOverkill01 = 0f;
-            presentation.ParticleDebt = 0f;
-            presentation.LastCardinalIndex = 0;
-            presentation.LastPowerState = 0;
-            presentation.PresentationFlags &= ~(PresentationFlagTextInitialized |
-                                                PresentationFlagDialInitialized |
-                                                PresentationFlagShaderInitialized);
+            try
+            {
+                CompassPresentationStateDTO presentation = presentationBuffer[0];
+                presentation.LastPresentedHeadingDegrees = 0f;
+                presentation.LastCompassGlassChromatic01 = 0f;
+                presentation.LastCompassPower01 = 0f;
+                presentation.LastCompassOverkill01 = 0f;
+                presentation.ParticleDebt = 0f;
+                presentation.LastCardinalIndex = 0;
+                presentation.LastPowerState = 0;
+                presentation.PresentationFlags &= ~(PresentationFlagTextInitialized |
+                                                    PresentationFlagDialInitialized |
+                                                    PresentationFlagShaderInitialized);
 
-            if (resetDialMatrix)
-                MarkDialMatrixPresentationDirty(ref presentation);
+                if (resetDialMatrix)
+                    MarkDialMatrixPresentationDirty(ref presentation);
 
-            presentationBuffer[0] = presentation;
+                presentationBuffer[0] = presentation;
+            }
+            finally
+            {
+                ReleasePresentationWriteBuffer(writeVault);
+            }
         }
 
         private void ResetParticleDebt()
         {
-            if (!TryGetExistingPresentationBuffer(out var presentationBuffer))
+            if (!TryAcquirePresentationWriteBuffer(out NativeArray<CompassPresentationStateDTO> presentationBuffer, out IDataVault writeVault))
                 return;
 
-            CompassPresentationStateDTO presentation = presentationBuffer[0];
-            presentation.ParticleDebt = 0f;
-            presentationBuffer[0] = presentation;
+            try
+            {
+                CompassPresentationStateDTO presentation = presentationBuffer[0];
+                presentation.ParticleDebt = 0f;
+                presentationBuffer[0] = presentation;
+            }
+            finally
+            {
+                ReleasePresentationWriteBuffer(writeVault);
+            }
         }
 
         private void MarkDialMatrixPresentationDirty()
         {
-            if (!TryGetExistingPresentationBuffer(out var presentationBuffer))
+            if (!TryAcquirePresentationWriteBuffer(out NativeArray<CompassPresentationStateDTO> presentationBuffer, out IDataVault writeVault))
                 return;
 
-            CompassPresentationStateDTO presentation = presentationBuffer[0];
-            MarkDialMatrixPresentationDirty(ref presentation);
-            presentationBuffer[0] = presentation;
+            try
+            {
+                CompassPresentationStateDTO presentation = presentationBuffer[0];
+                MarkDialMatrixPresentationDirty(ref presentation);
+                presentationBuffer[0] = presentation;
+            }
+            finally
+            {
+                ReleasePresentationWriteBuffer(writeVault);
+            }
         }
 
         private static void MarkDialMatrixPresentationDirty(ref CompassPresentationStateDTO presentation)
@@ -737,136 +739,76 @@ namespace Hecton8.UI.Navigation
             Shader.SetGlobalFloat(_CompassPowerId, 0f);
             Shader.SetGlobalFloat(_CompassOverkillId, 0f);
 
-            if (!TryGetExistingPresentationBuffer(out var presentationBuffer))
+            if (!TryAcquirePresentationWriteBuffer(out NativeArray<CompassPresentationStateDTO> presentationBuffer, out IDataVault writeVault))
                 return;
 
-            CompassPresentationStateDTO presentation = presentationBuffer[0];
-            presentation.LastCompassGlassChromatic01 = 0f;
-            presentation.LastCompassPower01 = 0f;
-            presentation.LastCompassOverkill01 = 0f;
-            presentation.PresentationFlags &= ~PresentationFlagShaderInitialized;
-            presentationBuffer[0] = presentation;
+            try
+            {
+                CompassPresentationStateDTO presentation = presentationBuffer[0];
+                presentation.LastCompassGlassChromatic01 = 0f;
+                presentation.LastCompassPower01 = 0f;
+                presentation.LastCompassOverkill01 = 0f;
+                presentation.PresentationFlags &= ~PresentationFlagShaderInitialized;
+                presentationBuffer[0] = presentation;
+            }
+            finally
+            {
+                ReleasePresentationWriteBuffer(writeVault);
+            }
         }
 
-        private bool TryGetCompassBuffers(
-            out NativeSlice<CompassStateDTO> stateBuffer,
-            out NativeSlice<float> outputBuffer,
-            out NativeSlice<CompassBlackBoxEntry> blackBox)
+        private bool TryPrepareCompassBuffersCold()
         {
-            stateBuffer = default;
-            outputBuffer = default;
-            blackBox = default;
-
             IDataVault vault = _vault;
             if (vault == null)
                 return false;
 
-            if (!TryOpenExistingLane(
-                    ref _stateLane,
-                    BufferID.CompassState,
-                    StateLength,
-                    out NativeArray<CompassStateDTO> state) ||
-                !TryOpenExistingLane(
-                    ref _headingOutputLane,
-                    BufferID.CompassHeadingOutput,
-                    (int)CompassOutputSlot.Count,
-                    out NativeArray<float> output) ||
-                !TryOpenExistingLane(
-                    ref _blackBoxLane,
-                    BufferID.CompassBlackBox,
-                    BlackBoxCapacity,
-                    out NativeArray<CompassBlackBoxEntry> telemetry))
-            {
-                return false;
-            }
-
-            stateBuffer = state.Slice();
-            outputBuffer = output.Slice();
-            blackBox = telemetry.Slice();
-            return true;
+            return TryBindOrAcquireLane(vault, ref _stateLane, BufferID.CompassState, StateLength, NativeArrayOptions.ClearMemory) &&
+                   TryBindOrAcquireLane(vault, ref _headingOutputLane, BufferID.CompassHeadingOutput, (int)CompassOutputSlot.Count, NativeArrayOptions.ClearMemory) &&
+                   TryBindOrAcquireLane(vault, ref _blackBoxLane, BufferID.CompassBlackBox, BlackBoxCapacity, NativeArrayOptions.ClearMemory);
         }
 
-        private bool TryPrepareCompassBuffersCold(
-            out NativeSlice<CompassStateDTO> stateBuffer,
-            out NativeSlice<float> outputBuffer,
-            out NativeSlice<CompassBlackBoxEntry> blackBox)
-        {
-            stateBuffer = default;
-            outputBuffer = default;
-            blackBox = default;
-
-            IDataVault vault = _vault;
-            if (vault == null)
-                return false;
-
-            if (!TryOpenOrAcquireLane(
-                    ref _stateLane,
-                    BufferID.CompassState,
-                    StateLength,
-                    NativeArrayOptions.ClearMemory,
-                    out NativeArray<CompassStateDTO> state) ||
-                !TryOpenOrAcquireLane(
-                    ref _headingOutputLane,
-                    BufferID.CompassHeadingOutput,
-                    (int)CompassOutputSlot.Count,
-                    NativeArrayOptions.ClearMemory,
-                    out NativeArray<float> output) ||
-                !TryOpenOrAcquireLane(
-                    ref _blackBoxLane,
-                    BufferID.CompassBlackBox,
-                    BlackBoxCapacity,
-                    NativeArrayOptions.ClearMemory,
-                    out NativeArray<CompassBlackBoxEntry> telemetry))
-            {
-                return false;
-            }
-
-            stateBuffer = state.Slice();
-            outputBuffer = output.Slice();
-            blackBox = telemetry.Slice();
-            return true;
-        }
-
-        private bool TryOpenExistingLane<T>(
+        private bool TryBindExistingLane<T>(
             ref VaultLane<T> lane,
             BufferID bufferId,
-            int requiredLength,
-            out NativeArray<T> buffer) where T : unmanaged
+            int requiredLength) where T : unmanaged
         {
-            buffer = default;
             IDataVault vault = _vault;
             if (vault == null || requiredLength <= 0)
                 return false;
 
-            if (OpenLane(vault, in lane, out buffer))
+            if (IsLaneBound(in lane) && lane.Length >= requiredLength)
                 return true;
 
             if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> existing))
                 return false;
 
             lane = CreateLane(in existing, bufferId, requiredLength);
-            return OpenLane(vault, in lane, out buffer);
+            return IsLaneBound(in lane) && lane.Length >= requiredLength;
         }
 
-        private bool TryOpenOrAcquireLane<T>(
+        private static bool TryBindOrAcquireLane<T>(
+            IDataVault vault,
             ref VaultLane<T> lane,
             BufferID bufferId,
             int requiredLength,
-            NativeArrayOptions options,
-            out NativeArray<T> buffer) where T : unmanaged
+            NativeArrayOptions options) where T : unmanaged
         {
-            if (TryOpenExistingLane(ref lane, bufferId, requiredLength, out buffer))
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            if (IsLaneBound(in lane) && lane.Length >= requiredLength)
                 return true;
 
-            IDataVault vault = _vault;
-            if (vault == null || requiredLength <= 0)
+            if (vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> existing))
             {
-                buffer = default;
-                return false;
+                lane = CreateLane(in existing, bufferId, requiredLength);
+                if (IsLaneBound(in lane) && lane.Length >= requiredLength)
+                    return true;
             }
 
             lane = AcquireLane<T>(vault, bufferId, requiredLength, options);
-            return OpenLane(vault, in lane, out buffer);
+            return IsLaneBound(in lane) && lane.Length >= requiredLength;
         }
 
         private static VaultLane<T> AcquireLane<T>(
@@ -911,19 +853,173 @@ namespace Hecton8.UI.Navigation
                    lane.Length > 0;
         }
 
-        private static bool OpenLane<T>(
-            IDataVault vault,
-            in VaultLane<T> lane,
-            out NativeArray<T> buffer) where T : unmanaged
+        private bool TryReadExistingLane<T>(
+            ref VaultLane<T> lane,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T>.ReadOnly buffer) where T : unmanaged
         {
             buffer = default;
-            if (vault == null || !IsLaneBound(in lane) || vault.IsCompactionFenceActive)
+            IDataVault vault = _vault;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !TryBindExistingLane(ref lane, bufferId, requiredLength) ||
+                vault.IsCompactionFenceActive)
+            {
                 return false;
+            }
 
-            if (!vault.TryResolveHandle(in lane.Handle, out buffer))
+            if (!vault.TryReadOnlyHandle(in lane.Handle, out buffer))
                 return false;
 
             return !vault.IsCompactionFenceActive && buffer.IsCreated && buffer.Length >= lane.Length;
+        }
+
+        private bool TryAcquireExistingLaneWrite<T>(
+            ref VaultLane<T> lane,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer,
+            out IDataVault writeVault) where T : unmanaged
+        {
+            buffer = default;
+            writeVault = null;
+            IDataVault vault = _vault;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !TryBindExistingLane(ref lane, bufferId, requiredLength) ||
+                vault.IsCompactionFenceActive)
+            {
+                return false;
+            }
+
+            if (!vault.TryAcquireWriteLock(in lane.Handle, OwnerSystem, out buffer))
+                return false;
+
+            bool releaseOnExit = true;
+            try
+            {
+                if (!vault.IsCompactionFenceActive && buffer.IsCreated && buffer.Length >= lane.Length)
+                {
+                    writeVault = vault;
+                    releaseOnExit = false;
+                    return true;
+                }
+
+                buffer = default;
+                return false;
+            }
+            finally
+            {
+                if (releaseOnExit)
+                    vault.ReleaseWriteLock(in lane.Handle, OwnerSystem);
+            }
+        }
+
+        private bool TryAcquireOrCreateLaneWrite<T>(
+            ref VaultLane<T> lane,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer,
+            out IDataVault writeVault) where T : unmanaged
+        {
+            buffer = default;
+            writeVault = null;
+            IDataVault vault = _vault;
+            if (!TryBindOrAcquireLane(vault, ref lane, bufferId, requiredLength, options) ||
+                vault.IsCompactionFenceActive)
+            {
+                return false;
+            }
+
+            if (!vault.TryAcquireWriteLock(in lane.Handle, OwnerSystem, out buffer))
+                return false;
+
+            bool releaseOnExit = true;
+            try
+            {
+                if (!vault.IsCompactionFenceActive && buffer.IsCreated && buffer.Length >= lane.Length)
+                {
+                    writeVault = vault;
+                    releaseOnExit = false;
+                    return true;
+                }
+
+                buffer = default;
+                return false;
+            }
+            finally
+            {
+                if (releaseOnExit)
+                    vault.ReleaseWriteLock(in lane.Handle, OwnerSystem);
+            }
+        }
+
+        private bool TryAcquireStateWriteBuffer(out NativeArray<CompassStateDTO> buffer, out IDataVault writeVault)
+        {
+            return TryAcquireExistingLaneWrite(ref _stateLane, BufferID.CompassState, StateLength, out buffer, out writeVault);
+        }
+
+        private void ReleaseStateWriteBuffer(IDataVault writeVault)
+        {
+            writeVault?.ReleaseWriteLock(in _stateLane.Handle, OwnerSystem);
+        }
+
+        private bool TryAcquireOutputWriteBuffer(out NativeArray<float> buffer, out IDataVault writeVault)
+        {
+            return TryAcquireExistingLaneWrite(
+                ref _headingOutputLane,
+                BufferID.CompassHeadingOutput,
+                (int)CompassOutputSlot.Count,
+                out buffer,
+                out writeVault);
+        }
+
+        private void ReleaseOutputWriteBuffer(IDataVault writeVault)
+        {
+            writeVault?.ReleaseWriteLock(in _headingOutputLane.Handle, OwnerSystem);
+        }
+
+        private bool TryAcquireBlackBoxWriteBuffer(out NativeArray<CompassBlackBoxEntry> buffer, out IDataVault writeVault)
+        {
+            return TryAcquireExistingLaneWrite(
+                ref _blackBoxLane,
+                BufferID.CompassBlackBox,
+                BlackBoxCapacity,
+                out buffer,
+                out writeVault);
+        }
+
+        private void ReleaseBlackBoxWriteBuffer(IDataVault writeVault)
+        {
+            writeVault?.ReleaseWriteLock(in _blackBoxLane.Handle, OwnerSystem);
+        }
+
+        private bool TryAcquirePresentationWriteBuffer(out NativeArray<CompassPresentationStateDTO> buffer, out IDataVault writeVault)
+        {
+            return TryAcquireExistingLaneWrite(
+                ref _presentationLane,
+                BufferID.CompassPresentationState,
+                StateLength,
+                out buffer,
+                out writeVault);
+        }
+
+        private bool TryAcquireOrCreatePresentationWriteBuffer(out NativeArray<CompassPresentationStateDTO> buffer, out IDataVault writeVault)
+        {
+            return TryAcquireOrCreateLaneWrite(
+                ref _presentationLane,
+                BufferID.CompassPresentationState,
+                StateLength,
+                NativeArrayOptions.ClearMemory,
+                out buffer,
+                out writeVault);
+        }
+
+        private void ReleasePresentationWriteBuffer(IDataVault writeVault)
+        {
+            writeVault?.ReleaseWriteLock(in _presentationLane.Handle, OwnerSystem);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -952,7 +1048,6 @@ namespace Hecton8.UI.Navigation
                 return;
             }
 
-            CompletePendingJob(forceComplete: true);
             ClearVaultLanes();
             _vault = vault;
             _fastCadenceAccumulatedDelta = 0f;
@@ -1050,7 +1145,7 @@ namespace Hecton8.UI.Navigation
         private bool RefreshFastSignalInputs(out CompassStateDTO state)
         {
             state = default;
-            if (!TryGetCompassBuffers(out var stateBuffer, out _, out _))
+            if (!TryGetExistingStateBuffer(out var stateBuffer))
                 return false;
 
             state = stateBuffer[0];
@@ -1102,8 +1197,7 @@ namespace Hecton8.UI.Navigation
                     state.LastAupShiftFrameId = shiftFrame;
             }
 
-            stateBuffer[0] = state;
-            return true;
+            return TryCommitCompassState(in state);
         }
 
         private void ApplyQueuedManualRecalibration(ref CompassStateDTO state)
@@ -1146,26 +1240,19 @@ namespace Hecton8.UI.Navigation
 
         private void ScheduleDrift(float deltaTime)
         {
-            if (_jobPending ||
-                !TryGetCompassBuffers(
-                    out var stateBuffer,
-                    out var outputBuffer,
-                    out var blackBox))
-            {
+            if (!TryReadCompassState(out CompassStateDTO state))
                 return;
-            }
 
             if (!TryResolvePose(out PlayerRuntimePoseSnapshot pose))
                 return;
 
-            CompassStateDTO state = stateBuffer[0];
             SanitizeFiniteState(ref state);
             double3 actualAup = pose.Aup.ToAbsoluteDouble3();
             if (!math.all(math.isfinite(actualAup)))
             {
                 state.Flags |= FlagNonFiniteFallback;
-                stateBuffer[0] = state;
-                QueueBlackBoxDump(state.BlackBoxCursor);
+                if (TryCommitCompassState(in state))
+                    QueueBlackBoxDump(state.BlackBoxCursor);
                 return;
             }
 
@@ -1200,25 +1287,42 @@ namespace Hecton8.UI.Navigation
             if (!math.isfinite(state.NoiseClockSeconds) || state.NoiseClockSeconds > 100000f)
                 state.NoiseClockSeconds = 0f;
 
-            stateBuffer[0] = state;
+            ResolveDriftStep(
+                ref state,
+                deltaTime,
+                state.NoiseClockSeconds,
+                headingCatchupRate,
+                driftNoiseFrequency,
+                anomalyNoiseDegrees,
+                wildSpinDegreesPerSecond,
+                state.CalibrationCount,
+                resetDrift,
+                out float currentHeading,
+                out float outputActualHeading,
+                out float drift,
+                out float anomaly,
+                out float power,
+                out float glitch,
+                out float maxDrift,
+                out float cardinalIndex);
 
-            GyroDriftJob job = new GyroDriftJob
-            {
-                State = stateBuffer,
-                Output = outputBuffer,
-                BlackBox = blackBox,
-                DeltaSeconds = deltaTime,
-                NoiseTime = state.NoiseClockSeconds,
-                HeadingCatchupRate = headingCatchupRate,
-                DriftNoiseFrequency = driftNoiseFrequency,
-                AnomalyNoiseDegrees = anomalyNoiseDegrees,
-                WildSpinDegreesPerSecond = wildSpinDegreesPerSecond,
-                CalibrationCount = state.CalibrationCount,
-                ResetDrift = resetDrift
-            };
+            int blackBoxCursor = ResolveBlackBoxCursor(state.BlackBoxCursor);
+            CompassBlackBoxEntry blackBoxEntry = CreateBlackBoxEntry(in state);
+            state.BlackBoxCursor = AdvanceBlackBoxCursor(blackBoxCursor);
 
-            _jobHandle = job.Schedule();
-            _jobPending = true;
+            if (!TryCommitCompassState(in state))
+                return;
+
+            TryCommitCompassOutput(
+                currentHeading,
+                outputActualHeading,
+                drift,
+                anomaly,
+                power,
+                glitch,
+                cardinalIndex,
+                maxDrift);
+            TryCommitBlackBoxEntry(in blackBoxEntry, blackBoxCursor);
         }
 
         private bool TryResolvePose(out PlayerRuntimePoseSnapshot pose)
@@ -1231,38 +1335,70 @@ namespace Hecton8.UI.Navigation
             return false;
         }
 
-        private void CompletePendingJob(bool forceComplete)
+        private bool TryCommitCompassState(in CompassStateDTO state)
         {
-            if (!_jobPending)
-                return;
+            if (!TryAcquireStateWriteBuffer(out NativeArray<CompassStateDTO> stateBuffer, out IDataVault writeVault))
+                return false;
 
-            if (!forceComplete && !_jobHandle.IsCompleted)
-                return;
-
-            Hecton8.Core.DispatcherJobFence.TryComplete(ref _jobHandle, forceComplete);
-            _jobPending = false;
-            CommitCompletedState();
+            try
+            {
+                stateBuffer[0] = state;
+                return true;
+            }
+            finally
+            {
+                ReleaseStateWriteBuffer(writeVault);
+            }
         }
 
-        private void CommitCompletedState()
+        private bool TryCommitCompassOutput(
+            float currentHeading,
+            float actualHeading,
+            float drift,
+            float anomaly,
+            float power,
+            float glitch,
+            float cardinalIndex,
+            float maxDrift)
         {
-            if (!TryGetCompassBuffers(
-                    out var stateBuffer,
-                    out _,
-                    out var blackBox))
+            if (!TryAcquireOutputWriteBuffer(out NativeArray<float> outputBuffer, out IDataVault writeVault))
+                return false;
+
+            try
             {
-                return;
+                outputBuffer[(int)CompassOutputSlot.CurrentHeadingDegrees] = currentHeading;
+                outputBuffer[(int)CompassOutputSlot.ActualHeadingDegrees] = actualHeading;
+                outputBuffer[(int)CompassOutputSlot.DriftDegrees] = drift;
+                outputBuffer[(int)CompassOutputSlot.AnomalyInterference01] = anomaly;
+                outputBuffer[(int)CompassOutputSlot.Power01] = power;
+                outputBuffer[(int)CompassOutputSlot.Glitch01] = glitch;
+                outputBuffer[(int)CompassOutputSlot.CardinalIndex] = cardinalIndex;
+                outputBuffer[(int)CompassOutputSlot.MaxGyroDriftDegrees] = maxDrift;
+                return true;
+            }
+            finally
+            {
+                ReleaseOutputWriteBuffer(writeVault);
+            }
+        }
+
+        private bool TryCommitBlackBoxEntry(in CompassBlackBoxEntry entry, int index)
+        {
+            if (index < 0 || index >= BlackBoxCapacity ||
+                !TryAcquireBlackBoxWriteBuffer(out NativeArray<CompassBlackBoxEntry> blackBox, out IDataVault writeVault))
+            {
+                return false;
             }
 
-            CompassStateDTO state = stateBuffer[0];
-            if (SanitizeFiniteState(ref state))
+            try
             {
-                state.Flags |= FlagNonFiniteFallback;
-                stateBuffer[0] = state;
-                QueueBlackBoxDump(state.BlackBoxCursor);
+                blackBox[index] = entry;
+                return true;
             }
-
-            stateBuffer[0] = state;
+            finally
+            {
+                ReleaseBlackBoxWriteBuffer(writeVault);
+            }
         }
 
         private static InertialNavigationSnapshot BuildSnapshot(in CompassStateDTO state)
@@ -1287,13 +1423,20 @@ namespace Hecton8.UI.Navigation
 
         private void ApplyPresentation()
         {
-            if (!TryGetCompassBuffers(out var stateBuffer, out var outputBuffer, out _) ||
+            if (!TryGetExistingStateBuffer(out var stateBuffer) ||
+                !TryReadExistingLane(
+                    ref _headingOutputLane,
+                    BufferID.CompassHeadingOutput,
+                    (int)CompassOutputSlot.Count,
+                    out NativeArray<float>.ReadOnly outputBuffer) ||
                 !TryGetPresentationBuffer(out var presentationBuffer))
+            {
                 return;
+            }
 
             CompassStateDTO state = stateBuffer[0];
             if (SanitizeFiniteState(ref state))
-                stateBuffer[0] = state;
+                TryCommitCompassState(in state);
 
             CompassPresentationStateDTO presentation = presentationBuffer[0];
             float power = SanitizeUnit01(outputBuffer[(int)CompassOutputSlot.Power01]);
@@ -1323,8 +1466,20 @@ namespace Hecton8.UI.Navigation
             presentationDirty |= ApplyChromatic(chromatic, power, overkill, ref presentation);
             presentationDirty |= EmitVisualOverkillFailureParticles(powered, anomaly, visualOverkillWeight, ref presentation);
 
-            if (presentationDirty)
-                presentationBuffer[0] = presentation;
+            if (!presentationDirty ||
+                !TryAcquirePresentationWriteBuffer(out NativeArray<CompassPresentationStateDTO> writeBuffer, out IDataVault writeVault))
+            {
+                return;
+            }
+
+            try
+            {
+                writeBuffer[0] = presentation;
+            }
+            finally
+            {
+                ReleasePresentationWriteBuffer(writeVault);
+            }
         }
 
         private bool ShouldApplyDialHeading(float heading, in CompassPresentationStateDTO presentation)
@@ -1727,36 +1882,6 @@ namespace Hecton8.UI.Navigation
             return new float3((float)velocity.x, (float)velocity.y, (float)velocity.z);
         }
 
-        private static void WriteBlackBox(ref CompassStateDTO state, NativeSlice<CompassBlackBoxEntry> blackBox)
-        {
-            if (blackBox.Length < BlackBoxCapacity)
-                return;
-
-            int cursor = state.BlackBoxCursor;
-            if (cursor < 0 || cursor >= BlackBoxCapacity)
-                cursor = 0;
-
-            blackBox[cursor] = new CompassBlackBoxEntry
-            {
-                Frame = state.Frame,
-                ActualHeadingDegrees = state.ActualHeadingDegrees,
-                CurrentHeadingDegrees = state.CurrentHeadingDegrees,
-                DriftDegrees = state.DriftDegrees,
-                MaxGyroDriftDegrees = state.MaxGyroDriftDegrees,
-                AnomalyInterference01 = state.AnomalyInterference01,
-                Power01 = state.Power01,
-                Flags = state.Flags,
-                LastAupShiftFrameId = state.LastAupShiftFrameId,
-                CalibrationCount = state.CalibrationCount
-            };
-
-            cursor++;
-            if (cursor >= BlackBoxCapacity)
-                cursor = 0;
-
-            state.BlackBoxCursor = cursor;
-        }
-
         private void QueueBlackBoxDump(int blackBoxCursor)
         {
             if (_blackBoxDumped)
@@ -1856,7 +1981,11 @@ namespace Hecton8.UI.Navigation
             entry = default;
             if (index < 0 ||
                 index >= BlackBoxCapacity ||
-                !OpenLane(_vault, in _blackBoxLane, out NativeArray<CompassBlackBoxEntry> blackBox) ||
+                !TryReadExistingLane(
+                    ref _blackBoxLane,
+                    BufferID.CompassBlackBox,
+                    BlackBoxCapacity,
+                    out NativeArray<CompassBlackBoxEntry>.ReadOnly blackBox) ||
                 blackBox.Length <= index)
             {
                 return false;
@@ -2123,6 +2252,152 @@ namespace Hecton8.UI.Navigation
             return changed;
         }
 
+        private static void ResolveDriftStep(
+            ref CompassStateDTO state,
+            float deltaTime,
+            float noiseTime,
+            float catchupRateSource,
+            float noiseFrequencySource,
+            float noiseDegreesSource,
+            float wildSpinRateSource,
+            int calibrationCount,
+            int resetDrift,
+            out float currentHeading,
+            out float actualHeading,
+            out float drift,
+            out float anomaly,
+            out float power,
+            out float glitch,
+            out float maxDrift,
+            out float cardinalIndex)
+        {
+            float safeDeltaTime = SanitizeDeltaTime(deltaTime);
+            float catchupRate = SanitizeNonNegative(catchupRateSource);
+            float noiseFrequency = SanitizeNonNegative(noiseFrequencySource);
+            float noiseDegrees = SanitizeNonNegative(noiseDegreesSource);
+            float wildSpinRate = SanitizeNonNegative(wildSpinRateSource);
+            actualHeading = NormalizeHeading(state.ActualHeadingDegrees);
+            currentHeading = (state.Flags & FlagInitialized) != 0u
+                ? NormalizeHeading(state.CurrentHeadingDegrees)
+                : actualHeading;
+            power = SanitizeUnit01(state.Power01);
+            anomaly = SanitizeUnit01(state.AnomalyInterference01);
+
+            uint flags = state.Flags | FlagInitialized;
+            flags &= ~FlagCalibrationApplied;
+            flags = power >= PowerDeathThreshold01 ? flags | FlagPowered : flags & ~FlagPowered;
+            flags = anomaly > 0.8f ? flags | FlagAnomalyUnstable : flags & ~FlagAnomalyUnstable;
+
+            if (resetDrift != 0)
+            {
+                currentHeading = actualHeading;
+                flags |= FlagCalibrationApplied;
+            }
+            else if (power >= PowerDeathThreshold01)
+            {
+                float headingDelta = DeltaAngleDegrees(currentHeading, actualHeading);
+                float alpha = SanitizeUnit01(catchupRate * safeDeltaTime);
+                float noiseValue = ResolveNoiseValue(noiseTime, noiseFrequency, flags);
+                currentHeading += headingDelta * alpha;
+                currentHeading += noiseValue * noiseDegrees * anomaly * safeDeltaTime;
+                if (anomaly > 0.8f)
+                {
+                    float spinSign = noiseValue < 0f ? -1f : 1f;
+                    currentHeading += spinSign * wildSpinRate * anomaly * safeDeltaTime;
+                }
+            }
+
+            currentHeading = NormalizeHeading(currentHeading);
+            drift = DeltaAngleDegrees(actualHeading, currentHeading);
+            maxDrift = math.max(math.abs(state.MaxGyroDriftDegrees), math.abs(drift));
+            glitch = SanitizeUnit01(anomaly * 1.25f + SanitizeUnit01(math.abs(drift) * (1f / 90f)) * 0.25f);
+
+            if (!math.isfinite(currentHeading) ||
+                !math.isfinite(actualHeading) ||
+                !math.isfinite(drift) ||
+                !math.isfinite(maxDrift))
+            {
+                currentHeading = 0f;
+                actualHeading = 0f;
+                drift = 0f;
+                maxDrift = 0f;
+                glitch = 1f;
+                flags |= FlagNonFiniteFallback;
+            }
+
+            state.ActualHeadingDegrees = actualHeading;
+            state.CurrentHeadingDegrees = currentHeading;
+            state.DriftDegrees = drift;
+            state.AnomalyInterference01 = anomaly;
+            state.Power01 = power;
+            state.Glitch01 = glitch;
+            state.MaxGyroDriftDegrees = maxDrift;
+            state.CalibrationCount = calibrationCount;
+            state.Flags = flags;
+            cardinalIndex = ResolveCardinalIndex(currentHeading);
+        }
+
+        private static float DeltaAngleDegrees(float from, float to)
+        {
+            float delta = NormalizeHeading(to) - NormalizeHeading(from);
+            delta = math.fmod(delta + 540f, 360f) - 180f;
+            return math.isfinite(delta) ? delta : 0f;
+        }
+
+        private static float ResolveNoiseValue(float noiseTime, float noiseFrequency, uint flags)
+        {
+            if (!math.isfinite(noiseTime) || !math.isfinite(noiseFrequency))
+                return 0f;
+
+            float t = noiseTime * noiseFrequency;
+            if ((flags & FlagReducedQualityNoise) != 0u)
+                return TriangleNoise(t);
+
+            return TriangleNoise(t + 0.371f);
+        }
+
+        private static float TriangleNoise(float t)
+        {
+            if (!math.isfinite(t))
+                return 0f;
+
+            float phase = math.frac(t);
+            return 1f - math.abs(phase * 4f - 2f);
+        }
+
+        private static float SanitizeNonNegative(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
+        }
+
+        private static int ResolveBlackBoxCursor(int cursor)
+        {
+            return cursor >= 0 && cursor < BlackBoxCapacity ? cursor : 0;
+        }
+
+        private static int AdvanceBlackBoxCursor(int cursor)
+        {
+            cursor++;
+            return cursor >= BlackBoxCapacity ? 0 : cursor;
+        }
+
+        private static CompassBlackBoxEntry CreateBlackBoxEntry(in CompassStateDTO state)
+        {
+            return new CompassBlackBoxEntry
+            {
+                Frame = state.Frame,
+                ActualHeadingDegrees = state.ActualHeadingDegrees,
+                CurrentHeadingDegrees = state.CurrentHeadingDegrees,
+                DriftDegrees = state.DriftDegrees,
+                MaxGyroDriftDegrees = state.MaxGyroDriftDegrees,
+                AnomalyInterference01 = state.AnomalyInterference01,
+                Power01 = state.Power01,
+                Flags = state.Flags,
+                LastAupShiftFrameId = state.LastAupShiftFrameId,
+                CalibrationCount = state.CalibrationCount
+            };
+        }
+
         private static float SmoothStep01(float value)
         {
             float t = math.saturate(math.isfinite(value) ? value : 1f);
@@ -2163,155 +2438,6 @@ namespace Hecton8.UI.Navigation
 
             float phase = math.frac(t);
             return 1f - math.abs(phase * 4f - 2f);
-        }
-
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct GyroDriftJob : IJob
-        {
-            [NoAlias] public NativeSlice<CompassStateDTO> State;
-            [NoAlias] public NativeSlice<float> Output;
-            [NoAlias] public NativeSlice<CompassBlackBoxEntry> BlackBox;
-            public float DeltaSeconds;
-            public float NoiseTime;
-            public float HeadingCatchupRate;
-            public float DriftNoiseFrequency;
-            public float AnomalyNoiseDegrees;
-            public float WildSpinDegreesPerSecond;
-            public int CalibrationCount;
-            public int ResetDrift;
-
-            public void Execute()
-            {
-                CompassStateDTO state = State[0];
-                float deltaTime = math.isfinite(DeltaSeconds) ? math.clamp(DeltaSeconds, 0f, MaxIntegrationDeltaSeconds) : 0f;
-                float catchupRate = SanitizeNonNegative(HeadingCatchupRate);
-                float noiseFrequency = SanitizeNonNegative(DriftNoiseFrequency);
-                float noiseDegrees = SanitizeNonNegative(AnomalyNoiseDegrees);
-                float wildSpinRate = SanitizeNonNegative(WildSpinDegreesPerSecond);
-                float actualHeading = NormalizeAngle(state.ActualHeadingDegrees);
-                float currentHeading = (state.Flags & FlagInitialized) != 0u
-                    ? NormalizeAngle(state.CurrentHeadingDegrees)
-                    : actualHeading;
-                float power = SanitizeUnit01(state.Power01);
-                float anomaly = SanitizeUnit01(state.AnomalyInterference01);
-
-                uint flags = state.Flags | FlagInitialized;
-                flags &= ~FlagCalibrationApplied;
-                flags = power >= PowerDeathThreshold01 ? flags | FlagPowered : flags & ~FlagPowered;
-                flags = anomaly > 0.8f ? flags | FlagAnomalyUnstable : flags & ~FlagAnomalyUnstable;
-
-                if (ResetDrift != 0)
-                {
-                    currentHeading = actualHeading;
-                    flags |= FlagCalibrationApplied;
-                }
-                else if (power >= PowerDeathThreshold01)
-                {
-                    float headingDelta = DeltaAngleDegrees(currentHeading, actualHeading);
-                    float alpha = SanitizeUnit01(catchupRate * deltaTime);
-                    float noiseValue = ResolveNoiseValue(NoiseTime, noiseFrequency, flags);
-                    currentHeading += headingDelta * alpha;
-                    currentHeading += noiseValue * noiseDegrees * anomaly * deltaTime;
-                    if (anomaly > 0.8f)
-                    {
-                        float spinSign = noiseValue < 0f ? -1f : 1f;
-                        currentHeading += spinSign * wildSpinRate * anomaly * deltaTime;
-                    }
-                }
-
-                currentHeading = NormalizeAngle(currentHeading);
-                float drift = DeltaAngleDegrees(actualHeading, currentHeading);
-                float maxDrift = math.max(math.abs(state.MaxGyroDriftDegrees), math.abs(drift));
-                float glitch = SanitizeUnit01(anomaly * 1.25f + SanitizeUnit01(math.abs(drift) * (1f / 90f)) * 0.25f);
-
-                if (!math.isfinite(currentHeading) ||
-                    !math.isfinite(actualHeading) ||
-                    !math.isfinite(drift) ||
-                    !math.isfinite(maxDrift))
-                {
-                    currentHeading = 0f;
-                    actualHeading = 0f;
-                    drift = 0f;
-                    maxDrift = 0f;
-                    glitch = 1f;
-                    flags |= FlagNonFiniteFallback;
-                }
-
-                state.ActualHeadingDegrees = actualHeading;
-                state.CurrentHeadingDegrees = currentHeading;
-                state.DriftDegrees = drift;
-                state.AnomalyInterference01 = anomaly;
-                state.Power01 = power;
-                state.Glitch01 = glitch;
-                state.MaxGyroDriftDegrees = maxDrift;
-                state.CalibrationCount = CalibrationCount;
-                state.Flags = flags;
-                WriteBlackBox(ref state, BlackBox);
-                State[0] = state;
-
-                Output[(int)CompassOutputSlot.CurrentHeadingDegrees] = currentHeading;
-                Output[(int)CompassOutputSlot.ActualHeadingDegrees] = actualHeading;
-                Output[(int)CompassOutputSlot.DriftDegrees] = drift;
-                Output[(int)CompassOutputSlot.AnomalyInterference01] = anomaly;
-                Output[(int)CompassOutputSlot.Power01] = power;
-                Output[(int)CompassOutputSlot.Glitch01] = glitch;
-                Output[(int)CompassOutputSlot.CardinalIndex] = ResolveCardinal(currentHeading);
-                Output[(int)CompassOutputSlot.MaxGyroDriftDegrees] = maxDrift;
-            }
-
-            private static float NormalizeAngle(float heading)
-            {
-                if (!math.isfinite(heading))
-                    return 0f;
-
-                float normalized = math.fmod(heading, 360f);
-                return normalized < 0f ? normalized + 360f : normalized;
-            }
-
-            private static float DeltaAngleDegrees(float from, float to)
-            {
-                float delta = NormalizeAngle(to) - NormalizeAngle(from);
-                delta = math.fmod(delta + 540f, 360f) - 180f;
-                return math.isfinite(delta) ? delta : 0f;
-            }
-
-            private static float ResolveCardinal(float heading)
-            {
-                float normalized = NormalizeAngle(heading);
-                int index = (int)math.floor((normalized + 22.5f) * (1f / 45f));
-                return index & 7;
-            }
-
-            private static float ResolveNoiseValue(float noiseTime, float noiseFrequency, uint flags)
-            {
-                if (!math.isfinite(noiseTime) || !math.isfinite(noiseFrequency))
-                    return 0f;
-
-                float t = noiseTime * noiseFrequency;
-                if ((flags & FlagReducedQualityNoise) != 0u)
-                    return TriangleNoise(t);
-
-                return TriangleNoise(t + 0.371f);
-            }
-
-            private static float TriangleNoise(float t)
-            {
-                if (!math.isfinite(t))
-                    return 0f;
-
-                float phase = math.frac(t);
-                return 1f - math.abs(phase * 4f - 2f);
-            }
-
-            private static float SanitizeUnit01(float value)
-            {
-                return math.isfinite(value) ? math.saturate(value) : 0f;
-            }
-
-            private static float SanitizeNonNegative(float value)
-            {
-                return math.isfinite(value) ? math.max(0f, value) : 0f;
-            }
         }
     }
 }

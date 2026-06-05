@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Публичный модуль: маршрут без FTL
+# No-FTL Route Delay
 
-В HECTON-8 нет faster-than-light rescue. Aegir достигли через probes, beam/pellet infrastructure, braking architecture и годы legal/cargo delay.
+HECTON-8 has no instant rescue channel. Aegir was reached through precursor probes, beam infrastructure, pellet-fusion freight and braking systems that treat human urgency as one more payload constraint. A message can cross the route before the hardware that would make the message useful. That delay is why Black Keel can hold a valid claim while the player still has to fix seals by hand.
 
 ## Scanner
 
-Publication module: no FTL. Distance - infrastructure, не декоративный scale.
+Transit record. Aegir traffic depends on probes, beam lanes, pellet freight, braking mass, packet age and legal delay.
 
 ## Terminal
 
-PUBLIC MODULE TRANSIT: no FTL, no ansible, no instant rescue. Используй probe, lane, braking и packet-delay language.
+PUBLIC ARCHIVE NODE // TRANSIT LIMIT. FTL absent. Ansible absent. Rescue route requires physical transfer, relay custody, braking architecture and a live mass window.
 
 ## Audio
 
-Помощь может юридически присутствовать и физически быть в годах пути.
+Help can be legally present and physically years away.
 
 ## Field Note
 
-Для public site hard-sci-fi page и wiki transit section.
+Marauder note: when the relay answers, ask how old the answer is.
 
 <!-- External Site; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/ru_RU. -->

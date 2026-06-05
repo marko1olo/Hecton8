@@ -1218,7 +1218,7 @@ Runtime boundary:
 
 User direction:
 
-- Continue turning unresolved lore into release-ready game/wiki/site content.
+- Continue turning unresolved lore into proof-gated game/wiki/site content.
 - Do not keep the carrier, debt, HECTON-8 physical atlas, Atlas agency or endings as vague discussion.
 - Keep all content compatible with localization, baked DataMonolith source rows, route cards and runtime binding maps.
 

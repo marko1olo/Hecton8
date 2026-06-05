@@ -10,21 +10,21 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Cable Reef Symbiosis
 
-Cable reefs are the middle-depth warning. They are not yet the bottom factory, but they show how ocean life can treat industry as bone, shade, current break and nutrient line.
+Cable reefs mark the first place where life and infrastructure help each other enough to fool a salvage cutter. Mats reduce abrasion on power trunks, filter bodies calm current around service corridors, and grazing fauna keep some lines clean. The same growth can hide broken insulation or draw Atlas maintenance drones. Scan before cutting; a living sleeve may be the only thing keeping a relay line dry.
 
 ## Scanner
 
-Flora is growing on power trunks and signal lines. The reef is using the colony's wiring as skeleton.
+Flora is bonded to power trunks and signal lines. Some growth protects the cable; some hides failed insulation.
 
 ## Terminal
 
-Maintenance note: cable-root mats reduce abrasion and preserve signal continuity, but attract drones and grazing fauna.
+MAINTENANCE NOTE: cable-root mats reduce abrasion and preserve signal continuity. Drone and grazer traffic increases near live trunks.
 
 ## Audio
 
@@ -32,6 +32,6 @@ A living reef learned the shape of a service corridor.
 
 ## Field Note
 
-The first merge is useful before it is horrible.
+If it is growing on a cable, prove it is killing the line before you strip it.
 
 <!-- In-Game Wiki; generated from P033_CABLE_REEF_SYMBIOSIS/en_US. -->

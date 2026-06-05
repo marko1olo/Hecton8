@@ -1,0 +1,94 @@
+ID: 3223
+Role: RS094_CANONICAL_PACKET_JSON_BUILDER
+
+Objective:
+Create a canonical AppliedLore packet JSON bundle and release-set manifest for P467-P474, without wiring it into importer/source CSV, route cards, generated pages, h8bin, Unity, or runtime.
+
+Why this is needed:
+P467-P474 are complete STATIC_DOC production packets, but they are not canonical AppliedLore packet JSON. The next safe integration step is a source-ready bundle that a later owner can wire into `AppliedLoreImporter.py`/manifest source flow.
+
+Owned scope:
+- `Docs/Lore/AppliedContent/release_sets/RS094_PUBLIC_AUTHORITY_BRIDGE_EXPANSION.md`
+- `Docs/Lore/AppliedContent/release_sets/RS094_PUBLIC_AUTHORITY_BRIDGE_EXPANSION_manifest.json`
+- `Docs/Lore/AppliedContent/packets/RS094_PUBLIC_AUTHORITY_BRIDGE_EXPANSION.packets.json`
+- `Docs/Reports/Batch32/3223_RS094_CANONICAL_PACKET_JSON.md`
+- `Docs/Tasks/Status_3223.md`
+- `Docs/AgentLogs/LOG_3223.md`
+- `Docs/AgentLogs/Rationale_3223.md` only if needed
+
+Do not edit:
+- `Assets/_SourceData/DataMonolith/Narrative/applied_lore_packets.csv`
+- `Assets/_Project/Scripts/Core/Generated/H8AppliedLoreHashes.cs`
+- `Docs/Lore/AppliedContent/Publication_Surface_Index.csv`
+- generated page directories
+- route_cards
+- graphs
+- binding maps
+- h8bin
+- Unity scenes/prefabs/assets
+- runtime scripts
+- production packet Markdown
+- other agents' status/log/rationale files
+
+Authority docs:
+AGENTS.md, authoring.md, data.md, localization.md, writing.md, quality.md, Docs/Lore/Lore_Content_System.md, Docs/Lore/Lore_Localization_Model.md, Docs/Lore/Lore_Multilingual_Content_Architecture.md.
+
+Mandates:
+- QA_Evidence_Text_Filter_Audit.txt
+- UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt
+- DATA_Runtime_Struct_Layout_ARM64.txt
+- TOOL_Designer_Facades_CSV_Binary_Bridge.txt
+- OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+
+Packet IDs to include:
+- `P467_ATLAS6_PUBLIC_REPAIR_NETWORK_BRIDGE`
+- `P468_XENON_OMEGA_PUBLIC_MATERIAL_BRIDGE`
+- `P469_AEGIR_RELAY_WINDOW_BRIDGE`
+- `P470_KEELMARK_TONNE_WINDOW_BRIDGE`
+- `P471_LUYTEN_PACKET_CUSTODY_RELAY_BRIDGE`
+- `P472_TAU_CETI_PUBLIC_LEDGER_PRESSURE_BRIDGE`
+- `P473_BARNARD_YARDS_SALVAGE_ORIGIN_BRIDGE`
+- `P474_SOL_CORE_REMOTE_CLAIM_AUTHORITY_BRIDGE`
+
+Canonical JSON requirements:
+- Follow the `RS093_LORE_SYSTEM_INTEGRATION_BRIDGE.packets.json` schema style.
+- `release_set_id`: `RS094_PUBLIC_AUTHORITY_BRIDGE_EXPANSION`.
+- `evidence_class`: `STATIC_SOURCE`.
+- `runtime_contract.authoring_only=true`, `runtime_reads_json=false`, `runtime_reads_markdown=false`, `runtime_ready=false`, `native_localization_ready=false`, `data_monolith_ready=false`.
+- Each packet must include `packet_id`, `release_set_id`, `article_id`, `title_key`, `status`, `canon_owner`, `runtime_contract`, `surfaces`, `unlock`, and `localized`.
+- Locales: exactly 15 keys: `en_US`, `ar_SA`, `de_DE`, `es_ES`, `fr_FR`, `he_IL`, `id_ID`, `ja_JP`, `ko_KR`, `nl_NL`, `pl_PL`, `pt_BR`, `ru_RU`, `uk_UA`, `zh_CN`.
+- Each locale should include the same surface keys used by RS093 where possible: `title`, `scanner`, `terminal`, `audio`, `in_game_wiki`, `external_site`, `field_note`.
+- English rows are source authority. Non-English rows remain draft-machine/LLM pending native pass. Use explicit draft prefix if matching existing source style.
+- Do not claim native review.
+- Keep Markdown packet references under `canon_owner`.
+
+Manifest requirements:
+- `schema`: `H8.APPLIED_LORE_RELEASE_SET.V0`.
+- `release_set_id`: `RS094_PUBLIC_AUTHORITY_BRIDGE_EXPANSION`.
+- `status`: `canonical_source_candidate_pending_manifest_wiring_native_localization_and_bake`.
+- `packets`: the eight packet IDs.
+- `authoring_packet_sources`: eight P467-P474 production packet paths.
+- `canonical_importer_ready`: false.
+- `runtime_ready`: false.
+- `evidence_class`: `STATIC_SOURCE`.
+- Do not set `packet_sources` or `canonical_importer_sources` yet. That is for the next owner.
+
+Validation:
+- JSON parses.
+- Packet count 8.
+- Locale count 15 per packet.
+- Required localized surface keys present per locale.
+- `U+FFFD=0`.
+- No positive runtime/native/DataMonolith/h8bin/publication readiness claim.
+- Verify no source CSV/hash/generated route/h8bin files changed.
+
+Final report:
+- What was wrong.
+- What you did.
+- In-game result.
+- What was verified.
+
+Rejection gates:
+- No importer/source CSV/export/h8bin/Unity/runtime edits.
+- No route-card CSV creation.
+- No fake native-reviewed claim.

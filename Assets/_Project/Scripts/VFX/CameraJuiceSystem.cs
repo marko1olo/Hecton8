@@ -80,6 +80,8 @@ namespace Hecton8.VFX
         private bool _physicsImpactRegistered;
         private bool _projectionFovDirty;
         private float _queuedProjectionFov;
+        private bool _projectionFovApplied;
+        private float _lastAppliedProjectionFov;
         private bool _biomeBlendDirty;
         private BiomeProfile _queuedBiomeBlendFrom;
         private BiomeProfile _queuedBiomeBlendTo;
@@ -148,6 +150,9 @@ namespace Hecton8.VFX
         private const float PROCEDURAL_ROLL_AMPLITUDE_DEGREES = 5.5f;
         private const float PROCEDURAL_DIRECTIONAL_BIAS_SECONDS = 0.06f;
         private const float PROCEDURAL_HIT_STOP_THRESHOLD = 0.8f;
+        private const float PROCEDURAL_IMPACT_FOV_MIN_SEVERITY = 0.52f;
+        private const float PROCEDURAL_IMPACT_FOV_MAX_DEGREES = 4.0f;
+        private const float PROCEDURAL_IMPACT_FOV_DURATION = 0.16f;
         private const int PROCEDURAL_MAX_IMPACTS_PER_FRAME = 32;
         private const int CAMERA_JUICE_TELEMETRY_CAPACITY = 300;
         private const int CameraJuiceTelemetryEntrySizeBytes = 64;
@@ -166,6 +171,7 @@ namespace Hecton8.VFX
         private uint _cameraJuiceTelemetryCursor;
         private bool _cameraJuiceTelemetryDumped;
         private bool _cameraJuiceTelemetryDumpRequested;
+        private bool _cameraJuiceTelemetryDumpDeferred;
 #pragma warning disable CS0414
         private bool _cameraJuiceTelemetryReady;
 #pragma warning restore CS0414
@@ -190,6 +196,8 @@ namespace Hecton8.VFX
         private float _swimmingVelocityFovOffset;
         private const float MIN_FOV = 40f;
         private const float MAX_FOV = 90f;
+        private const float ProjectionFovDirtyEpsilon = 0.001f;
+        private const float FovPresentationCalmEpsilon = 0.01f;
 
         // ═══ POST-PROCESSING STATE ═══
         private Vignette _healthVignette;
@@ -362,6 +370,7 @@ namespace Hecton8.VFX
         private float _adaptiveFOVScale = 1f;
         private float _adaptivePostFxScale = 1f;
         private float _adaptiveRenderScale = 1f;
+        private float _cachedPresentationMotionScale = 1f;
         private int _adaptiveMaxActiveShakes = MAX_ACTIVE_SHAKES;
         private byte _adaptiveVRAMPressureState = VramPressureStateCodes.Stable;
         private bool _adaptiveDisableInteractionDoF;
@@ -380,6 +389,7 @@ namespace Hecton8.VFX
         [SerializeField] private float _debugAdaptiveShakeScale = 1f;
         [SerializeField] private float _debugAdaptiveFOVScale = 1f;
         [SerializeField] private float _debugAdaptivePostFxScale = 1f;
+        [SerializeField] private float _debugPresentationMotionScale = 1f;
         [SerializeField] private string _debugAdaptiveVRAMPressure = "Stable";
         [SerializeField] private int _debugAdaptiveMaxActiveShakes = MAX_ACTIVE_SHAKES;
 #endif
@@ -397,6 +407,7 @@ namespace Hecton8.VFX
             }
 
             RefreshCachedRegistryServices();
+            RefreshCachedPresentationMotionScale();
             if (!TryResolveCamera())
             {
                 LogMainCameraMissing();
@@ -495,6 +506,9 @@ namespace Hecton8.VFX
             {
                 _mainCamera.fieldOfView = _baseFOV;
                 _mainCamera.ResetProjectionMatrix();
+                _projectionFovDirty = false;
+                _lastAppliedProjectionFov = _baseFOV;
+                _projectionFovApplied = true;
             }
 
             ReleaseCameraJuiceTelemetry();
@@ -762,8 +776,7 @@ namespace Hecton8.VFX
             try
             {
                 UpdateFOV(dt);
-                _pendingSpeedLineDeltaTime += math.max(0f, math.isfinite(dt) ? dt : 0f);
-                _speedLineVisualDirty = true;
+                QueueCameraSpeedLineUpdate(dt);
             }
             catch (Exception)
             {
@@ -833,6 +846,8 @@ namespace Hecton8.VFX
         /// </summary>
         public void SlowTick()
         {
+            RefreshCachedPresentationMotionScale();
+
             if (_dependencyResolveSlowTickCountdown <= 0)
             {
                 _dependencyResolveSlowTickCountdown = 4;
@@ -843,6 +858,9 @@ namespace Hecton8.VFX
             {
                 _dependencyResolveSlowTickCountdown--;
             }
+
+            RecoverCameraJuiceVaultBindings();
+            FlushDeferredCameraJuiceTelemetryDump();
 
             if (!_healthO2EffectsEnabled || !_postProcessingEnabled) return;
 
@@ -856,6 +874,18 @@ namespace Hecton8.VFX
                 _healthO2EffectsEnabled = false;
             }
 
+        }
+
+        private void RefreshCachedPresentationMotionScale()
+        {
+            float motionScale = 1f;
+            if (SettingsManager.TryGetInstance(out SettingsManager settings) && settings != null)
+                motionScale = settings.UiMotionScale;
+
+            _cachedPresentationMotionScale = math.saturate(math.isfinite(motionScale) ? motionScale : 1f);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _debugPresentationMotionScale = _cachedPresentationMotionScale;
+#endif
         }
 
         // ═══ ISAVEABLE ═══
@@ -1242,20 +1272,64 @@ namespace Hecton8.VFX
             if (!_shakeEnabled)
             {
                 ClearProceduralCameraJuiceProjection();
+                ClearSuppressedProceduralCameraJuiceState(CameraJuiceFlagVRSomaticWriteRejected);
                 return;
             }
 
-            float effectiveShakeScale = _shakeIntensityMultiplier * _adaptiveShakeScale;
+            float effectiveShakeScale = _shakeIntensityMultiplier * _adaptiveShakeScale * ResolvePresentationMotionScale();
             if (effectiveShakeScale <= 0f)
             {
                 _shakeOffset = Vector3.zero;
                 _proceduralShakeTranslation = float3.zero;
                 _proceduralShakeRotationDegrees = float3.zero;
                 ClearProceduralCameraJuiceProjection();
+                ClearSuppressedProceduralCameraJuiceState(CameraJuiceFlagVRSomaticWriteRejected);
+                return;
+            }
+
+            if (CanSkipProceduralCameraJuiceFrame())
+            {
+                MarkProceduralCameraJuiceCalmFrame();
                 return;
             }
 
             RunProceduralCameraJuice(dt, effectiveShakeScale);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float ResolvePresentationMotionScale()
+        {
+            float motionScale = _cachedPresentationMotionScale;
+            return math.saturate(math.isfinite(motionScale) ? motionScale : 1f);
+        }
+
+        private float ResolveCameraJuiceFluidDrag01()
+        {
+            HectonPlayerMovement playerMovement = _playerMovement;
+            if (playerMovement == null)
+                return 0f;
+
+            float immersion = math.saturate(math.isfinite(playerMovement.WaterImmersionRatio) ? playerMovement.WaterImmersionRatio : 0f);
+            return playerMovement.IsPlayerSubmerged ? math.max(immersion, 1f) : immersion;
+        }
+
+        private void RecoverCameraJuiceVaultBindings()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return;
+
+            if (_cameraJuicePlayerKinematicStateHandle.BufferID == 0u ||
+                _cameraJuicePlayerKinematicStateHandle.Generation == 0u)
+            {
+                RefreshCameraJuiceColdVaultHandles();
+            }
+
+            if (!_cameraJuiceTelemetryReady)
+                EnsureCameraJuiceTelemetry();
+
+            if (!_cameraJuiceBuffersSeeded)
+                EnsureProceduralCameraJuiceBuffers();
         }
 
         private void AddProceduralTrauma(float severity01, float3 worldDirection)
@@ -1352,17 +1426,24 @@ namespace Hecton8.VFX
 
             if (vault.IsCompactionFenceActive)
             {
-                ClearCameraJuiceTelemetryDescriptor();
+                _cameraJuiceTelemetryReady = false;
                 return false;
             }
 
             if (IsCameraJuiceTelemetryHandle(in _cameraJuiceTelemetryHandle) &&
                 vault.TryReadOnlyHandle(in _cameraJuiceTelemetryHandle, out NativeArray<CameraJuiceTelemetryEntry>.ReadOnly existingTelemetry) &&
+                !vault.IsCompactionFenceActive &&
                 existingTelemetry.IsCreated &&
                 existingTelemetry.Length >= CAMERA_JUICE_TELEMETRY_CAPACITY)
             {
                 _cameraJuiceTelemetryReady = true;
                 return true;
+            }
+
+            if (vault.IsCompactionFenceActive)
+            {
+                _cameraJuiceTelemetryReady = false;
+                return false;
             }
 
             if (vault.TryGetGenerationHandle<CameraJuiceTelemetryEntry>(
@@ -1370,6 +1451,7 @@ namespace Hecton8.VFX
                     out VaultGenerationHandle<CameraJuiceTelemetryEntry> borrowedHandle) &&
                 IsCameraJuiceTelemetryHandle(in borrowedHandle) &&
                 vault.TryReadOnlyHandle(in borrowedHandle, out existingTelemetry) &&
+                !vault.IsCompactionFenceActive &&
                 existingTelemetry.IsCreated &&
                 existingTelemetry.Length >= CAMERA_JUICE_TELEMETRY_CAPACITY)
             {
@@ -1377,6 +1459,12 @@ namespace Hecton8.VFX
                 _ownsCameraJuiceTelemetryBuffer = false;
                 _cameraJuiceTelemetryReady = true;
                 return true;
+            }
+
+            if (vault.IsCompactionFenceActive)
+            {
+                _cameraJuiceTelemetryReady = false;
+                return false;
             }
 
             if (vault.IsAllocationLocked)
@@ -1393,7 +1481,7 @@ namespace Hecton8.VFX
             bool ownsAcquiredHandle = true;
 
             if (!IsCameraJuiceTelemetryHandle(in acquiredHandle) ||
-                !TryResolveCameraJuiceTelemetryWriteBuffer(vault, in acquiredHandle, out NativeArray<CameraJuiceTelemetryEntry> telemetry))
+                !TryInitializeCameraJuiceTelemetryRing(vault, in acquiredHandle))
             {
                 if (IsCameraJuiceTelemetryHandle(in acquiredHandle) && ownsAcquiredHandle)
                     vault.ReleaseBuffer(in acquiredHandle);
@@ -1402,37 +1490,44 @@ namespace Hecton8.VFX
                 return false;
             }
 
-            InitializeCameraJuiceTelemetryRing(telemetry);
-
             _cameraJuiceTelemetryHandle = acquiredHandle;
             _ownsCameraJuiceTelemetryBuffer = ownsAcquiredHandle;
             _cameraJuiceTelemetryReady = true;
             return true;
         }
 
-        private static bool TryResolveCameraJuiceTelemetryWriteBuffer(
+        private bool TryInitializeCameraJuiceTelemetryRing(
             IDataVault vault,
-            in VaultGenerationHandle<CameraJuiceTelemetryEntry> handle,
-            out NativeArray<CameraJuiceTelemetryEntry> telemetry)
+            in VaultGenerationHandle<CameraJuiceTelemetryEntry> handle)
         {
-            telemetry = default;
+            NativeArray<CameraJuiceTelemetryEntry> telemetry = default;
+            bool acquired = false;
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
-                !IsCameraJuiceTelemetryHandle(in handle) ||
-                !vault.TryResolveHandle(in handle, out telemetry))
+                !IsCameraJuiceTelemetryHandle(in handle))
             {
                 return false;
             }
 
-            if (vault.IsCompactionFenceActive ||
-                !telemetry.IsCreated ||
-                telemetry.Length < CAMERA_JUICE_TELEMETRY_CAPACITY)
+            try
             {
-                telemetry = default;
-                return false;
-            }
+                acquired = vault.TryAcquireWriteLock(in handle, CameraJuiceOwnerSystemId, out telemetry);
+                if (!acquired ||
+                    vault.IsCompactionFenceActive ||
+                    !telemetry.IsCreated ||
+                    telemetry.Length < CAMERA_JUICE_TELEMETRY_CAPACITY)
+                {
+                    return false;
+                }
 
-            return true;
+                InitializeCameraJuiceTelemetryRing(telemetry);
+                return true;
+            }
+            finally
+            {
+                if (acquired)
+                    vault.ReleaseWriteLock(in handle, CameraJuiceOwnerSystemId);
+            }
         }
 
         private bool OpenCameraJuiceTelemetryReadOnly(out NativeArray<CameraJuiceTelemetryEntry>.ReadOnly telemetry)
@@ -1447,6 +1542,7 @@ namespace Hecton8.VFX
                 !telemetry.IsCreated ||
                 telemetry.Length < CAMERA_JUICE_TELEMETRY_CAPACITY)
             {
+                telemetry = default;
                 return false;
             }
 
@@ -1478,6 +1574,7 @@ namespace Hecton8.VFX
             _ownsCameraJuiceTelemetryBuffer = false;
             _cameraJuiceTelemetryReady = false;
             _cameraJuiceTelemetryDumpRequested = false;
+            _cameraJuiceTelemetryDumpDeferred = false;
         }
 
         private void ResetCameraJuiceTelemetryEpochState()
@@ -1485,6 +1582,7 @@ namespace Hecton8.VFX
             _cameraJuiceTelemetryCursor = 0;
             _cameraJuiceTelemetryDumped = false;
             _cameraJuiceTelemetryDumpRequested = false;
+            _cameraJuiceTelemetryDumpDeferred = false;
         }
 
         private static bool IsCameraJuiceTelemetryHandle(in VaultGenerationHandle<CameraJuiceTelemetryEntry> handle)
@@ -1503,32 +1601,72 @@ namespace Hecton8.VFX
         private void RecordCameraJuiceTelemetry()
         {
             IDataVault vault = _dataVault;
-            if (!TryResolveCameraJuiceTelemetryWriteBuffer(vault, in _cameraJuiceTelemetryHandle, out NativeArray<CameraJuiceTelemetryEntry> telemetry))
-                return;
-
-            int index = (int)(_cameraJuiceTelemetryCursor % (uint)CAMERA_JUICE_TELEMETRY_CAPACITY);
-            telemetry[index] = new CameraJuiceTelemetryEntry
+            NativeArray<CameraJuiceTelemetryEntry> telemetry = default;
+            bool acquired = false;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !IsCameraJuiceTelemetryHandle(in _cameraJuiceTelemetryHandle))
             {
-                Frame = _cameraJuiceTelemetryCursor,
-                Flags = ResolveCameraJuiceTelemetryFlags(),
-                TraumaScalar = _cameraJuiceLastTraumaScalar,
-                MaxTranslationalOffsetMagnitude = _cameraJuiceLastMaxTranslationMagnitude,
-                Offset = _proceduralShakeTranslation,
-                RotationDegrees = _proceduralShakeRotationDegrees,
-                IncomingSignalCount = _cameraJuiceLastIncomingSignalCount,
-                BurstExecutionMicroseconds = _cameraJuiceLastBurstExecutionMicros,
-                GlobalQualityWeight01 = _cameraJuiceLastQualityWeight,
-                DirectionalImpulseMagnitude = _cameraJuiceLastDirectionalImpulseMagnitude,
-                StateHash = _cameraJuiceLastStateHash,
-                Sequence = _cameraJuiceTelemetryCursor
-            };
+                return;
+            }
+
+            try
+            {
+                acquired = vault.TryAcquireWriteLock(in _cameraJuiceTelemetryHandle, CameraJuiceOwnerSystemId, out telemetry);
+                if (!acquired ||
+                    vault.IsCompactionFenceActive ||
+                    !telemetry.IsCreated ||
+                    telemetry.Length < CAMERA_JUICE_TELEMETRY_CAPACITY)
+                {
+                    return;
+                }
+
+                int index = (int)(_cameraJuiceTelemetryCursor % (uint)CAMERA_JUICE_TELEMETRY_CAPACITY);
+                telemetry[index] = new CameraJuiceTelemetryEntry
+                {
+                    Frame = _cameraJuiceTelemetryCursor,
+                    Flags = ResolveCameraJuiceTelemetryFlags(),
+                    TraumaScalar = _cameraJuiceLastTraumaScalar,
+                    MaxTranslationalOffsetMagnitude = _cameraJuiceLastMaxTranslationMagnitude,
+                    Offset = _proceduralShakeTranslation,
+                    RotationDegrees = _proceduralShakeRotationDegrees,
+                    IncomingSignalCount = _cameraJuiceLastIncomingSignalCount,
+                    BurstExecutionMicroseconds = _cameraJuiceLastBurstExecutionMicros,
+                    GlobalQualityWeight01 = _cameraJuiceLastQualityWeight,
+                    DirectionalImpulseMagnitude = _cameraJuiceLastDirectionalImpulseMagnitude,
+                    StateHash = _cameraJuiceLastStateHash,
+                    Sequence = _cameraJuiceTelemetryCursor
+                };
+            }
+            finally
+            {
+                if (acquired)
+                    vault.ReleaseWriteLock(in _cameraJuiceTelemetryHandle, CameraJuiceOwnerSystemId);
+            }
+
             _cameraJuiceTelemetryCursor++;
 
             if (_cameraJuiceTelemetryDumpRequested)
             {
-                _cameraJuiceTelemetryDumpRequested = false;
-                DumpCameraJuiceTelemetry();
+                RequestDeferredCameraJuiceTelemetryDump();
             }
+        }
+
+        private void RequestDeferredCameraJuiceTelemetryDump()
+        {
+            _cameraJuiceTelemetryDumpRequested = false;
+            if (!_cameraJuiceTelemetryDumped)
+                _cameraJuiceTelemetryDumpDeferred = true;
+        }
+
+        private void FlushDeferredCameraJuiceTelemetryDump()
+        {
+            if (!_cameraJuiceTelemetryDumpDeferred)
+                return;
+
+            _cameraJuiceTelemetryDumpDeferred = false;
+            if (!_cameraJuiceTelemetryDumped)
+                DumpCameraJuiceTelemetry();
         }
 
         [StructLayout(LayoutKind.Explicit, Size = CameraJuiceTelemetryDumpHeaderSizeBytes)]
@@ -1549,7 +1687,7 @@ namespace Hecton8.VFX
             if (_cameraJuiceTelemetryDumped || !OpenCameraJuiceTelemetryReadOnly(out var telemetry))
                 return;
 
-            const string dumpPath = "Docs/AgentLogs/Dump_SHINOBU_354.bin";
+            const string dumpPath = "Docs/AgentLogs/Dump_CameraJuiceSystem.bin";
 
             NativeArray<byte> payload = default;
             try
@@ -1613,14 +1751,18 @@ namespace Hecton8.VFX
 
             if (HectonXRRuntimeState.IsXRActive)
             {
+                bool needsProjectionReset = _cameraJuiceProjectionDirty || _cameraJuiceProjectionResetDirty;
                 _shakeOffset = Vector3.zero;
                 _proceduralShakeTranslation = float3.zero;
                 _proceduralShakeRotationDegrees = float3.zero;
-                ApplyCameraJuiceProjectionToCamera();
+                _cameraJuiceProjectionTranslation = float3.zero;
+                _cameraJuiceProjectionRotationDegrees = float3.zero;
+                _cameraJuiceProjectionDirty = false;
+                _cameraJuiceProjectionResetDirty = false;
+                if (needsProjectionReset)
+                    ApplyCameraJuiceProjectionToCamera();
                 return;
             }
-
-            ApplyCameraJuiceProjectionToCamera();
         }
 
         private Vector3 ResolveClipSafeShakeOffset(Vector3 offset)
@@ -1777,6 +1919,23 @@ namespace Hecton8.VFX
             }
         }
 
+        private void QueueCameraSpeedLineUpdate(float dt)
+        {
+            if (_speedLineParticles == null)
+                return;
+
+            if (_speedLineIntensity <= 0.001f)
+            {
+                float currentSpeed = ResolveCurrentCameraSpeed();
+                float startSpeed = math.max(0f, _speedLineStartMetersPerSecond);
+                if (currentSpeed <= startSpeed && !_speedLineParticles.isPlaying)
+                    return;
+            }
+
+            _pendingSpeedLineDeltaTime += math.max(0f, math.isfinite(dt) ? dt : 0f);
+            _speedLineVisualDirty = true;
+        }
+
         private float ResolveCurrentCameraSpeed()
         {
             float speed = 0f;
@@ -1818,6 +1977,49 @@ namespace Hecton8.VFX
             return submarineBody.linearVelocity.sqrMagnitude > startSpeed * startSpeed;
         }
 
+        private float ResolveSwimmingVelocityFovTarget(float presentationMotionScale)
+        {
+            if (_swimmingFovWarpMaxOffset <= 0f ||
+                _adaptiveFOVScale <= 0f ||
+                presentationMotionScale <= 0f)
+            {
+                return 0f;
+            }
+
+            HectonPlayerMovement playerMovement = _playerMovement;
+            bool velocityWarpEligible =
+                (playerMovement != null && playerMovement.IsPlayerSubmerged) ||
+                HasSubmarineVelocityFovSource();
+            if (!velocityWarpEligible)
+                return 0f;
+
+            float currentSpeed = ResolveCurrentCameraSpeed();
+            float speedRange = math.max(0.01f, _swimmingFovWarpFullSpeed - _swimmingFovWarpStartSpeed);
+            float speedT = math.saturate((currentSpeed - _swimmingFovWarpStartSpeed) / speedRange);
+            float smoothSpeedT = EvaluateSmoothStep01(speedT);
+            return smoothSpeedT * _swimmingFovWarpMaxOffset * _adaptiveFOVScale * presentationMotionScale;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool IsProjectionFovSettledAtBase()
+        {
+            if (_projectionFovDirty || !_projectionFovApplied)
+                return false;
+
+            return math.abs(_lastAppliedProjectionFov - _baseFOV) <= ProjectionFovDirtyEpsilon;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool CanSkipFovPresentationFrame(float swimmingWarpTarget)
+        {
+            return !_fovBlendActive &&
+                   !_inputReclaimFovActive &&
+                   math.abs(_currentFOVOffset) <= FovPresentationCalmEpsilon &&
+                   math.abs(_swimmingVelocityFovOffset) <= FovPresentationCalmEpsilon &&
+                   math.abs(swimmingWarpTarget) <= FovPresentationCalmEpsilon &&
+                   IsProjectionFovSettledAtBase();
+        }
+
         private void StopCameraSpeedLineParticles()
         {
             _speedLineIntensity = 0f;
@@ -1855,21 +2057,18 @@ namespace Hecton8.VFX
                 }
             }
 
+            float presentationMotionScale = ResolvePresentationMotionScale();
+            float swimmingWarpTarget = ResolveSwimmingVelocityFovTarget(presentationMotionScale);
+            if (CanSkipFovPresentationFrame(swimmingWarpTarget))
+            {
+                _currentFOVOffset = 0f;
+                _swimmingVelocityFovOffset = 0f;
+                return;
+            }
+
             // Calculate target FOV
             float targetFOV = _baseFOV +
-                (_currentFOVOffset * _fovIntensityMultiplier * _adaptiveFOVScale);
-            float swimmingWarpTarget = 0f;
-            bool velocityWarpEligible =
-                (_playerMovement != null && _playerMovement.IsPlayerSubmerged) ||
-                HasSubmarineVelocityFovSource();
-            if (velocityWarpEligible && _swimmingFovWarpMaxOffset > 0f)
-            {
-                float currentSpeed = ResolveCurrentCameraSpeed();
-                float speedRange = math.max(0.01f, _swimmingFovWarpFullSpeed - _swimmingFovWarpStartSpeed);
-                float speedT = math.saturate((currentSpeed - _swimmingFovWarpStartSpeed) / speedRange);
-                float smoothSpeedT = EvaluateSmoothStep01(speedT);
-                swimmingWarpTarget = smoothSpeedT * _swimmingFovWarpMaxOffset * _adaptiveFOVScale;
-            }
+                (_currentFOVOffset * _fovIntensityMultiplier * _adaptiveFOVScale * presentationMotionScale);
 
             float warpBlendT = ResolvePadeApproach01(math.max(0.01f, _swimmingFovWarpSharpness), dt);
             warpBlendT = EvaluateSmoothStep01(warpBlendT);
@@ -1904,7 +2103,12 @@ namespace Hecton8.VFX
                 return;
 
             _mainCamera.fieldOfView = targetFOV;
+            _lastAppliedProjectionFov = targetFOV;
+            _projectionFovApplied = true;
             if (_mainCamera.orthographic)
+                return;
+
+            if (_cameraJuiceProjectionDirty || _cameraJuiceProjectionResetDirty)
                 return;
 
             Matrix4x4 projection = Matrix4x4.Perspective(
@@ -1918,7 +2122,20 @@ namespace Hecton8.VFX
 
         private void QueueProjectionFov(float targetFOV)
         {
-            _queuedProjectionFov = math.clamp(targetFOV, MIN_FOV, MAX_FOV);
+            float clampedFov = math.clamp(targetFOV, MIN_FOV, MAX_FOV);
+            if (_projectionFovDirty)
+            {
+                if (math.abs(_queuedProjectionFov - clampedFov) <= ProjectionFovDirtyEpsilon)
+                    return;
+
+                _queuedProjectionFov = clampedFov;
+                return;
+            }
+
+            if (_projectionFovApplied && math.abs(_lastAppliedProjectionFov - clampedFov) <= ProjectionFovDirtyEpsilon)
+                return;
+
+            _queuedProjectionFov = clampedFov;
             _projectionFovDirty = true;
         }
 
@@ -2254,6 +2471,9 @@ namespace Hecton8.VFX
             _cameraTransform = _mainCamera.transform;
             _cameraLocalRestPosition = _cameraTransform.localPosition;
             _baseFOV = _mainCamera.fieldOfView;
+            _lastAppliedProjectionFov = _baseFOV;
+            _projectionFovApplied = true;
+            _projectionFovDirty = false;
             return true;
         }
 

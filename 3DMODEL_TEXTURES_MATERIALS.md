@@ -9,6 +9,8 @@ For source creation recipes, AI-assisted texture prompts, procedural height/norm
 
 Generated meshes must use existing high-quality human-authored or AI-assisted texture assets when available. Synthetic flat colors are allowed only as validator/debug placeholders and must not ship as final art.
 
+The texture choice must support the product visual floor, not only shader correctness. Surface, coastline, shallow, medium-depth hero path, close-interaction, capsule, fauna, flora, geology, tool, and structure materials must read as detailed and beautiful in scene captures. If an optimized atlas turns the asset into blurry mud or flat color, the atlas is rejected even if the import settings are technically valid.
+
 Texture generation may be AI-assisted, compute-baked, or externally authored, but Unity runtime must consume imported compressed texture assets. Runtime `Texture2D` creation, compression, pixel filling, or texture mask baking is banned for production gameplay.
 
 ## 2. Naming And Roles

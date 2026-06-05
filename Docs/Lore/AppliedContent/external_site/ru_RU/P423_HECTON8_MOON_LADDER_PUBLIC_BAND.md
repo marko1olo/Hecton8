@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Лестница лун HECTON-8
+# HECTON-8 Moon Ladder
 
-HECTON-8 находится внутри рабочей multi-moon claim system, где важны relay, ice-scatter, quarantine и salvage traffic.
+HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.
 
 ## Scanner
 
-Лестница лун: HECTON-8 - один клейм, не весь Aegir.
+Moon ladder: HECTON-8 is one claim, not the whole Aegir system.
 
 ## Terminal
 
-MOON LADDER. Только роли; точные орбиты владеет таблица.
+MOON LADDER. Public role labels only; exact orbital elements stay table-owned.
 
 ## Audio
 
-Другие луны - не side quests. Они причина, почему маршрут кусается.
+Other moons are not side quests. They are why the route has teeth.
 
 ## Field Note
 
-Для публичной system map и in-game atlas; не обещать playable moons.
+Moon ladder record: public maps can show Aegir scale without promising playable moons.
 
 <!-- External Site; generated from P423_HECTON8_MOON_LADDER_PUBLIC_BAND/ru_RU. -->

@@ -26,11 +26,15 @@ namespace Hecton8.UI
         private const uint ArabicAlef = 0x0627u;
         private const uint ArabicBeh = 0x0628u;
         private const uint ArabicMeem = 0x0645u;
+        private const uint HebrewAlef = 0x05D0u;
+        private const uint HebrewBet = 0x05D1u;
+        private const uint HebrewMem = 0x05DEu;
 
         private static TMP_FontAsset _cachedReadableFont;
         private static TMP_FontAsset _cachedReadableFontCjkSc;
         private static TMP_FontAsset _cachedReadableFontCjkJp;
         private static TMP_FontAsset _cachedReadableFontArabic;
+        private static TMP_FontAsset _cachedReadableFontHebrew;
         private static TMP_FontAsset _cachedBiosFallbackFont;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -40,6 +44,7 @@ namespace Hecton8.UI
             _cachedReadableFontCjkSc = null;
             _cachedReadableFontCjkJp = null;
             _cachedReadableFontArabic = null;
+            _cachedReadableFontHebrew = null;
             _cachedBiosFallbackFont = null;
         }
 
@@ -92,7 +97,7 @@ namespace Hecton8.UI
                 return resolved;
 
             TMP_FontAsset biosFallback = ResolveBiosFallbackFont();
-            if ((IsCjkLanguage(language) || language == GameLanguage.Arabic) &&
+            if (UsesDedicatedScriptFallback(language) &&
                 !FontSupportsLanguage(biosFallback, language))
             {
                 return null;
@@ -169,6 +174,7 @@ namespace Hecton8.UI
             _cachedReadableFontCjkSc = null;
             _cachedReadableFontCjkJp = null;
             _cachedReadableFontArabic = null;
+            _cachedReadableFontHebrew = null;
             _cachedBiosFallbackFont = null;
         }
 
@@ -218,6 +224,7 @@ namespace Hecton8.UI
             _cachedReadableFontCjkSc = ResolveLanguageFallback(primary, GameLanguage.ChineseSimplified);
             _cachedReadableFontCjkJp = ResolveLanguageFallback(primary, GameLanguage.Japanese);
             _cachedReadableFontArabic = ResolveLanguageFallback(primary, GameLanguage.Arabic);
+            _cachedReadableFontHebrew = ResolveLanguageFallback(primary, GameLanguage.Hebrew);
         }
 
         private static TMP_FontAsset GetCachedLanguageFont(GameLanguage language)
@@ -234,6 +241,9 @@ namespace Hecton8.UI
 
                 case GameLanguage.Arabic:
                     return _cachedReadableFontArabic;
+
+                case GameLanguage.Hebrew:
+                    return _cachedReadableFontHebrew;
 
                 default:
                     return _cachedReadableFont;
@@ -267,7 +277,7 @@ namespace Hecton8.UI
             if (primary == null)
                 return null;
 
-            if (!IsCjkLanguage(language) && language != GameLanguage.Arabic)
+            if (!UsesDedicatedScriptFallback(language))
                 return primary;
 
             if (FontSupportsLanguage(primary, language))
@@ -333,9 +343,21 @@ namespace Hecton8.UI
                            HasGlyph(font, ArabicBeh) &&
                            HasGlyph(font, ArabicMeem);
 
+                case GameLanguage.Hebrew:
+                    return HasGlyph(font, HebrewAlef) &&
+                           HasGlyph(font, HebrewBet) &&
+                           HasGlyph(font, HebrewMem);
+
                 default:
                     return true;
             }
+        }
+
+        private static bool UsesDedicatedScriptFallback(GameLanguage language)
+        {
+            return IsCjkLanguage(language) ||
+                   language == GameLanguage.Arabic ||
+                   language == GameLanguage.Hebrew;
         }
 
         private static bool HasCjkScName(string name)

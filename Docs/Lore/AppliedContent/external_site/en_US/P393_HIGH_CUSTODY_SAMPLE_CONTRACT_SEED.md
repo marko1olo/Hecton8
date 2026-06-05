@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ A sample can weigh more after it enters the ledger.
 
 ## Field Note
 
-Use for sample-heavy replay contracts and inventory/custody UI.
+Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation.
 
 <!-- External Site; generated from P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED/en_US. -->

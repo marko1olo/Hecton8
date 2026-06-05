@@ -10,8 +10,8 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
 # Долг и blacklist как давление контракта
@@ -32,6 +32,6 @@ CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable 
 
 ## Field Note
 
-Использовать как contract/dossier text, не как runtime economy tuning.
+The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded.
 
 <!-- External Site; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/ru_RU. -->

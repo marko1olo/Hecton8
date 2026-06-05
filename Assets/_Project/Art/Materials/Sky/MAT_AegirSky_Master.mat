@@ -30,8 +30,11 @@ Material:
     m_Ints: []
     m_Floats:
     - _AegirExposure: 1.18
+    - _DiscTextureWeight: 1
+    - _RingOpacity: 0
     - _StarDensity: 0.9968
     - _StarIntensity: 0.26
+    - _ScreenAegirOpacity: 0
     m_Colors:
     - _AtmosphereTint: {r: 0.2, g: 0.57, b: 0.76, a: 1}
     - _RingTint: {r: 0.46, g: 0.72, b: 0.82, a: 1}

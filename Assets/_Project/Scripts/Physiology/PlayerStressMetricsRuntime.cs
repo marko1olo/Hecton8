@@ -82,6 +82,8 @@ namespace Hecton8.Physiology
         private bool _registeredModuleStatus;
         private bool _insidePoweredBase;
         private bool _hotSwapRegistered;
+        private IPlayerRuntimeContext _playerContext;
+        private IEcosystemDirectorService _ecosystemDirector;
 
         public float PlayerStress01 => _state.PlayerStress01;
 
@@ -119,11 +121,13 @@ namespace Hecton8.Physiology
         private void OnEnable()
         {
             TryRegisterHotSwapListener();
+            RebindColdServices();
             TryRegister();
         }
 
         private void Start()
         {
+            RebindColdServices();
             TryRegister();
         }
 
@@ -152,6 +156,18 @@ namespace Hecton8.Physiology
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _playerContext = currentService as IPlayerRuntimeContext;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.EcosystemDirector)
+            {
+                _ecosystemDirector = currentService as IEcosystemDirectorService;
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
                 return;
 
@@ -162,6 +178,12 @@ namespace Hecton8.Physiology
             }
 
             TryRegister();
+        }
+
+        private void RebindColdServices()
+        {
+            _playerContext = GlobalRegistry.Player;
+            _ecosystemDirector = GlobalRegistry.EcosystemDirector;
         }
 
         public void SlowTick()
@@ -331,7 +353,7 @@ namespace Hecton8.Physiology
         private void EvaluateThreats(in PlayerPose pose)
         {
             _state.PredatorThreat01 = 0f;
-            IEcosystemDirectorService ecosystemDirector = GlobalRegistry.EcosystemDirector;
+            IEcosystemDirectorService ecosystemDirector = _ecosystemDirector;
             if (ecosystemDirector != null &&
                 ecosystemDirector.TryGetApexPredatorThreat(pose.RuntimePosition, ApexThreatRadiusMeters, out float proximity01))
             {
@@ -658,7 +680,7 @@ namespace Hecton8.Physiology
         private bool TryResolvePlayerPose(out PlayerPose pose)
         {
             pose = default;
-            IPlayerRuntimeContext player = GlobalRegistry.Player;
+            IPlayerRuntimeContext player = _playerContext;
             if (player == null || !player.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
                 return false;
 

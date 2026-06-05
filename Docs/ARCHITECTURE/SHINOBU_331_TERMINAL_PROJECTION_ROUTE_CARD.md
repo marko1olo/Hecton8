@@ -1,6 +1,9 @@
 ﻿# SHINOBU_331 Terminal Projection Route Card
 
-Review disposition: `YELLOW`.
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
+Evidence class: STATIC_DOC / STATIC_SOURCE
+Owner domain: Core Interaction Layers / Diegetic Terminal UV Input Projection
+Review disposition: YELLOW / STATIC_DOC_ONLY until compile/import/runtime/profiler/player proof exists.
 
 Reason: static source route is present, but compile, Unity import, Play Mode, profiler/GCMonitor, Burst Inspector, Frame Debugger, shader import, player build, and device proof are absent.
 

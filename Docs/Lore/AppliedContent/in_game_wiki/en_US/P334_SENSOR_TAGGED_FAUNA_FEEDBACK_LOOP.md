@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ It is not hunting you. It may still report you.
 
 ## Field Note
 
-Use for scanner clues, not boss telegraphs.
+Scanner returns remain environmental evidence: tag, migration, repair priority, and no explicit predator command.
 
 <!-- In-Game Wiki; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/en_US. -->

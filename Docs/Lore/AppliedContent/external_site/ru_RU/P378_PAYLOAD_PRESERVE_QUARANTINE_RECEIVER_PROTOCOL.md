@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Протокол приемника: сохранить и карантинировать
+# Payload Preserve Quarantine Receiver Protocol
 
-Лучшие endings HECTON-8 должны спасать что-то настоящее и оставлять damage, delay или uncertainty.
+The strongest HECTON-8 endings should save something real while leaving visible damage, delay or uncertainty.
 
 ## Scanner
 
@@ -28,10 +28,10 @@ PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological 
 
 ## Audio
 
-Сохранить живым не значит сохранить свободным.
+Keeping it alive does not mean keeping it free.
 
 ## Field Note
 
-Для preserve/quarantine ending record и public-spoiler copy.
+Receiver record: preservation blocks direct corporate transfer while risking quarantine as another custody system.
 
 <!-- External Site; generated from P378_PAYLOAD_PRESERVE_QUARANTINE_RECEIVER_PROTOCOL/ru_RU. -->

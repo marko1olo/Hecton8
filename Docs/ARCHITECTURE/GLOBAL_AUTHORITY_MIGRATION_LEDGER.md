@@ -104,8 +104,8 @@ Allowed global routes:
   - Runtime SaveRuntime interface tails, CrashTelemetryBuffer save presence, concrete UI tails, bootstrap/diagnostic SaveRuntime tails.
   - Save owner tails, spline-renderer/FluidRuntime owner tails, dispatcher/save/DataVault rebind tails, interaction registry scene-scan removal.
   - FaunaBrain physics determinism compile fix.
-- Historical zero-warning proof path: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup122_tick_registration.log`.
-- 2026-05-28 static check: that active AgentLogs file is absent; rerun before using it as proof.
+- Missing historical zero-warning evidence path: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup122_tick_registration.log`.
+- 2026-05-28 static check: that active AgentLogs file is absent; rerun or restore the artifact before using it as proof.
 - Runtime proof remains pending.
 - loop163/X_003: submarine room atmosphere and beacon network consumers moved to contract service routes.
   - Owners: `SubmarineAtmosphereSystem` owns `ISubmarineAtmosphereRoomMutationSink`; `BeaconNetworkSystem` owns `IBeaconNetworkService`.

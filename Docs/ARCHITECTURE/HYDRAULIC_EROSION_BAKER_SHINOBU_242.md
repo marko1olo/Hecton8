@@ -2,6 +2,8 @@
 
 Status: PENDING VERIFICATION
 
+Evidence class: STATIC_DOC
+
 ## Ownership
 
 - Owner: SHINOBU_242 / HYDRAULIC_EROSION_SIMULATOR_BAKER.

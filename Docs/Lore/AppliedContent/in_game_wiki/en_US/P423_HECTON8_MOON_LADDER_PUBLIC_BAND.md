@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ Other moons are not side quests. They are why the route has teeth.
 
 ## Field Note
 
-Use for public system map and in-game atlas; avoid promising playable moons.
+Moon ladder record: public maps can show Aegir scale without promising playable moons.
 
 <!-- In-Game Wiki; generated from P423_HECTON8_MOON_LADDER_PUBLIC_BAND/en_US. -->

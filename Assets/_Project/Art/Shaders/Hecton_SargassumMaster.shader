@@ -116,6 +116,7 @@ Shader "Hecton8/Flora/SargassumMaster"
             half _HectonOceanBiolumStrength;
             float4x4 _GlobalBiolumDearLieGroups;
             float4 _GlobalBiolumParams;
+            float4 _GlobalBiolumClock;
             float _HectonTimeOfDay01;
             float _HectonNightFactor;
             float _SargassumBiolumPhaseMultiplier;
@@ -170,6 +171,12 @@ Shader "Hecton8/Flora/SargassumMaster"
             float4 SargassumFiniteOr(float4 value, float4 fallbackValue)
             {
                 return all(isfinite(value)) ? value : fallbackValue;
+            }
+
+            float SargassumWrappedVisualTime()
+            {
+                float wrapped = SargassumFiniteOr(_GlobalBiolumClock.x, 0.0);
+                return max(wrapped, 0.0);
             }
 
             half SargassumTrianglePulse01(float phase)
@@ -309,7 +316,7 @@ Shader "Hecton8/Flora/SargassumMaster"
                 float2 sample = safeWorldXZ * 0.028 + driftOffset * 0.015;
                 float coarse = Hash21(floor(sample));
                 float fine = Hash21(floor(sample * 1.93 + 17.0));
-                float wave = SargassumTrianglePulse01(sample.x * 1.2 + sample.y * 0.94 + SargassumFiniteOr(_Time.y, 0.0) * 0.1);
+                float wave = SargassumTrianglePulse01(sample.x * 1.2 + sample.y * 0.94 + SargassumWrappedVisualTime() * 0.1);
                 return saturate(coarse * 0.46 + fine * 0.34 + wave * 0.20);
             }
 
@@ -383,7 +390,7 @@ Shader "Hecton8/Flora/SargassumMaster"
                 float3 normalOS = SargassumFiniteOr(input.normalOS, float3(0.0, 1.0, 0.0));
                 half4 vertexColor = saturate((half4)SargassumFiniteOr((float4)input.color, float4(1.0, 0.0, 0.0, 1.0)));
                 float2 uv = saturate(SargassumFiniteOr(input.uv, float2(0.5, 0.5)));
-                float timeSeconds = SargassumFiniteOr(_Time.y, 0.0);
+                float timeSeconds = SargassumWrappedVisualTime();
                 float3 positionOS = SargassumFiniteOr(input.positionOS.xyz, float3(0.0, 0.0, 0.0));
                 half phase = vertexColor.b;
                 half rigidity = saturate(vertexColor.a);
@@ -483,7 +490,7 @@ Shader "Hecton8/Flora/SargassumMaster"
                 half masterBiolum = globalBiolumState.w;
                 half biolumEnergy = clamp(_BiolumStrength * masterBiolum * (1.0h + oceanBiolumInfluence * 0.7h) * bubbleBiolumMask * biolumPulse * timeBand * nightFactor, 0.0h, 10.0h);
                 half3 biolum = biolumColor * biolumEnergy;
-                half signalPhase = dot((half2)biolumLocalAupCoord.xz, half2(_NoirSignalFlickerScale, _NoirSignalFlickerScale * 1.37h)) + _Time.y * 2.1h + input.color.b * 3.3h;
+                half signalPhase = dot((half2)biolumLocalAupCoord.xz, half2(_NoirSignalFlickerScale, _NoirSignalFlickerScale * 1.37h)) + (half)SargassumWrappedVisualTime() * 2.1h + input.color.b * 3.3h;
                 half signalWave = 1.0h - abs(frac(signalPhase * 0.15915494h) * 2.0h - 1.0h);
                 half signalFlicker = smoothstep(0.18h, 0.92h, signalWave) * saturate(_NoirSignalFlickerStrength);
                 half signalMask = saturate((1.0h - ao) * input.uv.y * (1.0h - isBubble));
@@ -567,6 +574,7 @@ Shader "Hecton8/Flora/SargassumMaster"
             float3 _LightDirection;
             float4 _HectonPropWashPosition;
             float4 _SargassumGlobalDriftOffset;
+            float4 _GlobalBiolumClock;
             half _HectonPropWashForce;
             float4 _SargassumBuoyancySinkWorldRect;
             float _SargassumBuoyancySinkDepth;
@@ -615,6 +623,12 @@ Shader "Hecton8/Flora/SargassumMaster"
             float4 SargassumFiniteOr(float4 value, float4 fallbackValue)
             {
                 return all(isfinite(value)) ? value : fallbackValue;
+            }
+
+            float SargassumWrappedVisualTime()
+            {
+                float wrapped = SargassumFiniteOr(_GlobalBiolumClock.x, 0.0);
+                return max(wrapped, 0.0);
             }
 
             half SargassumTrianglePulse01(float phase)
@@ -722,7 +736,7 @@ Shader "Hecton8/Flora/SargassumMaster"
                 float2 sample = safeWorldXZ * 0.028 + driftOffset * 0.015;
                 float coarse = Hash21(floor(sample));
                 float fine = Hash21(floor(sample * 1.93 + 17.0));
-                float wave = SargassumTrianglePulse01(sample.x * 1.2 + sample.y * 0.94 + SargassumFiniteOr(_Time.y, 0.0) * 0.1);
+                float wave = SargassumTrianglePulse01(sample.x * 1.2 + sample.y * 0.94 + SargassumWrappedVisualTime() * 0.1);
                 return saturate(coarse * 0.46 + fine * 0.34 + wave * 0.20);
             }
 
@@ -736,7 +750,7 @@ Shader "Hecton8/Flora/SargassumMaster"
                 float3 normalOS = SargassumFiniteOr(input.normalOS, float3(0.0, 1.0, 0.0));
                 half4 vertexColor = saturate((half4)SargassumFiniteOr((float4)input.color, float4(1.0, 0.0, 0.0, 1.0)));
                 float2 uv = saturate(SargassumFiniteOr(input.uv, float2(0.5, 0.5)));
-                float timeSeconds = SargassumFiniteOr(_Time.y, 0.0);
+                float timeSeconds = SargassumWrappedVisualTime();
                 float3 positionOS = SargassumFiniteOr(input.positionOS.xyz, float3(0.0, 0.0, 0.0));
                 half phase = vertexColor.b;
                 half rigidity = saturate(vertexColor.a);

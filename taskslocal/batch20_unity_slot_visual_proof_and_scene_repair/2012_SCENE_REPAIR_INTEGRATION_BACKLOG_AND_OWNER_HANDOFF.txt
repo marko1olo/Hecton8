@@ -1,0 +1,120 @@
+TASK 2012: SCENE REPAIR INTEGRATION BACKLOG AND OWNER HANDOFF
+
+Role:
+Integration planner for Batch20 scene repair and single Unity owner handoff.
+
+Unity status:
+NO UNITY. Planning only. Do not open Unity or edit active Assets.
+
+Primary objective:
+Create the integration backlog that orders Batch20 repair work around the single Unity owner. The backlog must reconcile visual proof, static debt, generation packets, ProductFace debt, and owner boundaries without requiring simultaneous Unity control.
+
+Authority files to read first:
+1. AGENTS.md
+2. HECTON8_ORCHESTRATOR.md
+3. HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md
+4. TASTE.md
+5. VISION_LOCKS.md
+6. PROJECT_BIBLES.md
+7. quality.md
+8. presentation.md
+9. performance.md
+10. PROCEDURAL_ASSET_PIPELINE.md
+
+Relevant mandates to load:
+1. .agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt
+2. .agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt
+3. .agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt
+4. .agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+5. .agents-skills/DBG_Telemetry_Crash_Reporting_PostMortem.txt
+
+Exact project files and tools to inspect:
+1. taskslocal/batch20_unity_slot_visual_proof_and_scene_repair/BATCH_INDEX.txt
+2. taskslocal/batch20_unity_slot_visual_proof_and_scene_repair/2001_UNITY_SLOT_VISUAL_PROOF_CAPTURE_AND_TRIAGE.txt
+3. taskslocal/batch20_unity_slot_visual_proof_and_scene_repair/2002_STATIC_SURFACE_SHALLOW_SCENE_REPAIR_LEDGER.txt
+4. taskslocal/batch20_unity_slot_visual_proof_and_scene_repair/2003_KELP_ROCK_DRY_LAND_PLACEMENT_REPAIR_SPEC.txt
+5. taskslocal/batch20_unity_slot_visual_proof_and_scene_repair/2004_BIOFORGE_FLORA_CORAL_SOURCE_PACKAGE.txt
+6. taskslocal/batch20_unity_slot_visual_proof_and_scene_repair/2005_GEOLOGY_FORGE_SHORELINE_ROCK_SOURCE_PACKAGE.txt
+7. taskslocal/batch20_unity_slot_visual_proof_and_scene_repair/2006_SKY_AEGIR_MOONS_CLOUD_SOURCE_AND_VALIDATOR_PACKET.txt
+8. taskslocal/batch20_unity_slot_visual_proof_and_scene_repair/2007_OCEAN_SHORELINE_WATERLINE_RENDER_PROOF_PACKET.txt
+9. taskslocal/batch20_unity_slot_visual_proof_and_scene_repair/2008_PRODUCTFACE_RELINK_AND_CHANNEL_CONTRACT_UNITY_HANDOFF.txt
+10. taskslocal/batch20_unity_slot_visual_proof_and_scene_repair/2009_GEMINI_PROMPT_PACKS_FOR_SURFACE_SHALLOWS.txt
+11. taskslocal/batch20_unity_slot_visual_proof_and_scene_repair/2010_QUALITY_SCALABILITY_MATRIX_AND_PROOF_CHECKLIST.txt
+12. taskslocal/batch20_unity_slot_visual_proof_and_scene_repair/2011_STATIC_VALIDATOR_RUNBOOK_FOR_VISUAL_DEBT.txt
+13. If existing, Docs/Reports/Batch20/*.md and *.csv
+14. Docs/Tasks/Status_20*.md only for Batch20 IDs.
+15. Docs/AgentLogs/LOG_20*.md only for Batch20 IDs.
+
+Forbidden actions:
+1. Do not run Unity.
+2. Do not edit active Assets.
+3. Do not invent completion for missing sibling outputs.
+4. Do not turn this into broad project management boilerplate.
+5. Do not create dependencies that force agents to wait on sibling work unnecessarily.
+6. Do not assign simultaneous Unity control.
+7. Do not lower visual floor to make integration easy.
+
+Ownership boundaries:
+1. You own integration sequence and owner handoff.
+2. You may read Batch20 task files and any completed Batch20 reports.
+3. You may create integration backlog docs under Docs/Reports/Batch20.
+4. You do not own implementing repairs, generating assets, running validators, or capturing proof.
+
+Deliverables:
+1. Docs/Reports/Batch20/2012_SCENE_REPAIR_INTEGRATION_BACKLOG.md
+2. Docs/Reports/Batch20/2012_OWNER_HANDOFF_SEQUENCE.csv
+3. Docs/Reports/Batch20/2012_UNITY_SLOT_QUEUE.md
+4. Docs/Reports/Batch20/2012_BLOCKER_REGISTER.csv
+5. Docs/Tasks/Status_2012.md
+6. Docs/AgentLogs/Rationale_2012.md
+7. Docs/AgentLogs/LOG_2012.md
+
+Required backlog categories:
+1. Unity-slot visual proof.
+2. Static surface/shallow scene ledger.
+3. Placement rule repair.
+4. BioForge/Flora bake.
+5. GeologyForge bake.
+6. Sky/Aegir/moon/cloud source validation.
+7. Ocean/shoreline/waterline render proof.
+8. ProductFace relink and channel contracts.
+9. Gemini/manual candidate generation.
+10. GlobalQualityWeight matrix.
+11. Static validators.
+12. Final Unity owner repair and recapture.
+
+Work plan:
+1. Read authority and mandates.
+2. Confirm current Unity owner name in the backlog: "Продолжить работу по логам".
+3. Read Batch20 task files and any completed Batch20 reports. Treat missing reports as PENDING.
+4. Build a queue with no simultaneous Unity ownership.
+5. Separate work into no-Unity lanes, editor-only lanes, Unity-slot lanes, GUI/manual generation lanes, and final proof lanes.
+6. Define what can run in parallel safely.
+7. Define what must be serialized through the Unity owner.
+8. Define what must wait for generated candidates.
+9. Define what must wait for texture channel contracts.
+10. Define what must wait for ProductFace validator output.
+11. Define what must wait for visual proof shots.
+12. Define repair candidate order: proof first, static ledger, source generation, material/channel validation, placement repair, scene application, proof recapture.
+13. For every backlog item, list exact owner route, exact input files, exact output proof, and forbidden actions.
+14. Add stop conditions for compile/import breakage and the 3-strikes protocol.
+15. Add Black Box/telemetry expectations for any critical system repair that crosses into Physics/Voxel/AI. If none, state none.
+16. Add low/middle/high/ultra consequence verification gates.
+17. Add three-pillar acceptance gates.
+18. Add final proof shot gate matching required Batch20 shots.
+19. Add handoff language for current Unity owner and next Unity owner.
+20. Finalize with blocker register and no-fluff status.
+
+Three-pillar acceptance:
+1. Graphics: backlog routes all surface/shallow visual debt to real owners.
+2. Optimization: backlog blocks hot-path/unproven expensive routes until profiler proof exists.
+3. Gameplay: backlog preserves route readability, item identity, hazard visibility, and navigation.
+
+GlobalQualityWeight consequences:
+1. Low: backlog must prove cheap route remains authored and readable.
+2. Middle: backlog must prove default target.
+3. High: backlog must prove added fidelity has budget.
+4. Ultra: backlog must prove overkill visuals do not alter gameplay truth or authority.
+
+Closeout standard:
+The integration document must let the controller dispatch around one Unity owner without creating fake dependencies or simultaneous editor control.

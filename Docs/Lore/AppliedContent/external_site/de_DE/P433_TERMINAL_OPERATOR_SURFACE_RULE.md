@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ A terminal should sound like it was used by tired people.
 
 ## Field Note
 
-Use for terminal copy style and voice direction.
+Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context.
 
 <!-- External Site; generated from P433_TERMINAL_OPERATOR_SURFACE_RULE/de_DE. -->

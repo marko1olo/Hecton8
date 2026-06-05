@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
 # First Sanitized Accident Packet
 
-First Sanitized Accident Packet defines the game's evidence-before-exposition rule.
+The first Deep Reach notice is frightening because it is defensible. It names cascade, quarantine and corrupted logs while the room preserves the omissions.
 
 ## Scanner
 
-The first lie should sound useful.
+Recovered Deep Reach incident packet. Clean wording conflicts with door clocks and flood marks.
 
 ## Terminal
 
-FIRST LIE: Deep Reach calls the failure a localized geotechnical cascade, evacuation authorization failure and data loss. Nearby damage shows flood timing, missing names and Atlas repair traces.
+DEEP REACH INCIDENT NOTICE / LOCALIZED GEOTECHNICAL CASCADE: evacuation authorization failure remains under review; biological-pressure quarantine active; Atlas logs corrupted; external release deferred pending witness reconciliation.
 
 ## Audio
 
-The packet says incident. The room says people.
+The packet says cascade. Door clocks say delay.
 
 ## Field Note
 
-Corporate text becomes frightening when the room contradicts it.
+They wrote cascade. The scum line on the locker is higher than the evacuation stamp.
 
 <!-- External Site; generated from P154_FIRST_SANITIZED_ACCIDENT_PACKET/ja_JP. -->

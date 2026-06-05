@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Worker Community No Family Hook Rule
+# Worker Community Notice
 
-HECTON-8's protagonist is not an off-world tourist or family-avenger. They are a professional returning to a ruined claim they partly understand.
+HECTON-8 makes its colony human through crews, shifts, notices and work contacts. The motive stays professional until the evidence makes it personal.
 
 ## Scanner
 
-Story boundary. Player motive is professional guilt and curiosity, not lost-family melodrama.
+Notice board fragment. It records work contacts, not bloodline drama.
 
 ## Terminal
 
-AUTHORING LOCK: the player was former Deep Reach and is now a marauder. Do not attach parent, spouse or child rescue motive. Human stakes come from worker evidence and corporate negligence.
+COMMUNITY NOTICE: emergency contact updates due before pump tone 3. Route leads sign work-contact columns. Personal calls queue behind relay traffic.
 
 ## Audio
 
-You came back because you knew the shape of the work. That is enough.
+They built a roster, not a legend.
 
 ## Field Note
 
-Use as narrative guardrail for quests, wiki and marketing copy.
+NOTICE BOARD: swap shifts through crew lead. Mark bunk row, route, meal token and work contact. Personal calls wait for relay window.
 
 <!-- External Site; generated from P359_WORKER_COMMUNITY_NO_FAMILY_HOOK_RULE/nl_NL. -->

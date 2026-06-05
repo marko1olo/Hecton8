@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Шкала населения и власти
+# Population And Authority Scale
 
-Числа населения остаются мягкими, но роли власти зафиксированы, чтобы контракты, терминалы и статьи сайта не спорили друг с другом.
+Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.
 
 ## Scanner
 
-Масштаб населения - фон. Игрок чувствует давление власти.
+Population scale is background. Authority pressure is what the player feels.
 
 ## Terminal
 
-AUTHORITY SCALE: Sol сертифицирует владение, Centauri легитимизирует хартии, Barnard дает труд для мертвых claims, Tau Ceti может публиковать доказательства, Luyten подтверждает custody, Aegir исполняет грязный claim.
+AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.
 
 ## Audio
 
-Самый большой домен - не ближайшая рука.
+The largest domain is not the nearest hand.
 
 ## Field Note
 
-Не превращать сеттинг в перепись космической оперы.
+Do not turn the setting into census space opera.
 
 <!-- In-Game Wiki; generated from P162_DOMAIN_POPULATION_AUTHORITY_SCALE/ru_RU. -->

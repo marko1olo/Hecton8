@@ -6239,74 +6239,79 @@ namespace Hecton8.World
 
         private void PushFaunaGeneticsTelemetryFrame()
         {
+            if (!_faunaGeneticsTelemetry.TryResolveReadOnly(out NativeArray<GeneticsTelemetryEntry>.ReadOnly telemetryReadOnly) ||
+                telemetryReadOnly.Length <= 0)
+            {
+                return;
+            }
+
+            int invalidCount = 0;
+            NativeArray<ulong>.ReadOnly headlessGenomes = default;
+            NativeArray<MacroSwarm>.ReadOnly macroSwarms = default;
+            bool headlessResolved = _headlessEntities.FaunaGenomes.TryResolveReadOnly(out headlessGenomes);
+            bool macroResolved = _macroSwarms.TryResolveReadOnly(out macroSwarms);
+            int headlessCount = headlessResolved ? math.min(_activeSectorCount, headlessGenomes.Length) : 0;
+            int macroCount = macroResolved ? math.min(_activeMacroSwarmCount, macroSwarms.Length) : 0;
+            int activeCount = 0;
+            int extractionOps = 0;
+            float hueSum = 0f;
+            float sizeSum = 0f;
+            float aggressionSum = 0f;
+            float patternSum = 0f;
+            uint stateHash = 2166136261u;
+            uint patternLo = 0u;
+            uint patternHi = 0u;
+
+            for (int i = 0; i < headlessCount; i++)
+                AccumulateGeneticsTelemetry(headlessGenomes[i], ref activeCount, ref invalidCount, ref extractionOps, ref hueSum, ref sizeSum, ref aggressionSum, ref patternSum, ref stateHash, ref patternLo, ref patternHi);
+
+            for (int i = 0; i < macroCount; i++)
+                AccumulateGeneticsTelemetry(macroSwarms[i].Genome, ref activeCount, ref invalidCount, ref extractionOps, ref hueSum, ref sizeSum, ref aggressionSum, ref patternSum, ref stateHash, ref patternLo, ref patternHi);
+
+            float invCount = activeCount > 0 ? math.rcp((float)activeCount) : 0f;
+            FaunaGeneticsTuningDTO tuning = default;
+            NativeArray<FaunaGeneticsTuningDTO>.ReadOnly tuningReadOnly;
+            if (_faunaGeneticsTuning.TryResolveReadOnly(out tuningReadOnly) &&
+                tuningReadOnly.Length > 0)
+            {
+                tuning = tuningReadOnly[0];
+            }
+
+            int compiledGenomeCount = math.max(_lastFaunaGenomeCompiledCount, activeCount);
+            uint frame = ReadDispatcherFrameId();
+            GeneticsTelemetryEntry entry = new GeneticsTelemetryEntry
+            {
+                FrameIndex = frame,
+                StateHash = stateHash == 0u ? 1u : stateHash,
+                CompiledGenomeCount = compiledGenomeCount,
+                ActiveGenomeCount = activeCount,
+                ExtractionOperationCount = extractionOps,
+                InvalidMaskCount = invalidCount,
+                AverageHueShift01 = hueSum * invCount,
+                AverageSize01 = sizeSum * invCount,
+                AverageAggression01 = aggressionSum * invCount,
+                AveragePattern01 = patternSum * invCount,
+                BurstExecutionMicroseconds = _lastFaunaGenomeBurstMicroseconds,
+                TuningStateHash = tuning.StateHash,
+                PatternHistogramLo = patternLo,
+                PatternHistogramHi = patternHi,
+                Flags = (uint)math.select(0, 1, invalidCount > 0)
+            };
+            bool shouldDump = invalidCount > 0 ||
+                              (compiledGenomeCount > 0 &&
+                               _lastFaunaGenomeBurstMicroseconds > FaunaGeneticsTelemetryBudgetMicroseconds);
+
             if (!_faunaGeneticsTelemetry.TryAcquireWriteLock(SystemID.AIEcology, out NativeArray<GeneticsTelemetryEntry> geneticsTelemetry))
                 return;
 
-            bool shouldDump = false;
-            uint frame = 0u;
-            int compiledGenomeCount = 0;
-            int invalidCount = 0;
             try
             {
                 if (geneticsTelemetry.Length <= 0)
                     return;
 
-                NativeArray<ulong>.ReadOnly headlessGenomes = default;
-                NativeArray<MacroSwarm>.ReadOnly macroSwarms = default;
-                bool headlessResolved = _headlessEntities.FaunaGenomes.TryResolveReadOnly(out headlessGenomes);
-                bool macroResolved = _macroSwarms.TryResolveReadOnly(out macroSwarms);
-                int headlessCount = headlessResolved ? math.min(_activeSectorCount, headlessGenomes.Length) : 0;
-                int macroCount = macroResolved ? math.min(_activeMacroSwarmCount, macroSwarms.Length) : 0;
-                int activeCount = 0;
-                int extractionOps = 0;
-                float hueSum = 0f;
-                float sizeSum = 0f;
-                float aggressionSum = 0f;
-                float patternSum = 0f;
-                uint stateHash = 2166136261u;
-                uint patternLo = 0u;
-                uint patternHi = 0u;
-
-                for (int i = 0; i < headlessCount; i++)
-                    AccumulateGeneticsTelemetry(headlessGenomes[i], ref activeCount, ref invalidCount, ref extractionOps, ref hueSum, ref sizeSum, ref aggressionSum, ref patternSum, ref stateHash, ref patternLo, ref patternHi);
-
-                for (int i = 0; i < macroCount; i++)
-                    AccumulateGeneticsTelemetry(macroSwarms[i].Genome, ref activeCount, ref invalidCount, ref extractionOps, ref hueSum, ref sizeSum, ref aggressionSum, ref patternSum, ref stateHash, ref patternLo, ref patternHi);
-
-                float invCount = activeCount > 0 ? math.rcp((float)activeCount) : 0f;
-                FaunaGeneticsTuningDTO tuning = default;
-                NativeArray<FaunaGeneticsTuningDTO>.ReadOnly tuningReadOnly;
-                if (_faunaGeneticsTuning.TryResolveReadOnly(out tuningReadOnly) &&
-                    tuningReadOnly.Length > 0)
-                {
-                    tuning = tuningReadOnly[0];
-                }
-
-                compiledGenomeCount = math.max(_lastFaunaGenomeCompiledCount, activeCount);
-                frame = ReadDispatcherFrameId();
                 int index = _faunaGeneticsTelemetryCursor % geneticsTelemetry.Length;
-                geneticsTelemetry[index] = new GeneticsTelemetryEntry
-                {
-                    FrameIndex = frame,
-                    StateHash = stateHash == 0u ? 1u : stateHash,
-                    CompiledGenomeCount = compiledGenomeCount,
-                    ActiveGenomeCount = activeCount,
-                    ExtractionOperationCount = extractionOps,
-                    InvalidMaskCount = invalidCount,
-                    AverageHueShift01 = hueSum * invCount,
-                    AverageSize01 = sizeSum * invCount,
-                    AverageAggression01 = aggressionSum * invCount,
-                    AveragePattern01 = patternSum * invCount,
-                    BurstExecutionMicroseconds = _lastFaunaGenomeBurstMicroseconds,
-                    TuningStateHash = tuning.StateHash,
-                    PatternHistogramLo = patternLo,
-                    PatternHistogramHi = patternHi,
-                    Flags = (uint)math.select(0, 1, invalidCount > 0)
-                };
+                geneticsTelemetry[index] = entry;
                 _faunaGeneticsTelemetryCursor++;
-                shouldDump = invalidCount > 0 ||
-                             (compiledGenomeCount > 0 &&
-                              _lastFaunaGenomeBurstMicroseconds > FaunaGeneticsTelemetryBudgetMicroseconds);
             }
             finally
             {
@@ -6689,9 +6694,7 @@ namespace Hecton8.World
                 SpatialTargetKind.Bioform,
                 _floraPredatorAupHits);
             int uploadCount = 0;
-            bool uploadLocked = false;
             bool publishEmptyFallback = false;
-            NativeArray<float4> upload = default;
             float4[] uploadSnapshot = _floraPredatorAupUploadSnapshot;
             if (uploadSnapshot == null || uploadSnapshot.Length < FloraPredatorAupBufferCapacity)
             {
@@ -6700,41 +6703,43 @@ namespace Hecton8.World
                 return;
             }
 
-            try
+            int snapshotCapacity = math.min(FloraPredatorAupBufferCapacity, uploadSnapshot.Length);
+            for (int hitIndex = 0; hitIndex < hitCount && uploadCount < snapshotCapacity; hitIndex++)
             {
-                uploadLocked = _floraPredatorAupUpload.TryAcquireWriteLock(SystemID.AIEcology, out upload);
-                if (!uploadLocked || !upload.IsCreated)
+                SpatialQueryHit hit = _floraPredatorAupHits[hitIndex];
+                IFaunaSpatialContact faunaContact = hit.Owner as IFaunaSpatialContact;
+                if (faunaContact == null || faunaContact.IsDead || !faunaContact.IsApexPredatorContact)
+                    continue;
+
+                uploadSnapshot[uploadCount++] = new float4(
+                    hit.Position.x,
+                    hit.Position.y,
+                    hit.Position.z,
+                    FloraPredatorStealthRadiusMeters);
+            }
+
+            if (uploadCount > 0)
+            {
+                if (!_floraPredatorAupUpload.TryAcquireWriteLock(SystemID.AIEcology, out NativeArray<float4> upload) ||
+                    !upload.IsCreated)
                 {
                     publishEmptyFallback = true;
                 }
                 else
                 {
-                    int uploadCapacity = math.min(FloraPredatorAupBufferCapacity, upload.Length);
-                    for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
+                    try
                     {
-                        SpatialQueryHit hit = _floraPredatorAupHits[hitIndex];
-                        IFaunaSpatialContact faunaContact = hit.Owner as IFaunaSpatialContact;
-                        if (faunaContact == null || faunaContact.IsDead || !faunaContact.IsApexPredatorContact)
-                            continue;
+                        int copyCount = math.min(uploadCount, upload.Length);
+                        for (int i = 0; i < copyCount; i++)
+                            upload[i] = uploadSnapshot[i];
 
-                        if (uploadCount < uploadCapacity)
-                        {
-                            float4 packedAup = new float4(
-                                hit.Position.x,
-                                hit.Position.y,
-                                hit.Position.z,
-                                FloraPredatorStealthRadiusMeters);
-                            upload[uploadCount] = packedAup;
-                            uploadSnapshot[uploadCount] = packedAup;
-                            uploadCount++;
-                        }
+                        uploadCount = copyCount;
+                    }
+                    finally
+                    {
+                        _floraPredatorAupUpload.ReleaseWriteLock(SystemID.AIEcology);
                     }
                 }
-            }
-            finally
-            {
-                if (uploadLocked)
-                    _floraPredatorAupUpload.ReleaseWriteLock(SystemID.AIEcology);
             }
 
             if (publishEmptyFallback)

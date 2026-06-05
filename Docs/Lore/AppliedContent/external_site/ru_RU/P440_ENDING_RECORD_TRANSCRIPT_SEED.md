@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Seed транскрипта ending record
+# Транскрипт финальной записи
 
-Spoiler ending pages должны читаться как after-action custody records: что ушло, кто этим владеет и что осталось поврежденным.
+Спойлерные финальные страницы читаются как послеоперационные записи хранения: что ушло, кто этим владеет и что осталось поврежденным.
 
 ## Scanner
 
-Ending transcript seed: after-action records itemize receiver, proof custody и unresolved cost.
+Фрагмент финальной записи перечисляет приемника, хэш полезной нагрузки, состояние долга и неурегулированную цену.
 
 ## Terminal
 
-AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.
+ПОСЛЕОПЕРАЦИОННАЯ ЗАПИСЬ: приемник подтвердил прием; хэш полезной нагрузки сохранен; требование закрыто для учета; состояние правды не решено; флаг подавления неизвестен.
 
 ## Audio
 
-Dossier entry: claim closed for accounting. Truth status unresolved by design.
+Послеоперационная запись. Приемник принял хэш полезной нагрузки. Требование закрыто для учета. Флаг подавления нечитаем. Цепочка правды не решена.
 
 ## Field Note
 
-Для ending dossier, spoiler pages и final VO captions.
+Финальная запись досье. Должна назвать приемника, хранение и неурегулированную цену, а не чистое моральное закрытие.
 
 <!-- External Site; generated from P440_ENDING_RECORD_TRANSCRIPT_SEED/ru_RU. -->

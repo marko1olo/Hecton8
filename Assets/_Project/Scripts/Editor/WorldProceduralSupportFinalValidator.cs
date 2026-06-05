@@ -107,8 +107,8 @@ namespace Hecton8.EditorTools
 
             if (metrics.RealFinalCount <= 0 && metrics.PlaceholderFinalCount > 0)
             {
-                Debug.LogWarning($"[WorldProceduralSupportFinalValidator] {record.AssetPath}: only placeholder support finals are linked.");
-                warningCount++;
+                Debug.LogError($"[WorldProceduralSupportFinalValidator] {record.AssetPath}: only placeholder support finals are linked. World-support scatter cannot ship with procedural placeholder finals.");
+                errorCount++;
             }
             else if (metrics.RealFinalCount <= 0)
             {
@@ -123,7 +123,18 @@ namespace Hecton8.EditorTools
                     continue;
 
                 if (WorldProceduralPlaceholderAuthoring.IsPlaceholderFinalVariant(variant))
+                {
+                    Debug.LogError($"[WorldProceduralSupportFinalValidator] {record.AssetPath}: support variant '{variant.variantId}' is final-ready but still points at procedural placeholder prefab '{AssetDatabase.GetAssetPath(variant.prefab)}'.");
+                    errorCount++;
                     continue;
+                }
+
+                if (WorldProceduralFinalPrefabQualityGate.UsesUnityBuiltInPrimitiveMesh(variant.prefab))
+                {
+                    Debug.LogError($"[WorldProceduralSupportFinalValidator] {record.AssetPath}: support variant '{variant.variantId}' uses Unity built-in primitive mesh ids in prefab '{AssetDatabase.GetAssetPath(variant.prefab)}'.");
+                    errorCount++;
+                    continue;
+                }
 
                 Renderer[] renderers = variant.prefab.GetComponentsInChildren<Renderer>(true);
                 if (renderers == null || renderers.Length <= 0)

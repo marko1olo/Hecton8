@@ -934,7 +934,8 @@ namespace Hecton8.Narrative.Editor
                 CountTextInStruct(signalFile.Root, "LoreFragmentScannedSignal", "[FieldOffset(52)] public uint Frame") +
                 CountTextInStruct(signalFile.Root, "LoreFragmentScannedSignal", "[FieldOffset(56)] public uint SourceId") +
                 CountTextInStruct(signalFile.Root, "LoreFragmentScannedSignal", "[FieldOffset(60)] public byte Flags") +
-                CountTextInFile(signalLifecycleFile, "ValidateSignalSize<LoreFragmentScannedSignal>(64)");
+                CountTextInStruct(signalFile.Root, "LoreFragmentScannedSignal", "public const int SizeBytes = 64") +
+                CountTextInFile(signalLifecycleFile, "ValidateSignalSize<LoreFragmentScannedSignal>(LoreFragmentScannedSignal.SizeBytes)");
             summary.ScannerLoreFragmentCompletionPublishes =
                 CountTextInMethod(scannerFile.Root, "RouteCompletionIfNeeded", "SignalBus<LoreFragmentScannedSignal>.TryPushTracked");
             summary.ScannerLoreFragmentCompletionFields =
@@ -952,6 +953,10 @@ namespace Hecton8.Narrative.Editor
                 CountTextInMethod(pdaFile.Root, "ConsumeScanSignals", "TryCaptureSignalAup(in signal") +
                 CountTextInMethod(pdaFile.Root, "ConsumeScanSignals", "hasSignalAup = true") +
                 CountTextInMethod(pdaFile.Root, "TryCaptureSignalAup", "UnsafeUtility.As<LoreFragmentScannedSignal, PdaAup48>");
+            summary.ScannerLoreFragmentPdaScanCompleteAupFiniteChecks =
+                CountTextInMethod(pdaFile.Root, "ConsumeScanSignals", "TryCaptureSignalAup(in signal, out PdaAup48 signalAup)") +
+                CountTextInMethod(pdaFile.Root, "ConsumeScanSignals", "hasSignalAup, validatePayload: false") +
+                CountTextInMethod(pdaFile.Root, "TryCaptureSignalAup", "UnsafeUtility.As<ScanCompleteSignal, PdaAup48>");
             summary.ScannerLoreFragmentPdaUnlockCalls =
                 CountTextInMethod(pdaFile.Root, "ConsumeScanSignals", "UnlockEntry(signal.Hash, in aup, signal.SourceId, signal.Frame, hasSignalAup)");
             summary.ScannerLoreFragmentPdaPairedDedupes =
@@ -980,6 +985,7 @@ namespace Hecton8.Narrative.Editor
                 summary.ScannerLoreFragmentPairedScanComplete >= 2 &&
                 summary.ScannerLoreFragmentPdaSnapshotReads == 1 &&
                 summary.ScannerLoreFragmentPdaAupReads >= 2 &&
+                summary.ScannerLoreFragmentPdaScanCompleteAupFiniteChecks >= 3 &&
                 summary.ScannerLoreFragmentPdaUnlockCalls == 1 &&
                 summary.ScannerLoreFragmentPdaPairedDedupes >= 4 &&
                 summary.ScannerLoreFragmentAppliedLoreAupPublishes >= 2 &&
@@ -1001,6 +1007,7 @@ namespace Hecton8.Narrative.Editor
                 " paired=" + summary.ScannerLoreFragmentPairedScanComplete +
                 " pda_snapshot=" + summary.ScannerLoreFragmentPdaSnapshotReads +
                 " pda_aup=" + summary.ScannerLoreFragmentPdaAupReads +
+                " pda_scan_complete_aup_checks=" + summary.ScannerLoreFragmentPdaScanCompleteAupFiniteChecks +
                 " pda_unlocks=" + summary.ScannerLoreFragmentPdaUnlockCalls +
                 " pda_paired_dedupes=" + summary.ScannerLoreFragmentPdaPairedDedupes +
                 " applied_aup=" + summary.ScannerLoreFragmentAppliedLoreAupPublishes +
@@ -1017,21 +1024,39 @@ namespace Hecton8.Narrative.Editor
             ref ApexSummary summary)
         {
             FileUnit signalFile;
+            FileUnit signalLifecycleFile;
             FileUnit signalBusFile;
+            FileUnit appliedLoreRuntimeFile;
+            FileUnit staticDataArenaFile;
             FileUnit messageTerminalFile;
             FileUnit terminalOsFile;
             bool hasSignalFile = TryFindFile(files, "GlobalSignalPayloads.DomainRemainder.cs", out signalFile);
+            bool hasSignalLifecycleFile = TryFindFile(files, "GlobalSignals.RuntimeLifecycle.cs", out signalLifecycleFile);
             bool hasSignalBusFile = TryFindFile(files, "SignalBusRuntime.cs", out signalBusFile);
+            bool hasAppliedLoreRuntimeFile = TryFindFile(files, "H8AppliedLoreRuntime.cs", out appliedLoreRuntimeFile);
+            bool hasStaticDataArenaFile = TryFindFile(files, "H8StaticDataArena.cs", out staticDataArenaFile);
             bool hasMessageTerminalFile = TryFindFile(files, "MessageTerminal.cs", out messageTerminalFile);
             bool hasTerminalOsFile = TryFindFile(files, "TerminalOsRuntime.cs", out terminalOsFile);
 
-            if (!hasSignalFile || !hasSignalBusFile || !hasMessageTerminalFile || !hasTerminalOsFile)
+            if (!hasSignalFile ||
+                !hasSignalLifecycleFile ||
+                !hasSignalBusFile ||
+                !hasAppliedLoreRuntimeFile ||
+                !hasStaticDataArenaFile ||
+                !hasMessageTerminalFile ||
+                !hasTerminalOsFile)
             {
                 findings.Add(new Finding(
                     "AppliedLoreTerminalPreview",
                     0,
                     "terminal_preview_route_sources_missing",
-                    "signal=" + hasSignalFile + " bus=" + hasSignalBusFile + " publisher=" + hasMessageTerminalFile + " consumer=" + hasTerminalOsFile));
+                    "signal=" + hasSignalFile +
+                    " lifecycle=" + hasSignalLifecycleFile +
+                    " bus=" + hasSignalBusFile +
+                    " runtime=" + hasAppliedLoreRuntimeFile +
+                    " arena=" + hasStaticDataArenaFile +
+                    " publisher=" + hasMessageTerminalFile +
+                    " consumer=" + hasTerminalOsFile));
                 summary.DependencyFindings++;
                 return;
             }
@@ -1040,6 +1065,7 @@ namespace Hecton8.Narrative.Editor
             bool hasFixedSignalDefinition =
                 signalSource.IndexOf("public struct " + AppliedLoreTerminalPreviewSignalName + " : ISignal", StringComparison.Ordinal) >= 0 &&
                 signalSource.IndexOf("StructLayout(LayoutKind.Explicit, Size = 32)", StringComparison.Ordinal) >= 0 &&
+                signalSource.IndexOf("public const int SizeBytes = 32", StringComparison.Ordinal) >= 0 &&
                 signalSource.IndexOf("LowTierFrameSignals = 8", StringComparison.Ordinal) >= 0 &&
                 signalSource.IndexOf("LaneHash = 0x41545056u", StringComparison.Ordinal) >= 0;
             summary.TerminalPreviewSignalDefinitions = hasFixedSignalDefinition ? 1 : 0;
@@ -1050,6 +1076,43 @@ namespace Hecton8.Narrative.Editor
                     0,
                     "terminal_preview_signal_contract",
                     "AppliedLore terminal preview signal is not a fixed 32-byte lane contract"));
+                summary.DependencyFindings++;
+            }
+
+            summary.TerminalPreviewSignalLifecycleSizeProofs = CountTextInFile(
+                signalLifecycleFile,
+                "ValidateSignalSize<" + AppliedLoreTerminalPreviewSignalName + ">(" + AppliedLoreTerminalPreviewSignalName + ".SizeBytes)");
+            summary.AppliedLoreRuntimeLayoutProofs =
+                CountTextInFile(appliedLoreRuntimeFile, "UnsafeUtility.SizeOf<H8AppliedLorePacketRecord>()") +
+                CountTextInFile(appliedLoreRuntimeFile, "UnsafeUtility.SizeOf<H8AppliedLoreRouteRecord>()") +
+                CountTextInFile(appliedLoreRuntimeFile, "UnsafeUtility.SizeOf<H8AppliedLoreWorldImpactRecord>()") +
+                CountTextInFile(appliedLoreRuntimeFile, "UnsafeUtility.SizeOf<LoreFragmentScannedSignal>()") +
+                CountTextInFile(appliedLoreRuntimeFile, "UnsafeUtility.SizeOf<" + AppliedLoreTerminalPreviewSignalName + ">()");
+            if (summary.TerminalPreviewSignalLifecycleSizeProofs != 1 ||
+                summary.AppliedLoreRuntimeLayoutProofs < 5)
+            {
+                findings.Add(new Finding(
+                    appliedLoreRuntimeFile.RelativePath,
+                    0,
+                    "applied_lore_runtime_layout_proof",
+                    "AppliedLore runtime must validate packet/route/world-impact/lore-signal/terminal-preview blittable sizes, lifecycle_size_proofs=" +
+                    summary.TerminalPreviewSignalLifecycleSizeProofs +
+                    " runtime_sizeof_proofs=" +
+                    summary.AppliedLoreRuntimeLayoutProofs));
+                summary.DependencyFindings++;
+            }
+
+            summary.AppliedLoreBootLayoutGuards = CountTextInFile(
+                staticDataArenaFile,
+                "!H8AppliedLoreRuntime.ValidateRuntimeLayout()");
+            if (summary.AppliedLoreBootLayoutGuards != 1)
+            {
+                findings.Add(new Finding(
+                    staticDataArenaFile.RelativePath,
+                    0,
+                    "applied_lore_boot_layout_guard",
+                    "Resident Data Monolith validation must include H8AppliedLoreRuntime.ValidateRuntimeLayout, guards=" +
+                    summary.AppliedLoreBootLayoutGuards));
                 summary.DependencyFindings++;
             }
 
@@ -1323,24 +1386,40 @@ namespace Hecton8.Narrative.Editor
             summary.ScannableFragmentPendingStringClears =
                 CountTextInMethod(scannableFile.Root, "ClearQueuedLateFrameWork", "_pendingCompleteEventUnlockId = null") +
                 CountTextInMethod(scannableFile.Root, "FlushQueuedScanEvents", "_pendingCompleteEventUnlockId = null");
+            summary.ScannableFragmentLockStateOrder = MethodTextAppearsInOrder(
+                scannableFile.Root,
+                "Lock",
+                "StopScanning();",
+                "_state = FragmentState.Locked;") ? 1 : 0;
+            summary.ScannableFragmentEventFlushBeforeDisable = MethodTextAppearsInOrder(
+                scannableFile.Root,
+                "LateFrameTick",
+                "FlushQueuedScanEvents();",
+                "DisableFragment();") ? 1 : 0;
 
             if (summary.ScannableFragmentHashUnlocks != 1 ||
                 summary.ScannableFragmentLateFrameEventFlushes != 1 ||
                 summary.ScannableFragmentLifecycleClears < 3 ||
-                summary.ScannableFragmentPendingStringClears < 2)
+                summary.ScannableFragmentPendingStringClears < 2 ||
+                summary.ScannableFragmentLockStateOrder != 1 ||
+                summary.ScannableFragmentEventFlushBeforeDisable != 1)
             {
                 findings.Add(new Finding(
                     scannableFile.RelativePath,
                     0,
                     "scannable_fragment_phase_hygiene",
-                    "ScannableFragment must publish applied lore by hash and clear late-frame compatibility events on lifecycle exit, hash_unlocks=" +
+                    "ScannableFragment must publish applied lore by hash, clear late-frame compatibility events before disable, and lock after scan stop, hash_unlocks=" +
                     summary.ScannableFragmentHashUnlocks +
                     " lateframe_flushes=" +
                     summary.ScannableFragmentLateFrameEventFlushes +
                     " lifecycle_clears=" +
                     summary.ScannableFragmentLifecycleClears +
                     " pending_string_clears=" +
-                    summary.ScannableFragmentPendingStringClears));
+                    summary.ScannableFragmentPendingStringClears +
+                    " lock_order=" +
+                    summary.ScannableFragmentLockStateOrder +
+                    " flush_before_disable=" +
+                    summary.ScannableFragmentEventFlushBeforeDisable));
                 summary.PhaseFindings++;
             }
         }
@@ -3612,6 +3691,31 @@ namespace Hecton8.Narrative.Editor
             return count;
         }
 
+        private static bool MethodTextAppearsInOrder(
+            CompilationUnitSyntax root,
+            string methodName,
+            string firstText,
+            string secondText)
+        {
+            if (root == null ||
+                string.IsNullOrEmpty(firstText) ||
+                string.IsNullOrEmpty(secondText) ||
+                !TryFindMethod(root, methodName, out MethodDeclarationSyntax method))
+            {
+                return false;
+            }
+
+            string methodText = method.ToFullString();
+            int firstIndex = methodText.IndexOf(firstText, StringComparison.Ordinal);
+            if (firstIndex < 0)
+                return false;
+
+            return methodText.IndexOf(
+                secondText,
+                firstIndex + firstText.Length,
+                StringComparison.Ordinal) >= 0;
+        }
+
         private static int CountTextInStruct(CompilationUnitSyntax root, string structName, string requiredText)
         {
             if (root == null || string.IsNullOrEmpty(structName) || string.IsNullOrEmpty(requiredText))
@@ -4253,6 +4357,7 @@ namespace Hecton8.Narrative.Editor
             builder.Append(" scanner_lore_fragment_paired_scan_complete=").Append(summary.ScannerLoreFragmentPairedScanComplete);
             builder.Append(" scanner_lore_fragment_pda_snapshot_reads=").Append(summary.ScannerLoreFragmentPdaSnapshotReads);
             builder.Append(" scanner_lore_fragment_pda_aup_reads=").Append(summary.ScannerLoreFragmentPdaAupReads);
+            builder.Append(" scanner_lore_fragment_pda_scan_complete_aup_checks=").Append(summary.ScannerLoreFragmentPdaScanCompleteAupFiniteChecks);
             builder.Append(" scanner_lore_fragment_pda_unlock_calls=").Append(summary.ScannerLoreFragmentPdaUnlockCalls);
             builder.Append(" scanner_lore_fragment_pda_paired_dedupes=").Append(summary.ScannerLoreFragmentPdaPairedDedupes);
             builder.Append(" scanner_lore_fragment_applied_lore_aup_publishes=").Append(summary.ScannerLoreFragmentAppliedLoreAupPublishes);
@@ -4271,6 +4376,9 @@ namespace Hecton8.Narrative.Editor
             builder.Append(" terminal_os_preview_hash_duplicate_indices=").Append(summary.TerminalOsPreviewHashDuplicateIndices);
             builder.Append(" terminal_os_scene_binding_warnings=").Append(summary.TerminalOsSceneBindingWarnings);
             builder.Append(" terminal_preview_signal_defs=").Append(summary.TerminalPreviewSignalDefinitions);
+            builder.Append(" terminal_preview_lifecycle_size_proofs=").Append(summary.TerminalPreviewSignalLifecycleSizeProofs);
+            builder.Append(" applied_lore_runtime_layout_proofs=").Append(summary.AppliedLoreRuntimeLayoutProofs);
+            builder.Append(" applied_lore_boot_layout_guards=").Append(summary.AppliedLoreBootLayoutGuards);
             builder.Append(" terminal_preview_bus_contracts=").Append(summary.TerminalPreviewSignalBusContracts);
             builder.Append(" terminal_preview_publishers=").Append(summary.TerminalPreviewPublisherCalls);
             builder.Append(" terminal_preview_snapshot_reads=").Append(summary.TerminalPreviewSnapshotReads);
@@ -4286,6 +4394,8 @@ namespace Hecton8.Narrative.Editor
             builder.Append(" scannable_fragment_lateframe_flushes=").Append(summary.ScannableFragmentLateFrameEventFlushes);
             builder.Append(" scannable_fragment_lifecycle_clears=").Append(summary.ScannableFragmentLifecycleClears);
             builder.Append(" scannable_fragment_pending_string_clears=").Append(summary.ScannableFragmentPendingStringClears);
+            builder.Append(" scannable_fragment_lock_state_order=").Append(summary.ScannableFragmentLockStateOrder);
+            builder.Append(" scannable_fragment_event_flush_before_disable=").Append(summary.ScannableFragmentEventFlushBeforeDisable);
             builder.Append(" narrative_discovery_lore_hash_caches=").Append(summary.NarrativeDiscoveryLoreHashCaches);
             builder.Append(" narrative_discovery_cached_unlock_calls=").Append(summary.NarrativeDiscoveryCachedUnlockCalls);
             builder.Append(" narrative_discovery_runtime_string_hashes=").Append(summary.NarrativeDiscoveryInteractionStringHashes);
@@ -4527,6 +4637,7 @@ namespace Hecton8.Narrative.Editor
             public int ScannerLoreFragmentPairedScanComplete;
             public int ScannerLoreFragmentPdaSnapshotReads;
             public int ScannerLoreFragmentPdaAupReads;
+            public int ScannerLoreFragmentPdaScanCompleteAupFiniteChecks;
             public int ScannerLoreFragmentPdaUnlockCalls;
             public int ScannerLoreFragmentPdaPairedDedupes;
             public int ScannerLoreFragmentAppliedLoreAupPublishes;
@@ -4545,6 +4656,9 @@ namespace Hecton8.Narrative.Editor
             public int TerminalOsPreviewHashDuplicateIndices;
             public int TerminalOsSceneBindingWarnings;
             public int TerminalPreviewSignalDefinitions;
+            public int TerminalPreviewSignalLifecycleSizeProofs;
+            public int AppliedLoreRuntimeLayoutProofs;
+            public int AppliedLoreBootLayoutGuards;
             public int TerminalPreviewSignalBusContracts;
             public int TerminalPreviewPublisherCalls;
             public int TerminalPreviewSnapshotReads;
@@ -4560,6 +4674,8 @@ namespace Hecton8.Narrative.Editor
             public int ScannableFragmentLateFrameEventFlushes;
             public int ScannableFragmentLifecycleClears;
             public int ScannableFragmentPendingStringClears;
+            public int ScannableFragmentLockStateOrder;
+            public int ScannableFragmentEventFlushBeforeDisable;
             public int NarrativeDiscoveryLoreHashCaches;
             public int NarrativeDiscoveryCachedUnlockCalls;
             public int NarrativeDiscoveryInteractionStringHashes;

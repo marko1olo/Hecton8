@@ -1,7 +1,14 @@
 # HECTON-8 Accessibility And Readability Bible
 
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
+Evidence class: STATIC_DOC
 Scope: readability, subtitles, input alternatives, color support, flashing reduction, UI scale, audio clarity, camera comfort, localization expansion, and low-tier perception.
+
+## First-20 Route Hook
+
+- First-20 moment: first exit, swim, resource/tool interaction, hazard warning, menu/settings use, death/retry, and save/load feedback remain readable and operable.
+- Route blocker removed: opening-route progress cannot depend on color-only warnings, tiny text, unreduced motion/flashing, missing subtitles, or inaccessible input chords.
+- Proof class: STATIC_DOC until 720p captures, localization expansion checks, subtitle/caption samples, remap/navigation evidence, and route readability captures exist.
 
 ## 0. Prime Accessibility Law
 

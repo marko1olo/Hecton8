@@ -1,0 +1,26 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS099_PUBLIC_EVIDENCE_GOVERNANCE_BRIDGE",
+  "status": "canonical_source_candidate_pending_controller_review_and_downstream_wiring",
+  "packets": [
+    "P496_PUBLIC_EVIDENCE_MISUSE_WARNING_BRIDGE",
+    "P497_EVIDENCE_RELATION_GRAPH_DOSSIER_BRIDGE",
+    "P498_TERMINAL_CLAIMANT_LANGUAGE_AUDIT_BRIDGE",
+    "P499_PUBLIC_INDEX_SPOILER_CAP_BRIDGE"
+  ],
+  "authoring_packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P496_PUBLIC_EVIDENCE_MISUSE_WARNING_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P497_EVIDENCE_RELATION_GRAPH_DOSSIER_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P498_TERMINAL_CLAIMANT_LANGUAGE_AUDIT_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P499_PUBLIC_INDEX_SPOILER_CAP_BRIDGE.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false,
+  "evidence_class": "STATIC_SOURCE"
+}

@@ -1,0 +1,22 @@
+ID RANGE: 2401-2402
+BATCH: 1474_diag_reject_followup
+CREATED: 2026-06-04
+UNITY SLOT: OWNED BY `Продолжить работу по логам`
+
+PURPOSE
+1474 diagnostic screenshots improved water color but remain rejected for missing foam, horizontal underwater cut/blue wall, empty seabed, weak haze/caustics/particulate, stale log, and incomplete proof packet. This wave is static/read-only and must not enter Unity.
+
+TASKS
+- `2401_CURRENT_SCENE_DELTA_UNDERWATER_CUT_AUDITOR.txt`
+- `2402_UNDERWATER_PRESENTATION_MATERIAL_RECEIVER_AUDITOR.txt`
+
+OUTPUT ROOT
+- `Docs/Reports/Batch24/`
+- `Docs/Tasks/Status_240X.md`
+- `Docs/AgentLogs/LOG_240X.md`
+- `Docs/AgentLogs/Rationale_240X.md` only if needed.
+
+REJECT
+- Running Unity/build/import.
+- Editing active Unity owner files.
+- Claiming runtime acceptance from static evidence.

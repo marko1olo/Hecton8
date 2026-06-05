@@ -1,7 +1,14 @@
 # HECTON-8 Atmosphere, Weather, Thermodynamics, And Macro Environment Bible
 
 Status: AUTHORING LAW / STATIC DOC / RUNTIME PROOF NOT IMPLIED
+Evidence class: STATIC_DOC
 Scope: tides, storms, turbidity, gas pockets, thermodynamics, vents, seismic pulses, celestial cycles, biome atmosphere, environmental hazards, and macro-world environmental proof.
+
+## First-20 Route Hook
+
+- First-20 moment: world load, first exit, swim, and first fair hazard need readable surface/shallow weather, turbidity, heat/gas warnings, and route-changing macro state.
+- Route blocker removed: prevents the opening route from using decorative weather or invisible hazards that do not change navigation, survival, sound, or visibility decisions.
+- Proof class: STATIC_DOC only; route acceptance still requires gameplay capture, hazard readability proof, and profiler/GC/GPU evidence for runtime fields or presentation changes.
 
 ## Prime Law
 

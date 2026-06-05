@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Рен Окойе/рассолы
+# Ren Okoye/Brine Map
 
-Рен Окойе показывает движение по HECTON-8 как труд: чтение рассола, давления и допуска одновременно.
+Ren Okoye frames HECTON-8 traversal as labor: reading brine, pressure and permission together.
 
 ## Scanner
 
-Досье: Рен Окойе. Планшет и доска меток показывают рассол как дорогу.
+Dossier: Ren Okoye. Slate and pinboard show brine as a road.
 
 ## Terminal
 
-РЕН ОКОЙЕ/РАССОЛЫ. Безопасные течения обгоняли допуски; закон отставал от воды.
+REN OKOYE/BRINE MAP. Safe currents moved faster than permits; legal routes lagged water.
 
 ## Audio
 
-Окойе рисовал дороги, которые двигались, пока руководство спорило о разрешениях.
+Okoye drew roads that moved while management argued about permission.
 
 ## Field Note
 
-Использовать как scanner-first доказательство на подходах к рассольному каньону.
+Brine approach evidence: scanner-first cartography turns salt gradients, route marks, and worker traces into Ren Okoye's record.
 
 <!-- External Site; generated from P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER/ru_RU. -->

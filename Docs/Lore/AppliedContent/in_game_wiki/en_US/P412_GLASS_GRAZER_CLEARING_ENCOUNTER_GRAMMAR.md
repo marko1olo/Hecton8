@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -20,7 +20,7 @@ Glass-grazer encounters contrast the horror. They are beautiful, useful and stil
 
 ## Scanner
 
-Encounter grammar: glass grazer clearing. Scraped routes can be safe until the herd vanishes.
+Glass grazer clearing. Recent scrape marks suggest low predator pressure; risk rises if herd movement stops.
 
 ## Terminal
 
@@ -32,6 +32,6 @@ The grazers make bright corridors. Something else decides when they empty.
 
 ## Field Note
 
-Use for safe-zone literacy and shallow contrast.
+A grazed corridor is useful until it goes quiet. Do not build the return plan on a herd you cannot see.
 
 <!-- In-Game Wiki; generated from P412_GLASS_GRAZER_CLEARING_ENCOUNTER_GRAMMAR/en_US. -->

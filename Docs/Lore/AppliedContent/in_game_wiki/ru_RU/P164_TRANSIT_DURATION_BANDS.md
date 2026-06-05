@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Диапазоны длительности перелета
+# Transit Duration Bands
 
-Диапазоны длительности позволяют миссиям и route UI объяснить, почему добыча возможна, а спасение остается грязным.
+Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.
 
 ## Scanner
 
-Один маршрут означает разное время для пакетов, грузов и людей.
+The same route means different time for packets, freight and people.
 
 ## Terminal
 
-DURATION BANDS: probe packets могут идти на десятилетия раньше claims; тяжелый груз медленный и staged; crew rotation редок, дорог и юридически упакован; локальные relay windows все равно задержаны.
+DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.
 
 ## Audio
 
-Груз может прийти раньше милости. В этом доктрина.
+Cargo can arrive before mercy. That is the doctrine.
 
 ## Field Note
 
-Использовать диапазоны и custody-термины до точной настройки систем.
+Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.
 
 <!-- In-Game Wiki; generated from P164_TRANSIT_DURATION_BANDS/ru_RU. -->

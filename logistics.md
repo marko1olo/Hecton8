@@ -3,6 +3,12 @@
 Status: AUTHORING LAW / STATIC DOC / RUNTIME PROOF NOT IMPLIED
 Scope: power grids, oxygen pressure, fluid networks, coolant, data/signal networks, pipes, cables, pumps, brownouts, rupture, graph solving, and logistics proof gates.
 
+## First-20 Route Hook
+
+- First-20 moment: craft/repair/build and hazard response where pump, power, oxygen, or data-network state changes route safety and the way back.
+- Route blocker removed: prevents first-route infrastructure from reading as decorative pipes, fake lights, or invisible failures instead of a legible survival system.
+- Proof class: STATIC_DOC hook only; acceptance still requires node/edge schema, failure thresholds, compact UI/world failure capture, save/load proof if persistent, and profiler/GC proof for runtime graph changes.
+
 ## Prime Law
 
 Logistics are the nervous system of survival infrastructure. They are directed graph truth, not decorative pipes.
@@ -43,6 +49,18 @@ Required:
 - no per-segment Update/FixedUpdate.
 
 Network visualization is a proxy. Throughput is graph math.
+
+## Current Static Source Anchor - Submarine Thermal Grid
+
+Evidence class: STATIC_SOURCE only.
+
+- `Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs` owns a submarine-local thermal/power graph anchor. It does not replace habitat CSR topology, module logistics ownership, construction graph truth, or habitat persistence.
+- Static capacities: `MaxNodes = 512`, `MaxEdges = MaxNodes * 6`, `TelemetryFrameCount = 300`.
+- Vault-backed lanes cover nodes A/B, edges, injections, external heat, anchors, tuning, telemetry, counters, specs, CSV bytes, visual state, convergence/residual state, and pending graph payloads.
+- Thermal telemetry writes `ThermalPowerGridTelemetrySnapshot[300]`; source dump targets are `Docs/AgentLogs/Dump_THERMAL_GRID.bin` and `Docs/AgentLogs/Dump_SHINOBU_203.bin`.
+- Quality scaling is continuous: `ResolvePropagationIterations(GlobalQualityWeight)` maps propagation iterations without changing topology authority or DTO layout.
+- Signal boundary: the runtime consumes `SignalBus<ThermalStateChangedSignal>` snapshots and uploads visual state through `GraphicsBuffer.LockBufferForWrite`; this is not habitat graph truth.
+- Proof gap: Unity import, Play Mode, profiler/GC, memory retention, thermal visual proof, and dump decode proof are absent in this static pass.
 
 ## Failure And Readability
 

@@ -1,0 +1,105 @@
+HECTON-8 LOCAL TASK FILE
+ID: 2103
+Role: CORAL_REEF_FLORA_FINAL_READY_SOURCE_PACKAGE_CONSTRAINTS
+Batch: batch21_art_replacement_wave
+
+OBJECTIVE
+Create final-ready source package constraints for photic coral, reef flora, kelp, soft fans, and shoreline/intertidal separation, with explicit rejection of land kelp, dry-land coral, primitive stalks, tube/blob coral, paper plates, alpha-only fans, and proxy fallback finals.
+
+WHY THIS EXISTS
+2019 reports dry-land kelp/coral placement risk and proxy/fallback flora/coral finals. 2019 queue rows Q006-Q010 and Q014 and matrix rows G004-G009 identify planned-not-imported or source-missing flora/coral families. 2022 ranks shallow branching coral and kelp blade/holdfast as source candidates.
+
+AUTHORITY DOCS TO READ
+- AGENTS.md
+- TASTE.md
+- VISION_LOCKS.md
+- PROJECT_BIBLES.md
+- quality.md
+- PROCEDURAL_ASSET_PIPELINE.md
+- 3dmodel.md
+- 3DMODEL_FLORA_CORAL.md
+- 3DMODEL_TEXTURES_MATERIALS.md
+- 3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md
+- 3DMODEL_HERO_REALISM_OVERKILL.md for hero/close flora or reef setpieces
+- world.md
+- terrain.md
+- water.md
+- rendering.md
+- shaders.md
+- Docs/Reports/Batch20/2019_PRIMITIVE_PROXY_ART_DEBT_ELIMINATION_PLAN.md
+- Docs/Reports/Batch20/2019_PROXY_DEBT_QUEUE.csv
+- Docs/Reports/Batch20/2019_GENERATION_ROUTE_MATRIX.csv
+- Docs/Reports/Batch21/2022_GEMINI_TEXTURE_BUDGET_AND_PROMPT_QUEUE.md
+- Docs/Reports/Batch20/2004_BIOFORGE_FLORA_CORAL_SOURCE_PACKAGE.md if present
+- Docs/Reports/Batch20/2004_FLORA_CORAL_VARIANT_MATRIX.csv if present
+- Docs/Reports/Batch20/2004_TEXTURE_CHANNEL_CONTRACTS.csv if present
+- Docs/Reports/Batch20/2004_GENERATION_HANDOFF_CHECKLIST.md if present
+
+OWNED DOMAIN
+Flora/coral/reef source package constraints and QA gates only. No placement edits, no Unity generation, no asset import.
+
+OWNED OUTPUT SCOPE
+- Docs/Reports/Batch21/2103_*
+- Docs/GeneratedAssets/Gemini/Prompts/Batch21/2103_* if prompt files are needed.
+- Docs/Tasks/Status_2103.md
+- Docs/AgentLogs/Rationale_2103.md only for real decisions.
+- Docs/AgentLogs/LOG_2103.md
+
+FORBIDDEN ACTIONS
+- Do not run Unity, MCP, Play Mode, profiler, imports, dotnet build, csc, or any project build.
+- Do not edit Assets, Packages, ProjectSettings, Library, Temp, UserSettings, scenes, prefabs, materials, shaders, placement rules, or runtime scripts.
+- Do not generate/import meshes or textures into Assets.
+- Do not accept BioForge starter output, primitive proxies, or material fallback paths as final production proof.
+- Do not depend on 2101, 2102, 2104, 2105, 2106, or 2107.
+
+QUALITY SCALING EXPECTATION
+Low: sparse but biologically readable silhouettes, rooted anchors, correct vertex color semantics, no alpha-blend walls, no land kelp/coral.
+Middle: complete family coverage for photic route density with accepted LOD/material/source constraints.
+High: richer pores, branch knuckles, blade fibers, scars, pigment, biolum masks, and current response.
+Ultra: dense reef/flora hero overkill only after placement, overdraw, import, and profiler proof; never as a static-source claim.
+
+PHASE 0 - AUTHORITY AND EVIDENCE DISCOVERY
+01. Read authority docs and relevant 2004 files if present. Proof: Status_2103.md doc/evidence list. Blocker: absent 2004 files are CANDIDATE and must not be invented.
+02. Extract 2019 rows covering dry-land kelp, dry-land coral, kelp proxy finals, coral proxy finals, soft fan source, BioForge fallback, and flora source blockers. Proof: evidence table.
+03. Extract 2022 rows for shallow branching coral and kelp blade/holdfast source candidates. Proof: queue reference. Blocker: no generation.
+04. Separate 2103 scope from seabed/geology/material-only tasks. Proof: scope statement. Blocker: out-of-scope substrate/rock goes to handoff notes.
+05. Write Status_2103.md with discovered evidence, active constraints, and no-Unity acknowledgment.
+06. Gate: if no flora/coral evidence exists, mark NOT APPLICABLE and stop. Do not invent species.
+
+PHASE 1 - FINAL-READY FAMILY CONSTRAINTS
+07. Define accepted family list from evidence: tall kelp, kelp patch/canopy, intertidal shoreline flora, branching coral, massive coral, plate coral, low sponge/floor coral, soft reef fan, anchor debris encrustation. Proof: family matrix.
+08. For each family, declare biome/depth route and placement constraints as future-owner requirements: submerged seafloor, reef substrate, current edge, shoreline/intertidal split, or explicit non-coral dry shoreline flora. Proof: placement constraint table. Blocker: no rule edits here.
+09. Define forbidden proxy reads per family: primitive stalk, ribbon-only blade, smooth tube bouquet, smooth blob, paper-thin plate, alpha-only fan, noisy carpet, dry-land kelp/coral, starter material as final. Proof: rejection matrix.
+10. Define geometry constraints: root/holdfast, taper, branch hierarchy, welded knuckles, plate rims, underside AO, pores/cavities, scars, nonuniform silhouette. Proof: topology matrix.
+11. Define vertex color contract: R sway amplitude, G biolum phase/mask, B AO/cavity darkness, A thickness/damage/harvest/wetness meaning. Proof: channel table. Blocker: any family lacking channel meaning is blocked.
+12. Define texture source stack per family: albedo, height/normal source, MRAO/mask, detail, emission/biolum only where semantically placed. Proof: map stack table.
+13. Write prompt requirements for shallow branching coral and kelp blade/holdfast without running generation. Proof: prompt pack or report section.
+14. Define source QA criteria: no baked lighting, no text/logo, no object render, no low-res mush, no random neon, no wallpaper symmetry where biology should vary, no unusable height signal. Proof: QA checklist.
+
+PHASE 2 - VALIDATION AND HANDOFF GATES
+15. Define mesh proof required later: flat-material silhouette sheet, topology/weld proof, vertex color sheet, LOD overlay, collider/no-collider justification, material debug, final photic capture. Proof: future proof template.
+16. Define material proof required later: PBR closeup, albedo/normal/mask/emission debug, import settings, shader channel contract, SRP Batcher/shared material note. Proof: proof template.
+17. Define placement proof required later: dry-land zero proof, submerged acceptance proof, substrate proof, route readability, overdraw/profiler for dense fields. Proof: handoff gate.
+18. Define low/middle/high/ultra consequences with continuous GlobalQualityWeight. Proof: scaling table.
+19. Define no-fallback rule: production family profiles must skip missing real finals or mark blocked; they must not fall back to primitive/proxy/default materials. Proof: no-fallback section.
+20. Cross-check no sibling dependencies. Proof: self-audit. Blocker: remove any reference to "after 2101/2102 output."
+21. Cross-check no visual proof claim is based on static YAML/path existence. Proof: evidence label audit.
+22. Write 2103 final source constraints report under Docs/Reports/Batch21. Proof: path listed in log.
+
+PHASE 3 - REPORTING
+23. Update Status_2103.md with tasks completed, files created, and PENDING Unity/source generation proof.
+24. Update Rationale_2103.md only for real family inclusion/exclusion or constraint decisions.
+25. Append LOG_2103.md with concise report: wrong state, source constraints, no in-game run, proof class, residual risks.
+26. Final chat report: list outputs and future Unity-owner pending proof. No production-ready claim.
+
+PROOF PACKET
+- STATIC VERIFIED: family constraints, prompt requirements, QA gates, future proof templates.
+- PENDING VERIFICATION: source image generation, mesh generation, Unity import, placement rule edits, route captures, overdraw/profiler, GC/memory/VRAM.
+
+BLOCKER RULES
+- Missing 2004 files or generator names become CANDIDATE.
+- Dry-land kelp/coral is not acceptable as production art. If shoreline flora is needed, it is a separate intertidal family.
+- If a family cannot meet topology and vertex color contract, mark BLOCKED rather than accepting a proxy.
+
+FINAL REPORT REQUIREMENTS
+Use proof labels exactly. Static source constraints are not final visual proof.

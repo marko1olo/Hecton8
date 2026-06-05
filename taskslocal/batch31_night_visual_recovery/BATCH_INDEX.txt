@@ -1,0 +1,61 @@
+Batch: batch31_night_visual_recovery
+Date: 2026-06-05
+Mode: wide autonomous visual/product recovery wave
+Controller memory:
+- Docs/Orchestration/ORCHESTRATOR_NIGHT_20260605.md
+- Docs/Orchestration/ORCHESTRATOR_NIGHT_20260605_PLAN.md
+
+Current front:
+- No visual acceptance exists.
+- Mandatory visual references live under Docs/OBYAZATELNYE PRIMERY PO KARTINKAM (filesystem path may display as Cyrillic in Explorer).
+- Latest rejected raw events: h8_1474*, h8_1912*, h8_1913_surface_patch_a.
+- 02_HECTON_WORLD.unity has a huge dirty diff after 1912 quarantine/capture work.
+- Raw MCP screenshots are diagnostic only.
+- Next candidate proof must be manifest-bound under Docs/Screenshots/HectonProofPackets/h8_1475_{session}/.
+
+Shared authority:
+- AGENTS.md
+- PROJECT_BIBLES.md
+- TASTE.md
+- VISION_LOCKS.md
+- quality.md
+- domain bibles named in each task file
+- matching .agents-skills mandates named in each task file
+
+Hard rules:
+- Do not fabricate targets, metrics, line numbers, hashes, runtime proof, or visual acceptance.
+- If assigned a Unity-heavy task, inspect active Unity/dotnet/csc/shader compiler/CPU state before action.
+- Do not run dotnet build while Unity/import/compiler work or CPU > 50 percent is active.
+- Do not accept raw screenshots as proof.
+- Do not save diagnostic scene changes into production.
+- Do not delete Unity assets without reference proof plus .meta handling.
+- Do not use darkness, fog, post, or "cinematic fake" to hide weak art.
+- Surface, sky, Aegir, ocean skin, coast, photic shallows, and 0-100m routes must be bright, readable, beautiful, and premium.
+- Full UI and full player movement are mandatory product-slice fronts, not optional polish.
+- "UI on" and "movement works" claims require real code/runtime proof, not filenames or editor-only widgets.
+- Material/texture criticals are now summarized in Docs/Reports/Batch31/MATERIAL_TEXTURE_CRITICALS_20260605.md.
+- Gemini/Batch31 texture sources are prototype candidates, not automatic trash and not final production imports. Preserve full useful sources; the small Gemini mark is final-cleanup debt, not a prototype blocker.
+- Active/proposed proxy materials, null texture slots, broken GUIDs, color-only foam/veil, and stale sky/cloud bindings must be classified before end-wave prefab placement.
+
+Agent files:
+- 3101_UNITY_SCENE_DIFF_OWNER.txt
+- 3102_PROOF_HARNESS_1475_OWNER.txt
+- 3103_WATER_CREST_FOAM_CAUSTIC_OWNER.txt
+- 3104_SHORELINE_TERRAIN_ASSET_OWNER.txt
+- 3105_AEGIR_SKY_CELESTIAL_OWNER.txt
+- 3106_UNDERWATER_ROUTE_VOLUME_OWNER.txt
+- 3107_PRODUCT_FACE_PREFAB_PLACEMENT_PREP.txt
+- 3108_FIRST20_STAKE_UI_ROUTE_OWNER.txt
+- 3109_FULL_UI_PLAYER_MOVEMENT_OWNER.txt
+- 3110_LORE_WORLD_CONSISTENCY_OWNER.txt
+
+Reporting because each task has an explicit ID:
+- Docs/Tasks/Status_[ID].md
+- Docs/AgentLogs/Rationale_[ID].md for non-trivial decisions only
+- Docs/AgentLogs/LOG_[ID].md final concise evidence report
+- Docs/Reports/Batch31/[ID]_[SHORT_NAME].md if a controller-facing report is useful
+
+No sibling dependencies:
+- Each agent works against current files only.
+- If a sibling artifact would help but is absent, mark BLOCKED BY DEPENDENCY or write a handoff note.
+- Do not invent future sibling APIs, scenes, materials, or proof packets.

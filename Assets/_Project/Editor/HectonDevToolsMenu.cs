@@ -186,9 +186,9 @@ namespace Hecton8.Editor
             return EditorApplication.isPlaying;
         }
 
-        private const string ScreenshotsFolderName = "Screenshots";
+        private const string ScreenshotsFolderName = "Docs/Screenshots";
 
-        [MenuItem(MenuRoot + "Capture Screenshot -> ProjectRoot/Screenshots (Play Mode)", false, 70)]
+        [MenuItem(MenuRoot + "Capture Screenshot -> Docs/Screenshots (Play Mode)", false, 70)]
         public static void CaptureScreenshotToProject()
         {
             string screenshotsFolder = ResolveScreenshotsFolderPath();
@@ -200,7 +200,7 @@ namespace Hecton8.Editor
             Debug.Log("[Hecton Dev] Capturing screenshot to: " + absolutePath.Replace('\\', '/'));
         }
 
-        [MenuItem(MenuRoot + "Capture Screenshot -> ProjectRoot/Screenshots (Play Mode)", true)]
+        [MenuItem(MenuRoot + "Capture Screenshot -> Docs/Screenshots (Play Mode)", true)]
         public static bool CaptureScreenshotValidate()
         {
             return EditorApplication.isPlaying;

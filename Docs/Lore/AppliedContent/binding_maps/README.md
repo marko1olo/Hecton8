@@ -5,15 +5,17 @@ Purpose: define which baked AppliedLore packets should be assigned to concrete s
 
 These maps are not runtime interpreters. They are handoff data for Unity authoring passes.
 
+Freshness boundary: local counts and "current" statements in this README are static snapshots unless a timestamped command output or audit artifact says otherwise. Binding CSV rows, publication pages, prefab rows, and scene-target worklists do not prove Unity placement, runtime visibility, or DataMonolith readiness.
+
 ## Current Maps
 
 - `RS001_RS003_runtime_binding_map.csv`: first 15 baked packets, with hex and decimal hashes for Unity inspector assignment.
 - `RS001_RS009_scene_binding_targets.csv`: concrete first-party prefab/data-asset candidates for P001-P045.
 - `RS010_scene_binding_targets.csv`: concrete first-party prefab/data-asset candidates for P046-P050.
-- `RS001_RS010_manual_binding_policy.csv`: historical filename, current all-release hard policy for the 374 non-auto rows through RS092. It says which rows require a real diegetic terminal anchor and which require a visibly marked world prop with `NarrativeDiscovery`.
-- `RS001_RS010_scene_placement_plan.csv`: historical filename, current deterministic placement plan for those 374 manual rows in `Assets/_Project/Scenes/02_HECTON_WORLD.unity`. It names the prefab source, object name, placement root, transform, component field, display name, and discovery id.
+- `RS001_RS010_manual_binding_policy.csv`: historical filename for a manual binding policy snapshot. Treat row counts and RS coverage as current only when a newer audit command says so.
+- `RS001_RS010_scene_placement_plan.csv`: historical filename for a deterministic scene placement-plan snapshot. Treat row counts, scene coverage, and object placement as current only when a newer Unity API placement pass and audit artifact say so.
 - `Assets/_Project/Prefabs/Narrative/AppliedLore/PFB_AppliedLore_MessageTerminalAnchor.prefab`: reusable zero-hash terminal template.
-- `Assets/_Project/Prefabs/Narrative/AppliedLore/Terminals/PFB_AppliedLore_Terminal_*.prefab`: generated terminal prefabs for terminal policy rows. These are ready for scene placement after `manual_terminal_prefab_rows` reaches the terminal policy row count in audit output; placement is still a separate authoring pass.
+- `Assets/_Project/Prefabs/Narrative/AppliedLore/Terminals/PFB_AppliedLore_Terminal_*.prefab`: generated terminal prefabs for terminal policy rows. Treat them as scene-placement candidates only after `manual_terminal_prefab_rows` reaches the terminal policy row count in a timestamped audit output; placement is still a separate authoring pass.
 - `*_scene_binding_targets.csv` rows are not serialized binding proof. They are worklists for assigning existing packet hashes through Unity API/editor tooling.
 
 ## Runtime Fields
@@ -25,16 +27,16 @@ These maps are not runtime interpreters. They are handoff data for Unity authori
 - `ScannableFragment.appliedLoreFinalPacketHash`
 - `MessageTerminal.appliedLorePacketHash`
 
-## Current State
+## Last Recorded Source-Only Snapshot
 
-`Tools/AppliedLoreRuntimeAudit.py --root . --source-only` currently reports `packets=460`, `rows=6900`, `route_cards=454`, `manual_policy_rows=374`, `manual_terminal_policy_rows=27`, `manual_discovery_policy_rows=347`, `placement_plan_rows=374`, `scene_placement_serialized_rows=7`, `scene_bindings=7`, `prefab_bindings=43`, and `authoring_bindings=50`.
+This README previously recorded `Tools/AppliedLoreRuntimeAudit.py --root . --source-only` with `packets=460`, `rows=6900`, `route_cards=454`, `manual_policy_rows=374`, `manual_terminal_policy_rows=27`, `manual_discovery_policy_rows=347`, `placement_plan_rows=374`, `scene_placement_serialized_rows=7`, `scene_bindings=7`, `prefab_bindings=43`, and `authoring_bindings=50`. Without a timestamped command artifact, these numbers are static documentation evidence only.
 
-Meaning: source rows, publication pages, route-card source data, prefab bindings, and seven scene bindings exist. Twenty-seven terminal policy rows match the current TerminalOS runtime renderer/transform slots. Three hundred forty-seven newer manual rows are intentionally routed through `NarrativeDiscovery` placement backlog instead of expanding TerminalOS during a parallel Unity pass.
+Meaning for that snapshot: source rows, generated pages, route-card source data, prefab binding rows, and seven serialized scene-binding rows were visible to the audit. That does not prove placement completion, runtime content visibility, native localization, or player-build behavior. Twenty-seven terminal policy rows were recorded for TerminalOS renderer/transform slots; three hundred forty-seven manual rows were recorded as `NarrativeDiscovery` placement backlog instead of TerminalOS expansion.
 
-Next Unity-safe pass: open `Assets/_Project/Scenes/02_HECTON_WORLD.unity` in Unity and run `Hecton8/Lore/Apply Applied Lore Scene Placement Plan`. The menu is log-only for MCP automation; it refuses to edit unloaded scenes. After Unity saves the loaded scene, rerun the audit. A scene placement pass is not complete until `scene_bindings` rises above zero through Unity API-authored scene objects.
+Next Unity-safe pass: open `Assets/_Project/Scenes/02_HECTON_WORLD.unity` in Unity and run `Hecton8/Lore/Apply Applied Lore Scene Placement Plan`. The menu is log-only for MCP automation; it refuses to edit unloaded scenes. After Unity saves the loaded scene, rerun the audit. A scene placement pass is not complete until a timestamped Unity API placement pass and rerun audit report the expected scene bindings for the scoped target.
 
 Do not raw-edit `.unity` or `.prefab` YAML for this pass. Use Unity API/editor tooling so file IDs and prefab overrides stay valid.
 
-## Expected After RS089-RS092
+## Historical Source-Only Target
 
-Current source-only target is `packets=460`, `rows=6900`, `route_cards=454`, `manual_policy_rows=374`, `manual_terminal_policy_rows=27`, `manual_discovery_policy_rows=347`. Runtime scene placement still requires the Unity editor placement pass.
+The prior source-only target was `packets=460`, `rows=6900`, `route_cards=454`, `manual_policy_rows=374`, `manual_terminal_policy_rows=27`, `manual_discovery_policy_rows=347`. Newer RS093+ files are outside that target unless a newer audit says otherwise. Runtime scene placement still requires the Unity editor placement pass and proof artifact.

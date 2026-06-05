@@ -1038,7 +1038,7 @@ namespace Hecton8.Gameplay
         internal bool HasRuntimeActiveIntent => IsEquipped && _runtimeActiveIntentSeconds > 0f;
         internal bool WasRecentlyUsed(float maxIdleSeconds) => IsEquipped && _secondsSinceLastUse <= FiniteAtLeast(maxIdleSeconds, 0.05f);
 
-        private bool TryResolveRuntimeAup(Vector3 runtimePosition, out double3 absoluteAup)
+        protected bool TryResolveRuntimeAup(Vector3 runtimePosition, out double3 absoluteAup)
         {
             absoluteAup = default;
             if (!IsFiniteVector(runtimePosition))

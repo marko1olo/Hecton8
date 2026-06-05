@@ -4,6 +4,8 @@
 
 Date: 2026-05-19
 
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
+
 
 
 Owner: SHINOBU_151
@@ -99,6 +101,18 @@ The runtime route is:
 
 
 No Unity `Light` object is instantiated or toggled by this route.
+
+## Source Anchor - DynamicPointLightCullingDirector (2026-06-05)
+
+Evidence class: STATIC_SOURCE only. `Assets/_Project/Scripts/Lighting/DynamicPointLightCulling/DynamicPointLightCullingDirector.cs` is the source anchor for this route.
+
+- Interface/phase anchor: `IUpdatable`, `ISlowTickable`, `ILateFrameTickable`, `IGlobalRegistryHotSwapListener`, `IDisposable`.
+- `Tick` schedules bounded culling work; `LateFrameTick` is the VISUAL_SYNC completion, GPU upload, and telemetry lane.
+- Vault lanes match the `71440` through `71458` manifest below, including `TelemetryRing = 71445` for `DynamicPointLightCullingTelemetryEntry[300]`.
+- GPU upload route uses two `GraphicsBuffer` payloads and `LockBufferForWrite` with `UnsafeUtility.MemCpy`.
+- `DynamicPointLightCullingMath.ResolveMaxActiveLights` resolves continuous survivor count from `8` to `64`; thermal pressure modulates the same weight route.
+- Fault dump target in source is `Docs/AgentLogs/Dump_13KRA.bin`.
+- Proof gap: source text does not prove Frame Debugger, RenderGraph, profiler/GPU, GC, compact visual readability, or player-build behavior.
 
 
 
@@ -316,7 +330,7 @@ Public ownership route remains Vault handles. Raw pointers do not escape the SHI
 
 
 
-| Fault dump target | `Docs/AgentLogs/Dump_LIGHT_DIRECTOR.bin` is planned/generated on fault; no existing artifact is implied unless a timestamped runtime trigger and output are linked |
+| Fault dump target | `Docs/AgentLogs/Dump_13KRA.bin` is planned/generated on fault; no existing artifact is implied unless a timestamped runtime trigger and output are linked |
 
 
 
@@ -328,7 +342,7 @@ Public ownership route remains Vault handles. Raw pointers do not escape the SHI
 
 
 
-Blackbox path: `Docs/AgentLogs/Dump_LIGHT_DIRECTOR.bin` planned/generated on fault; no existing artifact is implied unless linked with command, timestamp, environment, trigger, and output.
+Blackbox path: `Docs/AgentLogs/Dump_13KRA.bin` planned/generated on fault; no existing artifact is implied unless linked with command, timestamp, environment, trigger, and output.
 
 
 

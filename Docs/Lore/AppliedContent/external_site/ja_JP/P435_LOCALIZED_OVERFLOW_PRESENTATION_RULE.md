@@ -10,21 +10,21 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
 # Localized Overflow Presentation Rule
 
-Localization is authored data. The UI must absorb length and directionality without changing content identity.
+Localization is authored data. The UI absorbs length and directionality without changing content identity.
 
 ## Scanner
 
-Localization rule: long translations must collapse, page, or scroll inside UI; never shrink truth or change authority.
+Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.
 
 ## Terminal
 
-OVERFLOW: source packet identity, receiver labels, units and evidence tiers survive all locales. Layout adapts; facts do not.
+OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.
 
 ## Audio
 
@@ -32,6 +32,6 @@ A language can take more room. It cannot take a different truth.
 
 ## Field Note
 
-Use for localization UI QA and final native review gates.
+Localization layout records keep long or directional text from changing packet truth.
 
 <!-- External Site; generated from P435_LOCALIZED_OVERFLOW_PRESENTATION_RULE/ja_JP. -->

@@ -458,8 +458,8 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void Lock()
         {
-            _state = FragmentState.Locked;
             StopScanning();
+            _state = FragmentState.Locked;
         }
 
         /// <summary>
@@ -622,13 +622,16 @@ namespace Hecton8.Gameplay
                     audio.PlayAtPoint(completeSound, _transform.position, scanVolume);
             }
 
-            if (_pendingFragmentDisable)
-            {
-                _pendingFragmentDisable = false;
-                DisableFragment();
-            }
+            bool disableFragment = _pendingFragmentDisable;
+            _pendingFragmentDisable = false;
 
             FlushQueuedScanEvents();
+
+            if (disableFragment)
+            {
+                DisableFragment();
+                return;
+            }
         }
 
         // ══════════════════════════════════════════════════════════

@@ -1,0 +1,90 @@
+ID: 1899
+TITLE: ORGANIC_MISC_PRODUCTION_GENERATOR_CONTRACT
+MODE: REPORT_ONLY_STATIC_GENERATOR_CONTRACT
+
+You are HECTON-8 batch agent 1899.
+Do not edit source, assets, prefabs, scenes, binaries, `.meta`, generated meshes, DataMonolith, task files, or sibling outputs.
+
+PRIMARY GOAL
+
+Create the implementation-ready generator contract for replacing `PFB_Organic_EggCluster` and `PFB_Organic_PlantGiant` with non-primitive, premium organic meshes/materials while keeping gameplay truth separated.
+
+READ
+
+- `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `VISION_LOCKS.md`
+- `TASTE.md`
+- `quality.md`
+- `creatures.md`
+- `world.md`
+- `terrain.md`
+- `vfx.md`
+- `3dmodel.md`
+- `3DMODEL_TEXTURES_MATERIALS.md`
+- `3DMODEL_FLORA_CORAL.md`
+- `PROCEDURAL_ASSET_PIPELINE.md`
+- `Docs/Reports/Batch18/1851_GENERATED_ASSET_PRODUCTION_AUDIT.md`
+- `Docs/Reports/Batch18/1856_ORGANIC_MISC_FINAL_MESH_REBUILD_PACKET.md`
+- `Docs/Reports/Batch18/1858_GENERATED_FLORA_GEOLOGY_MANIFEST_PROOF_PACKET.md`
+
+Targeted source reads:
+
+- `Assets/_Project/Scripts/Editor/WorldProceduralOrganicMiscFinalAuthoring.cs`
+- `Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs`
+- `Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs`
+- `Assets/_Project/Scripts/Editor/WorldProceduralFloraBakedStarterGenerator.cs`
+
+Mandates:
+
+- `.agents-skills/QA_Evidence_Text_Filter_Audit.txt`
+- `.agents-skills/REND_Instanced_Flora_Physics.txt`
+- `.agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt`
+- `.agents-skills/PHYS_Destructible_Organic_Entropy.txt` if present; if absent, state it.
+
+OUTPUTS YOU OWN
+
+- `Docs/Reports/Batch18/1899_ORGANIC_MISC_PRODUCTION_GENERATOR_CONTRACT.md`
+- `Docs/Reports/Batch18/1899_ORGANIC_MISC_PRODUCTION_GENERATOR_MATRIX.csv`
+- `Docs/Tasks/Status_1899.md`
+- `Docs/AgentLogs/Rationale_1899.md`
+- `Docs/AgentLogs/LOG_1899.md`
+
+CSV COLUMNS
+
+- `target_family`
+- `target_prefab`
+- `current_defect`
+- `future_generator_component`
+- `mesh_features_required`
+- `material_texture_roles`
+- `hidden_gameplay_anchors`
+- `lod_hlod_policy`
+- `validator_hook`
+- `proof_required`
+- `status`
+
+REQUIRED WORK
+
+1. Translate 1856 into a future generator/source contract.
+2. Define exact mesh features for egg cluster and giant plant.
+3. Define vertex color semantics and shader/material role requirements.
+4. Define hidden gameplay anchors and collider policies.
+5. Define source files future implementation may create.
+6. Define source files future implementation must not unblock.
+7. Define output folders, manifest schema, screenshot proof set, and validation stack.
+8. Define compact/middle/high/ultra consequences without ugly compact assets.
+9. Do not implement source.
+10. Do not claim runtime/visual proof.
+
+VERIFICATION
+
+Run and record:
+
+- `git diff --check -- Docs/Reports/Batch18/1899_ORGANIC_MISC_PRODUCTION_GENERATOR_CONTRACT.md Docs/Reports/Batch18/1899_ORGANIC_MISC_PRODUCTION_GENERATOR_MATRIX.csv Docs/Tasks/Status_1899.md Docs/AgentLogs/Rationale_1899.md Docs/AgentLogs/LOG_1899.md`
+- `Import-Csv Docs/Reports/Batch18/1899_ORGANIC_MISC_PRODUCTION_GENERATOR_MATRIX.csv | Measure-Object`
+- static term cross-check for `PFB_Organic_EggCluster`, `PFB_Organic_PlantGiant`, `WorldProceduralOrganicMiscFinalAuthoring`, `vertex color`, `biolum`, `Subnautica`, `PENDING UNITY`.
+
+FINAL RESPONSE
+
+Report changed files, CSV row count, future generator components, and exact blocked legacy route.

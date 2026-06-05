@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
 # Drop Capsule Diagnostic Readout
 
-Drop Capsule Diagnostic Readout makes the opening damage legible. Every failed assembly points toward later exploration, salvage or evidence.
+The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.
 
 ## Scanner
 
-The screen still knows the words for systems it can no longer move.
+Capsule diagnostic still polls failed ascent hardware.
 
 ## Terminal
 
-ASCENT BUS: unavailable. Guidance gimbal: locked. Relay mast: shear detected. Compressor: flooded.
+BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.
 
 ## Audio
 
-The capsule can still count the ways it will not save you.
+Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.
 
 ## Field Note
 
-The first diagnostic should list failures as repair futures: ascent sleeve, guidance, relay, compressor, heat tile.
+Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.
 
 <!-- In-Game Wiki; generated from P247_DROP_CAPSULE_DIAGNOSTIC_READOUT/ar_SA. -->

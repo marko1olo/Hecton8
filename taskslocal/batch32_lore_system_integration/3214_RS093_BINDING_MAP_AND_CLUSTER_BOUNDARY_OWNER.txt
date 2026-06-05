@@ -1,0 +1,74 @@
+ID: 3214
+Role: RS093_BINDING_MAP_AND_CLUSTER_BOUNDARY_OWNER
+
+Objective:
+Repair the RS093 source-only binding-map blocker for P461-P464 and document why Publication_Cluster_Index is not the correct integration surface for these packets unless the site/wiki navigation-cluster graph is explicitly expanded later.
+
+Why this is needed:
+3210 wired P461-P464 into the canonical AppliedLore source pipeline. Static export now has CSV rows, hash constants, generated pages, and Publication_Surface_Index rows. `Tools/AppliedLoreRuntimeAudit.py --root . --source-only` still reports binding-map missing packets. Publication_Cluster_Index has zero P461-P464 rows, but current exporter/audit code only supports the hardcoded RS084 site/wiki navigation cluster graph with exactly five cluster packets.
+
+Owned scope:
+- `Docs/Lore/AppliedContent/binding_maps/RS093_runtime_binding_map.csv`
+- `Docs/Lore/AppliedContent/binding_maps/RS093_scene_binding_targets.csv`
+- `Docs/Reports/Batch32/3214_RS093_BINDING_MAP_AND_CLUSTER_BOUNDARY.md`
+- `Docs/Tasks/Status_3214.md`
+- `Docs/AgentLogs/LOG_3214.md`
+- `Docs/AgentLogs/Rationale_3214.md` only if a non-trivial decision is made
+
+Do not edit:
+- `Docs/Lore/AppliedContent/graphs/RS084_SITE_WIKI_NAVIGATION_CLUSTERS_evidence_graph.csv`
+- `Docs/Lore/AppliedContent/Publication_Cluster_Index.csv`
+- `Docs/Lore/AppliedContent/route_cards/*`
+- `Assets/_SourceData/DataMonolith/Narrative/applied_lore_route_cards.csv`
+- `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`
+- Unity scenes, prefabs, assets, or runtime scripts
+- Production packet Markdown P461-P469
+- Other agents' status/log/rationale files
+
+Authority docs:
+AGENTS.md, authoring.md, data.md, localization.md, writing.md, quality.md, Docs/Lore/Lore_Content_System.md, Docs/Lore/AppliedContent/binding_maps/README.md.
+
+Mandates:
+- QA_Evidence_Text_Filter_Audit.txt
+- UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt
+- DATA_Runtime_Struct_Layout_ARM64.txt
+- TOOL_Designer_Facades_CSV_Binary_Bridge.txt
+- OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+
+Inputs:
+- `Docs/Lore/AppliedContent/release_sets/RS093_LORE_SYSTEM_INTEGRATION_BRIDGE_manifest.json`
+- `Docs/Lore/AppliedContent/packets/RS093_LORE_SYSTEM_INTEGRATION_BRIDGE.packets.json`
+- `Assets/_Project/Scripts/Core/Generated/H8AppliedLoreHashes.cs`
+- `Assets/_SourceData/DataMonolith/Narrative/applied_lore_packets.csv`
+- `Docs/Lore/AppliedContent/Publication_Surface_Index.csv`
+- `Tools/AppliedLoreRuntimeAudit.py`
+- Recent binding-map examples: `Docs/Lore/AppliedContent/binding_maps/RS092_runtime_binding_map.csv` and `RS092_scene_binding_targets.csv`
+
+Tasks:
+1. Read this task, BATCH_INDEX, authority docs, binding-map README, relevant mandates, and the audit code for binding-map/scene-target validation.
+2. Confirm P461-P464 exist in source CSV, generated hash constants, and Publication_Surface_Index before writing binding maps.
+3. Create `RS093_runtime_binding_map.csv` with one row for each P461-P464 packet, using FNV-1a hash values from generated constants or audit function rules:
+   - P461_PACKET_CUSTODY_BRIDGE = 0xB9E31203 / 3118662147
+   - P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE = 0x39EB648E / 971728014
+   - P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE = 0x64DCA3D4 / 1692181460
+   - P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE = 0x6893BE85 / 1754517125
+4. Create `RS093_scene_binding_targets.csv` with one row for each P461-P464 packet. Use existing valid prefab candidates only. Prefer durable first-party construction/final or narrative AppliedLore prefabs. Do not reference missing assets.
+5. Keep component/field choices compatible with `SCENE_BINDING_TARGET_FIELDS` in `Tools/AppliedLoreRuntimeAudit.py`.
+6. Do not force P461-P464 into `Publication_Cluster_Index`. Instead write the 3214 report explaining: cluster exporter currently reads only `graphs/RS084_SITE_WIKI_NAVIGATION_CLUSTERS_evidence_graph.csv`, requires `arc_id=site_wiki_navigation_clusters`, `primary_surface=external_site`, and exactly five graph rows. P461-P464 are RS093 bridge packets, not site/wiki navigation-cluster packets.
+7. If CPU/process gate allows lightweight Python, run `python Tools/AppliedLoreRuntimeAudit.py --root . --source-only`. If blocked by CPU/dotnet/Unity gate, report the blocker and run only static file-shape checks.
+8. Verify no route-card CSV and no h8bin were created or modified.
+
+Proof packet:
+- Files changed.
+- Binding row count.
+- Scene-target row count.
+- Source-only audit output if run, or exact process-gate blocker if skipped.
+- Evidence class: STATIC_SOURCE.
+
+Rejection gates:
+- No route-card CSV creation.
+- No h8bin edit.
+- No Unity/build/dotnet.
+- No runtime/native/DataMonolith-ready claim.
+- No raw YAML edits.
+- No cluster graph mutation.

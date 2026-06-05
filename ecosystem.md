@@ -1,7 +1,14 @@
 # HECTON-8 Ecosystem, Biome Simulation, And Ecology Bible
 
 Status: AUTHORING LAW / STATIC DOC / RUNTIME PROOF NOT IMPLIED
+Evidence class: STATIC_DOC
 Scope: biome ecology, macro ecosystem director, biomass migration, flora/fauna distribution, food/territory pressure, ecological evidence, swarm background, and ecosystem proof gates.
+
+## First-20 Route Hook
+
+- First-20 moment: semi-open shallow route populated with light-driven biota, readable predator/prey traces, and ecological evidence around resource and tool decisions.
+- Route blocker removed: prevents the opening shallows from becoming random scatter, empty beauty, or dark biolum masking weak ecology.
+- Proof class: STATIC_DOC hook only; acceptance still requires biome tables, spawn masks, compact/normal screenshots, and profiler/GC proof for runtime ecology changes.
 
 ## Prime Law
 

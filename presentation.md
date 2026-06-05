@@ -1,7 +1,14 @@
 # HECTON-8 Presentation Bible
 
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
+Evidence class: STATIC_DOC
 Scope: lighting, fog, post-processing, VFX, particles, camera, screenshots, trailer capture, scene composition, and render taste.
+
+## First-20 Route Hook
+
+- First-20 moment: world load and first exit must show a bright, beautiful, readable photic route with water, terrain, sky/Aegir/moon context where visible, instruments, machinery, danger, and return cues.
+- Route blocker removed: prevents first-route proof from being reduced to mood shots, darkness, fog, bloom, or post-processing that hides weak surface, shallow-water, route, or asset work.
+- Proof class: STATIC_DOC only; route acceptance still requires route screenshots/clips, compact capture, render/profiler proof for runtime changes, and an explicit route/decision read statement.
 
 ## 0. Prime Presentation Law
 
@@ -14,6 +21,15 @@ Visual quality is not a post stack. It is composition plus material truth plus r
 Above-water and photic-zone captures are beauty proof, not noir proof. They must show bright ocean, readable terrain, wet material detail, sky/cloud structure, Aegir scale, moon silhouettes, and attractive approach routes.
 
 Reject surface screenshots that are black, muddy, over-fogged, one-note blue, procedural-looking, or hiding weak geometry. Surface tension comes from visible weather, orbital timing, wave state, radiation warnings, engineering risk, and descent contrast. The abyss earns darkness later.
+
+Depth/capture lock:
+
+- 0-100 m capture should be mostly bright, beautiful, colorful, and readable.
+- 200-400 m capture can become subdued and twilight-like.
+- 400-500 m and below can become dark/murky, but still needs silhouettes, route cues, instruments, and evidence.
+- Surface/shallow/mid-depth hero captures must meet or exceed Subnautica-level visual density and readability.
+
+The main visual mode is cinematic realism: believable materials plus controlled composition, color, and atmosphere. It is not clean sterile photorealism and not cartoon stylization.
 
 ## 1. Noir Lighting
 

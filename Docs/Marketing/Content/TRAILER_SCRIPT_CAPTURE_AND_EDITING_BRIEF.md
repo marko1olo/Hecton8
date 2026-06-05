@@ -4,6 +4,11 @@ Status: pre-footage production brief
 Owner lane: Marketing / trailer planning
 Runtime impact: none
 
+## Authority Boundary
+
+Static documentation only. Public trailer, capture, creative, Steam, wishlist, demo, performance, platform, release, publication, gameplay-proof, and CTA claims require root `textes.md` for voice plus `quality.md`, `release.md`, and `platform.md` with current proof artifacts and the local permission gates.
+No public post, Steam news, trailer/capsule approval, creator send, community launch, platform/release claim, demo claim, trailer publication, capture approval, or end-card CTA is authorized by drafts, examples, beat sheets, scripts, shot lists, or plan rows in this file.
+
 ## Trailer Goal
 
 The first trailer must make a cold player understand:
@@ -19,7 +24,7 @@ The first trailer must make a cold player understand:
 
 Internal use only. The trailer must not name or attack competitors.
 
-The current market leader already owns bright/cozy ocean, approachable creature wonder, clean modular bases, and co-op/friend energy. HECTON's first trailer must open in the opposite contract:
+The current market leader owns bright/cozy ocean, approachable creature wonder, clean modular bases, and co-op/friend energy. HECTON must still prove its own bright surface/photic beauty, but the trailer contract is beauty under pressure rather than cozy safety:
 
 | Second range | Must prove | Reject if |
 |---:|---|---|
@@ -46,7 +51,7 @@ Trailer footage can use cinematic framing only if the same shot still reads as r
 
 | Time | Beat | Visual |
 |---:|---|---|
-| 0-3s | Hook | black water, machinery light, pressure sound |
+| 0-3s | Hook | bright photic/surface route or black-water machinery light, pressure sound, readable route cost |
 | 3-8s | Player action | hand/tool/repair/salvage interaction |
 | 8-15s | Survival pressure | leak, oxygen, route hazard, warning |
 | 15-25s | Base/machine loop | module, pump, hatch, repair consequence |

@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Роль ice-scatter moon
+# Ice Scatter Moon Hazard Role
 
-Ice-scatter moon добавляет hazard traffic и salvage rumors вокруг Aegir, но фокус игры остаётся HECTON-8.
+The ice-scatter moon adds hazard traffic and salvage rumor pressure around Aegir. It is part of the wider system, but HECTON-8 remains the playable focus.
 
 ## Scanner
 
-Запись outer ice-scatter. Salvage traffic избегает луну, пока debris lanes закрыты.
+Outer ice-scatter record. Salvage traffic avoids this moon until debris lanes open.
 
 ## Terminal
 
-MOON LEDGER: ice-scatter moon сыплет яркий debris и old claim dust. Ценная на бумаге, мерзкая для navigation.
+MOON LEDGER: the ice-scatter moon sheds bright debris and old claim dust. It is valuable on paper and miserable for navigation.
 
 ## Audio
 
-В каждой системе есть луна, которую любят бухгалтеры и ненавидят пилоты.
+Every system has one moon that accountants love and pilots curse.
 
 ## Field Note
 
-Для map annotations и salvage rumor text.
+Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8.
 
 <!-- In-Game Wiki; generated from P348_ICE_SCATTER_MOON_HAZARD_ROLE/ru_RU. -->

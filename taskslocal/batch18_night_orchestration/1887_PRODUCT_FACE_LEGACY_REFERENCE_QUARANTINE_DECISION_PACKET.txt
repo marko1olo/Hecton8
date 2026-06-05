@@ -1,0 +1,128 @@
+ID: 1887
+TITLE: PRODUCT_FACE_LEGACY_REFERENCE_QUARANTINE_DECISION_PACKET
+MODE: REPORT_ONLY_STATIC_REFERENCE_AUDIT
+
+You are HECTON-8 batch agent 1887.
+You are running concurrently with other agents. Do not depend on sibling output that does not already exist on disk.
+Do not edit source code, Unity assets, prefabs, scenes, binaries, generated meshes, `.meta` files, DataMonolith files, or task files.
+
+PRIMARY GOAL
+
+Build a static production-reference and quarantine decision packet for product-face legacy/default roots and package/default material routes that would poison future visual relink proof.
+
+Focus on:
+
+- `Assets/_Project/Prefabs/Item_Titanium.prefab`
+- `Assets/_Project/Prefabs/STRUCTURES.prefab`
+- `Assets/_Project/Prefabs/Buildings/Cube.prefab`
+- current unresolved/default material GUID `31321ba15b8f8eb4c954353edc038b1d`
+- package-cache URP `Lit.mat` or package/default material routes in product-face prefabs
+- generated/source/relink reports that mention these risks
+
+READ FIRST
+
+Read fully:
+
+- `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `VISION_LOCKS.md`
+- `TASTE.md`
+- `quality.md`
+- `3dmodel.md`
+- `3DMODEL_TEXTURES_MATERIALS.md`
+- `inventory.md`
+- `construction.md`
+- `tools.md`
+- `Docs/Reports/Batch18/1867_PRODUCT_FACE_PREFAB_AUDIT_GATE.md`
+- `Docs/Reports/Batch18/1870_RESOURCE_PICKUP_VISUAL_SOURCE_PACKAGE.md`
+- `Docs/Reports/Batch18/1879_PRODUCT_FACE_RELINK_AND_PROOF_CONTRACT.md`
+- `Docs/Reports/Batch18/1879_PRODUCT_FACE_RELINK_SEQUENCE.csv`
+- `Docs/Reports/Batch18/1880_TOOL_MATERIAL_TEXTURE_ROLE_PACKAGE.md`
+- `Docs/Reports/Batch18/1881_RESOURCE_MATERIAL_TEXTURE_ROLE_PACKAGE.md`
+- `Docs/Reports/Batch18/1885_PRODUCT_FACE_PREFAB_ANCHOR_REFERENCE_STATIC_SNAPSHOT.md`
+
+Read relevant mandates from `.agents-skills`:
+
+- `QA_Evidence_Text_Filter_Audit.txt`
+- `DATA_Inventory_Resources_Items_SOA_Layout.txt`
+- `TOOL_Designer_Facades_CSV_Binary_Bridge.txt`
+
+REQUIRED AUDIT
+
+1. Production-reference scan:
+   - statically search for references to `Item_Titanium.prefab`, `STRUCTURES.prefab`, `Buildings/Cube.prefab`;
+   - search by path, file stem, GUID if meta exists, and likely prefab object names;
+   - do not rely on one search token only.
+
+2. Default/material risk scan:
+   - search product-face prefabs/reports for unresolved/default material GUID `31321ba15b8f8eb4c954353edc038b1d`;
+   - search for package-cache `Lit.mat`, package cache material routes, Unity default material/default-material, and placeholder/debug/trial material routes in product-face scope;
+   - classify whether each risk is on a product-face target, legacy root, report-only mention, or unrelated historical artifact.
+
+3. Decision packet:
+   - for each legacy root, decide static state:
+     - `RETAIN_AND_CANONICAL_RELINK_REQUIRED`
+     - `QUARANTINE_CANDIDATE_PENDING_REFERENCE_PROOF`
+     - `DELETE_FORBIDDEN_WITHOUT_UNITY_OWNER`
+     - `MISSING_STATIC_EVIDENCE`
+   - Do not authorize deletion. This is a future Unity-owner decision packet only.
+
+4. Canonical replacement expectation:
+   - `Item_Titanium` can only inherit canonical `TitaniumScrap` data/material/mesh truth if retained;
+   - `STRUCTURES` must not keep a primitive child via `Item_Titanium`;
+   - `Buildings/Cube` must be pressure-rated construction/module source if retained, not raw cube;
+   - `Tool_Propulsion_Held` package Lit route must be replaced by project-owned tool material source before acceptance.
+
+5. Future Unity-owner checklist:
+   - exact preflight reference scan;
+   - backup/quarantine folder rules;
+   - `.meta` handling;
+   - static validator/audit reruns;
+   - screenshot/proof requirements if any retained route remains player-visible.
+
+OUTPUTS YOU OWN
+
+Create/update only:
+
+- `Docs/Reports/Batch18/1887_PRODUCT_FACE_LEGACY_REFERENCE_QUARANTINE_DECISION_PACKET.md`
+- `Docs/Reports/Batch18/1887_PRODUCT_FACE_LEGACY_REFERENCE_MATRIX.csv`
+- `Docs/Tasks/Status_1887.md`
+- `Docs/AgentLogs/Rationale_1887.md`
+- `Docs/AgentLogs/LOG_1887.md`
+
+CSV REQUIREMENTS
+
+The CSV must parse with `Import-Csv`.
+Columns:
+
+- `target`
+- `target_path_or_token`
+- `reference_scan_method`
+- `static_hits_summary`
+- `risk_class`
+- `decision`
+- `future_owner_action`
+- `forbidden_action`
+- `proof_required`
+
+PROHIBITIONS
+
+- Do not run Unity.
+- Do not run dotnet build.
+- Do not use Unity MCP.
+- Do not run menu items, import, bake, screenshots, PlayMode, profiler, or DataMonolith.
+- Do not edit prefabs, source code, materials, textures, `.meta`, assets, scenes, binaries, generated mesh assets, or task files.
+- Do not delete, move, quarantine, or relink anything.
+- Do not claim runtime/visual acceptance.
+
+VERIFICATION REQUIRED
+
+Run and record:
+
+- `git diff --check -- Docs/Reports/Batch18/1887_PRODUCT_FACE_LEGACY_REFERENCE_QUARANTINE_DECISION_PACKET.md Docs/Reports/Batch18/1887_PRODUCT_FACE_LEGACY_REFERENCE_MATRIX.csv Docs/Tasks/Status_1887.md Docs/AgentLogs/Rationale_1887.md Docs/AgentLogs/LOG_1887.md`
+- `Import-Csv Docs/Reports/Batch18/1887_PRODUCT_FACE_LEGACY_REFERENCE_MATRIX.csv | Measure-Object`
+- static term cross-check for `Item_Titanium`, `STRUCTURES`, `Buildings/Cube`, `31321ba15b8f8eb4c954353edc038b1d`, `Lit.mat`, `Data_TitaniumScrap`, `Tool_Propulsion_Held`, and `QUARANTINE`.
+
+FINAL RESPONSE
+
+Report changed files, CSV row count, highest retained risks, and exact future Unity-owner actions.

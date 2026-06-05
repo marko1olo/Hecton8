@@ -10,21 +10,21 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Contract Risk Reward Row Contract
+# Contract Risk Reward Boundary
 
-Contract Risk Reward Row Contract turns replay pressure into table-owned contract cards.
+Contract Risk Reward Boundary converts replay pressure into table-owned contract records.
 
 ## Scanner
 
-Contract row: lien, storm window, custody, evidence order, clause weight.
+Contract boundary: lien, storm window, custody, evidence order, clause weight.
 
 ## Terminal
 
-CONTRACT HANDOFF: risk_reward rows require lien severity, payout ceiling, storm window, sample custody, evidence order and Deep Reach clause weight.
+CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.
 
 ## Audio
 
@@ -32,6 +32,6 @@ The contract is the first predator.
 
 ## Field Note
 
-Do not tune reward by writing new lore. Tune the row.
+Reward changes belong to the contract row, not to improvised lore text.
 
 <!-- In-Game Wiki; generated from P304_CONTRACT_RISK_REWARD_ROW_CONTRACT/ar_SA. -->

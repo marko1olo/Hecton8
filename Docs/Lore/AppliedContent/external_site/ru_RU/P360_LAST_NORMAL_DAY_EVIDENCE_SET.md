@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Last normal day evidence set
+# Last Normal Day Evidence Set
 
-HECTON-8 использует ordinary unfinished work как horror: routine всё ещё на board.
+HECTON-8 uses ordinary unfinished work as horror. The colony ends while routine is still on the board.
 
 ## Scanner
 
-Last-normal-day set. Самое сильное evidence - unfinished ordinary work.
+Last-normal-day set. The strongest evidence is unfinished ordinary work.
 
 ## Terminal
 
-EVIDENCE SET: locker plate not claimed, correction note unsigned, pump task still open, lunch token still clipped. Катастрофа вошла через незавершённую рутину.
+EVIDENCE SET: locker plate unclaimed; correction note unsigned; pump task open; lunch token clipped; route clock still waiting for return stamp.
 
 ## Audio
 
-Последний день не знал, что он последний.
+The last day did not know it was last.
 
 ## Field Note
 
-Для repeatable colony POI variants and emotional pacing.
+Locker plate unclaimed. Correction note unsigned. Pump task open. Lunch token still clipped. Nobody packed the board for history.
 
 <!-- External Site; generated from P360_LAST_NORMAL_DAY_EVIDENCE_SET/ru_RU. -->

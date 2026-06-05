@@ -239,7 +239,7 @@ namespace Hecton8.EditorTools
                 chunkStreamingProfile,
                 faunaSpawnRegistry,
                 proceduralStateRegistry);
-            WorldProceduralPlaceholderAuthoring.RebuildPlaceholderFinalVariants();
+            WorldProceduralPlaceholderAuthoring.RebuildPlaceholderProxyVariants();
 
             if (objectPoolManager != null)
                 EnsureWarmupPreset(objectPoolManager, colliderPrefab, 192);

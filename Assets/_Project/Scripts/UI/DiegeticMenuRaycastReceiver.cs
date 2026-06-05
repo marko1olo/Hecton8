@@ -38,6 +38,7 @@ namespace Hecton8.UI
         private const byte MenuClickAcousticChannel = AcousticPingSignal.ChannelMetalStress;
         private const int MaxCanvasGroupsPerControl = 8;
         private const byte CanvasGroupCacheOverflow = byte.MaxValue;
+        private const int ClearSelection = -1;
         private const int NoPendingSelection = -2;
 
         // COLD ALLOC: fixed diegetic menu selectable target cache - owner: DiegeticMenuRaycastReceiver
@@ -81,6 +82,7 @@ namespace Hecton8.UI
         private float _referenceHeight = DiegeticMenuCanvasUtility.ReferenceHeight;
         private int _hapticDropCount;
         private int _acousticDropCount;
+        private bool _dispatchingDiegeticInput;
 
         internal void Configure(RectTransform canvasRoot, EventSystem eventSystem, uint hapticSourceHash)
         {
@@ -97,6 +99,21 @@ namespace Hecton8.UI
             ClearControlCache();
             ClearInteractionState();
             CacheControlsRecursive(_canvasRoot);
+        }
+
+        public void PublishProgrammaticPrimaryClick(Selectable control)
+        {
+            PublishProgrammaticClick(control, 0.12f, 0.040f, 0.50f, 4.0f);
+        }
+
+        public void PublishProgrammaticSecondaryClick(Selectable control)
+        {
+            PublishProgrammaticClick(control, 0.08f, 0.032f, 0.34f, 3.0f);
+        }
+
+        public void PublishProgrammaticDestructiveClick(Selectable control)
+        {
+            PublishProgrammaticClick(control, 0.16f, 0.052f, 0.68f, 4.8f);
         }
 
         private void ClearControlCache()
@@ -140,7 +157,7 @@ namespace Hecton8.UI
         {
             _hoverControlIndex = -1;
             _pressedControlIndex = -1;
-            _pendingSelectionControlIndex = -1;
+            _pendingSelectionControlIndex = ClearSelection;
         }
 
         public void ReceiveCanvasInput(in DiegeticPanelInputEvent inputEvent)
@@ -613,21 +630,62 @@ namespace Hecton8.UI
 
         private void InvokeControl(int targetIndex)
         {
-            ControlKind kind = _controlKinds[targetIndex];
-            if (kind == ControlKind.Button)
+            _dispatchingDiegeticInput = true;
+            try
             {
-                Button button = _buttons[targetIndex];
-                if (button != null)
-                    button.onClick.Invoke();
+                ControlKind kind = _controlKinds[targetIndex];
+                if (kind == ControlKind.Button)
+                {
+                    Button button = _buttons[targetIndex];
+                    if (button != null)
+                        button.onClick.Invoke();
+                    return;
+                }
+
+                if (kind == ControlKind.Toggle)
+                {
+                    Toggle toggle = _toggles[targetIndex];
+                    if (toggle != null)
+                        toggle.isOn = !toggle.isOn;
+                }
+            }
+            finally
+            {
+                _dispatchingDiegeticInput = false;
+            }
+        }
+
+        private void PublishProgrammaticClick(
+            Selectable control,
+            float hapticIntensity01,
+            float hapticDurationSeconds,
+            float acousticIntensity01,
+            float acousticRadiusMeters)
+        {
+            if (_dispatchingDiegeticInput)
                 return;
+
+            int targetIndex = ResolveCachedControlIndex(control);
+            if (targetIndex < 0 || !IsControlEligible(targetIndex))
+                return;
+
+            PublishHaptic(hapticIntensity01, hapticDurationSeconds);
+            PublishAcoustic(targetIndex, acousticIntensity01, acousticRadiusMeters, MenuClickAcousticChannel, 0);
+        }
+
+        private int ResolveCachedControlIndex(Selectable control)
+        {
+            if (control == null)
+                return -1;
+
+            int count = _controlCount;
+            for (int i = 0; i < count; i++)
+            {
+                if (ReferenceEquals(_selectables[i], control))
+                    return i;
             }
 
-            if (kind == ControlKind.Toggle)
-            {
-                Toggle toggle = _toggles[targetIndex];
-                if (toggle != null)
-                    toggle.isOn = !toggle.isOn;
-            }
+            return -1;
         }
 
         private void UpdateHover(int targetIndex)

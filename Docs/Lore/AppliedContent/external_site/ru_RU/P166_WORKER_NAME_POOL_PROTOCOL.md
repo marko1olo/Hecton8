@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Протокол пула имен рабочих
+# Worker Name Pool Record
 
-Протокол пула имен рабочих задает правила сайта/wiki и игры для seeded worker evidence.
+Worker name pools keep seeded worker evidence human: origin band, role, shift, badge fragment, and route permission.
 
 ## Scanner
 
-Имена - доказательство, а не коллекционный flavor.
+Names are evidence, not collectible flavor.
 
 ## Terminal
 
-NAME POOL: генерировать рабочих из domain-origin band, job role, shift, badge fragment и route permission. Никогда не переводить личные имена live at runtime.
+NAME POOL: workers derive from domain-origin bands, job role, shift, badge fragment, and route permission. Personal names stay stable across languages.
 
 ## Audio
 
-Имя - это маршрут, работа и человек, которого Deep Reach пыталась оценить.
+A name is a route, a job, and a person Deep Reach tried to price.
 
 ## Field Note
 
-Seed names должны сохранять личность без семейной мелодрамы.
+Seed names must preserve identity without making family melodrama.
 
 <!-- External Site; generated from P166_WORKER_NAME_POOL_PROTOCOL/ru_RU. -->

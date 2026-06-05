@@ -3,6 +3,12 @@
 Status: AUTHORING LAW / STATIC DOC / RUNTIME PROOF NOT IMPLIED
 Scope: AI director, creature cognition, navigation, flocking, stimulus memory, encounter pacing, pathfinding, and AI proof gates.
 
+## First-20 Route Hook
+
+- First-20 moment: first shallow exit and hazard beat where creature pressure, sonar uncertainty, and Director pacing make the route feel alive without unavoidable failure.
+- Route blocker removed: prevents AI work from drifting into random patrols or late-game-only brains before the opening swim, resource, tool, and return-path decisions are legible.
+- Proof class: STATIC_DOC hook only; acceptance still requires encounter capture, Director/cognition telemetry, profiler/GC evidence, and first-route fairness proof.
+
 ## Prime Law
 
 AI exists to create pressure, doubt, pursuit, avoidance, ecology, and evidence. It does not exist to run expensive brains everywhere. HECTON-8 rejects random patrol monsters, omniscient enemies, fake intelligence hidden behind jump scares, and AI that spends frame time without changing player decisions.
@@ -96,6 +102,14 @@ Rules:
 - group response to light, sound, flow, and predator proximity;
 - no per-entity GameObject logic for swarm members;
 - no collision truth for decorative swarm particles.
+
+## 2026-06-05 Static Source Anchors
+
+Evidence class: STATIC_SOURCE only. Compile, Unity import, Play Mode, profiler, GC, encounter capture, and player-build proof remain PENDING VERIFICATION.
+
+| Runtime | Owner / boundary | Static route | GlobalQualityWeight consequence | Missing proof |
+|---|---|---|---|---|
+| `Assets/_Project/Scripts/HectonBoidController.cs` | `Hecton8.AI.GPU`, DataVault owner `SystemID.AIEcology`; GPU swarm/flocking presentation owner. It does not own creature cognition, collision truth, save identity, or Director authority. | Implements `ITickable`, `IUpdatable`, `ILateFrameTickable`, and hot-swap listener; registers late-frame environment route. Uses ping-pong boid `GraphicsBuffer`s, spatial grid buffers, visible index/indirect args buffers, `Graphics.RenderMeshIndirect`, GPU frustum culling, and owner-local material state. Owns a 300-frame DataVault black-box ring at `BufferID` 71979 with dump target `Docs/AgentLogs/Dump_1301_Boids.bin`. Consumes `SignalBus<AcousticPingSignal>` frame snapshots and caches `IFoveatedSimulationDirector`/flow read models through `GlobalRegistry` hot-swap. | Reads `MathLodRuntimeConfig.GlobalQualityWeight` or `HomeostasisBrain.GlobalQualityWeight`; derives social LOD weight and foveated VAT time scale. Foveated tier may freeze/peripheral-scale presentation, but creature truth, player fairness cues, and acoustic signal meaning must not change by quality tier. | No GPU profiler, GCMonitor, RenderDoc/Frame Debugger, swarm capture, signal overflow proof, black-box dump artifact, or gameplay fairness proof was provided by this static audit. |
 
 ## Player Fairness
 

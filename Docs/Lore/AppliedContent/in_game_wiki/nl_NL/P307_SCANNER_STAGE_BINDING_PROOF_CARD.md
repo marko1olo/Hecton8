@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Scanner Stage Binding Proof Card
+# Scanner Stage Binding
 
-Scanner Stage Binding Proof Card keeps scan text tied to physical discovery.
+Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.
 
 ## Scanner
 
-Scanner proof: 25, 50, 100 percent packet stages must map to physical evidence.
+Scanner stage: contact, partial contour, material read, behavior read, full dossier.
 
 ## Terminal
 
-SCANNER PROOF: scan stages must bind to authored packet hashes and only escalate text after physical evidence is found.
+Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.
 
 ## Audio
 
-The scan is not a narrator.
+A scan should sound like a diver found something, not like a lecturer arrived.
 
 ## Field Note
 
-Use for ScannableFragment stage binding pass.
+Keep scanner strings bound to scan percent, biome context, and evidence markers.
 
 <!-- In-Game Wiki; generated from P307_SCANNER_STAGE_BINDING_PROOF_CARD/nl_NL. -->

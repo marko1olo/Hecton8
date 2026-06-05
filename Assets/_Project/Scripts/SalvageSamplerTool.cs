@@ -101,7 +101,10 @@ namespace Hecton8.Gameplay
                     sampleDirection,
                     sampleImpulse,
                     DamageSourceIds.SalvageSampler,
-                    CombatDamageTypes.MicroFracture);
+                    CombatDamageTypes.MicroFracture,
+                    0u,
+                    0f,
+                    ToolCapabilityMasks.Salvage);
 
                 if (!applied && TryConsumeFeedbackGate())
                 {

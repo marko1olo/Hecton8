@@ -1,0 +1,33 @@
+{
+  "id": "TX_B31_WetBasaltShoreline_1429",
+  "evidence_class": "LOCAL_SOURCE_BAKE_STATIC_ONLY",
+  "source": "Docs/GeneratedAssets/Gemini/TX_H8_WetBasaltShoreline_Albedo_1429.png",
+  "note": "Watermark-cropped wet basalt source. Use as shoreline/wet rock source only; needs Unity material proof.",
+  "not_unity_imported": true,
+  "not_visual_acceptance": true,
+  "requires": [
+    "Unity material binding",
+    "BC7/BC5 import settings",
+    "2x2 seam review",
+    "route screenshot proof",
+    "MRAO channel convention verification"
+  ],
+  "outputs": {
+    "source_crop": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_SourceCrop.png",
+    "albedo": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_AlbedoSource.png",
+    "height": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_HeightSource.png",
+    "normal": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_NormalSource.png",
+    "mrao": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_MRAOSource.png",
+    "tile2x2": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_Albedo_tile2x2.png",
+    "normal_tile2x2": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_Normal_tile2x2.png"
+  },
+  "sha256": {
+    "source_crop": "c0697ecd96e3c316c391760bc24b87f9a3c8d313c472657bb57d222baf397490",
+    "albedo": "b7b25ec2925bd5804c309f95e85aeda3900d5d18553b2b33caf4af38c931b58d",
+    "height": "5b3a0067394162017ed33fac623fad5a2978ac2bacc733a99efc41ff412de5aa",
+    "normal": "7d1e06c266ddb42ed9e8284388d983b2350d37ee9c47e9d999aa486009d5e96f",
+    "mrao": "a5be772445da7829b5e591fc573f686099de011032aadf4cd4b6fbea74c0539b",
+    "tile2x2": "58872eca27229ee0d101e9b2a45cfa0a5c43b5809cfebbf48e7c8dd094458b6c",
+    "normal_tile2x2": "24f4bf28987843d4bd607cd66ffd301e05ac235541c05a74070c237e3edbc21d"
+  }
+}

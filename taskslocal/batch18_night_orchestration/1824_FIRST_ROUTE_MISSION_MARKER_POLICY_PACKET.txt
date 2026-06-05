@@ -1,0 +1,52 @@
+AGENT ID: 1824
+ROLE: FIRST_ROUTE_MISSION_MARKER_POLICY_PACKET
+MODE: No-edit static policy and Unity-slot handoff. No scene, prefab, quest, or UI edits.
+
+PRIMARY GOAL
+Convert the 1818 mission-marker audit into a route-correct marker target policy for the first 20 minutes. The output must decide where markers are needed, where they are forbidden, where diegetic cues replace markers, and what a single future Unity owner must bind and prove.
+
+READ
+- AGENTS.md, PROJECT_BIBLES.md, VISION_LOCKS.md, TASTE.md, quality.md
+- ui.md, gameplay.md, quests.md, world.md, narrative.md if present
+- Docs/Reports/Batch18/1803_FIRST20_ROUTE_BLOCKER_MATRIX.md
+- Docs/Reports/Batch18/1806_SURFACE_ROUTE_ACTION_MANIFEST.md
+- Docs/Reports/Batch18/1816_SURFACE_ROUTE_UNITY_SLOT_PACKET.md
+- Docs/Reports/Batch18/1818_MISSION_MARKER_ASSIGNMENT_VISIBILITY_AUDIT.md
+- Docs/Reports/Batch18/1818_MISSION_MARKER_BINDING_MATRIX.csv
+
+OWNED OUTPUTS
+- Docs/Tasks/Status_1824.md
+- Docs/AgentLogs/Rationale_1824.md for non-trivial decisions only
+- Docs/AgentLogs/LOG_1824.md
+- Docs/Reports/Batch18/1824_FIRST_ROUTE_MISSION_MARKER_POLICY_PACKET.md
+- Docs/Reports/Batch18/1824_FIRST_ROUTE_MARKER_TARGET_POLICY.csv
+
+HARD RULES
+- Do not edit scenes, prefabs, quest assets, UI code, marker code, source data, or task files.
+- Do not run Unity, PlayMode, profiler, screenshots, builds, or exporters.
+- Do not fabricate marker target objects, quest fields, route IDs, line numbers, or GUIDs.
+- If a target is unverified, mark it CANDIDATE and define the discovery step for the Unity owner.
+- Markers must improve gameplay readability without turning the route into flat GPS clutter.
+
+20 TASKS
+01. Create tracking files.
+02. Read authorities and 2-8 relevant mandates.
+03. Extract first-20 route beats from 1803/1806/1816.
+04. Extract current marker system gaps from 1818.
+05. Build a marker policy taxonomy: REQUIRED_MARKER, DIEGETIC_CUE_ONLY, OPTIONAL_HINT, FORBIDDEN_MARKER, PENDING_DISCOVERY.
+06. For each first-route beat, decide policy and reason.
+07. Identify player safety-critical beats: oxygen, pressure seal, first return route, first hazard, first craft/use gate.
+08. Identify beauty/rest beats where markers should not ruin exploration.
+09. Identify surface/coast/shallow visual landmarks that can replace explicit markers.
+10. Identify scanner/HUD/sonar cues that should pair with marker policy.
+11. Identify quest assets or names already proven by 1818 and mark missing fields honestly.
+12. Build CSV: beat, policy, candidate target, source proof, visual cue, UI cue, rejection risk, Unity-owner action.
+13. Define how marker visibility scales with GlobalQualityWeight without changing gameplay truth.
+14. Define no-GPS-clutter rules for cinematic realism.
+15. Define future Unity-slot implementation sequence.
+16. Define runtime proof: player route screenshot/video, marker visibility, no overdraw clutter, no marker on beauty-only beat, save/load state if relevant.
+17. Define failure proof: no target, missing marker owner, inactive marker system, bad material/mesh, UI occlusion.
+18. Append concise log.
+19. Final scan for fake Unity/runtime/profiler proof.
+20. Mark POLICY_PACKET_COMPLETE or BLOCKED with exact missing static evidence.
+

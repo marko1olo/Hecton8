@@ -1,0 +1,51 @@
+<AGENT_PROMPT id="1863">
+ROLE: High-conditional primitive fallback gate patcher.
+
+READ FIRST:
+- C:\hades\Hecton8\AGENTS.md
+- C:\hades\Hecton8\PROJECT_BIBLES.md
+- C:\hades\Hecton8\VISION_LOCKS.md
+- C:\hades\Hecton8\TASTE.md
+- C:\hades\Hecton8\quality.md
+- C:\hades\Hecton8\lore.md
+- C:\hades\Hecton8\tools.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1860_PRIMITIVE_FACTORY_RISK_CLASSIFICATION_PACKET.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1861_PRIMITIVE_FACTORY_SOURCE_GATES.md
+- Relevant .agents-skills only: QA_Evidence_Text_Filter_Audit, OPT_Cinematic_Cheat_Protocol_Visual_Fake_First, DATA_Data_Sovereignty_Binary_Layout_AUP, STRM_Asset_Lifecycle_Addressables_Loading_Memory.
+
+OWNED WRITE SCOPE:
+- `Assets/_Project/Scripts/Editor/HectonPrefabIntegrityScanner.cs`
+- `Assets/_Project/Scripts/Editor/Narrative/H8AppliedLoreBindingCatalogWindow.cs`
+- Docs/Tasks/Status_1863.md
+- Docs/AgentLogs/Rationale_1863.md
+- Docs/AgentLogs/LOG_1863.md
+- Docs/Reports/Batch18/1863_HIGH_CONDITIONAL_PRIMITIVE_FALLBACK_GATES.md
+
+DO NOT TOUCH:
+- Prefabs, scenes, .asset files, .meta files, binaries, generated pages, DataMonoliths.
+- AppliedLore importer/exporter/runtime data unless the source file above directly owns the fallback.
+- Sargassum source; that is 1862.
+
+TASK:
+1. Inspect `HectonPrefabIntegrityScanner`.
+   - Find where it creates `PFB_ErrorCube` from `PrimitiveType.Cube`.
+   - Find any route that can save/repair arbitrary broken prefab assets by writing the error cube back to the original path.
+   - Patch so destructive repair is fail-closed/dry-run unless an explicit scoped boolean/approval path already exists.
+   - Diagnostics-only creation of `PFB_ErrorCube` may remain only if it stays under Diagnostics and is not written over production prefab paths.
+2. Inspect `H8AppliedLoreBindingCatalogWindow`.
+   - It may create a terminal anchor cube, then replace mesh/material if `M_Diegetic_HUD_V4_CurvedPanel.asset` and material exist.
+   - Patch so missing mesh/material is a hard failure before save. Do not save a cube fallback.
+3. If `WorldProceduralFinalPrefabQualityGate` is useful, reuse it for prefab path/primitive checks in editor-only code.
+4. Preserve existing successful behavior when real terminal mesh/material exists and diagnostics remain scoped.
+5. Do not run Unity or mutate assets.
+6. Write exact evidence-class report. Do not claim runtime/compile proof.
+
+VERIFY:
+- `rg -n "CreatePrimitive|PrimitiveType|PFB_ErrorCube|SaveAsPrefabAsset|M_Diegetic_HUD_V4_CurvedPanel|WorldProceduralFinalPrefabQualityGate" Assets/_Project/Scripts/Editor/HectonPrefabIntegrityScanner.cs Assets/_Project/Scripts/Editor/Narrative/H8AppliedLoreBindingCatalogWindow.cs`
+- `git diff --check -- Assets/_Project/Scripts/Editor/HectonPrefabIntegrityScanner.cs Assets/_Project/Scripts/Editor/Narrative/H8AppliedLoreBindingCatalogWindow.cs Docs/Reports/Batch18/1863_HIGH_CONDITIONAL_PRIMITIVE_FALLBACK_GATES.md`
+- Do not run dotnet build, Unity menu items, importers, bakes, PlayMode, screenshots, or profiler.
+
+REPORT:
+- Final answer must list changed files and exact verification commands/results.
+- If a file path differs, state the actual path and why.
+</AGENT_PROMPT>

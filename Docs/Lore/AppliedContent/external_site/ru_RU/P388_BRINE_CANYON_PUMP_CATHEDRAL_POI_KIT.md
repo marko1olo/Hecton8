@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# POI-кит: Brine Canyon Pump Cathedral
+# Brine Canyon Pump Cathedral POI Kit
 
-Brine pump cathedral показывает правило HECTON-8: машина одновременно navigation, survival и evidence.
+The brine pump cathedral is an example of HECTON-8's design rule: machines are navigation, survival and evidence at once.
 
 ## Scanner
 
-POI kit: pump cathedral читает brine density и старое evacuation timing в одной комнате.
+POI kit: pump cathedral reads brine density and old evacuation timing in the same room.
 
 ## Terminal
 
-PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock и worker queue ledger.
+PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.
 
 ## Audio
 
-Собор строили, чтобы двигать воду. Он вел записи лучше людей.
+The cathedral was built to move water. It kept records better than people did.
 
 ## Field Note
 
-Для mid-depth industrial landmark и proof-chain placement.
+POI evidence kit: Brine Canyon Pump Cathedral turns mid-depth industrial scale into the liability chain's physical landmark.
 
 <!-- External Site; generated from P388_BRINE_CANYON_PUMP_CATHEDRAL_POI_KIT/ru_RU. -->

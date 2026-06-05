@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Правило operator surface для терминала
+# Terminal Operator Surface Rule
 
-Колония понимается через work systems: pumps, queues, certifications и broken legal packets.
+The colony is understood through work systems: pumps, queues, certifications and broken legal packets.
 
 ## Scanner
 
-Terminal rule: старые colony terminals говорят как operators, logs и systems, а не omniscient lore narrators.
+Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.
 
 ## Terminal
 
-TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence и failure stamps. Без villain monologue.
+TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.
 
 ## Audio
 
-Терминал должен звучать так, будто им пользовались уставшие люди.
+A terminal should sound like it was used by tired people.
 
 ## Field Note
 
-Для terminal copy style и voice direction.
+Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context.
 
 <!-- External Site; generated from P433_TERMINAL_OPERATOR_SURFACE_RULE/ru_RU. -->

@@ -2,6 +2,11 @@
 
 
 
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
+Evidence class: STATIC_DOC / STATIC_SOURCE
+Owner domain: ARM64 memory alignment and DTO layout enforcement
+Review disposition: YELLOW / STATIC_DOC_ONLY until compile/import/runtime/profiler/player proof exists.
+
 - Status: partial enforcement pass.
 - Last static scan text reported zero `StructLayout(...Pack=...)` under `Assets/_Project/Scripts`.
 - Current proof requires rerun artifact path, command/tool, timestamp, environment, and output.

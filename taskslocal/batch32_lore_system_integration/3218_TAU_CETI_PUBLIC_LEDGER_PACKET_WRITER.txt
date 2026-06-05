@@ -1,0 +1,68 @@
+ID: 3218
+Role: TAU_CETI_PUBLIC_LEDGER_PACKET_WRITER
+
+Objective:
+Create one STATIC_DOC production draft packet for `P472_TAU_CETI_PUBLIC_LEDGER_PRESSURE_BRIDGE`, explaining Tau Ceti as delayed public-evidence pressure for future site/wiki/in-game use.
+
+Why this is needed:
+Canon locks Tau Ceti as the authority domain that can make evidence politically public after relay delay. Current bridge packets cover local claim windows, Luyten custody, Aegir relay timing, and Keelmark mass accounting. The missing bridge is the public ledger pressure route: why exposing a packet can hurt Deep Reach later without saving the player now.
+
+Owned scope:
+- `Docs/Lore/AppliedContent/production_packets/P472_TAU_CETI_PUBLIC_LEDGER_PRESSURE_BRIDGE.production.md`
+- `Docs/Tasks/Status_3218.md`
+- `Docs/AgentLogs/LOG_3218.md`
+- `Docs/AgentLogs/Rationale_3218.md` only if needed
+
+Do not edit:
+- P461-P471 production packets
+- RS093 manifest/packet JSON/release set
+- binding maps
+- route_cards
+- source CSV
+- h8bin
+- generated pages/indexes
+- Unity scenes, prefabs, assets, or runtime scripts
+- other agents' status/log/rationale files
+
+Authority docs:
+AGENTS.md, writing.md, narrative.md, localization.md, data.md, authoring.md, quality.md, `Docs/Lore/Canon_Locks.md`, `Docs/Lore/Lore_Bible.md`, `Docs/Lore/Lore_Content_System.md`, `Docs/Lore/Lore_Localization_Model.md`.
+
+Mandates:
+- QA_Evidence_Text_Filter_Audit.txt
+- UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt
+- DATA_Runtime_Struct_Layout_ARM64.txt
+- TOOL_Designer_Facades_CSV_Binary_Bridge.txt
+- OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+
+Packet requirements:
+- Evidence class: STATIC_DOC.
+- Packet ID: `P472_TAU_CETI_PUBLIC_LEDGER_PRESSURE_BRIDGE`.
+- Release set candidate: `RS093_LORE_SYSTEM_INTEGRATION_BRIDGE`.
+- Article ID: `applied_lore.tau_ceti_public_ledger_pressure_bridge`.
+- Loc namespace: `LORE_TAU_CETI_PUBLIC_LEDGER_PRESSURE`.
+- Primary surfaces: `external_site / in_game_wiki / scanner / terminal / audio / field_note / black_box`.
+- Authority locale: `en_US`.
+- Non-English locales: `ar_SA`, `de_DE`, `es_ES`, `fr_FR`, `he_IL`, `id_ID`, `ja_JP`, `ko_KR`, `nl_NL`, `pl_PL`, `pt_BR`, `ru_RU`, `uk_UA`, `zh_CN`.
+- Status vocabulary: exactly `source_authority` for en_US and `draft_machine_or_llm` for every non-English row.
+- Include source brief, English authority surfaces, 15 locale rows, Runtime/Monolith placement notes, GlobalQualityWeight presentation density, QA, and hard boundary that runtime must not parse Markdown.
+- Natural-language style: legal-public pressure, not instant rescue or heroic court drama. Use Tau Ceti public ledger, relay delay, witness hash, custody packet, public docket, Deep Reach liability, Black Keel local window, Luyten custody route, and Aegir stale-law timing.
+- First-20 route moment improved: player learns that preserving evidence can change later public liability even when immediate rescue remains impossible.
+- Spoiler boundary: public-to-early evidence infrastructure. No final payload receiver outcomes, no Atlas basin truth, no ending route disclosure.
+- Route-card candidate note only. Do not create authoritative route-card CSV.
+
+Validation to run:
+- Static UTF-8 scan: 15 locale headings, 1 source row, 14 draft rows, 0 U+FFFD, and 0 exact mojibake marker codepoints U+00C3/U+00D0/U+00D8/U+00E6/U+00EC/U+00D7 unless there is a proven legitimate language reason.
+- Clone scan: non-English rows must not be English clones.
+- Boundary scan: no runtime/DataMonolith/native/localization/publication readiness claim.
+
+Final report:
+- What was wrong.
+- What you did.
+- In-game result.
+- What was verified.
+
+Rejection gates:
+- No source CSV/export/h8bin/Unity/runtime edits.
+- No fake native-reviewed claim.
+- No runtime-ready claim.
+- No route-card CSV creation.

@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
-# Worker Name Pool Protocol
+# Worker Name Pool Record
 
-Worker Name Pool Protocol defines site/wiki and game rules for seeded worker evidence.
+Worker name pools keep seeded worker evidence human: origin band, role, shift, badge fragment, and route permission.
 
 ## Scanner
 
@@ -24,7 +24,7 @@ Names are evidence, not collectible flavor.
 
 ## Terminal
 
-NAME POOL: generate workers from domain-origin bands, job role, shift, badge fragment and route permission. Never translate personal names live at runtime.
+NAME POOL: workers derive from domain-origin bands, job role, shift, badge fragment, and route permission. Personal names stay stable across languages.
 
 ## Audio
 

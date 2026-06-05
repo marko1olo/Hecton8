@@ -1,0 +1,119 @@
+TASK 2005: GEOLOGY FORGE SHORELINE ROCK SOURCE PACKAGE
+
+Role:
+Geology source package author for premium coastline, shoreline, reef, shelf, and shallow rock replacements.
+
+Unity status:
+NO UNITY. Do not open Unity, run Unity, or mutate active Assets.
+
+Primary objective:
+Create a concrete GeologyForge/RockSculptor source package for replacing primitive/random rocks and weak coastline scatter with geological, premium, optimized assets. The package must support repair of dry-land rock/kelp scatter without stripping the shore of visual richness.
+
+Authority files to read first:
+1. AGENTS.md
+2. TASTE.md
+3. VISION_LOCKS.md
+4. PROJECT_BIBLES.md
+5. PROCEDURAL_ASSET_PIPELINE.md
+6. 3dmodel.md
+7. 3DMODEL_GEOLOGY_ROCKS.md
+8. 3DMODEL_TEXTURES_MATERIALS.md
+9. 3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md
+10. terrain.md
+11. water.md
+12. world.md
+13. performance.md
+
+Relevant mandates to load:
+1. .agents-skills/REND_Terrain_VirtualTexturing.txt
+2. .agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt
+3. .agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt
+4. .agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt
+
+Exact project files and tools to inspect:
+1. Assets/_Project/Scripts/Editor/GeologyForge/GeologyForgeWindow.cs
+2. Assets/_Project/Scripts/Editor/GeologyForge/GeologyForgeGenerator.cs
+3. Assets/_Project/Scripts/Editor/GeologyForge/GeologyForgeJobs.cs
+4. Assets/_Project/Scripts/Editor/GeologyForge/GeologyForgeSelfAudit.cs
+5. Assets/_Project/Scripts/Editor/GeologyForge/GeologyVertexLayoutValidator.cs
+6. Assets/_Project/Editor/Generators/Geology/RockSculptorEngine1713.cs
+7. Assets/_Project/Editor/Generators/Geology/AbyssalGeologyStudio1606.cs
+8. Assets/_Project/Scripts/Editor/WorldProceduralFinalPrefabQualityGate.cs
+9. Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_rocks_*.asset
+10. Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_coral_*.asset
+11. rg --files Assets/_Project | rg "Rock|Geology|Cliff|Shore|Reef|Shelf|Arch"
+12. Tools/GeneratedAssetProductionAudit.py
+13. Tools/MaterialAudit.py
+
+Forbidden actions:
+1. Do not run Unity.
+2. Do not edit active Assets.
+3. Do not use Unity primitives as final rocks.
+4. Do not propose random land scatter.
+5. Do not hide bad rocks with fog, low exposure, or distance.
+6. Do not generate runtime procedural rocks.
+7. Do not leave collider/LOD/material contracts undefined.
+
+Ownership boundaries:
+1. You own geology source package and repair handoff.
+2. You may author manifests, prompt packs, family matrices, and validation checklists.
+3. You do not own Unity baking/capture, ProductFace relink, or ocean foam shader changes.
+4. You may reference ProductFace debt only where rock assets are product-face blockers.
+
+Deliverables:
+1. Docs/Reports/Batch20/2005_GEOLOGY_SHORELINE_ROCK_SOURCE_PACKAGE.md
+2. Docs/Reports/Batch20/2005_ROCK_VARIANT_MATRIX.csv
+3. Docs/Reports/Batch20/2005_TEXTURE_CHANNEL_CONTRACTS.csv
+4. Docs/Reports/Batch20/2005_COLLIDER_LOD_CONTRACTS.csv
+5. Docs/Reports/Batch20/2005_GENERATION_HANDOFF_CHECKLIST.md
+6. Docs/Tasks/Status_2005.md
+7. Docs/AgentLogs/Rationale_2005.md
+8. Docs/AgentLogs/LOG_2005.md
+
+Required rock families:
+1. Shoreline wet/dry transition outcrop.
+2. Beach cobble field.
+3. Coast cliff face modular chunk.
+4. Tidepool rim and wet ledge.
+5. Shallow reef anchor rock.
+6. Underwater shelf rock.
+7. Arch/overhang hero silhouette.
+8. Medium-depth route marker formation.
+9. Debris blend rocks for asset grounding.
+10. Distant HLOD coastline mass.
+
+Work plan:
+1. Read authority and mandates.
+2. Inspect GeologyForge and RockSculptor capabilities.
+3. Inspect existing rock placement rules and serialized fields.
+4. Inventory current rock asset routes if present.
+5. Define geological process per family: erosion, striation, fracture, sediment layering, volcanic/reef limestone, wetness band.
+6. Define silhouette requirements. Every hero rock needs recognizable geological shape from gameplay camera distance.
+7. Define LOD chain per family with mesh budgets by tier.
+8. Define collider proxy expectations: convex/simple for small, custom proxy for hero, no mesh collider spam unless justified.
+9. Define material/texture sets with explicit channel contracts.
+10. Define wetness/shoreline transition masks and how they should interact with waterline/ocean visuals.
+11. Define virtual texture or terrain blend expectations for coastline connection.
+12. Define placement rules by environment band: dry coast, wet sand, intertidal, 0-5m, 20-50m.
+13. Define no-random-scatter rules: clustering, slope alignment, erosion direction, grounding, avoiding float/sink artifacts.
+14. Define optimization route: instancing, shared materials, HLOD, culling, texture sizes, atlas/packs.
+15. Define gameplay route: shore entry remains readable, climb/block semantics are not ambiguous, hazards are visible.
+16. Create prompt pack language for rock source textures only. Mark candidate image generation as manual/orchestrator-only.
+17. Create validation checklist for GeologyForgeSelfAudit and GeologyVertexLayoutValidator.
+18. Create required proof list for Unity slot: shoreline closeup, Scene/Game matching, underwater 0-5m, underwater 20-50m, low/mid/high/ultra.
+19. Mark current output as STATIC VERIFIED/PENDING EDITOR VERIFICATION as appropriate.
+20. Finalize handoff for later GeologyForge editor agent.
+
+Three-pillar acceptance:
+1. Graphics: rocks read as authored geology, not primitive scatter.
+2. Optimization: LOD/collider/material contracts are explicit and cheap on weak devices.
+3. Gameplay: terrain silhouettes and shore transitions improve player navigation.
+
+GlobalQualityWeight consequences:
+1. Low: lower density and lower LOD distance, but premium shapes and materials remain.
+2. Middle: stable default coastline density.
+3. High: more hero formations and better wetness detail.
+4. Ultra: additional microdetail and hero silhouette density, with unchanged collision/gameplay truth unless explicitly authored.
+
+Closeout standard:
+The package must be ready for a later editor bake without asking what a "good rock" means.

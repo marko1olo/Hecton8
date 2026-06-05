@@ -1,0 +1,20 @@
+{
+    "schema":  "H8.APPLIED_LORE_RELEASE_SET.V0",
+    "release_set_id":  "RS097_DELIVERY_BOUNDARY_BRIDGE",
+    "status":  "canonical_source_candidate_pending_controller_review_and_downstream_wiring",
+    "packets":  [
+                    "P488_PUBLIC_ARCHIVE_REDACTION_HEADER_BRIDGE",
+                    "P489_IN_GAME_EVIDENCE_QUEUE_ROUTING_BRIDGE",
+                    "P490_DATA_MONOLITH_ADMISSION_RECEIPT_BRIDGE",
+                    "P491_NATIVE_LOCALIZATION_HOLD_BRIDGE"
+                ],
+    "authoring_packet_sources":  [
+                                     "Docs/Lore/AppliedContent/production_packets/P488_PUBLIC_ARCHIVE_REDACTION_HEADER_BRIDGE.production.md",
+                                     "Docs/Lore/AppliedContent/production_packets/P489_IN_GAME_EVIDENCE_QUEUE_ROUTING_BRIDGE.production.md",
+                                     "Docs/Lore/AppliedContent/production_packets/P490_DATA_MONOLITH_ADMISSION_RECEIPT_BRIDGE.production.md",
+                                     "Docs/Lore/AppliedContent/production_packets/P491_NATIVE_LOCALIZATION_HOLD_BRIDGE.production.md"
+                                 ],
+    "canonical_importer_ready":  false,
+    "runtime_ready":  false,
+    "evidence_class":  "STATIC_SOURCE"
+}

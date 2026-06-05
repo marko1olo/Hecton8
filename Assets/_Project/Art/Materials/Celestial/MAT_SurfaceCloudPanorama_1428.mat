@@ -24,26 +24,26 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _CloudTexA:
-        m_Texture: {fileID: 2800000, guid: cd47cc9e2fe0ec3448654aae6eaf7824, type: 3}
+        m_Texture: {fileID: 2800000, guid: d1e0a899aafb21d4eb46607799c9bfbb, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _CloudTexB:
-        m_Texture: {fileID: 2800000, guid: e1aefa60ab4517644bb884257440872b, type: 3}
+        m_Texture: {fileID: 2800000, guid: ade59f8348cb0b74e97f6b73d58380b1, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _CloudOpacity: 0.58
-    - _CloudSoftness: 0.34
-    - _CloudThreshold: 0.3
-    - _Exposure: 1.1
-    - _HorizonMist: 0.3
+    - _CloudOpacity: 0.82
+    - _CloudSoftness: 0.24
+    - _CloudThreshold: 0.29
+    - _Exposure: 1.08
+    - _HorizonMist: 0.24
     m_Colors:
-    - _CloudLit: {r: 0.88, g: 0.92, b: 0.96, a: 1}
-    - _CloudShadow: {r: 0.42, g: 0.48, b: 0.56, a: 1}
-    - _FlowA: {r: 0.0065, g: 0.0011, b: 1.15, a: 0.46}
-    - _FlowB: {r: -0.0032, g: 0.0007, b: 1.85, a: 0.54}
-    - _HorizonColor: {r: 0.64, g: 0.74, b: 0.82, a: 1}
-    - _ZenithColor: {r: 0.3, g: 0.49, b: 0.64, a: 1}
+    - _CloudLit: {r: 1, g: 1, b: 1, a: 1}
+    - _CloudShadow: {r: 0.31, g: 0.39, b: 0.48, a: 1}
+    - _FlowA: {r: 0.0011, g: 0.00016, b: 1, a: 1}
+    - _FlowB: {r: -0.00065, g: 0.00012, b: 1.45, a: 0.82}
+    - _HorizonColor: {r: 0.74, g: 0.86, b: 0.96, a: 1}
+    - _ZenithColor: {r: 0.12, g: 0.35, b: 0.62, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

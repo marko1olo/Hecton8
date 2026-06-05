@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ It is not parked above you. It is waiting where insurance allows it to wait.
 
 ## Field Note
 
-Use for ship page, escape route UI and partial-exit explanation.
+Carrier orbit record: Black Keel can receive payloads before it can retrieve people; that gap drives partial-exit logic.
 
 <!-- External Site; generated from P424_BLACK_KEEL_TRANSFER_ORBIT_BAND/en_US. -->

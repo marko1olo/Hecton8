@@ -10,21 +10,21 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Контракт стоимости рецепта побега
+# Escape Recipe Cost Boundary
 
-Контракт стоимости рецепта держит выход механическим, а не произвольным quest gate.
+Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.
 
 ## Scanner
 
-Escape recipe row: component class, pressure tier, route proof, authority state.
+Escape recipe boundary: component class, pressure tier, route proof, authority state.
 
 ## Terminal
 
-RECIPE HANDOFF: ascent-qualified costs должны назвать relay, seal, guidance, ascent energy, legal handshake и payload authority.
+ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.
 
 ## Audio
 
@@ -32,6 +32,6 @@ RECIPE HANDOFF: ascent-qualified costs должны назвать relay, seal, 
 
 ## Field Note
 
-Использовать bands из RS035; точные costs живут в recipe tables.
+Pressure bands come from containment rules; exact costs belong to recipe tables.
 
 <!-- In-Game Wiki; generated from P303_ESCAPE_RECIPE_COST_ROW_CONTRACT/ru_RU. -->

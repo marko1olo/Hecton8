@@ -4,6 +4,10 @@ Status: pre-demo operating plan
 Owner lane: Marketing / demo funnel
 Runtime impact: none
 
+## Authority Boundary
+
+Public voice routes through root `textes.md`. Quality, release, platform, Steam, wishlist, demo, Playtest, telemetry, performance, and support-route claims require `quality.md`, `release.md`, `platform.md`, current proof artifacts, and current official platform checks where applicable. This file is a demo/playtest plan only; no build note, telemetry field, checklist, source link, or copy draft grants public demo access, Steam page, Playtest tranche, platform readiness, release readiness, or publication permission.
+
 ## Source Boundary
 
 Current primary sources checked on 2026-05-19:

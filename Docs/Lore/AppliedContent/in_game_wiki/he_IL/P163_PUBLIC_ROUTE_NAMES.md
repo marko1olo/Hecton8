@@ -10,13 +10,13 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
 # Public Route Names
 
-Public route names give contracts, map UI, cargo records and site articles consistent names without forcing the player to study a full atlas.
+Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.
 
 ## Scanner
 

@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Last normal day evidence set
+# Last Normal Day Evidence Set
 
-Last-normal-day evidence делает катастрофу близкой без мелодрамы и даёт level design props для разных seeds.
+Last-normal-day evidence makes the disaster intimate without speeches: unfinished routine proves the colony was interrupted, not staged for memory.
 
 ## Scanner
 
-Last-normal-day set. Самое сильное evidence - unfinished ordinary work.
+Last-normal-day set. The strongest evidence is unfinished ordinary work.
 
 ## Terminal
 
-EVIDENCE SET: locker plate not claimed, correction note unsigned, pump task still open, lunch token still clipped. Катастрофа вошла через незавершённую рутину.
+EVIDENCE SET: locker plate unclaimed; correction note unsigned; pump task open; lunch token clipped; route clock still waiting for return stamp.
 
 ## Audio
 
-Последний день не знал, что он последний.
+The last day did not know it was last.
 
 ## Field Note
 
-Для repeatable colony POI variants and emotional pacing.
+Locker plate unclaimed. Correction note unsigned. Pump task open. Lunch token still clipped. Nobody packed the board for history.
 
 <!-- In-Game Wiki; generated from P360_LAST_NORMAL_DAY_EVIDENCE_SET/ru_RU. -->

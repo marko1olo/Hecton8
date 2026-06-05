@@ -101,9 +101,25 @@ Tool truth is owned by the interaction/tool system, not by VFX, UI, animation, o
 
 Interaction targets are serialized anchors, capability masks, material classes, or stable IDs. Runtime string lookup, scene search, or guessing from decorative mesh names is rejected.
 
+## 7.1 2026-06-05 Static Source Anchors
+
+Evidence class: STATIC_SOURCE only. Compile, Unity import, Play Mode, profiler, GC, save/load, power-grid, and player-build proof remain PENDING VERIFICATION.
+
+| Runtime | Owner / boundary | Static route | GlobalQualityWeight consequence | Missing proof |
+|---|---|---|---|---|
+| `Assets/_Project/Scripts/SeafloorDrillTool.cs` | `Hecton8.Gameplay`; handheld player tool. It is a short-range `PlayerTool`/`IToolModule` with `ToolCapabilityMasks.Drill`, not a deployable mining machine. | Publishes a controlled `InteractionSignal` with `InteractionEffectType.Drill` through the cached interaction service after resolving player pose/ray. Static text says the primary action drives a short controlled bore into Drill-gated resource nodes. | No direct quality read is visible; quality may scale feedback richness only. Handheld drill success, target class, and interaction result must stay stable. | No allocation proof, ray/query budget proof, target affordance capture, interaction runtime proof, durability coupling proof, or save/world-state proof was provided by this static audit. |
+| `Assets/_Project/Scripts/Gameplay/Mining/DeployableSdfDrillRuntime.cs` | `Hecton8.Gameplay.Mining`, DataVault owner `SystemID.GameplayTools`; deployable powered thumper drill. It is separate from the handheld `SeafloorDrillTool`: power-gated, placeable/poolable, inventory-bearing, acoustic-risk-producing, and SDF-aware. | Registers cold tick, late-frame tick, origin-shift, pool, cuttable, hot-swap, and interactable tree routes. Requires high power budget in static source, owns deployable inventory/black-box/extraction DataVault buffers, probes SDF/terrain through voxel read models, and emits `AcousticPingSignal`, `ItemAcquiredSignal`, `CombatDamageSignal`, and `DebrisSpawnSignal`. | Reads global quality for SDF snap/visual carve cadence with hysteresis. Static source indicates quality affects presentation cadence/weight; extraction truth, inventory, power gating, and acoustic risk must not be reduced by graphics quality. | No power-grid runtime, placement UX, SDF carve replay, item acquisition proof, threat response proof, profiler/GCMonitor, save/load, or black-box dump artifact was provided by this static audit. |
+| `Assets/_Project/Scripts/Tools/ToolDurabilitySystem.cs` | `Hecton8.Tools`, DataVault owner `SystemID.GameplayTools`; centralized tool durability service and save participant. It owns durability state, not the individual tool verb or visual feedback. | Implements `ISaveable`, `ISlowTickable`, `IUpdatable`, `ILateFrameTickable`, `IToolDurabilityService`, and hot-swap listeners. Registers `GlobalRegistry.ToolDurability`, save service, player-priority tick routes, and DataVault buffers `ToolDurabilityItemStates`, `ToolDurabilityPendingDecay`, `ToolDurabilityWearMultipliers`, `ToolDurabilitySlotActive`, and `ToolDurabilityBreakdownFlags`. Publishes `ItemDurabilityChangedSignal`; reads player context and `IBrineFluidDensityReadModel` for environmental corrosion. Save/load priorities are both 20. | No direct `GlobalQualityWeight` read is visible. Quality may scale presentation of wear/corrosion only; durability truth, break flags, save identity, and item hashes must not change by graphics tier. | No save/load roundtrip, brine corrosion scenario, signal overflow telemetry, profiler/GCMonitor, Unity import, or gameplay durability proof was provided by this static audit. |
+
 ## 8. GlobalQualityWeight Scaling
 
 Compact keeps target clarity, correct verb, sound, haptic priority, simple material response, and bounded queries. Middle adds richer sparks, heat, decals, and scan visuals. High adds better target material response and failure feedback. Ultra adds secondary smoke, slag, tool body motion, and richer cockpit/visor integration without changing the interaction result.
+
+## First-20 Route Hook
+
+- First-20 moment: tool and craft/repair/build must prove one scan, cut, repair, drill, or harvest action that changes route safety, capability, evidence, or resource state.
+- Route blocker removed: early tools cannot be animation-only progress bars, unclear target colliders, or feedback-only verbs with no owned world result.
+- Proof class: screenshot or capture of target affordance and physical feedback, Play Mode/player capture for success/failure, Profiler/GCMonitor for query/update paths, and save/load artifact when the tool changes persistent world or inventory state.
 
 ## 9. Proof Artifacts
 

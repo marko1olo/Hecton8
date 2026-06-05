@@ -57,6 +57,11 @@ namespace Hecton8.Vehicles.DropPod
 
         public static Quaternion ResolveNlerp(Quaternion from, Quaternion to, float t)
         {
+            return ResolveSlerp(from, to, t);
+        }
+
+        public static Quaternion ResolveSlerp(Quaternion from, Quaternion to, float t)
+        {
             if (!IsFinite(from))
                 from = Quaternion.identity;
             if (!IsFinite(to))
@@ -65,8 +70,15 @@ namespace Hecton8.Vehicles.DropPod
             float x = SanitizeUnit01(t);
             float4 a = new float4(from.x, from.y, from.z, from.w);
             float4 b = new float4(to.x, to.y, to.z, to.w);
+            float lengthA = math.dot(a, a);
+            float lengthB = math.dot(b, b);
+            if (lengthA <= TinyLengthSq || lengthB <= TinyLengthSq || !math.isfinite(lengthA) || !math.isfinite(lengthB))
+                return Quaternion.identity;
+
+            a *= math.rsqrt(lengthA);
+            b *= math.rsqrt(lengthB);
             b = math.select(b, -b, math.dot(a, b) < 0f);
-            float4 value = math.lerp(a, b, x);
+            float4 value = math.slerp(new quaternion(a), new quaternion(b), x).value;
             float lengthSq = math.dot(value, value);
             if (lengthSq <= TinyLengthSq || !math.isfinite(lengthSq))
                 return Quaternion.identity;

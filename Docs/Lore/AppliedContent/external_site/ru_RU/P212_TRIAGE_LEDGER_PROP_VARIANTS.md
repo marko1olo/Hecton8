@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
 # Варианты triage ledger props
 
-Варианты triage ledger props определяют, как HECTON-8 показывает medical evidence.
+Triage Ledger Prop Variants keep medical evidence procedural: pressure injury, route denial, equipment state, certification delay, and witness gap.
 
 ## Scanner
 
@@ -28,7 +28,7 @@ TRIAGE PROP RULE: каждая ledger entry связывает injury с pressur
 
 ## Audio
 
-Боль не доказательство, пока маршрут ее не объяснит.
+Pain is not proof until the route bears the mark.
 
 ## Field Note
 

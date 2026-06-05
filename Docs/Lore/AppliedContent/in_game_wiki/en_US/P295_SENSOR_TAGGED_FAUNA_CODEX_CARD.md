@@ -10,13 +10,13 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Sensor Tagged Fauna Codex Card
 
-Sensor-Tagged Fauna Codex Card clarifies Atlas repair ecology without making the ocean a mind.
+Some animals carry old biometal tags in scar tissue or shell growth. The tag can echo Atlas repair traffic, but the animal is still an animal. Treat the signal as contaminated telemetry, not intent.
 
 ## Scanner
 
@@ -32,6 +32,6 @@ It is not obeying. It is being used.
 
 ## Field Note
 
-Do not write as possession. It is damaged maintenance using animal movement.
+The tag is a scar, not a leash. Expect dirty telemetry and a nervous animal.
 
 <!-- In-Game Wiki; generated from P295_SENSOR_TAGGED_FAUNA_CODEX_CARD/en_US. -->

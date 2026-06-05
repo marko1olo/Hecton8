@@ -1,0 +1,53 @@
+ID: 2305
+ROLE: VISUAL_ACCEPTANCE_PACKET_JUDGE_AND_RUBRIC
+CHAT NAME: 2305 visual packet judge
+
+MISSION
+Create a strict visual proof rubric for surface, shoreline, underwater 0-5 m, underwater 20-50 m, Aegir/celestials, and regression low-oblique. Use the mandatory reference direction: bright/premium surface and photic shallows, Subnautica-level floor, darkness only in depth/caves/storms. Do not run Unity.
+
+AUTHORITIES TO READ
+1. `AGENTS.md`
+2. `PROJECT_BIBLES.md`
+3. `TASTE.md`
+4. `VISION_LOCKS.md`
+5. `quality.md`
+6. `presentation.md`
+7. `water.md`
+8. `terrain.md`
+9. `lighting.md`
+10. `vfx.md`
+11. `.agents-skills/QA_Evidence_Text_Filter_Audit.txt`
+
+EVIDENCE BASIS
+- Mandatory reference images under `Docs/ОБЯЗАТЕЛЬНЫЕ ПРИМЕРЫ ПО КАРТИНКАМ/`
+- `Docs/Screenshots/MCP/h8_1473_*`
+- `Docs/Reports/Batch22/2205_VISUAL_PROOF_PACKET_MATRIX.md`
+
+OWNED SCOPE
+Read-only:
+- docs, screenshots, reports, root bibles.
+
+TASKS
+01. Record relevant mandates in `Docs/Tasks/Status_2305.md`.
+02. Build a visual acceptance rubric with pass/fail criteria for each required packet view.
+03. Define explicit visual reject examples from 1466-1473: acid green, flat tinted plane, black streaks, pale slab, false underwater label, debug foam sheet, primitive celestial dot, empty seabed.
+04. Define explicit pass examples in words based on mandatory references: bright waterline, readable depth haze, caustic floor response, organic shoreline foam, textured rocks, Aegir behind atmosphere.
+05. Define proof metadata requirements that prevent fake screenshots.
+06. Define screenshot naming convention for future packets.
+07. Define how to judge surface brightness without allowing neon/saturation abuse.
+08. Define how to judge underwater haze without allowing darkness to hide weak terrain.
+09. Define how to judge foam and caustics without accepting debug clutter.
+10. Define how to judge terrain/material detail without accepting flat terrain shells.
+11. Define how to judge Aegir: large, beautiful, fixed map position, behind horizon/atmosphere, not primitive dot/disc.
+12. Define runtime fault gate: no visual acceptance if repeated exception, forced-load exit, compile/import loop, or stale log.
+13. Include a one-page steer template for Unity owner when a packet is rejected.
+14. Write `Docs/Reports/Batch23/2305_VISUAL_ACCEPTANCE_RUBRIC.md`.
+15. Write `Docs/Reports/Batch23/2305_PACKET_REJECT_REASON_CODES.csv`.
+16. Append concise facts to `Docs/AgentLogs/LOG_2305.md`.
+17. Final answer: top reject codes for 1473 and what a 1474 packet must include.
+
+REJECT
+- Subjective vague "looks better".
+- Accepting missing views.
+- Accepting stale logs.
+- Running Unity.

@@ -1,23 +1,25 @@
 ﻿# SHINOBU_260 Vocal Synthesis Pipeline
 
-Status: STATIC_SOURCE_PENDING_IMPORT
+Status: STATIC_SOURCE_RELEASE_CALLBACK_FAIL_CLOSED - NATIVE OUTPUT ROUTE REQUIRED
 
 ## Route
 
-`Docs/Audio/dialogue_script.csv` -> `Tools/voice_baker.py` -> `Assets/StreamingAssets/Hecton8/Audio/vocal_banks.h8bin` -> `SignalBus<VocalCueSignal>` -> `VocalBankPlaybackRuntime.OnAudioFilterRead`.
+`Docs/Audio/dialogue_script.csv` -> `Tools/voice_baker.py` -> `Assets/StreamingAssets/Hecton8/Audio/vocal_banks.h8bin` -> `SignalBus<VocalCueSignal>` -> `VocalBankPlaybackRuntime` control state.
+
+Release player output is blocked until a native/DSPGraph or native audio-kernel bridge consumes the vocal bank through a preallocated ring/output job. The managed Unity callback is not a production vocal decode route.
 
 Runtime voice playback does not use JSON, managed voice `AudioClip` tables, runtime string IDs, or AudioSource instantiation. Producers publish a 32-bit FNV-1a phrase hash in `VocalCueSignal`.
 
-`OnAudioFilterRead` is a legacy Unity callback seam required by the SHINOBU_260 XML prompt.
+`OnAudioFilterRead` is a legacy Unity callback seam kept for Editor/Development only.
 
-Project audio mandate still prefers DSPGraph/`IAudioOutputJob` for future hardening.
+Project audio mandate requires DSPGraph/`IAudioOutputJob` or a native audio-kernel bridge for release vocal playback.
 
-Until then, callback uses pinned Unity `float[]` at boundary and does not allocate inside decode loop.
+In non-editor, non-development player builds the callback fail-closes: it zero-fills the Unity buffer and does not decode, lock DataVault views, write telemetry, run `Stopwatch`, query gameplay state, or touch the vocal bank. This is intentional. A shipping build must use the native/DSPGraph route before vocal playback can be accepted.
 
-Default callback mode: master-listener mix.
+Editor/Development callback mode: master-listener mix.
 
-- Decoded voice samples add into the existing audio graph.
-- Idle/fault states leave the existing mix untouched.
+- Decoded voice samples add into the existing audio graph only in Editor/Development.
+- Release player idle/fault state is silence until the native route exists.
 - Source-driver overwrite mode requires a preexisting dedicated host.
 - SHINOBU_260 creates no AudioSource GameObject or driver AudioClip at runtime.
 

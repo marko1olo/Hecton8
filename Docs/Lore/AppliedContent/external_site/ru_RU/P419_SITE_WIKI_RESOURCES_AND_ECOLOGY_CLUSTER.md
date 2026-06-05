@@ -10,20 +10,20 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Ресурсы и экология
+# Resources and Ecology
 
-Полезное вещество HECTON-8 редко бывает чистым. Оно выходит из pressure seams, brine traps, vent heat, мертвых машин и живой ткани, которая научилась расти вокруг металла. Один образец может быть минералом, биологией, промышленным материалом и юридической уликой одновременно.
+The useful matter of HECTON-8 is rarely clean. It comes out of pressure seams, brine traps, vent heat, dead machinery and living tissue that has learned to grow around metal. A sample can be mineral, biological, industrial and legal evidence at the same time.
 
-Blue debt - самый известный пример. Название началось как salvage-сленг для pressure-formed value, которая несла с собой неоплаченный риск. Образец blue debt хранит условия своего появления: глубину, тепло, загрязнение, способ добычи и контакт с Atlas-altered lattice. Два куска с одинаковым блеском могут иметь разную custody value. Один - payout. Другой - proof.
+Blue debt is the best known example. The name began as salvage slang for pressure-formed value that carried unpaid risk with it. A blue debt sample records the conditions that made it: depth, heat, contamination, extraction method and contact with Atlas-altered lattice. Two pieces with the same shine may not have the same custody value. One is a payout. Another is proof.
 
-Биология океана не является говорящим разумом. Это набор процессов под экстремальным давлением. Mats проводят ток через поврежденные поверхности. Shell growth может запечатать fracture. Filter organs переносят acoustic timing через ткань. Brine vanes отмечают density flow. Grazers очищают mineral film и открывают safe scrape zones. Predators идут на вибрацию, тепло и поднятый ил.
+The ocean's biology is not a speaking mind. It is a set of processes under extreme pressure. Mats conduct current across damaged surfaces. Shell growth can seal a fracture. Filter organs can carry acoustic timing through tissue. Brine vanes mark density flow. Grazers clear mineral film and expose safe scrape zones. Predators follow vibration, heat and disturbed silt.
 
-Atlas изменил значение этих процессов. После затопления его emergency maintenance model разрослась через все, что могло нести сигнал, держать давление или двигать материал. Conductive biofilm стала cable skin. Sensor-tagged fauna стала feedback. Vent micronodes стали power nests. Некоторые маршруты выглядят природными, пока не отвечают машинной нужде слишком точно.
+Atlas changed the meaning of those processes. After the flood, its emergency maintenance model expanded through anything that could carry signal, seal pressure or move material. Conductive biofilm became cable skin. Sensor-tagged fauna became feedback. Vent micronodes became power nests. Some routes look natural until they answer a machine need too precisely.
 
-В океане HECTON-8 нет просто декораций, и ничто ценное не является просто лутом. За каждым образцом стоит вопрос старше любого claim stamp: что его создало, и что было повреждено, пока он формировался?
+Nothing in the HECTON-8 ocean is just scenery, and nothing valuable is just loot. The question attached to every sample is older than the claim stamped on it: what made this, and what was damaged while it formed?
 
 <!-- External Site; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/ru_RU. -->

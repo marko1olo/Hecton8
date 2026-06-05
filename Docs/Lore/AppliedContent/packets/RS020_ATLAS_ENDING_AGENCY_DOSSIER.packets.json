@@ -494,137 +494,137 @@
         "en_US": {
           "title": "Marauder Dossier Persistence",
           "scanner": "Dossier spool. You keep knowledge, not superpowers.",
-          "field_note": "Replay meta must respect hard mode: no magical strength retention.",
+          "field_note": "The dossier remembers evidence and warnings; it does not make pressure forgiving.",
           "terminal": "DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
           "audio": "The next run starts with scars in the file, not muscles in the suit.",
-          "in_game_wiki": "The Marauder dossier is the meta layer. It can retain endings, rumors, contract classes, evidence categories and route warnings. It should not retain combat power or break the survival economy. Knowledge changes decisions; it does not make pressure harmless.",
-          "external_site": "Marauder Dossier Persistence gives HECTON-8 replayability without roguelite power inflation: the player keeps knowledge, records and contract context."
+          "in_game_wiki": "The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.",
+          "external_site": "The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power."
         },
         "ru_RU": {
           "title": "Marauder Dossier Persistence",
           "scanner": "Dossier spool. Ты сохраняешь знание, не суперсилы.",
-          "field_note": "Replay meta должна уважать hard mode: никакого магического retention силы.",
+          "field_note": "Draft RU localization pending native pass. The dossier remembers evidence and warnings; it does not make pressure forgiving.",
           "terminal": "DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
           "audio": "Следующий run начинается со шрамов в файле, а не мышц в костюме.",
-          "in_game_wiki": "Marauder dossier - meta layer. Он может сохранять endings, rumors, contract classes, evidence categories и route warnings. Он не должен сохранять combat power или ломать survival economy. Knowledge меняет decisions; оно не делает pressure harmless.",
-          "external_site": "Marauder Dossier Persistence дает HECTON-8 replayability без roguelite power inflation: игрок сохраняет knowledge, records и contract context."
+          "in_game_wiki": "Draft RU localization pending native pass. The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.",
+          "external_site": "Draft RU localization pending native pass. The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power."
         },
         "ja_JP": {
           "title": "Marauder Dossier Persistence",
           "scanner": "Draft JP localization pending native pass. Dossier spool. You keep knowledge, not superpowers.",
-          "field_note": "Draft JP localization pending native pass. Replay meta must respect hard mode: no magical strength retention.",
+          "field_note": "Draft JP localization pending native pass. The dossier remembers evidence and warnings; it does not make pressure forgiving.",
           "terminal": "Draft JP localization pending native pass. DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
           "audio": "Draft JP localization pending native pass. The next run starts with scars in the file, not muscles in the suit.",
-          "in_game_wiki": "Draft JP localization pending native pass. The Marauder dossier is the meta layer. It can retain endings, rumors, contract classes, evidence categories and route warnings. It should not retain combat power or break the survival economy. Knowledge changes decisions; it does not make pressure harmless.",
-          "external_site": "Draft JP localization pending native pass. Marauder Dossier Persistence gives HECTON-8 replayability without roguelite power inflation: the player keeps knowledge, records and contract context."
+          "in_game_wiki": "Draft JP localization pending native pass. The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.",
+          "external_site": "Draft JP localization pending native pass. The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power."
         },
         "zh_CN": {
           "title": "Marauder Dossier Persistence",
           "scanner": "Draft CN localization pending native pass. Dossier spool. You keep knowledge, not superpowers.",
-          "field_note": "Draft CN localization pending native pass. Replay meta must respect hard mode: no magical strength retention.",
+          "field_note": "Draft CN localization pending native pass. The dossier remembers evidence and warnings; it does not make pressure forgiving.",
           "terminal": "Draft CN localization pending native pass. DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
           "audio": "Draft CN localization pending native pass. The next run starts with scars in the file, not muscles in the suit.",
-          "in_game_wiki": "Draft CN localization pending native pass. The Marauder dossier is the meta layer. It can retain endings, rumors, contract classes, evidence categories and route warnings. It should not retain combat power or break the survival economy. Knowledge changes decisions; it does not make pressure harmless.",
-          "external_site": "Draft CN localization pending native pass. Marauder Dossier Persistence gives HECTON-8 replayability without roguelite power inflation: the player keeps knowledge, records and contract context."
+          "in_game_wiki": "Draft CN localization pending native pass. The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.",
+          "external_site": "Draft CN localization pending native pass. The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power."
         },
         "fr_FR": {
           "title": "Marauder Dossier Persistence",
           "scanner": "Draft FR localization pending native pass. Dossier spool. You keep knowledge, not superpowers.",
-          "field_note": "Draft FR localization pending native pass. Replay meta must respect hard mode: no magical strength retention.",
+          "field_note": "Draft FR localization pending native pass. The dossier remembers evidence and warnings; it does not make pressure forgiving.",
           "terminal": "Draft FR localization pending native pass. DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
           "audio": "Draft FR localization pending native pass. The next run starts with scars in the file, not muscles in the suit.",
-          "in_game_wiki": "Draft FR localization pending native pass. The Marauder dossier is the meta layer. It can retain endings, rumors, contract classes, evidence categories and route warnings. It should not retain combat power or break the survival economy. Knowledge changes decisions; it does not make pressure harmless.",
-          "external_site": "Draft FR localization pending native pass. Marauder Dossier Persistence gives HECTON-8 replayability without roguelite power inflation: the player keeps knowledge, records and contract context."
+          "in_game_wiki": "Draft FR localization pending native pass. The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.",
+          "external_site": "Draft FR localization pending native pass. The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power."
         },
         "es_ES": {
           "title": "Marauder Dossier Persistence",
           "scanner": "Draft ES localization pending native pass. Dossier spool. You keep knowledge, not superpowers.",
-          "field_note": "Draft ES localization pending native pass. Replay meta must respect hard mode: no magical strength retention.",
+          "field_note": "Draft ES localization pending native pass. The dossier remembers evidence and warnings; it does not make pressure forgiving.",
           "terminal": "Draft ES localization pending native pass. DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
           "audio": "Draft ES localization pending native pass. The next run starts with scars in the file, not muscles in the suit.",
-          "in_game_wiki": "Draft ES localization pending native pass. The Marauder dossier is the meta layer. It can retain endings, rumors, contract classes, evidence categories and route warnings. It should not retain combat power or break the survival economy. Knowledge changes decisions; it does not make pressure harmless.",
-          "external_site": "Draft ES localization pending native pass. Marauder Dossier Persistence gives HECTON-8 replayability without roguelite power inflation: the player keeps knowledge, records and contract context."
+          "in_game_wiki": "Draft ES localization pending native pass. The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.",
+          "external_site": "Draft ES localization pending native pass. The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power."
         },
         "de_DE": {
           "title": "Marauder Dossier Persistence",
           "scanner": "Draft DE localization pending native pass. Dossier spool. You keep knowledge, not superpowers.",
-          "field_note": "Draft DE localization pending native pass. Replay meta must respect hard mode: no magical strength retention.",
+          "field_note": "Draft DE localization pending native pass. The dossier remembers evidence and warnings; it does not make pressure forgiving.",
           "terminal": "Draft DE localization pending native pass. DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
           "audio": "Draft DE localization pending native pass. The next run starts with scars in the file, not muscles in the suit.",
-          "in_game_wiki": "Draft DE localization pending native pass. The Marauder dossier is the meta layer. It can retain endings, rumors, contract classes, evidence categories and route warnings. It should not retain combat power or break the survival economy. Knowledge changes decisions; it does not make pressure harmless.",
-          "external_site": "Draft DE localization pending native pass. Marauder Dossier Persistence gives HECTON-8 replayability without roguelite power inflation: the player keeps knowledge, records and contract context."
+          "in_game_wiki": "Draft DE localization pending native pass. The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.",
+          "external_site": "Draft DE localization pending native pass. The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power."
         },
         "pl_PL": {
           "title": "Marauder Dossier Persistence",
           "scanner": "Draft PL localization pending native pass. Dossier spool. You keep knowledge, not superpowers.",
-          "field_note": "Draft PL localization pending native pass. Replay meta must respect hard mode: no magical strength retention.",
+          "field_note": "Draft PL localization pending native pass. The dossier remembers evidence and warnings; it does not make pressure forgiving.",
           "terminal": "Draft PL localization pending native pass. DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
           "audio": "Draft PL localization pending native pass. The next run starts with scars in the file, not muscles in the suit.",
-          "in_game_wiki": "Draft PL localization pending native pass. The Marauder dossier is the meta layer. It can retain endings, rumors, contract classes, evidence categories and route warnings. It should not retain combat power or break the survival economy. Knowledge changes decisions; it does not make pressure harmless.",
-          "external_site": "Draft PL localization pending native pass. Marauder Dossier Persistence gives HECTON-8 replayability without roguelite power inflation: the player keeps knowledge, records and contract context."
+          "in_game_wiki": "Draft PL localization pending native pass. The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.",
+          "external_site": "Draft PL localization pending native pass. The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power."
         },
         "uk_UA": {
           "title": "Marauder Dossier Persistence",
           "scanner": "Draft UK localization pending native pass. Dossier spool. You keep knowledge, not superpowers.",
-          "field_note": "Draft UK localization pending native pass. Replay meta must respect hard mode: no magical strength retention.",
+          "field_note": "Draft UA localization pending native pass. The dossier remembers evidence and warnings; it does not make pressure forgiving.",
           "terminal": "Draft UK localization pending native pass. DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
           "audio": "Draft UK localization pending native pass. The next run starts with scars in the file, not muscles in the suit.",
-          "in_game_wiki": "Draft UK localization pending native pass. The Marauder dossier is the meta layer. It can retain endings, rumors, contract classes, evidence categories and route warnings. It should not retain combat power or break the survival economy. Knowledge changes decisions; it does not make pressure harmless.",
-          "external_site": "Draft UK localization pending native pass. Marauder Dossier Persistence gives HECTON-8 replayability without roguelite power inflation: the player keeps knowledge, records and contract context."
+          "in_game_wiki": "Draft UA localization pending native pass. The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.",
+          "external_site": "Draft UA localization pending native pass. The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power."
         },
         "ar_SA": {
           "title": "Marauder Dossier Persistence",
           "scanner": "Draft AR localization pending native pass. Dossier spool. You keep knowledge, not superpowers.",
-          "field_note": "Draft AR localization pending native pass. Replay meta must respect hard mode: no magical strength retention.",
+          "field_note": "Draft AR localization pending native pass. The dossier remembers evidence and warnings; it does not make pressure forgiving.",
           "terminal": "Draft AR localization pending native pass. DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
           "audio": "Draft AR localization pending native pass. The next run starts with scars in the file, not muscles in the suit.",
-          "in_game_wiki": "Draft AR localization pending native pass. The Marauder dossier is the meta layer. It can retain endings, rumors, contract classes, evidence categories and route warnings. It should not retain combat power or break the survival economy. Knowledge changes decisions; it does not make pressure harmless.",
-          "external_site": "Draft AR localization pending native pass. Marauder Dossier Persistence gives HECTON-8 replayability without roguelite power inflation: the player keeps knowledge, records and contract context."
+          "in_game_wiki": "Draft AR localization pending native pass. The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.",
+          "external_site": "Draft AR localization pending native pass. The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power."
         },
         "id_ID": {
           "title": "Marauder Dossier Persistence",
           "scanner": "Draft ID localization pending native pass. Dossier spool. You keep knowledge, not superpowers.",
-          "field_note": "Draft ID localization pending native pass. Replay meta must respect hard mode: no magical strength retention.",
+          "field_note": "Draft ID localization pending native pass. The dossier remembers evidence and warnings; it does not make pressure forgiving.",
           "terminal": "Draft ID localization pending native pass. DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
           "audio": "Draft ID localization pending native pass. The next run starts with scars in the file, not muscles in the suit.",
-          "in_game_wiki": "Draft ID localization pending native pass. The Marauder dossier is the meta layer. It can retain endings, rumors, contract classes, evidence categories and route warnings. It should not retain combat power or break the survival economy. Knowledge changes decisions; it does not make pressure harmless.",
-          "external_site": "Draft ID localization pending native pass. Marauder Dossier Persistence gives HECTON-8 replayability without roguelite power inflation: the player keeps knowledge, records and contract context."
+          "in_game_wiki": "Draft ID localization pending native pass. The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.",
+          "external_site": "Draft ID localization pending native pass. The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power."
         },
         "ko_KR": {
           "title": "Marauder Dossier Persistence",
           "scanner": "Draft KO localization pending native pass. Dossier spool. You keep knowledge, not superpowers.",
-          "field_note": "Draft KO localization pending native pass. Replay meta must respect hard mode: no magical strength retention.",
+          "field_note": "Draft KO localization pending native pass. The dossier remembers evidence and warnings; it does not make pressure forgiving.",
           "terminal": "Draft KO localization pending native pass. DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
           "audio": "Draft KO localization pending native pass. The next run starts with scars in the file, not muscles in the suit.",
-          "in_game_wiki": "Draft KO localization pending native pass. The Marauder dossier is the meta layer. It can retain endings, rumors, contract classes, evidence categories and route warnings. It should not retain combat power or break the survival economy. Knowledge changes decisions; it does not make pressure harmless.",
-          "external_site": "Draft KO localization pending native pass. Marauder Dossier Persistence gives HECTON-8 replayability without roguelite power inflation: the player keeps knowledge, records and contract context."
+          "in_game_wiki": "Draft KO localization pending native pass. The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.",
+          "external_site": "Draft KO localization pending native pass. The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power."
         },
         "he_IL": {
           "title": "Marauder Dossier Persistence",
           "scanner": "Draft HE localization pending native pass. Dossier spool. You keep knowledge, not superpowers.",
-          "field_note": "Draft HE localization pending native pass. Replay meta must respect hard mode: no magical strength retention.",
+          "field_note": "Draft HE localization pending native pass. The dossier remembers evidence and warnings; it does not make pressure forgiving.",
           "terminal": "Draft HE localization pending native pass. DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
           "audio": "Draft HE localization pending native pass. The next run starts with scars in the file, not muscles in the suit.",
-          "in_game_wiki": "Draft HE localization pending native pass. The Marauder dossier is the meta layer. It can retain endings, rumors, contract classes, evidence categories and route warnings. It should not retain combat power or break the survival economy. Knowledge changes decisions; it does not make pressure harmless.",
-          "external_site": "Draft HE localization pending native pass. Marauder Dossier Persistence gives HECTON-8 replayability without roguelite power inflation: the player keeps knowledge, records and contract context."
+          "in_game_wiki": "Draft HE localization pending native pass. The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.",
+          "external_site": "Draft HE localization pending native pass. The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power."
         },
         "pt_BR": {
           "title": "Marauder Dossier Persistence",
           "scanner": "Draft PT-BR localization pending native pass. Dossier spool. You keep knowledge, not superpowers.",
-          "field_note": "Draft PT-BR localization pending native pass. Replay meta must respect hard mode: no magical strength retention.",
+          "field_note": "Draft PT localization pending native pass. The dossier remembers evidence and warnings; it does not make pressure forgiving.",
           "terminal": "Draft PT-BR localization pending native pass. DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
           "audio": "Draft PT-BR localization pending native pass. The next run starts with scars in the file, not muscles in the suit.",
-          "in_game_wiki": "Draft PT-BR localization pending native pass. The Marauder dossier is the meta layer. It can retain endings, rumors, contract classes, evidence categories and route warnings. It should not retain combat power or break the survival economy. Knowledge changes decisions; it does not make pressure harmless.",
-          "external_site": "Draft PT-BR localization pending native pass. Marauder Dossier Persistence gives HECTON-8 replayability without roguelite power inflation: the player keeps knowledge, records and contract context."
+          "in_game_wiki": "Draft PT localization pending native pass. The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.",
+          "external_site": "Draft PT localization pending native pass. The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power."
         },
         "nl_NL": {
           "title": "Marauder Dossier Persistence",
           "scanner": "Draft NL localization pending native pass. Dossier spool. You keep knowledge, not superpowers.",
-          "field_note": "Draft NL localization pending native pass. Replay meta must respect hard mode: no magical strength retention.",
+          "field_note": "Draft NL localization pending native pass. The dossier remembers evidence and warnings; it does not make pressure forgiving.",
           "terminal": "Draft NL localization pending native pass. DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
           "audio": "Draft NL localization pending native pass. The next run starts with scars in the file, not muscles in the suit.",
-          "in_game_wiki": "Draft NL localization pending native pass. The Marauder dossier is the meta layer. It can retain endings, rumors, contract classes, evidence categories and route warnings. It should not retain combat power or break the survival economy. Knowledge changes decisions; it does not make pressure harmless.",
-          "external_site": "Draft NL localization pending native pass. Marauder Dossier Persistence gives HECTON-8 replayability without roguelite power inflation: the player keeps knowledge, records and contract context."
+          "in_game_wiki": "Draft NL localization pending native pass. The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.",
+          "external_site": "Draft NL localization pending native pass. The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power."
         }
       }
     },

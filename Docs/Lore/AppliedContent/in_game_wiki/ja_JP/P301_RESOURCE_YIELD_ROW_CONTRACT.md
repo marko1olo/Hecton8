@@ -10,21 +10,21 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Resource Yield Row Contract
+# Resource Yield Data Boundary
 
-Resource Yield Row Contract turns resource lore into table-owned balance work without hiding numbers in prose.
+Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.
 
 ## Scanner
 
-Yield row contract: resource class, pressure band, custody grade, depletion rule.
+Yield boundary: resource class, pressure band, custody grade, depletion rule.
 
 ## Terminal
 
-TABLE HANDOFF: resource_yield rows must bind packet hash, resource class, depth band, rarity curve and depletion behavior before any number is accepted.
+RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.
 
 ## Audio
 
@@ -32,6 +32,6 @@ A sample without pressure history is not a value.
 
 ## Field Note
 
-Use for the gameplay table pass; do not invent final yields in public or in terminal logs.
+Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree.
 
 <!-- In-Game Wiki; generated from P301_RESOURCE_YIELD_ROW_CONTRACT/ja_JP. -->

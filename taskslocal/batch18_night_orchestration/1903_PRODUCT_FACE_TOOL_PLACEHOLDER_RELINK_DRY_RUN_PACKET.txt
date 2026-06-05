@@ -1,0 +1,85 @@
+ID: 1903
+TITLE: PRODUCT_FACE_TOOL_PLACEHOLDER_RELINK_DRY_RUN_PACKET
+MODE: REPORT_ONLY_STATIC_RELINK_DRY_RUN_PACKET
+
+You are HECTON-8 batch agent 1903.
+Do not edit source, assets, prefabs, materials, scenes, binaries, `.meta`, generated meshes, DataMonolith, task files, or sibling outputs.
+
+PRIMARY GOAL
+
+Create the static dry-run relink packet for the 23 current ProductFace tool placeholder material assignments found by 1893. This must preserve held/world tool pairing and prevent a future Unity owner from relinking one side of a tool family while leaving the other as placeholder.
+
+READ
+
+- `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `VISION_LOCKS.md`
+- `TASTE.md`
+- `quality.md`
+- `tools.md`
+- `player.md`
+- `3dmodel.md`
+- `3DMODEL_TEXTURES_MATERIALS.md`
+- `Docs/Reports/Batch18/1880_TOOL_MATERIAL_TEXTURE_ROLE_PACKAGE.md`
+- `Docs/Reports/Batch18/1885_PRODUCT_FACE_PREFAB_ANCHOR_REFERENCE_STATIC_SNAPSHOT.md`
+- `Docs/Reports/Batch18/1888_PRODUCT_FACE_TEXTURE_CHANNEL_MANIFEST_AND_SHADER_AUDIT.md`
+- `Docs/Reports/Batch18/1890_PRODUCT_FACE_MATERIAL_TEXTURE_VALIDATOR_IMPLEMENTATION.md`
+- `Docs/Reports/Batch18/1892_PRODUCT_FACE_SINGLE_UNITY_OWNER_RUNBOOK.md`
+- `Docs/Reports/Batch18/1893_PRODUCT_FACE_ACTUAL_MATERIAL_ASSIGNMENT_MATRIX.md`
+- `Docs/Reports/Batch18/1893_PRODUCT_FACE_ACTUAL_MATERIAL_ASSIGNMENT_MATRIX.csv`
+- `Docs/Reports/Batch18/1894_PRODUCT_FACE_TEXTURE_SOURCE_MANIFEST_SCHEMA.md`
+- `Docs/Reports/Batch18/1896_TOOLSCREEN_DIEGETIC_SHADER_CHANNEL_AUDIT.md`
+
+Mandates:
+
+- `.agents-skills/QA_Evidence_Text_Filter_Audit.txt`
+- `.agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt`
+
+OUTPUTS YOU OWN
+
+- `Docs/Reports/Batch18/1903_PRODUCT_FACE_TOOL_PLACEHOLDER_RELINK_DRY_RUN_PACKET.md`
+- `Docs/Reports/Batch18/1903_PRODUCT_FACE_TOOL_PLACEHOLDER_RELINK_DRY_RUN_MATRIX.csv`
+- `Docs/Tasks/Status_1903.md`
+- `Docs/AgentLogs/Rationale_1903.md`
+- `Docs/AgentLogs/LOG_1903.md`
+
+CSV COLUMNS
+
+- `tool_family`
+- `prefab_path`
+- `current_material`
+- `held_world_pair_status`
+- `future_material_family`
+- `required_texture_manifest_row`
+- `screen_channel_status`
+- `anchor_refs_to_preserve`
+- `relink_allowed_now`
+- `proof_required`
+- `status`
+
+REQUIRED WORK
+
+1. Use 1893 CSV as current YAML truth.
+2. Include all rows flagged `TOOL_PLACEHOLDER_MATERIAL`.
+3. Group by tool family and held/world side.
+4. Define a paired relink rule: held and world sides of the same tool family must move together unless explicitly split by future material owner.
+5. Include Tool_Propulsion separately because it also has default package Lit contamination from 1893.
+6. Use ToolDecayLit PackedMaskV1 channel contract from 1888 where appropriate.
+7. Keep ToolScreenDiegetic blocked except `_ToolScreenTex.rgb` from 1896.
+8. Define future material/source package prerequisites before relink.
+9. Define anchor/reference preservation from 1885.
+10. Mark `relink_allowed_now=false` for every row.
+11. Do not edit prefabs or materials.
+12. Do not claim Unity proof.
+
+VERIFICATION
+
+Run and record:
+
+- `git diff --check -- Docs/Reports/Batch18/1903_PRODUCT_FACE_TOOL_PLACEHOLDER_RELINK_DRY_RUN_PACKET.md Docs/Reports/Batch18/1903_PRODUCT_FACE_TOOL_PLACEHOLDER_RELINK_DRY_RUN_MATRIX.csv Docs/Tasks/Status_1903.md Docs/AgentLogs/Rationale_1903.md Docs/AgentLogs/LOG_1903.md`
+- `Import-Csv Docs/Reports/Batch18/1903_PRODUCT_FACE_TOOL_PLACEHOLDER_RELINK_DRY_RUN_MATRIX.csv | Measure-Object`
+- static term cross-check for `TOOL_PLACEHOLDER_MATERIAL`, `ToolDecayLit`, `ToolScreenDiegetic`, `Tool_Propulsion`, `held`, `world`, `PENDING UNITY`.
+
+FINAL RESPONSE
+
+Report changed files, CSV row count, affected tool families, and first future relink group.

@@ -22,6 +22,9 @@ namespace Hecton8.EditorTools
         [MenuItem("Hecton/Authoring/Rebuild Procedural World Support Finals", priority = 179)]
         public static void RebuildWorldSupportFinals()
         {
+            if (!WorldProceduralFinalPrefabQualityGate.AllowLegacyPrimitiveFinalAuthoring(nameof(WorldProceduralSupportFinalAuthoring), FinalPrefabFolder))
+                return;
+
             EnsureFolder("Assets/_Project/Art");
             EnsureFolder("Assets/_Project/Art/Materials");
             EnsureFolder(MaterialFolder);

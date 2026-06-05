@@ -3,8 +3,11 @@
 
 
 Status: STATIC SOURCE IMPLEMENTATION, UNITY IMPORT/COMPILE/BAKE EXECUTION PENDING
+Evidence class: STATIC_DOC
 
 Owner: Echelon 2 World Generation & Terrain
+Owner domain: Echelon 2 World Generation & Terrain / editor-baked heightmap data
+Review disposition: YELLOW / STATIC_DOC_ONLY until compile/import/runtime/profiler/player proof exists.
 
 
 

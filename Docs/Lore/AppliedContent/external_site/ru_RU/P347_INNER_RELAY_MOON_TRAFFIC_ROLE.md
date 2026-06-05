@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Роль inner relay moon
+# Inner Relay Moon Traffic Role
 
-Непроходимые луны Aegir дают масштабу: traffic anchors, failed claims, radiation hazards and orbital timing.
+The non-playable Aegir moons give the world scale: traffic anchors, failed claims, radiation hazards and orbital timing.
 
 ## Scanner
 
-Moon ledger. Inner bodies - hazards, relay anchors и traffic math, не игровые миры.
+Moon ledger. Inner bodies are hazards, relay anchors and traffic math, not playable worlds.
 
 ## Terminal
 
-MOON LADDER: inner relay moon жжёт корабли быстрой геометрией и radiation exposure, но старые beacons всё ещё помогают HECTON-8 window.
+MOON LADDER: the inner relay moon burns ships with fast geometry and radiation exposure, but its old beacons can still make a HECTON-8 window possible.
 
 ## Audio
 
-Inner moon - не пункт назначения. Это синяк тайминга с прикрученным маяком.
+The inner moon is not a destination. It is a timing bruise with a beacon bolted to it.
 
 ## Field Note
 
-Для system atlas и orbital UI labels.
+Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds.
 
 <!-- External Site; generated from P347_INNER_RELAY_MOON_TRAFFIC_ROLE/ru_RU. -->

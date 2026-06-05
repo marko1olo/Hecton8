@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -20,11 +20,11 @@ First Hour Spine is the early-game dramaturgy guide for HECTON-8. It ensures the
 
 ## Scanner
 
-Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.
+First-hour chain logged: damaged drop, air, bright shelf, pump shelter, sanitized accident packet, repair scar.
 
 ## Terminal
 
-SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.
+SHALLOW ANNEX: pump restart valid. Incident packet cached. Atlas repair growth found around cable, tool fragment, residue.
 
 ## Audio
 
@@ -32,6 +32,6 @@ The first safe room is not clean. It is only holding its breath better than you 
 
 ## Field Note
 
-The opening must be beautiful before it becomes accusing.
+The bright shelf is not a trick. It is the reason people wanted this place before the paperwork made it lethal.
 
 <!-- External Site; generated from P060_FIRST_HOUR_SPINE/en_US. -->

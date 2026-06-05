@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Generated;
@@ -44,7 +45,7 @@ namespace Hecton8.Data
     /// </summary>
     public static class H8AppliedLoreRuntime
     {
-        public const uint DefaultLocaleHash = 0x6C199F07u; // en_US
+        public const uint DefaultLocaleHash = H8AppliedLoreHashes.Locale_en_US;
         public const uint UnlockSourceId = 0x41504C52u; // APLR
         public const byte WorldImpactFlagBiome = 1 << 0;
         public const byte WorldImpactFlagAcoustic = 1 << 1;
@@ -52,11 +53,65 @@ namespace Hecton8.Data
         private const float MaxLoreDepthMeters = 5000f;
         private static int s_appliedLoreSignalPushDropCount;
 
+        public static uint ResolveLocaleHash(GameLanguage language)
+        {
+            switch (language)
+            {
+                case GameLanguage.Russian:
+                    return H8AppliedLoreHashes.Locale_ru_RU;
+                case GameLanguage.German:
+                    return H8AppliedLoreHashes.Locale_de_DE;
+                case GameLanguage.French:
+                    return H8AppliedLoreHashes.Locale_fr_FR;
+                case GameLanguage.Spanish:
+                    return H8AppliedLoreHashes.Locale_es_ES;
+                case GameLanguage.PortugueseBrazilian:
+                    return H8AppliedLoreHashes.Locale_pt_BR;
+                case GameLanguage.Polish:
+                    return H8AppliedLoreHashes.Locale_pl_PL;
+                case GameLanguage.Ukrainian:
+                    return H8AppliedLoreHashes.Locale_uk_UA;
+                case GameLanguage.ChineseSimplified:
+                case GameLanguage.ChineseTraditional:
+                    return H8AppliedLoreHashes.Locale_zh_CN;
+                case GameLanguage.Japanese:
+                    return H8AppliedLoreHashes.Locale_ja_JP;
+                case GameLanguage.Korean:
+                    return H8AppliedLoreHashes.Locale_ko_KR;
+                case GameLanguage.Indonesian:
+                    return H8AppliedLoreHashes.Locale_id_ID;
+                case GameLanguage.Arabic:
+                    return H8AppliedLoreHashes.Locale_ar_SA;
+                case GameLanguage.Hebrew:
+                    return H8AppliedLoreHashes.Locale_he_IL;
+                case GameLanguage.Dutch:
+                    return H8AppliedLoreHashes.Locale_nl_NL;
+                default:
+                    return DefaultLocaleHash;
+            }
+        }
+
         public static bool ValidateRuntimeLayout()
         {
+            int packetBytes = UnsafeUtility.SizeOf<H8AppliedLorePacketRecord>();
+            int routeBytes = UnsafeUtility.SizeOf<H8AppliedLoreRouteRecord>();
             int worldImpactBytes = UnsafeUtility.SizeOf<H8AppliedLoreWorldImpactRecord>();
-            return worldImpactBytes == H8AppliedLoreWorldImpactRecord.SizeBytes &&
-                   (worldImpactBytes & 7) == 0;
+            int loreFragmentSignalBytes = UnsafeUtility.SizeOf<LoreFragmentScannedSignal>();
+            int terminalPreviewSignalBytes = UnsafeUtility.SizeOf<AppliedLoreTerminalPreviewSignal>();
+            return packetBytes == H8DataLayoutConstants.AppliedLorePacketRecordSize &&
+                   (packetBytes & 7) == 0 &&
+                   routeBytes == H8DataLayoutConstants.AppliedLoreRouteRecordSize &&
+                   (routeBytes & 7) == 0 &&
+                   worldImpactBytes == H8AppliedLoreWorldImpactRecord.SizeBytes &&
+                   (worldImpactBytes & 7) == 0 &&
+                   loreFragmentSignalBytes == LoreFragmentScannedSignal.SizeBytes &&
+                   (loreFragmentSignalBytes & 7) == 0 &&
+                   terminalPreviewSignalBytes == AppliedLoreTerminalPreviewSignal.SizeBytes &&
+                   (terminalPreviewSignalBytes & 7) == 0 &&
+                   AppliedLoreTerminalPreviewSignal.LowTierFrameSignals > 0 &&
+                   AppliedLoreTerminalPreviewSignal.LowTierFrameSignals <= AppliedLoreTerminalPreviewSignal.MaxFrameSignals &&
+                   AppliedLoreTerminalPreviewSignal.MaxFrameSignals <= AppliedLoreTerminalPreviewSignal.ExpectedCapacity &&
+                   AppliedLoreTerminalPreviewSignal.LaneHash == 0x41545056u;
         }
 
         public static bool TryGetUtf8(
@@ -176,16 +231,58 @@ namespace Hecton8.Data
                 return false;
 
             uint count = Math.Min(record.PacketCount, (uint)H8DataLayoutConstants.AppliedLoreRoutePacketCapacity);
-            for (uint i = 0u; i < count; i++)
+            if (record.PacketHash0 == packetHash)
             {
-                if (H8StaticDataArena.GetAppliedLoreRoutePacketHash(in record, i) != packetHash)
-                    continue;
-
-                ordinal = i + 1u;
+                ordinal = 1u;
                 return true;
             }
+            if (count <= 1u)
+                return false;
+            if (record.PacketHash1 == packetHash)
+            {
+                ordinal = 2u;
+                return true;
+            }
+            if (count <= 2u)
+                return false;
+            if (record.PacketHash2 == packetHash)
+            {
+                ordinal = 3u;
+                return true;
+            }
+            if (count <= 3u)
+                return false;
+            if (record.PacketHash3 == packetHash)
+            {
+                ordinal = 4u;
+                return true;
+            }
+            if (count <= 4u)
+                return false;
+            if (record.PacketHash4 == packetHash)
+            {
+                ordinal = 5u;
+                return true;
+            }
+            if (count <= 5u)
+                return false;
+            if (record.PacketHash5 == packetHash)
+            {
+                ordinal = 6u;
+                return true;
+            }
+            if (count <= 6u)
+                return false;
+            if (record.PacketHash6 == packetHash)
+            {
+                ordinal = 7u;
+                return true;
+            }
+            if (count <= 7u || record.PacketHash7 != packetHash)
+                return false;
 
-            return false;
+            ordinal = 8u;
+            return true;
         }
 
         public static uint GetRouteRequiredPacketHash(in H8AppliedLoreRouteRecord record, uint index)

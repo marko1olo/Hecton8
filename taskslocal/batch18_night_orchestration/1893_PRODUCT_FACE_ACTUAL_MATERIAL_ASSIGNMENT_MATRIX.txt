@@ -1,0 +1,111 @@
+ID: 1893
+TITLE: PRODUCT_FACE_ACTUAL_MATERIAL_ASSIGNMENT_MATRIX
+MODE: REPORT_ONLY_STATIC_PREFAB_YAML_MATERIAL_AUDIT
+
+You are HECTON-8 batch agent 1893.
+You are not alone in the codebase. Do not edit source, assets, prefabs, scenes, binaries, `.meta`, generated meshes, DataMonolith, task files, or sibling outputs.
+
+PRIMARY GOAL
+
+Build the actual current product-face material assignment matrix from prefab YAML and material `.meta` files. Prior reports describe candidates and debt; this task must map current renderer material references as they exist on disk so the future Unity owner can relink without guessing.
+
+READ
+
+- `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `VISION_LOCKS.md`
+- `TASTE.md`
+- `quality.md`
+- `3dmodel.md`
+- `3DMODEL_TEXTURES_MATERIALS.md`
+- `tools.md`
+- `inventory.md`
+- `player.md`
+- `world.md`
+- `ocean.md`
+- `celestial.md`
+- `Docs/Reports/Batch18/1867_PRODUCT_FACE_PREFAB_AUDIT_GATE.md`
+- `Docs/Reports/Batch18/1880_TOOL_MATERIAL_TEXTURE_ROLE_PACKAGE.md`
+- `Docs/Reports/Batch18/1881_RESOURCE_MATERIAL_TEXTURE_ROLE_PACKAGE.md`
+- `Docs/Reports/Batch18/1882_TRANSPORT_PLAYER_MATERIAL_TEXTURE_ROLE_PACKAGE.md`
+- `Docs/Reports/Batch18/1883_SKY_OCEAN_MATERIAL_TEXTURE_ROLE_PACKAGE.md`
+- `Docs/Reports/Batch18/1885_PRODUCT_FACE_PREFAB_ANCHOR_REFERENCE_STATIC_SNAPSHOT.md`
+- `Docs/Reports/Batch18/1887_PRODUCT_FACE_LEGACY_REFERENCE_QUARANTINE_DECISION_PACKET.md`
+- `Docs/Reports/Batch18/1888_PRODUCT_FACE_TEXTURE_CHANNEL_MANIFEST_AND_SHADER_AUDIT.md`
+- `Docs/Reports/Batch18/1889_PRODUCT_FACE_ENVIRONMENT_SOURCE_EXCLUSION_MANIFEST.md`
+- `Docs/Reports/Batch18/1890_PRODUCT_FACE_MATERIAL_TEXTURE_VALIDATOR_IMPLEMENTATION.md` if present.
+
+Mandates:
+
+- `.agents-skills/QA_Evidence_Text_Filter_Audit.txt`
+- `.agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt`
+
+OUTPUTS YOU OWN
+
+- `Docs/Reports/Batch18/1893_PRODUCT_FACE_ACTUAL_MATERIAL_ASSIGNMENT_MATRIX.md`
+- `Docs/Reports/Batch18/1893_PRODUCT_FACE_ACTUAL_MATERIAL_ASSIGNMENT_MATRIX.csv`
+- `Docs/Tasks/Status_1893.md`
+- `Docs/AgentLogs/Rationale_1893.md`
+- `Docs/AgentLogs/LOG_1893.md`
+
+CSV COLUMNS
+
+- `prefab_path`
+- `prefab_family`
+- `yaml_material_guid`
+- `resolved_material_path`
+- `resolved_material_name`
+- `material_role_guess`
+- `channel_contract_status`
+- `forbidden_route_flag`
+- `evidence`
+- `future_action`
+- `status`
+
+SCOPE TO SCAN
+
+Exact prefabs:
+
+- `Assets/_Project/Prefabs/Player.prefab`
+- `Assets/_Project/Prefabs/Sky_System.prefab`
+- `Assets/_Project/Prefabs/Ocean_Crest.prefab`
+- `Assets/_Project/Prefabs/Item_Titanium.prefab`
+- `Assets/_Project/Prefabs/STRUCTURES.prefab`
+- `Assets/_Project/Prefabs/Buildings/Cube.prefab`
+
+Prefab roots:
+
+- `Assets/_Project/Prefabs/Tools/Held`
+- `Assets/_Project/Prefabs/Items/Tools`
+- `Assets/_Project/Prefabs/Resources/Pickups`
+- `Assets/_Project/Prefabs/Transport`
+
+REQUIRED WORK
+
+1. Create tracking files first.
+2. Resolve material GUIDs by scanning material `.meta` files under `Assets` and relevant package/default paths if visible.
+3. Parse prefab YAML statically for `m_Materials` / `m_Material` references and GUIDs.
+4. Do not use Unity APIs or AssetDatabase.
+5. Map every found material GUID to a path if possible.
+6. Flag default/package GUID `31321ba15b8f8eb4c954353edc038b1d`.
+7. Flag package-cache `Lit.mat`, tool placeholders, blockout, diagnostics, flat-color/checker/error, storm/noir/depth route misuse, and environment donor misuse.
+8. Cross-check material path/name against 1888 channel contracts and 1889 exclusions.
+9. Mark missing/unresolved GUIDs as `UNRESOLVED_GUID_CURRENT_YAML`.
+10. Mark hidden-input/sky/ocean cases separately; do not accept visible primitive debt.
+11. Include exact material assignment examples, but do not quote huge YAML blocks.
+12. Do not claim Unity/runtime/material loading proof.
+13. Do not edit prefabs or materials.
+14. Include a future relink action for every blocked row.
+15. Include Low/Middle/High/Ultra consequences for assignment quality without ugly compact mode.
+
+VERIFICATION
+
+Run and record:
+
+- `git diff --check -- Docs/Reports/Batch18/1893_PRODUCT_FACE_ACTUAL_MATERIAL_ASSIGNMENT_MATRIX.md Docs/Reports/Batch18/1893_PRODUCT_FACE_ACTUAL_MATERIAL_ASSIGNMENT_MATRIX.csv Docs/Tasks/Status_1893.md Docs/AgentLogs/Rationale_1893.md Docs/AgentLogs/LOG_1893.md`
+- `Import-Csv Docs/Reports/Batch18/1893_PRODUCT_FACE_ACTUAL_MATERIAL_ASSIGNMENT_MATRIX.csv | Measure-Object`
+- static term cross-check for `31321ba15b8f8eb4c954353edc038b1d`, `PackageCache`, `Placeholder`, `MAT_PlayerSwimBlockout`, `Sky_System`, `Ocean_Crest`, `Tool_Propulsion`, `Item_Titanium`.
+
+FINAL RESPONSE
+
+Report changed files, CSV row count, most dangerous current material assignment, unresolved GUID count, and exact future relink priorities.

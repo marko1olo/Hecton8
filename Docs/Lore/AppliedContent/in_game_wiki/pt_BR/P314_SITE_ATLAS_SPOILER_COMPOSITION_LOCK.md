@@ -10,13 +10,13 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Site Atlas Spoiler Composition Lock
+# Atlas Spoiler Composition Rule
 
-Site Atlas Spoiler Composition Lock protects final-basin meaning while still allowing public explanation.
+Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.
 
 ## Scanner
 
@@ -24,7 +24,7 @@ Atlas spoiler lock: failed governor first, ocean-machine consequences gated.
 
 ## Terminal
 
-SPOILER COMPOSITION: public Atlas pages must split failed industrial AI, repair ecology, factory-temple and ending payload into separate gated tiers.
+SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.
 
 ## Audio
 
@@ -32,6 +32,6 @@ Do not name the bottom before the player earns depth.
 
 ## Field Note
 
-Use for public wiki spoiler toggles and press-kit image redaction.
+Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences.
 
 <!-- In-Game Wiki; generated from P314_SITE_ATLAS_SPOILER_COMPOSITION_LOCK/pt_BR. -->

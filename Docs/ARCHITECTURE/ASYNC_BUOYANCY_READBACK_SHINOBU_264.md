@@ -1,5 +1,10 @@
 ﻿# Async Buoyancy Readback Route - SHINOBU_264
 
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
+Evidence class: STATIC_DOC / STATIC_SOURCE
+Owner domain: Physics buoyancy async readback
+Review disposition: YELLOW / STATIC_DOC_ONLY until compile/import/runtime/profiler/player proof exists.
+
 Owner: `AsyncBuoyancyReadbackRuntime`
 
 Runtime assembly: `Hecton8.Physics.Buoyancy.Runtime` under `Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback`.

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en" dir="ltr">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,6 +10,7 @@
       --bg: #090b0e;
       --panel: #11161c;
       --panel-2: #171d24;
+      --panel-3: #0e1318;
       --line: #27313b;
       --text: #e8edf2;
       --muted: #8e9aa6;
@@ -18,6 +19,7 @@
       --warn: #e3b86d;
       --bad: #d98787;
       --good: #91d29b;
+      --blocked: #e88f66;
     }
 
     * {
@@ -74,10 +76,21 @@
       text-align: left;
     }
 
+    html[dir="rtl"] button {
+      text-align: right;
+    }
+
     button:hover,
     button.active {
       border-color: var(--accent);
       background: #14222a;
+    }
+
+    button:focus-visible,
+    select:focus-visible,
+    input:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
     }
 
     select, input {
@@ -91,14 +104,14 @@
 
     .top-grid {
       display: grid;
-      grid-template-columns: 1fr auto auto auto;
+      grid-template-columns: minmax(240px, 1fr) minmax(145px, auto) minmax(150px, auto) minmax(170px, auto) minmax(150px, auto) minmax(150px, auto);
       gap: 10px;
       align-items: center;
     }
 
     .shell {
       display: grid;
-      grid-template-columns: 340px minmax(0, 1fr);
+      grid-template-columns: 360px minmax(0, 1fr);
       min-height: calc(100vh - 66px);
     }
 
@@ -107,6 +120,11 @@
       background: var(--panel);
       min-height: 100%;
       padding: 14px;
+    }
+
+    html[dir="rtl"] aside {
+      border-right: 0;
+      border-left: 1px solid var(--line);
     }
 
     main {
@@ -151,7 +169,7 @@
     .article-list {
       display: grid;
       gap: 6px;
-      max-height: calc(100vh - 365px);
+      max-height: calc(100vh - 430px);
       overflow: auto;
       padding-right: 2px;
     }
@@ -159,7 +177,7 @@
     .article-button {
       display: grid;
       gap: 4px;
-      min-height: 58px;
+      min-height: 62px;
       background: #0f141a;
     }
 
@@ -188,15 +206,22 @@
       white-space: nowrap;
     }
 
+    .status-ready,
     .status-source_ready {
       color: var(--good);
     }
 
+    .status-draft,
     .status-draft_native_pass_pending {
       color: var(--warn);
     }
 
-    .status-missing {
+    .status-blocked {
+      color: var(--blocked);
+    }
+
+    .status-missing,
+    .status-not_indexed {
       color: var(--bad);
     }
 
@@ -212,13 +237,117 @@
 
     .article-head {
       border-bottom: 1px solid var(--line);
-      margin-bottom: 24px;
+      margin-bottom: 18px;
       padding-bottom: 18px;
     }
 
     .article-head h1 {
       font-size: 30px;
       margin-bottom: 8px;
+    }
+
+    .path {
+      color: var(--muted);
+      font-family: Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      word-break: break-all;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      background: var(--panel-3);
+      border-radius: 4px;
+      margin: 0 0 18px;
+      padding: 12px;
+    }
+
+    .panel h2 {
+      font-size: 15px;
+      margin: 0 0 8px;
+    }
+
+    .panel-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .fact {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 4px;
+      padding: 8px;
+      min-width: 0;
+    }
+
+    .fact-label {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+
+    .fact-value {
+      overflow-wrap: anywhere;
+    }
+
+    .notice {
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--accent);
+      background: var(--panel);
+      border-radius: 4px;
+      color: var(--soft);
+      margin-top: 10px;
+      padding: 9px 10px;
+    }
+
+    html[dir="rtl"] .notice {
+      border-left: 1px solid var(--line);
+      border-right: 3px solid var(--accent);
+    }
+
+    .notice.warn {
+      border-left-color: var(--warn);
+      color: var(--warn);
+    }
+
+    .notice.blocked {
+      border-left-color: var(--blocked);
+      color: var(--blocked);
+    }
+
+    html[dir="rtl"] .notice.warn {
+      border-right-color: var(--warn);
+    }
+
+    html[dir="rtl"] .notice.blocked {
+      border-right-color: var(--blocked);
+    }
+
+    .surface-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 10px;
+    }
+
+    .surface-card {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 4px;
+      padding: 10px;
+      min-width: 0;
+    }
+
+    .surface-card h3 {
+      color: var(--accent);
+      font-size: 14px;
+      margin: 0 0 7px;
+    }
+
+    .surface-card p {
+      margin: 0 0 8px;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
     }
 
     .article-body {
@@ -235,6 +364,10 @@
       padding: 0;
     }
 
+    html[dir="rtl"] .article-body ul {
+      margin: 0 20px 14px 0;
+    }
+
     .article-body li {
       margin: 4px 0;
     }
@@ -245,13 +378,7 @@
       overflow: auto;
       padding: 12px;
       border-radius: 4px;
-    }
-
-    .path {
-      color: var(--muted);
-      font-family: Consolas, "Liberation Mono", monospace;
-      font-size: 12px;
-      word-break: break-all;
+      direction: ltr;
     }
 
     .empty {
@@ -262,18 +389,27 @@
       border-radius: 4px;
     }
 
-    @media (max-width: 980px) {
+    @media (max-width: 1180px) {
       .top-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr 1fr;
       }
+    }
 
-      .shell {
+    @media (max-width: 980px) {
+      .top-grid,
+      .shell,
+      .panel-grid {
         grid-template-columns: 1fr;
       }
 
       aside {
         border-right: 0;
+        border-left: 0;
         border-bottom: 1px solid var(--line);
+      }
+
+      html[dir="rtl"] aside {
+        border-left: 0;
       }
 
       .article-list {
@@ -291,35 +427,36 @@
     <div class="top-grid">
       <div>
         <h1>HECTON-8 Lore Reader</h1>
-        <div id="globalStatus" class="summary">Loading publication indexes...</div>
+        <div id="globalStatus" class="summary" aria-live="polite">Loading publication indexes...</div>
       </div>
-      <select id="surfaceSelect" aria-label="Surface"></select>
+      <select id="surfaceSelect" aria-label="Publication surface"></select>
       <select id="localeSelect" aria-label="Locale"></select>
-      <select id="statusSelect" aria-label="Localization status">
-        <option value="">All statuses</option>
-        <option value="source_ready">source_ready</option>
-        <option value="draft_native_pass_pending">draft_native_pass_pending</option>
-      </select>
+      <select id="releaseSetSelect" aria-label="Release set"></select>
+      <select id="statusSelect" aria-label="Localization status"></select>
+      <select id="spoilerSelect" aria-label="Spoiler state"></select>
     </div>
   </header>
 
   <div class="shell">
     <aside>
       <div class="controls">
-        <input id="searchInput" type="search" placeholder="Search title, packet, release set, tags">
-        <button id="clearClusterButton" type="button">All articles</button>
+        <input id="searchInput" type="search" placeholder="Search title, packet, article, body, cluster, release, locale">
+        <select id="packetSurfaceSelect" aria-label="Packet surface"></select>
+        <button id="clearClusterButton" type="button">All clusters</button>
       </div>
-      <div id="clusterList" class="clusters"></div>
-      <div id="listStatus" class="summary"></div>
-      <div id="articleList" class="article-list"></div>
+      <div id="clusterList" class="clusters" aria-label="Publication clusters"></div>
+      <div id="listStatus" class="summary" aria-live="polite"></div>
+      <div id="articleList" class="article-list" aria-label="Filtered articles"></div>
     </aside>
 
-    <main>
+    <main id="mainContent">
       <section class="article-head">
         <h1 id="articleTitle">No article selected</h1>
         <div id="articleMeta" class="article-meta"></div>
         <div id="articlePath" class="path"></div>
       </section>
+      <section id="controllerPanel" class="panel" aria-live="polite"></section>
+      <section id="packetPanel" class="panel" aria-live="polite"></section>
       <article id="articleBody" class="article-body">
         <div class="empty">Select a cluster or article. If Markdown cannot load from disk, open this file through the local HTTP server.</div>
       </article>
@@ -331,8 +468,54 @@
 
     const surfaceIndexPath = "Publication_Surface_Index.csv";
     const clusterIndexPath = "Publication_Cluster_Index.csv";
+    const localizationStatusPath = "Localization_Status_Index.md";
     const preferredLocale = "ru_RU";
     const preferredSurface = "external_site";
+    const preferredClusterId = "site_wiki_start_here_cluster";
+
+    const localeContract = [
+      { code: "en_US", dir: "ltr" },
+      { code: "ru_RU", dir: "ltr" },
+      { code: "ja_JP", dir: "ltr" },
+      { code: "zh_CN", dir: "ltr" },
+      { code: "fr_FR", dir: "ltr" },
+      { code: "es_ES", dir: "ltr" },
+      { code: "de_DE", dir: "ltr" },
+      { code: "pl_PL", dir: "ltr" },
+      { code: "uk_UA", dir: "ltr" },
+      { code: "ar_SA", dir: "rtl" },
+      { code: "id_ID", dir: "ltr" },
+      { code: "ko_KR", dir: "ltr" },
+      { code: "he_IL", dir: "rtl" },
+      { code: "pt_BR", dir: "ltr" },
+      { code: "nl_NL", dir: "ltr" }
+    ];
+
+    const packetSurfaceOptions = [
+      { value: "", label: "All packet surfaces" },
+      { value: "title", label: "Packet title" },
+      { value: "scanner", label: "Scanner" },
+      { value: "field_note", label: "Field note" },
+      { value: "terminal", label: "Terminal" },
+      { value: "audio", label: "Audio" },
+      { value: "in_game_wiki", label: "In-game wiki / codex" },
+      { value: "external_site", label: "External site" }
+    ];
+
+    const packetSurfaceAliases = {
+      title: ["title"],
+      scanner: ["scanner", "scanner_"],
+      field_note: ["field_note", "field_note_"],
+      terminal: ["terminal", "terminal_", "terminal_diag"],
+      audio: ["audio", "audio_", "audio_line", "audio_subtitle"],
+      in_game_wiki: ["in_game_wiki", "codex", "codex_body", "encyclopedia"],
+      external_site: ["external_site", "website_public", "website_archive"]
+    };
+
+    const surfaceBrightnessTerms = {
+      surface: ["surface", "waterline", "shallow", "photic", "shelf", "coast", "sky", "aegir", "moon", "cloud", "reef"],
+      dark: ["black", "dark", "gloom", "muddy", "crushed", "noir", "murk", "fog", "low light", "unreadable"]
+    };
 
     const state = {
       surfaceRows: [],
@@ -341,36 +524,57 @@
       activeRow: null,
       activeCluster: null,
       surface: "",
-      locale: "",
+      locale: preferredLocale,
+      releaseSet: "",
       status: "",
-      query: ""
+      spoiler: "",
+      packetSurface: "",
+      query: "",
+      parseWarnings: [],
+      clusterPacketMap: new Map(),
+      packetCache: new Map(),
+      packetTextIndex: new Map(),
+      articleTextCache: new Map(),
+      packetLoadErrors: [],
+      packetBundleLoadedCount: 0,
+      packetBundleFallbackCount: 0,
+      packetDirectFallbackCount: 0,
+      packetLibraryStatus: "packet index not loaded",
+      localizationStatusText: "",
+      loadToken: 0
     };
 
     const nodes = {
       globalStatus: document.getElementById("globalStatus"),
       surfaceSelect: document.getElementById("surfaceSelect"),
       localeSelect: document.getElementById("localeSelect"),
+      releaseSetSelect: document.getElementById("releaseSetSelect"),
       statusSelect: document.getElementById("statusSelect"),
+      spoilerSelect: document.getElementById("spoilerSelect"),
+      packetSurfaceSelect: document.getElementById("packetSurfaceSelect"),
       searchInput: document.getElementById("searchInput"),
       clearClusterButton: document.getElementById("clearClusterButton"),
       clusterList: document.getElementById("clusterList"),
       listStatus: document.getElementById("listStatus"),
       articleList: document.getElementById("articleList"),
+      mainContent: document.getElementById("mainContent"),
       articleTitle: document.getElementById("articleTitle"),
       articleMeta: document.getElementById("articleMeta"),
       articlePath: document.getElementById("articlePath"),
+      controllerPanel: document.getElementById("controllerPanel"),
+      packetPanel: document.getElementById("packetPanel"),
       articleBody: document.getElementById("articleBody")
     };
 
     function escapeHtml(value) {
-      return String(value)
+      return String(value || "")
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;");
     }
 
-    function parseCsv(text) {
+    function parseCsv(text, sourceName) {
       if (text.charCodeAt(0) === 0xFEFF) {
         text = text.slice(1);
       }
@@ -418,8 +622,15 @@
       }
 
       const header = rows.shift() || [];
-      return rows
-        .filter((item) => item.length === header.length)
+      let malformed = 0;
+      const parsed = rows
+        .filter((item) => {
+          const ok = item.length === header.length;
+          if (!ok) {
+            malformed += 1;
+          }
+          return ok;
+        })
         .map((item) => {
           const out = {};
           for (let i = 0; i < header.length; i += 1) {
@@ -427,6 +638,11 @@
           }
           return out;
         });
+
+      if (malformed > 0) {
+        state.parseWarnings.push(sourceName + ": skipped malformed rows=" + malformed);
+      }
+      return parsed;
     }
 
     function uniqueSorted(rows, key) {
@@ -440,47 +656,89 @@
       return Array.from(seen).sort();
     }
 
-    function setSelectOptions(select, values, current) {
+    function setSelectOptions(select, entries, current) {
       select.innerHTML = "";
-      for (let i = 0; i < values.length; i += 1) {
+      for (let i = 0; i < entries.length; i += 1) {
+        const entry = entries[i];
         const option = document.createElement("option");
-        option.value = values[i];
-        option.textContent = values[i];
+        option.value = entry.value;
+        option.textContent = entry.label;
         select.appendChild(option);
       }
-      select.value = values.includes(current) ? current : values[0] || "";
+      const values = entries.map((entry) => entry.value);
+      select.value = values.includes(current) ? current : (entries[0] ? entries[0].value : "");
     }
 
     function normalize(value) {
-      return String(value || "").toLocaleLowerCase();
+      return String(value || "").toLowerCase();
     }
 
-    function rowMatchesQuery(row, query) {
-      if (!query) {
-        return true;
+    function getStatusBucket(status) {
+      const value = normalize(status).replace(/[\s-]+/g, "_");
+      if (!value) {
+        return "missing";
       }
-      const haystack = [
-        row.packet_id,
-        row.article_id,
-        row.title,
-        row.release_set_id,
-        row.unlock_id,
-        row.poi_tags,
-        row.biome_tags,
-        row.localization_status
-      ].join(" ");
-      return normalize(haystack).includes(query);
+      if (value.includes("blocked")) {
+        return "blocked";
+      }
+      if (value.includes("draft") || value.includes("pending") || value.includes("machine_or_llm")) {
+        return "draft";
+      }
+      if (
+        value.includes("ready") ||
+        value.includes("reviewed") ||
+        value.includes("approved") ||
+        value.includes("passed") ||
+        value.includes("baked") ||
+        value.includes("locked") ||
+        value.includes("authority") ||
+        value.includes("applied") ||
+        value.includes("pilot")
+      ) {
+        return "ready";
+      }
+      return "other";
     }
 
-    function getClusterPacketSet(cluster) {
-      const set = new Set();
-      if (!cluster) {
-        return set;
+    function getStatusClassName(status) {
+      const bucket = getStatusBucket(status);
+      if (bucket === "ready") {
+        return "status-ready";
       }
-      set.add(cluster.cluster_packet_id);
-      addCsvList(set, cluster.prereq_packet_ids);
-      addCsvList(set, cluster.next_cluster_packet_ids);
-      return set;
+      if (bucket === "draft") {
+        return "status-draft";
+      }
+      if (bucket === "blocked") {
+        return "status-blocked";
+      }
+      return "status-not_indexed";
+    }
+
+    function getStatusDisplay(status) {
+      return (status || "missing") + " / " + getStatusBucket(status);
+    }
+
+    function getLocaleInfo(locale) {
+      return localeContract.find((item) => item.code === locale) || { code: locale || "en_US", dir: "ltr" };
+    }
+
+    function applyLocaleDirection() {
+      const info = getLocaleInfo(state.locale);
+      document.documentElement.lang = info.code;
+      document.documentElement.dir = info.dir;
+      nodes.mainContent.setAttribute("dir", info.dir);
+      nodes.articleBody.setAttribute("dir", info.dir);
+      nodes.articleList.setAttribute("dir", info.dir);
+      nodes.clusterList.setAttribute("dir", info.dir);
+      nodes.articleTitle.setAttribute("dir", info.dir);
+    }
+
+    function rowKey(row) {
+      return [row.surface, row.locale, row.packet_id].join("|");
+    }
+
+    function clusterMapKey(surface, locale, packetId) {
+      return [surface, locale, packetId].join("|");
     }
 
     function addCsvList(set, value) {
@@ -496,6 +754,202 @@
       }
     }
 
+    function getClusterPacketSet(cluster) {
+      const set = new Set();
+      if (!cluster) {
+        return set;
+      }
+      set.add(cluster.cluster_packet_id);
+      addCsvList(set, cluster.prereq_packet_ids);
+      addCsvList(set, cluster.next_cluster_packet_ids);
+      return set;
+    }
+
+    function buildClusterPacketMap() {
+      state.clusterPacketMap = new Map();
+      for (let i = 0; i < state.clusterRows.length; i += 1) {
+        const cluster = state.clusterRows[i];
+        const packetSet = getClusterPacketSet(cluster);
+        packetSet.forEach((packetId) => {
+          const key = clusterMapKey(cluster.surface, cluster.locale, packetId);
+          const list = state.clusterPacketMap.get(key) || [];
+          list.push(cluster);
+          state.clusterPacketMap.set(key, list);
+        });
+      }
+    }
+
+    function getRowClusters(row) {
+      return state.clusterPacketMap.get(clusterMapKey(row.surface, row.locale, row.packet_id)) || [];
+    }
+
+    function getRowSpoilerState(row) {
+      const clusters = getRowClusters(row);
+      if (clusters.length === 0) {
+        return "not_indexed";
+      }
+      let maxTier = "";
+      for (let i = 0; i < clusters.length; i += 1) {
+        const tier = clusters[i].spoiler_tier || "";
+        if (maxTier === "" || Number(tier) > Number(maxTier)) {
+          maxTier = tier;
+        }
+      }
+      return maxTier === "" ? "not_indexed" : maxTier;
+    }
+
+    function getLocalizedPacket(packet, locale) {
+      if (!packet || !packet.localized) {
+        return null;
+      }
+      return packet.localized[locale] || packet.localized.en_US || null;
+    }
+
+    function surfaceKeyMatches(key, surface) {
+      const aliases = packetSurfaceAliases[surface] || [surface];
+      for (let i = 0; i < aliases.length; i += 1) {
+        const alias = aliases[i];
+        if (alias.endsWith("_")) {
+          if (key.startsWith(alias)) {
+            return true;
+          }
+        } else if (key === alias) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function getPacketSurfaceEntries(localized, surface) {
+      if (!localized) {
+        return [];
+      }
+      const keys = Object.keys(localized);
+      const entries = [];
+
+      for (let i = 0; i < keys.length; i += 1) {
+        const key = keys[i];
+        const value = localized[key];
+        if (!value) {
+          continue;
+        }
+        if (!surface || surfaceKeyMatches(key, surface)) {
+          entries.push({ key, value });
+        }
+      }
+
+      return entries;
+    }
+
+    function getLongestSurfaceText(localized, surface) {
+      const entries = getPacketSurfaceEntries(localized, surface);
+      let key = "";
+      let length = 0;
+      for (let i = 0; i < entries.length; i += 1) {
+        const currentLength = String(entries[i].value || "").length;
+        if (currentLength > length) {
+          key = entries[i].key;
+          length = currentLength;
+        }
+      }
+      return { key, length };
+    }
+
+    function addLengthRisk(warnings, localized, surface, maxLength, label) {
+      const longest = getLongestSurfaceText(localized, surface);
+      if (longest.length > maxLength) {
+        warnings.push(label + " length " + longest.length + " exceeds " + maxLength + " chars at " + longest.key + ".");
+      }
+    }
+
+    function getContentRiskWarnings(row, markdown, packet) {
+      const warnings = [];
+      const statusBucket = getStatusBucket(row.localization_status);
+      const expectedDir = getLocaleInfo(row.locale).dir;
+      const indexedDir = row.direction || expectedDir;
+
+      if (statusBucket === "draft") {
+        warnings.push("Locale row is draft/pending; public reader must not treat this as final localized copy.");
+      } else if (statusBucket === "blocked") {
+        warnings.push("Locale row is blocked; content should not be promoted without translation owner review.");
+      }
+
+      if (indexedDir !== expectedDir) {
+        warnings.push("Direction mismatch: index has " + indexedDir + ", locale contract expects " + expectedDir + ".");
+      }
+
+      if (!packet) {
+        warnings.push("Packet JSON is not loaded yet; surface-level text QA is incomplete for this row.");
+        return warnings;
+      }
+
+      const localized = getLocalizedPacket(packet, row.locale);
+      if (!localized) {
+        warnings.push("Packet has no localized payload for " + row.locale + " and no en_US fallback.");
+        return warnings;
+      }
+
+      addLengthRisk(warnings, localized, "title", 96, "Title");
+      addLengthRisk(warnings, localized, "scanner", 240, "Scanner");
+      addLengthRisk(warnings, localized, "field_note", 300, "Field note");
+      addLengthRisk(warnings, localized, "terminal", 420, "Terminal");
+      addLengthRisk(warnings, localized, "audio", 220, "Audio");
+      addLengthRisk(warnings, localized, "external_site", 700, "External site");
+
+      if (markdown && markdown.length > 16000) {
+        warnings.push("Markdown body is " + markdown.length + " chars; inspect mobile scroll density and localization expansion.");
+      }
+
+      return warnings;
+    }
+
+    function packetHasSurface(row, surface) {
+      if (!surface) {
+        return true;
+      }
+      const packet = state.packetCache.get(row.packet_id);
+      if (!packet) {
+        return true;
+      }
+      const localized = getLocalizedPacket(packet, row.locale);
+      return getPacketSurfaceEntries(localized, surface).length > 0;
+    }
+
+    function rowMatchesQuery(row, query) {
+      if (!query) {
+        return true;
+      }
+      const clusters = getRowClusters(row);
+      const clusterText = clusters.map((cluster) => [
+        cluster.cluster_id,
+        cluster.title,
+        cluster.truth_payload,
+        cluster.player_question,
+        cluster.route_question,
+        cluster.primary_surface,
+        cluster.spoiler_tier
+      ].join(" ")).join(" ");
+      const packetText = state.packetTextIndex.get(row.packet_id + "|" + row.locale) || state.packetTextIndex.get(row.packet_id + "|en_US") || "";
+      const articleText = state.articleTextCache.get(rowKey(row)) || "";
+      const haystack = [
+        row.packet_id,
+        row.article_id,
+        row.title,
+        row.release_set_id,
+        row.unlock_id,
+        row.locale,
+        row.surface,
+        row.poi_tags,
+        row.biome_tags,
+        row.localization_status,
+        getStatusBucket(row.localization_status),
+        clusterText,
+        packetText,
+        articleText
+      ].join(" ");
+      return normalize(haystack).includes(query);
+    }
+
     function filterRows() {
       const query = normalize(state.query.trim());
       const clusterSet = getClusterPacketSet(state.activeCluster);
@@ -507,10 +961,19 @@
         if (row.surface !== state.surface || row.locale !== state.locale) {
           continue;
         }
+        if (state.releaseSet && row.release_set_id !== state.releaseSet) {
+          continue;
+        }
         if (state.status && row.localization_status !== state.status) {
           continue;
         }
+        if (state.spoiler && getRowSpoilerState(row) !== state.spoiler) {
+          continue;
+        }
         if (useCluster && !clusterSet.has(row.packet_id)) {
+          continue;
+        }
+        if (!packetHasSurface(row, state.packetSurface)) {
           continue;
         }
         if (!rowMatchesQuery(row, query)) {
@@ -520,10 +983,22 @@
       }
     }
 
+    function makePill(text, className) {
+      const span = document.createElement("span");
+      span.className = className ? "pill " + className : "pill";
+      span.textContent = text || "missing";
+      return span;
+    }
+
     function renderClusters() {
       nodes.clusterList.innerHTML = "";
       const rows = state.clusterRows.filter((row) => row.surface === state.surface && row.locale === state.locale);
       rows.sort((a, b) => Number(a.cluster_order || 0) - Number(b.cluster_order || 0));
+
+      if (rows.length === 0) {
+        nodes.clusterList.innerHTML = "<div class=\"empty\">No cluster rows for this surface/locale. Cluster filter is disabled.</div>";
+        return;
+      }
 
       for (let i = 0; i < rows.length; i += 1) {
         const row = rows[i];
@@ -532,15 +1007,20 @@
         button.className = "cluster-button";
         if (state.activeCluster && state.activeCluster.cluster_id === row.cluster_id) {
           button.classList.add("active");
+          button.setAttribute("aria-current", "true");
         }
 
         const title = document.createElement("span");
         title.className = "cluster-title";
-        title.textContent = row.localized_title || row.cluster_packet_id;
+        title.textContent = row.title || row.cluster_packet_id;
 
         const meta = document.createElement("span");
         meta.className = "cluster-meta";
-        meta.textContent = row.cluster_id + " | " + row.spoiler_tier + " | " + row.route_question;
+        meta.textContent = [
+          row.cluster_id,
+          "spoiler " + (row.spoiler_tier || "not indexed"),
+          row.player_question || row.route_question || "no question"
+        ].join(" | ");
 
         button.appendChild(title);
         button.appendChild(meta);
@@ -565,15 +1045,17 @@
       nodes.articleList.innerHTML = "";
       const totalLocaleRows = state.surfaceRows.filter((row) => row.surface === state.surface && row.locale === state.locale).length;
       const clusterText = state.activeCluster ? " | cluster: " + state.activeCluster.cluster_id : "";
-      nodes.listStatus.textContent = state.filteredRows.length + " / " + totalLocaleRows + " articles" + clusterText;
+      const packetFilterText = state.packetSurface ? " | packet surface: " + state.packetSurface : "";
+      nodes.listStatus.textContent = state.filteredRows.length + " / " + totalLocaleRows + " articles" + clusterText + packetFilterText;
 
       for (let i = 0; i < state.filteredRows.length; i += 1) {
         const row = state.filteredRows[i];
         const button = document.createElement("button");
         button.type = "button";
         button.className = "article-button";
-        if (state.activeRow && state.activeRow.packet_id === row.packet_id) {
+        if (state.activeRow && state.activeRow.packet_id === row.packet_id && state.activeRow.surface === row.surface) {
           button.classList.add("active");
+          button.setAttribute("aria-current", "true");
         }
 
         const id = document.createElement("span");
@@ -586,8 +1068,9 @@
 
         const meta = document.createElement("span");
         meta.className = "article-meta";
-        meta.appendChild(makePill(row.localization_status, "status-" + row.localization_status));
-        meta.appendChild(makePill(row.direction || "ltr", ""));
+        meta.appendChild(makePill(row.localization_status, getStatusClassName(row.localization_status)));
+        meta.appendChild(makePill("spoiler " + getRowSpoilerState(row), getRowSpoilerState(row) === "not_indexed" ? "status-not_indexed" : ""));
+        meta.appendChild(makePill(row.direction || getLocaleInfo(row.locale).dir, ""));
 
         button.appendChild(id);
         button.appendChild(title);
@@ -597,46 +1080,11 @@
       }
     }
 
-    function makePill(text, className) {
-      const span = document.createElement("span");
-      span.className = className ? "pill " + className : "pill";
-      span.textContent = text || "missing";
-      return span;
-    }
-
     function renderAll() {
       renderClusters();
       renderList();
       nodes.clearClusterButton.classList.toggle("active", !state.activeCluster);
-    }
-
-    async function loadArticle(row) {
-      state.activeRow = row;
-      nodes.articleTitle.textContent = row.title || row.article_id || row.packet_id;
-      nodes.articleMeta.innerHTML = "";
-      nodes.articleMeta.appendChild(makePill(row.surface, ""));
-      nodes.articleMeta.appendChild(makePill(row.locale, ""));
-      nodes.articleMeta.appendChild(makePill(row.localization_status, "status-" + row.localization_status));
-      nodes.articleMeta.appendChild(makePill(row.release_set_id, ""));
-      nodes.articleMeta.appendChild(makePill(row.unlock_id, ""));
-      nodes.articlePath.textContent = row.page_path;
-      nodes.articleBody.setAttribute("dir", row.direction || "ltr");
-      nodes.articleBody.innerHTML = "<div class=\"empty\">Loading Markdown...</div>";
-      renderList();
-
-      try {
-        const response = await fetch(row.page_path);
-        if (!response.ok) {
-          throw new Error("HTTP " + response.status);
-        }
-        const markdown = await response.text();
-        nodes.articleBody.innerHTML = renderMarkdown(markdown);
-      } catch (error) {
-        nodes.articleBody.innerHTML =
-          "<div class=\"empty\">Cannot load article. Run a local HTTP server from this folder and open reader.html through http://127.0.0.1. Error: " +
-          escapeHtml(error.message) +
-          "</div>";
-      }
+      nodes.clearClusterButton.setAttribute("aria-pressed", String(!state.activeCluster));
     }
 
     function renderMarkdown(markdown) {
@@ -712,21 +1160,346 @@
       return html.length > 0 ? html.join("\n") : "<div class=\"empty\">Article body is empty.</div>";
     }
 
+    function cachePacket(packet, sourcePath) {
+      if (!packet || !packet.packet_id) {
+        return;
+      }
+      packet.__sourcePath = sourcePath;
+      state.packetCache.set(packet.packet_id, packet);
+      if (!packet.localized) {
+        return;
+      }
+      const locales = Object.keys(packet.localized);
+      for (let i = 0; i < locales.length; i += 1) {
+        const locale = locales[i];
+        const localized = packet.localized[locale] || {};
+        const text = [
+          packet.packet_id,
+          packet.article_id,
+          packet.status,
+          Array.isArray(packet.surfaces) ? packet.surfaces.join(" ") : "",
+          Object.keys(localized).map((key) => localized[key]).join(" ")
+        ].join(" ");
+        state.packetTextIndex.set(packet.packet_id + "|" + locale, text);
+      }
+    }
+
+    async function loadPacketFile(path) {
+      const response = await fetch(path);
+      if (!response.ok) {
+        throw new Error(path + " HTTP " + response.status);
+      }
+      const json = await response.json();
+      if (Array.isArray(json.packets)) {
+        for (let i = 0; i < json.packets.length; i += 1) {
+          cachePacket(json.packets[i], path);
+        }
+      } else {
+        cachePacket(json, path);
+      }
+      return json;
+    }
+
+    async function findPacketForRow(row) {
+      if (state.packetCache.has(row.packet_id)) {
+        return state.packetCache.get(row.packet_id);
+      }
+
+      const directPath = "packets/" + row.packet_id + ".json";
+      try {
+        await loadPacketFile(directPath);
+      } catch (directError) {
+        const releasePath = "packets/" + row.release_set_id + ".packets.json";
+        try {
+          await loadPacketFile(releasePath);
+        } catch (releaseError) {
+          state.packetLoadErrors.push(row.packet_id + ": " + directError.message + " | " + releaseError.message);
+        }
+      }
+      return state.packetCache.get(row.packet_id) || null;
+    }
+
+    async function warmPacketLibrary() {
+      state.packetLibraryStatus = "packet index warming";
+      state.packetLoadErrors = [];
+      state.packetBundleLoadedCount = 0;
+      state.packetBundleFallbackCount = 0;
+      state.packetDirectFallbackCount = 0;
+      updateGlobalStatus();
+      const releasePacketMap = new Map();
+
+      for (let i = 0; i < state.surfaceRows.length; i += 1) {
+        const row = state.surfaceRows[i];
+        let packetSet = releasePacketMap.get(row.release_set_id);
+        if (!packetSet) {
+          packetSet = new Set();
+          releasePacketMap.set(row.release_set_id, packetSet);
+        }
+        packetSet.add(row.packet_id);
+      }
+
+      const releaseSets = Array.from(releasePacketMap.keys()).sort();
+      for (let i = 0; i < releaseSets.length; i += 1) {
+        const releaseSet = releaseSets[i];
+        const releasePath = "packets/" + releaseSet + ".packets.json";
+        let releaseError = null;
+        try {
+          await loadPacketFile(releasePath);
+          state.packetBundleLoadedCount += 1;
+        } catch (error) {
+          releaseError = error;
+          state.packetBundleFallbackCount += 1;
+        }
+
+        const packetIds = Array.from(releasePacketMap.get(releaseSet)).sort();
+        for (let packetIndex = 0; packetIndex < packetIds.length; packetIndex += 1) {
+          const packetId = packetIds[packetIndex];
+          if (state.packetCache.has(packetId)) {
+            continue;
+          }
+          try {
+            await loadPacketFile("packets/" + packetId + ".json");
+            state.packetDirectFallbackCount += 1;
+          } catch (error) {
+            const bundleText = releaseError ? "; bundle fallback: " + releaseError.message : "";
+            state.packetLoadErrors.push(packetId + ": " + error.message + bundleText);
+          }
+        }
+      }
+
+      state.packetLibraryStatus =
+        "packet index loaded: " + state.packetCache.size + " packets, release bundles " + state.packetBundleLoadedCount + "/" + releaseSets.length +
+        ", bundle fallbacks " + state.packetBundleFallbackCount + ", direct fallback packets " + state.packetDirectFallbackCount +
+        ", unresolved " + state.packetLoadErrors.length;
+      filterRows();
+      resetArticleIfHidden();
+      renderAll();
+      updateGlobalStatus();
+      if (!state.activeRow && state.filteredRows.length > 0) {
+        loadArticle(state.filteredRows[0]);
+      } else if (state.activeRow) {
+        renderPacketPanel(state.activeRow, state.packetCache.get(state.activeRow.packet_id));
+      }
+    }
+
+    function getLocaleStatusLine(locale) {
+      if (!state.localizationStatusText) {
+        return "Localization status index not loaded.";
+      }
+      const escapedLocale = locale.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const match = state.localizationStatusText.match(new RegExp("- `" + escapedLocale + "`: ([^\\n]+)"));
+      return match ? match[1] : "Locale not listed in Localization_Status_Index.md.";
+    }
+
+    function getBrightnessWarningText(markdown, packet) {
+      const localized = getLocalizedPacket(packet, state.locale);
+      const packetText = localized ? Object.keys(localized).map((key) => localized[key]).join(" ") : "";
+      let text = normalize([markdown || "", packetText].join(" ")).replace(/black keel/g, "");
+      const surfaceHits = surfaceBrightnessTerms.surface.filter((term) => text.includes(term));
+      const darkHits = surfaceBrightnessTerms.dark.filter((term) => text.includes(term));
+      if (surfaceHits.length === 0 || darkHits.length === 0) {
+        return "";
+      }
+      return "Surface brightness canon review: surface/shallow/sky terms [" + surfaceHits.join(", ") + "] appear near dark/noir terms [" + darkHits.join(", ") + "]. Controller should verify the text is not implying ugly or permanently dark surface/photic presentation.";
+    }
+
+    function fact(label, value) {
+      return "<div class=\"fact\"><span class=\"fact-label\">" + escapeHtml(label) + "</span><span class=\"fact-value\">" + escapeHtml(value || "not indexed") + "</span></div>";
+    }
+
+    function renderControllerPanel(row, markdown, packet) {
+      if (!row) {
+        nodes.controllerPanel.innerHTML = "<h2>Controller Status</h2><div class=\"empty\">No article selected.</div>";
+        return;
+      }
+
+      const clusters = getRowClusters(row);
+      const clusterNames = clusters.length > 0 ? clusters.map((cluster) => cluster.cluster_id).join(", ") : "not indexed";
+      const statusLine = getLocaleStatusLine(row.locale);
+      const warning = getBrightnessWarningText(markdown || "", packet);
+      const riskWarnings = getContentRiskWarnings(row, markdown || "", packet);
+      const fileNotice = location.protocol === "file:" ?
+        "<div class=\"notice warn\">Local file mode blocks fetch in most browsers. Use: python -m http.server 8788 --bind 127.0.0.1 --directory Docs/Lore/AppliedContent</div>" :
+        "";
+      const parseNotice = state.parseWarnings.length > 0 ?
+        "<div class=\"notice warn\">" + escapeHtml(state.parseWarnings.join(" | ")) + "</div>" :
+        "";
+      const brightnessNotice = warning ?
+        "<div class=\"notice warn\">" + escapeHtml(warning) + "</div>" :
+        "";
+      const contentRiskNotice = riskWarnings.length > 0 ?
+        "<div class=\"notice warn\">" + escapeHtml(riskWarnings.join(" ")) + "</div>" :
+        "";
+      const packetErrorNotice = state.packetLoadErrors.length > 0 ?
+        "<div class=\"notice blocked\">Unresolved packet JSON loads: " + escapeHtml(String(state.packetLoadErrors.length)) + ". First: " + escapeHtml(state.packetLoadErrors[0]) + "</div>" :
+        "";
+
+      nodes.controllerPanel.innerHTML =
+        "<h2>Controller Status</h2>" +
+        "<div class=\"panel-grid\">" +
+        fact("Locale status", getStatusDisplay(row.localization_status)) +
+        fact("Locale summary", statusLine) +
+        fact("Spoiler", getRowSpoilerState(row)) +
+        fact("Clusters", clusterNames) +
+        fact("Packet library", state.packetLibraryStatus) +
+        fact("Direction", row.direction || getLocaleInfo(row.locale).dir) +
+        "</div>" +
+        fileNotice +
+        parseNotice +
+        brightnessNotice +
+        contentRiskNotice +
+        packetErrorNotice;
+    }
+
+    function renderPacketPanel(row, packet) {
+      if (!row) {
+        nodes.packetPanel.innerHTML = "<h2>Packet Surfaces</h2><div class=\"empty\">No packet selected.</div>";
+        return;
+      }
+
+      if (!packet) {
+        nodes.packetPanel.innerHTML =
+          "<h2>Packet Surfaces</h2><div class=\"empty\">Packet JSON not loaded for " +
+          escapeHtml(row.packet_id) +
+          ". The page will try packets/" + escapeHtml(row.packet_id) + ".json and packets/" + escapeHtml(row.release_set_id) + ".packets.json.</div>";
+        return;
+      }
+
+      const localized = getLocalizedPacket(packet, row.locale);
+      if (!localized) {
+        nodes.packetPanel.innerHTML =
+          "<h2>Packet Surfaces</h2><div class=\"empty\">Packet has no localized text for " +
+          escapeHtml(row.locale) + " or en_US fallback.</div>";
+        return;
+      }
+
+      const surfaceValues = state.packetSurface ? [state.packetSurface] : packetSurfaceOptions.filter((item) => item.value).map((item) => item.value);
+      const cards = [];
+      for (let i = 0; i < surfaceValues.length; i += 1) {
+        const surface = surfaceValues[i];
+        const entries = getPacketSurfaceEntries(localized, surface);
+        if (entries.length === 0) {
+          continue;
+        }
+        const paragraphs = entries.map((entry) =>
+          "<p><strong>" + escapeHtml(entry.key) + ":</strong> " + escapeHtml(entry.value) + "</p>"
+        ).join("");
+        cards.push("<div class=\"surface-card\"><h3>" + escapeHtml(surface) + "</h3>" + paragraphs + "</div>");
+      }
+
+      const sourcePath = packet.__sourcePath || "not indexed";
+      nodes.packetPanel.innerHTML =
+        "<h2>Packet Surfaces</h2>" +
+        "<div class=\"article-meta\">" +
+        "<span class=\"pill\">" + escapeHtml(packet.packet_id) + "</span>" +
+        "<span class=\"pill " + getStatusClassName(packet.status) + "\">" + escapeHtml(getStatusDisplay(packet.status)) + "</span>" +
+        "<span class=\"pill\">" + escapeHtml(sourcePath) + "</span>" +
+        "</div>" +
+        (cards.length > 0 ? "<div class=\"surface-grid\">" + cards.join("") + "</div>" : "<div class=\"empty\">Selected packet surface is not present in this packet/locale.</div>");
+    }
+
+    async function loadArticle(row) {
+      state.loadToken += 1;
+      const token = state.loadToken;
+      state.activeRow = row;
+      applyLocaleDirection();
+      nodes.articleTitle.textContent = row.title || row.article_id || row.packet_id;
+      nodes.articleMeta.innerHTML = "";
+      nodes.articleMeta.appendChild(makePill(row.surface, ""));
+      nodes.articleMeta.appendChild(makePill(row.locale, ""));
+      nodes.articleMeta.appendChild(makePill(getStatusDisplay(row.localization_status), getStatusClassName(row.localization_status)));
+      nodes.articleMeta.appendChild(makePill(row.release_set_id, ""));
+      nodes.articleMeta.appendChild(makePill(row.unlock_id, ""));
+      nodes.articleMeta.appendChild(makePill("spoiler " + getRowSpoilerState(row), getRowSpoilerState(row) === "not_indexed" ? "status-not_indexed" : ""));
+      nodes.articlePath.textContent = row.page_path;
+      nodes.articleBody.setAttribute("dir", row.direction || getLocaleInfo(row.locale).dir);
+      nodes.articleBody.innerHTML = "<div class=\"empty\">Loading Markdown...</div>";
+      renderControllerPanel(row, "", state.packetCache.get(row.packet_id));
+      renderPacketPanel(row, state.packetCache.get(row.packet_id));
+      renderList();
+
+      let markdown = "";
+      try {
+        const response = await fetch(row.page_path);
+        if (!response.ok) {
+          throw new Error("HTTP " + response.status);
+        }
+        markdown = await response.text();
+        if (token !== state.loadToken) {
+          return;
+        }
+        state.articleTextCache.set(rowKey(row), markdown);
+        nodes.articleBody.innerHTML = renderMarkdown(markdown);
+      } catch (error) {
+        if (token !== state.loadToken) {
+          return;
+        }
+        nodes.articleBody.innerHTML =
+          "<div class=\"empty\">Cannot load article. Run a local HTTP server from this folder and open reader.html through http://127.0.0.1:8788/reader.html. Error: " +
+          escapeHtml(error.message) +
+          "</div>";
+      }
+
+      const packet = await findPacketForRow(row);
+      if (token !== state.loadToken) {
+        return;
+      }
+      renderPacketPanel(row, packet);
+      renderControllerPanel(row, markdown, packet);
+      filterRows();
+      renderList();
+      updateGlobalStatus();
+    }
+
     function syncSelectors() {
-      const surfaces = uniqueSorted(state.surfaceRows, "surface");
+      const surfaces = uniqueSorted(state.surfaceRows, "surface").map((surface) => ({
+        value: surface,
+        label: surface === "in_game_wiki" ? "in_game_wiki / codex" : surface
+      }));
       setSelectOptions(nodes.surfaceSelect, surfaces, state.surface || preferredSurface);
       state.surface = nodes.surfaceSelect.value;
-      const locales = uniqueSorted(state.surfaceRows.filter((row) => row.surface === state.surface), "locale");
-      setSelectOptions(nodes.localeSelect, locales, state.locale || preferredLocale);
+
+      nodes.localeSelect.innerHTML = "";
+      for (let i = 0; i < localeContract.length; i += 1) {
+        const locale = localeContract[i];
+        const count = state.surfaceRows.filter((row) => row.surface === state.surface && row.locale === locale.code).length;
+        const option = document.createElement("option");
+        option.value = locale.code;
+        option.textContent = locale.code + " | " + locale.dir + " | rows " + count;
+        nodes.localeSelect.appendChild(option);
+      }
+      nodes.localeSelect.value = localeContract.some((item) => item.code === state.locale) ? state.locale : preferredLocale;
       state.locale = nodes.localeSelect.value;
-      nodes.statusSelect.value = state.status;
+
+      const releaseSets = [{ value: "", label: "All release sets" }].concat(
+        uniqueSorted(state.surfaceRows.filter((row) => row.surface === state.surface && row.locale === state.locale), "release_set_id")
+          .map((value) => ({ value, label: value }))
+      );
+      setSelectOptions(nodes.releaseSetSelect, releaseSets, state.releaseSet);
+      state.releaseSet = nodes.releaseSetSelect.value;
+
+      const statuses = [{ value: "", label: "All localization statuses" }].concat(
+        uniqueSorted(state.surfaceRows, "localization_status").map((value) => ({ value, label: getStatusDisplay(value) }))
+      );
+      setSelectOptions(nodes.statusSelect, statuses, state.status);
+      state.status = nodes.statusSelect.value;
+
+      const spoilerValues = Array.from(new Set(state.clusterRows.map((row) => row.spoiler_tier).filter(Boolean))).sort();
+      const spoilers = [{ value: "", label: "All spoiler states" }, { value: "not_indexed", label: "spoiler not indexed" }]
+        .concat(spoilerValues.map((value) => ({ value, label: "spoiler " + value })));
+      setSelectOptions(nodes.spoilerSelect, spoilers, state.spoiler);
+      state.spoiler = nodes.spoilerSelect.value;
+
+      setSelectOptions(nodes.packetSurfaceSelect, packetSurfaceOptions, state.packetSurface);
+      state.packetSurface = nodes.packetSurfaceSelect.value;
+      applyLocaleDirection();
     }
 
     function resetArticleIfHidden() {
       if (!state.activeRow) {
         return;
       }
-      const visible = state.filteredRows.some((row) => row.packet_id === state.activeRow.packet_id);
+      const visible = state.filteredRows.some((row) => row.packet_id === state.activeRow.packet_id && row.surface === state.activeRow.surface);
       if (!visible) {
         state.activeRow = null;
       }
@@ -739,6 +1512,8 @@
       renderAll();
       if (!state.activeRow && state.filteredRows.length > 0) {
         loadArticle(state.filteredRows[0]);
+      } else if (state.activeRow) {
+        loadArticle(state.activeRow);
       }
       updateGlobalStatus();
     }
@@ -747,15 +1522,36 @@
       const localeRows = state.surfaceRows.filter((row) => row.surface === state.surface && row.locale === state.locale);
       let ready = 0;
       let draft = 0;
+      let blocked = 0;
+      let other = 0;
       for (let i = 0; i < localeRows.length; i += 1) {
-        if (localeRows[i].localization_status === "source_ready") {
+        const bucket = getStatusBucket(localeRows[i].localization_status);
+        if (bucket === "ready") {
           ready += 1;
-        } else if (localeRows[i].localization_status === "draft_native_pass_pending") {
+        } else if (bucket === "draft") {
           draft += 1;
+        } else if (bucket === "blocked") {
+          blocked += 1;
+        } else {
+          other += 1;
         }
       }
       nodes.globalStatus.textContent =
-        state.surface + " | " + state.locale + " | source_ready: " + ready + " | draft_native_pass_pending: " + draft;
+        state.surface + " | " + state.locale + " | rows " + localeRows.length +
+        " | ready " + ready + " | draft " + draft + " | blocked " + blocked + " | other " + other +
+        " | " + state.packetLibraryStatus;
+    }
+
+    async function loadLocalizationStatus() {
+      try {
+        const response = await fetch(localizationStatusPath);
+        if (!response.ok) {
+          throw new Error("HTTP " + response.status);
+        }
+        state.localizationStatusText = await response.text();
+      } catch (error) {
+        state.localizationStatusText = "Localization status index fetch failed: " + error.message;
+      }
     }
 
     async function boot() {
@@ -765,18 +1561,23 @@
         throw new Error("Publication indexes are not reachable through fetch()");
       }
 
-      state.surfaceRows = parseCsv(await surfaceResponse.text());
-      state.clusterRows = parseCsv(await clusterResponse.text());
+      state.surfaceRows = parseCsv(await surfaceResponse.text(), surfaceIndexPath);
+      state.clusterRows = parseCsv(await clusterResponse.text(), clusterIndexPath);
+      buildClusterPacketMap();
       state.surface = preferredSurface;
       state.locale = preferredLocale;
+      state.releaseSet = "";
       state.status = "";
+      state.spoiler = "";
+      state.packetSurface = "";
       state.query = "";
 
       syncSelectors();
+      await loadLocalizationStatus();
       const firstCluster = state.clusterRows.find((row) =>
         row.surface === state.surface &&
         row.locale === state.locale &&
-        row.cluster_id === "start_here"
+        row.cluster_id === preferredClusterId
       );
       state.activeCluster = firstCluster || null;
 
@@ -794,6 +1595,10 @@
       if (startRow) {
         loadArticle(startRow);
       }
+
+      setTimeout(() => {
+        warmPacketLibrary();
+      }, 30);
     }
 
     nodes.surfaceSelect.addEventListener("change", () => {
@@ -808,8 +1613,24 @@
       refreshAfterControlChange();
     });
 
+    nodes.releaseSetSelect.addEventListener("change", () => {
+      state.releaseSet = nodes.releaseSetSelect.value;
+      state.activeCluster = null;
+      refreshAfterControlChange();
+    });
+
     nodes.statusSelect.addEventListener("change", () => {
       state.status = nodes.statusSelect.value;
+      refreshAfterControlChange();
+    });
+
+    nodes.spoilerSelect.addEventListener("change", () => {
+      state.spoiler = nodes.spoilerSelect.value;
+      refreshAfterControlChange();
+    });
+
+    nodes.packetSurfaceSelect.addEventListener("change", () => {
+      state.packetSurface = nodes.packetSurfaceSelect.value;
       refreshAfterControlChange();
     });
 
@@ -818,6 +1639,7 @@
       filterRows();
       resetArticleIfHidden();
       renderAll();
+      updateGlobalStatus();
     });
 
     nodes.clearClusterButton.addEventListener("click", () => {
@@ -828,8 +1650,10 @@
 
     boot().catch((error) => {
       nodes.globalStatus.textContent = "Reader failed to boot.";
+      nodes.controllerPanel.innerHTML = "<h2>Controller Status</h2><div class=\"empty\">Boot failed.</div>";
+      nodes.packetPanel.innerHTML = "<h2>Packet Surfaces</h2><div class=\"empty\">Packet data unavailable.</div>";
       nodes.articleBody.innerHTML =
-        "<div class=\"empty\">Open this through a local HTTP server. Direct file:// loading blocks CSV/Markdown fetch in most browsers. Error: " +
+        "<div class=\"empty\">Open this through a local HTTP server. Direct file:// loading blocks CSV/Markdown fetch in most browsers. Command: python -m http.server 8788 --bind 127.0.0.1 --directory Docs/Lore/AppliedContent. Error: " +
         escapeHtml(error.message) +
         "</div>";
     });

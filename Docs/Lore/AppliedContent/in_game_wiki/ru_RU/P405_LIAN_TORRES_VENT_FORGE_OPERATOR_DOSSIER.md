@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Лиан Торрес/вент-печь
+# Lian Torres/Vent Forge
 
-Досье Лиана Торреса превращает стекло давления в доказательство труда. Перчатка, таймер и лоток показывают, что ресурсы HECTON-8 сначала были работой людей.
+Lian Torres' dossier turns pressure glass into labor evidence. The glove, timer and reject tray show that HECTON-8 resources were worked by people before they became salvage categories.
 
 ## Scanner
 
-Досье: Лиан Торрес. Перчатка, таймер и лоток брака совпадают.
+Dossier: Lian Torres. Glove, timer and reject tray match.
 
 ## Terminal
 
-ЛИАН ТОРРЕС/ВЕНТ-ПЕЧЬ. Лотки брака вели историю давления и цену уплотнения.
+LIAN TORRES/VENT FORGE. Reject trays logged pressure history and the price of each seal.
 
 ## Audio
 
-Торрес знал, какие ошибки все еще учат следующий шов держаться.
+Torres knew which failures could still teach the next seal to hold.
 
 ## Field Note
 
-Ставить в цепочки вент-кузни или добычи стекла давления.
+Place in vent forge or pressure-glass salvage chains.
 
 <!-- In-Game Wiki; generated from P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER/ru_RU. -->

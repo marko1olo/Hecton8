@@ -4,6 +4,8 @@ Date: 2026-06-02
 
 Status: STATIC_SOURCE REVIEWED / RUNTIME PENDING
 
+Owner domain: bootstrap / boot sequence topology
+
 ## Source Anchors
 
 Evidence class: STATIC_SOURCE / FILESYSTEM path check. These anchors prove current path visibility only, not Unity scene import, boot completion, Console cleanliness, profiler, or player-build proof.

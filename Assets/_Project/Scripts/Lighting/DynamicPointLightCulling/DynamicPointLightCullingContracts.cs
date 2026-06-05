@@ -62,6 +62,8 @@ namespace Hecton8.Lighting
         public const uint GpuDirty = 1u << 10;
         public const uint TimedOut = 1u << 11;
         public const uint ProbeBouncePublished = 1u << 12;
+        public const uint LayoutAligned = 1u << 13;
+        public const uint LayoutInvalid = 1u << 14;
     }
 
     /// <summary>

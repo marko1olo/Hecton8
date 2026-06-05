@@ -1,0 +1,35 @@
+BATCH25_RUNTIME_VISUAL_PROOF_BLOCKERS
+
+Purpose:
+No-Unity parallel audit wave for the current proof blockers observed around 19:05-19:08 on 2026-06-04.
+
+Unity slot owner:
+- `Продолжить работу по логам`
+
+Rules for all Batch25 agents:
+- Do not launch Unity.
+- Do not enter Play Mode.
+- Do not run dotnet/build if CPU is busy or compiler/Unity/import workers are active.
+- Prefer static source/YAML/log audit and write precise reports.
+- Do not edit scene/code/material files unless the task explicitly says so. These tasks are report-first because Unity owner is actively editing related files.
+- Follow `AGENTS.md`, `PROJECT_BIBLES.md`, `VISION_LOCKS.md`, `TASTE.md`, and relevant mandates only.
+- If you need status/log files, use your explicit ID.
+- Do not claim runtime proof.
+
+Agents:
+- 2501 WeatherEvents persistent leak and HectonCelestialEngine OnEnable cleanup auditor.
+- 2502 Bootstrap/menu/world route readiness hang auditor.
+- 2503 HectonUnderwaterVisuals ownership/serialization/GlobalRegistry phase auditor.
+- 2504 Crest/ocean clipping, foam, caustic material risk auditor.
+- 2505 Visual proof packet watchdog and acceptance gate integrator.
+
+Shared recent evidence:
+- `Docs/Orchestration/Captures/desktop_after_batch24_send_check_code.png`
+- `Docs/Orchestration/Captures/steer_1907_sent.png`
+- `Docs/Reports/Batch24/2401_CURRENT_SCENE_DELTA_UNDERWATER_CUT_AUDIT.md`
+- `Docs/Reports/Batch24/2402_UNDERWATER_MATERIAL_RECEIVER_AUDIT.md`
+- `Docs/Orchestration/UNITY_OWNER_STEER_20260604_BATCH24_1474_SLAB_CAUSTIC_ISOLATION.md`
+- `Docs/Orchestration/UNITY_OWNER_STEER_20260604_1905_UNDERWATER_VISUALS_UNASSIGNED.md`
+
+Output folder:
+- `Docs/Reports/Batch25/`

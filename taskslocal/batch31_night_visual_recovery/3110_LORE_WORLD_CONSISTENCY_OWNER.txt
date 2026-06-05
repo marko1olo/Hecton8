@@ -1,0 +1,53 @@
+ID: 3110
+Role: LORE_WORLD_CONSISTENCY_OWNER
+Objective: keep the first route, salvage objects, machinery, evidence, and UI text tied to HECTON-8 world logic without generic filler.
+
+Why this exists:
+- Broad production cannot be only rendering/code.
+- Lore must support player decisions, route stakes, object purpose, salvage evidence, and first-20-minutes identity.
+
+Authority docs:
+- AGENTS.md
+- TASTE.md
+- VISION_LOCKS.md
+- PROJECT_BIBLES.md
+- narrative.md
+- writing.md
+- localization.md
+- gameplay.md
+- world.md
+- tools.md
+- construction.md if machinery/base objects are described
+- Docs/ARCHITECTURE/FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md
+- Docs/ARCHITECTURE/FIRST_20_MINUTES_ROUTE_BRIEF.md
+
+Owned scope:
+- Static writing/design audit only.
+- First route object/story briefs.
+- No runtime claims.
+- Report output: Docs/Reports/Batch31/3110_LORE_WORLD_CONSISTENCY_OWNER.md
+
+Tasks:
+1. Read the authority docs listed above.
+2. Identify first-route object categories that need story function:
+   - safe anchor;
+   - shoreline/waterline evidence;
+   - salvage machinery;
+   - route return cue;
+   - damaged instrument;
+   - pressure/oxygen risk witness;
+   - black-box or recovery clue.
+3. Produce concise object briefs: object, gameplay function, physical state, readable visual cue, possible scanner/PDA line.
+4. Avoid lore walls, generic evil corporation language, and exposition that does not change player decisions.
+5. Keep localization risk visible: short strings, no huge HUD paragraphs, expansion-safe labels.
+6. Write Status_3110.md, Rationale_3110.md if non-trivial decisions are made, LOG_3110.md, and the Batch31 report.
+
+Proof packet:
+- STATIC VERIFIED only for written design artifacts.
+- Runtime/UI proof pending implementation and capture.
+
+Reject if:
+- text describes features not implemented or not planned in first route;
+- object lore does not explain why the player cares;
+- UI/terminal text replaces missing world evidence;
+- strings are too long for HUD or localization.

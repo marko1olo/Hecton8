@@ -1,0 +1,102 @@
+HECTON-8 LOCAL TASK FILE
+ID: 2102
+Role: PHOTIC_SEABED_SUBSTRATE_SOURCE_PACKAGE_AND_QA_GATE
+Batch: batch21_art_replacement_wave
+
+OBJECTIVE
+Create a self-contained photic seabed/substrate material source package and QA gate for future Unity-owner import, focused on bright shallow terrain, sediment, reef substrate, shallow shelves, and medium-depth readability. Do not import, relink, or edit Unity assets.
+
+WHY THIS EXISTS
+Batch20 keeps photic material readiness rejected. 2019 queue rows Q012 and Q014-Q015 and matrix rows G014-G015 identify photic/medium geology proxy debt. 2022 ranks photic seabed substrate as spend-first. The root visual lock requires 0-100 m to be bright, colorful, beautiful, and readable.
+
+AUTHORITY DOCS TO READ
+- AGENTS.md
+- TASTE.md
+- VISION_LOCKS.md
+- PROJECT_BIBLES.md
+- quality.md
+- PROCEDURAL_ASSET_PIPELINE.md
+- 3dmodel.md
+- 3DMODEL_GEOLOGY_ROCKS.md
+- 3DMODEL_TEXTURES_MATERIALS.md
+- 3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md
+- world.md
+- terrain.md
+- water.md
+- rendering.md
+- shaders.md
+- Docs/Reports/Batch20/2016_SURFACE_PHOTIC_MATERIAL_DEBT_TRIAGE.md
+- Docs/Reports/Batch20/2019_PRIMITIVE_PROXY_ART_DEBT_ELIMINATION_PLAN.md
+- Docs/Reports/Batch20/2019_PROXY_DEBT_QUEUE.csv
+- Docs/Reports/Batch20/2019_GENERATION_ROUTE_MATRIX.csv
+- Docs/Reports/Batch21/2022_GEMINI_TEXTURE_BUDGET_AND_PROMPT_QUEUE.md
+
+OWNED DOMAIN
+Photic seabed, sediment, substrate, shallow shelf, reef anchor material source package and static QA gate.
+
+OWNED OUTPUT SCOPE
+- Docs/Reports/Batch21/2102_*
+- Docs/GeneratedAssets/Gemini/Prompts/Batch21/2102_* if prompt files are needed.
+- Docs/Tasks/Status_2102.md
+- Docs/AgentLogs/Rationale_2102.md only for real decisions.
+- Docs/AgentLogs/LOG_2102.md
+
+FORBIDDEN ACTIONS
+- Do not run Unity, MCP, Play Mode, profiler, imports, dotnet build, csc, or any project build.
+- Do not edit Assets, Packages, ProjectSettings, Library, Temp, UserSettings, scenes, prefabs, materials, shaders, or runtime scripts.
+- Do not write generated images into Assets.
+- Do not relink TerrainLayers, materials, prefabs, scene scatter, or placement rules.
+- Do not claim visual proof from static YAML, CSV, or path existence.
+- Do not depend on tasks 2101 or 2103.
+
+QUALITY SCALING EXPECTATION
+Low: reduced texture size and scatter density only; seabed still has substrate identity, shallow clarity, route cues, and material read.
+Middle: expected player lane; full PBR roles, readable terrain transition, reef substrate identity, and non-muddy photic color.
+High: richer height/normal detail, shell fragments, sediment breakup, wetness/silt variation, caustic-compatible masks.
+Ultra: hero-quality seabed closeups and visual density only after source, import, capture, and profiler proof.
+
+PHASE 0 - AUTHORITY AND EVIDENCE DISCOVERY
+01. Read required authorities. Proof: Status_2102.md doc list. Blocker: missing doc is marked MISSING, not invented.
+02. Discover whether 2005_ROCK_VARIANT_MATRIX.csv, 2005_TEXTURE_CHANNEL_CONTRACTS.csv, 2005_COLLIDER_LOD_CONTRACTS.csv, and Batch20 material audit CSVs exist. Proof: discovered path table. Blocker: absent files become CANDIDATE.
+03. Extract existing evidence for photic substrate blockers from 2016, 2019 queue, 2019 matrix, and 2022 queue. Proof: evidence table. Blocker: static text supports source planning only.
+04. Separate scope from 2101 and 2103: 2102 owns seabed/substrate only, not shoreline wet basalt or coral/flora source packages. Proof: scope statement. Blocker: move out-of-scope items to handoff notes.
+05. Write Status_2102.md with discovered evidence and no-Unity acknowledgment. Proof: status file path.
+06. Gate: if no photic/seabed/substrate evidence exists, mark NOT APPLICABLE and stop. Do not invent a seabed route.
+
+PHASE 1 - SUBSTRATE SOURCE DESIGN
+07. Define source families: shallow sand/silt mix, shell/calcite fragment substrate, reef anchor rock surface, underwater shelf sediment, medium-depth route-marker substrate, subtle caustic-compatible detail. Proof: source package section. Blocker: unsupported families are CANDIDATE.
+08. Define physical material truths: grain scale, shell fragment size, silt deposition, algae/biofilm, erosion/current direction, substrate hardness, wetness behavior. Proof: material truth table.
+09. Define map stack for each family: albedo, height-like source, normal, packed MRAO/mask, optional detail, optional caustic response mask. Proof: role table. Blocker: no guessed channels.
+10. Define prompt requirements for `TX_B21_PhoticSeabedSubstrate_AlbedoHeightSource_20260604` without running generation. Proof: prompt text or prompt file. Blocker: no browser/Gemini work.
+11. Add optional prompt variants only if justified by evidence: shell-grit substrate, basalt-sediment transition, reef calcite floor, shallow shelf silt. Proof: rationale entry. Blocker: no more variants than the source blocker needs.
+12. Define QA criteria: tileability, no baked light, no horizon/object render, no logos/text, no muddy grade, no repeated obvious AI shells, no fantasy candy reef carpet, no flat noise. Proof: checklist.
+13. Define PBR derivation rules: albedo base only, roughness follows wet/dry and grain, AO cavity-biased, normal scale compatible with player height and shallow visibility, metallic zero. Proof: derivation table.
+14. Define substrate transition rules for future Unity owner: shallow open photic, reef base, medium-depth marker, under rock shelf, route edge. Proof: transition matrix. Blocker: no placement edits here.
+
+PHASE 2 - QA GATE AND HANDOFF
+15. Define import-intent table: albedo sRGB, normal map type, masks linear, compression, mip chain, streaming, max sizes by quality lane. Proof: import-intent table. Blocker: not Unity import proof.
+16. Define visual proof required later: low-tier photic seabed capture at player height, high-tier capture, shallow water top-down, grazing-light substrate preview, mask debug, final URP material preview. Proof: proof template.
+17. Define rejection gates: generic blue-gray sand, flat Perlin noise, muddy darkness, baked caustic shadows in albedo, proxy material, unresolved refs, substrate that hides route cues. Proof: rejection list.
+18. Define future dependency scan: material or TerrainLayer target must be verified by Unity owner; old placeholder/default material must be fixed or excluded with production dependency proof. Proof: handoff section.
+19. Define low/middle/high/ultra consequences using continuous GlobalQualityWeight and no binary switches. Proof: scaling table.
+20. Cross-check no sibling dependency exists. Proof: self-audit line. Blocker: remove any "after 2101/2103" text.
+21. Cross-check no static source claim is upgraded to visual/runtime acceptance. Proof: evidence label audit.
+22. Write 2102 final source package and QA report under Docs/Reports/Batch21. Proof: report path.
+
+PHASE 3 - REPORTING
+23. Update Status_2102.md with tasks completed, files created, and PENDING Unity proof list.
+24. Update Rationale_2102.md only for real decisions, such as adding or excluding substrate families.
+25. Append LOG_2102.md with concise proof: what was wrong, source package created, in-game result not run, verification state.
+26. Final chat report: list package files and future Unity-owner pending proof. Do not claim production readiness.
+
+PROOF PACKET
+- STATIC VERIFIED: docs read, evidence extracted, source package and QA gate written.
+- PENDING VERIFICATION: generated source image, manual tiling review, PBR derivation, Unity import, material/TerrainLayer binding, route captures, profiler/GC/memory/VRAM.
+
+BLOCKER RULES
+- If a route lacks evidence, mark CANDIDATE.
+- If a requested family overlaps another agent, preserve only the seabed/substrate aspect and write a handoff note.
+- If source quality cannot meet bright photic floor, reject the candidate. Do not darken water or fog to hide it.
+
+FINAL REPORT REQUIREMENTS
+Use exact proof labels. Static docs are not runtime proof. In-game result must remain PENDING VERIFICATION.

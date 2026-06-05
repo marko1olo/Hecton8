@@ -10,8 +10,8 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
 # חיי המדף המואר
@@ -24,7 +24,7 @@ localization_flags: 0
 
 ## Terminal
 
-סקר מדף: מרבדים חיים, רועים שקופים, pressureweed ואצות נתיב עדיין מחוץ לשליטת תיקון Atlas.
+SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.
 
 ## Audio
 

@@ -10,21 +10,21 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Pressure Ladder
 
-Pressure Ladder converts HECTON-8 depth progression into hard-sci-fi survival structure for long-form exploration.
+The pressure ladder turns HECTON-8's depth bands into survival work: seals, power, oxygen, sonar and return timing before each deeper route.
 
 ## Scanner
 
-Depth is divided by pressure ratings, not level names. Each band needs a different engineering answer.
+Depth banding detected: photic shelf, industrial shelf, brine canyon, abyssal machine field, Atlas basin. Gear rating gates the route.
 
 ## Terminal
 
-Depth ladder: shelf equipment, canyon reinforcement, brine insulation, abyss hull discipline, factory-zone signal hardening.
+DEPTH LADDER: 0-250 m shelf; 250-1200 m industrial/cable shelf; 1200-2800 m brine canyon; 2800-4300 m abyssal machine field; 4300-5600 m Atlas basin.
 
 ## Audio
 
@@ -32,6 +32,6 @@ You do not descend because you are brave. You descend because the next seal hold
 
 ## Field Note
 
-The ocean gates progress with math.
+The ocean gates progress with pressure, not permission.
 
 <!-- External Site; generated from P032_PRESSURE_LADDER_DEPTH_BANDS/en_US. -->

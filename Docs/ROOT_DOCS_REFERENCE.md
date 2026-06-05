@@ -7,15 +7,20 @@ Evidence class: STATIC_DOC / STATIC_FILESYSTEM
 
 ## Root Policy
 
-The repository root may contain only these active text anchors:
+The repository root may contain these active text anchors and standing route bibles:
 
 - `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `VISION_LOCKS.md`
 - `TASTE.md`
 - `textes.md`
 - `MASTER_RELEASE_WORK_PLAN.md`
 - `BUILD_PLAYTEST_ISSUES.md`
+- standing root route bibles listed under `Routes` in `PROJECT_BIBLES.md`
 
 Generated Unity/project files such as `.csproj`, `.slnx`, CSV, package, and build config files are not active documentation. Do not move them during documentation cleanup.
+
+Root reports, prompts, status files, work logs, generated evidence, task-progress prose, and temporary scan counters are not allowed root doctrine.
 
 `C:\hades` is not the repository root. Files in that parent directory are outside this policy unless the repo is explicitly moved.
 
@@ -28,6 +33,8 @@ Pre-cleanup verbose root copies are historical only:
 
 - `Docs/README.md` - active documentation map.
 - `Docs/PROJECT_BASELINE.md` - stable project baseline and documentation boundary.
+- `PROJECT_BIBLES.md` - standing root route-bible index and domain-bible selection map.
+- `VISION_LOCKS.md` - product vision locks and ambiguity-resolution authority.
 - `TASTE.md` - taste authority for gameplay, design, presentation, screenshot, audio, UI, creature, base, and marketing review.
 - `textes.md` - public-copy voice authority; use only for advertising, store, social, outreach, bios, and community text.
 - `Docs/DOC_GOVERNANCE.md` - documentation maintenance rules.

@@ -2,6 +2,7 @@
 
 Date: 2026-05-23
 Owner lane: HFI_AUDIT
+Owner domain: architecture/global authority audit
 
 Status: PENDING VERIFICATION
 

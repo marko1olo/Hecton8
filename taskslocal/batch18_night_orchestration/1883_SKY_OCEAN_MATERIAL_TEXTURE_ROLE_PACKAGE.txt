@@ -1,0 +1,60 @@
+<AGENT_PROMPT id="1883">
+ROLE: Sky, Aegir, ocean, and micro-fauna material/texture role package auditor.
+
+READ FIRST:
+- C:\hades\Hecton8\AGENTS.md
+- C:\hades\Hecton8\PROJECT_BIBLES.md
+- C:\hades\Hecton8\VISION_LOCKS.md
+- C:\hades\Hecton8\TASTE.md
+- C:\hades\Hecton8\quality.md
+- C:\hades\Hecton8\world.md
+- C:\hades\Hecton8\3dmodel.md
+- C:\hades\Hecton8\3DMODEL_TEXTURES_MATERIALS.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1865_SKY_OCEAN_PRIMITIVE_RISK_PROOF_PACKET.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1873_SKY_OCEAN_SOURCE_CLEANUP_AND_PROOF_SLOT_PACKET.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1878_SKY_OCEAN_SOURCE_VALIDATOR_IMPLEMENTATION.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1879_PRODUCT_FACE_RELINK_AND_PROOF_CONTRACT.md
+- Relevant .agents-skills only: QA_Evidence_Text_Filter_Audit, REND_URP_Graphics_HotPath_Optimization_HLOD, REND_Terrain_VirtualTexturing.
+
+OWNED WRITE SCOPE:
+- Docs/Tasks/Status_1883.md
+- Docs/AgentLogs/Rationale_1883.md
+- Docs/AgentLogs/LOG_1883.md
+- Docs/Reports/Batch18/1883_SKY_OCEAN_MATERIAL_TEXTURE_ROLE_PACKAGE.md
+- Docs/Reports/Batch18/1883_SKY_OCEAN_MATERIAL_TEXTURE_MATRIX.csv
+
+NO SOURCE/PREFAB/ASSET/SCENE/META/BINARY EDITS.
+NO UNITY MENU, IMPORT, BAKE, PLAYMODE, PROFILER, DOTNET BUILD, OR DATA MONOLITH RUN.
+
+PARALLEL LAW:
+- You may run alongside 1877, 1880, 1881, and 1882.
+- Do not depend on sibling output.
+
+TASK:
+Build the material/texture role package for bright surface sky, Aegir/moons, ocean surface, waterline/foam, photic shallows, and Sargassum micro-fauna. This must enforce that surface is beautiful and readable, not dark/noir as a cover-up.
+
+Requirements:
+1. Inspect actual material/texture candidates under `Assets/_Project/Art/Materials`, `Assets/_Project/Art/TEXTURES`, sky/ocean prefabs, and relevant scripts.
+2. Cover roles:
+   - sky dome / clouds;
+   - Aegir gas giant disc/bands/storms;
+   - moons/celestial bodies;
+   - surface ocean water/normal/swell;
+   - foam/waterline/ribbons;
+   - Crest hidden input materials;
+   - Sargassum oil/wave/foam damping;
+   - SargassumMicroFaunaBoids material/mesh/texture role.
+3. Map credible existing paths or mark `MISSING_SOURCE_REQUIRED`.
+4. Identify materials/textures whose names or values imply outdated surface noir/darkness and classify whether they are deep-only, weather-only, legacy risk, or safe if constrained.
+5. Explicitly reject using fog, darkness, bloom, storm, or crushed exposure to hide weak sky/ocean art.
+6. Define shader/texture semantics for sky/ocean maps, normal maps, foam masks, gas-giant bands, cloud overlays, micro-fauna VAT/card/impostor if needed.
+7. Define continuous quality scaling for compact/middle/high/ultra, with compact still beautiful and readable.
+8. List future Unity proof steps from 1873/1878/1879. Do not claim acceptance.
+
+VERIFY:
+- `git diff --check` on owned report/log/status files.
+- CSV parse check with `Import-Csv`.
+- Static cross-check that required roles appear in report and CSV.
+- Do not run Unity or dotnet.
+</AGENT_PROMPT>
+

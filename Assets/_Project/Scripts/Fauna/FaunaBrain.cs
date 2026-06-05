@@ -329,6 +329,12 @@ namespace Hecton8.AI
         private const float HitFlashDecayPerSecond = 9.5f;
         private const float PlayerImpactTraumaWeightPerForce = 0.0015f;
         private const float PredatorImpactSignalImpulseScale = 0.01f;
+        private const float LeviathanImpactCameraAmplitudeScale = 1.12f;
+        private const float LeviathanImpactCameraTranslationGain = 1.00f;
+        private const float LeviathanImpactCameraRotationGain = 1.35f;
+        private const float PredatorBiteCameraAmplitudeScale = 1.08f;
+        private const float PredatorBiteCameraTranslationGain = 0.95f;
+        private const float PredatorBiteCameraRotationGain = 1.20f;
         private const float HerbivoreSatedDurationSeconds = 16f;
         private const float CleanerFormationMinRadius = 1.6f;
         private const float CleanerFormationMaxRadius = 4.1f;
@@ -3950,7 +3956,16 @@ namespace Hecton8.AI
             impact.WeightClass = 3;
             impact.Flags = flags;
             SignalBus<ImpactSignal>.TryPushTracked(in impact, ref _signalPushDropCount);
-            CameraJuiceSignals.TryPublishImpact(in impact, signal.Normal);
+            CameraJuiceSignals.TryPublishImpact(
+                in impact,
+                signal.Normal,
+                CameraJuiceSignals.SharpKineticImpactProfileHash,
+                LeviathanImpactCameraAmplitudeScale,
+                impact.Intensity >= 0.72f ? CameraJuiceSignals.CriticalPriority : CameraJuiceSignals.HighPriority,
+                0f,
+                LeviathanImpactCameraTranslationGain,
+                LeviathanImpactCameraRotationGain,
+                signal.SourceHash);
 
             DebrisSpawnSignal debris = default;
             debris.PositionAup = pointAup;
@@ -6183,7 +6198,17 @@ namespace Hecton8.AI
                 if (_speciesProfile != null && _speciesProfile.attackShakeProfile != null)
                 {
                     float biteShakeSeverity = math.saturate(_speciesProfile.attackShakeProfile.MaxDisplacement * 2.5f);
-                    CameraJuiceSignals.TryPublishImpact(biteShakeSeverity, impactPoint, impactDir);
+                    CameraJuiceSignals.TryPublishImpact(
+                        biteShakeSeverity,
+                        impactPoint,
+                        impactDir,
+                        CameraJuiceSignals.SharpKineticImpactProfileHash,
+                        PredatorBiteCameraAmplitudeScale,
+                        biteShakeSeverity >= 0.72f ? CameraJuiceSignals.CriticalPriority : CameraJuiceSignals.HighPriority,
+                        0f,
+                        PredatorBiteCameraTranslationGain,
+                        PredatorBiteCameraRotationGain,
+                        ResolveStableFaunaHash(FaunaLeviathanBiteHashSalt, 0u));
                 }
 
                 DispatchPredatorBiteImpulseToPlayer(target, impactPoint, impactDir);
@@ -7002,15 +7027,32 @@ namespace Hecton8.AI
         {
             input = default;
             output = default;
-            return vault != null &&
-                   IsCorpseSinkVaultHandle(in inputHandle, BufferID.FaunaCorpseSinkKinematicInput) &&
-                   IsCorpseSinkVaultHandle(in outputHandle, BufferID.FaunaCorpseSinkKinematicOutput) &&
-                   vault.TryResolveHandle(in inputHandle, out input) &&
-                   input.IsCreated &&
-                   input.Length >= 1 &&
-                   vault.TryResolveHandle(in outputHandle, out output) &&
-                   output.IsCreated &&
-                   output.Length >= 1;
+            if (vault == null ||
+                !IsCorpseSinkVaultHandle(in inputHandle, BufferID.FaunaCorpseSinkKinematicInput) ||
+                !IsCorpseSinkVaultHandle(in outputHandle, BufferID.FaunaCorpseSinkKinematicOutput))
+            {
+                return false;
+            }
+
+            if (!vault.TryResolveHandle(in inputHandle, out input) ||
+                !input.IsCreated ||
+                input.Length < 1)
+            {
+                input = default;
+                output = default;
+                return false;
+            }
+
+            if (!vault.TryResolveHandle(in outputHandle, out output) ||
+                !output.IsCreated ||
+                output.Length < 1)
+            {
+                input = default;
+                output = default;
+                return false;
+            }
+
+            return true;
         }
 
         private void ReleaseCorpseSinkingKinematicsBuffers()

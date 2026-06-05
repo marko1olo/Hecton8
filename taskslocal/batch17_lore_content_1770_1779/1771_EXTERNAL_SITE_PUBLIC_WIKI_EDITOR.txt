@@ -1,0 +1,107 @@
+HECTON-8 LOCAL TASK FILE
+Batch: batch17_lore_content_1770_1779
+Agent ID: 1771
+Role: External Site and Public Wiki Editor
+Distribution: give this whole file to one agent. No XML extraction is required.
+Wave mode: PARALLEL. Agents 1770-1779 work simultaneously. Do not wait for them, do not depend on their future output.
+
+IDENTIFICATION LINE
+First response must begin exactly:
+PROMPT IDENTIFIED: 1771 | DOMAIN: Lore External Site / Public Wiki | TASK COUNT: 20
+
+OBJECTIVE
+Make the external-site/public-wiki lore layer readable, sorted, spoiler-safe, and ready for multilingual publication.
+This is not an internal design-note task. Output must feel like real public lore articles, public archive modules, navigation clusters, and release-safe wiki text.
+
+AUTHORITY DOCS
+Read fully before editing:
+- AGENTS.md
+- PROJECT_BIBLES.md
+- writing.md
+- narrative.md
+- localization.md
+- Docs/Lore/Lore_Bible.md
+- Docs/Lore/Canon_Locks.md
+- Docs/Lore/Lore_Content_System.md
+- Docs/Lore/Lore_Localization_Model.md
+- Docs/Lore/Lore_Multilingual_Content_Architecture.md
+- Docs/Lore/Website_Publication_Map.md
+- Docs/Lore/AppliedContent/README.md
+
+OWNED SCOPE
+Primary inspect/edit scope:
+- Docs/Lore/AppliedContent/external_site/
+- Docs/Lore/AppliedContent/Publication_Surface_Index.csv
+- Docs/Lore/AppliedContent/Publication_Cluster_Index.csv
+- Docs/Lore/AppliedContent/release_sets/
+- Docs/Lore/Website_Publication_Map.md
+- Docs/Lore/AppliedContent/production_audits/1771/
+
+Do not edit in_game_wiki pages except to compare tone and avoid duplicate contradictions.
+Do not depend on agents 1770 or 1772-1779. Use only existing files.
+
+PUBLIC SITE SURFACE RULES
+- Public articles can be more readable than in-game snippets, but must stay spoiler-gated.
+- Public site explains setting texture, human expansion, Aegir, moon ladder, HECTON-8 surface/shallows beauty, factions, ships, and release-safe history.
+- Public site does not reveal late-game truth chains, false endings, hidden payload receiver logic, or final Atlas contradictions unless explicitly marked archive/spoiler.
+- No AI phrases, no "in this article we explore", no fake marketing hype, no design-note voice.
+
+15-LOCALE CONTRACT
+Every changed or created public module must have a 15-locale plan:
+en_US, ru_RU, ja_JP, zh_CN, fr_FR, es_ES, de_DE, pl_PL, uk_UA, ar_SA, id_ID, ko_KR, he_IL, pt_BR, nl_NL.
+If you cannot produce trusted final text for every locale, preserve source_ready/pending_native_review flags and provide translation units, not false final approval.
+
+TASKS
+Task 01: Create/update Docs/Tasks/Status_1771.md with all 20 tasks and checkpoints after Tasks 05, 10, 15, and 20.
+
+Task 02: Create/update Docs/AgentLogs/Rationale_1771.md with only concrete editorial decisions and rejected alternatives.
+
+Task 03: Inventory external_site for all 15 locales. Output Docs/Lore/AppliedContent/production_audits/1771/external_site_inventory.csv with locale, page path, packet ID, title, article ID, spoiler level, status.
+
+Task 04: Compare external_site inventory with Website_Publication_Map.md pillars: Humanity 2190, Aegir System, Moon System, HECTON-8, Marauders, Barnard Yards, Deep Reach, Ships and Travel, Black Keel. Mark missing or weak public modules.
+
+Task 05: Checkpoint. Pick the highest-value public modules to improve without waiting for other agents. Append the selected set to Status_1771.md.
+
+Task 06: Audit public pages for false dark-surface framing. Patch exact public text that implies the surface/sky/moons/shallows are inherently bleak, dead, ugly, or visually inferior. Keep deep/cave/storm darkness intact.
+
+Task 07: Audit public pages for omniscient spoilers. Move or mark spoilers according to Website_Publication_Map.md and Lore_Content_System.md. Do not delete canon unless it is duplicated in the wrong layer.
+
+Task 08: Improve at least one site pillar cluster that is weak or unsorted. The result must be a real public-readable article/module, not a meta description of what could be written.
+
+Task 09: Improve public navigation metadata in Publication_Cluster_Index.csv or a matching generated/index source if the existing cluster map is incomplete. Keep rows parseable.
+
+Task 10: Checkpoint. Reopen changed pages in at least en_US and ru_RU plus one RTL locale if touched. Confirm no player-visible draft/localization disclaimer appears.
+
+Task 11: For each improved public module, define translation units: title, summary, body sections, archive note, related links. Keep units stable for all 15 locales.
+
+Task 12: Produce or update a multilingual status report for changed pages under production_audits/1771/public_translation_units.md. Mark exact locale readiness.
+
+Task 13: Ensure public HECTON-8 surface/shallows language matches visual target: bright, beautiful, alien, readable, with depth/storm/cave darkness reserved for correct contexts.
+
+Task 14: Ensure Deep Reach public articles sound like public archive/liability/history, not game-design exposition. Patch small bad passages if found.
+
+Task 15: Checkpoint. If static pages/indexes can be generated safely through existing tools, run the relevant export command. If not safe, record exact reason.
+
+Task 16: Cross-link public modules to in-game unlock concepts without leaking late spoilers: "public known", "player-discovered", "archive locked", "post-campaign spoiler".
+
+Task 17: Create Docs/Lore/AppliedContent/production_audits/1771/public_site_editorial_map.md with pillars, ready pages, weak pages, spoiler gates, and next-wave article needs.
+
+Task 18: Write Docs/AgentLogs/HANDOFF_1771.md for the protosite/reader agent with only existing pages/indexes and desired display behavior. Do not require future 1779 changes.
+
+Task 19: Re-run CSV sanity checks on any edited index. If PowerShell/Python command fails, capture exact output.
+
+Task 20: Final verification. Reopen changed files, update Status_1771.md, append final report to Docs/AgentLogs/LOG_1771.md.
+
+ACCEPTANCE PROOF
+- external_site_inventory.csv exists.
+- At least one weak public pillar is improved or a blocker is proven with exact paths.
+- Dark-surface misinformation is removed from public-site scope when found.
+- Translation unit/status report covers all 15 locales for changed modules.
+- Final LOG_1771.md lists edited files and validation.
+
+REJECTION CONDITIONS
+- Spoiler leaks into public-safe pages.
+- Public pages read like internal design specifications.
+- Future dependency on 1770/1779 output.
+- Native localization claimed without proof.
+- Surface/shallows described as inherently dark, ugly, or miserable.

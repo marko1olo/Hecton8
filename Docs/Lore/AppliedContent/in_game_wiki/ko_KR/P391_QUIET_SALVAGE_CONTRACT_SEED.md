@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ Low storm windows are never free. They are bought somewhere else.
 
 ## Field Note
 
-Use for contract selection and dossier rumor card.
+Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise.
 
 <!-- In-Game Wiki; generated from P391_QUIET_SALVAGE_CONTRACT_SEED/ko_KR. -->

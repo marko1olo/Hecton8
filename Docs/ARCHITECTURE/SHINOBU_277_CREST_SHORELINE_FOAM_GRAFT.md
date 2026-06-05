@@ -2,6 +2,8 @@
 
 Owner: `SHINOBU_277 / CREST_SHORELINE_FOAM_GRAFTER`
 
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
+
 Evidence class: STATIC_SOURCE only. Unity import, shader import, RenderGraph Viewer, profiler, and GPU timestamp proof are still required.
 
 ## Route

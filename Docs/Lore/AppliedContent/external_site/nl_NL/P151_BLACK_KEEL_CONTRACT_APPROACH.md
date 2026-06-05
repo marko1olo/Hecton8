@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Black Keel Contract Approach
+# Black Keel Claim Acceptance
 
-Black Keel Contract Approach defines the first playable pressure: contract before catastrophe.
+A Black Keel claim terminal frames the opening around debt, oxygen addenda and custody before the ocean ever touches the screen.
 
 ## Scanner
 
-The first scene is a contract machine, not a heroic briefing.
+Contract console. Aegir Reclamation Pool lists a 4.8 tonne-window lien before it lists oxygen.
 
 ## Terminal
 
-OPENING BEAT: Black Keel presents a claim, lien relief, oxygen addenda, payload custody and a narrow orbital window. The player accepts because debt and blacklist pressure make refusal expensive.
+BLACK KEEL / CLAIM ACCEPTANCE TERMINAL: route RAN-B:H8 salvage descent; lien relief 4.8 tonne-window conditional; oxygen welfare addenda billed after recovery; payload custody Black Keel primary, Keelmark Mutual witness; refusal penalty leaves Barnard blacklist review active.
 
 ## Audio
 
-The ship does not welcome you. It calculates you.
+Black Keel to contractor: claim window is open. Oxygen is billable after recovery. Acknowledge if you can work.
 
 ## Field Note
 
-The player starts by accepting a bad professional decision.
+The stylus is tied to the screen with pressure cord. Someone expected trembling hands.
 
 <!-- External Site; generated from P151_BLACK_KEEL_CONTRACT_APPROACH/nl_NL. -->

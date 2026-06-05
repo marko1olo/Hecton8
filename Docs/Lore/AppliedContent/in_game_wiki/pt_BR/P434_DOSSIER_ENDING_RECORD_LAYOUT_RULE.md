@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ The record does not congratulate you. It itemizes what changed hands.
 
 ## Field Note
 
-Use for ending dossier UI and spoiler-site layout.
+Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression.
 
 <!-- In-Game Wiki; generated from P434_DOSSIER_ENDING_RECORD_LAYOUT_RULE/pt_BR. -->

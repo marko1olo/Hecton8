@@ -9,6 +9,10 @@ Parent authority:
 - `Docs/Modding/Mod_API_Sandbox_Quarantine.md`
 - `Docs/Modding/SDK_Authoring_Interface_Plan.md`
 
+## Authority Boundary
+
+Root `modding.md` owns the public modding boundary. This SDK product blueprint is a product/UX plan, not runtime loader readiness, platform readiness, release proof, or public API approval. Product screens, CLI names, package format, Workshop/moderation concepts, local discovery, and MVP backlog items remain authoring/review plans until `Docs/Modding/Runtime_Verification_Playbook.md` passes with current proof artifacts; platform and release claims still require `platform.md` and `release.md`.
+
 ## Purpose
 
 This document turns the envelope-only modding architecture into an actual product plan for people who create mods.

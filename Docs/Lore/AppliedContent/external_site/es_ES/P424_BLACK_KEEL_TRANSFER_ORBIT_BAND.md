@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# ES LOC: Black Keel Transfer Band
+# Black Keel Transfer Band
 
-ES LOC HOLD: Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.
+Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.
 
 ## Scanner
 
-ES LOC: Carrier band: Black Keel loiters high, not above HECTON-8.
+Carrier band: Black Keel loiters high, not above HECTON-8.
 
 ## Terminal
 
-ES LOC: CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.
+CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.
 
 ## Audio
 
-ES LOC HOLD: It is not parked above you. It is waiting where insurance allows it to wait.
+It is not parked above you. It is waiting where insurance allows it to wait.
 
 ## Field Note
 
-ES LOC HOLD: Use for ship page, escape route UI and partial-exit explanation.
+Carrier orbit record: Black Keel can receive payloads before it can retrieve people; that gap drives partial-exit logic.
 
 <!-- External Site; generated from P424_BLACK_KEEL_TRANSFER_ORBIT_BAND/es_ES. -->

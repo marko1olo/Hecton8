@@ -52,6 +52,25 @@ CSV_HEADERS = (
 FNV_OFFSET = 2166136261
 FNV_PRIME = 16777619
 ROW_FLAG_DRAFT_LOCALIZATION = 1 << 0
+SURFACE_MASKS = {
+    "title": 1 << 0,
+    "scanner": 1 << 1,
+    "terminal": 1 << 2,
+    "audio": 1 << 3,
+    "audio_subtitle": 1 << 3,
+    "in_game_wiki": 1 << 4,
+    "external_site": 1 << 5,
+    "field_note": 1 << 6,
+}
+DEFAULT_SURFACE_MASK = (
+    SURFACE_MASKS["title"]
+    | SURFACE_MASKS["scanner"]
+    | SURFACE_MASKS["terminal"]
+    | SURFACE_MASKS["audio"]
+    | SURFACE_MASKS["in_game_wiki"]
+    | SURFACE_MASKS["external_site"]
+    | SURFACE_MASKS["field_note"]
+)
 
 LOCALIZED_TEXT_FIELDS = (
     "title",
@@ -123,10 +142,19 @@ def collect_packets(root: Path) -> list[dict[str, Any]]:
     for manifest_path in iter_manifest_paths(root):
         manifest = load_json(manifest_path)
         release_set_id = str(manifest.get("release_set_id", ""))
+        packet_sources = manifest.get("packet_sources", [])
+        if not packet_sources:
+            if manifest.get("canonical_importer_ready") is True:
+                packet_sources = manifest.get("canonical_importer_sources", [])
+            else:
+                # Authoring-only manifests can list STATIC_DOC production packets.
+                # They are not canonical CSV/export packets until packet_sources exist.
+                continue
+
         for packet_id in manifest.get("packets", []):
             manifest_packet_ids.add(str(packet_id))
 
-        for source in manifest.get("packet_sources", []):
+        for source in packet_sources:
             source_path = resolve_source(root, str(source))
             packet_source = load_json(source_path)
             if "packets" in packet_source:
@@ -223,6 +251,34 @@ def first_list(value: Any, limit: int = 2) -> list[str]:
     return [str(item) for item in value[:limit] if str(item)]
 
 
+def resolve_packet_surface_mask(packet: dict[str, Any]) -> int:
+    """Resolve runtime-visible surfaces from packet authoring metadata.
+
+    Title is always included so field-note-only production cards still have a
+    readable PDA/terminal label without exposing scanner/wiki/site prose.
+    """
+
+    explicit_mask = packet.get("surface_mask")
+    if explicit_mask is not None:
+        try:
+            mask = int(explicit_mask, 0) if isinstance(explicit_mask, str) else int(explicit_mask)
+        except (TypeError, ValueError) as exc:
+            packet_id = str(packet.get("packet_id", ""))
+            raise ValueError(f"Bad surface_mask for packet {packet_id}: {explicit_mask!r}") from exc
+        return mask | SURFACE_MASKS["title"]
+
+    surfaces = packet.get("surfaces")
+    if isinstance(surfaces, list):
+        mask = SURFACE_MASKS["title"]
+        for surface in surfaces:
+            bit = SURFACE_MASKS.get(str(surface))
+            if bit is not None:
+                mask |= bit
+        return mask
+
+    return DEFAULT_SURFACE_MASK
+
+
 def packet_rows(packets: list[dict[str, Any]]) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
     for packet in packets:
@@ -240,6 +296,7 @@ def packet_rows(packets: list[dict[str, Any]]) -> list[dict[str, str]]:
         if not isinstance(localized_by_locale, dict):
             raise ValueError(f"Packet localized must be object: {packet_id}")
 
+        surface_mask = str(resolve_packet_surface_mask(packet))
         for locale in TARGET_LOCALES:
             localized = localized_by_locale.get(locale)
             if not isinstance(localized, dict):
@@ -253,7 +310,7 @@ def packet_rows(packets: list[dict[str, Any]]) -> list[dict[str, str]]:
                     "release_set_id": release_set_id,
                     "article_id": article_id,
                     "unlock_id": unlock_id,
-                    "surface_mask": "127",
+                    "surface_mask": surface_mask,
                     "title": require_text(localized, "title", packet_id, locale),
                     "scanner": require_text(localized, "scanner", packet_id, locale),
                     "terminal": require_text(localized, "terminal", packet_id, locale),

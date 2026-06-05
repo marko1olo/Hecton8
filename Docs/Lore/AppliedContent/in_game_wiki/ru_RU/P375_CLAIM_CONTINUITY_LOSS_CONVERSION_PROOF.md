@@ -10,8 +10,8 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
 # Доказательство conversion loss в claim continuity
@@ -32,6 +32,6 @@ KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim conti
 
 ## Field Note
 
-Использовать как final proof перед public ledger или payload receiver choice.
+Final proof stands between the public ledger and the payload receiver: one preserves the dead, the other controls the claim.
 
 <!-- In-Game Wiki; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/ru_RU. -->

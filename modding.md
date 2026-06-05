@@ -2,10 +2,19 @@
 
 Date: 2026-06-02
 Status: ROOT MODDING AUTHORITY / ENVELOPE-ONLY / STATIC BIBLE / RUNTIME PROOF REQUIRED
+Evidence class: STATIC_DOC
+
+## First-20 Route Hook
+
+- First-20 moment: SDK and modding groundwork may support route-adjacent authoring samples, locale/content packaging, or proof-safe public API examples without touching first-route gameplay truth.
+- Route blocker removed: prevents modding language from implying public extension authority before the opening route, package validation, envelope rejection, and runtime playbook evidence exist.
+- Proof class: STATIC_DOC hook only; modding acceptance still requires static validator proof for related edits and Unity runtime verification before any runtime acceptance claim.
 
 ## Prime Law
 
 Modding in HECTON-8 is not a permission to patch the game, run arbitrary gameplay code, hold Unity object handles, or mutate first-party truth. The public modding surface is an envelope-only authoring and submission system: external creators use the SDK, Workbench, CLI tools, manifests, graphs, settings tables, locale files, content manifests, review manifests, and submission packages; the game runtime accepts only validated, fixed-size command envelopes and approved content references after the engine owner decides they are legal.
+
+User vision lock: modding and SDK foundations are real production goals and may be prepared before final release proof. They must remain envelope-only, proof-labeled, and must not claim public readiness until runtime validation, security, platform, and review artifacts exist.
 
 Any agent asked to add mod support, SDK support, public API methods, external starter kit tooling, Workshop packaging, mod command opcodes, mod events, mod save payloads, mod assets, or mod UI must read this file first, then read `Docs/Modding/README.md`, `Docs/Modding/Mod_API_Specification.md`, `Docs/Modding/Mod_API_Sandbox_Quarantine.md`, `Docs/Modding/External_Starter_Kit_File_Contract.md`, and `Docs/Modding/Change_Control_Checklist.md`. If those files disagree, the narrower, safer, source-backed envelope-only contract wins until runtime verification proves a wider route.
 

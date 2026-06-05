@@ -1,5 +1,10 @@
 ﻿# Voxel Dynamic NavGrid Vault Route - Agent 1316
 
+Status: `STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING`
+Evidence class: `STATIC_DOC / STATIC_SOURCE`
+Owner domain: world streaming/voxel navigation
+Review disposition: `YELLOW / STATIC_DOC_ONLY` until compile/import/runtime/profiler/player proof exists.
+
 Owner: `SystemID.WorldStreaming`
 
 Scope: `Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs` and lifecycle binding in `VoxelDynamicNavGridRuntimeLifecycle.cs`.

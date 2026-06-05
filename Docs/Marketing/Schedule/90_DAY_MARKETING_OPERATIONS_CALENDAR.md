@@ -4,6 +4,12 @@ Status: reusable schedule template
 Owner lane: Marketing / operations
 Runtime impact: none
 
+## Authority Boundary
+
+Static schedule template only. Public voice routes through root `textes.md`.
+Any quality, release, platform, Steam, wishlist, demo, performance, press, review-key, embargo, showcase, curator, asset-QA, schedule, SEO, pricing, discount, publication, website, or presskit claim requires `quality.md`, `release.md`, `platform.md`, current proof artifacts, and the matching local permission gate.
+Calendar rows, planned weeks, checklist items, and strategy rows do not approve Steam page, wishlist, pricing, discount, review-key, presskit, showcase, publication, platform, or release claims.
+
 ## Assumption
 
 This calendar starts when the team can produce at least rough in-game screenshots within 30 days. If screenshots are farther away, repeat Weeks 1-4 as preparation loops.

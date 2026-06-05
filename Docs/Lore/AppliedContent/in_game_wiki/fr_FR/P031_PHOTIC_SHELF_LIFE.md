@@ -10,8 +10,8 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
 # Vie du plateau photique
@@ -24,7 +24,7 @@ La biologie du plateau peu profond est vive, sonore et peu altérée. La lune n'
 
 ## Terminal
 
-Relevé du plateau: tapis vivants, brouteurs transparents, pressureweed et algues de route hors domination de réparation Atlas.
+SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.
 
 ## Audio
 

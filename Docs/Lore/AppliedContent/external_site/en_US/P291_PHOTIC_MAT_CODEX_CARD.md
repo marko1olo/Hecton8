@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -24,7 +24,7 @@ Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when
 
 ## Terminal
 
-SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.
+SPECIMEN: photic mat. Oxygen-positive, pressure-fragile. Do not harvest large sheets near sealed seams.
 
 ## Audio
 
@@ -32,6 +32,6 @@ Light here is work, not comfort.
 
 ## Field Note
 
-Codex card should be bright, useful and slightly unstable; not horror-only.
+Cut samples only from loose edges. If the mat is sealing a crack, it is already doing a job you may need later.
 
 <!-- External Site; generated from P291_PHOTIC_MAT_CODEX_CARD/en_US. -->

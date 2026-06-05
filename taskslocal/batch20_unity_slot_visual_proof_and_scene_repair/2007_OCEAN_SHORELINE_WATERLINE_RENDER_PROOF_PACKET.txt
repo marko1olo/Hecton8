@@ -1,0 +1,115 @@
+TASK 2007: OCEAN SHORELINE WATERLINE RENDER PROOF PACKET
+
+Role:
+Ocean surface, shoreline foam, waterline, and photic-shallow render proof packet author.
+
+Unity status:
+NO UNITY. Do not open Unity, run Unity, or edit active Assets.
+
+Primary objective:
+Create a static/render-route proof packet for the ocean and shoreline visual route. The packet must identify what must be verified in Unity and what can be proven from source: ocean single-pass route, shoreline foam graft, waterline, photic shallows, medium-depth readability, Crest vendor boundary, and screenshot/profiler requirements.
+
+Authority files to read first:
+1. AGENTS.md
+2. TASTE.md
+3. VISION_LOCKS.md
+4. PROJECT_BIBLES.md
+5. water.md
+6. rendering.md
+7. shaders.md
+8. atmosphere.md
+9. lighting.md
+10. performance.md
+11. Docs/ARCHITECTURE/SHINOBU_277_CREST_SHORELINE_FOAM_GRAFT.md
+12. Docs/ARCHITECTURE/URP_SCREENSHOT_PIPELINE.md
+
+Relevant mandates to load:
+1. .agents-skills/REND_Shader_Noir_Aesthetics_Dithering_Fog.txt
+2. .agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt
+3. .agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt
+4. .agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt
+5. .agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+
+Exact project files and tools to inspect:
+1. Assets/_Project/Scripts/Rendering/OceanSinglePass/HectonSinglePassOceanFeature.cs
+2. Assets/_Project/Scripts/Rendering/OceanSinglePass/OceanSinglePassRuntime.cs
+3. Assets/_Project/Scripts/Rendering/OceanSinglePass/OceanSinglePassContracts.cs
+4. Assets/_Project/Scripts/Rendering/OceanSinglePass/ShorelineFoamGraftContracts.cs
+5. Assets/_Project/Scripts/Rendering/OceanSinglePass/ShorelineFoamGraftGizmos.cs
+6. Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs
+7. Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereContracts.cs
+8. Assets/_Project/Editor/OceanRenderLayoutValidator.cs
+9. Assets/Crest/Crest/Textures/WaveNormals/WaveNormals.png
+10. Assets/Crest/Crest/Textures/Foam2.png
+11. Assets/Crest/Crest/Textures/foam.png
+12. Assets/Crest/Crest/Textures/Caustics/Caustics_tex_color.png
+13. rg -n "ShorelineFoam|OceanSinglePass|GlobalQualityWeight|AsyncGPUReadback|ReadPixels|Camera.Render|SetData|LockBufferForWrite|RenderGraph|Crest"
+
+Forbidden actions:
+1. Do not run Unity.
+2. Do not edit Crest vendor files.
+3. Do not propose CPU particles, DecalProjector spam, auxiliary cameras, or Camera.Render for shoreline foam.
+4. Do not propose physical water simulation when a premium visual fake can do the job.
+5. Do not accept flat opaque blue water, muddy shallows, dark cover, or missing waterline.
+6. Do not claim RenderGraph/profiler proof from source code.
+7. Do not run builds.
+
+Ownership boundaries:
+1. You own static source packet and proof requirements.
+2. You may create docs, route diagrams in text, shader/DTO contract summaries, and Unity-slot checklists.
+3. You do not own shader edits, render feature edits, scene edits, or Unity captures.
+4. Crest assets remain vendor-owned and unchanged.
+
+Deliverables:
+1. Docs/Reports/Batch20/2007_OCEAN_SHORELINE_RENDER_PROOF_PACKET.md
+2. Docs/Reports/Batch20/2007_OCEAN_ROUTE_CONTRACTS.csv
+3. Docs/Reports/Batch20/2007_UNITY_PROOF_CHECKLIST.md
+4. Docs/Reports/Batch20/2007_RISK_LEDGER.csv
+5. Docs/Tasks/Status_2007.md
+6. Docs/AgentLogs/Rationale_2007.md
+7. Docs/AgentLogs/LOG_2007.md
+
+Required route facts to verify:
+1. Shoreline foam graft is a screen-space visual fake.
+2. Crest vendor boundary remains unchanged.
+3. ShorelineFoamParamsDTO is a fixed contract and must not change for quality tiers.
+4. GlobalQualityWeight may scale ring count, loop limit, decay, intensity, falloff, normal perturbation, and cadence.
+5. GlobalQualityWeight must not change gameplay truth, DTO layout, save identity, rollback authority, or buffer ownership.
+6. GPU uploads must not become managed hot-path SetData churn without proof.
+7. Screenshot/proof capture route must avoid Camera.Render and ReadPixels in runtime code.
+
+Work plan:
+1. Read authority and mandates.
+2. Inspect ocean single-pass runtime and feature files.
+3. Inspect shoreline foam DTO/contracts/gizmos.
+4. Inspect atmosphere integration.
+5. Inspect OceanRenderLayoutValidator coverage.
+6. Inspect Crest texture paths and record vendor boundary.
+7. Search for forbidden screenshot/readback/render routes in ocean/screenshot-related code.
+8. Create a route diagram in text from producer phase to render consumer to shader route.
+9. Identify every static proof point and every pending Unity proof point.
+10. Define water surface visual floor: bright readable surface, credible waves, premium foam, visible waterline, photic shallows, caustics/refraction intent if present.
+11. Define shoreline closeup acceptance: no flat seam, no opaque band, no weak foam, no terrain-water mismatch, no primitive clutter.
+12. Define underwater 0-5m acceptance: readable color, caustics or premium substitute, surface underside, ecology, no muddy fog.
+13. Define underwater 20-50m acceptance: medium-depth hero readability, not abyss darkness.
+14. Define Aegir/horizon ocean interaction acceptance: reflection/color/haze cannot fight sky route.
+15. Define optimization proof checklist: profiler CPU/GPU, GC allocation, RenderGraph pass, buffer upload route, batches, overdraw risk.
+16. Define gameplay proof checklist: shore entry, swimming route, hazards, interactables, depth cues, horizon orientation.
+17. Define Low/Middle/High/Ultra consequences for water and foam.
+18. Add exact Unity capture requirements for task 2001.
+19. Mark all source-only findings as STATIC VERIFIED and runtime claims as PENDING VERIFICATION.
+20. Finalize handoff with exact files and viewer tools the Unity owner must open.
+
+Three-pillar acceptance:
+1. Graphics: water/shoreline/photic shallows can meet the visual floor with premium fake-first routes.
+2. Optimization: proof requirements catch hot-path readback, SetData churn, overdraw, and runtime allocation risks.
+3. Gameplay: water visuals preserve traversal, hazard, depth, and route readability.
+
+GlobalQualityWeight consequences:
+1. Low: fewer foam rings, lower loop limits, simpler normals, lower caustic cadence, still premium.
+2. Middle: stable default waterline and foam.
+3. High: richer normal perturbation, stronger local foam, higher caustic/detail cadence.
+4. Ultra: visual overkill water surface and hero shoreline detail without authority changes.
+
+Closeout standard:
+The Unity-slot owner must have exact ocean/shoreline proof requirements and source route facts, not vague "check water."

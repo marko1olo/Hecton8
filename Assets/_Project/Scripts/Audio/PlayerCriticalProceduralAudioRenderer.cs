@@ -14,6 +14,7 @@ using Hecton8.Visor;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -139,6 +140,8 @@ namespace Hecton8.Audio
         private const int AudioSynthesisTelemetryCapacity = 300;
         private const int AudioSynthesisTelemetryFailureDumpThreshold = 3;
         private const int PrologueTransitionQueueCapacity = 32;
+        private const int NativeDtoAlignmentBytes = 8;
+        private const int AudioTransitionStateSizeBytes = 64;
         private const uint GranularTelemetrySampleStrideMask = 63u;
         private const int GranularDisabledVoiceCapacity = 0;
         private const int GranularMinimumQualityVoiceCapacity = 8;
@@ -180,6 +183,10 @@ namespace Hecton8.Audio
         private const float PrologueSplashdownOutputGain = 0.82f;
         private const float PrologueSplashdownCavitationNoiseGain = 0.46f;
         private const float ProloguePortalFdnSend = 0.28f;
+        private static readonly int _audioTransitionStateRuntimeSizeBytes = UnsafeUtility.SizeOf<AudioTransitionState>();
+        private static readonly bool _audioTransitionStateLayoutValid =
+            _audioTransitionStateRuntimeSizeBytes == AudioTransitionStateSizeBytes &&
+            (_audioTransitionStateRuntimeSizeBytes & (NativeDtoAlignmentBytes - 1)) == 0;
         private const float HullCreakGrainSeconds = 0.045f;
         private const float HullSubBassMinimumHertz = 25f;
         private const float HullSubBassMaximumHertz = 40f;
@@ -2816,7 +2823,7 @@ namespace Hecton8.Audio
         /// </summary>
         public bool QueuePrologueAudioTransition(in AudioTransitionState state)
         {
-            if (_prologueTransitionQueueCount >= PrologueTransitionQueueCapacity)
+            if (!_audioTransitionStateLayoutValid || _prologueTransitionQueueCount >= PrologueTransitionQueueCapacity)
             {
                 return false;
             }
@@ -7541,7 +7548,10 @@ namespace Hecton8.Audio
             _ = ResolveVaultBuffer(vault, ref _granularVoiceGainHandle, BufferID.PlayerCriticalGranularVoiceGain, GranularVoiceCapacity, NativeArrayOptions.UninitializedMemory);
             _ = ResolveVaultBuffer(vault, ref _granularTelemetryRingHandle, BufferID.PlayerCriticalGranularTelemetryRing, GranularTelemetryCapacity, NativeArrayOptions.ClearMemory);
             _ = ResolveVaultBuffer(vault, ref _prologueTransitionTelemetryRingHandle, BufferID.PlayerCriticalPrologueTransitionTelemetryRing, PrologueTransitionTelemetryCapacity, NativeArrayOptions.ClearMemory);
-            _ = ResolveVaultBuffer(vault, ref _prologueTransitionRingHandle, PlayerCriticalPrologueTransitionRingBufferId, PrologueTransitionQueueCapacity, NativeArrayOptions.ClearMemory);
+            if (_audioTransitionStateLayoutValid)
+                _ = ResolveVaultBuffer(vault, ref _prologueTransitionRingHandle, PlayerCriticalPrologueTransitionRingBufferId, PrologueTransitionQueueCapacity, NativeArrayOptions.ClearMemory);
+            else
+                _prologueTransitionRingHandle = default;
             _ = ResolveVaultBuffer(vault, ref _audioSynthesisTelemetryRingHandle, PlayerCriticalAudioSynthesisTelemetryRingBufferId, AudioSynthesisTelemetryCapacity, NativeArrayOptions.ClearMemory);
             if (!AreVaultBackedAudioBuffersCreated())
             {
@@ -13718,6 +13728,9 @@ namespace Hecton8.Audio
 
         private void PrewarmPrologueTransitionQueue()
         {
+            if (!_audioTransitionStateLayoutValid)
+                return;
+
             IDataVault guardVault = null;
             if (!TryAcquirePlayerCriticalMutationBuffer(
                     in _prologueTransitionRingHandle,

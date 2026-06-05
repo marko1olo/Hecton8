@@ -1,7 +1,14 @@
 # HECTON-8 Lore Localization Model
 
 Status: working content contract.
+Evidence class: STATIC_DOC / CONTENT_CORPUS.
 Purpose: every lore unit must be usable by the game codex, terminal records, scanner notes, website articles, wiki pages, and localization pipeline.
+
+## Authority And Proof Boundary
+
+Use `narrative.md` for canon truth, evidence order, unlock route, and mission/text placement. Use `writing.md` for artifact prose and multilingual packet shape. Use `localization.md` for accepted localization statuses, locale rows, font/RTL/CJK/fallback rules, and runtime text proof gates. Use `textes.md` for real-world public copy, store copy, social posts, creator outreach, captions, and publication-facing claims.
+
+This model is STATIC_DOC / CONTENT_CORPUS evidence only. It does not prove Unity placement, player-visible runtime delivery, h8bin/Data Monolith bake readiness, native review, public website publication, profiler/GC status, or platform readiness.
 
 ## Principle
 
@@ -47,7 +54,7 @@ Every mature article must define:
 - Source Voices: neutral reference, marauder field note, Deep Reach internal, Atlas fragment, public domain.
 - Spoiler Level: 0 to 4.
 - First Unlock Route: event, depth band, scan, POI, contract, or ending.
-- Localization Status: source draft, source locked, loc ready, baked, QA passed.
+- Localization Status: `source_authority`, `draft_machine_or_llm`, `BLOCKED_TRANSLATION_DRAFT`, `fluent_reviewed`, `native_reviewed`, or `runtime_ready`.
 - Related Articles: article IDs only, not prose names.
 
 ## LocID Shape
@@ -103,6 +110,8 @@ They export from the same article packet:
 
 The website can have richer prose, images, and chronology, but it must point back to the same Article ID and canon owner.
 
+Website, wiki, or marketing-support markdown is a source candidate only. External publication requires `textes.md` routing and the applicable proof gates for the exact public claim, asset, channel, owner approval, and readiness language.
+
 ## Localization QA Notes
 
 RTL:
@@ -123,23 +132,26 @@ Expansion:
 
 ## Maturity States
 
-Draft Reference:
-Writer notes exist, not ready for player or website use.
+Source Authority:
+`source_authority`. English authority text exists with stable Article ID, canon owner, spoiler level, source voice, unlock route, and surface intent.
 
-Source Ready:
-Article has canon owner, spoiler level, source voice, unlock route, and English source text.
+Draft Machine Or LLM:
+`draft_machine_or_llm`. Draft translation exists, but it is not native-approved and cannot be claimed final.
 
-Loc Ready:
-Article has stable LocIDs and section boundaries.
+Blocked Translation Draft:
+`BLOCKED_TRANSLATION_DRAFT`. Required locale row exists, but usable draft text is blocked and the blocker is named.
 
-Baked:
-Entries exist in locale JSON or generated binary.
+Fluent Reviewed:
+`fluent_reviewed`. Fluent review passed, but native review and assigned-surface runtime proof may still be missing.
 
-Runtime QA Passed:
-Article has been tested in PDA, terminal, scanner, or other assigned surface.
+Native Reviewed:
+`native_reviewed`. Native speaker reviewed meaning, voice, idiom, and forbidden fact drift. This is not runtime proof.
 
-Website Ready:
-Spoiler-safe/public or archive copy is approved for external publication.
+Runtime Ready:
+`runtime_ready`. Native-reviewed text has been tested in the assigned UI, audio, site, or export surface with required proof artifacts. Lore markdown, locale JSON, and generated pages alone do not prove this state.
+
+Publication Ready:
+Not a localization status. Use only after `textes.md` public-copy review and the applicable proof gate for the exact external channel and claim.
 
 ## Current Application
 

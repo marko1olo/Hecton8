@@ -2,6 +2,11 @@
 
 
 
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
+Evidence class: STATIC_DOC / STATIC_SOURCE
+Owner domain: Echelon 4 Player, Kinematics & Tools / Exosuit 6DoF Kinematics
+Review disposition: YELLOW / STATIC_DOC_ONLY until compile/import/runtime/profiler/player proof exists.
+
 Owner: `SHINOBU_276`
 
 Domain: Echelon 4 Player, Kinematics & Tools / Exosuit 6DoF Kinematics

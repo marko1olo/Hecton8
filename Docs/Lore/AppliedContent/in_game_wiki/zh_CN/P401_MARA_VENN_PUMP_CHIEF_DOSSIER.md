@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# ZH LOC: Mara Venn/Pump Chief
+# Mara Venn/Pump Chief
 
-ZH LOC HOLD: Mara Venn anchors the colony's practical humanity. Her evidence chain is a badge, a cadence board, a corrected water ledger and a bypass handle polished by repeated use.
+Mara Venn anchors the colony's practical humanity. Her evidence chain is a badge, a cadence board, a corrected water ledger and a bypass handle polished by repeated use.
 
 ## Scanner
 
-ZH LOC: Dossier: Mara Venn. Pump rhythm and water ledger agree.
+Dossier: Mara Venn. Pump rhythm and water ledger agree.
 
 ## Terminal
 
-ZH LOC: MARA VENN/PUMPS. Held bypass; water stayed a machine load, not scenery.
+MARA VENN/PUMPS. Held bypass; water stayed a machine load, not scenery.
 
 ## Audio
 
-ZH LOC HOLD: Venn did not leave a speech. She left the pump rhythm everyone else used to breathe.
+Venn did not leave a speech. She left the pump rhythm everyone else used to breathe.
 
 ## Field Note
 
-ZH LOC HOLD: Place as a pump-room prop cluster; avoid family relation hooks.
+Pump-room evidence cluster: badge, cadence board, ledger correction, and polished bypass handle keep Mara Venn procedural, not melodramatic.
 
 <!-- In-Game Wiki; generated from P401_MARA_VENN_PUMP_CHIEF_DOSSIER/zh_CN. -->

@@ -1,0 +1,331 @@
+# Publication Surface Cross-Check - 1770
+
+Evidence class: STATIC_SOURCE. Checked `Publication_Surface_Index.csv` against generated `external_site` and `in_game_wiki` markdown pages.
+
+- Indexed rows: 13800
+- Missing pages: 0
+- Orphan pages: 0
+- Duplicate packet IDs within surface/locale: 6900
+- Wrong surface/locale folder rows: 13800
+- Inconsistent page H1 vs index title: 1449
+
+## Missing Pages
+
+None found.
+
+## Orphan Pages
+
+None found.
+
+## Duplicate Packet IDs
+
+- `(None, 'en_US', 'P001_CRASH_SHELF')`
+- `(None, 'en_US', 'P002_BLACK_KEEL_CONTACT')`
+- `(None, 'en_US', 'P003_BARNARD_MARK')`
+- `(None, 'en_US', 'P004_BLUE_DEBT')`
+- `(None, 'en_US', 'P005_REPAIR_SCAR')`
+- `(None, 'en_US', 'P006_DEAD_CLAIM_CACHE')`
+- `(None, 'en_US', 'P007_BRINE_STAIR')`
+- `(None, 'en_US', 'P008_EVACUATION_HOLD')`
+- `(None, 'en_US', 'P009_BOTTOM_FACTORY')`
+- `(None, 'en_US', 'P010_PAYLOAD_WINDOW')`
+- `(None, 'en_US', 'P011_DOMAIN_MARKS_2190')`
+- `(None, 'en_US', 'P012_RELAY_SPINE')`
+- `(None, 'en_US', 'P013_NEARLIGHT_SHIP_CLASSES')`
+- `(None, 'en_US', 'P014_AEGIR_ROUTE_WINDOW')`
+- `(None, 'en_US', 'P015_BLACK_KEEL_LEDGER')`
+- `(None, 'en_US', 'P016_AEGIR_HOST_STAR')`
+- `(None, 'en_US', 'P017_AEGIR_MOON_LADDER')`
+- `(None, 'en_US', 'P018_HECTON8_DROWNED_GEOLOGY')`
+- `(None, 'en_US', 'P019_HECTON8_RESOURCE_STACK')`
+- `(None, 'en_US', 'P020_HECTON8_ECOLOGY_REGISTRY')`
+- `(None, 'en_US', 'P021_BLACK_KEEL_CUSTODY')`
+- `(None, 'en_US', 'P022_DROP_CAPSULE_DAMAGE')`
+- `(None, 'en_US', 'P023_DEEP_REACH_RETURN_CLAIM')`
+- `(None, 'en_US', 'P024_FALSE_EXIT_MATERIAL')`
+- `(None, 'en_US', 'P025_PROFESSIONAL_MOTIVE')`
+- `(None, 'en_US', 'P026_SIX_DOMAIN_LEDGER')`
+- `(None, 'en_US', 'P027_BARNARD_YARDS_ORIGIN')`
+- `(None, 'en_US', 'P028_NO_FTL_TRANSIT_MATH')`
+- `(None, 'en_US', 'P029_SEED_SHIP_DOCTRINE')`
+- `(None, 'en_US', 'P030_RELAY_CUSTODY_DEBT_CHAIN')`
+- `(None, 'en_US', 'P031_PHOTIC_SHELF_LIFE')`
+- `(None, 'en_US', 'P032_PRESSURE_LADDER_DEPTH_BANDS')`
+- `(None, 'en_US', 'P033_CABLE_REEF_SYMBIOSIS')`
+- `(None, 'en_US', 'P034_ABYSSAL_REPAIR_FAUNA')`
+- `(None, 'en_US', 'P035_FACTORY_TEMPLE_THRESHOLD')`
+- `(None, 'en_US', 'P036_RETURN_VECTOR_WINDOW')`
+- `(None, 'en_US', 'P037_COWARD_EXIT_CHAIN')`
+- `(None, 'en_US', 'P038_MATERIAL_PAYOUT_LEDGER')`
+- `(None, 'en_US', 'P039_DEEP_REACH_CLEANSE_ORDER')`
+- `(None, 'en_US', 'P040_ATLAS_FINAL_ARGUMENT')`
+- `(None, 'en_US', 'P041_WORKER_LOCKER_ROW')`
+- `(None, 'en_US', 'P042_PRESSURE_BUNK_ROUTINE')`
+- `(None, 'en_US', 'P043_SHIFT_BOARD_ROUTE_HOLDS')`
+- `(None, 'en_US', 'P044_MEDICAL_LOCK_DELAY')`
+- `(None, 'en_US', 'P045_BLACK_BOX_NAME_STACK')`
+- `(None, 'en_US', 'P046_PUMP_ROOM_HANDSHAKE')`
+- `(None, 'en_US', 'P047_HATCH_SEAL_LEDGER')`
+- `(None, 'en_US', 'P048_CABLE_SPLICE_SCAR')`
+- `(None, 'en_US', 'P049_SONAR_RETURN_ROUTE')`
+- `(None, 'en_US', 'P050_SALVAGE_TOOL_CUSTODY')`
+- `(None, 'en_US', 'P051_LIGHT_DELAY_AUTHORITY')`
+- `(None, 'en_US', 'P052_BLACK_KEEL_TARIFF_TABLE')`
+- `(None, 'en_US', 'P053_MARAUDER_GRAFFITI_MASKS')`
+- `(None, 'en_US', 'P054_RELAY_QUEUE_DRIFT')`
+- `(None, 'en_US', 'P055_CORPORATE_RESPONSE_LEDGER')`
+- `(None, 'en_US', 'P056_EX_DEEP_REACH_MARAUDER')`
+- `(None, 'en_US', 'P057_GREAT_TIDE_LIABILITY_CHAIN')`
+- `(None, 'en_US', 'P058_BLACK_KEEL_CLAIM_HOOKS')`
+- `(None, 'en_US', 'P059_ESCAPE_CHAIN_ASSEMBLY')`
+- `(None, 'en_US', 'P060_FIRST_HOUR_SPINE')`
+- `(None, 'en_US', 'P061_MAINTENANCE_ECOLOGY')`
+- `(None, 'en_US', 'P062_MARA_VENN_TIDE_MODEL')`
+- `(None, 'en_US', 'P063_JUNO_KADE_EVACUATION_HOLD')`
+- `(None, 'en_US', 'P064_REN_OKOYE_PUMP_63')`
+- `(None, 'en_US', 'P065_SAHANA_IQBAL_ATLAS_SAFETY')`
+- `(None, 'en_US', 'P066_LIAN_TORRES_LAST_PACKET')`
+- `(None, 'en_US', 'P067_OSKAR_NEUMANN_PRESSURE_FORGE')`
+- `(None, 'en_US', 'P068_AYA_MORITA_REPAIR_MEDICINE')`
+- `(None, 'en_US', 'P069_PAVEL_SORN_PROCEDURE_HOLD')`
+- `(None, 'en_US', 'P070_DEEP_REACH_PRESENT_WINDOWS')`
+- `(None, 'en_US', 'P071_SOL_CORE_AUTHORITY')`
+- `(None, 'en_US', 'P072_CENTAURI_COMPACT_LEGITIMACY')`
+- `(None, 'en_US', 'P073_BARNARD_YARDS_MARAUDER_ORIGIN')`
+- `(None, 'en_US', 'P074_TAU_CETI_PUBLIC_LEDGER')`
+- `(None, 'en_US', 'P075_LUYTEN_JUNCTION_PACKET_CUSTODY')`
+- `(None, 'en_US', 'P076_RAN_AEGIR_ANCHOR')`
+- `(None, 'en_US', 'P077_AEGIR_MOON_LADDER')`
+- `(None, 'en_US', 'P078_INNER_MOON_RELAY_HAZARDS')`
+- `(None, 'en_US', 'P079_HECTON8_ORBIT_TIDE_GEOMETRY')`
+- `(None, 'en_US', 'P080_OUTER_MOON_COLD_CLAIMS')`
+- `(None, 'en_US', 'P081_GREAT_TIDE_PHYSICS_RECORD')`
+- `(None, 'en_US', 'P082_PRESSURE_GLASS_FORMATION')`
+- `(None, 'en_US', 'P083_BRINE_CANYON_ROUTE_LADDER')`
+- `(None, 'en_US', 'P084_VENT_FORGE_GEOTHERMAL_ENGINE')`
+- `(None, 'en_US', 'P085_BIOMETAL_RESOURCE_STACK')`
+- `(None, 'en_US', 'P086_AEGIR_RECLAMATION_POOL')`
+- `(None, 'en_US', 'P087_KEELMARK_MUTUAL_CUSTODY')`
+- `(None, 'en_US', 'P088_TONNE_WINDOW_DEBT')`
+- `(None, 'en_US', 'P089_BLACK_KEEL_FIRST_VOICE')`
+- `(None, 'en_US', 'P090_DEEP_REACH_PRIORITY_HOOK')`
+- `(None, 'en_US', 'P091_COLLISION_FRACTURED_MOON')`
+- `(None, 'en_US', 'P092_GLOBAL_OCEAN_DEPTH_BANDS')`
+- `(None, 'en_US', 'P093_ACCESSIBLE_SEAFLOOR_WINDOWS')`
+- `(None, 'en_US', 'P094_SEED_GEOLOGY_INVARIANTS')`
+- `(None, 'en_US', 'P095_PRESSURE_CONTAINMENT_FAILURE')`
+- `(None, 'en_US', 'P096_ATLAS_PERSON_BOUNDARY')`
+- `(None, 'en_US', 'P097_RECOVERY_COMPLIANCE_OFFICE')`
+- `(None, 'en_US', 'P098_FALSE_ENDING_TAXONOMY')`
+- `(None, 'en_US', 'P099_MARAUDER_DOSSIER_PERSISTENCE')`
+- `(None, 'en_US', 'P100_FINAL_CHOICE_PAYLOAD')`
+- TRUNCATED: 6800 additional rows.
+
+## Wrong Locale Folders
+
+- `in_game_wiki/en_US/P001_CRASH_SHELF.md`
+- `in_game_wiki/en_US/P002_BLACK_KEEL_CONTACT.md`
+- `in_game_wiki/en_US/P003_BARNARD_MARK.md`
+- `in_game_wiki/en_US/P004_BLUE_DEBT.md`
+- `in_game_wiki/en_US/P005_REPAIR_SCAR.md`
+- `in_game_wiki/en_US/P006_DEAD_CLAIM_CACHE.md`
+- `in_game_wiki/en_US/P007_BRINE_STAIR.md`
+- `in_game_wiki/en_US/P008_EVACUATION_HOLD.md`
+- `in_game_wiki/en_US/P009_BOTTOM_FACTORY.md`
+- `in_game_wiki/en_US/P010_PAYLOAD_WINDOW.md`
+- `in_game_wiki/en_US/P011_DOMAIN_MARKS_2190.md`
+- `in_game_wiki/en_US/P012_RELAY_SPINE.md`
+- `in_game_wiki/en_US/P013_NEARLIGHT_SHIP_CLASSES.md`
+- `in_game_wiki/en_US/P014_AEGIR_ROUTE_WINDOW.md`
+- `in_game_wiki/en_US/P015_BLACK_KEEL_LEDGER.md`
+- `in_game_wiki/en_US/P016_AEGIR_HOST_STAR.md`
+- `in_game_wiki/en_US/P017_AEGIR_MOON_LADDER.md`
+- `in_game_wiki/en_US/P018_HECTON8_DROWNED_GEOLOGY.md`
+- `in_game_wiki/en_US/P019_HECTON8_RESOURCE_STACK.md`
+- `in_game_wiki/en_US/P020_HECTON8_ECOLOGY_REGISTRY.md`
+- `in_game_wiki/en_US/P021_BLACK_KEEL_CUSTODY.md`
+- `in_game_wiki/en_US/P022_DROP_CAPSULE_DAMAGE.md`
+- `in_game_wiki/en_US/P023_DEEP_REACH_RETURN_CLAIM.md`
+- `in_game_wiki/en_US/P024_FALSE_EXIT_MATERIAL.md`
+- `in_game_wiki/en_US/P025_PROFESSIONAL_MOTIVE.md`
+- `in_game_wiki/en_US/P026_SIX_DOMAIN_LEDGER.md`
+- `in_game_wiki/en_US/P027_BARNARD_YARDS_ORIGIN.md`
+- `in_game_wiki/en_US/P028_NO_FTL_TRANSIT_MATH.md`
+- `in_game_wiki/en_US/P029_SEED_SHIP_DOCTRINE.md`
+- `in_game_wiki/en_US/P030_RELAY_CUSTODY_DEBT_CHAIN.md`
+- `in_game_wiki/en_US/P031_PHOTIC_SHELF_LIFE.md`
+- `in_game_wiki/en_US/P032_PRESSURE_LADDER_DEPTH_BANDS.md`
+- `in_game_wiki/en_US/P033_CABLE_REEF_SYMBIOSIS.md`
+- `in_game_wiki/en_US/P034_ABYSSAL_REPAIR_FAUNA.md`
+- `in_game_wiki/en_US/P035_FACTORY_TEMPLE_THRESHOLD.md`
+- `in_game_wiki/en_US/P036_RETURN_VECTOR_WINDOW.md`
+- `in_game_wiki/en_US/P037_COWARD_EXIT_CHAIN.md`
+- `in_game_wiki/en_US/P038_MATERIAL_PAYOUT_LEDGER.md`
+- `in_game_wiki/en_US/P039_DEEP_REACH_CLEANSE_ORDER.md`
+- `in_game_wiki/en_US/P040_ATLAS_FINAL_ARGUMENT.md`
+- `in_game_wiki/en_US/P041_WORKER_LOCKER_ROW.md`
+- `in_game_wiki/en_US/P042_PRESSURE_BUNK_ROUTINE.md`
+- `in_game_wiki/en_US/P043_SHIFT_BOARD_ROUTE_HOLDS.md`
+- `in_game_wiki/en_US/P044_MEDICAL_LOCK_DELAY.md`
+- `in_game_wiki/en_US/P045_BLACK_BOX_NAME_STACK.md`
+- `in_game_wiki/en_US/P046_PUMP_ROOM_HANDSHAKE.md`
+- `in_game_wiki/en_US/P047_HATCH_SEAL_LEDGER.md`
+- `in_game_wiki/en_US/P048_CABLE_SPLICE_SCAR.md`
+- `in_game_wiki/en_US/P049_SONAR_RETURN_ROUTE.md`
+- `in_game_wiki/en_US/P050_SALVAGE_TOOL_CUSTODY.md`
+- `in_game_wiki/en_US/P051_LIGHT_DELAY_AUTHORITY.md`
+- `in_game_wiki/en_US/P052_BLACK_KEEL_TARIFF_TABLE.md`
+- `in_game_wiki/en_US/P053_MARAUDER_GRAFFITI_MASKS.md`
+- `in_game_wiki/en_US/P054_RELAY_QUEUE_DRIFT.md`
+- `in_game_wiki/en_US/P055_CORPORATE_RESPONSE_LEDGER.md`
+- `in_game_wiki/en_US/P056_EX_DEEP_REACH_MARAUDER.md`
+- `in_game_wiki/en_US/P057_GREAT_TIDE_LIABILITY_CHAIN.md`
+- `in_game_wiki/en_US/P058_BLACK_KEEL_CLAIM_HOOKS.md`
+- `in_game_wiki/en_US/P059_ESCAPE_CHAIN_ASSEMBLY.md`
+- `in_game_wiki/en_US/P060_FIRST_HOUR_SPINE.md`
+- `in_game_wiki/en_US/P061_MAINTENANCE_ECOLOGY.md`
+- `in_game_wiki/en_US/P062_MARA_VENN_TIDE_MODEL.md`
+- `in_game_wiki/en_US/P063_JUNO_KADE_EVACUATION_HOLD.md`
+- `in_game_wiki/en_US/P064_REN_OKOYE_PUMP_63.md`
+- `in_game_wiki/en_US/P065_SAHANA_IQBAL_ATLAS_SAFETY.md`
+- `in_game_wiki/en_US/P066_LIAN_TORRES_LAST_PACKET.md`
+- `in_game_wiki/en_US/P067_OSKAR_NEUMANN_PRESSURE_FORGE.md`
+- `in_game_wiki/en_US/P068_AYA_MORITA_REPAIR_MEDICINE.md`
+- `in_game_wiki/en_US/P069_PAVEL_SORN_PROCEDURE_HOLD.md`
+- `in_game_wiki/en_US/P070_DEEP_REACH_PRESENT_WINDOWS.md`
+- `in_game_wiki/en_US/P071_SOL_CORE_AUTHORITY.md`
+- `in_game_wiki/en_US/P072_CENTAURI_COMPACT_LEGITIMACY.md`
+- `in_game_wiki/en_US/P073_BARNARD_YARDS_MARAUDER_ORIGIN.md`
+- `in_game_wiki/en_US/P074_TAU_CETI_PUBLIC_LEDGER.md`
+- `in_game_wiki/en_US/P075_LUYTEN_JUNCTION_PACKET_CUSTODY.md`
+- `in_game_wiki/en_US/P076_RAN_AEGIR_ANCHOR.md`
+- `in_game_wiki/en_US/P077_AEGIR_MOON_LADDER.md`
+- `in_game_wiki/en_US/P078_INNER_MOON_RELAY_HAZARDS.md`
+- `in_game_wiki/en_US/P079_HECTON8_ORBIT_TIDE_GEOMETRY.md`
+- `in_game_wiki/en_US/P080_OUTER_MOON_COLD_CLAIMS.md`
+- `in_game_wiki/en_US/P081_GREAT_TIDE_PHYSICS_RECORD.md`
+- `in_game_wiki/en_US/P082_PRESSURE_GLASS_FORMATION.md`
+- `in_game_wiki/en_US/P083_BRINE_CANYON_ROUTE_LADDER.md`
+- `in_game_wiki/en_US/P084_VENT_FORGE_GEOTHERMAL_ENGINE.md`
+- `in_game_wiki/en_US/P085_BIOMETAL_RESOURCE_STACK.md`
+- `in_game_wiki/en_US/P086_AEGIR_RECLAMATION_POOL.md`
+- `in_game_wiki/en_US/P087_KEELMARK_MUTUAL_CUSTODY.md`
+- `in_game_wiki/en_US/P088_TONNE_WINDOW_DEBT.md`
+- `in_game_wiki/en_US/P089_BLACK_KEEL_FIRST_VOICE.md`
+- `in_game_wiki/en_US/P090_DEEP_REACH_PRIORITY_HOOK.md`
+- `in_game_wiki/en_US/P091_COLLISION_FRACTURED_MOON.md`
+- `in_game_wiki/en_US/P092_GLOBAL_OCEAN_DEPTH_BANDS.md`
+- `in_game_wiki/en_US/P093_ACCESSIBLE_SEAFLOOR_WINDOWS.md`
+- `in_game_wiki/en_US/P094_SEED_GEOLOGY_INVARIANTS.md`
+- `in_game_wiki/en_US/P095_PRESSURE_CONTAINMENT_FAILURE.md`
+- `in_game_wiki/en_US/P096_ATLAS_PERSON_BOUNDARY.md`
+- `in_game_wiki/en_US/P097_RECOVERY_COMPLIANCE_OFFICE.md`
+- `in_game_wiki/en_US/P098_FALSE_ENDING_TAXONOMY.md`
+- `in_game_wiki/en_US/P099_MARAUDER_DOSSIER_PERSISTENCE.md`
+- `in_game_wiki/en_US/P100_FINAL_CHOICE_PAYLOAD.md`
+- TRUNCATED: 13700 additional rows.
+
+## Inconsistent Titles
+
+- `in_game_wiki/ru_RU/P001_CRASH_SHELF.md | index=ÐŸÐ¾Ð»ÐºÐ° ÐºÑ€ÑƒÑˆÐµÐ½Ð¸Ñ | page=Полка крушения`
+- `in_game_wiki/ru_RU/P002_BLACK_KEEL_CONTACT.md | index=ÐšÐ¾Ð½Ñ‚Ð°ÐºÑ‚ Black Keel | page=Контакт Black Keel`
+- `in_game_wiki/ru_RU/P003_BARNARD_MARK.md | index=ÐœÐµÑ‚ÐºÐ° Barnard | page=Метка Barnard`
+- `in_game_wiki/ru_RU/P005_REPAIR_SCAR.md | index=Ð ÐµÐ¼Ð¾Ð½Ñ‚Ð½Ñ‹Ð¹ ÑˆÑ€Ð°Ð¼ | page=Ремонтный шрам`
+- `in_game_wiki/ru_RU/P006_DEAD_CLAIM_CACHE.md | index=ÐšÑÑˆ Ð¼ÐµÑ€Ñ‚Ð²Ð¾Ð³Ð¾ claim | page=Кэш мертвого claim`
+- `in_game_wiki/ru_RU/P008_EVACUATION_HOLD.md | index=Ð£Ð´ÐµÑ€Ð¶Ð°Ð½Ð½Ð°Ñ ÑÐ²Ð°ÐºÑƒÐ°Ñ†Ð¸Ñ | page=Удержанная эвакуация`
+- `in_game_wiki/ru_RU/P009_BOTTOM_FACTORY.md | index=Ð”Ð¾Ð½Ð½Ð°Ñ Ñ„Ð°Ð±Ñ€Ð¸ÐºÐ° | page=Донная фабрика`
+- `in_game_wiki/ru_RU/P010_PAYLOAD_WINDOW.md | index=ÐžÐºÐ½Ð¾ Ð¿Ð¾Ð»ÐµÐ·Ð½Ð¾Ð¹ Ð½Ð°Ð³Ñ€ÑƒÐ·ÐºÐ¸ | page=Окно полезной нагрузки`
+- `in_game_wiki/ru_RU/P011_DOMAIN_MARKS_2190.md | index=ÐœÐµÑ‚ÐºÐ¸ Ð´Ð¾Ð¼ÐµÐ½Ð¾Ð² 2190 | page=Метки доменов 2190`
+- `in_game_wiki/ru_RU/P013_NEARLIGHT_SHIP_CLASSES.md | index=ÐšÐ»Ð°ÑÑÑ‹ Ð¾ÐºÐ¾Ð»Ð¾ÑÐ²ÐµÑ‚Ð¾Ð²Ñ‹Ñ… ÐºÐ¾Ñ€Ð°Ð±Ð»ÐµÐ¹ | page=Классы околосветовых кораблей`
+- `in_game_wiki/ru_RU/P014_AEGIR_ROUTE_WINDOW.md | index=ÐžÐºÐ½Ð¾ Ð¼Ð°Ñ€ÑˆÑ€ÑƒÑ‚Ð° Aegir | page=Окно маршрута Aegir`
+- `in_game_wiki/ru_RU/P015_BLACK_KEEL_LEDGER.md | index=Ð ÐµÐµÑÑ‚Ñ€ Black Keel | page=Реестр Black Keel`
+- `in_game_wiki/ru_RU/P016_AEGIR_HOST_STAR.md | index=Ð—Ð²ÐµÐ·Ð´Ð° ÑÐ¸ÑÑ‚ÐµÐ¼Ñ‹ Aegir | page=Звезда системы Aegir`
+- `in_game_wiki/ru_RU/P017_AEGIR_MOON_LADDER.md | index=Ð›ÑƒÐ½Ð½Ð°Ñ Ð»ÐµÑÑ‚Ð½Ð¸Ñ†Ð° Aegir | page=Лунная лестница Aegir`
+- `in_game_wiki/ru_RU/P018_HECTON8_DROWNED_GEOLOGY.md | index=Ð—Ð°Ñ‚Ð¾Ð¿Ð»ÐµÐ½Ð½Ð°Ñ Ð³ÐµÐ¾Ð»Ð¾Ð³Ð¸Ñ | page=Затопленная геология`
+- `in_game_wiki/ru_RU/P019_HECTON8_RESOURCE_STACK.md | index=Ð¡Ñ‚ÐµÐº Ñ€ÐµÑÑƒÑ€ÑÐ¾Ð² | page=Стек ресурсов`
+- `in_game_wiki/ru_RU/P020_HECTON8_ECOLOGY_REGISTRY.md | index=Ð ÐµÐ³Ð¸ÑÑ‚Ñ€ ÑÐºÐ¾Ð»Ð¾Ð³Ð¸Ð¸ | page=Регистр экологии`
+- `in_game_wiki/ru_RU/P021_BLACK_KEEL_CUSTODY.md | index=ÐžÐ¿ÐµÐºÐ° Black Keel | page=Опека Black Keel`
+- `in_game_wiki/ru_RU/P022_DROP_CAPSULE_DAMAGE.md | index=ÐŸÐ¾Ð²Ñ€ÐµÐ¶Ð´ÐµÐ½Ð¸Ðµ ÑÐ¿ÑƒÑÐºÐ¾Ð²Ð¾Ð¹ ÐºÐ°Ð¿ÑÑƒÐ»Ñ‹ | page=Повреждение спусковой капсулы`
+- `in_game_wiki/ru_RU/P023_DEEP_REACH_RETURN_CLAIM.md | index=Ð’Ð¾Ð·Ð²Ñ€Ð°Ñ‚Ð½Ð°Ñ Ð¿Ñ€ÐµÑ‚ÐµÐ½Ð·Ð¸Ñ Deep Reach | page=Возвратная претензия Deep Reach`
+- `in_game_wiki/ru_RU/P024_FALSE_EXIT_MATERIAL.md | index=ÐœÐ°Ñ‚ÐµÑ€Ð¸Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ð²Ñ‹Ñ…Ð¾Ð´ | page=Материальный выход`
+- `in_game_wiki/ru_RU/P025_PROFESSIONAL_MOTIVE.md | index=ÐŸÑ€Ð¾Ñ„ÐµÑÑÐ¸Ð¾Ð½Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ð¼Ð¾Ñ‚Ð¸Ð² | page=Профессиональный мотив`
+- `in_game_wiki/ru_RU/P026_SIX_DOMAIN_LEDGER.md | index=Ð ÐµÐµÑÑ‚Ñ€ ÑˆÐµÑÑ‚Ð¸ Ð´Ð¾Ð¼ÐµÐ½Ð¾Ð² | page=Реестр шести доменов`
+- `in_game_wiki/ru_RU/P027_BARNARD_YARDS_ORIGIN.md | index=ÐŸÑ€Ð¾Ð¸ÑÑ…Ð¾Ð¶Ð´ÐµÐ½Ð¸Ðµ: Barnard Yards | page=Происхождение: Barnard Yards`
+- `in_game_wiki/ru_RU/P028_NO_FTL_TRANSIT_MATH.md | index=ÐœÐ°Ñ‚ÐµÐ¼Ð°Ñ‚Ð¸ÐºÐ° Ð¿Ð¾Ð»ÐµÑ‚Ð° Ð±ÐµÐ· FTL | page=Математика полета без FTL`
+- `in_game_wiki/ru_RU/P029_SEED_SHIP_DOCTRINE.md | index=Ð”Ð¾ÐºÑ‚Ñ€Ð¸Ð½Ð° Seed Ship | page=Доктрина Seed Ship`
+- `in_game_wiki/ru_RU/P030_RELAY_CUSTODY_DEBT_CHAIN.md | index=Ð”Ð¾Ð»Ð³Ð¾Ð²Ð°Ñ Ñ†ÐµÐ¿ÑŒ relay custody | page=Долговая цепь relay custody`
+- `in_game_wiki/ru_RU/P031_PHOTIC_SHELF_LIFE.md | index=Ð–Ð¸Ð·Ð½ÑŒ ÑÐ²ÐµÑ‚Ð¾Ð²Ð¾Ð³Ð¾ ÑˆÐµÐ»ÑŒÑ„Ð° | page=Жизнь светового шельфа`
+- `in_game_wiki/ru_RU/P032_PRESSURE_LADDER_DEPTH_BANDS.md | index=Ð›ÐµÑÑ‚Ð½Ð¸Ñ†Ð° Ð´Ð°Ð²Ð»ÐµÐ½Ð¸Ñ | page=Лестница давления`
+- `in_game_wiki/ru_RU/P033_CABLE_REEF_SYMBIOSIS.md | index=Ð¡Ð¸Ð¼Ð±Ð¸Ð¾Ð· ÐºÐ°Ð±ÐµÐ»ÑŒÐ½Ð¾Ð³Ð¾ Ñ€Ð¸Ñ„Ð° | page=Симбиоз кабельного рифа`
+- `in_game_wiki/ru_RU/P034_ABYSSAL_REPAIR_FAUNA.md | index=ÐÐ±Ð¸ÑÑÐ°Ð»ÑŒÐ½Ð°Ñ Ñ€ÐµÐ¼Ð¾Ð½Ñ‚Ð½Ð°Ñ Ñ„Ð°ÑƒÐ½Ð° | page=Абиссальная ремонтная фауна`
+- `in_game_wiki/ru_RU/P035_FACTORY_TEMPLE_THRESHOLD.md | index=ÐŸÐ¾Ñ€Ð¾Ð³ Ñ„Ð°Ð±Ñ€Ð¸ÐºÐ¸-Ñ…Ñ€Ð°Ð¼Ð° | page=Порог фабрики-храма`
+- `in_game_wiki/ru_RU/P036_RETURN_VECTOR_WINDOW.md | index=ÐžÐºÐ½Ð¾ Ð²Ð¾Ð·Ð²Ñ€Ð°Ñ‚Ð½Ð¾Ð³Ð¾ Ð²ÐµÐºÑ‚Ð¾Ñ€Ð° | page=Окно возвратного вектора`
+- `in_game_wiki/ru_RU/P037_COWARD_EXIT_CHAIN.md | index=Ð¦ÐµÐ¿Ð¾Ñ‡ÐºÐ° Ñ‚Ñ€ÑƒÑÐ»Ð¸Ð²Ð¾Ð³Ð¾ Ð²Ñ‹Ñ…Ð¾Ð´Ð° | page=Цепочка трусливого выхода`
+- `in_game_wiki/ru_RU/P038_MATERIAL_PAYOUT_LEDGER.md | index=Ð ÐµÐµÑÑ‚Ñ€ Ð¼Ð°Ñ‚ÐµÑ€Ð¸Ð°Ð»ÑŒÐ½Ð¾Ð¹ Ð²Ñ‹Ð¿Ð»Ð°Ñ‚Ñ‹ | page=Реестр материальной выплаты`
+- `in_game_wiki/ru_RU/P039_DEEP_REACH_CLEANSE_ORDER.md | index=ÐŸÑ€Ð¸ÐºÐ°Ð· Deep Reach Ð½Ð° Ð·Ð°Ñ‡Ð¸ÑÑ‚ÐºÑƒ | page=Приказ Deep Reach на зачистку`
+- `in_game_wiki/ru_RU/P040_ATLAS_FINAL_ARGUMENT.md | index=Ð¤Ð¸Ð½Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ð°Ñ€Ð³ÑƒÐ¼ÐµÐ½Ñ‚ Atlas | page=Финальный аргумент Atlas`
+- `in_game_wiki/ru_RU/P041_WORKER_LOCKER_ROW.md | index=Ð ÑÐ´ Ñ€Ð°Ð±Ð¾Ñ‡Ð¸Ñ… ÑˆÐºÐ°Ñ„Ð¾Ð² | page=Ряд рабочих шкафов`
+- `in_game_wiki/ru_RU/P042_PRESSURE_BUNK_ROUTINE.md | index=Ð ÐµÐ¶Ð¸Ð¼ Ð½Ð°Ð¿Ð¾Ñ€Ð½Ñ‹Ñ… ÐºÐ¾ÐµÐº | page=Режим напорных коек`
+- `in_game_wiki/ru_RU/P043_SHIFT_BOARD_ROUTE_HOLDS.md | index=Ð¡Ð¼ÐµÐ½Ð½Ð°Ñ Ð´Ð¾ÑÐºÐ° ÑƒÐ´ÐµÑ€Ð¶Ð°Ð½Ð¸Ð¹ Ð¼Ð°Ñ€ÑˆÑ€ÑƒÑ‚Ð° | page=Сменная доска удержаний маршрута`
+- `in_game_wiki/ru_RU/P044_MEDICAL_LOCK_DELAY.md | index=Ð—Ð°Ð´ÐµÑ€Ð¶ÐºÐ° Ð¼ÐµÐ´Ð¸Ñ†Ð¸Ð½ÑÐºÐ¾Ð³Ð¾ ÑˆÐ»ÑŽÐ·Ð° | page=Задержка медицинского шлюза`
+- `in_game_wiki/ru_RU/P045_BLACK_BOX_NAME_STACK.md | index=Ð¡Ñ‚ÐµÐº Ð¸Ð¼ÐµÐ½ Ñ‡ÐµÑ€Ð½Ñ‹Ñ… ÑÑ‰Ð¸ÐºÐ¾Ð² | page=Стек имен черных ящиков`
+- `in_game_wiki/ru_RU/P056_EX_DEEP_REACH_MARAUDER.md | index=Ð‘Ñ‹Ð²ÑˆÐ¸Ð¹ Deep Reach-Ð¼Ð°Ñ€Ð¾Ð´ÐµÑ€ | page=Бывший Deep Reach-мародер`
+- `in_game_wiki/ru_RU/P057_GREAT_TIDE_LIABILITY_CHAIN.md | index=Ð¦ÐµÐ¿Ð¾Ñ‡ÐºÐ° Ð¾Ñ‚Ð²ÐµÑ‚ÑÑ‚Ð²ÐµÐ½Ð½Ð¾ÑÑ‚Ð¸ Ð’ÐµÐ»Ð¸ÐºÐ¾Ð³Ð¾ ÐŸÑ€Ð¸Ð»Ð¸Ð²Ð° | page=Цепочка ответственности Великого Прилива`
+- `in_game_wiki/ru_RU/P058_BLACK_KEEL_CLAIM_HOOKS.md | index=Claim-ÐºÑ€ÑŽÐºÐ¸ Black Keel | page=Claim-крюки Black Keel`
+- `in_game_wiki/ru_RU/P059_ESCAPE_CHAIN_ASSEMBLY.md | index=Ð¡Ð±Ð¾Ñ€ÐºÐ° Ñ†ÐµÐ¿Ð¾Ñ‡ÐºÐ¸ Ð¿Ð¾Ð±ÐµÐ³Ð° | page=Сборка цепочки побега`
+- `in_game_wiki/ru_RU/P060_FIRST_HOUR_SPINE.md | index=ÐšÐ°Ñ€ÐºÐ°Ñ Ð¿ÐµÑ€Ð²Ð¾Ð³Ð¾ Ñ‡Ð°ÑÐ° | page=Каркас первого часа`
+- `in_game_wiki/ru_RU/P061_MAINTENANCE_ECOLOGY.md | index=Ð ÐµÐ¼Ð¾Ð½Ñ‚Ð½Ð°Ñ ÑÐºÐ¾Ð»Ð¾Ð³Ð¸Ñ | page=Ремонтная экология`
+- `in_game_wiki/ru_RU/P062_MARA_VENN_TIDE_MODEL.md | index=ÐŸÑ€Ð¸Ð»Ð¸Ð²Ð½Ð°Ñ Ð¼Ð¾Ð´ÐµÐ»ÑŒ ÐœÐ°Ñ€Ñ‹ Ð’ÐµÐ½Ð½ | page=Приливная модель Мары Венн`
+- `in_game_wiki/ru_RU/P063_JUNO_KADE_EVACUATION_HOLD.md | index=Ð­Ð²Ð°ÐºÑƒÐ°Ñ†Ð¸Ð¾Ð½Ð½Ð°Ñ Ð·Ð°Ð´ÐµÑ€Ð¶ÐºÐ° Ð”Ð¶ÑƒÐ½Ð¾ ÐšÐµÐ¹Ð´ | page=Эвакуационная задержка Джуно Кейд`
+- `in_game_wiki/ru_RU/P064_REN_OKOYE_PUMP_63.md | index=ÐÐ°ÑÐ¾Ñ 63 Ð ÐµÐ½Ð° ÐžÐºÐ¾Ð¹Ðµ | page=Насос 63 Рена Окойе`
+- `in_game_wiki/ru_RU/P065_SAHANA_IQBAL_ATLAS_SAFETY.md | index=Ð‘ÐµÐ·Ð¾Ð¿Ð°ÑÐ½Ð¾ÑÑ‚ÑŒ Atlas Ð¿Ð¾ Ð¡Ð°Ñ…Ð°Ð½Ðµ Ð˜ÐºÐ±Ð°Ð» | page=Безопасность Atlas по Сахане Икбал`
+- `in_game_wiki/ru_RU/P066_LIAN_TORRES_LAST_PACKET.md | index=ÐŸÐ¾ÑÐ»ÐµÐ´Ð½Ð¸Ð¹ Ð¿Ð°ÐºÐµÑ‚ Ð›Ð¸Ð°Ð½Ð° Ð¢Ð¾Ñ€Ñ€ÐµÑÐ° | page=Последний пакет Лиана Торреса`
+- `in_game_wiki/ru_RU/P067_OSKAR_NEUMANN_PRESSURE_FORGE.md | index=ÐšÑƒÐ·Ð½Ñ Ð´Ð°Ð²Ð»ÐµÐ½Ð¸Ñ ÐžÑÐºÐ°Ñ€Ð° ÐÐ¾Ð¹Ð¼Ð°Ð½Ð½Ð° | page=Кузня давления Оскара Нойманна`
+- `in_game_wiki/ru_RU/P068_AYA_MORITA_REPAIR_MEDICINE.md | index=Ð ÐµÐ¼Ð¾Ð½Ñ‚Ð½Ð°Ñ Ð¼ÐµÐ´Ð¸Ñ†Ð¸Ð½Ð° ÐÐ¸ ÐœÐ¾Ñ€Ð¸Ñ‚Ñ‹ | page=Ремонтная медицина Аи Мориты`
+- `in_game_wiki/ru_RU/P069_PAVEL_SORN_PROCEDURE_HOLD.md | index=ÐŸÑ€Ð¾Ñ†ÐµÐ´ÑƒÑ€Ð½Ð°Ñ Ð·Ð°Ð´ÐµÑ€Ð¶ÐºÐ° ÐŸÐ°Ð²Ð»Ð° Ð¡Ð¾Ñ€Ð½Ð° | page=Процедурная задержка Павла Сорна`
+- `in_game_wiki/ru_RU/P070_DEEP_REACH_PRESENT_WINDOWS.md | index=Ð¢ÐµÐºÑƒÑ‰Ð¸Ðµ Ð¾ÐºÐ½Ð° Deep Reach | page=Текущие окна Deep Reach`
+- `in_game_wiki/ru_RU/P071_SOL_CORE_AUTHORITY.md | index=Ð’Ð»Ð°ÑÑ‚ÑŒ Sol Core | page=Власть Sol Core`
+- `in_game_wiki/ru_RU/P072_CENTAURI_COMPACT_LEGITIMACY.md | index=Ð›ÐµÐ³Ð¸Ñ‚Ð¸Ð¼Ð½Ð¾ÑÑ‚ÑŒ Centauri Compact | page=Легитимность Centauri Compact`
+- `in_game_wiki/ru_RU/P073_BARNARD_YARDS_MARAUDER_ORIGIN.md | index=Marauder-ÐºÐ¾Ñ€Ð½Ð¸ Barnard Yards | page=Marauder-корни Barnard Yards`
+- `in_game_wiki/ru_RU/P074_TAU_CETI_PUBLIC_LEDGER.md | index=ÐŸÑƒÐ±Ð»Ð¸Ñ‡Ð½Ñ‹Ð¹ Ñ€ÐµÐµÑÑ‚Ñ€ Tau Ceti | page=Публичный реестр Tau Ceti`
+- `in_game_wiki/ru_RU/P076_RAN_AEGIR_ANCHOR.md | index=Ð¯ÐºÐ¾Ñ€ÑŒ Ran / Aegir | page=Якорь Ran / Aegir`
+- `in_game_wiki/ru_RU/P077_AEGIR_MOON_LADDER.md | index=Ð›ÑƒÐ½Ð½Ð°Ñ Ð»ÐµÑÑ‚Ð½Ð¸Ñ†Ð° Aegir | page=Лунная лестница Aegir`
+- `in_game_wiki/ru_RU/P078_INNER_MOON_RELAY_HAZARDS.md | index=Relay-Ð¾Ð¿Ð°ÑÐ½Ð¾ÑÑ‚Ð¸ Ð²Ð½ÑƒÑ‚Ñ€ÐµÐ½Ð½Ð¸Ñ… Ð»ÑƒÐ½ | page=Relay-опасности внутренних лун`
+- `in_game_wiki/ru_RU/P079_HECTON8_ORBIT_TIDE_GEOMETRY.md | index=ÐžÑ€Ð±Ð¸Ñ‚Ð° Ð¸ Ð¿Ñ€Ð¸Ð»Ð¸Ð²Ð½Ð°Ñ Ð³ÐµÐ¾Ð¼ÐµÑ‚Ñ€Ð¸Ñ HECTON-8 | page=Орбита и приливная геометрия HECTON-8`
+- `in_game_wiki/ru_RU/P080_OUTER_MOON_COLD_CLAIMS.md | index=Ð¥Ð¾Ð»Ð¾Ð´Ð½Ñ‹Ðµ claims Ð²Ð½ÐµÑˆÐ½Ð¸Ñ… Ð»ÑƒÐ½ | page=Холодные claims внешних лун`
+- `in_game_wiki/ru_RU/P081_GREAT_TIDE_PHYSICS_RECORD.md | index=Ð¤Ð¸Ð·Ð¸Ñ‡ÐµÑÐºÐ°Ñ Ð·Ð°Ð¿Ð¸ÑÑŒ Great Tide | page=Физическая запись Great Tide`
+- `in_game_wiki/ru_RU/P082_PRESSURE_GLASS_FORMATION.md | index=Ð¤Ð¾Ñ€Ð¼Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð¸Ðµ pressure glass | page=Формирование pressure glass`
+- `in_game_wiki/ru_RU/P083_BRINE_CANYON_ROUTE_LADDER.md | index=ÐœÐ°Ñ€ÑˆÑ€ÑƒÑ‚Ð½Ð°Ñ Ð»ÐµÑÑ‚Ð½Ð¸Ñ†Ð° brine canyon | page=Маршрутная лестница brine canyon`
+- `in_game_wiki/ru_RU/P084_VENT_FORGE_GEOTHERMAL_ENGINE.md | index=Ð“ÐµÐ¾Ñ‚ÐµÑ€Ð¼Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ð´Ð²Ð¸Ð³Ð°Ñ‚ÐµÐ»ÑŒ vent forge | page=Геотермальный двигатель vent forge`
+- `in_game_wiki/ru_RU/P085_BIOMETAL_RESOURCE_STACK.md | index=Ð ÐµÑÑƒÑ€ÑÐ½Ñ‹Ð¹ ÑÑ‚ÐµÐº biometal | page=Ресурсный стек biometal`
+- `in_game_wiki/ru_RU/P089_BLACK_KEEL_FIRST_VOICE.md | index=ÐŸÐµÑ€Ð²Ñ‹Ð¹ Ð³Ð¾Ð»Ð¾Ñ Black Keel | page=Первый голос Black Keel`
+- `in_game_wiki/ru_RU/P092_GLOBAL_OCEAN_DEPTH_BANDS.md | index=Ð“Ð»ÑƒÐ±Ð¸Ð½Ð½Ñ‹Ðµ Ð·Ð¾Ð½Ñ‹ Ð³Ð»Ð¾Ð±Ð°Ð»ÑŒÐ½Ð¾Ð³Ð¾ Ð¾ÐºÐµÐ°Ð½Ð° | page=Глубинные зоны глобального океана`
+- `in_game_wiki/ru_RU/P101_NO_FTL_ROUTE_ECONOMY.md | index=Ð­ÐºÐ¾Ð½Ð¾Ð¼Ð¸ÐºÐ° Ð¼Ð°Ñ€ÑˆÑ€ÑƒÑ‚Ð¾Ð² Ð±ÐµÐ· FTL | page=Экономика маршрутов без FTL`
+- `in_game_wiki/ru_RU/P102_BEAM_SAIL_PROBE_ERA.md | index=Ð­Ñ€Ð° beam-sail Ð·Ð¾Ð½Ð´Ð¾Ð² | page=Эра beam-sail зондов`
+- `in_game_wiki/ru_RU/P103_PELLET_FUSION_FREIGHT.md | index=Pellet-fusion Ð³Ñ€ÑƒÐ·Ð¾Ð²Ñ‹Ðµ Ñ€ÐµÐ¹ÑÑ‹ | page=Pellet-fusion грузовые рейсы`
+- `in_game_wiki/ru_RU/P104_RAN_B_H8_PUBLIC_CATALOG.md | index=ÐŸÑƒÐ±Ð»Ð¸Ñ‡Ð½Ñ‹Ð¹ ÐºÐ°Ñ‚Ð°Ð»Ð¾Ð³ RAN-B:H8 | page=Публичный каталог RAN-B:H8`
+- `in_game_wiki/ru_RU/P105_BLACK_KEEL_IN_SYSTEM_TENDER.md | index=Black Keel ÐºÐ°Ðº Ð²Ð½ÑƒÑ‚Ñ€Ð¸ÑÐ¸ÑÑ‚ÐµÐ¼Ð½Ñ‹Ð¹ tender | page=Black Keel как внутрисистемный tender`
+- `in_game_wiki/ru_RU/P107_SELENE_ARENDT_ATLAS_WEIGHTING.md | index=Selene Arendt: Ð²ÐµÑ Atlas | page=Selene Arendt: вес Atlas`
+- `in_game_wiki/ru_RU/P111_MANUAL_BILGE_PUMP_KIT.md | index=Ð ÑƒÑ‡Ð½Ð¾Ð¹ bilge pump kit | page=Ручной bilge pump kit`
+- `in_game_wiki/ru_RU/P121_DOMAIN_CIVIC_CORPORATE_SPLIT.md | index=Ð“Ñ€Ð°Ð¶Ð´Ð°Ð½ÑÐºÐ¾-ÐºÐ¾Ñ€Ð¿Ð¾Ñ€Ð°Ñ‚Ð¸Ð²Ð½Ñ‹Ð¹ Ñ€Ð°ÑÐºÐ¾Ð» Ð´Ð¾Ð¼ÐµÐ½Ð¾Ð² | page=Гражданско-корпоративный раскол доменов`
+- `in_game_wiki/ru_RU/P122_MARAUDER_LEGAL_LOOPHOLE.md | index=Ð®Ñ€Ð¸Ð´Ð¸Ñ‡ÐµÑÐºÐ°Ñ Ð»Ð°Ð·ÐµÐ¹ÐºÐ° Ð¼Ð°Ñ€Ð¾Ð´ÐµÑ€Ð¾Ð² | page=Юридическая лазейка мародеров`
+- `in_game_wiki/ru_RU/P123_SALVAGE_TRUTH_EVIDENCE_STATUS.md | index=Ð¡Ñ‚Ð°Ñ‚ÑƒÑ salvage-Ð¿Ñ€Ð°Ð²Ð´Ñ‹ ÐºÐ°Ðº Ð´Ð¾ÐºÐ°Ð·Ð°Ñ‚ÐµÐ»ÑŒÑÑ‚Ð²Ð° | page=Статус salvage-правды как доказательства`
+- `in_game_wiki/ru_RU/P124_NORMAL_CITIZEN_AEGIR_MEMORY.md | index=ÐŸÐ°Ð¼ÑÑ‚ÑŒ Ð¾Ð±Ñ‹Ñ‡Ð½Ñ‹Ñ… Ð»ÑŽÐ´ÐµÐ¹ Ð¾Ð± Aegir | page=Память обычных людей об Aegir`
+- `in_game_wiki/ru_RU/P125_DEEP_REACH_ORIGIN_CHAIN.md | index=Ð¦ÐµÐ¿Ð¾Ñ‡ÐºÐ° Ð¿Ñ€Ð¾Ð¸ÑÑ…Ð¾Ð¶Ð´ÐµÐ½Ð¸Ñ Deep Reach | page=Цепочка происхождения Deep Reach`
+- `in_game_wiki/ru_RU/P126_ATLAS_PUBLIC_FRONT.md | index=ÐŸÑƒÐ±Ð»Ð¸Ñ‡Ð½Ð°Ñ Ð²Ð¸Ñ‚Ñ€Ð¸Ð½Ð° Atlas | page=Публичная витрина Atlas`
+- `in_game_wiki/ru_RU/P127_ATLAS_INSURANCE_PERSONHOOD_STATUS.md | index=Ð¡Ñ‚Ñ€Ð°Ñ…Ð¾Ð²Ð¾Ð¹ ÑÑ‚Ð°Ñ‚ÑƒÑ Atlas Ð¸ personhood | page=Страховой статус Atlas и personhood`
+- `in_game_wiki/ru_RU/P128_ATLAS_CLASSIFIED_WEIGHTING_LAYER.md | index=Ð¡ÐµÐºÑ€ÐµÑ‚Ð½Ñ‹Ð¹ weighting layer Atlas | page=Секретный weighting layer Atlas`
+- `in_game_wiki/ru_RU/P129_ATLAS_SHUTDOWN_ETHIC_FRAME.md | index=Ð­Ñ‚Ð¸Ñ‡ÐµÑÐºÐ°Ñ Ñ€Ð°Ð¼ÐºÐ° Ð¾Ñ‚ÐºÐ»ÑŽÑ‡ÐµÐ½Ð¸Ñ Atlas | page=Этическая рамка отключения Atlas`
+- `in_game_wiki/ru_RU/P130_ATLAS_PUBLIC_MEMORY_AFTER_2147.md | index=ÐŸÑƒÐ±Ð»Ð¸Ñ‡Ð½Ð°Ñ Ð¿Ð°Ð¼ÑÑ‚ÑŒ Ð¾Ð± Atlas Ð¿Ð¾ÑÐ»Ðµ 2147 | page=Публичная память об Atlas после 2147`
+- `in_game_wiki/ru_RU/P131_MATERIAL_EXIT_BITTER_CREDITS.md | index=Ð“Ð¾Ñ€ÑŒÐºÐ¸Ðµ Ñ‚Ð¸Ñ‚Ñ€Ñ‹ Ð¼Ð°Ñ‚ÐµÑ€Ð¸Ð°Ð»ÑŒÐ½Ð¾Ð³Ð¾ Ð²Ñ‹Ñ…Ð¾Ð´Ð° | page=Горькие титры материального выхода`
+- `in_game_wiki/ru_RU/P132_PARTIAL_EXIT_SAME_SEED_RETURN.md | index=Ð§Ð°ÑÑ‚Ð¸Ñ‡Ð½Ñ‹Ð¹ Ð²Ñ‹Ñ…Ð¾Ð´ Ñ Ð²Ð¾Ð·Ð²Ñ€Ð°Ñ‚Ð¾Ð¼ Ð² Ñ‚Ð¾Ñ‚ Ð¶Ðµ seed | page=Частичный выход с возвратом в тот же seed`
+- `in_game_wiki/ru_RU/P133_CORPORATE_CAPTURE_BAD_END.md | index=ÐŸÐ»Ð¾Ñ…Ð¾Ð¹ Ñ„Ð¸Ð½Ð°Ð» ÐºÐ¾Ñ€Ð¿Ð¾Ñ€Ð°Ñ‚Ð¸Ð²Ð½Ð¾Ð³Ð¾ Ð·Ð°Ñ…Ð²Ð°Ñ‚Ð° | page=Плохой финал корпоративного захвата`
+- `in_game_wiki/ru_RU/P134_QUARANTINE_HOLD_STALE_AIR.md | index=ÐšÐ°Ñ€Ð°Ð½Ñ‚Ð¸Ð½Ð½Ñ‹Ð¹ hold ÑÐ¾ stale air | page=Карантинный hold со stale air`
+- `in_game_wiki/ru_RU/P135_PUBLIC_LEDGER_LEAK_ROUTE.md | index=ÐœÐ°Ñ€ÑˆÑ€ÑƒÑ‚ ÑƒÑ‚ÐµÑ‡ÐºÐ¸ Ð² public ledger | page=Маршрут утечки в public ledger`
+- `in_game_wiki/ru_RU/P136_DOSSIER_RUMOR_UNLOCKS.md | index=Ð¡Ð»ÑƒÑ…Ð¸ Ð² Marauder dossier | page=Слухи в Marauder dossier`
+- `in_game_wiki/ru_RU/P137_RISKIER_CONTRACT_SEEDS.md | index=Ð‘Ð¾Ð»ÐµÐµ Ñ€Ð¸ÑÐºÐ¾Ð²Ð°Ð½Ð½Ñ‹Ðµ ÐºÐ¾Ð½Ñ‚Ñ€Ð°ÐºÑ‚Ð½Ñ‹Ðµ seeds | page=Более рискованные контрактные seeds`
+- `in_game_wiki/ru_RU/P138_FALSE_ENDING_COUNT_LADDER.md | index=Ð›ÐµÑÑ‚Ð½Ð¸Ñ†Ð° Ð»Ð¾Ð¶Ð½Ñ‹Ñ… ÐºÐ¾Ð½Ñ†Ð¾Ð²Ð¾Ðº | page=Лестница ложных концовок`
+- `in_game_wiki/ru_RU/P139_STARTING_CLAIM_VARIANTS.md | index=Ð’Ð°Ñ€Ð¸Ð°Ð½Ñ‚Ñ‹ ÑÑ‚Ð°Ñ€Ñ‚Ð¾Ð²Ð¾Ð³Ð¾ claim | page=Варианты стартового claim`
+- `in_game_wiki/ru_RU/P140_DOSSIER_KNOWLEDGE_NOT_POWER.md | index=Dossier: Ð·Ð½Ð°Ð½Ð¸Ðµ, Ð° Ð½Ðµ ÑÐ¸Ð»Ð° | page=Dossier: знание, а не сила`
+- TRUNCATED: 1349 additional rows.
+

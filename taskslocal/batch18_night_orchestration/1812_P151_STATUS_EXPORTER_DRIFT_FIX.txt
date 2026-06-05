@@ -1,0 +1,48 @@
+AGENT ID: 1812
+ROLE: P151_STATUS_EXPORTER_DRIFT_FIX
+MODE: No-Unity exporter/status drift task. Do not run in parallel with 1811.
+
+PRIMARY GOAL
+Fix or precisely route the `P151_BLACK_KEEL_CONTRACT_APPROACH/ru_RU` status drift where source/packet JSON say draft-native-pass-pending but generated publication page says source_ready. The fix should prefer the owning exporter/source route over blind generated-page edits.
+
+AUTHORITIES TO READ
+- AGENTS.md, PROJECT_BIBLES.md, VISION_LOCKS.md, quality.md
+- data.md, localization.md, writing.md, narrative.md, authoring.md
+- Docs/Reports/Batch18/1804_APPLIED_LORE_DATAMONOLITH_RECONCILE.md
+- Tools/AppliedLoreRuntimeAudit.py
+- Tools/AppliedLorePageExporter.py
+- Tools/AppliedLoreRouteCardExporter.py
+
+OWNED OUTPUTS
+- Docs/Tasks/Status_1812.md
+- Docs/AgentLogs/Rationale_1812.md for decisions only
+- Docs/AgentLogs/LOG_1812.md
+- Docs/Reports/Batch18/1812_P151_STATUS_EXPORTER_DRIFT_FIX.md
+
+HARD RULES
+- Do not run in parallel with P456 source repair or broad AppliedLore export.
+- No Unity or bake by default.
+- Do not edit generated pages only unless you prove exporter cannot currently run and the generated fix is explicitly temporary.
+- Do not claim full DataMonolith readiness unless source-only and full audit pass after the fix, and even then Unity bake/import/runtime remain pending.
+
+20 TASKS
+01. Create tracking files.
+02. Read authorities and relevant mandates.
+03. Inspect P151 source row(s) in `applied_lore_packets.csv`.
+04. Inspect P151 packet JSON bundle/single packet state.
+05. Inspect generated `in_game_wiki/ru_RU/P151_BLACK_KEEL_CONTRACT_APPROACH.md`.
+06. Inspect `Publication_Surface_Index.csv` row(s) for P151/ru_RU.
+07. Inspect exporter logic that derives `localization_status`.
+08. Identify whether drift is source, exporter, generated page, index, or mixed.
+09. Apply the smallest safe fix to source/exporter/generated/index route.
+10. Preserve CSV schema and locale identity.
+11. Run `python Tools/AppliedLoreRuntimeAudit.py --root . --source-only` if safe.
+12. Run `python Tools/AppliedLoreRuntimeAudit.py --root .` if source-only passes and safe.
+13. Record exact command output.
+14. If audit reaches another blocker, report it without widening scope.
+15. Write report with root cause and files changed.
+16. Write re-export/bake instructions if Unity/export is still pending.
+17. Append log.
+18. Final scan for fake readiness.
+19. Mark COMPLETE, PARTIAL, or BLOCKED.
+20. Do not touch P456 unless task 1811 is complete and no conflict exists.

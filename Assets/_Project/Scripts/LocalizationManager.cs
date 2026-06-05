@@ -46,6 +46,8 @@ namespace Hecton.Localization
         Hindi = 14,
         Indonesian = 15,
         Arabic = 16,
+        Hebrew = 17,
+        Dutch = 18,
     }
 
     /// <summary>
@@ -64,7 +66,7 @@ namespace Hecton.Localization
         private const int MadnessChancePercent = 15;
         private const float MadnessRollInterval = 0.5f;
         private const float MadnessBlinkDuration = 2f;
-        private const int GameLanguageCount = (int)GameLanguage.Arabic + 1;
+        private const int GameLanguageCount = (int)GameLanguage.Dutch + 1;
         private const uint BabelLocaleSwapSystemHash = 0xBABA0039u;
         private const int BabelLocaleSwapIdle = 0;
         private const int BabelLocaleSwapReading = 1;
@@ -106,6 +108,7 @@ namespace Hecton.Localization
         private const string LatinCorruptionAlphabet = "AEINORSTUVWXYZ";
         private const string CyrillicCorruptionAlphabet = "ABVGDEZhZIYKLMNOPRSTUFHTsChShSchYEYuYa";
         private const string ArabicCorruptionAlphabet = "ابتثجحخدذرزسشصضطظعغفقكلمنهوي";
+        private const string HebrewCorruptionAlphabet = "\u05D0\u05D1\u05D2\u05D3\u05D4\u05D5\u05D6\u05D7\u05D8\u05D9\u05DB\u05DC\u05DE\u05E0\u05E1\u05E2\u05E4\u05E6\u05E7\u05E8\u05E9\u05EA";
         private const string CjkCorruptionAlphabet = "深海圧壳酸氧流核域警号層站影断障";
         private const string HangulCorruptionAlphabet = "심해압력산소전력균열경보파손격리영역장치";
         private const string DevanagariCorruptionAlphabet = "अआइईउऊकखगघचछजझटठडढतथदधनपफबभमयरलवशसह";
@@ -484,15 +487,10 @@ namespace Hecton.Localization
         /// <summary>
         /// Force visible HUD consumers to refresh against the latest hull-stress corruption state.
         /// </summary>
-        internal void RefreshHullStressHudCorruptionVisuals()
+        public void RefreshHullStressHudCorruptionVisuals()
         {
             EvaluateMadnessOverrideState();
             LocalizationEvents.TryPublishCorruptionVisualStateChanged(CurrentLanguage, _lastPublishedVisualBucket);
-        }
-
-        void ILocalizationStressHudRefreshSink.RefreshHullStressHudCorruptionVisuals()
-        {
-            RefreshHullStressHudCorruptionVisuals();
         }
 
         /// <summary>
@@ -1061,6 +1059,10 @@ namespace Hecton.Localization
                     return "loc_strings_id.h8bin";
                 case GameLanguage.Arabic:
                     return "loc_strings_ar.h8bin";
+                case GameLanguage.Hebrew:
+                    return "loc_strings_he.h8bin";
+                case GameLanguage.Dutch:
+                    return "loc_strings_nl.h8bin";
                 default:
                     return "loc_strings_en.h8bin";
             }
@@ -1231,11 +1233,6 @@ namespace Hecton.Localization
         void ILocalizationTransientOverrideSink.SetTransientLanguageOverride(ushort languageId, bool enableGlyphMode)
         {
             SetTransientLanguageOverride((GameLanguage)languageId, enableGlyphMode);
-        }
-
-        void ILocalizationTransientOverrideSink.ClearTransientLanguageOverride()
-        {
-            ClearTransientLanguageOverride();
         }
 
         /// <summary>
@@ -2389,6 +2386,9 @@ namespace Hecton.Localization
                 case GameLanguage.Arabic:
                     return ArabicCorruptionAlphabet;
 
+                case GameLanguage.Hebrew:
+                    return HebrewCorruptionAlphabet;
+
                 case GameLanguage.ChineseSimplified:
                 case GameLanguage.ChineseTraditional:
                 case GameLanguage.Japanese:
@@ -2503,6 +2503,15 @@ namespace Hecton.Localization
                         return "_MANY";
                     return "_OTHER";
 
+                case GameLanguage.Hebrew:
+                    if (absCount == 1)
+                        return "_ONE";
+                    if (absCount == 2)
+                        return "_TWO";
+                    if (absCount != 0 && absCount % 10 == 0)
+                        return "_MANY";
+                    return "_OTHER";
+
                 default:
                     return absCount == 1 ? "_ONE" : "_OTHER";
             }
@@ -2525,7 +2534,8 @@ namespace Hecton.Localization
         /// </summary>
         public static bool IsRightToLeftLanguage(GameLanguage language)
         {
-            return language == GameLanguage.Arabic;
+            return language == GameLanguage.Arabic ||
+                   language == GameLanguage.Hebrew;
         }
 
         private static string FormatLocalized(string template, string key, params object[] args)

@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Packet Notary Interface Signatures
 
-Packet Notary Interface Signatures turns interstellar delay into a legal evidence system for HECTON-8.
+Packet Notary Interface signatures turn interstellar delay into legal evidence: relay time, hash witness, custody owner, and price.
 
 ## Scanner
 

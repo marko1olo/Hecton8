@@ -213,7 +213,7 @@ World Truth:
 The player's world is tied to HECTON-8 through labor, contracts, tools, and names. The motive grows through discovery, not exposition.
 
 Replay Variable:
-Which name appears, item type, whether it points to family, mentor, rival crew, or old debt.
+Which name appears, item type, whether it points to a mentor, rival crew, old debt, employer, yard school, or revoked work contact. Do not use a family-revenge or missing-relative hook.
 
 Text Hooks:
 Player codex update, personal log, ending dossier modifier.

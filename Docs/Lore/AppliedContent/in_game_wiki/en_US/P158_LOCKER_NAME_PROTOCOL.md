@@ -10,13 +10,13 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Locker Name Protocol
 
-Locker Name Protocol gives artists and writers a repeatable human evidence object across seeds.
+Locker name plates make workers legible through objects: badge, role, route permission, and the thing left unfinished.
 
 ## Scanner
 

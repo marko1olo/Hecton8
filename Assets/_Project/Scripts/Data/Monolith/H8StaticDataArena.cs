@@ -1023,7 +1023,7 @@ namespace Hecton8.Data
             while (low <= high)
             {
                 int index = low + ((high - low) >> 1);
-                H8AppliedLorePacketRecord candidate = records[index];
+                ref readonly H8AppliedLorePacketRecord candidate = ref records[index];
                 int compare = CompareAppliedLoreKey(candidate.PacketHash, candidate.LocaleHash, packetHash, localeHash);
                 if (compare == 0)
                 {
@@ -1051,39 +1051,50 @@ namespace Hecton8.Data
             utf8Bytes = ReadOnlySpan<byte>.Empty;
             uint offset;
             uint length;
+            uint surfaceBit;
             switch (surface)
             {
                 case H8AppliedLoreSurface.Title:
+                    surfaceBit = 1u << 0;
                     offset = record.TitleUtf8Offset;
                     length = record.TitleUtf8ByteLength;
                     break;
                 case H8AppliedLoreSurface.Scanner:
+                    surfaceBit = 1u << 1;
                     offset = record.ScannerUtf8Offset;
                     length = record.ScannerUtf8ByteLength;
                     break;
                 case H8AppliedLoreSurface.Terminal:
+                    surfaceBit = 1u << 2;
                     offset = record.TerminalUtf8Offset;
                     length = record.TerminalUtf8ByteLength;
                     break;
                 case H8AppliedLoreSurface.Audio:
+                    surfaceBit = 1u << 3;
                     offset = record.AudioUtf8Offset;
                     length = record.AudioUtf8ByteLength;
                     break;
                 case H8AppliedLoreSurface.InGameWiki:
+                    surfaceBit = 1u << 4;
                     offset = record.WikiUtf8Offset;
                     length = record.WikiUtf8ByteLength;
                     break;
                 case H8AppliedLoreSurface.ExternalSite:
+                    surfaceBit = 1u << 5;
                     offset = record.SiteUtf8Offset;
                     length = record.SiteUtf8ByteLength;
                     break;
                 case H8AppliedLoreSurface.FieldNote:
+                    surfaceBit = 1u << 6;
                     offset = record.FieldNoteUtf8Offset;
                     length = record.FieldNoteUtf8ByteLength;
                     break;
                 default:
                     return false;
             }
+
+            if ((record.SurfaceMask & surfaceBit) == 0u)
+                return false;
 
             if (length == 0u || length > int.MaxValue)
                 return false;
@@ -1124,7 +1135,7 @@ namespace Hecton8.Data
             while (low <= high)
             {
                 int index = low + ((high - low) >> 1);
-                H8AppliedLoreRouteRecord candidate = records[index];
+                ref readonly H8AppliedLoreRouteRecord candidate = ref records[index];
                 if (candidate.RouteCardHash == routeCardHash)
                 {
                     record = candidate;
@@ -1174,7 +1185,7 @@ namespace Hecton8.Data
             ReadOnlySpan<H8AppliedLoreRouteRecord> records = GetSectionSpan<H8AppliedLoreRouteRecord>(H8DataSectionId.AppliedLoreRoutes);
             for (int i = 0; i < records.Length; i++)
             {
-                H8AppliedLoreRouteRecord candidate = records[i];
+                ref readonly H8AppliedLoreRouteRecord candidate = ref records[i];
                 if (candidate.RouteCardHash == 0u)
                     continue;
 
@@ -1197,11 +1208,33 @@ namespace Hecton8.Data
                 return false;
 
             uint count = math.min(record.PacketCount, (uint)H8DataLayoutConstants.AppliedLoreRoutePacketCapacity);
-            for (uint i = 0u; i < count; i++)
-                if (GetAppliedLoreRoutePacketHash(in record, i) == packetHash)
-                    return true;
-
-            return false;
+            if (record.PacketHash0 == packetHash)
+                return true;
+            if (count <= 1u)
+                return false;
+            if (record.PacketHash1 == packetHash)
+                return true;
+            if (count <= 2u)
+                return false;
+            if (record.PacketHash2 == packetHash)
+                return true;
+            if (count <= 3u)
+                return false;
+            if (record.PacketHash3 == packetHash)
+                return true;
+            if (count <= 4u)
+                return false;
+            if (record.PacketHash4 == packetHash)
+                return true;
+            if (count <= 5u)
+                return false;
+            if (record.PacketHash5 == packetHash)
+                return true;
+            if (count <= 6u)
+                return false;
+            if (record.PacketHash6 == packetHash)
+                return true;
+            return count > 7u && record.PacketHash7 == packetHash;
         }
 
         /// <summary>
@@ -3014,7 +3047,8 @@ namespace Hecton8.Data
                 return false;
             }
 
-            if (!H8DataLayoutAudit.ValidateBlittableSizes())
+            if (!H8DataLayoutAudit.ValidateBlittableSizes() ||
+                !H8AppliedLoreRuntime.ValidateRuntimeLayout())
             {
                 status = H8DataBlobLoadStatus.HeaderMismatch;
                 return false;

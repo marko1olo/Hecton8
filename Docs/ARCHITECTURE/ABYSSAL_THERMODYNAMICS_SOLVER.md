@@ -6,6 +6,8 @@ Owner: SHINOBU_117
 
 Status: pending Unity compile because narrow `Hecton8.Core.csproj` build is blocked by Visor/Somatic missing DTO dependencies outside thermodynamics.
 
+Evidence class: STATIC_DOC / STATIC_SOURCE. Source anchors are text evidence only; Unity compile/runtime/profiler/player proof remains pending.
+
 Source anchors: `Assets/_Project/Scripts/Thermodynamics/AbyssalThermodynamicsSolver.cs`, `Assets/_Project/Scripts/Thermodynamics/AbyssalThermodynamicsJobs.cs`, `Assets/_Project/Scripts/Thermodynamics/ThermodynamicsHazardTypes.cs`.
 
 ## Runtime Contract

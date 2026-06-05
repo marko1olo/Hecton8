@@ -1,7 +1,14 @@
 # HECTON-8 Performance, Zero-GC, And Runtime Budget Bible
 
 Status: AUTHORING LAW / STATIC DOC / RUNTIME PROOF NOT IMPLIED
+Evidence class: STATIC_DOC
 Scope: frame budgets, zero-GC hot paths, memory/VRAM budgets, load shedding, arena allocation, jobs/Burst discipline, profiler gates, and runtime performance proof.
+
+## First-20 Route Hook
+
+- First-20 moment: world load, bright shallow exit, swim/orient, resource/tool interaction, hazard response, and save/load must fit compact budgets without flattening the route.
+- Route blocker removed: fake optimization claims, hot-path allocations, unowned memory/VRAM growth, and load-shed rules that drop route readability or survival warnings.
+- Proof class: `STATIC_DOC` until compact-route profiler, GCMonitor or equivalent GC proof, Memory/VRAM captures, and screenshot/clip evidence exist.
 
 ## Prime Law
 

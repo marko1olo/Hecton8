@@ -210,6 +210,21 @@ Diegetic UI work must provide:
 - localization expansion, RTL/CJK/fallback risk note where text appears;
 - profiler/Frame Debugger proof when render textures, panel cameras, shader effects, or runtime UI paths changed.
 
+## First-20 Route Hook
+
+- First-20 moment: swim, tool, hazard, and save/load must show oxygen, depth/pressure, route/return cue, tool state, scanner confidence, warning priority, and interaction affordance on a believable carrier.
+- Route blocker removed: HUD/panel work cannot claim opening-route support if critical readouts clip, allocate, lie about owner truth, or disappear under water/fog/post effects.
+- Proof class: screenshot, Play Mode/player capture for route operation, Profiler/GCMonitor for runtime UI updates, Frame Debugger for RT/panel/shader changes, and save/load artifact for UI-restored persistent state.
+
+## 13B. Live Source Anchors - 2026-06-05
+
+Evidence class: STATIC_SOURCE / STATIC_DOC only. These anchors are documentation traceability, not runtime acceptance.
+
+- `Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs`: owner is the UI navigation diegetic compass. It registers `ISlowTickable` and `ILateFrameTickable` on `PriorityLayer.UI`, consumes typed signal snapshots for anomaly, calibration, survival vitals, system health, and AUP shift, and reads/writes DataVault compass lanes. UI GC boundary: cardinal output uses fixed `char[2]` and `TMP_Text.SetCharArray`; no runtime string formatting, `TMP_Text.text`, hierarchy search, or registry polling may be added to the readout path. Proof gaps: Play Mode binding, compact readability screenshot, GC/profiler capture, and scene/prefab physical carrier proof.
+- `Assets/_Project/Scripts/Visor/SpectrumSystem.cs`: owner is visor spectrum/sonar presentation. It owns bounded fixed queues for mode/pulse/ping/snapshot/echo/ping-return UI events and consumes active sonar and spatial-audio-derived inputs into presentation. It does not own hidden world truth, AI truth, or objective truth. Proof gaps: active sonar HUD/visor screenshot, UI/audio reaction proof, Frame Debugger/Profiler/GC proof, and compact readability proof.
+- `Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs`: owner is visor fluid/distortion presentation. It is a RenderGraph visual fake over the player camera using cached wet lens, hull stress, water density, lens state, and quality fields. It must preserve critical HUD readability; it cannot be used to hide primitive water, weak terrain, unreadable route cues, or missing damage/flooding truth. Proof gaps: Frame Debugger/RenderGraph Viewer, compact/high visual captures, GPU/CPU timing, and GC proof.
+- `Assets/_Project/Scripts/AtlasSignal/SignalBeacon.cs`: owner is Atlas signal beacon telemetry and acoustic breadcrumb presentation. It publishes partial signal strength/static/error/recovered-bit telemetry for PDA/HUD consumers and acoustic ping payloads for audio/sonar lanes. It is not a quest/save authority; recovered fragment persistence and objective effects require separate narrative/persistence proof.
+
 ## 14. Acceptance Sentence
 
 A diegetic HUD or world panel is accepted only when it is bound to a believable physical carrier, reads immutable owner truth, updates at justified cadence, allocates zero GC in hot paths, scales through `GlobalQualityWeight` without changing warning or command truth, and proves compact readability plus profiler state for runtime changes.

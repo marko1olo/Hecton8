@@ -46,6 +46,7 @@ Shader "Hecton/Prologue/Capsule Reentry Plasma Fake"
             float _H8OrbitalLeadingEdgeDot;
             float _H8OrbitalUniverseSpeed;
             float _H8OrbitalMathLod;
+            float4 _HectonReentryPlasmaState1;
             float4 _HectonReentryAblationState;
 
             struct Attributes
@@ -71,7 +72,8 @@ Shader "Hecton/Prologue/Capsule Reentry Plasma Fake"
 
                 float plasmaIntensity = saturate(max(_H8OrbitalReentryHeat, max(_PlasmaIntensity, _HectonReentryAblationState.x)));
                 float ablationAmount = saturate(max(_AblationAmount, _HectonReentryAblationState.y));
-                float shellLift = plasmaIntensity * 0.08 + ablationAmount * 0.035;
+                float qualityPressure = saturate(_HectonReentryPlasmaState1.x);
+                float shellLift = (plasmaIntensity * 0.08 + ablationAmount * 0.035) * lerp(1.0, 0.58, qualityPressure);
                 VertexPositionInputs vertexInput = GetVertexPositionInputs(input.positionOS.xyz + input.normalOS * shellLift);
                 VertexNormalInputs normalInput = GetVertexNormalInputs(input.normalOS);
                 output.positionCS = vertexInput.positionCS;
@@ -89,18 +91,20 @@ Shader "Hecton/Prologue/Capsule Reentry Plasma Fake"
                 half glassStress = saturate(max(_GlassCrackIntensity, _HectonReentryAblationState.z));
                 float mathLod = isfinite(_H8OrbitalMathLod) ? _H8OrbitalMathLod : 1.0;
                 half mathLod01 = (half)saturate(mathLod * 0.33333334);
-                half detailWeight = smoothstep(0.16h, 0.82h, mathLod01);
-                half overkillWeight = smoothstep(0.82h, 1.0h, mathLod01);
+                half qualityPressure = saturate((half)_HectonReentryPlasmaState1.x);
+                half detailAllowed = saturate(1.0h - qualityPressure * 0.78h);
+                half detailWeight = smoothstep(0.16h, 0.82h, mathLod01) * detailAllowed;
+                half overkillWeight = smoothstep(0.82h, 1.0h, mathLod01) * saturate(1.0h - qualityPressure);
                 half edge = saturate(_H8OrbitalLeadingEdgeDot);
                 half detailedFlicker = saturate(sin((input.positionWS.x + input.positionWS.y * 0.37h + _Time.y * 24.0h) * _NoiseScale) * 0.5h + 0.5h);
-                half flicker = lerp(0.72h, detailedFlicker, detailWeight);
+                half flicker = lerp(lerp(0.72h, 0.88h, qualityPressure), detailedFlicker, detailWeight);
                 half overkill = lerp(1.0h, 1.25h, overkillWeight);
                 half alpha = saturate((heat + ablation * 0.18h + glassStress * 0.08h) * lerp(0.22h, 1.0h, edge) * lerp(0.55h, 1.0h, flicker) * _Alpha);
                 half3 color = lerp(_PlasmaColor.rgb, _CoreColor.rgb, flicker * heat) * (1.0h + heat * 3.0h * overkill);
-                half scorchMask = saturate(ablation * (1.0h - edge * 0.35h));
+                half scorchMask = saturate(ablation * (1.0h - edge * 0.35h) * saturate(1.0h - qualityPressure * 0.35h));
                 half3 scorchColor = color * half3(0.45h, 0.30h, 0.18h);
                 color = lerp(color, scorchColor, scorchMask);
-                color += _CoreColor.rgb * (glassStress * 0.35h);
+                color += _CoreColor.rgb * (glassStress * lerp(0.35h, 0.24h, qualityPressure));
                 return half4(color, alpha);
             }
             ENDHLSL

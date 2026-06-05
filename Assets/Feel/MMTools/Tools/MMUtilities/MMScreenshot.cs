@@ -15,7 +15,7 @@ namespace MoreMountains.Tools
 		private const string LegacyAssetsScreenshotsFolder = "Assets/Screenshots";
 
 		/// the name of the folder (relative to the project's root) to save screenshots to
-		public string FolderName = "Screenshots";
+		public string FolderName = "Docs/Screenshots";
 		/// the method to use to take the screenshot. Screencapture uses the API of the same name, and will let you keep 
 		/// whatever ratio the game view has, RenderTexture renders to a texture of the specified resolution
 		public enum Methods { ScreenCapture, RenderTexture }
@@ -110,9 +110,10 @@ namespace MoreMountains.Tools
 
 			if (string.IsNullOrEmpty(normalizedFolderName) ||
 				string.Equals(normalizedFolderName, "Screenshots", System.StringComparison.OrdinalIgnoreCase) ||
+				string.Equals(normalizedFolderName, "Docs/Screenshots", System.StringComparison.OrdinalIgnoreCase) ||
 				string.Equals(normalizedFolderName, LegacyAssetsScreenshotsFolder, System.StringComparison.OrdinalIgnoreCase))
 			{
-				return Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Screenshots"));
+				return Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "Screenshots"));
 			}
 
 			return Path.IsPathRooted(FolderName)

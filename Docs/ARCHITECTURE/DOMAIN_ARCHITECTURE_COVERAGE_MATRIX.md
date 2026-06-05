@@ -14,10 +14,10 @@ This is not runtime proof.
 ## Use Rule
 
 1. Identify the assigned domain from the current task owner, prompt, route card, or `Docs/PROJECT_ATLAS.md`.
-2. Read `PROJECT_RUNTIME_TOPOLOGY.md`.
-3. Read `SOURCE_SYSTEMS_REALITY_MAP.md`.
-4. Read `GLOBAL_AUTHORITY_BOUNDARIES.md`.
-5. Read `FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md`.
+2. Read `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md`.
+3. Read `Docs/ARCHITECTURE/SOURCE_SYSTEMS_REALITY_MAP.md`.
+4. Read `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md`.
+5. Read `Docs/ARCHITECTURE/FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md`.
 6. Read the matching echelon below.
 7. Read source anchors before editing.
 8. If source and doc disagree, patch the doc with evidence.
@@ -32,6 +32,27 @@ Before editing any domain, check both:
 - loose root scripts under `Assets/_Project/Scripts` whose class names match the domain.
 
 If root-level source and a domain doc disagree, source wins and the doc must be downgraded to `STATIC_SOURCE` / `PENDING VERIFICATION` until runtime proof exists.
+
+## Wave 2 Family Routing Overlay
+
+Status: STATIC_SOURCE only. These overlays sharpen read-order for large source families from the 2026-06-05 source coverage audit. They do not prove compile, Unity import, Play Mode, profiler, GC, visual quality, save/load, player build, or platform readiness.
+
+| Source family | Enter through | Static exemplar anchors | Evidence class | Failure mode / proof artifact class |
+|---|---|---|---|---|
+| Editor authoring, bakers, validators, tuners | Echelon 9 plus `Docs/ARCHITECTURE/TECH_ART_PBR_SURFACE_DOCTRINE.md`, `Docs/ARCHITECTURE/PROCEDURAL_WORLD_VERTICAL_ARCHITECTURE.md`, `Docs/QUALITY_GATES.md` | `Assets/_Project/Scripts/Editor/AITextureControlMapBaker/Shinobu269/AITextureControlMapBaker.cs`; `Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchBakePipeline.cs`; `Assets/_Project/Scripts/Editor/DocumentationAuthoritySmokeTester.cs` | STATIC_SOURCE only | Failure mode: generic Editor row hides baker/import/validator/tuner ownership. Proof class: tool output, importer report, validation report, CI/player-build artifact. |
+| Loose root mixed-domain scripts | `SOURCE_SYSTEMS_REALITY_MAP.md` loose-root rule, then the matching echelon by concrete owner | `Assets/_Project/Scripts/HectonWorldGenerator.cs`; `Assets/_Project/Scripts/SaveSidecarStorage.cs`; `Assets/_Project/Scripts/LocalizationManager.cs`; `Assets/_Project/Scripts/AutomationSmokeTester.cs` | STATIC_SOURCE only | Failure mode: subfolder-only routing skips root owners. Proof class: exact owner source read plus domain-specific static/runtime artifact. |
+| Physiology runtime cluster | Echelon 5 plus `survival.md` and `physics.md` | `Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs`; `Assets/_Project/Scripts/Physiology/ShinobuMetabolismRuntime.cs`; `Assets/_Project/Scripts/Physiology/ShinobuSuitIntegrityRuntime.cs` | STATIC_SOURCE only | Failure mode: physiology lost inside combat or UI trauma. Proof class: survival/pressure route artifact, layout audit, black-box/profiler/GC artifact. |
+| Plugins bridge / quarantine | Echelon 9 plus `Docs/ARCHITECTURE/THIRD_PARTY_POISON.md`; `water.md` and `terrain.md` only through approved bridge routes | `Assets/_Project/Scripts/Plugins/Crest/OceanKinematics/OceanKinematicsVaultRuntime.cs`; `Assets/_Project/Scripts/Plugins/MapMagic/MapMagicRuntimeBridge.cs`; `Assets/_Project/Scripts/Plugins/Steam/SteamManager.cs` | STATIC_SOURCE only | Failure mode: bridge code treated as permission for direct third-party runtime usage. Proof class: quarantine audit, bridge route review, package/import/runtime artifact. |
+| UI navigation and instruments | Echelon 8 plus `Docs/ARCHITECTURE/ZERO_GC_UI_PIPELINE.md`, `ui.md`, `sonar.md` | `Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs`; `Assets/_Project/Scripts/UI/SubmarineSonarHoloMapRenderer.cs`; `Assets/_Project/Scripts/UI/AcousticRadarSphereRenderer.cs` | STATIC_SOURCE only | Failure mode: presentation component becomes gameplay truth or allocates in HUD paths. Proof class: UI GC, route capture, profiler/frame artifact. |
+| Visor render features | Echelon 8 plus `Docs/ARCHITECTURE/VISOR_AR_STENCIL_RENDERER.md`, `rendering.md`, `shaders.md` | `Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs`; `Assets/_Project/Scripts/Visor/HectonAbyssalSsdoFeature.cs`; `Assets/_Project/Scripts/Visor/HectonStochasticSsrFeature.cs` | STATIC_SOURCE only | Failure mode: URP feature source treated as render proof. Proof class: shader import log, Frame Debugger/RenderGraph, capture, VRAM/frame artifact. |
+| Audio propagation, echolocation, synthesis | Echelon 8 plus `Docs/ARCHITECTURE/AUDIO_DSP_PIPELINE.md`, `Docs/ARCHITECTURE/ADAPTIVE_STEM_AUDIO_MIXER.md`, `Docs/ARCHITECTURE/VOCAL_WARNING_QUEUE_SHINOBU_352.md`, `audio.md` | `Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs`; `Assets/_Project/Scripts/Audio/Echolocation/AcousticEcholocationRaymarch.cs`; `Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs` | STATIC_SOURCE only | Failure mode: broad audio route hides DSP/thread/native proof. Proof class: audio profiler/device capture, DSP queue audit, GC/profiler artifact. |
+| Lighting / GI / light shafts | Echelon 7 plus `lighting.md`, `rendering.md`, `Docs/ARCHITECTURE/SHINOBU_151_DYNAMIC_POINT_LIGHT_CULLING_ROUTE_CARD.md` | `Assets/_Project/Scripts/Lighting/HectonLightingRuntime_DayNightRelay.cs`; `Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs`; `Assets/_Project/Scripts/Lighting/Shafts/ScreenSpaceLightShaftRuntime.cs` | STATIC_SOURCE only | Failure mode: lighting source treated as baked/probe/visual readiness. Proof class: Frame Debugger, probe/lightmap artifact, visual capture, profiler/frame artifact. |
+| Graphics material response and caustics | Echelon 7/8 plus `Docs/ARCHITECTURE/TECH_ART_PBR_SURFACE_DOCTRINE.md`, `rendering.md`, `shaders.md` | `Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs`; `Assets/_Project/Scripts/Graphics/Materials/ShinobuMaterialResponseRuntime.cs`; `Assets/_Project/Scripts/Graphics/Caustics/AnalyticalCausticsService.cs` | STATIC_SOURCE only | Failure mode: material source treated as shader/import/visual proof. Proof class: material/shader import audit, Frame Debugger, capture, VRAM/frame artifact. |
+| Core bridge, diagnostics, replay | Echelon 1 plus `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md` Core Source Spine, `Docs/ARCHITECTURE/CORE_REPLAY_DETERMINISM.md`, `Docs/ARCHITECTURE/ASYNCHRONOUS_TELEMETRY_EXPORTER_SHINOBU_160.md` | `Assets/_Project/Scripts/Core/Bridge/H8BridgeFacadeRuntime.cs`; `Assets/_Project/Scripts/Core/DodReplayRecorder.cs`; `Assets/_Project/Scripts/Core/Diagnostics/AsynchronousTelemetryExporter.cs` | STATIC_SOURCE only | Failure mode: diagnostics or bridge code becomes hidden authority/proof inflation. Proof class: replay hash, telemetry export, black-box dump, runtime artifact. |
+| Save sidecars, thumbnails, maintenance | Echelon 1 plus `Docs/ARCHITECTURE/SAVE_PAGING_PROTOCOL.md` and `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md` Data And Persistence | `Assets/_Project/Scripts/SaveSidecarStorage.cs`; `Assets/_Project/Scripts/SaveThumbnailSystem.cs`; `Assets/_Project/Scripts/SaveSlotMaintenanceRecord.cs` | STATIC_SOURCE only | Failure mode: support files treated as save/load correctness. Proof class: save/load roundtrip, corruption recovery, thumbnail/sidecar artifact. |
+| World anomaly, sargassum, readability | Echelon 2 plus `Docs/ARCHITECTURE/PROCEDURAL_WORLD_VERTICAL_ARCHITECTURE.md`, `world.md`, `terrain.md` | `Assets/_Project/Scripts/World/HectonAnomalyEngine.cs`; `Assets/_Project/Scripts/World/SargassumCutManager.cs`; `Assets/_Project/Scripts/World/WorldReadabilityDirector.cs` | STATIC_SOURCE only | Failure mode: anomaly/readability source treated as route readability or visual proof. Proof class: route capture, gameplay readability artifact, profiler/GC/frame artifact. |
+| QA and headless harnesses | Echelon 9 plus `Docs/QUALITY_GATES.md` and `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md` QA row | `Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs`; `Assets/_Project/Scripts/Editor/DocumentationAuthoritySmokeTester.cs`; `Assets/_Project/Scripts/AutomationSmokeTester.cs` | STATIC_SOURCE only | Failure mode: harness source treated as executed validation. Proof class: fresh headless/QA CSV, black-box artifact, CI log. |
+| Settings, localization, subtitles | Echelon 8 plus `Docs/ARCHITECTURE/ZERO_GC_UI_PIPELINE.md`, `settings.md`, `localization.md`, `ui.md` | `Assets/_Project/Scripts/UI/SettingsManager.cs`; `Assets/_Project/Scripts/LocalizationManager.cs`; `Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs` | STATIC_SOURCE only | Failure mode: settings/localization/subtitle source treated as persistence/font/UI-GC proof. Proof class: settings roundtrip, locale/font/subtitle capture, UI GC/profiler artifact. |
 
 ## Echelon 1: Core And Memory
 
@@ -51,20 +72,20 @@ Runtime surface:
 
 Architecture docs:
 
-- `PROJECT_RUNTIME_TOPOLOGY.md`
-- `BOOT_SEQUENCE_TOPOLOGY.md`
-- `DISPATCH_PIPELINE.md`
-- `GLOBAL_AUTHORITY_BOUNDARIES.md`
-- `SYSTEM_INTERCONNECT_MATRIX.md`
-- `DATA_MONOLITH_H8BIN_SPEC.md`
-- `DATA_MONOLITH_RUNTIME_INTEGRATION.md`
-- `SAVE_PAGING_PROTOCOL.md`
-- `AUP_PRECISION_STANDARDS.md`
-- `SCALABILITY_MATRIX.md`
-- `PLATFORM_PORTABILITY_PROOF_LADDER.md`
-- `CORE_REPLAY_DETERMINISM.md`
-- `ARENA_ALLOCATOR_2_0.md`
-- `ASYNCHRONOUS_TELEMETRY_EXPORTER_SHINOBU_160.md`
+- `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md`
+- `Docs/ARCHITECTURE/BOOT_SEQUENCE_TOPOLOGY.md`
+- `Docs/ARCHITECTURE/DISPATCH_PIPELINE.md`
+- `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md`
+- `Docs/ARCHITECTURE/SYSTEM_INTERCONNECT_MATRIX.md`
+- `Docs/ARCHITECTURE/DATA_MONOLITH_H8BIN_SPEC.md`
+- `Docs/ARCHITECTURE/DATA_MONOLITH_RUNTIME_INTEGRATION.md`
+- `Docs/ARCHITECTURE/SAVE_PAGING_PROTOCOL.md`
+- `Docs/ARCHITECTURE/AUP_PRECISION_STANDARDS.md`
+- `Docs/ARCHITECTURE/SCALABILITY_MATRIX.md`
+- `Docs/ARCHITECTURE/PLATFORM_PORTABILITY_PROOF_LADDER.md`
+- `Docs/ARCHITECTURE/CORE_REPLAY_DETERMINISM.md`
+- `Docs/ARCHITECTURE/ARENA_ALLOCATOR_2_0.md`
+- `Docs/ARCHITECTURE/ASYNCHRONOUS_TELEMETRY_EXPORTER_SHINOBU_160.md`
 
 Source anchors:
 
@@ -102,16 +123,16 @@ Runtime surface:
 
 Architecture docs:
 
-- `PROCEDURAL_WORLD_VERTICAL_ARCHITECTURE.md`
-- `FLOODED_TERRESTRIAL_GEOGRAPHY.md`
-- `TERRAIN_RUNTIME_AUTHORITY_ROUTE.md`
-- `TERRAIN_CHUNK_PAGING_SYSTEM_SHINOBU_245.md`
-- `STATIC_CAVE_SDF_VOLUME_BAKER.md`
-- `VOXEL_TERRAIN_SEAM_BINDER_SHINOBU_246.md`
-- `VOXEL_DYNAMIC_NAVGRID_VAULT_ROUTE_1316.md`
-- `FLOW_FIELD_MATH.md`
-- `BIOME_WEIGHT_MAP_BAKER_SHINOBU_243.md`
-- `PROCEDURAL_WRECKAGE_GLOBAL_AUTHORITY_ROUTE_CARD_SHINOBU_121.md`
+- `Docs/ARCHITECTURE/PROCEDURAL_WORLD_VERTICAL_ARCHITECTURE.md`
+- `Docs/ARCHITECTURE/FLOODED_TERRESTRIAL_GEOGRAPHY.md`
+- `Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md`
+- `Docs/ARCHITECTURE/TERRAIN_CHUNK_PAGING_SYSTEM_SHINOBU_245.md`
+- `Docs/ARCHITECTURE/STATIC_CAVE_SDF_VOLUME_BAKER.md`
+- `Docs/ARCHITECTURE/VOXEL_TERRAIN_SEAM_BINDER_SHINOBU_246.md`
+- `Docs/ARCHITECTURE/VOXEL_DYNAMIC_NAVGRID_VAULT_ROUTE_1316.md`
+- `Docs/ARCHITECTURE/FLOW_FIELD_MATH.md`
+- `Docs/ARCHITECTURE/BIOME_WEIGHT_MAP_BAKER_SHINOBU_243.md`
+- `Docs/ARCHITECTURE/PROCEDURAL_WRECKAGE_GLOBAL_AUTHORITY_ROUTE_CARD_SHINOBU_121.md`
 
 Source anchors:
 
@@ -427,13 +448,13 @@ Runtime surface:
 
 Architecture docs:
 
-- `SHINOBU_345_CELESTIAL_ORBIT_ROUTE_CARD.md`
-- `ABYSSAL_THERMODYNAMICS_SOLVER.md`
-- `SURFACE_STORM_ABYSSAL_PROPAGATION_SHINOBU_234.md`
-- `ABYSSAL_CAUSTICS_SHINOBU_232.md`
-- `FLOW_FIELD_MATH.md`
-- `CINEMATIC_CHEATS_LEDGER.md`
-- `TECH_ART_PBR_SURFACE_DOCTRINE.md`
+- `Docs/ARCHITECTURE/SHINOBU_345_CELESTIAL_ORBIT_ROUTE_CARD.md`
+- `Docs/ARCHITECTURE/ABYSSAL_THERMODYNAMICS_SOLVER.md`
+- `Docs/ARCHITECTURE/SURFACE_STORM_ABYSSAL_PROPAGATION_SHINOBU_234.md`
+- `Docs/ARCHITECTURE/ABYSSAL_CAUSTICS_SHINOBU_232.md`
+- `Docs/ARCHITECTURE/FLOW_FIELD_MATH.md`
+- `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`
+- `Docs/ARCHITECTURE/TECH_ART_PBR_SURFACE_DOCTRINE.md`
 
 Source anchors:
 
@@ -483,16 +504,16 @@ Runtime surface:
 
 Architecture docs:
 
-- `ZERO_GC_UI_PIPELINE.md`
-- `VISOR_AR_STENCIL_RENDERER.md`
-- `SHINOBU_348_SCREEN_SPACE_PDA_PROJECTOR_ROUTE_CARD.md`
-- `PDA_ENCYCLOPEDIA_STREAMER.md`
-- `SHINOBU_226_SCANNER_LORE_DATABASE_SYNC.md`
-- `SHINOBU_349_AUP_NARRATIVE_POI_TRIGGER_ROUTE_CARD.md`
-- `AUDIO_DSP_PIPELINE.md`
-- `ADAPTIVE_STEM_AUDIO_MIXER.md`
-- `VOCAL_WARNING_QUEUE_SHINOBU_352.md`
-- `VOCAL_SYNTHESIS_PIPELINE_SHINOBU_260.md`
+- `Docs/ARCHITECTURE/ZERO_GC_UI_PIPELINE.md`
+- `Docs/ARCHITECTURE/VISOR_AR_STENCIL_RENDERER.md`
+- `Docs/ARCHITECTURE/SHINOBU_348_SCREEN_SPACE_PDA_PROJECTOR_ROUTE_CARD.md`
+- `Docs/ARCHITECTURE/PDA_ENCYCLOPEDIA_STREAMER.md`
+- `Docs/ARCHITECTURE/SHINOBU_226_SCANNER_LORE_DATABASE_SYNC.md`
+- `Docs/ARCHITECTURE/SHINOBU_349_AUP_NARRATIVE_POI_TRIGGER_ROUTE_CARD.md`
+- `Docs/ARCHITECTURE/AUDIO_DSP_PIPELINE.md`
+- `Docs/ARCHITECTURE/ADAPTIVE_STEM_AUDIO_MIXER.md`
+- `Docs/ARCHITECTURE/VOCAL_WARNING_QUEUE_SHINOBU_352.md`
+- `Docs/ARCHITECTURE/VOCAL_SYNTHESIS_PIPELINE_SHINOBU_260.md`
 
 Source anchors:
 
@@ -555,13 +576,13 @@ Runtime surface:
 
 Architecture docs:
 
-- `SHINOBU_353_HAPTIC_SYNTHESIS_ROUTE_CARD.md`
-- `SHINOBU_354_PROCEDURAL_CAMERA_SHAKE_ROUTE_CARD.md`
-- `SHINOBU_151_DYNAMIC_POINT_LIGHT_CULLING_ROUTE_CARD.md`
-- `THIRD_PARTY_POISON.md`
-- `URP_SCREENSHOT_PIPELINE.md`
-- `PLATFORM_PORTABILITY_PROOF_LADDER.md`
-- `PROJECT_RUNTIME_TOPOLOGY.md`
+- `Docs/ARCHITECTURE/SHINOBU_353_HAPTIC_SYNTHESIS_ROUTE_CARD.md`
+- `Docs/ARCHITECTURE/SHINOBU_354_PROCEDURAL_CAMERA_SHAKE_ROUTE_CARD.md`
+- `Docs/ARCHITECTURE/SHINOBU_151_DYNAMIC_POINT_LIGHT_CULLING_ROUTE_CARD.md`
+- `Docs/ARCHITECTURE/THIRD_PARTY_POISON.md`
+- `Docs/ARCHITECTURE/URP_SCREENSHOT_PIPELINE.md`
+- `Docs/ARCHITECTURE/PLATFORM_PORTABILITY_PROOF_LADDER.md`
+- `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md`
 
 Source anchors:
 

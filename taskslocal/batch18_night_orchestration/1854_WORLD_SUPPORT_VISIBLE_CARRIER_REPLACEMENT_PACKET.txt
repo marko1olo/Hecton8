@@ -1,0 +1,64 @@
+AGENT ID: 1854
+ROLE: WORLD_SUPPORT_VISIBLE_CARRIER_REPLACEMENT_PACKET
+MODE: No-mutation production replacement packet. Do not edit prefabs, assets, source, scenes, binaries, or `.meta`.
+
+PRIMARY GOAL
+Turn the 9 primitive `WorldSupport/Final` blockers into an exact production rebuild packet. The packet must split hidden gameplay/support markers from visible art carriers and define how to replace each visible carrier with non-primitive authored/generated mesh compositions that meet the surface/shallow/mid-depth visual floor.
+
+READ
+- AGENTS.md, PROJECT_BIBLES.md, VISION_LOCKS.md, TASTE.md, quality.md
+- world.md, terrain.md, water.md, creatures.md, vfx.md, 3dmodel.md, 3DMODEL_TEXTURES_MATERIALS.md if present
+- Docs/Reports/Batch18/1851_GENERATED_ASSET_PRODUCTION_AUDIT.md
+- Docs/Reports/Batch18/1852_PROCEDURAL_PLACEHOLDER_FINAL_GATE.md
+- Docs/Reports/Batch18/1853_PRIMITIVE_FINAL_REPLACEMENT_PLAN.md
+- Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_creature_spawn_passive.asset
+- Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_creature_spawn_predator.asset
+- Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_creature_zone_abyss_apex.asset
+- Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_creature_zone_large_threat.asset
+- Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_creature_zone_reef_apex.asset
+- Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_creature_zone_ruin_apex.asset
+- Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_pocket_hazard.asset
+- Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_pocket_resource.asset
+- Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_pocket_safe.asset
+- Assets/_Project/Prefabs/Nature/Rocks/ProceduralFinals if present
+- Assets/_Project/Prefabs/Nature/Flora/Baked if present
+- Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs if present
+- Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs if present
+
+OWNED OUTPUTS
+- Docs/Tasks/Status_1854.md
+- Docs/AgentLogs/Rationale_1854.md for non-trivial decisions only
+- Docs/AgentLogs/LOG_1854.md
+- Docs/Reports/Batch18/1854_WORLD_SUPPORT_VISIBLE_CARRIER_REPLACEMENT_PACKET.md
+- Docs/Reports/Batch18/1854_WORLD_SUPPORT_REPLACEMENT_MATRIX.csv
+
+HARD RULES
+- Do not run Unity, PlayMode, builds, importers, exporters, bakes, or DataMonolith tools.
+- Do not relink family assets.
+- Do not delete or rewrite primitive prefabs.
+- Do not choose AI proxy objects or `WorldProceduralProxy` prefabs as production visual replacements.
+- Do not mark anything final-ready.
+- If no safe source mesh exists, write a production generator/authoring requirement instead of pretending.
+- Keep gameplay marker volumes hidden/support-only; visible art must be separate non-primitive mesh content.
+
+20 TASKS
+01. Create tracking files and mark evidence class STATIC_SOURCE.
+02. Read authorities and 2-8 relevant mandates from `.agents-skills`.
+03. Reconfirm the 9 WorldSupport primitive final prefabs and their family links from source files.
+04. For each prefab, count built-in primitive mesh refs and list visible child names that prove primitive art.
+05. Inventory existing non-primitive flora/geology/support material candidates that could serve as carriers, without claiming drop-in replacement.
+06. Inventory invalid nearby candidates: AI proxies, WorldProceduralProxy, primitive support prefabs.
+07. Define the hidden gameplay support layer for each family: marker, trigger, spawn zone, hazard/resource/safe logic.
+08. Define the visible art carrier layer for each family: desired silhouette, mesh families, material slots, LOD/HLOD needs.
+09. For passive spawn, specify a reef/kelp/coral school-anchor habitat carrier.
+10. For predator spawn, specify lair carrier from geology plus authored nest/scratch/tooth evidence.
+11. For abyss/large/reef/ruin apex zones, specify separate territory carriers and readability rules by depth.
+12. For hazard pocket, specify vent chimney/tube-worm/geology/VFX carrier and reject bad atlas references.
+13. For resource pocket, specify deposit/cache carrier that does not conflate pickup logic with visible mesh.
+14. For safe pocket, specify shelter carrier with bright/readable shallow-safe composition.
+15. Define required materials, texture/detail expectations, vertex color channels, and biolum/current/wetness semantics.
+16. Define collider proxy policy: simple colliders are allowed only as invisible collision/support, not visible art.
+17. Define exact future authoring/generator route: files to create, folders, naming, manifest format, proof files.
+18. Define validation gates: static audit, family validator, screenshot/render proof, runtime marker proof when Unity slot exists.
+19. Build CSV matrix with family, variant, current prefab, defect, proposed visual carrier, invalid candidates, future owner.
+20. Append concise LOG/Rationale and mark PACKET_COMPLETE or BLOCKED with missing evidence.

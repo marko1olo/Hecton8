@@ -2,6 +2,8 @@
 
 Date: 2026-05-20
 
+Owner domain: habitat/deformation offline damage baker
+
 Status: STATIC SOURCE UPDATED - PENDING UNITY IMPORT / PROFILER PROOF
 
 ## Boundary

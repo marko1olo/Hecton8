@@ -1,0 +1,45 @@
+# Orchestrator Day Append 2026-06-04 Batch29
+
+## Update 2026-06-04 23:10 +04:00
+
+- Recovery gate re-run after context compaction/user correction.
+- Current front: portfolio orchestration around rejected Unity surface/photic/underwater visual proof.
+- Active Unity owner: separate Codex GUI thread `Продолжить работу по логам`; GUI delivery of steer files is not claimed without screenshot proof.
+- Last complete rejected proof: six-file raw `1474` packet under `Docs/Screenshots/MCP`.
+- Newest rejected visual events:
+  - `Docs/Screenshots/MCP/h8_1912_surface_edit_main.png`;
+  - `Docs/Screenshots/MCP/h8_1912_surface_after_quarantine_b.png`.
+- `1912` is rejected:
+  - raw surface-only editor capture;
+  - no six route-correct views;
+  - no manifest/checksums/camera/depth/quality/toggles/log path;
+  - black primitive foreground blockers;
+  - flat dark green water sheet;
+  - no believable foam, caustics, underwater volume, particles, route depth, or return cue;
+  - terrain and Aegir still below floor.
+- `h8_1912_surface_after_quarantine_b.png` was visually inspected after watchdog refresh and remains the same rejected frame; it does not prove cleanup or quality improvement.
+- Compared `1912` against local reference-direction frames:
+  - `Docs/Screenshots/1428_surface_game_cloud_deck_pass12.png`;
+  - `Docs/Screenshots/1428_sky_foam_caustics_pass_game.png`;
+  - `Docs/Screenshots/MCP/h8_1473_mainrt_crest_foam_shoreline.png`;
+  - `Docs/Screenshots/MCP/h8_1908_surface_runtime_ui_on.png`;
+  - `Docs/Screenshots/MCP/h8_1474_underwater_0_5m.png`.
+- Result: older frames are also rejected but prove `1912` regressed composition/proof hygiene instead of moving toward premium waterline/shallow route.
+- Critical process blocker:
+  - `Assets/_Project/Scripts/Editor/H8VisualProofCapture1912.cs` is untracked under `Assets`;
+  - it includes `QuarantineSurfaceRejectsAndExit()` that opens `02_HECTON_WORLD`, disables renderers, marks scene dirty, and saves scene;
+  - current `git diff --stat` for `Assets/_Project/Scenes/02_HECTON_WORLD.unity` is `93725` changed lines;
+  - scene mutation is `PENDING REVIEW`, not accepted cleanup.
+- Watchdog rerun:
+  - `STATIC_BLOCKED`;
+  - `DIRTY_LOG_TOKENS_FOUND`;
+  - `RAW_PNG_SET_NO_MANIFEST`.
+- ProofGate tests:
+  - `python -m unittest discover -s Tools\ProofGate -p test_*.py`;
+  - `Ran 21 tests`, `OK`.
+- Created:
+  - `Docs/Reports/Batch29/BATCH29_1912_VISUAL_REJECTION_AND_REFERENCE_COMPARE.md`;
+  - `Docs/Reports/Batch29/BATCH29_SYNTHESIS_FOR_CONTROLLER.md`;
+  - `Docs/Orchestration/UNITY_OWNER_STEER_20260604_1912_REJECT_QUARANTINE_SCRIPT.md`.
+- Next action:
+  - create Batch30 no-Unity independent task wave for scene-diff audit, reusable proof harness, visual target matrix, foam/caustic route, terrain/shoreline asset route, and Aegir/sky asset route.

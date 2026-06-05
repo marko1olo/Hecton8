@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ The last question is not what happened. It is who you send it to.
 
 ## Field Note
 
-Use for final route UI, ending dossier and spoiler-gated publication branches.
+Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged.
 
 <!-- In-Game Wiki; generated from P385_ATLAS_BASIN_PAYLOAD_ACT/pl_PL. -->

@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts.Signals;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 
 namespace Hecton8.Narrative.Prologue
@@ -66,7 +67,9 @@ namespace Hecton8.Narrative.Prologue
 
         private static bool ValidateDtoLayout()
         {
-            return Marshal.SizeOf<ReentryStateDTO>() == 32 &&
+            int dtoBytes = UnsafeUtility.SizeOf<ReentryStateDTO>();
+            return dtoBytes == 32 &&
+                   (dtoBytes & 7) == 0 &&
                    OffsetOf(nameof(ReentryStateDTO.ElapsedTime)) == 0 &&
                    OffsetOf(nameof(ReentryStateDTO.Progress01)) == 8 &&
                    OffsetOf(nameof(ReentryStateDTO.HeatIntensity)) == 12 &&
@@ -76,7 +79,9 @@ namespace Hecton8.Narrative.Prologue
 
         private static bool ValidateAcousticLayout()
         {
-            return Marshal.SizeOf<ReentryAcousticStressSignal>() == 32 &&
+            int signalBytes = UnsafeUtility.SizeOf<ReentryAcousticStressSignal>();
+            return signalBytes == 32 &&
+                   (signalBytes & 7) == 0 &&
                    AcousticOffsetOf(nameof(ReentryAcousticStressSignal.Stress01)) == 0 &&
                    AcousticOffsetOf(nameof(ReentryAcousticStressSignal.Heat01)) == 4 &&
                    AcousticOffsetOf(nameof(ReentryAcousticStressSignal.UniverseVelocityMetersPerSecond)) == 8 &&

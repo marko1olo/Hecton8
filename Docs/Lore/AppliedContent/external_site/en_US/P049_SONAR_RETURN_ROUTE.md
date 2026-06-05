@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -20,11 +20,11 @@ Sonar Return Route is the navigation grammar of Submerge: return paths change, e
 
 ## Scanner
 
-The beacon does not point home. It measures how badly the way back changed since the last safe ping.
+Return beacon stale. Compare old safe ping to current echo before carrying cargo or diving deeper.
 
 ## Terminal
 
-Sonar route: last clean echo invalid. Black Keel ping accepted. Local obstruction drift exceeds mapped tolerance.
+SONAR ROUTE: last clean echo invalid. Black Keel ping accepted. Local obstruction drift exceeds mapped tolerance.
 
 ## Audio
 
@@ -32,6 +32,6 @@ The way back is not gone. It is different enough to kill you.
 
 ## Field Note
 
-Return route is a living cost, not a minimap line.
+Never trust an old clean echo with new weight on your back.
 
 <!-- External Site; generated from P049_SONAR_RETURN_ROUTE/en_US. -->

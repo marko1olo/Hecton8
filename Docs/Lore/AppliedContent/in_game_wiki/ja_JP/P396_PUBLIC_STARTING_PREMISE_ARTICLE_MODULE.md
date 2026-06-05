@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Public Starting Premise Article Module
+# Marauder Starting Claim
 
-This article module is for spoiler-light player-facing summaries and in-game codex front matter.
+The opening record frames the player as a professional under pressure, not a tourist and not a family avenger. Old Deep Reach history matters because the procedures on HECTON-8 are familiar before they become evidence.
 
 ## Scanner
 
-Publication module: premise. Marauder contract, debt pressure and old Deep Reach language.
+Public claim record. The first route identifies a debt-bound Marauder with old Deep Reach field experience and a Black Keel salvage window.
 
 ## Terminal
 
-PUBLIC MODULE PREMISE: reveal ex-Deep-Reach professional context only as starting frame, not full liability proof.
+PUBLIC ARCHIVE NODE // STARTING CLAIM. Contractor history: former Deep Reach field-systems specialist. Current status: Marauder lien pressure. Route: Black Keel recovery claim, P-63 descent.
 
 ## Audio
 
-You are not discovering a legend. You are returning to paperwork you know too well.
+You are returning to paperwork you know too well.
 
 ## Field Note
 
-Use for website overview, store-page lore block and codex front matter.
+Marauder note: the contract knows your past. That does not make it honest.
 
 <!-- In-Game Wiki; generated from P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE/ja_JP. -->

@@ -175,11 +175,11 @@ V6 currentness boundary: the 2026-05-21 official Steam API/appdetails refresh st
 
 | Creator segment | Private pain signal to answer | Required HECTON proof | Safe pitch angle |
 |---|---|---|---|
-| Direct underwater survival | SN2 owns the audience; clone fatigue and thin-loop complaints exist. | `PLAN-SHOT-001` plus `PLAN-SHOT-003` or `PLAN-CLIP-003`. | "Different emotional contract: colder, heavier, salvage under pressure." |
+| Direct underwater survival | SN2 owns the audience; clone fatigue and thin-loop complaints exist. | `PLAN-SHOT-000` plus `PLAN-SHOT-003` or `PLAN-CLIP-003`; `PLAN-SHOT-001` may support depth identity after surface/photic proof. | "Different emotional contract: beautiful water under pressure, then heavier salvage below the light." |
 | Engineering/base systems | Base-builder praise/friction means systems need visual clarity. | `PLAN-SHOT-002`, `PLAN-SHOT-005`, or `PLAN-CLIP-001`. | "Base-as-machine, gauges, seals, pumps, failure response." |
 | Horror/abyss | Atmosphere praise is strong; defensive-agency complaints make passive fear weak. | `PLAN-SHOT-006` or `PLAN-CLIP-002`. | "Instrument dread and route decisions before the reveal." |
 | Indie first-look | EA trust and AI-looking asset risk are high. | Real gameplay asset with build/source fields, no concept-looking still. | "A small honest slice, not a future-feature promise." |
-| Regional first-look | Localized pitch risk plus Steam/SN2 familiarity. | Reviewed local one-liner plus `PLAN-SHOT-001` and one base/machinery proof asset. | "Industrial underwater survival with single-player-first, proof-first scope." |
+| Regional first-look | Localized pitch risk plus Steam/SN2 familiarity. | Reviewed local one-liner plus `PLAN-SHOT-000` and one base/machinery proof asset; add `PLAN-SHOT-001` only if depth identity is also captured honestly. | "Beautiful alien water under pressure, single-player-first, proof-first scope." |
 | Systems/progression | Short-content complaints mean scenery is not enough. | A clip that shows action -> consequence -> next decision. | "Route loop, recovery, and machinery pressure." |
 
 Hard gates:
@@ -273,7 +273,7 @@ The next useful creator work is not more names. It is proving the planned assets
 
 | Planned asset | Unlocks first | Creator rows affected | Why this asset matters | Still blocked by |
 |---|---|---|---|---|
-| `PLAN-SHOT-001` Identity hero | Warm screenshot/Steam proof | Kage848, Keith Ballard, Accurize2, CohhCarnage, Dad's Gaming Addiction, Games4Kickz, Timm Plays Games | Direct underwater-survival creators need to see the project is not bright reef clone art. | QA score 10/12, Steam/presskit URL if mentioned, human contact-route reveal. |
+| `PLAN-SHOT-000` Bright photic route | Warm screenshot/Steam proof | Kage848, Keith Ballard, Accurize2, CohhCarnage, Dad's Gaming Addiction, Games4Kickz, Timm Plays Games | Direct underwater-survival creators need to see beautiful alien water with HECTON route cost, not generic reef clone art or fake dark grading. | QA score 10/12, Steam/presskit URL if mentioned, human contact-route reveal. Add `PLAN-SHOT-001` only when depth identity is also captured honestly. |
 | `PLAN-SHOT-002` Pressure room | Base/system proof | NOOBLETS, Nerdzeitalter, Boubers, Aavak, TotalXclipse | Engineering/base-system creators need machinery, gauges, leaks, and pressure-vessel logic, not scenery. | Real gameplay state, not decorative room; official route recheck. |
 | `PLAN-SHOT-003` Salvage contact | First outreach hook | Kage848, Jade PG, GameEdged, EnterElysium, Welonz, paulsoaresjr | Survival-route creators need one readable action: tool, target, hazard, reward. | Player verb readable without caption; Steam link only after `steam_page_publish_permission_gate` plus `public_cta_permission_gate`; presskit link only after `press_release_permission_gate` plus `public_cta_permission_gate` if used. |
 | `PLAN-SHOT-004` Heavy machine | Machine fantasy proof | NOOBLETS, TotalXclipse, Aavak, BringTheParty, Nerdzeitalter | Systems audiences need heavy interaction and mass. This shot also separates HECTON-8 from generic underwater horror. | Reject if toy-like, clean sci-fi, or static prop. |

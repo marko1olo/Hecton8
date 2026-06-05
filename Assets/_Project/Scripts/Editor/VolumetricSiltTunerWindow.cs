@@ -10,6 +10,7 @@ namespace Hecton8.EditorTools
 {
     public sealed class VolumetricSiltTunerWindow : EditorWindow
     {
+        private const uint ManualEditorProfileHash = 0x48535654u;
         private bool _drawWakeGizmos = true;
         private string _status = "Vault not sampled.";
 
@@ -41,7 +42,7 @@ namespace Hecton8.EditorTools
 
             if (!TryReadFirst(vault, BufferID.MarineSnowTuningConstants, out VfxConfigurationDTO snapshot))
             {
-                snapshot = VolumetricSiltConfigurationAccess.CreateDefault(100000);
+                snapshot = VolumetricSiltConfigurationAccess.CreateDefault(VfxComputeParticleBudgetCatalog.MiddleQualityMarineSnowCount);
                 if (!TryWriteFirstOrAcquire(vault, BufferID.MarineSnowTuningConstants, snapshot))
                 {
                     EditorGUILayout.HelpBox("Silt tuning buffer unavailable.", MessageType.Warning);
@@ -51,12 +52,16 @@ namespace Hecton8.EditorTools
 
             if (snapshot.Version == 0u)
             {
-                snapshot = VolumetricSiltConfigurationAccess.CreateDefault(100000);
+                snapshot = VolumetricSiltConfigurationAccess.CreateDefault(VfxComputeParticleBudgetCatalog.MiddleQualityMarineSnowCount);
                 TryWriteFirstOrAcquire(vault, BufferID.MarineSnowTuningConstants, snapshot);
             }
 
             EditorGUI.BeginChangeCheck();
-            snapshot.ParticleCount = EditorGUILayout.IntSlider("Particle Count", snapshot.ParticleCount, 1000, 100000);
+            snapshot.ParticleCount = EditorGUILayout.IntSlider(
+                "Particle Count",
+                Mathf.Clamp(snapshot.ParticleCount, VfxComputeParticleBudgetCatalog.MinimumQualityMarineSnowCount, VfxComputeParticleBudgetCatalog.OverkillQualityMarineSnowCount),
+                VfxComputeParticleBudgetCatalog.MinimumQualityMarineSnowCount,
+                VfxComputeParticleBudgetCatalog.OverkillQualityMarineSnowCount);
             snapshot.CurlNoiseStrength = EditorGUILayout.Slider("Curl Noise Strength", snapshot.CurlNoiseStrength, 0f, 4f);
             snapshot.WakeInfluence = EditorGUILayout.Slider("Wake Influence", snapshot.WakeInfluence, 0f, 4f);
             snapshot.GravitySinkingSpeed = EditorGUILayout.Slider("Gravity Sinking Speed", snapshot.GravitySinkingSpeed, 0.05f, 6f);
@@ -64,6 +69,7 @@ namespace Hecton8.EditorTools
             snapshot.DensityScale = EditorGUILayout.Slider("Density Scale", snapshot.DensityScale, 0f, 3f);
             if (EditorGUI.EndChangeCheck())
             {
+                snapshot.CsvProfileHash = ManualEditorProfileHash;
                 snapshot.Version++;
                 if (TryWriteFirstOrAcquire(vault, BufferID.MarineSnowTuningConstants, snapshot))
                 {
@@ -91,7 +97,7 @@ namespace Hecton8.EditorTools
             if (vault == null || vault.IsCompactionFenceActive)
                 return;
 
-            if (!TryReadExistingVaultView(vault, BufferID.MarineSnowDynamicWakes, out NativeArray<DynamicWakeDTO> wakes))
+            if (!TryReadExistingVaultView(vault, BufferID.MarineSnowDynamicWakes, out NativeArray<DynamicWakeDTO>.ReadOnly wakes))
                 return;
 
             Handles.color = Color.yellow;
@@ -116,7 +122,7 @@ namespace Hecton8.EditorTools
             where T : struct
         {
             value = default;
-            if (!TryReadExistingVaultView(vault, bufferId, out NativeArray<T> buffer) || buffer.Length <= 0)
+            if (!TryReadExistingVaultView(vault, bufferId, out NativeArray<T>.ReadOnly buffer) || buffer.Length <= 0)
                 return false;
 
             value = buffer[0];
@@ -143,13 +149,13 @@ namespace Hecton8.EditorTools
             }
         }
 
-        private static bool TryReadExistingVaultView<T>(IDataVault vault, BufferID bufferId, out NativeArray<T> buffer)
+        private static bool TryReadExistingVaultView<T>(IDataVault vault, BufferID bufferId, out NativeArray<T>.ReadOnly buffer)
             where T : struct
         {
             buffer = default;
             return vault != null &&
                    vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) &&
-                   vault.TryReadHandle(in handle, out buffer) &&
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
                    buffer.IsCreated;
         }
 

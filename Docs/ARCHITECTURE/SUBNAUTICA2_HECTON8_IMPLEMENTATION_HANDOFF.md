@@ -3,6 +3,9 @@
 Date: 2026-05-17
 
 Status: PENDING VERIFICATION
+Evidence class: STATIC_DOC
+Owner domain: architecture/static implementation handoff
+Review disposition: YELLOW / STATIC_DOC_ONLY until compile/import/runtime/profiler/player proof exists.
 
 ## Current Verdict
 

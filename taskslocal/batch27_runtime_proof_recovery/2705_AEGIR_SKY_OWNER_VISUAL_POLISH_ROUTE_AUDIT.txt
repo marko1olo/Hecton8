@@ -1,0 +1,48 @@
+ID: 2705
+Role: Aegir / Sky Owner Visual Polish Route Auditor
+Mode: report-only, static/source/material audit. Do not edit project files except the required report.
+
+Objective:
+Define the cleanest Aegir/sky/sun polish route after Batch26 found owner ambiguity and weak 1474 celestial visuals.
+
+Evidence basis:
+- `HectonCelestialEngine.sunVisualTransform` is null.
+- `SURFACE_LOW_SUN_DISC_1428` exists but inactive/renderer-disabled.
+- Live Aegir material exists but 1474 Aegir/celestial proof is rejected for weak/dirty artifacts.
+
+Read first:
+- `AGENTS.md`
+- `TASTE.md`
+- `VISION_LOCKS.md`
+- `celestial.md`
+- `atmosphere.md`
+- `rendering.md`
+- `shaders.md`
+- `.agents-skills/REND_Shader_Noir_Aesthetics_Dithering_Fog.txt`
+- `Docs/Reports/Batch26/2604_AEGIR_CELESTIAL_OWNER_AUDIT.md`
+
+Owned inspection scope:
+- `Assets/_Project/Scripts/HectonCelestialEngine.cs`
+- `Assets/_Project/Scripts/HectonAtmosphereManager.cs`
+- `Assets/_Project/Scripts/HectonUnderwaterVisuals.cs`
+- live sky/Aegir/sun materials and shaders named in 2604
+- `Assets/_Project/Scenes/02_HECTON_WORLD.unity` static refs only
+
+Tasks:
+1. Decide which route is safer to recommend as primary: sky-material sun disc or scene-mesh sun disc.
+2. List exact source/scene/material changes required for the recommended route.
+3. List exact changes that must not be done because they create duplicate truth owners or hide weak art.
+4. Audit Aegir material/shader risks for sticker/rim/disconnected-layer/stripe artifacts from static values.
+5. Define proof views and manifest fields for Aegir long/crop and surface sky.
+6. Define quality scaling consequences without binary switches.
+7. Produce an owner-correct polish plan that can be handed to Unity owner after runtime health clears.
+
+Required report:
+`Docs/Reports/Batch27/2705_AEGIR_SKY_OWNER_VISUAL_POLISH_ROUTE_AUDIT.md`
+
+Report must include:
+- recommended owner route;
+- required file/scene/material targets;
+- artifact risks;
+- proof requirements;
+- Low/Mid/High/Ultra consequences.

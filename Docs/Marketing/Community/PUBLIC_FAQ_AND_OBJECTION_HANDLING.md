@@ -4,6 +4,11 @@ Status: public-response draft bank
 Owner lane: Marketing / community and press response
 Runtime impact: none
 
+## Authority Boundary
+
+Static documentation only. Public FAQ, community reply, creator reply, Steam/forum answer, demo, wishlist, performance, platform, release, publication, and support claims require root `textes.md` for voice plus `quality.md`, `release.md`, and `platform.md` with current proof artifacts and the local permission gates.
+No public post, Steam news, trailer/capsule approval, creator send, community launch, platform/release claim, demo claim, support answer, or FAQ publication is authorized by drafts, examples, safe-answer blocks, or plan rows in this file.
+
 ## Purpose
 
 This file gives short, safe answers to predictable questions. Use these in Steam forums, Discord, Reddit, creator replies, press emails, and social responses.
@@ -36,7 +41,7 @@ The project is designed with scalable quality in mind, but we will publish perfo
 
 ### Is it horror?
 
-HECTON-8 uses dread, pressure, black water, and hostile systems. It is not being built as a jumpscare-first horror game.
+HECTON-8 uses beautiful alien water under pressure, dread, black water at depth, and hostile systems. It is not being built as a jumpscare-first horror game.
 
 ### Is there combat?
 
@@ -133,7 +138,7 @@ Use only when someone explicitly brings up Subnautica 2. Do not volunteer the co
 
 | Trigger | Safe reply | Do not say | Internal action |
 |---|---|---|---|
-| "Are you making this because Subnautica 2 disappointed people?" | `No. HECTON-8 has to stand on its own. The focus is pressure, salvage, machinery, black water, and single-player survival decisions.` | Any mention of SN2 EULA, bugs, co-op problems, or review complaints. | Check whether the asset/caption is leaning too hard on competitor contrast. |
+| "Are you making this because Subnautica 2 disappointed people?" | `No. HECTON-8 has to stand on its own. The focus is beautiful alien water under pressure, salvage, machinery, black-water depth, and single-player survival decisions.` | Any mention of SN2 EULA, bugs, co-op problems, or review complaints. | Check whether the asset/caption is leaning too hard on competitor contrast. |
 | "Will this have better co-op?" | `The current public plan is single-player-first. Additional modes are discussed only if they are real in the build.` | "We avoid co-op bugs", "maybe later", "better networking." | Recheck copy for accidental multiplayer wording. |
 | "Will it run better than Subnautica 2?" | `We will talk about performance only with build, hardware, settings, and frame-time context.` | "Yes", "optimized", "zero stutter", competitor performance claims. | Route to performance-proof hold; no public claim. |
 | "Will you let players fight back?" | `We are not ready to describe defense systems publicly. The current public focus is survival pressure, tools, routes, and machinery.` | "Unlike SN2", "we have weapons", shooter promise. | Capture threat assets as decision frames, not helpless monster thumbnails. |
@@ -162,7 +167,7 @@ Maximum cadence:
 | "Shill / ad / spam." | `Fair concern. This is a critique post; if the board/thread is the wrong place, I will stop.` | Defensive rant, repost, bump, mod-lawyering. | Mark route `REVISE` if multiple users treat it as promo. |
 | "AI slop." | `Judge the media. If the mechanic, material language, or player decision does not read, the asset fails.` | "AI is the future", "we use agents", long toolchain debate. | Audit whether the asset looks generated, over-smoothed, incoherent, or concept-only. |
 | "Unity asset flip." | `Engine/toolchain is not the pitch. The useful critique is whether pressure, machinery, and the player decision read.` | Engine war, plugin list, "not an asset flip" without proof. | Check for generic store-asset silhouettes/materials and weak custom identity. |
-| "Subnautica clone." | `That is the risk being tested. The intended lane is pressure, machinery, salvage, sonar, black water, and route decisions. Which cue still reads too close?` | "It is totally different", "better than Subnautica", SN2 pain points. | Add the named clone cue to asset revision notes. |
+| "Subnautica clone." | `That is the risk being tested. The intended lane is beautiful alien water under pressure, machinery, salvage, sonar, black-water depth, and route decisions. Which cue still reads too close?` | "It is totally different", "better than Subnautica", SN2 pain points. | Add the named clone cue to asset revision notes. |
 | "Where is gameplay?" | `If the shot does not show what the player does, it is not ready. The target action is [repair/retreat/seal/reroute/salvage/scan].` | Lore explanation, Steam tease, roadmap promise. | Downgrade the asset to mood-only if viewers cannot name the verb. |
 | "Post Steam." | `Not linking it in this thread. This post is for critique only. Public links use approved routes.` | Unapproved store URL, Discord invite, signup link. | Keep destination gate held unless exact CTA gate is allowed. |
 | "Show build / give key." | `No keys or builds through anonymous threads.` | DM/key offer, invite link, private route hint. | Preserve security boundary; route to key/access policy only if official route exists elsewhere. |

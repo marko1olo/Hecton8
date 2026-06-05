@@ -2,6 +2,8 @@
 
 Date: 2026-05-12
 
+Owner domain: core/signal lane corridor
+
 Status: STATIC_SOURCE REVIEWED / RUNTIME PENDING
 
 ## Source Anchors
@@ -9,6 +11,12 @@ Status: STATIC_SOURCE REVIEWED / RUNTIME PENDING
 Evidence class: STATIC_SOURCE / FILESYSTEM path check. These anchors prove current path visibility only, not runtime lane health, profiler, mod smoke, GC, or player-build proof.
 
 - `Assets/_Project/Scripts/Core/GlobalSignals.cs`
+
+- `Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs`
+
+- `Assets/_Project/Scripts/Core/Signals/GlobalSignals.State.cs`
+
+- `Assets/_Project/Scripts/Core/Signals/GlobalSignals.RuntimeLifecycle.cs`
 
 - `Assets/_Project/Scripts/Core/SystemDispatcher.cs`
 
@@ -44,6 +52,42 @@ Owner Source: `Assets/_Project/Scripts/Core/GlobalSignals.cs`
 | signal struct sizes | validator source exists via `ValidateSignalSize` / `ValidateSignalPayload`; static pass covers Mod API schema orientation only; no compile/runtime/profiler/GC/platform/mod-smoke proof |
 
 | fallback SPSC container | `SpscSignalRingBuffer<T>` |
+
+## 2026-06-05 Domain Remainder Payload Anchor
+
+Evidence class: STATIC_SOURCE. Runtime lane health, overflow behavior, compile/import, GC, profiler, and player-build proof are absent.
+
+Source: `Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs`.
+
+Static facts:
+
+- Owner namespace: `Hecton8.Core.Contracts.Signals`.
+- Shape: 105 `ISignal` payload structs using `[StructLayout(LayoutKind.Explicit)]`; static size buckets are 48 payloads at 32 bytes, 49 at 64 bytes, 1 at 96 bytes, and 7 at 128 bytes.
+- Transform companion: `CombatDamageSignalAupShiftTransformer : ISignalSnapshotTransformer<CombatDamageSignal>`.
+- Exact route examples from current source:
+  - `GlobalSignals.State.cs`: `MemoryPressureSignalCapacity = 16`, `MemoryAddressShiftSignalCapacity = 64`, `FramePacingWarningSignalCapacity = 8`, `ChunkDehydratedSignalCapacity = 64`, `TemperatureChangedSignalCapacity = 64`, `ResourceDepletionDeltaSignalCapacity = 64`, `BubbleSpawnSignalCapacity = 64`.
+  - `GlobalSignals.RuntimeLifecycle.cs`: current static source configures and initializes `SectorResidencyHydratedSignal`, `SectorDehydratedSignal`, `ChunkDehydratedSignal`, `RadiationSourceSignal`, `ResourceDepletionDeltaSignal`, `TemperatureChangedSignal`, and `ThermalSourceSignal`.
+  - `GlobalSignals.LegacyFacade.cs` and `GlobalSignals.LegacyWriters.cs`: retained bridge publishing/writer surfaces exist for selected payloads including `CombatDamageSignal`, `CrashTelemetrySignal`, `MemoryPressureSignal`, `MemoryAddressShiftSignal`, `ResourceDepletionDeltaSignal`, `TemperatureChangedSignal`, and `BubbleSpawnSignal`.
+
+Boundary:
+
+- The DTO file declares payload layout only. It does not own producer phase, consumer phase, drain cadence, overflow policy, or black-box dump implementation.
+- First-party runtime traffic must use `SignalBus<T>` snapshots or documented retained `GlobalSignals` bridge lanes. A retained bridge is not approval for new direct queue traffic.
+- Payloads must remain unmanaged, finite-safe, and object-free. Any new payload needs owner, phases, capacity, overflow/backpressure, layout proof, and telemetry before use.
+
+Fault boundary:
+
+- Fault-facing payloads in this file include `CrashTelemetrySignal`, `TelemetryAnomalySignal`, `MemoryPressureSignal`, `SystemHealthIndexSignal`, `CpuStarvationSignal`, and `FramePacingWarningSignal`.
+- Their existence is not a black-box dump, GC, profiler, or runtime proof. Dump and recovery proof must cite the owning telemetry artifact.
+
+Missing proof artifacts:
+
+- `SignalPayloadLayoutValidator` output with timestamp.
+- duplicate lane/name scan over first-party assemblies.
+- Unity compile/import result.
+- runtime lane storm/overflow telemetry.
+- GC/profiler capture for signal publish/drain paths.
+- player-build/platform preservation proof where lanes cross IL2CPP/platform boundaries.
 
 ## Lane Table
 

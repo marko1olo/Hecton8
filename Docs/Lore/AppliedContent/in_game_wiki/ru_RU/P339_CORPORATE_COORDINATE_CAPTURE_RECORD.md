@@ -10,13 +10,13 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Record corporate coordinate capture
+# Corporate Coordinate Capture Record
 
-Record corporate coordinate capture - самый ясный sellout route. Игрок может сбежать, но disaster site возвращается институту, который его провалил.
+Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.
 
 ## Scanner
 
@@ -28,10 +28,10 @@ COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public r
 
 ## Audio
 
-Ты открыл дверь изнутри.
+You opened the door from the inside.
 
 ## Field Note
 
-Для bad-material или corporate partial ending.
+Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach.
 
 <!-- In-Game Wiki; generated from P339_CORPORATE_COORDINATE_CAPTURE_RECORD/ru_RU. -->

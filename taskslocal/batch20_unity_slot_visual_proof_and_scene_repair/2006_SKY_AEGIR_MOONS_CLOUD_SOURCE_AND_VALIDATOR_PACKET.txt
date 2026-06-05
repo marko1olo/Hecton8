@@ -1,0 +1,111 @@
+TASK 2006: SKY AEGIR MOONS CLOUD SOURCE AND VALIDATOR PACKET
+
+Role:
+Sky, Aegir, moons, and cloud source/validation packet author.
+
+Unity status:
+NO UNITY. Do not open Unity. Do not edit active sky, material, prefab, or scene assets.
+
+Primary objective:
+Create a source-aware validator and repair packet for the bright surface sky route: Aegir, moons, clouds, sun/exposure, horizon, ocean relation, and Scene/Game consistency. The packet must give the Unity-slot owner exact inspection points and prevent fake "dark noir" coverups.
+
+Authority files to read first:
+1. AGENTS.md
+2. TASTE.md
+3. VISION_LOCKS.md
+4. PROJECT_BIBLES.md
+5. celestial.md
+6. atmosphere.md
+7. lighting.md
+8. rendering.md
+9. shaders.md
+10. presentation.md
+11. performance.md
+
+Relevant mandates to load:
+1. .agents-skills/REND_Shader_Noir_Aesthetics_Dithering_Fog.txt
+2. .agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt
+3. .agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt
+4. .agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt
+
+Exact project files and tools to inspect:
+1. Assets/_Project/Editor/HectonSkyTools.cs
+2. Assets/_Project/Editor/HectonSkyAtlasGenerator.cs
+3. Assets/_Project/Scripts/Editor/SceneViewSkyboxEnforcer.cs
+4. Assets/_Project/Scripts/Editor/ProductFaceSkyOceanSourceValidator.cs
+5. Assets/_Project/Scripts/SkySystemFollowCamera.cs
+6. Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs
+7. Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereContracts.cs
+8. Assets/_Project/_PROLOGUE_CONTENT/Prefabs/GasGiant_Aegir.prefab
+9. Assets/_Project/_PROLOGUE_CONTENT/Textures/Planets/Clouds/GASgIANT/Aegir_storms.png
+10. rg --files Assets/_Project | rg "Aegir|GasGiant|Moon|Sky|Cloud|Atmosphere|Sun|Horizon"
+11. rg -n "Aegir|GasGiant|moon|cloud|skybox|exposure|horizon|atmosphere|SceneViewSkybox"
+
+Forbidden actions:
+1. Do not run Unity.
+2. Do not replace Aegir/clouds/moons with placeholder gradients, SVG-like circles, or flat billboards.
+3. Do not solve sky weakness by darkening surface time of day.
+4. Do not create candidate generated images without GUI/browser/orchestrator access.
+5. Do not edit active Assets.
+6. Do not claim Scene/Game match without fresh Unity capture.
+
+Ownership boundaries:
+1. You own source validation packet and repair handoff.
+2. You may create docs, manifests, static validator expectations, and prompt packs.
+3. You do not own actual sky asset import, scene wiring, Unity capture, or shader edits.
+4. Ocean interaction notes are allowed only where sky/horizon/reflection proof needs them.
+
+Deliverables:
+1. Docs/Reports/Batch20/2006_SKY_AEGIR_SOURCE_VALIDATOR_PACKET.md
+2. Docs/Reports/Batch20/2006_SKY_AEGIR_ASSET_INVENTORY.csv
+3. Docs/Reports/Batch20/2006_AEGIR_CLOUD_MOON_PROMPTS.md
+4. Docs/Reports/Batch20/2006_UNITY_CAPTURE_CHECKLIST.md
+5. Docs/Tasks/Status_2006.md
+6. Docs/AgentLogs/Rationale_2006.md
+7. Docs/AgentLogs/LOG_2006.md
+
+Required analysis:
+1. Aegir prefab source path, material route, texture route, scale assumptions, and likely crop risks.
+2. Aegir_storms.png existence and role. Do not infer channel contract without source.
+3. Sky atlas generator route and whether it can produce/update source atlases.
+4. Scene View skybox enforcement route and risk of Game/Scene mismatch.
+5. ProductFace sky/ocean source validator route and current static coverage.
+6. Cloud source routes and texture/material contract gaps.
+7. Moons source routes and texture/material contract gaps.
+8. Exposure/time-of-day risks that can violate the bright surface lock.
+
+Work plan:
+1. Read authority and mandates.
+2. Inventory sky/Aegir/moon/cloud assets by exact path.
+3. Inspect sky tools and atlas generator for expected inputs and outputs.
+4. Inspect ProductFaceSkyOceanSourceValidator to identify static validation coverage.
+5. Inspect SceneViewSkyboxEnforcer to understand Game/Scene mismatch risk.
+6. Inspect sky follow camera route for parallax/scale stability.
+7. Create asset inventory with proof label per asset: exists, referenced, imported unknown, runtime unknown.
+8. Create Aegir close-crop risk notes: source resolution, material stretching, compression, lighting, horizon placement.
+9. Create Aegir long-shot risk notes: scale, silhouette, relation to cloud layer/moons, color harmony.
+10. Create 360 sky pan checklist. Include headings and what each heading must prove.
+11. Create bright-surface exposure checklist. Darkness/noir is not acceptable outside weather/eclipse/depth contexts.
+12. Create prompt packs for Aegir cloud/storm texture, moon surface texture, bright volumetric-looking cloud atlases, and horizon haze. Mark generation as manual/orchestrator-only.
+13. Define texture channel contracts needed for imported sources.
+14. Define Low/Middle/High/Ultra consequences for clouds, Aegir detail, moon detail, atmospheric scattering fake, and update cadence.
+15. Define gameplay readability requirements: horizon orientation, celestial navigation landmarks, no glare hiding interactables.
+16. Define optimization requirements: no heavy runtime volumetric simulation without proof, prefer premium fakes/atlases.
+17. Define Unity-slot proof outputs: Aegir crop/long, 360 pan, Game/Scene match, profiler notes.
+18. Mark every unresolved runtime claim as PENDING VERIFICATION.
+19. Write handoff recommendations with exact files to inspect first in Unity.
+20. Finalize concise status.
+
+Three-pillar acceptance:
+1. Graphics: sky/Aegir/moons/clouds are premium first-viewport signals.
+2. Optimization: atlas/fake-first route is clear and scalable.
+3. Gameplay: sky provides orientation and mood without blinding or darkening the surface route.
+
+GlobalQualityWeight consequences:
+1. Low: simpler cloud layers and lower-res distant celestial detail, not flat placeholders.
+2. Middle: default sky/Aegir/moon/cloud quality.
+3. High: richer cloud breakup, better Aegir detail, stronger horizon integration.
+4. Ultra: visual overkill celestial/cloud detail and pan stability with unchanged gameplay truth.
+
+Closeout standard:
+The Unity-slot owner must have exact capture and validation instructions for sky/Aegir without inventing them.

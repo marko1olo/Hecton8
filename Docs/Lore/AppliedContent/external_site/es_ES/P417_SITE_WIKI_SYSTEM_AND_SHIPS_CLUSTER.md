@@ -10,28 +10,20 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Site Wiki System and Ships Cluster
+# Aegir Route and Ships
 
-System and ships: the route to Aegir is slow, infrastructural and legally tangled. HECTON-8 has no instant rescue lane.
+Aegir is close enough to be exploited and far enough to be abandoned. No faster-than-light drive crosses the gap, and no ansible carries orders ahead of physics. Every message, contract and rescue claim moves through delay: probe packets, relay custody, beam schedules, pellet-fusion freight and transfer windows indifferent to human urgency.
 
-## Scanner
+The first Aegir traffic was not human. Needleprobes mapped the warm dwarf system and returned enough mineral, radiation and orbital data to justify heavier investment. Beam-sail packets followed, then slower cargo, then seed-ship mass that had to brake inside a planned infrastructure web. By the time Deep Reach arrived at HECTON-8, the route already belonged to institutions: carriers, insurers, domain offices, reclamation pools and companies skilled at making ownership difficult to name.
 
-Publication cluster: system and ships. No FTL, Aegir route and carrier limits.
+The Black Keel carrier sits inside that ambiguity. It is not a navy ship and not a rescue service. It is a claim platform with docking mass, tender craft, debt ledgers and salvage authority. Its contract chain lets Deep Reach apply pressure without appearing as the direct hand on the hatch. The ship can extract a person, a sample or a sealed payload only when mass, weather, orbit and custody align.
 
-## Terminal
+The damaged bathydrop capsule is therefore a serious boundary. A descent impact can leave the shell intact enough for survival while ruining ascent tolerances: seal compression, acoustic return sync, guidance tables, energy buffering and quarantine handshake. The capsule can become shelter and evidence at the same time, a vehicle that proves arrival but cannot certify escape.
 
-SITE NAV: group probes, beam/pellet lanes, Seed Ship braking, Black Keel custody, Aegir transfer orbit and bathydrop failure.
-
-## Audio
-
-Distance is not lore trivia. It is why help cannot simply arrive.
-
-## Field Note
-
-Use for site route map, wiki nav and codex hard-sci-fi index.
+In the Aegir system, distance is not background. It is the reason help arrives as paperwork before it arrives as hardware.
 
 <!-- External Site; generated from P417_SITE_WIKI_SYSTEM_AND_SHIPS_CLUSTER/es_ES. -->

@@ -25,18 +25,15 @@ namespace Hecton8.UI
         [FieldOffset(8)] public uint StartAudioFrame;
         [FieldOffset(12)] public float CurrentProgress;
         [FieldOffset(16)] public uint Flags;
-        [FieldOffset(20)] private byte _pad0;
-        [FieldOffset(21)] private byte _pad1;
-        [FieldOffset(22)] private byte _pad2;
-        [FieldOffset(23)] private byte _pad3;
-        [FieldOffset(24)] private byte _pad4;
-        [FieldOffset(25)] private byte _pad5;
-        [FieldOffset(26)] private byte _pad6;
-        [FieldOffset(27)] private byte _pad7;
-        [FieldOffset(28)] private byte _pad8;
-        [FieldOffset(29)] private byte _pad9;
-        [FieldOffset(30)] private byte _pad10;
-        [FieldOffset(31)] private byte _pad11;
+        [FieldOffset(20)] public uint SourceHash;
+        [FieldOffset(24)] private byte _pad0;
+        [FieldOffset(25)] private byte _pad1;
+        [FieldOffset(26)] private byte _pad2;
+        [FieldOffset(27)] private byte _pad3;
+        [FieldOffset(28)] private byte _pad4;
+        [FieldOffset(29)] private byte _pad5;
+        [FieldOffset(30)] private byte _pad6;
+        [FieldOffset(31)] private byte _pad7;
     }
 
     /// <summary>
@@ -139,6 +136,7 @@ namespace Hecton8.UI
         private static readonly DispatcherBridge s_dispatcherBridge = new DispatcherBridge();
         private static IDataVault s_vault;
         private static IDataVault s_activeMutationGuardVault;
+        private static BufferID s_activeMutationBufferId;
         private static ulong s_activeMutationGuardMask;
         private static VaultGenerationHandle<SubtitleCueDTO> s_cueHandle;
         private static VaultGenerationHandle<LocalizationTelemetryEntry> s_telemetryHandle;
@@ -179,6 +177,7 @@ namespace Hecton8.UI
             ReleaseSubtitleBuffers(s_vault);
             s_vault = null;
             s_activeMutationGuardVault = null;
+            s_activeMutationBufferId = default;
             s_activeMutationGuardMask = 0ul;
             s_cueHandle = default;
             s_telemetryHandle = default;
@@ -213,6 +212,7 @@ namespace Hecton8.UI
             ReleaseAllSubtitleMutationBuffers();
             ReleaseSubtitleBuffers(s_vault);
             s_activeMutationGuardVault = null;
+            s_activeMutationBufferId = default;
             s_activeMutationGuardMask = 0ul;
             s_vault = vault;
             s_initialized = false;
@@ -655,11 +655,18 @@ namespace Hecton8.UI
             }
 
             bool releaseOnExit = true;
+            bool writeLockHeld = false;
             try
             {
                 if (vault.IsCompactionFenceActive ||
-                    !vault.TryResolveHandle(in handle, out buffer) ||
-                    vault.IsCompactionFenceActive ||
+                    !vault.TryAcquireWriteLock(in handle, SystemID.UI, out buffer))
+                {
+                    buffer = default;
+                    return false;
+                }
+
+                writeLockHeld = true;
+                if (vault.IsCompactionFenceActive ||
                     !buffer.IsCreated ||
                     buffer.Length < requiredLength)
                 {
@@ -667,14 +674,19 @@ namespace Hecton8.UI
                     return false;
                 }
 
-                StoreSubtitleMutationVault(mutationGuardMask, vault);
+                StoreSubtitleMutationVault(mutationGuardMask, bufferId, vault);
                 releaseOnExit = false;
                 return true;
             }
             finally
             {
                 if (releaseOnExit)
+                {
+                    if (writeLockHeld)
+                        vault.ReleaseWriteLock(in handle, SystemID.UI);
+
                     vault.ReleaseMutationGuard(mutationGuardMask);
+                }
             }
         }
 
@@ -695,34 +707,68 @@ namespace Hecton8.UI
 
         private static void ReleaseSubtitleMutationBuffer(ulong mutationGuardMask)
         {
-            IDataVault vault = TakeSubtitleMutationVault(mutationGuardMask);
+            IDataVault vault = TakeSubtitleMutationVault(mutationGuardMask, out BufferID bufferId);
             if (vault != null && mutationGuardMask != 0ul)
+            {
+                ReleaseSubtitleWriteLock(vault, bufferId);
                 vault.ReleaseMutationGuard(mutationGuardMask);
+            }
         }
 
         private static void ReleaseAllSubtitleMutationBuffers()
         {
             ulong mutationGuardMask = s_activeMutationGuardMask;
-            IDataVault vault = TakeSubtitleMutationVault(mutationGuardMask);
+            IDataVault vault = TakeSubtitleMutationVault(mutationGuardMask, out BufferID bufferId);
             if (vault != null && mutationGuardMask != 0ul)
+            {
+                ReleaseSubtitleWriteLock(vault, bufferId);
                 vault.ReleaseMutationGuard(mutationGuardMask);
+            }
         }
 
-        private static void StoreSubtitleMutationVault(ulong mutationGuardMask, IDataVault vault)
+        private static void StoreSubtitleMutationVault(ulong mutationGuardMask, BufferID bufferId, IDataVault vault)
         {
             s_activeMutationGuardVault = vault;
+            s_activeMutationBufferId = bufferId;
             s_activeMutationGuardMask = mutationGuardMask;
         }
 
-        private static IDataVault TakeSubtitleMutationVault(ulong mutationGuardMask)
+        private static IDataVault TakeSubtitleMutationVault(ulong mutationGuardMask, out BufferID bufferId)
         {
+            bufferId = default;
             if (mutationGuardMask == 0ul || mutationGuardMask != s_activeMutationGuardMask)
                 return null;
 
             IDataVault vault = s_activeMutationGuardVault;
+            bufferId = s_activeMutationBufferId;
             s_activeMutationGuardVault = null;
+            s_activeMutationBufferId = default;
             s_activeMutationGuardMask = 0ul;
             return vault;
+        }
+
+        private static void ReleaseSubtitleWriteLock(IDataVault vault, BufferID bufferId)
+        {
+            if (vault == null)
+                return;
+
+            if (bufferId == SubtitleCueStateBufferId && IsSubtitleVaultHandle(in s_cueHandle, SubtitleCueStateBufferId))
+            {
+                vault.ReleaseWriteLock(in s_cueHandle, SystemID.UI);
+                return;
+            }
+
+            if (bufferId == SubtitleCueTelemetryBufferId && IsSubtitleVaultHandle(in s_telemetryHandle, SubtitleCueTelemetryBufferId))
+            {
+                vault.ReleaseWriteLock(in s_telemetryHandle, SystemID.UI);
+                return;
+            }
+
+            if (bufferId == UIOptimizationTelemetryBufferId &&
+                IsSubtitleVaultHandle(in s_uiOptimizationTelemetryHandle, UIOptimizationTelemetryBufferId))
+            {
+                vault.ReleaseWriteLock(in s_uiOptimizationTelemetryHandle, SystemID.UI);
+            }
         }
 
         private static bool IsSubtitleVaultHandle<T>(
@@ -860,8 +906,9 @@ namespace Hecton8.UI
                    OffsetOf<SubtitleCueDTO>(nameof(SubtitleCueDTO.StartAudioFrame)) == 8 &&
                    OffsetOf<SubtitleCueDTO>(nameof(SubtitleCueDTO.CurrentProgress)) == 12 &&
                    OffsetOf<SubtitleCueDTO>(nameof(SubtitleCueDTO.Flags)) == 16 &&
-                   OffsetOf<SubtitleCueDTO>("_pad0") == 20 &&
-                   OffsetOf<SubtitleCueDTO>("_pad11") == 31 &&
+                   OffsetOf<SubtitleCueDTO>(nameof(SubtitleCueDTO.SourceHash)) == 20 &&
+                   OffsetOf<SubtitleCueDTO>("_pad0") == 24 &&
+                   OffsetOf<SubtitleCueDTO>("_pad7") == 31 &&
                    UnsafeUtility.SizeOf<SubtitleCueSignal>() == 64 &&
                    OffsetOf<SubtitleCueSignal>(nameof(SubtitleCueSignal.TokenHash)) == 0 &&
                    OffsetOf<SubtitleCueSignal>(nameof(SubtitleCueSignal.SourceHash)) == 4 &&
@@ -919,7 +966,7 @@ namespace Hecton8.UI
             return s_layoutValid;
         }
 
-        private static bool RegisterCue(uint tokenHash, uint startAudioFrame, float durationSeconds, uint flags)
+        private static bool RegisterCue(uint tokenHash, uint startAudioFrame, float durationSeconds, uint flags, uint sourceHash = 0u)
         {
             if (!TryCompletePendingCueEvaluation() || !TryAcquireCueMutationBuffer(out NativeArray<SubtitleCueDTO> cues))
                 return false;
@@ -939,6 +986,7 @@ namespace Hecton8.UI
                 cue.StartAudioFrame = startAudioFrame;
                 cue.CurrentProgress = 0f;
                 cue.Flags = flags | FlagActive | FlagVisualOnlyNoRollback;
+                cue.SourceHash = sourceHash;
                 cues[slot] = cue;
                 return true;
             }
@@ -993,7 +1041,7 @@ namespace Hecton8.UI
                     ? signal.DurationMilliseconds * 0.001f
                     : 3.25f;
                 uint startAudioFrame = signal.StartAudioFrame != 0u ? signal.StartAudioFrame : s_audioFrameClock;
-                RegisterCue(signal.TokenHash, startAudioFrame, duration, flags);
+                RegisterCue(signal.TokenHash, startAudioFrame, duration, flags, signal.SourceHash);
                 s_cueSignalCountThisFrame++;
             }
         }

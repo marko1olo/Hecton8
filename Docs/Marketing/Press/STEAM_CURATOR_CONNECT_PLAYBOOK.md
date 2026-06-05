@@ -4,6 +4,12 @@ Status: pre-Curator-Connect plan / no copies ready
 Owner lane: Marketing / Steam curator ops
 Runtime impact: none
 
+## Authority Boundary
+
+Static curator operating plan only. Public voice routes through root `textes.md`.
+Any quality, release, platform, Steam, wishlist, demo, performance, press, review-key, embargo, showcase, curator, publication, website, or presskit claim requires `quality.md`, `release.md`, `platform.md`, current proof artifacts, and the matching local permission gate.
+Draft lists, templates, checklists, schedules, and strategy rows do not approve Steam page, wishlist, pricing, discount, review-key, presskit, showcase, publication, platform, or release claims.
+
 ## Source Boundary
 
 Primary source checked on 2026-05-19:
@@ -106,7 +112,7 @@ Contact: [owner-controlled email]
 ## Message Template - Horror Curator
 
 ```text
-HECTON-8 is a single-player deep-sea survival game with a colder horror angle: pressure, black water, hostile visibility, machinery failure, and a buried Seed Ship anomaly.
+HECTON-8 is a single-player underwater survival game with beautiful alien water near the light and a colder horror angle below it: pressure, black water, hostile visibility, machinery failure, and a buried Seed Ship anomaly.
 
 This is not a jumpscare-first build. The current hook is sustained dread through systems and environment.
 

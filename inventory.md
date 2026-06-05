@@ -1,13 +1,24 @@
 # HECTON-8 Inventory, Resources, Crafting, And Economy Bible
 
 Status: AUTHORING LAW / STATIC DOC / RUNTIME PROOF NOT IMPLIED
+Evidence class: STATIC_DOC
 Scope: items, resource identity, inventory data, storage, crafting, salvage economy, repair costs, extraction pressure, logistics links, and proof gates.
+
+## First-20 Route Hook
+
+- First-20 moment: find resource -> inventory item -> tool interaction -> craft/repair/build action that changes route safety or capability.
+- Route blocker removed: prevents the opening route from becoming abstract loot collection with no physical material, storage pressure, recipe consequence, or salvage scar.
+- Proof class: STATIC_DOC hook only; acceptance still requires item/schema table, recipe/source table, UI snapshot proof, save/load proof if persistent, and no-hot-allocation evidence for runtime inventory changes.
 
 ## Prime Law
 
 Inventory is physical logistics under pressure, not abstract loot collection.
 
 Every item must imply material, origin, condition, use, volume, risk, and extraction cost. HECTON-8 rejects colored-rock currency, infinite pockets, generic crafting ladders, clean resource icons, and progression that ignores oxygen, pressure, route, power, seals, pumps, and survival debt.
+
+Inventory shape lock: the player inventory should be cell/grid-limited unless current implementation proof forces a better equivalent. Inspect existing inventory work before redesigning it.
+
+Early resource balance remains a design task. Do not flood the opening with generic resources; choose enough materials to prove survival, tools, repair/build, and route planning without turning the game into a colored-rock crafting treadmill.
 
 ## Truth Ownership
 

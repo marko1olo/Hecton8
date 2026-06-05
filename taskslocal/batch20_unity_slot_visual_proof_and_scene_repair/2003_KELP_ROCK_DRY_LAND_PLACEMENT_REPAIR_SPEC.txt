@@ -1,0 +1,119 @@
+TASK 2003: KELP ROCK DRY-LAND PLACEMENT REPAIR SPEC
+
+Role:
+Static placement-rule specialist for dry-land kelp/rock plausibility and repair planning.
+
+Unity status:
+NO UNITY. Do not open Unity, run Unity, or modify active scene/prefab/material assets.
+
+Primary objective:
+Produce a repair-grade specification for why kelp/rocks can appear on dry land and how to fix the placement route without destroying valid shore/photic-shallow ecology. The spec must distinguish terrain depth mapping, rule thresholds, seafloor preference, biome masks, slope masks, and generation tool responsibilities.
+
+Authority files to read first:
+1. AGENTS.md
+2. VISION_LOCKS.md
+3. PROJECT_BIBLES.md
+4. world.md
+5. terrain.md
+6. water.md
+7. PROCEDURAL_ASSET_PIPELINE.md
+8. 3DMODEL_FLORA_CORAL.md
+9. 3DMODEL_GEOLOGY_ROCKS.md
+10. performance.md
+
+Relevant mandates to load:
+1. .agents-skills/REND_Instanced_Flora_Physics.txt
+2. .agents-skills/REND_Terrain_VirtualTexturing.txt
+3. .agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt
+4. .agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+
+Exact project files and tools to inspect:
+1. Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_kelp_tall.asset
+2. Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_kelp_starter.asset
+3. Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_kelp_patch_dense.asset
+4. Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_kelp_canopy.asset
+5. Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_kelp_abyssal.asset
+6. Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_rocks_floor.asset
+7. Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_rocks_cluster.asset
+8. Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_rocks_arch.asset
+9. Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_rocks_shelf.asset
+10. Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_coral_*.asset
+11. Assets/_Project/Scripts/Editor/ProceduralGen/BioRuleData.cs
+12. Assets/_Project/Scripts/Editor/ProceduralGen/BioForgeGenerator.cs
+13. Assets/_Project/Scripts/Editor/ProceduralGen/BioForgeJobs.cs
+14. Assets/_Project/Scripts/Editor/ProceduralGen/ShallowsBioForgeBatchBaker.cs
+15. Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs
+16. Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs
+17. Assets/_Project/Scripts/Editor/WorldProceduralFloraFinalVariantValidator.cs
+18. Assets/_Project/Scripts/Editor/WorldProceduralFamilyContractValidator.cs
+19. rg -n "minDepthMeters|preferSeafloor|maxDepthMeters|slope|biome|mask|shore|terrain|depth"
+
+Forbidden actions:
+1. Do not edit rule assets in this task.
+2. Do not run Unity.
+3. Do not propose deleting kelp/rocks as a fix.
+4. Do not lower the shallow ecology floor to avoid placement bugs.
+5. Do not add runtime scene searches or hot polling.
+6. Do not create binary low/high quality branches.
+7. Do not mark static reasoning as runtime proof.
+
+Ownership boundaries:
+1. You own rule analysis and repair specification.
+2. You may create docs/reports and candidate patch snippets.
+3. You do not own applying asset edits, baking new prefabs, or runtime capture.
+4. The Unity-slot owner applies any final asset edits after proof.
+
+Deliverables:
+1. Docs/Reports/Batch20/2003_KELP_ROCK_DRY_LAND_PLACEMENT_SPEC.md
+2. Docs/Reports/Batch20/2003_RULE_MATRIX.csv
+3. Docs/Reports/Batch20/2003_CANDIDATE_RULE_PATCHES.diff.txt
+4. Docs/Reports/Batch20/2003_STATIC_COMMANDS.txt
+5. Docs/Tasks/Status_2003.md
+6. Docs/AgentLogs/Rationale_2003.md
+7. Docs/AgentLogs/LOG_2003.md
+
+Required analysis:
+1. Confirm static values for every kelp rule: minDepthMeters, maxDepthMeters if present, preferSeafloor, slope restrictions, biome restrictions, prefab family, density/cadence fields.
+2. Confirm static values for every rock rule.
+3. Confirm static values for shallow coral rules.
+4. Identify which rules can legally evaluate dry terrain as depth 0.
+5. Identify whether preferSeafloor 0 means no seafloor preference, false, or route-specific neutral. Use source code, not guesswork.
+6. Identify the system responsible for translating terrain/water/depth to placement eligibility.
+7. Identify whether shore band placement has a separate coastal ecology route or is being faked by generic sea placement.
+8. Identify any rule names or prefab families that imply underwater-only assets but allow dry placement.
+
+Work plan:
+1. Read authority and mandates.
+2. Build a rule inventory with exact paths.
+3. Extract all relevant serialized fields from kelp, rock, coral, and shoreline rules.
+4. Inspect BioRuleData to map serialized fields to semantics.
+5. Inspect BioForgeGenerator/BioForgeJobs to find the actual eligibility test.
+6. Inspect ShallowsBioForgeBatchBaker for batch bake assumptions.
+7. Inspect seaweed/coral mesh builders for anchor/pivot/origin assumptions that can worsen dry-land placement.
+8. Search for world depth map and dry terrain depth mapping references. Record exact source or mark as supplied static baseline if not found.
+9. Split placement mistakes into data bug, generator bug, missing terrain mask, missing shoreline route, or missing asset family route.
+10. Create a candidate patch matrix. Include "do nothing" only where evidence proves the route is correct.
+11. Define a dry-land rejection strategy that preserves valid intertidal and 0-5m photic placement.
+12. Define a shoreline-specific replacement route for coastal vegetation/rocks that does not reuse underwater kelp as land scatter.
+13. Define rock rules by geological role: beach cobble, shore outcrop, shelf, arch, floor, cliff, reef anchor.
+14. Define flora rules by ecology role: floating kelp, anchored kelp, tidal grass/seaweed, coral, sponge, reef fan.
+15. Add no-runtime-GC constraints for any future validator or placement code.
+16. Add GlobalQualityWeight consequences for density, silhouette complexity, animation cadence, and LOD range.
+17. Add required Unity proof shots for validating this spec: shoreline closeup, underwater 0-5m, underwater 20-50m, Scene/Game matching.
+18. Add failure tests: dry hill, beach edge, wet sand, ankle depth, 3m depth, 30m depth.
+19. Write candidate diffs as text only. Do not patch Assets.
+20. Finalize with exact handoff instructions for the Unity-slot owner.
+
+Three-pillar acceptance:
+1. Graphics: no dry-land underwater kelp/rocks, no primitive replacement scatter, shore remains premium.
+2. Optimization: no runtime searches, no allocation-heavy eligibility, no tiny jobs or same-frame job readbacks.
+3. Gameplay: shoreline navigation and underwater route readability improve rather than being stripped.
+
+GlobalQualityWeight consequences:
+1. Low: fewer instances, simpler wind/sway, shorter visibility, but no ugly primitive stand-ins.
+2. Middle: stable default density and LOD.
+3. High: richer silhouettes and secondary movement in player-facing zones.
+4. Ultra: overkill density/detail in hero views with culling, batching, and unchanged gameplay truth.
+
+Closeout standard:
+A future Unity agent must be able to apply and test the placement fix without reverse-engineering the rules again.

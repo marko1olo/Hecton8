@@ -35,7 +35,7 @@ Use for adjacent underwater-survival channels.
 
 Message:
 
-HECTON-8 shares the broad underwater survival audience, but the fantasy is not bright alien wonder. It is pressure, industrial machinery, salvage, and black-water dread.
+HECTON-8 shares the broad underwater survival audience, but the fantasy is not pure cozy alien wonder. It is beautiful alien water under pressure: industrial machinery, salvage, and black-water dread as the route drops below the light.
 
 Required proof:
 

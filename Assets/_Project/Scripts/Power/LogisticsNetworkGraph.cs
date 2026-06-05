@@ -2564,7 +2564,7 @@ namespace Hecton8.Power
             if (vault == null || handle.BufferID == 0u)
                 return default;
 
-            return vault.TryResolveHandle(in handle, out NativeArray<T> buffer) && buffer.IsCreated
+            return vault.TryReadHandle(in handle, out NativeArray<T> buffer) && buffer.IsCreated
                 ? buffer
                 : default;
         }
@@ -2585,7 +2585,7 @@ namespace Hecton8.Power
             }
 
             if (handle.BufferID != 0u &&
-                vault.TryResolveHandle(in handle, out NativeArray<T> existing) &&
+                vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly existing) &&
                 existing.IsCreated &&
                 existing.Length >= safeLength)
             {
@@ -3712,7 +3712,9 @@ namespace Hecton8.Power
             WritePowerBlackBoxSample(0u);
         }
 
-        private bool TryResolvePowerBlackBox(out NativeArray<PowerTelemetryEntry> ring, out NativeArray<PowerGridCounter64> cursor)
+        private bool TryResolvePowerBlackBox(
+            out NativeArray<PowerTelemetryEntry>.ReadOnly ring,
+            out NativeArray<PowerGridCounter64>.ReadOnly cursor)
         {
             ring = default;
             cursor = default;
@@ -3721,7 +3723,7 @@ namespace Hecton8.Power
                 return false;
 
             if (_powerBlackBoxHandle.BufferID == 0u ||
-                !vault.TryResolveHandle(in _powerBlackBoxHandle, out ring) ||
+                !vault.TryReadOnlyHandle(in _powerBlackBoxHandle, out ring) ||
                 !ring.IsCreated ||
                 ring.Length < PowerBlackBoxCapacity)
             {
@@ -3729,7 +3731,7 @@ namespace Hecton8.Power
                         PowerGridBufferIds.TelemetryRing,
                         out _powerBlackBoxHandle) ||
                     _powerBlackBoxHandle.BufferID == 0u ||
-                    !vault.TryResolveHandle(in _powerBlackBoxHandle, out ring) ||
+                    !vault.TryReadOnlyHandle(in _powerBlackBoxHandle, out ring) ||
                     !ring.IsCreated ||
                     ring.Length < PowerBlackBoxCapacity)
                 {
@@ -3738,7 +3740,7 @@ namespace Hecton8.Power
             }
 
             if (_powerBlackBoxCursorHandle.BufferID == 0u ||
-                !vault.TryResolveHandle(in _powerBlackBoxCursorHandle, out cursor) ||
+                !vault.TryReadOnlyHandle(in _powerBlackBoxCursorHandle, out cursor) ||
                 !cursor.IsCreated ||
                 cursor.Length <= 0)
             {
@@ -3746,7 +3748,7 @@ namespace Hecton8.Power
                         PowerGridBufferIds.TelemetryCursor,
                         out _powerBlackBoxCursorHandle) ||
                     _powerBlackBoxCursorHandle.BufferID == 0u ||
-                    !vault.TryResolveHandle(in _powerBlackBoxCursorHandle, out cursor) ||
+                    !vault.TryReadOnlyHandle(in _powerBlackBoxCursorHandle, out cursor) ||
                     !cursor.IsCreated ||
                     cursor.Length <= 0)
                 {
@@ -3757,86 +3759,28 @@ namespace Hecton8.Power
             return true;
         }
 
-        private bool TryAcquirePowerBlackBoxRingWriteLock(out NativeArray<PowerTelemetryEntry> ring)
+        private bool TryEnsurePowerBlackBoxRingHandle(IDataVault vault)
         {
-            ring = default;
-            IDataVault vault = _powerBlackBoxVault;
-            if (vault == null || vault.IsCompactionFenceActive)
+            if (vault == null)
                 return false;
 
-            if (_powerBlackBoxHandle.BufferID == 0u &&
-                (!vault.TryGetGenerationHandle<PowerTelemetryEntry>(PowerGridBufferIds.TelemetryRing, out _powerBlackBoxHandle) ||
-                 _powerBlackBoxHandle.BufferID == 0u))
-            {
-                return false;
-            }
-
-            if (vault.IsCompactionFenceActive)
-            {
-                return false;
-            }
-
-            bool acquired = false;
-            try
-            {
-                if (!vault.TryAcquireWriteLock(in _powerBlackBoxHandle, SystemID.Power, out ring))
-                    return false;
-
-                acquired = true;
-                if (!ring.IsCreated || ring.Length < PowerBlackBoxCapacity)
-                    return false;
-
-                acquired = false;
-                return true;
-            }
-            finally
-            {
-                if (acquired)
-                {
-                    vault.ReleaseWriteLock(in _powerBlackBoxHandle, SystemID.Power);
-                    ring = default;
-                }
-            }
+            return _powerBlackBoxHandle.BufferID != 0u ||
+                   (vault.TryGetGenerationHandle<PowerTelemetryEntry>(
+                        PowerGridBufferIds.TelemetryRing,
+                        out _powerBlackBoxHandle) &&
+                    _powerBlackBoxHandle.BufferID != 0u);
         }
 
-        private bool TryAcquirePowerBlackBoxCursorWriteLock(out NativeArray<PowerGridCounter64> cursor)
+        private bool TryEnsurePowerBlackBoxCursorHandle(IDataVault vault)
         {
-            cursor = default;
-            IDataVault vault = _powerBlackBoxVault;
-            if (vault == null || vault.IsCompactionFenceActive)
+            if (vault == null)
                 return false;
 
-            if (_powerBlackBoxCursorHandle.BufferID == 0u &&
-                (!vault.TryGetGenerationHandle<PowerGridCounter64>(PowerGridBufferIds.TelemetryCursor, out _powerBlackBoxCursorHandle) ||
-                 _powerBlackBoxCursorHandle.BufferID == 0u))
-            {
-                return false;
-            }
-
-            if (vault.IsCompactionFenceActive)
-                return false;
-
-            bool acquired = false;
-            try
-            {
-                if (!vault.TryAcquireWriteLock(in _powerBlackBoxCursorHandle, SystemID.Power, out cursor))
-                    return false;
-
-                acquired = true;
-                if (!cursor.IsCreated || cursor.Length <= 0)
-                    return false;
-
-                acquired = false;
-                return true;
-            }
-            finally
-            {
-                if (acquired)
-                {
-                    vault.ReleaseWriteLock(in _powerBlackBoxCursorHandle, SystemID.Power);
-                    cursor = default;
-                }
-            }
+            return _powerBlackBoxCursorHandle.BufferID != 0u ||
+                   (vault.TryGetGenerationHandle<PowerGridCounter64>(
+                        PowerGridBufferIds.TelemetryCursor,
+                        out _powerBlackBoxCursorHandle) &&
+                    _powerBlackBoxCursorHandle.BufferID != 0u);
         }
 
         private uint ReadSolverTelemetryReasonFlags()
@@ -3875,12 +3819,8 @@ namespace Hecton8.Power
 
         private void WritePowerBlackBoxSample(uint reasonFlags)
         {
-            if (!TryResolvePowerBlackBox(
-                    out NativeArray<PowerTelemetryEntry> powerBlackBoxSnapshot,
-                    out NativeArray<PowerGridCounter64> powerBlackBoxCursorSnapshot))
-            {
+            if (!TryReadPowerBlackBoxCursorState(out PowerGridCounter64 cursorState, out int cursor))
                 return;
-            }
 
             uint flags = reasonFlags | ReadSolverTelemetryReasonFlags();
             bool dumpRequired = false;
@@ -3971,10 +3911,6 @@ namespace Hecton8.Power
             if (overloadedCount > 0)
                 flags |= PowerBlackBoxOverloadFlag;
 
-            PowerGridCounter64 cursorState = powerBlackBoxCursorSnapshot[0];
-            int cursor = cursorState.Value;
-            if ((uint)cursor >= (uint)powerBlackBoxSnapshot.Length)
-                cursor = 0;
             uint frameIndex = unchecked(cursorState.Flags + 1u);
             if (frameIndex == 0u)
                 frameIndex = 1u;
@@ -3997,34 +3933,13 @@ namespace Hecton8.Power
             entry.BrownoutCount = brownoutCount;
             entry.OverloadedCount = overloadedCount;
 
-            if (!TryAcquirePowerBlackBoxRingWriteLock(out NativeArray<PowerTelemetryEntry> powerBlackBox))
+            if (!TryWritePowerBlackBoxEntry(cursor, in entry, out int ringLength))
                 return;
 
-            try
-            {
-                if ((uint)cursor >= (uint)powerBlackBox.Length)
-                    cursor = 0;
-                powerBlackBox[cursor] = entry;
-            }
-            finally
-            {
-                _powerBlackBoxVault.ReleaseWriteLock(in _powerBlackBoxHandle, SystemID.Power);
-            }
-
-            int nextCursor = (cursor + 1) % powerBlackBoxSnapshot.Length;
+            int nextCursor = (cursor + 1) % ringLength;
             cursorState.Value = nextCursor;
             cursorState.Flags = frameIndex;
-            if (TryAcquirePowerBlackBoxCursorWriteLock(out NativeArray<PowerGridCounter64> powerBlackBoxCursor))
-            {
-                try
-                {
-                    powerBlackBoxCursor[0] = cursorState;
-                }
-                finally
-                {
-                    _powerBlackBoxVault.ReleaseWriteLock(in _powerBlackBoxCursorHandle, SystemID.Power);
-                }
-            }
+            TryWritePowerBlackBoxCursorState(in cursorState);
 
             if ((flags & (PowerBlackBoxNonFiniteFlag | PowerBlackBoxJacobiDivergentFlag)) != 0)
                 dumpRequired = true;
@@ -4033,10 +3948,112 @@ namespace Hecton8.Power
                 DumpPowerBlackBoxOnce(flags);
         }
 
+        private bool TryReadPowerBlackBoxCursorState(out PowerGridCounter64 cursorState, out int cursor)
+        {
+            cursorState = default;
+            cursor = 0;
+            IDataVault vault = _powerBlackBoxVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !TryEnsurePowerBlackBoxCursorHandle(vault) ||
+                vault.IsCompactionFenceActive)
+            {
+                return false;
+            }
+
+            bool lockAcquired = false;
+            try
+            {
+                if (!vault.TryAcquireWriteLock(in _powerBlackBoxCursorHandle, SystemID.Power, out NativeArray<PowerGridCounter64> cursorBuffer))
+                    return false;
+
+                lockAcquired = true;
+                if (!cursorBuffer.IsCreated || cursorBuffer.Length <= 0)
+                    return false;
+
+                cursorState = cursorBuffer[0];
+                cursor = cursorState.Value;
+                if ((uint)cursor >= PowerBlackBoxCapacity)
+                    cursor = 0;
+                return true;
+            }
+            finally
+            {
+                if (lockAcquired)
+                    vault.ReleaseWriteLock(in _powerBlackBoxCursorHandle, SystemID.Power);
+            }
+        }
+
+        private bool TryWritePowerBlackBoxEntry(int cursor, in PowerTelemetryEntry entry, out int ringLength)
+        {
+            ringLength = 0;
+            IDataVault vault = _powerBlackBoxVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !TryEnsurePowerBlackBoxRingHandle(vault) ||
+                vault.IsCompactionFenceActive)
+            {
+                return false;
+            }
+
+            bool lockAcquired = false;
+            try
+            {
+                if (!vault.TryAcquireWriteLock(in _powerBlackBoxHandle, SystemID.Power, out NativeArray<PowerTelemetryEntry> powerBlackBox))
+                    return false;
+
+                lockAcquired = true;
+                if (!powerBlackBox.IsCreated || powerBlackBox.Length < PowerBlackBoxCapacity)
+                    return false;
+
+                ringLength = PowerBlackBoxCapacity;
+                if ((uint)cursor >= (uint)ringLength)
+                    cursor = 0;
+                powerBlackBox[cursor] = entry;
+                return true;
+            }
+            finally
+            {
+                if (lockAcquired)
+                    vault.ReleaseWriteLock(in _powerBlackBoxHandle, SystemID.Power);
+            }
+        }
+
+        private bool TryWritePowerBlackBoxCursorState(in PowerGridCounter64 cursorState)
+        {
+            IDataVault vault = _powerBlackBoxVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !TryEnsurePowerBlackBoxCursorHandle(vault) ||
+                vault.IsCompactionFenceActive)
+            {
+                return false;
+            }
+
+            bool lockAcquired = false;
+            try
+            {
+                if (!vault.TryAcquireWriteLock(in _powerBlackBoxCursorHandle, SystemID.Power, out NativeArray<PowerGridCounter64> cursorBuffer))
+                    return false;
+
+                lockAcquired = true;
+                if (!cursorBuffer.IsCreated || cursorBuffer.Length <= 0)
+                    return false;
+
+                cursorBuffer[0] = cursorState;
+                return true;
+            }
+            finally
+            {
+                if (lockAcquired)
+                    vault.ReleaseWriteLock(in _powerBlackBoxCursorHandle, SystemID.Power);
+            }
+        }
+
         private void DumpPowerBlackBoxOnce(uint reasonFlags)
         {
             if (_powerBlackBoxDumped ||
-                !TryResolvePowerBlackBox(out NativeArray<PowerTelemetryEntry> powerBlackBox, out NativeArray<PowerGridCounter64> powerBlackBoxCursor))
+                !TryResolvePowerBlackBox(out NativeArray<PowerTelemetryEntry>.ReadOnly powerBlackBox, out NativeArray<PowerGridCounter64>.ReadOnly powerBlackBoxCursor))
             {
                 return;
             }
@@ -4047,7 +4064,7 @@ namespace Hecton8.Power
             _powerBlackBoxDumped = DumpPowerBlackBox(reasonFlags, powerBlackBox, cursor);
         }
 
-        private unsafe bool DumpPowerBlackBox(uint reasonFlags, NativeArray<PowerTelemetryEntry> powerBlackBox, int cursor)
+        private unsafe bool DumpPowerBlackBox(uint reasonFlags, NativeArray<PowerTelemetryEntry>.ReadOnly powerBlackBox, int cursor)
         {
             NativeArray<byte> payload = default;
             try

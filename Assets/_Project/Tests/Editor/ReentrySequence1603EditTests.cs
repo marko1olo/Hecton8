@@ -55,8 +55,8 @@ namespace Hecton8.Tests.Editor
             "PublishReentryStateNoThrow",
             "RecordStage",
             "ShouldStopForCancellation",
-            "TryHandleDevelopmentSkip",
-            "TryExecuteDevelopmentSkipHandoff",
+            "TryHandleSkipRequest",
+            "TryExecuteSkipHandoff",
             "IntegrateState",
             "MaintainCameraLocalOverlay",
             "ConsumeAtmosphericSignals",
@@ -102,6 +102,10 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("MaxGlassStress01", validator);
             StringAssert.Contains("AblationBoundsValid", validator);
             StringAssert.Contains("private static byte ToByte(bool value)", validator);
+            StringAssert.Contains("UnsafeUtility.SizeOf<ReentryStateDTO>()", validator);
+            StringAssert.Contains("UnsafeUtility.SizeOf<ReentryAcousticStressSignal>()", validator);
+            StringAssert.Contains("(dtoBytes & 7) == 0", validator);
+            StringAssert.Contains("(signalBytes & 7) == 0", validator);
             Assert.That(ContainsOrdinal(validator, "public bool DtoLayoutValid"), Is.False);
             Assert.That(ContainsOrdinal(validator, "public bool AcousticLayoutValid"), Is.False);
             Assert.That(ContainsOrdinal(validator, "public bool Valid"), Is.False);
@@ -148,7 +152,10 @@ namespace Hecton8.Tests.Editor
             MethodDeclarationSyntax cancelActive = FindMethod(root, "CancelActiveSequenceNoThrow");
             MethodDeclarationSyntax fail = FindMethod(root, "FailSequence");
             MethodDeclarationSyntax sanitizeTerminal = FindMethod(root, "SanitizeReentryStateForTerminalPublish");
-            MethodDeclarationSyntax devSkipHandoff = FindMethod(root, "TryExecuteDevelopmentSkipHandoff");
+            MethodDeclarationSyntax shouldStop = FindMethod(root, "ShouldStopForCancellation");
+            MethodDeclarationSyntax tryHandleSkip = FindMethod(root, "TryHandleSkipRequest");
+            MethodDeclarationSyntax developmentSkipAllowed = FindMethod(root, "IsDevelopmentSkipAllowed");
+            MethodDeclarationSyntax devSkipHandoff = FindMethod(root, "TryExecuteSkipHandoff");
             string tickSource = tick.ToFullString();
             string runSource = run.ToFullString();
             string tryBeginSource = tryBegin.ToFullString();
@@ -171,24 +178,27 @@ namespace Hecton8.Tests.Editor
             Assert.That(ContainsOrdinal(tryBeginSource, "RecordStage(PrologueStage.Faulted"), Is.False);
             Assert.That(CountOrdinal(runSource, "PublishFinalizedReentryStateNoThrow();"), Is.EqualTo(2));
             Assert.That(
-                ContainsOrdinal(compactTick, "if(ShouldStopForCancellation(_runCancellationToken)){if(_running){CompleteSequenceRun();PublishFinalizedReentryStateNoThrow();}return;}"),
+                ContainsOrdinal(compactTick, "if(ShouldStopForCancellation(_runCancellationToken)){if(_running){CompleteSequenceRun(preservePendingCameraImpact:false);PublishFinalizedReentryStateNoThrow();}return;}"),
                 Is.True);
             Assert.That(
-                ContainsOrdinal(compactTick, "if(TryHandleDevelopmentSkip()){if(_running){CompleteSequenceRun();PublishFinalizedReentryStateNoThrow();}return;}"),
+                ContainsOrdinal(compactTick, "if(TryHandleSkipRequest()){if(_running){CompleteSequenceRun(preservePendingCameraImpact:false);PublishFinalizedReentryStateNoThrow();}return;}"),
                 Is.True);
             StringAssert.Contains("_reentryState.CurrentPhaseEnum = (uint)_stage;", finalized.ToFullString());
             StringAssert.Contains("PublishReentryStateNoThrow();", finalized.ToFullString());
             Assert.That(Calls(onDisable, "CancelActiveSequenceNoThrow"), Is.True);
             Assert.That(Calls(dispose, "CancelActiveSequenceNoThrow"), Is.True);
             StringAssert.Contains("RecordStage(PrologueStage.Cancelled", cancelActiveSource);
-            AssertTextBefore(cancelActiveSource, "RecordStage(PrologueStage.Cancelled", "CompleteSequenceRun();");
-            AssertTextBefore(cancelActiveSource, "CompleteSequenceRun();", "PublishFinalizedReentryStateNoThrow();");
+            AssertTextBefore(cancelActiveSource, "RecordStage(PrologueStage.Cancelled", "CompleteSequenceRun(preservePendingCameraImpact: false);");
+            AssertTextBefore(cancelActiveSource, "CompleteSequenceRun(preservePendingCameraImpact: false);", "PublishFinalizedReentryStateNoThrow();");
             StringAssert.Contains("RecordStage(PrologueStage.Faulted", failSource);
-            AssertTextBefore(failSource, "RecordStage(PrologueStage.Faulted", "CompleteSequenceRun();");
+            AssertTextBefore(failSource, "RecordStage(PrologueStage.Faulted", "CompleteSequenceRun(preservePendingCameraImpact: false);");
             AssertTextBefore(failSource, "SanitizeReentryStateForTerminalPublish();", "PublishFinalizedReentryStateNoThrow();");
             StringAssert.Contains("FailSequence(PrologueCancelReasons.DevSkip);", devSkipHandoffSource);
             Assert.That(ContainsOrdinal(devSkipHandoffSource, "RecordStage(PrologueStage.Faulted"), Is.False);
             Assert.That(ContainsOrdinal(devSkipHandoffSource, "DumpBlackBox()"), Is.False);
+            StringAssert.Contains("_cancelReason == PrologueCancelReasons.DevSkip && IsDevelopmentSkipAllowed()", shouldStop.ToFullString());
+            StringAssert.Contains("if (!IsDevelopmentSkipAllowed() || !_runtime.ShouldSkipPrologue)", tryHandleSkip.ToFullString());
+            StringAssert.Contains("return runtime != null && runtime.IsDevelopmentBuild;", developmentSkipAllowed.ToFullString());
             StringAssert.Contains("math.isfinite(_reentryState.ElapsedTime)", sanitizeTerminal.ToFullString());
             StringAssert.Contains("math.saturate(_reentryState.Progress01)", sanitizeTerminal.ToFullString());
         }
@@ -202,16 +212,21 @@ namespace Hecton8.Tests.Editor
             string survivalProxyGetter = FindProperty(bridgeRoot, "SurvivalProxyPressure01").ToFullString();
             string skipGetter = FindProperty(bridgeRoot, "ShouldSkipPrologue").ToFullString();
             string frameRefresh = FindMethod(bridgeRoot, "RefreshFrameState").ToFullString();
+            string handleSkip = FindMethod(bridgeRoot, "HandleSkipRequested").ToFullString();
             string hydrationRefresh = FindMethod(bridgeRoot, "RefreshHydrationState").ToFullString();
             string oceanReady = FindMethod(bridgeRoot, "IsOceanSurfaceReady").ToFullString();
             string prepare = FindMethod(bridgeRoot, "PrepareSequenceRun").ToFullString();
 
             StringAssert.Contains("void RefreshFrameState()", Read("Assets/_Project/Scripts/Core/Contracts/PrologueSequenceContracts.cs"));
             StringAssert.Contains("void RefreshHydrationState(bool allowProxy)", Read("Assets/_Project/Scripts/Core/Contracts/PrologueSequenceContracts.cs"));
-            AssertTextBefore(tickSource, "_runtime.RefreshFrameState();", "if (TryHandleDevelopmentSkip())");
+            AssertTextBefore(tickSource, "_runtime.RefreshFrameState();", "if (TryHandleSkipRequest())");
             AssertTextBefore(tickSource, "_runtime.RefreshHydrationState(allowProxy: true);", "if (_runtime.IsOceanSurfaceReady(allowProxy: false))");
             AssertTextBefore(tickSource, "_runtime.IsOceanSurfaceReady(allowProxy: false)", "if (_runtime.IsOceanSurfaceReady(allowProxy: true))");
             Assert.That(CountOrdinal(tickSource, "_runtime.RefreshHydrationState("), Is.EqualTo(1));
+            StringAssert.Contains("return _isDevelopmentBuild && _skipRequested;", skipGetter);
+            StringAssert.Contains("if (!IsDevelopmentBuild)", frameRefresh);
+            StringAssert.Contains("_skipRequested = false;", frameRefresh);
+            StringAssert.Contains("if (!IsDevelopmentBuild || _skipRequested)", handleSkip);
             Assert.That(ContainsOrdinal(survivalProxyGetter, "RefreshSurvivalProxy"), Is.False);
             Assert.That(ContainsOrdinal(survivalProxyGetter, "ResolveSurvivalProxy"), Is.False);
             Assert.That(ContainsOrdinal(survivalProxyGetter, "SignalBus<"), Is.False);
@@ -283,6 +298,7 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("_AblationAmount", capsuleShader);
             StringAssert.Contains("_GlassCrackIntensity", capsuleShader);
             StringAssert.Contains("_HectonReentryAblationState", capsuleShader);
+            StringAssert.Contains("_HectonReentryPlasmaState1", capsuleShader);
             StringAssert.Contains("smoothstep(0.16h, 0.82h, mathLod01)", capsuleShader);
             StringAssert.Contains("smoothstep(0.82h, 1.0h, mathLod01)", capsuleShader);
             Assert.That(ContainsOrdinal(capsuleShader, "if (_H8OrbitalMathLod"), Is.False);
@@ -339,12 +355,63 @@ namespace Hecton8.Tests.Editor
         public void AcousticStressIsNotThrottledByCameraTraumaCadence()
         {
             CompilationUnitSyntax root = Parse(DirectorPath);
+            string source = Read(DirectorPath);
             string presentation = FindMethod(root, "PublishContinuousCameraTrauma").ToFullString();
+            string queueCameraImpact = FindMethod(root, "QueueCameraPressureImpact").ToFullString();
+            string flushCameraImpact = FindMethod(root, "FlushQueuedCameraPressureImpact").ToFullString();
+            string lateFrame = FindMethod(root, "LateFrameTick").ToFullString();
+            string complete = FindMethod(root, "CompleteSequenceRun").ToFullString();
+            string cancel = FindMethod(root, "CancelActiveSequenceNoThrow").ToFullString();
+            string fail = FindMethod(root, "FailSequence").ToFullString();
+            string register = FindMethod(root, "TryRegisterUpdateLane").ToFullString();
+            string ensureLate = FindMethod(root, "TryEnsureLateFrameLane").ToFullString();
+            string unregisterLateFrame = FindMethod(root, "TryUnregisterLateFrameLane").ToFullString();
 
+            StringAssert.Contains("ILateFrameTickable", source);
             AssertTextBefore(presentation, "float trauma01 = _reentryState.TraumaScalar;", "PublishReentryAcousticStressSignal(trauma01);");
             AssertTextBefore(presentation, "PublishReentryAcousticStressSignal(trauma01);", "_traumaPublishAccumulatorSeconds += deltaSeconds;");
             AssertTextBefore(presentation, "PublishReentryAcousticStressSignal(trauma01);", "if (_traumaPublishAccumulatorSeconds < TraumaPublishIntervalSeconds)");
-            AssertTextBefore(presentation, "if (_traumaPublishAccumulatorSeconds < TraumaPublishIntervalSeconds)", "CameraJuiceSignals.TryPublishImpact");
+            AssertTextBefore(presentation, "if (_traumaPublishAccumulatorSeconds < TraumaPublishIntervalSeconds)", "QueueCameraPressureImpact(trauma01);");
+            Assert.That(ContainsOrdinal(presentation, "CameraJuiceSignals.TryPublishImpact"), Is.False);
+            AssertTextBefore(queueCameraImpact, "if (!TryEnsureLateFrameLane())", "float safeTrauma01");
+            AssertTextBefore(queueCameraImpact, "_pendingCameraPressureTrauma01 = safeTrauma01;", "_pendingCameraPressureImpactDirty = true;");
+            AssertTextBefore(lateFrame, "FlushQueuedCameraPressureImpact();", "if (!_running)");
+            StringAssert.Contains("CameraJuiceSignals.TryPublishImpact", flushCameraImpact);
+            StringAssert.Contains("_registeredUpdateLane = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);", register);
+            Assert.That(ContainsOrdinal(register, "TryRegisterLateFrameTickable"), Is.False);
+            StringAssert.Contains("GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment)", ensureLate);
+            StringAssert.Contains("GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment)", unregisterLateFrame);
+            AssertTextBefore(complete, "TryUnregisterUpdateLane();", "if (!preservePendingCameraImpact)");
+            AssertTextBefore(complete, "if (!preservePendingCameraImpact)", "if (!_pendingCameraPressureImpactDirty)");
+            StringAssert.Contains("CompleteSequenceRun(preservePendingCameraImpact: false);", cancel);
+            StringAssert.Contains("CompleteSequenceRun(preservePendingCameraImpact: false);", fail);
+            AssertNoForbiddenHotText(queueCameraImpact, DirectorPath, "QueueCameraPressureImpact");
+            AssertNoForbiddenHotText(flushCameraImpact, DirectorPath, "FlushQueuedCameraPressureImpact");
+        }
+
+        [Test]
+        public void OrbitalFeedbackSignalsFlushAfterPresentationInLateFrame()
+        {
+            CompilationUnitSyntax root = Parse(OrbitDirectorPath);
+            string tick = FindMethod(root, "Tick").ToFullString();
+            string lateFrame = FindMethod(root, "LateFrameTick").ToFullString();
+            string emitFeedback = FindMethod(root, "EmitFeedback").ToFullString();
+            string queueCameraPressure = FindMethod(root, "QueueCameraPressureFeedback").ToFullString();
+            string flush = FindMethod(root, "FlushQueuedFeedbackSignals").ToFullString();
+            string reset = FindMethod(root, "ResetRuntimeState").ToFullString();
+
+            StringAssert.Contains("QueueCameraPressureFeedback(turbulence01, _reentryHeat01, cameraJuiceIntervalSeconds, cameraPriority);", emitFeedback);
+            Assert.That(ContainsOrdinal(tick, "CameraJuiceSignals.TryPublishImpact"), Is.False);
+            Assert.That(ContainsOrdinal(emitFeedback, "CameraJuiceSignals.TryPublishImpact"), Is.False);
+            AssertTextBefore(lateFrame, "ApplyPresentation();", "FlushQueuedFeedbackSignals();");
+            StringAssert.Contains("CameraJuiceSignals.TryPublishImpact", flush);
+            StringAssert.Contains("SignalBus<StreamingTurbulenceSignal>.TryPushTracked(in signal, ref _signalPushDropCount);", flush);
+            AssertTextBefore(flush, "_pendingCameraPressureSignalDirty = false;", "CameraJuiceSignals.TryPublishImpact");
+            AssertTextBefore(queueCameraPressure, "_pendingCameraPressureSignal = signal;", "_pendingCameraPressureSignalDirty = true;");
+            StringAssert.Contains("_pendingCameraPressureSignalDirty = false;", reset);
+            StringAssert.Contains("_pendingCameraPressureSignal = default;", reset);
+            AssertNoForbiddenHotText(queueCameraPressure, OrbitDirectorPath, "QueueCameraPressureFeedback");
+            AssertNoForbiddenHotText(flush, OrbitDirectorPath, "FlushQueuedFeedbackSignals");
         }
 
         [Test]
@@ -353,9 +420,12 @@ namespace Hecton8.Tests.Editor
             CompilationUnitSyntax root = Parse(OrbitBootstrapPath);
             string bootstrap = Read(OrbitBootstrapPath);
             string post = FindMethod(root, "ConfigureOrbitPostProcessing").ToFullString();
+            string opticalWeight = FindMethod(root, "ResolveOrbitOpticalWeight01").ToFullString();
 
             StringAssert.Contains("COLD ALLOC: List<GameObject>[16]", bootstrap);
-            StringAssert.Contains("float bloomWeight = quality * quality;", post);
+            StringAssert.Contains("float bloomWeight = ResolveOrbitOpticalWeight01(quality);", post);
+            StringAssert.Contains("math.smoothstep(OrbitOpticalQualityFloor, 1f, quality)", opticalWeight);
+            StringAssert.Contains("return t * t;", opticalWeight);
             StringAssert.Contains("bool postProcessingEnabled = bloomWeight > 0f;", post);
             StringAssert.Contains("volume.enabled = postProcessingEnabled;", post);
             StringAssert.Contains("bloom.active = postProcessingEnabled;", post);
@@ -365,23 +435,42 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void WorldHandoffLoaderUsesSceneServiceOnlyAfterWhiteoutFrame()
+        public void WorldHandoffLoaderPreloadsAdditivelyAndReleasesAfterOceanHandoff()
         {
             CompilationUnitSyntax root = Parse(WorldHandoffLoaderPath);
             string source = Read(WorldHandoffLoaderPath);
-            string loadNextFrame = FindMethod(root, "LoadWorldOnNextFrameAsync").ToFullString();
+            string onEnable = FindMethod(root, "OnEnable").ToFullString();
+            string lateFrame = FindMethod(root, "LateFrameTick").ToFullString();
+            string preload = FindMethod(root, "TryBeginWorldPreloadIfReady").ToFullString();
+            string release = FindMethod(root, "TryReleaseWorldActivationIfReady").ToFullString();
+            string complete = FindMethod(root, "TryCompleteActivatedWorldHandoff").ToFullString();
+            string disableRelease = FindMethod(root, "ReleaseHeldWorldLoadBeforeDisable").ToFullString();
 
             Assert.That(ContainsOrdinal(source, "useDirectSingleSceneLoad"), Is.False);
-            Assert.That(ContainsOrdinal(source, "SceneManager.LoadScene"), Is.False);
-            Assert.That(ContainsOrdinal(source, "LoadSceneAsync"), Is.False);
-            StringAssert.Contains("await Awaitable.NextFrameAsync(destroyCancellationToken);", loadNextFrame);
-            StringAssert.Contains("sceneService.LoadScene(sceneName);", loadNextFrame);
-            AssertTextBefore(loadNextFrame, "RefreshGameStartContextHandoff();", "sceneService.LoadScene(sceneName);");
+            Assert.That(ContainsOrdinal(source, "LoadWorldOnNextFrameAsync"), Is.False);
+            Assert.That(ContainsOrdinal(source, "sceneService.LoadScene(sceneName);"), Is.False);
+            Assert.That(ContainsOrdinal(source, "SceneManager.LoadScene("), Is.False);
+            StringAssert.Contains("PrologueReentrySignalLanes.Warm();", onEnable);
+            AssertTextBefore(lateFrame, "ConsumeAtmosphericPreloadSignals(frame);", "TryBeginWorldPreloadIfReady(frame);");
+            AssertTextBefore(lateFrame, "ConsumePrologueCompleteSignals(frame);", "TryReleaseWorldActivationIfReady(frame);");
+            AssertTextBefore(lateFrame, "TryReleaseWorldActivationIfReady(frame);", "TryCompleteActivatedWorldHandoff();");
+            AssertTextBefore(preload, "RefreshGameStartContextHandoff();", "SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);");
+            AssertTextBefore(preload, "SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);", "operation.allowSceneActivation = false;");
+            StringAssert.Contains("operation.priority = math.clamp(additiveLoadPriority, -100, 100);", preload);
+            AssertTextBefore(release, "float progress01 = math.saturate(operation.progress * math.rcp(ActivationProgressReady01));", "EmitActivationHoldMask(frame, 1f - progress01);");
+            AssertTextBefore(release, "EmitActivationHoldMask(frame, 1f - progress01);", "operation.allowSceneActivation = true;");
+            StringAssert.Contains("CameraJuiceSignals.ContinuousPressureStressProfileHash", FindMethod(root, "EmitActivationHoldMask").ToFullString());
+            StringAssert.Contains("SceneManager.UnloadSceneAsync(orbitScene);", complete);
+            StringAssert.Contains("operation.allowSceneActivation = true;", disableRelease);
         }
 
         [Test]
         public void DataVaultWriteLocksAreFlatAndReleasedInFinally()
         {
+            string orbitalSource = Read(OrbitDirectorPath);
+            Assert.That(ContainsOrdinal(orbitalSource, "TryResolveHandle("), Is.False, OrbitDirectorPath);
+            StringAssert.Contains("TryReadOnlyHandle(in _telemetryRingHandle", orbitalSource);
+
             for (int fileIndex = 0; fileIndex < ReentryCSharpFiles.Length; fileIndex++)
             {
                 string relativePath = ReentryCSharpFiles[fileIndex];
@@ -546,8 +635,9 @@ namespace Hecton8.Tests.Editor
             Assert.That(ContainsOrdinal(methodSource, "GetComponent("), Is.False, relativePath + ":" + methodName);
             Assert.That(ContainsOrdinal(methodSource, "TryGetComponent("), Is.False, relativePath + ":" + methodName);
             Assert.That(ContainsOrdinal(methodSource, ".Complete("), Is.False, relativePath + ":" + methodName);
-            Assert.That(ContainsOrdinal(methodSource, "SceneManager.LoadScene"), Is.False, relativePath + ":" + methodName);
-            Assert.That(ContainsOrdinal(methodSource, "LoadSceneAsync"), Is.False, relativePath + ":" + methodName);
+            Assert.That(ContainsOrdinal(methodSource, "SceneManager.LoadScene("), Is.False, relativePath + ":" + methodName);
+            if (!string.Equals(methodName, "TryBeginWorldPreloadIfReady", StringComparison.Ordinal))
+                Assert.That(ContainsOrdinal(methodSource, "LoadSceneAsync"), Is.False, relativePath + ":" + methodName);
             Assert.That(ContainsOrdinal(methodSource, "Start" + "Coroutine"), Is.False, relativePath + ":" + methodName);
             Assert.That(ContainsOrdinal(methodSource, "yield return"), Is.False, relativePath + ":" + methodName);
             Assert.That(ContainsOrdinal(methodSource, "WaitForSeconds"), Is.False, relativePath + ":" + methodName);

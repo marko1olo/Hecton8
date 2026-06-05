@@ -4,6 +4,10 @@ Status: promise-control policy
 Owner lane: Marketing / public roadmap
 Runtime impact: none
 
+## Authority Boundary
+
+Public voice routes through root `textes.md`. Quality, release, platform, Steam, wishlist, demo, schedule, feature-scope, performance, and roadmap claims require `quality.md`, `release.md`, `platform.md`, and current proof artifacts. This file controls wording only; policy levels, templates, or roadmap labels do not grant public promise, release window, platform readiness, demo, Steam, or feature-scope claims.
+
 ## Purpose
 
 Roadmaps can build trust or destroy it. HECTON-8 must not publish a fantasy backlog as a promise.
@@ -182,7 +186,7 @@ Internal replacement:
 
 ```text
 Private competitor signal informs which HECTON proof asset we prioritize.
-Public copy stays about pressure, salvage, machinery, black water, and honest scope.
+Public copy stays about beautiful alien water when shown, pressure, salvage, machinery, black-water depth, and honest scope.
 ```
 
 ## Current HECTON-8 Decision

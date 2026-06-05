@@ -399,6 +399,14 @@ namespace Hecton8.Audio.Editor
             AssertOffset<SoundEmissionSignal>("_pad5", 62, ref failureFlags);
             AssertOffset<SoundEmissionSignal>("_pad6", 63, ref failureFlags);
 
+            AssertExplicit<global::Hecton8.Core.AudioEvent>(32, ref failureFlags);
+            AssertOffset<global::Hecton8.Core.AudioEvent>(nameof(global::Hecton8.Core.AudioEvent.EventID), 0, ref failureFlags);
+            AssertOffset<global::Hecton8.Core.AudioEvent>(nameof(global::Hecton8.Core.AudioEvent.Position), 4, ref failureFlags);
+            AssertOffset<global::Hecton8.Core.AudioEvent>(nameof(global::Hecton8.Core.AudioEvent.Volume), 16, ref failureFlags);
+            AssertOffset<global::Hecton8.Core.AudioEvent>(nameof(global::Hecton8.Core.AudioEvent.Pitch), 20, ref failureFlags);
+            AssertOffset<global::Hecton8.Core.AudioEvent>(nameof(global::Hecton8.Core.AudioEvent.ClipHash), 24, ref failureFlags);
+            AssertOffset<global::Hecton8.Core.AudioEvent>("_reserved1", 28, ref failureFlags);
+
             AssertExplicit<AcousticPathResult>(104, ref failureFlags);
             AssertOffset<AcousticPathResult>(nameof(AcousticPathResult.LastPortalAup), 0, ref failureFlags);
             AssertOffset<AcousticPathResult>(nameof(AcousticPathResult.TrueDistanceMeters), 40, ref failureFlags);

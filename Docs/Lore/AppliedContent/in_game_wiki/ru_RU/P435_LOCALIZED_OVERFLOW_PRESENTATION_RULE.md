@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Правило localized overflow presentation
+# Localized Overflow Presentation Rule
 
-Это presentation rule готовит codex к world languages и RTL/CJK review без runtime translation.
+This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.
 
 ## Scanner
 
-Localization rule: длинные переводы должны collapse, page или scroll внутри UI; нельзя сжимать truth или менять authority.
+Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.
 
 ## Terminal
 
-OVERFLOW: source packet identity, receiver labels, units и evidence tiers сохраняются во всех locales. Layout adapts; facts do not.
+OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.
 
 ## Audio
 
-Язык может занять больше места. Он не может получить другую truth.
+A language can take more room. It cannot take a different truth.
 
 ## Field Note
 
-Для localization UI QA и final native review gates.
+Localization layout records keep long or directional text from changing packet truth.
 
 <!-- In-Game Wiki; generated from P435_LOCALIZED_OVERFLOW_PRESENTATION_RULE/ru_RU. -->

@@ -201,12 +201,12 @@
       "localized": {
         "en_US": {
           "title": "Aegir Moon Ladder",
-          "scanner": "Moon sequence resolved: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.",
-          "field_note": "The sky is a mechanism, not scenery.",
-          "terminal": "HECTON-8 is Aegir-VIII: not inner, not farthest. Rake resonance and Pale shadow alter tide and packet quality.",
-          "audio": "Count the moons before you trust a window.",
-          "in_game_wiki": "Aegir uses a practical moon ladder: radiation markers, relay bodies, exhausted claims, resonant hazards, HECTON-8, cold storage moons and outer irregulars. HECTON-8 stays valuable because it sits between living-ocean tolerance and orbital pressure.",
-          "external_site": "The Aegir moon ladder makes the playable moon part of a moving system. Other moons shape tides, carrier waits, relay shadows and the cost of leaving."
+          "scanner": "Moon ladder resolved: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute. Kestrel and Mute distort route timing.",
+          "field_note": "The sky is a work schedule. Miss one moon shadow and the carrier is just a rumor.",
+          "terminal": "AEGIR ROUTE NOTE: HECTON-8 sits after Kestrel. Relay shadow, tide phase and carrier window must match before payload ascent.",
+          "audio": "Count Kestrel before you trust the window.",
+          "in_game_wiki": "Aegir's moons are part of the route math, not scenery. Public catalog crosswalks vary by office, but the current PDA map uses the working ladder Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8 and Mute. HECTON-8 is Aegir-VIII: valuable because its ocean pressure, tide resonance and relay shadows make Black Keel recovery windows dirty.",
+          "external_site": "Aegir's moon ladder makes HECTON-8 part of a moving recovery problem. Other moons shape tide phase, carrier waits, relay shadows and the cost of leaving."
         },
         "ru_RU": {
           "title": "Лунная лестница Aegir",
@@ -365,12 +365,12 @@
       "localized": {
         "en_US": {
           "title": "Drowned Geology",
-          "scanner": "Layered shelf, canyon, brine stair and vent geometry. This moon teaches descent through terrain, not level gates.",
+          "scanner": "Layered shelf, canyon funnel, brine stair and vent scar detected. Treat terrain as pressure routing, not background.",
           "field_note": "The safest route is a reading, not a corridor.",
-          "terminal": "Depth forecast: shelf collapse, service canyon funnels, brine density curtains, thermal plumes, abyss silt exposure.",
+          "terminal": "DEPTH FORECAST: shelf collapse, service-canyon funneling, brine-density curtains, thermal plumes, abyssal silt exposure. Route confidence falls after storm surge.",
           "audio": "Read the rock before you ask the suit to win.",
-          "in_game_wiki": "HECTON-8 geology is gameplay language: shelf survival, drowned rooms, canyon funnels, brine density, thermal routes and abyss exposure. Seeds can move routes without changing that physical truth.",
-          "external_site": "Drowned Geology explains replayability through terrain, brine, heat and pressure rather than arbitrary gates."
+          "in_game_wiki": "The geology scan is a route read. Exposed ridges usually give shallow shelter; collapsed shelves collect salvage and silt; canyon funnels amplify current; brine curtains bend sonar and buoyancy; vent scars can cure sealant or cook it. Use terrain shape to decide when to cache cargo, when to mark a second line and when a depth upgrade is not optional.",
+          "external_site": "Drowned geology makes routes change through terrain, brine, heat and pressure. A safe path is a reading that can expire after storms, silt drift or salvage cuts."
         },
         "ru_RU": {
           "title": "Затопленная геология",
@@ -693,12 +693,12 @@
       "localized": {
         "en_US": {
           "title": "Ecology Registry",
-          "scanner": "Bright shallow ecology confirmed. Deeper traces show cable flora, filter bodies and Atlas repair intrusion.",
+          "scanner": "Ecology split confirmed: native shelf life, cable-adapted biota and Atlas-routed repair organisms. Identify category before harvesting.",
           "field_note": "The world was alive before it was wounded.",
-          "terminal": "Registry split: native pressure ecology, colony-adapted biota, Atlas-altered repair organisms. Do not merge categories.",
-          "audio": "If everything is monster, nothing is violation.",
-          "in_game_wiki": "HECTON-8 needs contrast: bright useful shallows, mid-depth adaptation to human structures, and deep Atlas repair intrusion. Horror works because native life existed before the damage.",
-          "external_site": "The Ecology Registry protects the tone: beauty first, then pressure, then category collapse."
+          "terminal": "REGISTRY SPLIT: native pressure ecology; colony-adapted cable biota; Atlas-altered repair organisms. Mislabeling can destroy working seals.",
+          "audio": "If everything is a monster, you will cut the thing holding pressure.",
+          "in_game_wiki": "Use the ecology registry to separate native life from damage. Bright shelf mats and grazers show the baseline. Cable flora and filter bodies show life adapting to human hardware. Sensor-tagged fauna, conductive film and shell-seal growth point to Atlas repair routing. Do not cut every living thing off a cable; some of it may be keeping the line sealed.",
+          "external_site": "The ecology registry separates native life, colony-adapted biota and Atlas-routed repair organisms so beauty, pressure and damage remain legible."
         },
         "ru_RU": {
           "title": "Регистр экологии",

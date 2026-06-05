@@ -270,6 +270,20 @@ namespace Hecton8.Tools
         public const uint FaultMetaFlagsOffset = 1u << 10;
         public const uint FaultMetaSequenceOffset = 1u << 11;
         public const uint FaultRequestPadOffset = 1u << 12;
+        public const uint FaultGlowDecalSize = 1u << 13;
+        public const uint FaultGlowDecalCenterOffset = 1u << 14;
+        public const uint FaultGlowDecalFrameOffset = 1u << 15;
+        public const uint FaultHitSize = 1u << 16;
+        public const uint FaultDeformationSize = 1u << 17;
+        public const uint FaultBatteryDrainSize = 1u << 18;
+        public const uint FaultImpactVfxSize = 1u << 19;
+        public const uint FaultCooldownSize = 1u << 20;
+        public const uint FaultTelemetryEntrySize = 1u << 21;
+        public const uint FaultTuningSize = 1u << 22;
+        public const uint FaultSpecSize = 1u << 23;
+        public const uint FaultCountersSize = 1u << 24;
+        public const uint FaultCsvParseSize = 1u << 25;
+        public const uint FaultGlowDecalFieldOffsets = 1u << 26;
 
         public static bool Validate(out uint faultFlags)
         {
@@ -300,6 +314,44 @@ namespace Hecton8.Tools
                 faultFlags |= FaultMetaFlagsOffset;
             if (OffsetOf<LaserCutRequestMetaDTO>(nameof(LaserCutRequestMetaDTO.RequestSequence)) != 8)
                 faultFlags |= FaultMetaSequenceOffset;
+            if (UnsafeUtility.SizeOf<LaserCutGlowDecalRequestDTO>() != 64)
+                faultFlags |= FaultGlowDecalSize;
+            if (OffsetOf<LaserCutGlowDecalRequestDTO>(nameof(LaserCutGlowDecalRequestDTO.CenterAUP)) != 0)
+                faultFlags |= FaultGlowDecalCenterOffset;
+            if (OffsetOf<LaserCutGlowDecalRequestDTO>(nameof(LaserCutGlowDecalRequestDTO.Frame)) != 56)
+                faultFlags |= FaultGlowDecalFrameOffset;
+            if (OffsetOf<LaserCutGlowDecalRequestDTO>(nameof(LaserCutGlowDecalRequestDTO.Normal)) != 24 ||
+                OffsetOf<LaserCutGlowDecalRequestDTO>(nameof(LaserCutGlowDecalRequestDTO.RadiusMeters)) != 36 ||
+                OffsetOf<LaserCutGlowDecalRequestDTO>(nameof(LaserCutGlowDecalRequestDTO.Glow01)) != 40 ||
+                OffsetOf<LaserCutGlowDecalRequestDTO>(nameof(LaserCutGlowDecalRequestDTO.LifetimeSeconds)) != 44 ||
+                OffsetOf<LaserCutGlowDecalRequestDTO>(nameof(LaserCutGlowDecalRequestDTO.ToolHashID)) != 48 ||
+                OffsetOf<LaserCutGlowDecalRequestDTO>(nameof(LaserCutGlowDecalRequestDTO.MaterialHash)) != 52 ||
+                OffsetOf<LaserCutGlowDecalRequestDTO>(nameof(LaserCutGlowDecalRequestDTO.Flags)) != 60)
+            {
+                faultFlags |= FaultGlowDecalFieldOffsets;
+            }
+            if (UnsafeUtility.SizeOf<LaserCutHitDTO>() != 96)
+                faultFlags |= FaultHitSize;
+            if (UnsafeUtility.SizeOf<LaserCutDeformationStateDTO>() != 64)
+                faultFlags |= FaultDeformationSize;
+            if (UnsafeUtility.SizeOf<LaserCutBatteryDrainRequest>() != 32)
+                faultFlags |= FaultBatteryDrainSize;
+            if (UnsafeUtility.SizeOf<LaserCutImpactVfxDTO>() != 64)
+                faultFlags |= FaultImpactVfxSize;
+            if (UnsafeUtility.SizeOf<LaserCutCooldownDTO>() != 32)
+                faultFlags |= FaultCooldownSize;
+            if (UnsafeUtility.SizeOf<LaserCutTelemetryEntry>() != 128)
+                faultFlags |= FaultTelemetryEntrySize;
+            if (UnsafeUtility.SizeOf<LaserCutterTuningDTO>() != 64)
+                faultFlags |= FaultTuningSize;
+            if (UnsafeUtility.SizeOf<LaserCutterSpecDTO>() != 64)
+                faultFlags |= FaultSpecSize;
+            if (UnsafeUtility.SizeOf<LaserCutterCountersDTO>() != 32)
+                faultFlags |= FaultCountersSize;
+#if UNITY_EDITOR
+            if (UnsafeUtility.SizeOf<LaserCutterCsvParseResult>() != 32)
+                faultFlags |= FaultCsvParseSize;
+#endif
             if (LaserCutterDodConstants.BlackBoxFrameCount != RequiredBlackBoxFrameCount())
                 faultFlags |= FaultTelemetryCapacity;
 

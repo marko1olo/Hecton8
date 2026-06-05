@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.World;
@@ -31,7 +32,7 @@ namespace Hecton8.Lighting
         private const uint DumpMagic = 0x4C445038u; // LDP8
         private const int DumpVersion = 1;
         private const string DefaultProfileCsvRelativePath = "Docs/Data/light_culling_profiles.csv";
-        private const string BlackBoxDumpFileName = "Dump_13KRA.bin";
+        private const string BlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_13KRA.bin";
 
         private static readonly int _DynamicLightBufferId = Shader.PropertyToID("_H8DynamicPointLightBuffer");
         private static readonly int _DynamicLightStateId = Shader.PropertyToID("_H8DynamicPointLightState");
@@ -561,7 +562,7 @@ namespace Hecton8.Lighting
             if (!ring.IsCreated || ring.Length == 0)
                 return false;
 
-            string path = "Docs/AgentLogs/" + BlackBoxDumpFileName;
+            const string path = BlackBoxDumpRelativePath;
             NativeArray<byte> payload = default;
             try
             {
@@ -1672,24 +1673,83 @@ namespace Hecton8.Lighting
             if (!auditArray.IsCreated || auditArray.Length == 0)
                 return;
 
+            int lightCullStateSize = UnsafeUtility.SizeOf<LightCullStateDTO>();
+            int sourceSize = UnsafeUtility.SizeOf<DynamicPointLightSourceDTO>();
+            int gpuPayloadSize = UnsafeUtility.SizeOf<DynamicPointLightGpuDTO>();
+            int telemetrySize = UnsafeUtility.SizeOf<DynamicPointLightCullingTelemetryEntry>();
+            int settingsSize = UnsafeUtility.SizeOf<DynamicPointLightCullingSettingsDTO>();
+            int profileRuleSize = UnsafeUtility.SizeOf<DynamicPointLightProfileRuleDTO>();
+            int sourceManifestSize = UnsafeUtility.SizeOf<DynamicPointLightSourceManifestDTO>();
+            int runtimeCountersSize = UnsafeUtility.SizeOf<DynamicPointLightRuntimeCountersDTO>();
+            int selfAuditSize = UnsafeUtility.SizeOf<DynamicPointLightSelfAuditDTO>();
+
             DynamicPointLightSelfAuditDTO audit = default;
-            audit.LightCullStateSize = UnsafeUtility.SizeOf<LightCullStateDTO>();
-            audit.SourceSize = UnsafeUtility.SizeOf<DynamicPointLightSourceDTO>();
-            audit.GpuPayloadSize = UnsafeUtility.SizeOf<DynamicPointLightGpuDTO>();
-            audit.TelemetrySize = UnsafeUtility.SizeOf<DynamicPointLightCullingTelemetryEntry>();
-            audit.SettingsSize = UnsafeUtility.SizeOf<DynamicPointLightCullingSettingsDTO>();
-            audit.ProfileRuleSize = UnsafeUtility.SizeOf<DynamicPointLightProfileRuleDTO>();
+            audit.LightCullStateSize = lightCullStateSize;
+            audit.SourceSize = sourceSize;
+            audit.GpuPayloadSize = gpuPayloadSize;
+            audit.TelemetrySize = telemetrySize;
+            audit.SettingsSize = settingsSize;
+            audit.ProfileRuleSize = profileRuleSize;
             audit.SourceBufferId = (int)DynamicPointLightCullingVaultIds.Sources;
             audit.StateBufferId = (int)DynamicPointLightCullingVaultIds.States;
             audit.GpuFrontBufferId = (int)DynamicPointLightCullingVaultIds.GpuPayloadFront;
             audit.GpuBackBufferId = (int)DynamicPointLightCullingVaultIds.GpuPayloadBack;
             audit.TelemetryBufferId = (int)DynamicPointLightCullingVaultIds.TelemetryRing;
             audit.MaxMockLights = DynamicPointLightCullingMath.DefaultMockLightCount;
-            audit.Flags = DynamicPointLightCullingFlags.GpuDirty;
+            audit.Flags = DynamicPointLightCullingFlags.GpuDirty |
+                          (IsSelfAuditLayoutValid(
+                              lightCullStateSize,
+                              sourceSize,
+                              gpuPayloadSize,
+                              telemetrySize,
+                              settingsSize,
+                              profileRuleSize,
+                              sourceManifestSize,
+                              runtimeCountersSize,
+                              selfAuditSize)
+                              ? DynamicPointLightCullingFlags.LayoutAligned
+                              : DynamicPointLightCullingFlags.LayoutInvalid);
             audit.SourceHash = DynamicPointLightCullingMath.SourceHash;
             audit.SourceManifestBufferId = (int)DynamicPointLightCullingVaultIds.SourceManifest;
-            audit.SourceManifestSize = UnsafeUtility.SizeOf<DynamicPointLightSourceManifestDTO>();
+            audit.SourceManifestSize = sourceManifestSize;
             auditArray[0] = audit;
+        }
+
+        private static bool IsSelfAuditLayoutValid(
+            int lightCullStateSize,
+            int sourceSize,
+            int gpuPayloadSize,
+            int telemetrySize,
+            int settingsSize,
+            int profileRuleSize,
+            int sourceManifestSize,
+            int runtimeCountersSize,
+            int selfAuditSize)
+        {
+            return lightCullStateSize == DynamicPointLightCullingLayout.LightCullStateStrideBytes &&
+                   sourceSize == DynamicPointLightCullingLayout.SourceStrideBytes &&
+                   gpuPayloadSize == DynamicPointLightCullingLayout.GpuPayloadStrideBytes &&
+                   telemetrySize == DynamicPointLightCullingLayout.TelemetryEntryStrideBytes &&
+                   settingsSize == DynamicPointLightCullingLayout.SettingsStrideBytes &&
+                   profileRuleSize == DynamicPointLightCullingLayout.ProfileRuleStrideBytes &&
+                   sourceManifestSize == DynamicPointLightCullingLayout.SourceManifestStrideBytes &&
+                   runtimeCountersSize == DynamicPointLightCullingLayout.RuntimeCountersStrideBytes &&
+                   selfAuditSize == DynamicPointLightCullingLayout.SelfAuditStrideBytes &&
+                   IsAligned8(lightCullStateSize) &&
+                   IsAligned8(sourceSize) &&
+                   IsAligned8(gpuPayloadSize) &&
+                   IsAligned8(telemetrySize) &&
+                   IsAligned8(settingsSize) &&
+                   IsAligned8(profileRuleSize) &&
+                   IsAligned8(sourceManifestSize) &&
+                   IsAligned8(runtimeCountersSize) &&
+                   IsAligned8(selfAuditSize);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsAligned8(int sizeBytes)
+        {
+            return sizeBytes > 0 && (sizeBytes & 7) == 0;
         }
 
         private static uint HashSettings(in DynamicPointLightCullingSettingsDTO settings)

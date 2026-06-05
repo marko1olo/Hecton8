@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# ID LOC HOLD: RU Review Gate
+# Russian Operational Voice Contract
 
-ID LOC HOLD: Russian Native Review Lock defines the release gate for RU text.
+Russian text has to keep HECTON-8's dry operational voice: direct warnings, exact terms, readable units, and no decorative horror.
 
 ## Scanner
 
-ID LOC HOLD: Cyrillic is not the problem. Tone drift is.
+Cyrillic width is solvable. Tone drift is the real risk.
 
 ## Terminal
 
-ID LOC HOLD: RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.
+Russian copy keeps procedure, pressure, debt, and evidence intact. No melodrama, no softened liability.
 
 ## Audio
 
-ID LOC HOLD: Do not make the machine poetic.
+The machine should sound useful before it sounds beautiful.
 
 ## Field Note
 
-ID LOC HOLD: Review gate: terse terminal language, stable proper nouns, no softened corporate guilt, no ornamental horror prose.
+Protect terse terminal language, stable proper nouns, corporate and legal terms, unit clarity, and short survival text.
 
 <!-- In-Game Wiki; generated from P276_RU_NATIVE_REVIEW_LOCK/id_ID. -->

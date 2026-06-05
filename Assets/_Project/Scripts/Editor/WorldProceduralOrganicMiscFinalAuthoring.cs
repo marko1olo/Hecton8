@@ -21,6 +21,9 @@ namespace Hecton8.EditorTools
         [MenuItem("Hecton/Authoring/Rebuild Procedural Organic Misc Finals", priority = 180)]
         public static void RebuildOrganicMiscFinals()
         {
+            if (!WorldProceduralFinalPrefabQualityGate.AllowLegacyPrimitiveFinalAuthoring(nameof(WorldProceduralOrganicMiscFinalAuthoring), FinalPrefabFolder))
+                return;
+
             EnsureFolder("Assets/_Project/Art");
             EnsureFolder("Assets/_Project/Art/Materials");
             EnsureFolder("Assets/_Project/Art/Materials/Nature");

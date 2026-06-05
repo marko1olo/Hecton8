@@ -1,7 +1,14 @@
 # HECTON-8 Release Readiness Bible
 
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
+Evidence class: STATIC_DOC
 Scope: release readiness, vertical slice gates, build proof, platform proof, performance proof, content lock, regression triage, public claim safety, and final handoff discipline.
+
+## First-20 Route Hook
+
+- First-20 moment: release gates start with boot, menu, world load, swim/orient, instrument read, gather/salvage, tool use, repair/craft/build, hazard, save, load, and return/fail evidence.
+- Route blocker removed: broad feature count replacing route proof, stale logs treated as current artifacts, public copy overclaim, and content lock without compact/high presentation notes.
+- Proof class: `STATIC_DOC` until current build/import, Play Mode or player run, profiler/GC/memory, screenshot/clip, save/load, platform/device, and known-risk artifacts exist.
 
 ## 1. Prime Law
 
@@ -57,7 +64,7 @@ The release gate prioritizes the first playable route before broad feature count
 11. load;
 12. return or fail with evidence.
 
-Work outside this route must name the blocker it removes. Feature breadth without route proof is rejected.
+Work outside this route must name the blocker it removes or the approved broad foundation it strengthens. Feature breadth without route proof is rejected only when it lowers first-route quality, fakes readiness, or distracts from proof. Visual, lore, platform, modding, XR, SDK, data, asset, water, terrain, UI, and vehicle foundations may proceed in parallel under proof labels.
 
 ## 4. Build Gate
 
@@ -109,7 +116,7 @@ Compact must prove:
 - meaningful audio/UI redundancy;
 - stable save/load.
 
-High and Ultra may add visual density, not different truth. If Compact fails readability, the feature is not release-ready.
+High and Ultra may add visual density, not different truth. If Compact fails readability, the feature is not accepted for release.
 
 ## 7. Content Lock Gate
 

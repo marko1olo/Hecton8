@@ -2,6 +2,10 @@
 
 Status: static owner route rollback-polished with KCC intent bridge, explicit completion-gated flush, generated csproj sourcegraph bridge extended; guarded compile currently blocked by CPU threshold.
 
+Evidence class: STATIC_DOC
+
+Owner domain: habitat atmosphere / airlock pressurization
+
 ## Ownership
 
 SHINOBU_338 owns airlock pressure/water/gas exchange math only. It does not own KCC movement, atmosphere graph scheduling, fluid graph scheduling, GPU VFX rendering, or acoustic DSP playback.

@@ -45,6 +45,8 @@ Texture3D<float4> _AbyssalFlowFieldTexture;
 Texture3D<float4> _HectonBakedFogDensityFlowTexture;
 float4 _SunDirection;
 float4 _FinalGiantAbyssLight;
+float4 _H8AbyssAbsorptionColor;
+float4 _H8AbyssAtmosphereParams;
 
 struct PointLightDTO
 {
@@ -317,7 +319,9 @@ float3 ApplyWaterOpticsToScattering(float3 scatterColor, float3 samplePositionWS
     float3 sunDirection = SafeNormalize3(-_SunDirection.xyz, float3(0.0, -1.0, 0.0));
     float phase = PhaseHG(dot(sunDirection, -viewDir), _H8WaterOpticsScatteringCoefficientsRGB.w);
     float quality = WaterOpticsQualityWeight();
-    float3 opticsLight = max(_H8WaterOpticsDirectionalLightColorAndIntensity.rgb, _FinalGiantAbyssLight.rgb) *
+    float abyssDepthMask = SafeFiniteSaturate(_H8AbyssAbsorptionColor.w);
+    float3 abyssFloor = max(SafeFiniteColor(_H8AbyssAbsorptionColor.rgb, float3(0.0, 0.0, 0.0)), float3(0.0, 0.0, 0.0)) * abyssDepthMask;
+    float3 opticsLight = max(max(_H8WaterOpticsDirectionalLightColorAndIntensity.rgb, _FinalGiantAbyssLight.rgb), abyssFloor) *
         max(0.0, SafeFiniteScalar(_H8WaterOpticsDirectionalLightColorAndIntensity.w, 0.85));
     float3 inScatter = opticsLight * scatterRatio * (1.0 - transmittance) * phase * lerp(0.35, 1.85, quality);
     return SafeFiniteColor(lerp(scatterColor, scatterColor * transmittance + inScatter, blend), scatterColor);
@@ -379,7 +383,10 @@ float ResolveFogDensity(float3 samplePositionWS, float normalizedTravel, float s
     }
 
     float stratification = lerp(1.0, 0.38, SafeFiniteSaturate(normalizedTravel));
-    return max(0.0, SafeFiniteScalar(_HectonVolumetricFogColorAndDensity.w, 0.0)) * (SafeFiniteSaturate(densitySample) * stratification + max(0.0, SafeFiniteScalar(siltDensity, 0.0)));
+    float abyssFogBoost = max(0.0, SafeFiniteScalar(_H8AbyssAtmosphereParams.x, 0.0));
+    return max(0.0, SafeFiniteScalar(_HectonVolumetricFogColorAndDensity.w, 0.0)) *
+        (1.0 + abyssFogBoost) *
+        (SafeFiniteSaturate(densitySample) * stratification + max(0.0, SafeFiniteScalar(siltDensity, 0.0)));
 }
 
 float3 ResolvePointLightScattering(float3 samplePositionWS, float3 viewDir)
@@ -413,7 +420,11 @@ float3 ResolveDirectionalScattering(float3 viewDir)
     float3 sunDirection = SafeNormalize3(-_SunDirection.xyz, float3(0.0, -1.0, 0.0));
     float phase = PhaseHG(dot(sunDirection, -viewDir), _HectonVolumetricFogScatteringParams.z);
     float lightIntensity = max(SafeFiniteScalar(_FinalGiantAbyssLight.w, 0.08), 0.08);
-    float3 lightColor = max(SafeFiniteColor(_FinalGiantAbyssLight.rgb, float3(0.025, 0.055, 0.075)), float3(0.025, 0.055, 0.075));
+    float abyssDepthMask = SafeFiniteSaturate(_H8AbyssAbsorptionColor.w);
+    float3 abyssFloor = max(SafeFiniteColor(_H8AbyssAbsorptionColor.rgb, float3(0.0, 0.0, 0.0)), float3(0.0, 0.0, 0.0)) * abyssDepthMask;
+    float3 lightColor = max(
+        max(SafeFiniteColor(_FinalGiantAbyssLight.rgb, float3(0.025, 0.055, 0.075)), float3(0.025, 0.055, 0.075)),
+        abyssFloor);
     return lightColor * lightIntensity * phase;
 }
 
@@ -447,7 +458,9 @@ void BuildVolumetricFogGrid(uint3 dispatchThreadId : SV_DispatchThreadID)
     float3 samplePositionWS = cameraPositionWS + samplePositionLocal;
     float siltDensity = SampleMarineSnowDensity(screenUv);
     float density = ResolveFogDensity(samplePositionWS, normalizedTravel, siltDensity);
-    float3 fogColor = ResolveNoirFloorColor(_HectonVolumetricFogColorAndDensity.rgb);
+    float abyssDepthMask = SafeFiniteSaturate(_H8AbyssAbsorptionColor.w);
+    float3 abyssFloor = max(SafeFiniteColor(_H8AbyssAbsorptionColor.rgb, float3(0.0, 0.0, 0.0)), float3(0.0, 0.0, 0.0)) * abyssDepthMask;
+    float3 fogColor = max(ResolveNoirFloorColor(_HectonVolumetricFogColorAndDensity.rgb), abyssFloor);
     float scatterCoefficient = max(0.0, SafeFiniteScalar(_HectonVolumetricFogScatteringParams.x, 0.85));
     float3 localScatter = fogColor * scatterCoefficient + ResolveDirectionalScattering(rayDir) + ResolvePointLightScattering(samplePositionWS, rayDir);
     localScatter = ApplyWaterOpticsToScattering(localScatter, samplePositionWS, rayDir, travel);

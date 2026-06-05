@@ -1,0 +1,88 @@
+AGENT ID: 1806
+ROLE: SURFACE_ROUTE_ACTION_MANIFEST_BUILDER
+MODE: Independent Wave 02 static/data task. Do not wait for 1803-1805.
+
+PRIMARY GOAL
+Turn the completed 1801/1802 static reports into a concrete first-surface/photic-route action manifest that a later Unity visual implementer can use without re-reading the whole repo. The manifest must map route beats to exact scene objects, candidate assets, material families, required proof screenshots, and rejection gates.
+
+AUTHORITIES TO READ
+1. C:\hades\Hecton8\AGENTS.md
+2. C:\hades\Hecton8\PROJECT_BIBLES.md
+3. C:\hades\Hecton8\VISION_LOCKS.md
+4. C:\hades\Hecton8\TASTE.md
+5. C:\hades\Hecton8\quality.md
+6. C:\hades\Hecton8\world.md
+7. C:\hades\Hecton8\terrain.md
+8. C:\hades\Hecton8\water.md
+9. C:\hades\Hecton8\presentation.md
+10. C:\hades\Hecton8\Docs\Reports\Batch18\1801_WORLD_SURFACE_ROUTE_EVIDENCE.md
+11. C:\hades\Hecton8\Docs\Reports\Batch18\1802_SURFACE_SHALLOW_ASSET_INVENTORY.md
+
+RELEVANT MANDATES
+Choose 2-8 from .agents-skills before non-trivial work. Likely:
+- QA_Evidence_Text_Filter_Audit
+- REND_Terrain_VirtualTexturing
+- REND_URP_Graphics_HotPath_Optimization_HLOD
+- OPT_Cinematic_Cheat_Protocol_Visual_Fake_First
+- OPT_Performance_Budgets_FrameTime_VRAM_Limits
+- REND_Shader_Noir_Aesthetics_Dithering_Fog
+
+OWNED OUTPUTS
+- Docs/Tasks/Status_1806.md
+- Docs/AgentLogs/Rationale_1806.md for non-trivial decisions only
+- Docs/AgentLogs/LOG_1806.md
+- Docs/Reports/Batch18/1806_SURFACE_ROUTE_ACTION_MANIFEST.md
+- Docs/Reports/Batch18/1806_SURFACE_ROUTE_ACTION_MANIFEST.csv
+
+HARD RULES
+- No live Unity/editor control unless explicitly safe and needed; this task should be static.
+- Do not edit scenes, prefabs, materials, or assets.
+- Do not depend on unfinished 1803-1805.
+- Do not claim runtime quality, profiler, Frame Debugger, or Play Mode proof.
+- Do not invent object counts, path existence, line numbers, or material bindings.
+- Surface and 0-100 m route must be bright, readable, colorful, and beautiful. Depth darkness is not a fix.
+
+MANIFEST COLUMNS
+The CSV must include at least:
+- route_beat
+- player_moment
+- existing_scene_object_or_data
+- candidate_asset_or_material
+- current_static_state
+- visual_gap
+- gameplay_gap
+- optimization_risk
+- unity_action
+- proof_screenshot
+- proof_runtime_metric
+- compact_result
+- middle_result
+- high_result
+- ultra_result
+- rejection_gate
+- source_report_refs
+
+20 TASKS
+01. Create Status_1806.md with all tasks and proof labels.
+02. Read the required authority docs and selected mandates.
+03. Extract route beats from 1801: spawn, first surface look, waterline, Aegir/horizon, coastline, 0-30 m shallows, 30-100 m route, industrial trace, resource node, scrap, forward fabricator, return path.
+04. Extract candidate assets from 1802 for ocean, waterline foam, wet basalt, sky/Aegir, coral/kelp, industrial trace, UI/sonar.
+05. Inspect static path existence only when 1801/1802 claims need confirmation.
+06. Build the CSV manifest with proof labels.
+07. Build the Markdown report explaining the manifest and exact non-Unity boundary.
+08. Mark inactive candidates separately from active scene references.
+09. Mark WorldRuntime/procedural placeholders as rejected final references.
+10. Identify at least 8 Unity-slot actions that are concrete enough to execute.
+11. For each action, define screenshot proof and runtime metric proof.
+12. For each action, define Compact/Middle/High/Ultra consequences with Compact still attractive.
+13. Separate visual gaps from gameplay gaps and optimization risks.
+14. Add a "do not do" section: no dark-cover surface, no blind Crest camera enable, no path-existence quality claims.
+15. Add a "Unity implementer prompt" using only verified paths/candidates.
+16. Add a "visual QA prompt" with screenshot angles and rejection gates.
+17. Append LOG_1806.md with outputs and evidence class.
+18. Final scan: no fake runtime proof, no invented IDs, no dependency on unfinished siblings.
+19. Mark status as STATIC MANIFEST COMPLETE or BLOCKED BY MISSING STATIC EVIDENCE.
+20. If blocked, explain exact missing file/source and continue with partial verified manifest.
+
+ACCEPTANCE
+Done means a later Unity agent can open 1806 report/CSV and know exactly what to inspect/change/capture for the first surface route without reading 1801/1802 in full.

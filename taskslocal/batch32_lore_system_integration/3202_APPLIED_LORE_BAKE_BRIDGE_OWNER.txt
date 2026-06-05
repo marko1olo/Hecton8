@@ -1,0 +1,43 @@
+ID: 3202
+Role: APPLIED_LORE_BAKE_BRIDGE_OWNER
+
+Objective:
+Create the next safe bridge from production packets to future static data without breaking current AppliedLore validators or claiming DataMonolith readiness.
+
+Why this is needed:
+`P461_PACKET_CUSTODY_BRIDGE` and `P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE` exist as production drafts, but adding an authoritative `RS093_route_cards.csv` failed because these packets do not exist in the current AppliedLore source CSV/export rows. The bridge needs owner-correct ordering.
+
+Owned scope:
+- Docs/Lore/AppliedContent/production_packets/P461_PACKET_CUSTODY_BRIDGE.production.md
+- Docs/Lore/AppliedContent/production_packets/P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE.production.md
+- Docs/Lore/AppliedContent/release_sets/RS093_LORE_SYSTEM_INTEGRATION_BRIDGE.md
+- Docs/Lore/AppliedContent/release_sets/RS093_LORE_SYSTEM_INTEGRATION_BRIDGE_manifest.json
+- Tools/AppliedLore*.py and Assets/_SourceData/DataMonolith/Narrative/* only for inspection unless a safe source-generation route is proven.
+- Do not edit `static_data.h8bin`.
+
+Authority docs:
+AGENTS.md, authoring.md, data.md, localization.md, writing.md, quality.md, Docs/Lore/Lore_Content_System.md, Docs/Lore/Lore_Localization_Model.md.
+
+Tasks:
+1. Read authority and mandates from BATCH_INDEX.
+2. Inspect `Tools/AppliedLoreImporter.py`, `Tools/AppliedLorePageExporter.py`, `Tools/AppliedLoreRouteCardExporter.py`, and `Tools/AppliedLoreRuntimeAudit.py` enough to map source order.
+3. Inspect `Assets/_SourceData/DataMonolith/Narrative/applied_lore_packets.csv` and generated hash/export files. Do not edit until owner route is proven.
+4. Produce a source-order map: production packet -> packet JSON/source CSV -> page export -> route card export -> static_data.h8bin.
+5. Determine exactly where P461 and P462 must be added first for route card validation to accept them.
+6. If safe, create a source-only candidate patch that adds P461 and P462 to the correct authoring source without touching binary output. If not safe, write a blocker report.
+7. Do not add authoritative route_cards CSV until packet source row exists and source-only audit accepts packet ownership.
+8. Record DTO/layout implications if any source CSV export would affect runtime structs; evidence remains STATIC_SOURCE unless Unity/player proof exists.
+9. Run JSON/CSV parse validation for touched files.
+10. Report exact next bake command or editor tool path if found; do not run Unity/build.
+
+Proof packet:
+- Source-order map.
+- Exact blocker or patch.
+- Validation command output or timeout.
+- Evidence class for every claim.
+
+Rejection gates:
+- No direct binary edits.
+- No runtime markdown parser.
+- No authoritative CSV that points at absent packet rows.
+- No DataMonolith readiness claim from docs.

@@ -33,7 +33,7 @@
           "audio": "You were never the person who signed the lie. You knew the language that made it work.",
           "in_game_wiki": "The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.",
           "external_site": "The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.",
-          "field_note": "Use as dossier origin card and contract-start context."
+          "field_note": "The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible."
         },
         "ru_RU": {
           "title": "Запись полевого системного специалиста",
@@ -42,7 +42,7 @@
           "audio": "Ты не был тем, кто подписал ложь. Ты знал язык, на котором она работала.",
           "in_game_wiki": "Прошлое героя в Deep Reach практическое: field systems, evacuation hardware и procedure language. Вина начинается с узнавания, не с родни.",
           "external_site": "Игрок - бывший Deep Reach systems worker, ставший Marauder. Его опыт делает каждый broken pump, route stamp и liability phrase личным.",
-          "field_note": "Для dossier origin card и contract-start context."
+          "field_note": "Draft RU localization pending native pass. The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Field Systems Specialist Record",
@@ -51,7 +51,7 @@
           "audio": "Draft JA localization pending native pass. You were never the person who signed the lie. You knew the language that made it work.",
           "in_game_wiki": "Draft JA localization pending native pass. The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.",
           "external_site": "Draft JA localization pending native pass. The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.",
-          "field_note": "Draft JA localization pending native pass. Use as dossier origin card and contract-start context."
+          "field_note": "Draft JP localization pending native pass. The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Field Systems Specialist Record",
@@ -60,7 +60,7 @@
           "audio": "Draft ZH localization pending native pass. You were never the person who signed the lie. You knew the language that made it work.",
           "in_game_wiki": "Draft ZH localization pending native pass. The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.",
           "external_site": "Draft ZH localization pending native pass. The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.",
-          "field_note": "Draft ZH localization pending native pass. Use as dossier origin card and contract-start context."
+          "field_note": "Draft CN localization pending native pass. The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Field Systems Specialist Record",
@@ -69,7 +69,7 @@
           "audio": "Draft FR localization pending native pass. You were never the person who signed the lie. You knew the language that made it work.",
           "in_game_wiki": "Draft FR localization pending native pass. The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.",
           "external_site": "Draft FR localization pending native pass. The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.",
-          "field_note": "Draft FR localization pending native pass. Use as dossier origin card and contract-start context."
+          "field_note": "Draft FR localization pending native pass. The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Field Systems Specialist Record",
@@ -78,7 +78,7 @@
           "audio": "Draft ES localization pending native pass. You were never the person who signed the lie. You knew the language that made it work.",
           "in_game_wiki": "Draft ES localization pending native pass. The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.",
           "external_site": "Draft ES localization pending native pass. The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.",
-          "field_note": "Draft ES localization pending native pass. Use as dossier origin card and contract-start context."
+          "field_note": "Draft ES localization pending native pass. The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Field Systems Specialist Record",
@@ -87,7 +87,7 @@
           "audio": "Draft DE localization pending native pass. You were never the person who signed the lie. You knew the language that made it work.",
           "in_game_wiki": "Draft DE localization pending native pass. The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.",
           "external_site": "Draft DE localization pending native pass. The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.",
-          "field_note": "Draft DE localization pending native pass. Use as dossier origin card and contract-start context."
+          "field_note": "Draft DE localization pending native pass. The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Field Systems Specialist Record",
@@ -96,7 +96,7 @@
           "audio": "Draft PL localization pending native pass. You were never the person who signed the lie. You knew the language that made it work.",
           "in_game_wiki": "Draft PL localization pending native pass. The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.",
           "external_site": "Draft PL localization pending native pass. The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.",
-          "field_note": "Draft PL localization pending native pass. Use as dossier origin card and contract-start context."
+          "field_note": "Draft PL localization pending native pass. The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Field Systems Specialist Record",
@@ -105,7 +105,7 @@
           "audio": "Draft UK localization pending native pass. You were never the person who signed the lie. You knew the language that made it work.",
           "in_game_wiki": "Draft UK localization pending native pass. The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.",
           "external_site": "Draft UK localization pending native pass. The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.",
-          "field_note": "Draft UK localization pending native pass. Use as dossier origin card and contract-start context."
+          "field_note": "Draft UA localization pending native pass. The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Field Systems Specialist Record",
@@ -114,7 +114,7 @@
           "audio": "Draft AR localization pending native pass. You were never the person who signed the lie. You knew the language that made it work.",
           "in_game_wiki": "Draft AR localization pending native pass. The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.",
           "external_site": "Draft AR localization pending native pass. The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.",
-          "field_note": "Draft AR localization pending native pass. Use as dossier origin card and contract-start context."
+          "field_note": "Draft AR localization pending native pass. The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Field Systems Specialist Record",
@@ -123,7 +123,7 @@
           "audio": "Draft ID localization pending native pass. You were never the person who signed the lie. You knew the language that made it work.",
           "in_game_wiki": "Draft ID localization pending native pass. The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.",
           "external_site": "Draft ID localization pending native pass. The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.",
-          "field_note": "Draft ID localization pending native pass. Use as dossier origin card and contract-start context."
+          "field_note": "Draft ID localization pending native pass. The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Field Systems Specialist Record",
@@ -132,7 +132,7 @@
           "audio": "Draft KO localization pending native pass. You were never the person who signed the lie. You knew the language that made it work.",
           "in_game_wiki": "Draft KO localization pending native pass. The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.",
           "external_site": "Draft KO localization pending native pass. The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.",
-          "field_note": "Draft KO localization pending native pass. Use as dossier origin card and contract-start context."
+          "field_note": "Draft KO localization pending native pass. The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Field Systems Specialist Record",
@@ -141,7 +141,7 @@
           "audio": "Draft HE localization pending native pass. You were never the person who signed the lie. You knew the language that made it work.",
           "in_game_wiki": "Draft HE localization pending native pass. The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.",
           "external_site": "Draft HE localization pending native pass. The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.",
-          "field_note": "Draft HE localization pending native pass. Use as dossier origin card and contract-start context."
+          "field_note": "Draft HE localization pending native pass. The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Field Systems Specialist Record",
@@ -150,7 +150,7 @@
           "audio": "Draft PT localization pending native pass. You were never the person who signed the lie. You knew the language that made it work.",
           "in_game_wiki": "Draft PT localization pending native pass. The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.",
           "external_site": "Draft PT localization pending native pass. The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.",
-          "field_note": "Draft PT localization pending native pass. Use as dossier origin card and contract-start context."
+          "field_note": "Draft PT localization pending native pass. The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Field Systems Specialist Record",
@@ -159,7 +159,7 @@
           "audio": "Draft NL localization pending native pass. You were never the person who signed the lie. You knew the language that made it work.",
           "in_game_wiki": "Draft NL localization pending native pass. The protagonist's Deep Reach past is practical: field systems, evacuation hardware and procedure language. Their guilt begins as recognition, not blood relation.",
           "external_site": "Draft NL localization pending native pass. The player character is a former Deep Reach systems worker turned Marauder. Their expertise makes every broken pump, route stamp and liability phrase personal.",
-          "field_note": "Draft NL localization pending native pass. Use as dossier origin card and contract-start context."
+          "field_note": "Draft NL localization pending native pass. The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible."
         }
       }
     },
@@ -186,135 +186,135 @@
           "scanner": "Access trace matches old Deep Reach phrasing. Denial is written as maintenance.",
           "terminal": "LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.",
           "audio": "That is not security. That is a memo pretending to be a door.",
-          "in_game_wiki": "Revoked access becomes a narrative tool: the player cannot simply open Deep Reach systems, but they can recognize how the denial is worded.",
-          "external_site": "The protagonist's past gives HECTON-8 a specific investigative texture: old procedure language acts as both clue and barrier.",
-          "field_note": "Use on locks that hint at hidden liability without granting free access."
+          "in_game_wiki": "Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.",
+          "external_site": "The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.",
+          "field_note": "Lockout language hints at hidden liability without granting free access."
         },
         "ru_RU": {
           "title": "След языка отозванного доступа",
           "scanner": "Access trace совпадает со старой фразировкой Deep Reach. Denial написан как maintenance.",
           "terminal": "LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because former staff know them.",
           "audio": "Это не security. Это memo, притворяющийся дверью.",
-          "in_game_wiki": "Revoked access работает как инструмент сюжета: игрок не открывает Deep Reach системы бесплатно, но узнает язык отказа.",
-          "external_site": "Прошлое протагониста дает HECTON-8 точную investigative texture: old procedure language одновременно clue и barrier.",
-          "field_note": "Ставить на locks, которые намекают на liability без free access."
+          "in_game_wiki": "Draft RU localization pending native pass. Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.",
+          "external_site": "Draft RU localization pending native pass. The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.",
+          "field_note": "Draft RU localization pending native pass. Lockout language hints at hidden liability without granting free access."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Revoked Access Language Trace",
           "scanner": "Draft JA localization pending native pass. Access trace matches old Deep Reach phrasing. Denial is written as maintenance.",
           "terminal": "Draft JA localization pending native pass. LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.",
           "audio": "Draft JA localization pending native pass. That is not security. That is a memo pretending to be a door.",
-          "in_game_wiki": "Draft JA localization pending native pass. Revoked access becomes a narrative tool: the player cannot simply open Deep Reach systems, but they can recognize how the denial is worded.",
-          "external_site": "Draft JA localization pending native pass. The protagonist's past gives HECTON-8 a specific investigative texture: old procedure language acts as both clue and barrier.",
-          "field_note": "Draft JA localization pending native pass. Use on locks that hint at hidden liability without granting free access."
+          "in_game_wiki": "Draft JP localization pending native pass. Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.",
+          "external_site": "Draft JP localization pending native pass. The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.",
+          "field_note": "Draft JP localization pending native pass. Lockout language hints at hidden liability without granting free access."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Revoked Access Language Trace",
           "scanner": "Draft ZH localization pending native pass. Access trace matches old Deep Reach phrasing. Denial is written as maintenance.",
           "terminal": "Draft ZH localization pending native pass. LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.",
           "audio": "Draft ZH localization pending native pass. That is not security. That is a memo pretending to be a door.",
-          "in_game_wiki": "Draft ZH localization pending native pass. Revoked access becomes a narrative tool: the player cannot simply open Deep Reach systems, but they can recognize how the denial is worded.",
-          "external_site": "Draft ZH localization pending native pass. The protagonist's past gives HECTON-8 a specific investigative texture: old procedure language acts as both clue and barrier.",
-          "field_note": "Draft ZH localization pending native pass. Use on locks that hint at hidden liability without granting free access."
+          "in_game_wiki": "Draft CN localization pending native pass. Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.",
+          "external_site": "Draft CN localization pending native pass. The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.",
+          "field_note": "Draft CN localization pending native pass. Lockout language hints at hidden liability without granting free access."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Revoked Access Language Trace",
           "scanner": "Draft FR localization pending native pass. Access trace matches old Deep Reach phrasing. Denial is written as maintenance.",
           "terminal": "Draft FR localization pending native pass. LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.",
           "audio": "Draft FR localization pending native pass. That is not security. That is a memo pretending to be a door.",
-          "in_game_wiki": "Draft FR localization pending native pass. Revoked access becomes a narrative tool: the player cannot simply open Deep Reach systems, but they can recognize how the denial is worded.",
-          "external_site": "Draft FR localization pending native pass. The protagonist's past gives HECTON-8 a specific investigative texture: old procedure language acts as both clue and barrier.",
-          "field_note": "Draft FR localization pending native pass. Use on locks that hint at hidden liability without granting free access."
+          "in_game_wiki": "Draft FR localization pending native pass. Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.",
+          "external_site": "Draft FR localization pending native pass. The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.",
+          "field_note": "Draft FR localization pending native pass. Lockout language hints at hidden liability without granting free access."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Revoked Access Language Trace",
           "scanner": "Draft ES localization pending native pass. Access trace matches old Deep Reach phrasing. Denial is written as maintenance.",
           "terminal": "Draft ES localization pending native pass. LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.",
           "audio": "Draft ES localization pending native pass. That is not security. That is a memo pretending to be a door.",
-          "in_game_wiki": "Draft ES localization pending native pass. Revoked access becomes a narrative tool: the player cannot simply open Deep Reach systems, but they can recognize how the denial is worded.",
-          "external_site": "Draft ES localization pending native pass. The protagonist's past gives HECTON-8 a specific investigative texture: old procedure language acts as both clue and barrier.",
-          "field_note": "Draft ES localization pending native pass. Use on locks that hint at hidden liability without granting free access."
+          "in_game_wiki": "Draft ES localization pending native pass. Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.",
+          "external_site": "Draft ES localization pending native pass. The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.",
+          "field_note": "Draft ES localization pending native pass. Lockout language hints at hidden liability without granting free access."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Revoked Access Language Trace",
           "scanner": "Draft DE localization pending native pass. Access trace matches old Deep Reach phrasing. Denial is written as maintenance.",
           "terminal": "Draft DE localization pending native pass. LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.",
           "audio": "Draft DE localization pending native pass. That is not security. That is a memo pretending to be a door.",
-          "in_game_wiki": "Draft DE localization pending native pass. Revoked access becomes a narrative tool: the player cannot simply open Deep Reach systems, but they can recognize how the denial is worded.",
-          "external_site": "Draft DE localization pending native pass. The protagonist's past gives HECTON-8 a specific investigative texture: old procedure language acts as both clue and barrier.",
-          "field_note": "Draft DE localization pending native pass. Use on locks that hint at hidden liability without granting free access."
+          "in_game_wiki": "Draft DE localization pending native pass. Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.",
+          "external_site": "Draft DE localization pending native pass. The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.",
+          "field_note": "Draft DE localization pending native pass. Lockout language hints at hidden liability without granting free access."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Revoked Access Language Trace",
           "scanner": "Draft PL localization pending native pass. Access trace matches old Deep Reach phrasing. Denial is written as maintenance.",
           "terminal": "Draft PL localization pending native pass. LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.",
           "audio": "Draft PL localization pending native pass. That is not security. That is a memo pretending to be a door.",
-          "in_game_wiki": "Draft PL localization pending native pass. Revoked access becomes a narrative tool: the player cannot simply open Deep Reach systems, but they can recognize how the denial is worded.",
-          "external_site": "Draft PL localization pending native pass. The protagonist's past gives HECTON-8 a specific investigative texture: old procedure language acts as both clue and barrier.",
-          "field_note": "Draft PL localization pending native pass. Use on locks that hint at hidden liability without granting free access."
+          "in_game_wiki": "Draft PL localization pending native pass. Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.",
+          "external_site": "Draft PL localization pending native pass. The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.",
+          "field_note": "Draft PL localization pending native pass. Lockout language hints at hidden liability without granting free access."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Revoked Access Language Trace",
           "scanner": "Draft UK localization pending native pass. Access trace matches old Deep Reach phrasing. Denial is written as maintenance.",
           "terminal": "Draft UK localization pending native pass. LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.",
           "audio": "Draft UK localization pending native pass. That is not security. That is a memo pretending to be a door.",
-          "in_game_wiki": "Draft UK localization pending native pass. Revoked access becomes a narrative tool: the player cannot simply open Deep Reach systems, but they can recognize how the denial is worded.",
-          "external_site": "Draft UK localization pending native pass. The protagonist's past gives HECTON-8 a specific investigative texture: old procedure language acts as both clue and barrier.",
-          "field_note": "Draft UK localization pending native pass. Use on locks that hint at hidden liability without granting free access."
+          "in_game_wiki": "Draft UA localization pending native pass. Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.",
+          "external_site": "Draft UA localization pending native pass. The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.",
+          "field_note": "Draft UA localization pending native pass. Lockout language hints at hidden liability without granting free access."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Revoked Access Language Trace",
           "scanner": "Draft AR localization pending native pass. Access trace matches old Deep Reach phrasing. Denial is written as maintenance.",
           "terminal": "Draft AR localization pending native pass. LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.",
           "audio": "Draft AR localization pending native pass. That is not security. That is a memo pretending to be a door.",
-          "in_game_wiki": "Draft AR localization pending native pass. Revoked access becomes a narrative tool: the player cannot simply open Deep Reach systems, but they can recognize how the denial is worded.",
-          "external_site": "Draft AR localization pending native pass. The protagonist's past gives HECTON-8 a specific investigative texture: old procedure language acts as both clue and barrier.",
-          "field_note": "Draft AR localization pending native pass. Use on locks that hint at hidden liability without granting free access."
+          "in_game_wiki": "Draft AR localization pending native pass. Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.",
+          "external_site": "Draft AR localization pending native pass. The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.",
+          "field_note": "Draft AR localization pending native pass. Lockout language hints at hidden liability without granting free access."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Revoked Access Language Trace",
           "scanner": "Draft ID localization pending native pass. Access trace matches old Deep Reach phrasing. Denial is written as maintenance.",
           "terminal": "Draft ID localization pending native pass. LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.",
           "audio": "Draft ID localization pending native pass. That is not security. That is a memo pretending to be a door.",
-          "in_game_wiki": "Draft ID localization pending native pass. Revoked access becomes a narrative tool: the player cannot simply open Deep Reach systems, but they can recognize how the denial is worded.",
-          "external_site": "Draft ID localization pending native pass. The protagonist's past gives HECTON-8 a specific investigative texture: old procedure language acts as both clue and barrier.",
-          "field_note": "Draft ID localization pending native pass. Use on locks that hint at hidden liability without granting free access."
+          "in_game_wiki": "Draft ID localization pending native pass. Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.",
+          "external_site": "Draft ID localization pending native pass. The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.",
+          "field_note": "Draft ID localization pending native pass. Lockout language hints at hidden liability without granting free access."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Revoked Access Language Trace",
           "scanner": "Draft KO localization pending native pass. Access trace matches old Deep Reach phrasing. Denial is written as maintenance.",
           "terminal": "Draft KO localization pending native pass. LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.",
           "audio": "Draft KO localization pending native pass. That is not security. That is a memo pretending to be a door.",
-          "in_game_wiki": "Draft KO localization pending native pass. Revoked access becomes a narrative tool: the player cannot simply open Deep Reach systems, but they can recognize how the denial is worded.",
-          "external_site": "Draft KO localization pending native pass. The protagonist's past gives HECTON-8 a specific investigative texture: old procedure language acts as both clue and barrier.",
-          "field_note": "Draft KO localization pending native pass. Use on locks that hint at hidden liability without granting free access."
+          "in_game_wiki": "Draft KO localization pending native pass. Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.",
+          "external_site": "Draft KO localization pending native pass. The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.",
+          "field_note": "Draft KO localization pending native pass. Lockout language hints at hidden liability without granting free access."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Revoked Access Language Trace",
           "scanner": "Draft HE localization pending native pass. Access trace matches old Deep Reach phrasing. Denial is written as maintenance.",
           "terminal": "Draft HE localization pending native pass. LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.",
           "audio": "Draft HE localization pending native pass. That is not security. That is a memo pretending to be a door.",
-          "in_game_wiki": "Draft HE localization pending native pass. Revoked access becomes a narrative tool: the player cannot simply open Deep Reach systems, but they can recognize how the denial is worded.",
-          "external_site": "Draft HE localization pending native pass. The protagonist's past gives HECTON-8 a specific investigative texture: old procedure language acts as both clue and barrier.",
-          "field_note": "Draft HE localization pending native pass. Use on locks that hint at hidden liability without granting free access."
+          "in_game_wiki": "Draft HE localization pending native pass. Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.",
+          "external_site": "Draft HE localization pending native pass. The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.",
+          "field_note": "Draft HE localization pending native pass. Lockout language hints at hidden liability without granting free access."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Revoked Access Language Trace",
           "scanner": "Draft PT localization pending native pass. Access trace matches old Deep Reach phrasing. Denial is written as maintenance.",
           "terminal": "Draft PT localization pending native pass. LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.",
           "audio": "Draft PT localization pending native pass. That is not security. That is a memo pretending to be a door.",
-          "in_game_wiki": "Draft PT localization pending native pass. Revoked access becomes a narrative tool: the player cannot simply open Deep Reach systems, but they can recognize how the denial is worded.",
-          "external_site": "Draft PT localization pending native pass. The protagonist's past gives HECTON-8 a specific investigative texture: old procedure language acts as both clue and barrier.",
-          "field_note": "Draft PT localization pending native pass. Use on locks that hint at hidden liability without granting free access."
+          "in_game_wiki": "Draft PT localization pending native pass. Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.",
+          "external_site": "Draft PT localization pending native pass. The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.",
+          "field_note": "Draft PT localization pending native pass. Lockout language hints at hidden liability without granting free access."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Revoked Access Language Trace",
           "scanner": "Draft NL localization pending native pass. Access trace matches old Deep Reach phrasing. Denial is written as maintenance.",
           "terminal": "Draft NL localization pending native pass. LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.",
           "audio": "Draft NL localization pending native pass. That is not security. That is a memo pretending to be a door.",
-          "in_game_wiki": "Draft NL localization pending native pass. Revoked access becomes a narrative tool: the player cannot simply open Deep Reach systems, but they can recognize how the denial is worded.",
-          "external_site": "Draft NL localization pending native pass. The protagonist's past gives HECTON-8 a specific investigative texture: old procedure language acts as both clue and barrier.",
-          "field_note": "Draft NL localization pending native pass. Use on locks that hint at hidden liability without granting free access."
+          "in_game_wiki": "Draft NL localization pending native pass. Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.",
+          "external_site": "Draft NL localization pending native pass. The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.",
+          "field_note": "Draft NL localization pending native pass. Lockout language hints at hidden liability without granting free access."
         }
       }
     },
@@ -498,7 +498,7 @@
           "audio": "This was not kidnapping. It was the kind of choice the frontier sells as freedom.",
           "in_game_wiki": "The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.",
           "external_site": "HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.",
-          "field_note": "Use as contract/dossier text, not as runtime economy tuning."
+          "field_note": "The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded."
         },
         "ru_RU": {
           "title": "Долг и blacklist как давление контракта",
@@ -507,7 +507,7 @@
           "audio": "Это не похищение. Это выбор, который frontier продает как свободу.",
           "in_game_wiki": "Игрок стартует как профессиональный Marauder под финансовым и юридическим давлением. Это заземляет контракт и не делает героя беспомощным.",
           "external_site": "HECTON-8 описывает протагониста через экономику фронтира: debt, blacklists, claim pools и старый corporate access.",
-          "field_note": "Использовать как contract/dossier text, не как runtime economy tuning."
+          "field_note": "Draft RU localization pending native pass. The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Debt Blacklist Contract Pressure",
@@ -516,7 +516,7 @@
           "audio": "Draft JA localization pending native pass. This was not kidnapping. It was the kind of choice the frontier sells as freedom.",
           "in_game_wiki": "Draft JA localization pending native pass. The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.",
           "external_site": "Draft JA localization pending native pass. HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.",
-          "field_note": "Draft JA localization pending native pass. Use as contract/dossier text, not as runtime economy tuning."
+          "field_note": "Draft JP localization pending native pass. The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Debt Blacklist Contract Pressure",
@@ -525,7 +525,7 @@
           "audio": "Draft ZH localization pending native pass. This was not kidnapping. It was the kind of choice the frontier sells as freedom.",
           "in_game_wiki": "Draft ZH localization pending native pass. The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.",
           "external_site": "Draft ZH localization pending native pass. HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.",
-          "field_note": "Draft ZH localization pending native pass. Use as contract/dossier text, not as runtime economy tuning."
+          "field_note": "Draft CN localization pending native pass. The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Debt Blacklist Contract Pressure",
@@ -534,7 +534,7 @@
           "audio": "Draft FR localization pending native pass. This was not kidnapping. It was the kind of choice the frontier sells as freedom.",
           "in_game_wiki": "Draft FR localization pending native pass. The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.",
           "external_site": "Draft FR localization pending native pass. HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.",
-          "field_note": "Draft FR localization pending native pass. Use as contract/dossier text, not as runtime economy tuning."
+          "field_note": "Draft FR localization pending native pass. The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Debt Blacklist Contract Pressure",
@@ -543,7 +543,7 @@
           "audio": "Draft ES localization pending native pass. This was not kidnapping. It was the kind of choice the frontier sells as freedom.",
           "in_game_wiki": "Draft ES localization pending native pass. The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.",
           "external_site": "Draft ES localization pending native pass. HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.",
-          "field_note": "Draft ES localization pending native pass. Use as contract/dossier text, not as runtime economy tuning."
+          "field_note": "Draft ES localization pending native pass. The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Debt Blacklist Contract Pressure",
@@ -552,7 +552,7 @@
           "audio": "Draft DE localization pending native pass. This was not kidnapping. It was the kind of choice the frontier sells as freedom.",
           "in_game_wiki": "Draft DE localization pending native pass. The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.",
           "external_site": "Draft DE localization pending native pass. HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.",
-          "field_note": "Draft DE localization pending native pass. Use as contract/dossier text, not as runtime economy tuning."
+          "field_note": "Draft DE localization pending native pass. The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Debt Blacklist Contract Pressure",
@@ -561,7 +561,7 @@
           "audio": "Draft PL localization pending native pass. This was not kidnapping. It was the kind of choice the frontier sells as freedom.",
           "in_game_wiki": "Draft PL localization pending native pass. The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.",
           "external_site": "Draft PL localization pending native pass. HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.",
-          "field_note": "Draft PL localization pending native pass. Use as contract/dossier text, not as runtime economy tuning."
+          "field_note": "Draft PL localization pending native pass. The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Debt Blacklist Contract Pressure",
@@ -570,7 +570,7 @@
           "audio": "Draft UK localization pending native pass. This was not kidnapping. It was the kind of choice the frontier sells as freedom.",
           "in_game_wiki": "Draft UK localization pending native pass. The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.",
           "external_site": "Draft UK localization pending native pass. HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.",
-          "field_note": "Draft UK localization pending native pass. Use as contract/dossier text, not as runtime economy tuning."
+          "field_note": "Draft UA localization pending native pass. The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Debt Blacklist Contract Pressure",
@@ -579,7 +579,7 @@
           "audio": "Draft AR localization pending native pass. This was not kidnapping. It was the kind of choice the frontier sells as freedom.",
           "in_game_wiki": "Draft AR localization pending native pass. The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.",
           "external_site": "Draft AR localization pending native pass. HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.",
-          "field_note": "Draft AR localization pending native pass. Use as contract/dossier text, not as runtime economy tuning."
+          "field_note": "Draft AR localization pending native pass. The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Debt Blacklist Contract Pressure",
@@ -588,7 +588,7 @@
           "audio": "Draft ID localization pending native pass. This was not kidnapping. It was the kind of choice the frontier sells as freedom.",
           "in_game_wiki": "Draft ID localization pending native pass. The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.",
           "external_site": "Draft ID localization pending native pass. HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.",
-          "field_note": "Draft ID localization pending native pass. Use as contract/dossier text, not as runtime economy tuning."
+          "field_note": "Draft ID localization pending native pass. The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Debt Blacklist Contract Pressure",
@@ -597,7 +597,7 @@
           "audio": "Draft KO localization pending native pass. This was not kidnapping. It was the kind of choice the frontier sells as freedom.",
           "in_game_wiki": "Draft KO localization pending native pass. The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.",
           "external_site": "Draft KO localization pending native pass. HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.",
-          "field_note": "Draft KO localization pending native pass. Use as contract/dossier text, not as runtime economy tuning."
+          "field_note": "Draft KO localization pending native pass. The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Debt Blacklist Contract Pressure",
@@ -606,7 +606,7 @@
           "audio": "Draft HE localization pending native pass. This was not kidnapping. It was the kind of choice the frontier sells as freedom.",
           "in_game_wiki": "Draft HE localization pending native pass. The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.",
           "external_site": "Draft HE localization pending native pass. HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.",
-          "field_note": "Draft HE localization pending native pass. Use as contract/dossier text, not as runtime economy tuning."
+          "field_note": "Draft HE localization pending native pass. The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Debt Blacklist Contract Pressure",
@@ -615,7 +615,7 @@
           "audio": "Draft PT localization pending native pass. This was not kidnapping. It was the kind of choice the frontier sells as freedom.",
           "in_game_wiki": "Draft PT localization pending native pass. The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.",
           "external_site": "Draft PT localization pending native pass. HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.",
-          "field_note": "Draft PT localization pending native pass. Use as contract/dossier text, not as runtime economy tuning."
+          "field_note": "Draft PT localization pending native pass. The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Debt Blacklist Contract Pressure",
@@ -624,7 +624,7 @@
           "audio": "Draft NL localization pending native pass. This was not kidnapping. It was the kind of choice the frontier sells as freedom.",
           "in_game_wiki": "Draft NL localization pending native pass. The player starts as a professional Marauder under financial and legal pressure. That keeps the contract grounded without making the protagonist helpless.",
           "external_site": "Draft NL localization pending native pass. HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.",
-          "field_note": "Draft NL localization pending native pass. Use as contract/dossier text, not as runtime economy tuning."
+          "field_note": "Draft NL localization pending native pass. The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded."
         }
       }
     },

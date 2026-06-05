@@ -94,8 +94,8 @@ namespace Hecton8.EditorTools
 
             if (metrics.RealFinalCount <= 0 && metrics.PlaceholderFinalCount > 0)
             {
-                Debug.LogWarning($"[WorldProceduralStructuralFinalValidator] {record.AssetPath}: only placeholder structural finals are linked.");
-                warningCount++;
+                Debug.LogError($"[WorldProceduralStructuralFinalValidator] {record.AssetPath}: only placeholder structural finals are linked. Structural scatter requires real final prefabs.");
+                errorCount++;
             }
             else if (metrics.RealFinalCount <= 0)
             {
@@ -110,12 +110,23 @@ namespace Hecton8.EditorTools
                     continue;
 
                 if (WorldProceduralPlaceholderAuthoring.IsPlaceholderFinalVariant(variant))
+                {
+                    Debug.LogError($"[WorldProceduralStructuralFinalValidator] {record.AssetPath}: structural variant '{variant.variantId}' is final-ready but still points at procedural placeholder prefab '{AssetDatabase.GetAssetPath(variant.prefab)}'.");
+                    errorCount++;
                     continue;
+                }
+
+                if (WorldProceduralFinalPrefabQualityGate.UsesUnityBuiltInPrimitiveMesh(variant.prefab))
+                {
+                    Debug.LogError($"[WorldProceduralStructuralFinalValidator] {record.AssetPath}: structural variant '{variant.variantId}' uses Unity built-in primitive mesh ids in prefab '{AssetDatabase.GetAssetPath(variant.prefab)}'.");
+                    errorCount++;
+                    continue;
+                }
 
                 GameObject prefab = variant.prefab;
                 string prefabPath = AssetDatabase.GetAssetPath(prefab);
                 Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>(true);
-            HashSet<Material> inspectedMaterials = new HashSet<Material>(32);
+                HashSet<Material> inspectedMaterials = new HashSet<Material>(32);
                 if (renderers == null || renderers.Length <= 0)
                 {
                     Debug.LogError($"[WorldProceduralStructuralFinalValidator] {record.AssetPath}: structural variant '{variant.variantId}' has no renderers in prefab '{prefabPath}'.");

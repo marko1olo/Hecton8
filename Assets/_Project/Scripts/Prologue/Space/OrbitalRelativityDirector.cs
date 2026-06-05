@@ -24,6 +24,8 @@ namespace Hecton8.Prologue.Space
     {
         private int _signalPushDropCount;
         private const int TelemetryCapacity = 300;
+        private const int OrbitalTelemetryEntrySizeBytes = 64;
+        private const int NativeDtoAlignmentBytes = 8;
         private const int ControlDrainLimit = 8;
         private const uint SourceHash = PrologueSignalSourceHashes.OrbitalRelativityDirector;
         private const uint PlasmaRoarHash = 0x504C415Au; // PLAZ
@@ -39,6 +41,11 @@ namespace Hecton8.Prologue.Space
         private const int MathLodHysteresisFrames = 3;
         private const float MinimumEclipseLightFloor01 = 0.18f;
         private const float ShaderGlobalEpsilonSq = 0.00000001f;
+        private const float CameraPressureAmplitudeScale = 0.54f;
+        private const float CameraPressureTranslationGain = 0.22f;
+        private const float CameraPressureRotationGain = 0.76f;
+        private const float CameraPressureNormalPriorityThreshold = 0.28f;
+        private const float CameraPressureHighPriorityThreshold = 0.72f;
         private const string DumpFileName = "Dump_ORBITAL_MECHANICS_DIRECTOR.bin";
         private const SystemID OwnerSystemId = SystemID.CoreBridge;
         private const BufferID TelemetryRingBufferId = (BufferID)0x4F524241; // "ORBA"
@@ -54,9 +61,15 @@ namespace Hecton8.Prologue.Space
         private static readonly int _aegirPlanetCenterRadiusId = Shader.PropertyToID("_H8AegirPlanetCenterRadius");
         private static readonly int _aegirRingPlaneInnerId = Shader.PropertyToID("_H8AegirRingPlaneInner");
         private static readonly int _aegirOrbitScalarsId = Shader.PropertyToID("_H8AegirOrbitScalars");
+        private static readonly int _aegirFlowPhaseId = Shader.PropertyToID("_H8AegirFlowPhase");
+        private static readonly int _aegirFlowPhaseValidId = Shader.PropertyToID("_H8AegirFlowPhaseValid");
         private static readonly int _globalQualityWeightId = Shader.PropertyToID("_H8GlobalQualityWeight");
         private static readonly int _legacySunDirectionId = Shader.PropertyToID("_SunDirection");
         private static readonly int _legacyAegirDirectionId = Shader.PropertyToID("_AegirDirection");
+        private static readonly int _orbitalTelemetryEntryRuntimeSizeBytes = UnsafeUtility.SizeOf<OrbitalTelemetryEntry>();
+        private static readonly bool _orbitalTelemetryLayoutValid =
+            _orbitalTelemetryEntryRuntimeSizeBytes == OrbitalTelemetryEntrySizeBytes &&
+            (_orbitalTelemetryEntryRuntimeSizeBytes & (NativeDtoAlignmentBytes - 1)) == 0;
         private static readonly float3 s_defaultSunDirection = new float3(-0.38f, -0.72f, 0.58f);
         private static readonly float3 s_defaultAegirDirection = new float3(-0.38f, -0.18f, 0.905f);
         private static readonly float3 s_defaultRingPlaneNormal = new float3(0.16f, 0.93f, 0.33f);
@@ -158,6 +171,9 @@ namespace Hecton8.Prologue.Space
         private AcousticPingSignal _pendingPlasmaAudioSignal;
         private bool _pendingHapticSignalDirty;
         private HapticRequest _pendingHapticSignal;
+        private bool _pendingCameraPressureSignalDirty;
+        private StreamingTurbulenceSignal _pendingCameraPressureSignal;
+        private byte _pendingCameraPressurePriority;
         private Quaternion _capsuleLockedRotation = Quaternion.identity;
         private float3 _capsuleLeadingEdgeLocalNormalized = new float3(0f, -1f, 0f);
         private IDataVault _dataVault;
@@ -170,7 +186,10 @@ namespace Hecton8.Prologue.Space
         private CelestialParametersDTO _uploadedCelestialParameters;
         private bool _presentationShaderGlobalsUploaded;
         private bool _celestialParametersUploaded;
+        private bool _aegirFlowPhaseUploaded;
         private float _eclipseOcclusionSmoothed;
+        private float _aegirFlowPhase;
+        private float _uploadedAegirFlowPhase = -1f;
         private OrbitalDirectorSnapshot _snapshot;
         private AbsoluteUniversePosition _originAup;
 
@@ -342,17 +361,7 @@ namespace Hecton8.Prologue.Space
 
         private void ReleaseRuntimeAuthority()
         {
-            if (_registeredUpdate)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-                _registeredUpdate = false;
-            }
-
-            if (_registeredLateFrame)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-                _registeredLateFrame = false;
-            }
+            UnregisterDispatcherLanes();
 
             _pendingOrbitalPresentation = false;
             _pendingOrbitalShaderClear = false;
@@ -362,6 +371,9 @@ namespace Hecton8.Prologue.Space
             _pendingPlasmaAudioSignal = default;
             _pendingHapticSignalDirty = false;
             _pendingHapticSignal = default;
+            _pendingCameraPressureSignalDirty = false;
+            _pendingCameraPressureSignal = default;
+            _pendingCameraPressurePriority = CameraJuiceSignals.LowPriority;
 
             TryUnregisterHotSwapListener();
 
@@ -546,6 +558,21 @@ namespace Hecton8.Prologue.Space
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
+        private void UnregisterDispatcherLanes()
+        {
+            if (_registeredUpdate)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registeredUpdate = false;
+            }
+
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
+        }
+
         private void TryRegisterHotSwapListener()
         {
             if (_registeredHotSwapListener || !_serviceRegistered || _aborted || !Application.isPlaying)
@@ -565,6 +592,12 @@ namespace Hecton8.Prologue.Space
 
         private bool EnsureTelemetry()
         {
+            if (!_orbitalTelemetryLayoutValid)
+            {
+                ClearTelemetryDescriptor();
+                return false;
+            }
+
             IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
@@ -576,7 +609,7 @@ namespace Hecton8.Prologue.Space
             }
 
             if (IsVaultHandleCreated(in _telemetryRingHandle) &&
-                vault.TryResolveHandle(in _telemetryRingHandle, out NativeArray<OrbitalTelemetryEntry> currentRing) &&
+                vault.TryReadOnlyHandle(in _telemetryRingHandle, out NativeArray<OrbitalTelemetryEntry>.ReadOnly currentRing) &&
                 currentRing.IsCreated &&
                 currentRing.Length >= TelemetryCapacity)
             {
@@ -587,7 +620,7 @@ namespace Hecton8.Prologue.Space
             if (vault.TryGetGenerationHandle(
                     TelemetryRingBufferId,
                     out VaultGenerationHandle<OrbitalTelemetryEntry> existing) &&
-                vault.TryResolveHandle(in existing, out NativeArray<OrbitalTelemetryEntry> existingRing) &&
+                vault.TryReadOnlyHandle(in existing, out NativeArray<OrbitalTelemetryEntry>.ReadOnly existingRing) &&
                 existingRing.IsCreated &&
                 existingRing.Length >= TelemetryCapacity)
             {
@@ -604,7 +637,7 @@ namespace Hecton8.Prologue.Space
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
             if (!IsVaultHandleCreated(in acquired) ||
-                !vault.TryResolveHandle(in acquired, out NativeArray<OrbitalTelemetryEntry> acquiredRing) ||
+                !vault.TryReadOnlyHandle(in acquired, out NativeArray<OrbitalTelemetryEntry>.ReadOnly acquiredRing) ||
                 !acquiredRing.IsCreated ||
                 acquiredRing.Length < TelemetryCapacity)
             {
@@ -630,6 +663,13 @@ namespace Hecton8.Prologue.Space
             _audioTimer = 0f;
             _hapticTimer = 0f;
             _presentationDeltaTime = 0f;
+            _pendingPlasmaAudioSignalDirty = false;
+            _pendingPlasmaAudioSignal = default;
+            _pendingHapticSignalDirty = false;
+            _pendingHapticSignal = default;
+            _pendingCameraPressureSignalDirty = false;
+            _pendingCameraPressureSignal = default;
+            _pendingCameraPressurePriority = CameraJuiceSignals.LowPriority;
             _sequence = 0u;
             _handoffEmitted = false;
             _telemetryDumped = false;
@@ -641,10 +681,13 @@ namespace Hecton8.Prologue.Space
             _mathLodCandidateFrames = 0;
             _mathLodShader = 0f;
             _eclipseOcclusionSmoothed = 0f;
+            _aegirFlowPhase = 0f;
             _presentationShaderGlobalsUploaded = false;
             _uploadedPresentationShaderGlobals = default;
             _celestialParametersUploaded = false;
             _uploadedCelestialParameters = default;
+            _aegirFlowPhaseUploaded = false;
+            _uploadedAegirFlowPhase = -1f;
             PublishSnapshot();
             if (applyPresentation)
                 QueueOrbitalPresentation();
@@ -769,6 +812,7 @@ namespace Hecton8.Prologue.Space
 
             UploadPresentationShaderGlobalsIfDirty();
             UploadCelestialGlobalsIfDirty();
+            UploadAegirFlowPhaseIfDirty();
             ApplyEclipseLighting(_celestialParameters.SunDirection.w);
         }
 
@@ -812,6 +856,7 @@ namespace Hecton8.Prologue.Space
             float ringOuter = math.max(ringInner + 0.01f, aegirRingOuterRadius);
             float quality = ResolveQuality01();
             float flowSpeed = math.max(0f, aegirBandFlowSpeed);
+            _aegirFlowPhase = ResolveAegirFlowPhase(_aegirFlowPhase, flowSpeed, quality, _presentationDeltaTime);
 
             _celestialParameters.SunDirection.x = sunDirection.x;
             _celestialParameters.SunDirection.y = sunDirection.y;
@@ -863,6 +908,17 @@ namespace Hecton8.Prologue.Space
 
             _uploadedCelestialParameters = _celestialParameters;
             _celestialParametersUploaded = true;
+        }
+
+        private void UploadAegirFlowPhaseIfDirty()
+        {
+            if (_aegirFlowPhaseUploaded && math.abs(_uploadedAegirFlowPhase - _aegirFlowPhase) <= 0.000001f)
+                return;
+
+            Shader.SetGlobalFloat(_aegirFlowPhaseId, _aegirFlowPhase);
+            Shader.SetGlobalFloat(_aegirFlowPhaseValidId, 1f);
+            _uploadedAegirFlowPhase = _aegirFlowPhase;
+            _aegirFlowPhaseUploaded = true;
         }
 
         private static bool PresentationShaderGlobalsChanged(PresentationShaderGlobalsDTO lhs, PresentationShaderGlobalsDTO rhs)
@@ -987,6 +1043,14 @@ namespace Hecton8.Prologue.Space
             return math.saturate(math.select(1f, quality, math.isfinite(quality)));
         }
 
+        private static float ResolveAegirFlowPhase(float currentPhase, float flowSpeed, float quality01, float deltaTime)
+        {
+            float safePhase = math.isfinite(currentPhase) ? currentPhase : 0f;
+            float safeDelta = math.max(0f, math.select(0f, deltaTime, math.isfinite(deltaTime)));
+            float cadence = math.max(0f, flowSpeed) * math.lerp(0.35f, 1.25f, math.saturate(quality01));
+            return math.frac(safePhase + safeDelta * cadence);
+        }
+
         private static float TriangleWaveSigned(float phase)
         {
             float t = math.frac(phase);
@@ -1014,15 +1078,10 @@ namespace Hecton8.Prologue.Space
             {
                 _cameraJuiceTimer = math.max(0.02f, cameraJuiceIntervalSeconds);
                 float turbulence01 = UniverseSpeed01() * math.saturate(0.25f + _reentryHeat01 * 0.75f);
-                CameraJuiceSignals.TryPublishImpact(turbulence01, Vector3.zero, Vector3.down);
-                StreamingTurbulenceSignal turbulence = default;
-                turbulence.Intensity01 = turbulence01;
-                turbulence.Debt01 = _reentryHeat01;
-                turbulence.DurationSeconds = cameraJuiceIntervalSeconds;
-                turbulence.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
-                turbulence.SourceHash = SourceHash;
-                turbulence.Sequence = _sequence;
-                SignalBus<StreamingTurbulenceSignal>.TryPushTracked(in turbulence, ref _signalPushDropCount);
+                byte cameraPriority = turbulence01 >= CameraPressureHighPriorityThreshold
+                    ? CameraJuiceSignals.HighPriority
+                    : (turbulence01 >= CameraPressureNormalPriorityThreshold ? CameraJuiceSignals.NormalPriority : CameraJuiceSignals.LowPriority);
+                QueueCameraPressureFeedback(turbulence01, _reentryHeat01, cameraJuiceIntervalSeconds, cameraPriority);
             }
 
             if (reentry && _audioTimer <= 0f)
@@ -1090,8 +1149,46 @@ namespace Hecton8.Prologue.Space
             _pendingHapticSignalDirty = true;
         }
 
+        private void QueueCameraPressureFeedback(
+            float intensity01,
+            float debt01,
+            float durationSeconds,
+            byte priority)
+        {
+            StreamingTurbulenceSignal signal = default;
+            signal.Intensity01 = math.saturate(math.select(0f, intensity01, math.isfinite(intensity01)));
+            signal.Debt01 = math.saturate(math.select(0f, debt01, math.isfinite(debt01)));
+            signal.DurationSeconds = math.max(0.02f, math.select(0.02f, durationSeconds, math.isfinite(durationSeconds)));
+            signal.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
+            signal.SourceHash = SourceHash;
+            signal.Sequence = _sequence;
+            _pendingCameraPressureSignal = signal;
+            _pendingCameraPressurePriority = priority;
+            _pendingCameraPressureSignalDirty = true;
+        }
+
         private void FlushQueuedFeedbackSignals()
         {
+            if (_pendingCameraPressureSignalDirty)
+            {
+                _pendingCameraPressureSignalDirty = false;
+                StreamingTurbulenceSignal signal = _pendingCameraPressureSignal;
+                CameraJuiceSignals.TryPublishImpact(
+                    signal.Intensity01,
+                    Vector3.zero,
+                    Vector3.down,
+                    CameraJuiceSignals.ContinuousPressureStressProfileHash,
+                    CameraPressureAmplitudeScale,
+                    _pendingCameraPressurePriority,
+                    0f,
+                    CameraPressureTranslationGain,
+                    CameraPressureRotationGain,
+                    SourceHash);
+                SignalBus<StreamingTurbulenceSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
+                _pendingCameraPressureSignal = default;
+                _pendingCameraPressurePriority = CameraJuiceSignals.LowPriority;
+            }
+
             if (_pendingPlasmaAudioSignalDirty)
             {
                 _pendingPlasmaAudioSignalDirty = false;
@@ -1184,8 +1281,7 @@ namespace Hecton8.Prologue.Space
                 if (ReferenceEquals(previousService, currentService))
                     return;
 
-                _registeredUpdate = false;
-                _registeredLateFrame = false;
+                UnregisterDispatcherLanes();
                 if (currentService != null && isActiveAndEnabled)
                     TryRegisterUpdateLane();
                 return;
@@ -1243,7 +1339,23 @@ namespace Hecton8.Prologue.Space
 
         private void RecordTelemetry()
         {
+            if (!_orbitalTelemetryLayoutValid)
+                return;
+
             IDataVault vault = _dataVault;
+            byte mathLod = _mathLod == byte.MaxValue ? MathLodImpostor : _mathLod;
+            OrbitalTelemetryEntry entry = default;
+            entry.UniverseVelocity = _universeVelocity;
+            entry.PlanetDistanceMeters = _distanceMeters;
+            entry.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
+            entry.StateHash = HashState(_universeVelocity, _distanceMeters, _reentryHeat01, _cloudWhiteout01);
+            entry.ReentryHeat01 = _reentryHeat01;
+            entry.CloudWhiteout01 = _cloudWhiteout01;
+            entry.Sequence = unchecked((ushort)_sequence);
+            entry.MathLod = mathLod;
+            entry.Flags = (byte)((_handoffEmitted ? 1 : 0) | (_aborted ? 2 : 0));
+            int telemetryIndex = math.clamp(_telemetryCursor, 0, TelemetryCapacity - 1);
+            int nextTelemetryCursor = (telemetryIndex + 1) % TelemetryCapacity;
             if (vault == null ||
                 !IsVaultHandleCreated(in _telemetryRingHandle) ||
                 !vault.TryAcquireWriteLock(in _telemetryRingHandle, OwnerSystemId, out NativeArray<OrbitalTelemetryEntry> telemetryRing))
@@ -1256,18 +1368,8 @@ namespace Hecton8.Prologue.Space
                 if (!telemetryRing.IsCreated || telemetryRing.Length < TelemetryCapacity)
                     return;
 
-                OrbitalTelemetryEntry entry = default;
-                entry.UniverseVelocity = _universeVelocity;
-                entry.PlanetDistanceMeters = _distanceMeters;
-                entry.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
-                entry.StateHash = HashState(_universeVelocity, _distanceMeters, _reentryHeat01, _cloudWhiteout01);
-                entry.ReentryHeat01 = _reentryHeat01;
-                entry.CloudWhiteout01 = _cloudWhiteout01;
-                entry.Sequence = unchecked((ushort)_sequence);
-                entry.MathLod = _mathLod == byte.MaxValue ? MathLodImpostor : _mathLod;
-                entry.Flags = (byte)((_handoffEmitted ? 1 : 0) | (_aborted ? 2 : 0));
-                telemetryRing[_telemetryCursor] = entry;
-                _telemetryCursor = (_telemetryCursor + 1) % telemetryRing.Length;
+                telemetryRing[telemetryIndex] = entry;
+                _telemetryCursor = nextTelemetryCursor;
             }
             finally
             {
@@ -1277,7 +1379,8 @@ namespace Hecton8.Prologue.Space
 
         private void DumpTelemetry(byte reason)
         {
-            if (_telemetryDumped ||
+            if (!_orbitalTelemetryLayoutValid ||
+                _telemetryDumped ||
                 !TryReadTelemetryRing(out NativeArray<OrbitalTelemetryEntry>.ReadOnly telemetryRing))
             {
                 return;
@@ -1372,6 +1475,9 @@ namespace Hecton8.Prologue.Space
         private bool TryReadTelemetryRing(out NativeArray<OrbitalTelemetryEntry>.ReadOnly telemetryRing)
         {
             telemetryRing = default;
+            if (!_orbitalTelemetryLayoutValid)
+                return false;
+
             IDataVault vault = _dataVault;
             if (vault == null || !IsVaultHandleCreated(in _telemetryRingHandle))
                 return false;
@@ -1460,6 +1566,8 @@ namespace Hecton8.Prologue.Space
             Shader.SetGlobalVector(_aegirPlanetCenterRadiusId, Vector4.zero);
             Shader.SetGlobalVector(_aegirRingPlaneInnerId, Vector4.zero);
             Shader.SetGlobalVector(_aegirOrbitScalarsId, Vector4.zero);
+            Shader.SetGlobalFloat(_aegirFlowPhaseId, 0f);
+            Shader.SetGlobalFloat(_aegirFlowPhaseValidId, 0f);
             Shader.SetGlobalFloat(_globalQualityWeightId, 0f);
             Shader.SetGlobalVector(_legacySunDirectionId, Vector4.zero);
             Shader.SetGlobalVector(_legacyAegirDirectionId, Vector4.zero);
@@ -1467,6 +1575,8 @@ namespace Hecton8.Prologue.Space
             _uploadedPresentationShaderGlobals = default;
             _celestialParametersUploaded = false;
             _uploadedCelestialParameters = default;
+            _aegirFlowPhaseUploaded = false;
+            _uploadedAegirFlowPhase = -1f;
         }
 
         private static float SanitizeDeltaTime(float deltaTime)

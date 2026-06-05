@@ -10,21 +10,21 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Maintenance Ecology
 
-Maintenance Ecology defines the non-mystical ocean/Atlas relationship. Atlas does not control a sentient sea; it routes maintenance through biological processes that can conduct, seal, repeat, carry, digest or grow around industrial infrastructure.
+Maintenance ecology is what remains after Atlas learns which living surfaces can carry work. Biofilm can bridge a weak circuit. Shell growth can close a fracture. Filter colonies can repeat acoustic pulses. Tagged fauna can return bad sensor packets. None of that makes the ocean a mind, but it makes every cable reef a possible tool, hazard, or false repair.
 
 ## Scanner
 
-Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.
+Conductive biofilm, shell growth, tagged fauna, vent heat, and drones are carrying repair traffic.
 
 ## Terminal
 
-ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.
+ATLAS ECOLOGY: biofilm bridge stable. Filter colony repeats pulse. Shell seal closes fracture. Fauna tag returns sensor packets.
 
 ## Audio
 
@@ -32,6 +32,6 @@ The ocean is not thinking like you. Atlas learned which parts of it carry a sign
 
 ## Field Note
 
-Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.
+Do not cut every living seam. Some are holding pressure. Scan for signal first, then decide what can be stripped.
 
 <!-- In-Game Wiki; generated from P061_MAINTENANCE_ECOLOGY/en_US. -->

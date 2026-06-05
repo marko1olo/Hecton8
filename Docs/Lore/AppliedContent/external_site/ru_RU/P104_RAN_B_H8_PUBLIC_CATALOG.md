@@ -10,17 +10,17 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Публичный каталог RAN-B:H8
+# RAN-B:H8 Public Catalog
 
-Публичный каталог RAN-B:H8 дает сайту/вики hard-sci-fi label, сохраняя HECTON-8 как эмоциональное и юридическое имя игры. Это также позволит будущим астрономическим страницам отделить real-system inspiration от fictional moon content.
+RAN-B:H8 is the hard astronomy label for the HECTON-8 destination: a real-scale route name beside the survivor-facing moon name.
 
 ## Scanner
 
-Catalog plate. Публичная route label RAN-B:H8; project label Deep Reach - HECTON-8.
+Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.
 
 ## Terminal
 
@@ -28,10 +28,10 @@ CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common na
 
 ## Audio
 
-Звездная карта зовет это H8. Люди, которые умерли здесь, звали это HECTON.
+The star chart calls it H8. The people who died here called it HECTON.
 
 ## Field Note
 
-В игре использовать HECTON-8. RAN-B:H8 использовать там, где документу нужна сухая астрономия.
+Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.
 
 <!-- External Site; generated from P104_RAN_B_H8_PUBLIC_CATALOG/ru_RU. -->

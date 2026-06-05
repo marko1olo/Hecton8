@@ -1,7 +1,14 @@
 # HECTON-8 Settings, Options, And User Configuration Bible
 
 Status: AUTHORING LAW / STATIC DOC / RUNTIME PROOF NOT IMPLIED
+Evidence class: STATIC_DOC
 Scope: graphics/audio/input/accessibility settings, saveable options, quality profiles, device detection, menu settings UI, config persistence, and settings proof gates.
+
+## First-20 Route Hook
+
+- First-20 moment: main menu, first route readability, input comfort, audio warnings, accessibility options, and continuous visual scaling before and during the opening route.
+- Route blocker removed: unsafe defaults, binary quality switches, unreadable options rows, or settings that mutate gameplay truth cannot gate the first route.
+- Proof class: STATIC_DOC until settings schema, persistence/clamp tests, compact menu screenshots, localization expansion, apply timing evidence, and runtime scans exist.
 
 ## Prime Law
 

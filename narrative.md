@@ -1,15 +1,24 @@
 # HECTON-8 Narrative And Evidence Bible
 
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
+Evidence class: STATIC_DOC
 Scope: missions, quests, black-box records, logs, lore, environmental storytelling, corporate language, objectives, codex, text/audio evidence, and progression truth.
 
 Route note: this file owns narrative truth, evidence order, mission state, and text placement. For the actual prose quality of in-world articles, encyclopedia pages, survivor diaries, scanner/codex entries, technical notes, and AppliedContent packets, use `writing.md` with this file.
+
+## First-20 Route Hook
+
+- First-20 moment: Marauder salvage motive, first evidence object, and a physical Deep Reach or Atlas contradiction discovered before exposition during the opening resource/tool/hazard route.
+- Route blocker removed: prevents the first route from using generic tutorial objectives, family melodrama, or lore text unsupported by room, machine, route, body, or instrument evidence.
+- Proof class: STATIC_DOC hook only; acceptance still requires mission operation statement, evidence-channel list, quest IDs, text sample, and screenshot/capture evidence where the beat is player-facing.
 
 ## 0. Prime Narrative Law
 
 Evidence comes before exposition.
 
 HECTON-8 narrative is strongest when the room, machine, route, body, log fragment, and instrument disagree with clean corporate language. Lore walls are rejected unless the player already needs the information.
+
+Opening motive lock: the protagonist starts as a Marauder/salvage worker driven by contract, debt, payout, route opportunity, procedure, and survival economics. Do not replace the opening with missing family, revenge, romance, chosen-one destiny, secret passenger drama, or other personal melodrama unless the user explicitly overturns this lock. Personal weight may emerge through professional guilt, recognition of workers, procedures, evidence, and consequences, but the first motive is salvage work.
 
 ## 1. Mission Shape
 
@@ -57,6 +66,8 @@ Correct handoff:
 4. Runtime/UI receives stable IDs and bounded surfaces, never free-form markdown.
 
 Do not ask a writer to "make lore for this area" without a scene packet. Do not ask a scenario agent to solve prose quality by dumping exposition into a log.
+
+If a task asks for an encyclopedia entry, survivor diary, scanner fact, audio log, terminal note, website article, wiki page, or technical/mineral/engine article, the output must include the actual readable artifact text through `writing.md`. Scenario notes alone are not enough. For production or AppliedContent packets, preserve the 15-locale route through `localization.md` and the lore localization docs.
 
 ## 2. Evidence Stack
 

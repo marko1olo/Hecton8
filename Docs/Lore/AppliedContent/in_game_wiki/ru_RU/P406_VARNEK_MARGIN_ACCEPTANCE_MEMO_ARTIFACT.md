@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Мемо Варнека
+# Varnek Margin Memo
 
-Мемо Варнека - чистый артефакт вины: Великий прилив вызвала физика, но Deep Reach приняла опасный предел, потому что остановка была дороже.
+The Varnek memo is evidence that the hazard was real and known. Deep Reach kept the schedule because expected shutdown cost beat modeled tail risk.
 
 ## Scanner
 
-Артефакт Deep Reach: мемо о пределе. Риск затопления не выдумали, но его оценили в деньгах.
+Aegir Operations Risk memo. Tide margin was accepted as payable exposure.
 
 ## Terminal
 
-МЕМО ВАРНЕКА. Риск потопа оценили; остановку проиграла непрерывность Atlas.
+AEGIR OPS RISK / VARNEK / TIDE-MARGIN REVIEW: average model remains billable. Tail exposure accepted under Atlas continuity cost. Independent shutdown not recommended.
 
 ## Audio
 
-Никто не подписал приказ об убийстве. Они подписали предел.
+No murder order. A margin acceptance.
 
 ## Field Note
 
-Использовать как якорь нюанса для сайта и поздний proof terminal.
+Varnek did not deny the water. He moved it into a cost column and stamped continuity exposure over the evacuation reserve.
 
 <!-- In-Game Wiki; generated from P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT/ru_RU. -->

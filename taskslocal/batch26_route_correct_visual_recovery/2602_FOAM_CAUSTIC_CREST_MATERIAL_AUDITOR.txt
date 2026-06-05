@@ -1,0 +1,47 @@
+<AGENT_PROMPT id="2602">
+You are Batch26 agent 2602 for HECTON-8.
+
+Mission:
+Audit foam, caustics, Crest material clipping, and underwater receiver risks behind rejected 1474. Produce a safe owner-correct isolation/correction plan. Do not run Unity.
+
+Read:
+- `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `TASTE.md`
+- `VISION_LOCKS.md`
+- `quality.md`
+- `water.md`
+- `rendering.md`
+- `shaders.md`
+- `performance.md`
+- `Docs/Reports/Batch25/BATCH25_SYNTHESIS_FOR_UNITY_OWNER.md`
+- `Docs/Reports/Batch25/2504_CREST_OCEAN_CLIP_FOAM_CAUSTIC_RISK_AUDIT.md`
+- Batch24 slab/caustic reports if relevant
+
+Owned scope:
+- Static inspection of Crest materials, project water materials, scene object names, YAML references, shader keywords, and existing reports.
+- No edits outside output report/status/log.
+
+Tasks:
+1. Inspect `Assets/Crest/Crest/Materials/Ocean.mat` for `_ClipSurface`, `_ClipUnderTerrain`, and clip keywords.
+2. Inspect `Assets/Crest/Crest/Materials/Ocean_UnderwaterCurtain.mat` for caustic/transparency/clip keyword state and strength values.
+3. Inspect `Assets/_Project/Art/Materials/MAT_H8_SurfaceCrestOcean_1428.mat` for overdriven foam/caustic/shallow/subsurface/sky values.
+4. Inspect scene/YAML references for `H8_FloorCausticSoft_1443` and any shoreline foam candidates.
+5. Identify which values are static risks versus runtime-proven blockers.
+6. Build an isolation order that avoids adding haze/darkness over visible slabs.
+7. Define accepted shoreline foam proof: close 1 m wet contact, broken organic foam, not numeric material proof.
+8. Define accepted caustics proof: justified shallow/light source, not global sheet, not abyssal fake without reason.
+9. Include continuous `GlobalQualityWeight` consequences for Compact, Middle, High, Ultra.
+10. State profiler/Frame Debugger proof needed if any render path changes later.
+11. Produce static-only report and mark runtime proof as `PENDING VERIFICATION`.
+
+Output:
+- `Docs/Reports/Batch26/2602_FOAM_CAUSTIC_CREST_MATERIAL_AUDIT.md`
+- `Docs/Tasks/Status_2602.md`
+- `Docs/AgentLogs/LOG_2602.md`
+
+Forbidden:
+- No Unity launch, no Play Mode, no MCP screenshot capture, no dotnet/build.
+- No material/code/scene edits.
+- No raw-enabling `H8_UnderwaterHazeCurtain_1454` as a proposed production fix.
+</AGENT_PROMPT>

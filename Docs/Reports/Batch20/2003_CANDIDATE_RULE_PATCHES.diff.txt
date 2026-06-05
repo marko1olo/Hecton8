@@ -1,0 +1,311 @@
+Candidate only. Do not apply automatically from this worker.
+Owner must apply through Unity/asset review and validate scene/runtime behavior.
+
+## Runtime Code Candidate: strict filters and submerged truth gate
+
+--- Assets/_Project/Scripts/WorldProceduralScatterDirector.cs
++++ Assets/_Project/Scripts/WorldProceduralScatterDirector.cs
+@@
+-            if (!runtimeRule.StrictEnvelopeMapping &&
++            if (runtimeRule.StrictEnvelopeMapping &&
+                 runtimeRule.PreferredBiomeFamilies != null &&
+                 runtimeRule.PreferredBiomeFamilies.Length > 0)
+@@
+-            if (!runtimeRule.StrictEnvelopeMapping &&
++            if (runtimeRule.StrictEnvelopeMapping &&
+                 runtimeRule.PreferredZoneKinds != null &&
+                 runtimeRule.PreferredZoneKinds.Length > 0)
+@@
+-            if (!runtimeRule.StrictEnvelopeMapping &&
++            if (runtimeRule.StrictEnvelopeMapping &&
+                 runtimeRule.PreferredSocketKinds != null &&
+                 runtimeRule.PreferredSocketKinds.Length > 0)
+
+Add before returning true from MatchesScatter or before the caller reaches variant resolution:
+
+```csharp
+if (RequiresSubmergedSeafloorPlacement(runtimeRule.ProceduralDomain))
+{
+    float minimumSubmergedDepthMeters = ResolveMinimumSubmergedDepthMeters(runtimeRule);
+    if (depthMeters < minimumSubmergedDepthMeters)
+        return false;
+}
+```
+
+Add helpers near other static scatter-domain helpers:
+
+```csharp
+private static bool RequiresSubmergedSeafloorPlacement(WorldPrefabFamilyProfile.ProceduralDomain domain)
+{
+    return domain == WorldPrefabFamilyProfile.ProceduralDomain.Kelp ||
+           domain == WorldPrefabFamilyProfile.ProceduralDomain.Plant ||
+           domain == WorldPrefabFamilyProfile.ProceduralDomain.Coral ||
+           domain == WorldPrefabFamilyProfile.ProceduralDomain.Rock ||
+           domain == WorldPrefabFamilyProfile.ProceduralDomain.RockCluster ||
+           domain == WorldPrefabFamilyProfile.ProceduralDomain.RockArch ||
+           domain == WorldPrefabFamilyProfile.ProceduralDomain.RockShelf ||
+           domain == WorldPrefabFamilyProfile.ProceduralDomain.SafePocket ||
+           domain == WorldPrefabFamilyProfile.ProceduralDomain.ResourcePocket ||
+           domain == WorldPrefabFamilyProfile.ProceduralDomain.HazardPocket;
+}
+
+private static float ResolveMinimumSubmergedDepthMeters(in ScatterRuntimeRuleEntry runtimeRule)
+{
+    float authored = Mathf.Max(0f, runtimeRule.MinDepthMeters);
+    if (authored > 0f)
+        return authored;
+
+    switch (runtimeRule.ProceduralDomain)
+    {
+        case WorldPrefabFamilyProfile.ProceduralDomain.Rock:
+        case WorldPrefabFamilyProfile.ProceduralDomain.RockCluster:
+            return 1f;
+        case WorldPrefabFamilyProfile.ProceduralDomain.SafePocket:
+        case WorldPrefabFamilyProfile.ProceduralDomain.ResourcePocket:
+        case WorldPrefabFamilyProfile.ProceduralDomain.HazardPocket:
+            return 2f;
+        default:
+            return 1.5f;
+    }
+}
+```
+
+## Runtime Code Candidate: strict substrate cannot be default Any for underwater domains
+
+--- Assets/_Project/Scripts/WorldProceduralScatterDirectorEnvironmentalEnvelope.cs
++++ Assets/_Project/Scripts/WorldProceduralScatterDirectorEnvironmentalEnvelope.cs
+@@
+-            if (runtimeRule.RequiredSubstrate == WorldProceduralPlacementRule.FloraSubstrateMask.None ||
+-                runtimeRule.RequiredSubstrate == WorldProceduralPlacementRule.FloraSubstrateMask.Any)
++            if (runtimeRule.RequiredSubstrate == WorldProceduralPlacementRule.FloraSubstrateMask.None)
+             {
+                 return true;
+             }
++
++            if (runtimeRule.RequiredSubstrate == WorldProceduralPlacementRule.FloraSubstrateMask.Any &&
++                RequiresSubmergedSeafloorPlacement(runtimeRule.ProceduralDomain))
++            {
++                return false;
++            }
++
++            if (runtimeRule.RequiredSubstrate == WorldProceduralPlacementRule.FloraSubstrateMask.Any)
++            {
++                return true;
++            }
+
+Exact helper visibility must match the partial class. If `RequiresSubmergedSeafloorPlacement` is private in another partial file, duplicate it as a private static helper or expose an internal static helper in one partial. Do not introduce managed allocations or scene searches.
+
+## Runtime Code Candidate: reject production-visible proxy fallback
+
+--- Assets/_Project/Scripts/WorldProceduralScatterDirector.cs
++++ Assets/_Project/Scripts/WorldProceduralScatterDirector.cs
+@@
+             WorldPrefabFamilyProfile.VariantEntry proxyVariant = ResolveVariantFiltered(family, stableHash, VariantFilterMode.ProxyOnly);
+-            if (proxyVariant != null)
++            if (proxyVariant != null && !RejectProxyForProductionVisibleFamily(family))
+                 return proxyVariant;
+
+Add:
+
+```csharp
+private static bool RejectProxyForProductionVisibleFamily(WorldPrefabFamilyProfile family)
+{
+    if (family == null)
+        return false;
+
+    switch (family.proceduralDomain)
+    {
+        case WorldPrefabFamilyProfile.ProceduralDomain.Kelp:
+        case WorldPrefabFamilyProfile.ProceduralDomain.Plant:
+        case WorldPrefabFamilyProfile.ProceduralDomain.Coral:
+        case WorldPrefabFamilyProfile.ProceduralDomain.Rock:
+        case WorldPrefabFamilyProfile.ProceduralDomain.RockCluster:
+        case WorldPrefabFamilyProfile.ProceduralDomain.RockArch:
+        case WorldPrefabFamilyProfile.ProceduralDomain.RockShelf:
+        case WorldPrefabFamilyProfile.ProceduralDomain.SafePocket:
+        case WorldPrefabFamilyProfile.ProceduralDomain.ResourcePocket:
+        case WorldPrefabFamilyProfile.ProceduralDomain.HazardPocket:
+            return FamilySupportsFinalVariant(family);
+        default:
+            return false;
+    }
+}
+```
+
+If owner needs proxy fallback for editor diagnostics, gate it behind an explicit editor/development path. Do not bind it to `GlobalQualityWeight`.
+
+## Rule Asset Candidate Diffs
+
+For serialized enum reference:
+
+- `FloraSubstrateMask.Rock = 2`
+- `FloraSubstrateMask.Any = 3`
+- `preferSeafloor: 1` means true
+
+--- Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_kelp_starter.asset
++++ Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_kelp_starter.asset
+@@
+-  minDepthMeters: 0
++  minDepthMeters: 1.5
++  requiredSubstrate: 2
+-  preferSeafloor: 0
++  preferSeafloor: 1
++  strictEnvelopeMapping: 1
+
+--- Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_kelp_tall.asset
++++ Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_kelp_tall.asset
+@@
+-  minDepthMeters: 0
++  minDepthMeters: 1.5
++  requiredSubstrate: 2
+-  preferSeafloor: 0
++  preferSeafloor: 1
++  strictEnvelopeMapping: 1
+
+--- Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_kelp_patch_dense.asset
++++ Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_kelp_patch_dense.asset
+@@
+-  minDepthMeters: 0
++  minDepthMeters: 1.5
++  requiredSubstrate: 2
+-  preferSeafloor: 0
++  preferSeafloor: 1
++  strictEnvelopeMapping: 1
+
+--- Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_kelp_canopy.asset
++++ Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_kelp_canopy.asset
+@@
+-  minDepthMeters: 0
++  minDepthMeters: 1.5
++  requiredSubstrate: 2
+-  preferSeafloor: 0
++  preferSeafloor: 1
++  strictEnvelopeMapping: 1
+
+--- Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_kelp_abyssal.asset
++++ Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_kelp_abyssal.asset
+@@
++  requiredSubstrate: 2
+-  preferSeafloor: 0
++  preferSeafloor: 1
++  strictEnvelopeMapping: 1
+
+--- Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_coral_reef.asset
++++ Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_coral_reef.asset
+@@
+-  minDepthMeters: 0
++  minDepthMeters: 1.5
++  requiredSubstrate: 2
+-  preferSeafloor: 0
++  preferSeafloor: 1
++  strictEnvelopeMapping: 1
+
+--- Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_coral_branching.asset
++++ Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_coral_branching.asset
+@@
+-  minDepthMeters: 0
++  minDepthMeters: 1.5
++  requiredSubstrate: 2
+-  preferSeafloor: 0
++  preferSeafloor: 1
++  strictEnvelopeMapping: 1
+
+--- Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_coral_low.asset
++++ Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_coral_low.asset
+@@
+-  minDepthMeters: 0
++  minDepthMeters: 1.5
++  requiredSubstrate: 2
+-  preferSeafloor: 0
++  preferSeafloor: 1
++  strictEnvelopeMapping: 1
+
+--- Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_coral_massive.asset
++++ Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_coral_massive.asset
+@@
++  requiredSubstrate: 2
+-  preferSeafloor: 0
++  preferSeafloor: 1
++  strictEnvelopeMapping: 1
+
+--- Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_coral_plate.asset
++++ Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_coral_plate.asset
+@@
++  requiredSubstrate: 2
+-  preferSeafloor: 0
++  preferSeafloor: 1
++  strictEnvelopeMapping: 1
+
+--- Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_coral_brittle.asset
++++ Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_coral_brittle.asset
+@@
++  requiredSubstrate: 2
+-  preferSeafloor: 0
++  preferSeafloor: 1
++  strictEnvelopeMapping: 1
+
+--- Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_rocks_floor.asset
++++ Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_rocks_floor.asset
+@@
+-  minDepthMeters: 0
++  minDepthMeters: 1
++  requiredSubstrate: 2
+-  preferSeafloor: 0
++  preferSeafloor: 1
++  strictEnvelopeMapping: 1
+
+--- Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_rocks_cluster.asset
++++ Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_rocks_cluster.asset
+@@
+-  minDepthMeters: 0
++  minDepthMeters: 1
++  requiredSubstrate: 2
+-  preferSeafloor: 0
++  preferSeafloor: 1
++  strictEnvelopeMapping: 1
+
+--- Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_rocks_arch.asset
++++ Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_rocks_arch.asset
+@@
++  requiredSubstrate: 2
+-  preferSeafloor: 0
++  preferSeafloor: 1
++  strictEnvelopeMapping: 1
+
+--- Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_rocks_shelf.asset
++++ Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_rocks_shelf.asset
+@@
++  requiredSubstrate: 2
+-  preferSeafloor: 0
++  preferSeafloor: 1
++  strictEnvelopeMapping: 1
+
+--- Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_pocket_safe.asset
++++ Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_pocket_safe.asset
+@@
+-  minDepthMeters: 0
++  minDepthMeters: 2
+-  preferSeafloor: 0
++  preferSeafloor: 1
++  strictEnvelopeMapping: 1
+
+## Family Asset Candidate Diffs
+
+Set `allowProxyPrimitives: 0` after the owner confirms final-ready variants exist and are assigned:
+
+- `Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_kelp_tall.asset`
+- `Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_kelp_patch_dense.asset`
+- `Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_kelp_canopy.asset`
+- `Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_kelp_abyssal.asset`
+- `Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_coral_branching.asset`
+- `Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_coral_low.asset`
+- `Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_coral_massive.asset`
+- `Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_coral_plate.asset`
+- `Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_coral_brittle.asset`
+- `Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_rock_small_floor.asset`
+- `Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_rock_cluster_medium.asset`
+- `Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_rock_arch_large.asset`
+- `Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_rock_shelf_large.asset`
+- `Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_pocket_safe.asset`
+
+Do not remove final variants. Do not delete shallow ecology. Do not replace seafloor density with darkness or proxy geometry.

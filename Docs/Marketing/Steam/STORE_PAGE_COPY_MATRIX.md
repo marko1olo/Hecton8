@@ -1,4 +1,4 @@
-﻿# Steam Store Page Copy Matrix
+# Steam Store Page Copy Matrix
 
 ## Authority Boundary
 
@@ -19,6 +19,8 @@ Publication requires exact Steam app/page owner, official rule recheck, Campaign
 ## Store Page Mission
 
 The Steam page must convert a cold viewer from "underwater survival?" to "this has a distinct pressure/machinery identity" in one screen.
+
+Visual truth update: pressure/machinery identity must not erase the surface/shallow beauty lock. If the first Steam packet includes surface, coastline, Aegir, ocean skin, or photic shallows, those images should be bright, readable, beautiful, and Subnautica-level or better. "Black water" is a depth/route-risk hook, not a permanent grade for the whole game.
 
 ## Short Description Variants
 
@@ -41,7 +43,7 @@ Use these three first once real screenshots exist. Do not keep adding variants u
 
 | Candidate | Copy | Pair with first asset | Why it exists | Kill if |
 |---|---|---|---|---|
-| A - Pressure/Salvage | Survive below the light in a single-player underwater survival game about pressure, salvage, machinery, and the cost of keeping a base alive. | Exterior screenshot: industrial base or wreck route under black water, one readable objective. | Safest Steam baseline. It says genre, player verb, and identity without overpromising. | Viewers only read it as Subnautica clone, or cannot name the minute-to-minute action. |
+| A - Pressure/Salvage | Survive a beautiful alien ocean where pressure, salvage, machinery, and the cost of keeping a base alive decide how far below the light you can go. | Exterior screenshot: bright photic shallows/surface-adjacent route or industrial base/wreck route with one readable objective. | Safest Steam baseline after the vision lock. It says genre, beauty, player verb, and identity without overpromising. | Viewers only read it as Subnautica clone, only dark water, or cannot name the minute-to-minute action. |
 | B - Machine/Base | Build where the ocean wants every seal to fail. Salvage wrecks, power pressure-rated habitats, and keep failing machines alive in black water. | Interior/base screenshot: leak, gauge, tool, power conduit, repairable object. | Converts base-building players who want systems and readable failure. | The build cannot show base failure/repair honestly in the first screenshot pack. |
 | C - Seed Ship/Anomaly | Follow a corrupted signal into industrial black water where machines, wildlife, and instruments stop obeying clean rules. | Anomaly/Seed Ship screenshot with instrument corruption and a route cue. | Strongest mystery hook; useful for horror/atmosphere creators. | The Seed Ship/anomaly is only lore text and has no visible systemic proof. |
 
@@ -57,8 +59,8 @@ This is the first assembly decision table. It converts the copy candidates, asse
 
 | Steam surface | Default choice | Required evidence | Switch condition | Kill condition |
 |---|---|---|---|---|
-| Short description | Candidate A - Pressure/Salvage | `PLAN-SHOT-001`, `PLAN-SHOT-003`, one base/machinery shot, and one agency/decision proof asset (`PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003`) score high enough for their surface and preserve the AB-009/KPI viewer-named decision field. | Switch to B only if base/machinery failure is visually clear; switch to C only if Seed Ship/anomaly is visible as a system after agency proof exists. | Viewers cannot name minute-to-minute action, cannot identify a player decision, or assume multiplayer/co-op. |
-| First screenshot | `PLAN-SHOT-001` Identity hero | Black-water industrial silhouette plus player/light/pressure cue. | Use `PLAN-SHOT-003` if identity hero is beautiful but actionless. | Reads as empty ocean, generic diver shot, or Subnautica clone frame. |
+| Short description | Candidate A - Pressure/Salvage | `PLAN-SHOT-000`, `PLAN-SHOT-003`, one base/machinery shot, and one agency/decision proof asset (`PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003`) score high enough for their surface and preserve the AB-009/KPI viewer-named decision field. `PLAN-SHOT-001` supports depth identity after surface/photic proof. | Switch to B only if base/machinery failure is visually clear; switch to C only if Seed Ship/anomaly is visible as a system after agency proof exists. | Viewers cannot name minute-to-minute action, cannot identify a player decision, or assume multiplayer/co-op. |
+| First screenshot | `PLAN-SHOT-000` Bright photic route | Beautiful alien water plus terrain/material detail, technogenic trace, and route cue. | Use `PLAN-SHOT-003` if bright route proof is beautiful but actionless; use `PLAN-SHOT-001` only as second/depth identity. | Reads as generic aquarium, empty scenery, muddy surface, generic diver shot, or Subnautica clone frame. |
 | Second screenshot | `PLAN-SHOT-003` Salvage contact | Tool/interact target/hazard/reward must be readable. | Use base system shot if salvage interaction is not implemented. | Player verb needs caption. |
 | Third screenshot | `PLAN-SHOT-002` Pressure room | Gauges, seals, pressure door, dirty glass, maintenance surfaces. | Use `PLAN-SHOT-005` if failure state is clearer than room state. | Reads as clean sci-fi lounge. |
 | Fourth screenshot | `PLAN-SHOT-006` Threat silhouette | Threat/scale through instrument/floodlight relation plus a readable player choice: avoid, reroute, seal, scan, or retreat. | Use `PLAN-CLIP-001` or `PLAN-CLIP-003` as the agency proof if the still frame is unclear. `PLAN-SHOT-007` cannot substitute for agency proof. | Reads as terrain, random monster pose, or passive victim shot. |
@@ -98,13 +100,13 @@ HECTON-8 is a single-player deep-sea survival game about pressure, salvage, mach
 First paragraph:
 
 ```text
-HECTON-8 is a single-player deep-sea survival game set in black water below the light. Every route asks the same question: how much pressure, oxygen, power, and machine failure can you afford before coming back costs more than going deeper?
+HECTON-8 is a single-player underwater survival game set in a beautiful alien ocean that becomes black-water pressure country below the light. Every route asks the same question: how much pressure, oxygen, power, and machine failure can you afford before coming back costs more than going deeper?
 ```
 
 Feature bullets V0:
 
 ```text
-- Descend into industrial black-water routes where pressure and visibility shape every decision.
+- Descend from bright photic routes into industrial black-water depth where pressure and visibility shape every decision.
 - Salvage wreckage and useful machinery without losing the return path.
 - Keep pressure-rated habitats alive through power, oxygen, seals, and maintenance.
 - Read danger through instruments, floodlights, gauges, and failing machines.
@@ -162,7 +164,7 @@ Bad capsule ideas:
 
 ## Screenshot Order For Steam
 
-1. Signature hero: black water + industrial silhouette.
+1. Signature hero: bright photic route or black-water depth + industrial trace/silhouette.
 2. Gameplay verb: salvage/tool interaction.
 3. Base/machinery interior.
 4. Threat/sonar silhouette.

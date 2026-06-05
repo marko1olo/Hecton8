@@ -1,5 +1,11 @@
 ﻿# Compliance And Disclosure Playbook
 
+## Authority Boundary
+
+Static compliance guardrail only. Disclosure rules, key rules, paid terms, forbidden-claim lists, platform notes, and footer templates do not prove legal approval, quality, release, platform, Steam, wishlist, demo, performance, localization, monitoring, launch, contract, or public-response readiness.
+Public voice routes to root `textes.md`. Quality, release, platform, Steam, wishlist, demo, performance, feedback, review/forum response, legal/compliance, localization, monitoring, operations, partnership, contract, and launch claims route through root `quality.md`, `release.md`, and `platform.md` with current proof artifacts plus local permission gates where present.
+No launch/release readiness, localized public use, public response, creator contract send, platform claim, Steam approval, wishlist claim, demo approval, legal/compliance clearance, or public send approval exists from this static playbook or its templates.
+
 Status: compliance guardrail / pre-outreach
 Public stance: single-player-first scope / proof-first public copy
 Runtime impact: none

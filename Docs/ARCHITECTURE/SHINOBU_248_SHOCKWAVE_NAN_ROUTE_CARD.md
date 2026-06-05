@@ -2,6 +2,8 @@
 
 Date: 2026-05-21
 
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
+
 Owner: SHINOBU_248 / SHOCKWAVE_NAN_AUDITOR_AND_LINK
 
 Evidence: STATIC_SOURCE only. Unity import, Burst Inspector, Play Mode, profiler, GCMonitor, shader render, and player-build proof remain pending.

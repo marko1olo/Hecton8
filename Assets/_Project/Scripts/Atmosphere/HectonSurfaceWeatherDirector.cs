@@ -43,6 +43,7 @@ namespace Hecton8.Atmosphere
         private const float ThunderCameraShakeScale = 0.35f;
         private const float ScreenSpaceRainFrameTimeShedMs = 14f;
         private const int SurfaceWeatherPerformanceWarningCooldownFrames = 30;
+        private const uint ThunderCameraJuiceSourceHash = 0x54484E44u; // THND
         private const uint SurfaceWeatherSolveBudgetWarningHash = 0x53574657u;
         private const uint SurfaceWeatherSolveBudgetContextHash = 0x53574654u;
         private static readonly long SurfaceWeatherSolveBudgetWarningTicks = Math.Max(1L, Stopwatch.Frequency / 5000L);
@@ -2119,7 +2120,17 @@ namespace Hecton8.Atmosphere
             };
             SignalBus<PhysicsEventPayload>.TryPushTracked(in payload, ref s_x001SurfaceWeatherDirectorSignalPushDropCount);
 
-            CameraJuiceSignals.TryPublishImpact(cameraShake01, shockPosition, Vector3.down);
+            CameraJuiceSignals.TryPublishImpact(
+                cameraShake01,
+                shockPosition,
+                Vector3.down,
+                CameraJuiceSignals.LowFreqSeismicHeaveProfileHash,
+                1.05f,
+                cameraShake01 >= 0.2f ? CameraJuiceSignals.HighPriority : CameraJuiceSignals.NormalPriority,
+                radiusMeters,
+                0.85f,
+                1.35f,
+                ThunderCameraJuiceSourceHash);
         }
 
         private bool TrySelectInitialProfile(out RuntimeWeatherProfile profile)

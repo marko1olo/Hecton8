@@ -1,0 +1,52 @@
+ID: 3105
+Role: AEGIR_SKY_CELESTIAL_OWNER
+Objective: recover Aegir, sky, cloud, and sun ownership so the surface product face is premium, bright, and route-correct.
+
+Why this exists:
+- Current Aegir reads muddy/sticker-like in rejected captures.
+- Sky material slots and active owner route need proof.
+- Raw enabling old flat sun mesh is rejected.
+
+Authority docs:
+- AGENTS.md
+- TASTE.md
+- VISION_LOCKS.md
+- quality.md
+- celestial.md
+- atmosphere.md
+- rendering.md
+- shaders.md
+- Docs/Reports/Batch30/3006_AEGIR_SKY_ASSET_ROUTE_AUDIT.md
+- Docs/Reports/Batch31/MATERIAL_TEXTURE_CRITICALS_20260605.md
+- .agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt
+- .agents-skills/REND_Shader_Noir_Aesthetics_Dithering_Fog.txt
+
+Owned scope:
+- Assets/_Project/Art/Materials/Mat_HectonSky.mat
+- Assets/_Project/Art/Materials/Celestial/
+- Assets/_Project/Art/Materials/Sky/
+- Assets/_Project/Art/TEXTURES related to gas giant/cloud/sky
+- Assets/_Project/Scripts/HectonCelestialEngine.cs
+- Assets/_Project/Scripts/HectonUnderwaterVisuals.cs only for sky/sun proof route
+- Report output: Docs/Reports/Batch31/3105_AEGIR_SKY_CELESTIAL_OWNER.md
+
+Tasks:
+1. Read authority and Batch30 3006.
+2. Verify current active skybox and Aegir material route.
+3. Inventory gas giant and cloud textures with dimensions/GUID/static path.
+4. Identify missing/null material slots and broken GUID risks in `Mat_HectonSky.mat` and cloud overlay.
+5. Map existing cloud/sky textures to shader roles before proposing Unity binding.
+6. Reject duplicate sun owner routes.
+7. Preserve `PrimarySunDiscOwner=SkyMaterial` unless evidence proves otherwise.
+8. Build Aegir improvement route: source texture, material, shader, long/crop proof, residency proof.
+9. Define continuous GlobalQualityWeight visual scaling.
+10. If proposing edits, keep them scoped and no runtime material clones.
+11. Write Status_3105.md, Rationale_3105.md, LOG_3105.md, and Batch31 report.
+
+Proof packet:
+- STATIC VERIFIED for route/asset inventory.
+- Visual acceptance only after fresh manifest packet and human review.
+
+Reject if:
+- Aegir remains muddy, sine-striped, low-res, or disconnected from lighting/water.
+- Mesh sun is enabled as a flat untextured quick fix.

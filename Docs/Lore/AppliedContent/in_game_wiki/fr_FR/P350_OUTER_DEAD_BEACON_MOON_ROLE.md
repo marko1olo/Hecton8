@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ Dead infrastructure does not leave. It just becomes another error term.
 
 ## Field Note
 
-Use for comm-window lore and orbital system pages.
+Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary.
 
 <!-- In-Game Wiki; generated from P350_OUTER_DEAD_BEACON_MOON_ROLE/fr_FR. -->

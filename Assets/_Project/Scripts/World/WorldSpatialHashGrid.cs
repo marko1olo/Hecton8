@@ -214,6 +214,8 @@ namespace Hecton8.World
         private static readonly TransientSignalEntry[] _transientSignals = new TransientSignalEntry[MaxTransientSignalCount]; // COLD ALLOC: TransientSignalEntry[16] - transient PDA sonar signal ring - owner: WorldSpatialHashGrid
 
         private static HectonSpatialHash _nativeHash;
+        // COLD ALLOC: float[512] - acoustic density map staging scratch; heavy density build and texture upload run outside DataVault locks.
+        private static readonly float[] _acousticDensityMapScratch = new float[AcousticDensityMapCellCount];
         // COLD ALLOC: int[2048] - facade query result scratch copied from HectonSpatialHash internal native scratch.
         private static readonly int[] _queryHandles = new int[MaxQueryHandleCapacity];
         // COLD ALLOC: double3[8192] - synchronous AUP validation scratch - owner: WorldSpatialHashGrid
@@ -1376,42 +1378,19 @@ namespace Hecton8.World
                 !IsAcousticDensityMapHandle(in _acousticDensityMapHandle))
                 return false;
 
-            bool locked = false;
-            try
+            if (!TrySnapshotAcousticDensityMapForUpload(
+                    vault,
+                    requestedSampleCount,
+                    out uploadedSampleCount,
+                    out peakIntensity))
             {
-                if (!vault.TryAcquireWriteLock(in _acousticDensityMapHandle, SystemID.WorldSpatialHash, out NativeArray<float> densityMap))
-                    return false;
-
-                locked = true;
-                if (!densityMap.IsCreated ||
-                    densityMap.Length < AcousticDensityMapCellCount)
-                {
-                    return false;
-                }
-
-                int sampleCount = math.min(densityMap.Length, requestedSampleCount);
-                if (sampleCount <= 0 || sampleCount != AcousticDensityMapCellCount)
-                    return false;
-
-                destination.SetPixelData(densityMap, 0);
-
-                float peak = 0f;
-                for (int i = 0; i < sampleCount; i++)
-                {
-                    float sample = densityMap[i];
-                    if (sample > peak)
-                        peak = sample;
-                }
-
-                uploadedSampleCount = sampleCount;
-                peakIntensity = math.saturate(peak);
-                return true;
+                uploadedSampleCount = 0;
+                peakIntensity = 0f;
+                return false;
             }
-            finally
-            {
-                if (locked)
-                    vault.ReleaseWriteLock(in _acousticDensityMapHandle, SystemID.WorldSpatialHash);
-            }
+
+            destination.SetPixelData(_acousticDensityMapScratch, 0);
+            return true;
         }
 
         public static bool IsHandleCurrent(int handle)
@@ -2088,6 +2067,92 @@ namespace Hecton8.World
             return true;
         }
 
+        private static bool TrySnapshotAcousticDensityMapForUpload(
+            IDataVault vault,
+            int requestedSampleCount,
+            out int uploadedSampleCount,
+            out float peakIntensity)
+        {
+            uploadedSampleCount = 0;
+            peakIntensity = 0f;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                _acousticDensityMapScratch.Length < AcousticDensityMapCellCount)
+            {
+                return false;
+            }
+
+            bool locked = false;
+            try
+            {
+                if (!vault.TryAcquireWriteLock(in _acousticDensityMapHandle, SystemID.WorldSpatialHash, out NativeArray<float> densityMap))
+                    return false;
+
+                locked = true;
+                if (!densityMap.IsCreated ||
+                    densityMap.Length < AcousticDensityMapCellCount)
+                {
+                    return false;
+                }
+
+                int sampleCount = math.min(densityMap.Length, requestedSampleCount);
+                if (sampleCount <= 0 || sampleCount != AcousticDensityMapCellCount)
+                    return false;
+
+                float peak = 0f;
+                for (int i = 0; i < sampleCount; i++)
+                {
+                    float sample = densityMap[i];
+                    _acousticDensityMapScratch[i] = sample;
+                    if (sample > peak)
+                        peak = sample;
+                }
+
+                uploadedSampleCount = sampleCount;
+                peakIntensity = math.saturate(peak);
+                return true;
+            }
+            finally
+            {
+                if (locked)
+                    vault.ReleaseWriteLock(in _acousticDensityMapHandle, SystemID.WorldSpatialHash);
+            }
+        }
+
+        private static bool TryPublishAcousticDensityScratchToVault(IDataVault vault)
+        {
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                _acousticDensityMapScratch.Length < AcousticDensityMapCellCount)
+            {
+                return false;
+            }
+
+            bool locked = false;
+            try
+            {
+                if (!vault.TryAcquireWriteLock(in _acousticDensityMapHandle, SystemID.WorldSpatialHash, out NativeArray<float> densityMap))
+                    return false;
+
+                locked = true;
+                if (!densityMap.IsCreated ||
+                    densityMap.Length < AcousticDensityMapCellCount)
+                {
+                    return false;
+                }
+
+                for (int i = 0; i < AcousticDensityMapCellCount; i++)
+                    densityMap[i] = _acousticDensityMapScratch[i];
+
+                return true;
+            }
+            finally
+            {
+                if (locked)
+                    vault.ReleaseWriteLock(in _acousticDensityMapHandle, SystemID.WorldSpatialHash);
+            }
+        }
+
         private static void DisposeAcousticDensityMap()
         {
             ClearAcousticDensityMapForOriginShift();
@@ -2120,37 +2185,22 @@ namespace Hecton8.World
                     return;
 
                 IDataVault vault = _acousticDensityVault;
-                bool locked = false;
-                try
-                {
-                    if (vault == null)
-                        return;
+                if (vault == null)
+                    return;
 
-                    if (!vault.TryAcquireWriteLock(in _acousticDensityMapHandle, SystemID.WorldSpatialHash, out NativeArray<float> densityMap))
-                        return;
+                _nativeHash.BuildAcousticDensityMap(
+                    in listenerAup,
+                    AcousticDensityMapRadiusMeters,
+                    currentTimestamp,
+                    _acousticDensityMapScratch,
+                    new int3(AcousticDensityMapAxis, AcousticDensityMapAxis, AcousticDensityMapAxis),
+                    (uint)SpatialTransientEventType.AcousticImpulse);
 
-                    locked = true;
-                    if (!densityMap.IsCreated ||
-                        densityMap.Length < AcousticDensityMapCellCount)
-                    {
-                        return;
-                    }
+                if (!TryPublishAcousticDensityScratchToVault(vault))
+                    return;
 
-                    _nativeHash.BuildAcousticDensityMap(
-                        in listenerAup,
-                        AcousticDensityMapRadiusMeters,
-                        currentTimestamp,
-                        densityMap,
-                        new int3(AcousticDensityMapAxis, AcousticDensityMapAxis, AcousticDensityMapAxis),
-                        (uint)SpatialTransientEventType.AcousticImpulse);
-                    _hasAcousticDensityMap = true;
-                    _lastAcousticDensityFrame = currentFrame;
-                }
-                finally
-                {
-                    if (locked)
-                        vault.ReleaseWriteLock(in _acousticDensityMapHandle, SystemID.WorldSpatialHash);
-                }
+                _hasAcousticDensityMap = true;
+                _lastAcousticDensityFrame = currentFrame;
             }
         }
 

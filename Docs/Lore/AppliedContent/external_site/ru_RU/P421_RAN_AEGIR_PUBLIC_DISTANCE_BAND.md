@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Дистанция Ran/Aegir
+# Ran/Aegir Distance Band
 
-Система Aegir лежит в достижимом, но жестком no-FTL диапазоне: достаточно близко для индустрии и достаточно далеко, чтобы заброшенность имела цену.
+The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.
 
 ## Scanner
 
-Публичная полоса: Ran/Aegir - 10.5 ly без FTL от Sol.
+Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.
 
 ## Terminal
 
-EPHEMERIS BAND. Используй 10.5 ly до заморозки констант. Без FTL-спасения.
+EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.
 
 ## Audio
 
-Десять световых лет близко на карте и жестоко для контракта.
+Ten light-years is close on a map and brutal for a contract.
 
 ## Field Note
 
-Для астрономического вступления сайта и route map кодекса. Не объявлять финальные ephemeris constants.
+Public astronomy record: distance bands and route maps are explanatory ranges, not final ephemeris constants.
 
 <!-- External Site; generated from P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND/ru_RU. -->

@@ -4,6 +4,16 @@
 
 This folder is an Editor-output target for AI texture control-map templates. It is not a runtime asset source, not a proof artifact, and not a quality-scaling contract.
 
+Stable authority routes:
+
+- `PROCEDURAL_ASSET_PIPELINE.md`
+- `3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md`
+- `3DMODEL_TEXTURES_MATERIALS.md`
+- `rendering.md`
+- `Docs/ARCHITECTURE/ARM_TEXTURE_PACKING_PIPELINE.md`
+
+Do not cite these templates as proof of texture import settings, ARM packing output, material quality, VRAM residency, generated asset quality, or visual/art QA.
+
 ## Output Owner
 
 Unity Editor tools write UV-space template PNGs here:

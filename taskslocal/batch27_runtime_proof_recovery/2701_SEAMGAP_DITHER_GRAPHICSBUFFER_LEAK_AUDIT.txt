@@ -1,0 +1,45 @@
+ID: 2701
+Role: SeamGapDitherRenderer GraphicsBuffer Leak Auditor
+Mode: report-only, static/source/log audit. Do not edit project files except the required report.
+
+Objective:
+Identify the exact owner-correct fix shape for the current Persistent leak stack from `SeamGapDitherRenderer.EnsureBuffers()` without touching Unity or triggering imports.
+
+Evidence basis:
+- Batch26 synthesis reports a current leak stack at `Assets/_Project/Scripts/SeamGapDitherRenderer.cs:455`, `456`, `466`, `467`, `476`, `481`.
+- The leak blocks clean proof until a fresh reload/play-exit log proves it gone.
+
+Read first:
+- `AGENTS.md`
+- `quality.md`
+- `performance.md`
+- `.agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
+- `.agents-skills/DBG_Telemetry_Crash_Reporting_PostMortem.txt`
+- `Docs/Reports/Batch26/BATCH26_SYNTHESIS_FOR_UNITY_OWNER.md`
+
+Owned inspection scope:
+- `Assets/_Project/Scripts/SeamGapDitherRenderer.cs`
+- `GraphicsBufferUploadUtility` source if present
+- current Unity logs under `Docs/AgentLogs/*1474*.log` and live Editor log only as read-only evidence
+- related source files only if directly referenced by `SeamGapDitherRenderer`
+
+Tasks:
+1. Inspect the full lifecycle of every `GraphicsBuffer`, `Mesh`, `NativeArray`, callback, and static/runtime resource in `SeamGapDitherRenderer`.
+2. Locate `OnDisable`, `OnDestroy`, domain reload, play-exit, and editor lifecycle release paths.
+3. Verify whether every buffer allocated in `EnsureBuffers()` is released on all owner exits.
+4. Determine whether double-buffer active fields can keep stale buffer refs after release/recreate.
+5. Check if `EnsureBuffers()` can allocate during editor reload or in an invalid phase.
+6. Identify whether fix should be source code, scene owner gating, editor callback cleanup, or proof-only.
+7. Do not implement. Produce an exact patch plan with candidate method names and line refs.
+8. Define required verification: fresh reload, Play enter/exit, log tail, no Persistent alloc leak, no compile errors, no runtime visual regression.
+
+Required report:
+`Docs/Reports/Batch27/2701_SEAMGAP_DITHER_GRAPHICSBUFFER_LEAK_AUDIT.md`
+
+Report must include:
+- current lifecycle map;
+- likely leak source;
+- exact fix plan;
+- risks;
+- proof commands/artifacts required;
+- Low/Mid/High/Ultra consequences if the renderer is disabled, reduced, or fixed.

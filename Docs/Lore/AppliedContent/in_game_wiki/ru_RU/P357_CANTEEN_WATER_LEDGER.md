@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Canteen water ledger
+# Canteen Water Ledger
 
-Canteen ledger делает жизнь колонии материальной: water, tokens, pump access, medical overrides and accountability.
+The canteen ledger makes colony life material: water, tokens, pump access, medical overrides and accountability before the flood.
 
 ## Scanner
 
-Water ledger recovered. Колония считала drinkable water как labor infrastructure.
+Water ledger recovered. Drinkable water was assigned like tool custody.
 
 ## Terminal
 
-CANTEEN LEDGER: шесть missing tokens, два medical overrides, одна pump-room correction. Обычные числа - evidence.
+CANTEEN LEDGER: six missing tokens; two medical overrides; one pump-room correction; ration dispute routed to shift lead after tone 2.
 
 ## Audio
 
-Катастрофа верится лучше, когда последний спор был о water tokens.
+The last argument was about water tokens.
 
 ## Field Note
 
-Для early/mid colony props.
+Six missing tokens, two medical overrides, one pump-room correction. The argument in the margin is about cups, not the end of the world.
 
 <!-- In-Game Wiki; generated from P357_CANTEEN_WATER_LEDGER/ru_RU. -->

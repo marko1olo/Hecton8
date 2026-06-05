@@ -21,18 +21,17 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: MAT_SurfaceSplashFoamDirty_1428
-  m_Shader: {fileID: 4800000, guid: 650dd9526735d5b46b79224bc6e94025, type: 3}
+  m_Shader: {fileID: 4800000, guid: 293b5e809b0a2ff44a3044c7de1e5636, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords:
+  m_ValidKeywords: []
+  m_InvalidKeywords:
   - _SURFACE_TYPE_TRANSPARENT
-  m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 1
-  m_CustomRenderQueue: 3000
-  stringTagMap:
-    RenderType: Transparent
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
   disabledShaderPasses:
   - MOTIONVECTORS
   - DepthOnly
@@ -42,7 +41,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _BaseMap:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: e330b3b94b6bdfb42ab2a9e1ca3a5efc, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
@@ -52,6 +51,7 @@ Material:
     m_Ints: []
     m_Floats:
     - _AddPrecomputedVelocity: 0
+    - _Alpha: 0.46
     - _AlphaClip: 0
     - _AlphaToMask: 0
     - _Blend: 0
@@ -60,15 +60,21 @@ Material:
     - _Cutoff: 0.5
     - _DstBlend: 10
     - _DstBlendAlpha: 10
+    - _EdgeFade: 0.16
     - _QueueOffset: 0
     - _SampleGI: 0
+    - _Softness: 0.22
     - _SrcBlend: 5
     - _SrcBlendAlpha: 1
     - _Surface: 1
+    - _Threshold: 0.42
     - _XRMotionVectorsPass: 1
     - _ZWrite: 0
     m_Colors:
     - _BaseColor: {r: 0.62, g: 0.86, b: 0.8, a: 0.5}
     - _Color: {r: 0.62, g: 0.86, b: 0.8, a: 0.5}
+    - _FoamColor: {r: 0.82, g: 0.98, b: 0.94, a: 0.64}
+    - _TilingA: {r: 2.1, g: 0.72, b: 0.014, a: 0.004}
+    - _TilingB: {r: 4.8, g: 1.22, b: -0.01, a: 0.006}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

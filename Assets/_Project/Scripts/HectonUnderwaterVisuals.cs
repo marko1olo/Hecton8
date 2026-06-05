@@ -151,6 +151,7 @@ namespace Hecton8.Environment
         private const float UnderwaterDaylightSeaTintStrength = 0.34f;
         private const float UnderwaterDaylightAmbientTintStrength = 0.18f;
         private const float UnderwaterClearWaterMotesStrength = 0.2f;
+        private const float SuspendedMotesQualityRefreshEpsilon = 0.01f;
         private const string UnderwaterSuspendedMotesChildName = "Underwater_SuspendedMotes";
         private const string UnderwaterExhaleBubblesChildName = "Underwater_ExhaleBubbles";
         private const string UnderwaterShallowSunBeamChildName = "Underwater_ShallowSunBeam";
@@ -193,7 +194,9 @@ namespace Hecton8.Environment
         private int _hudFogLuminanceThreadGroupSizeY;
         private bool _hudFogLuminanceReady;
         private bool _hudFogReadbackPending;
+        private bool _hudFogLuminanceReleasePending;
         private bool _hudFogLuminanceReadbackRepairRequested = true;
+        private Action<AsyncGPUReadbackRequest> _hudFogLuminanceReadbackCompleted;
         private RenderTexture _photophobiaFieldTextureA;
         private RenderTexture _photophobiaFieldTextureB;
         private int _photophobiaFieldKernel = -1;
@@ -337,7 +340,7 @@ namespace Hecton8.Environment
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
 
         [Header("Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â WATER LEVEL Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â")]
-        [SerializeField] private float waterLevelFallback = 4900f;
+        [SerializeField] private float waterLevelFallback = 14.02f;
 
         [Header("Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â DEEP CELESTIAL CULL Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â")]
         [Tooltip("Suppresses SpaceCamera celestial rendering below this depth to cut deep-water render overhead without touching shallow water.")]
@@ -358,9 +361,9 @@ namespace Hecton8.Environment
         [SerializeField] private float sunVisualDisableThreshold = 0.005f;
 
         [Header("Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â SUN SCATTERING Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â")]
-        [SerializeField] private float baseSunSize = 0.002f;
+        [SerializeField] private float baseSunSize = 0.0065f;
         [SerializeField] private float underwaterSunSizeMax = 0.15f;
-        [SerializeField] private float baseSunEdgeSoftness = 0.001f;
+        [SerializeField] private float baseSunEdgeSoftness = 0.0035f;
         [SerializeField] private float underwaterSunSoftnessMax = 0.5f;
         [SerializeField, UnityEngine.Range(0.5f, 20f)] private float sunStateBrightenSpeed = 4.5f;
         [SerializeField, UnityEngine.Range(0.5f, 20f)] private float sunStateDarkenSpeed = 8f;
@@ -741,8 +744,6 @@ namespace Hecton8.Environment
             Shader.PropertyToID("_HectonWaterSurfaceEmission");
         private static readonly int _HectonUnderwaterSurfaceColorId =
             Shader.PropertyToID("_HectonUnderwaterSurfaceColor");
-        private static readonly Action<AsyncGPUReadbackRequest> s_HudFogLuminanceReadbackCompleted =
-            HandleHudFogLuminanceReadbackCompleted;
         private static readonly int _ID_SunSize =
             Shader.PropertyToID("_SunSize");
         private static readonly int _ID_SunEdgeSoftness =
@@ -816,6 +817,7 @@ namespace Hecton8.Environment
         private IFluidBubbleBurstSink _fluidBubbleBurstSink;
         private bool _physicsEngineCached;
         private bool _physicsEngineLookupAttempted;
+        private static IOceanVisualBridge s_oceanVisualBridge;
 
         private HectonAtmosphereManager _cachedAtmoManager;
         private bool _atmoManagerCached;
@@ -920,6 +922,8 @@ namespace Hecton8.Environment
         private float _smoothedSunLightFactor = -1f;
         private float _smoothedSunIntensity = -1f;
         private float _cachedSuspendedMotesEmission = -1f;
+        private int _cachedSuspendedMotesParticleCap;
+        private float _cachedSuspendedMotesQualityWeight = -1f;
         private float _cachedBottomDistance = float.PositiveInfinity;
         private float _cachedBottomSiltBoost;
         private float _externalBottomSiltBurstBoost;
@@ -1012,6 +1016,7 @@ namespace Hecton8.Environment
         private void Awake()
         {
             _runtimeVisualCallbacksActive = Application.isPlaying;
+            _hudFogLuminanceReadbackCompleted = HandleHudFogLuminanceReadbackCompleted;
             CacheGraphicsCapabilitiesCold();
             CacheRuntimeSkyMaterialReference();
             ForceMandatedSkyboxOwnership();
@@ -1033,7 +1038,6 @@ namespace Hecton8.Environment
             if (_runtimeVisualCallbacksActive)
             {
                 ActiveRuntimeInstance = this;
-                GlobalRegistry.RegisterUnderwaterVisualsRuntime(this);
                 CacheGraphicsCapabilitiesCold();
                 CacheRuntimeDependencies();
                 TryRegisterHotSwapListener();
@@ -1379,7 +1383,7 @@ namespace Hecton8.Environment
             }
         }
 
-        private static void EnsureCameraTextureRequirements(UniversalAdditionalCameraData cameraData, Camera camera)
+        private void EnsureCameraTextureRequirements(UniversalAdditionalCameraData cameraData, Camera camera)
         {
             if (cameraData == null)
                 return;
@@ -1411,42 +1415,62 @@ namespace Hecton8.Environment
                 cameraData.renderPostProcessing = true;
         }
 
-        private static IOceanVisualBridge ResolveOceanVisualBridge()
+        private void CacheOceanVisualBridgeCold()
         {
-            return OceanVisualBridgeRegistry.Active;
+            s_oceanVisualBridge = OceanVisualBridgeRegistry.Active;
         }
 
-        private static bool HasUnderwaterPass(Camera camera)
+        private void RefreshOceanVisualBridgeOnColdCadence()
+        {
+            IOceanVisualBridge activeBridge = OceanVisualBridgeRegistry.Active;
+            if (ReferenceEquals(s_oceanVisualBridge, activeBridge))
+                return;
+
+            s_oceanVisualBridge = activeBridge;
+            _runtimeVisualOwnerResolveRequested = true;
+            _pendingOceanMaterialBindingDirty = true;
+        }
+
+        private static IOceanVisualBridge ResolveOceanVisualBridge()
+        {
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+                return OceanVisualBridgeRegistry.Active;
+#endif
+            return s_oceanVisualBridge;
+        }
+
+        private bool HasUnderwaterPass(Camera camera)
         {
             IOceanVisualBridge bridge = ResolveOceanVisualBridge();
             return bridge != null && bridge.HasUnderwaterPass(camera);
         }
 
-        private static Component TryGetUnderwaterPass(Camera camera)
+        private Component TryGetUnderwaterPass(Camera camera)
         {
             IOceanVisualBridge bridge = ResolveOceanVisualBridge();
             return bridge != null ? bridge.TryGetUnderwaterPass(camera) : null;
         }
 
-        private static Component EnsureUnderwaterPass(Camera camera)
+        private Component EnsureUnderwaterPass(Camera camera)
         {
             IOceanVisualBridge bridge = ResolveOceanVisualBridge();
             return bridge != null ? bridge.EnsureUnderwaterPass(camera) : null;
         }
 
-        private static bool IsUnderwaterPassEnabled(Component renderer)
+        private bool IsUnderwaterPassEnabled(Component renderer)
         {
             IOceanVisualBridge bridge = ResolveOceanVisualBridge();
             return bridge != null && bridge.IsUnderwaterPassEnabled(renderer);
         }
 
-        private static bool IsUnderwaterPassActive(Component renderer)
+        private bool IsUnderwaterPassActive(Component renderer)
         {
             IOceanVisualBridge bridge = ResolveOceanVisualBridge();
             return bridge != null && bridge.IsUnderwaterPassActive(renderer);
         }
 
-        private static void SetUnderwaterPassEnabled(Component renderer, bool enabled)
+        private void SetUnderwaterPassEnabled(Component renderer, bool enabled)
         {
             IOceanVisualBridge bridge = ResolveOceanVisualBridge();
             if (bridge == null)
@@ -1455,7 +1479,7 @@ namespace Hecton8.Environment
             bridge.SetUnderwaterPassEnabled(renderer, enabled);
         }
 
-        private static void SetCopyOceanMaterialParamsEachFrame(Component renderer, bool enabled)
+        private void SetCopyOceanMaterialParamsEachFrame(Component renderer, bool enabled)
         {
             IOceanVisualBridge bridge = ResolveOceanVisualBridge();
             if (bridge == null)
@@ -1464,13 +1488,13 @@ namespace Hecton8.Environment
             bridge.SetCopyOceanMaterialParamsEachFrame(renderer, enabled);
         }
 
-        private static Material ResolveOceanMaterial()
+        private Material ResolveOceanMaterial()
         {
             IOceanVisualBridge bridge = ResolveOceanVisualBridge();
             return bridge != null ? bridge.OceanMaterial : null;
         }
 
-        private static bool HasUnderwaterPassInstance()
+        private bool HasUnderwaterPassInstance()
         {
             IOceanVisualBridge bridge = ResolveOceanVisualBridge();
             return bridge != null && bridge.HasUnderwaterInstance;
@@ -1638,6 +1662,8 @@ namespace Hecton8.Environment
             _nextThermoclineAllowedTime = float.NegativeInfinity;
             _cachedBottomDistance = float.PositiveInfinity;
             _cachedBottomSiltBoost = 0f;
+            _cachedSuspendedMotesParticleCap = 0;
+            _cachedSuspendedMotesQualityWeight = -1f;
             _nextBottomSiltProbeTime = float.NegativeInfinity;
             _nextExhaleBubbleAllowedTime = float.NegativeInfinity;
             _nextRuntimeSpaceCameraResolveTime = float.NegativeInfinity;
@@ -2157,6 +2183,7 @@ namespace Hecton8.Environment
             if (_runtimeVisualCallbacksActive)
             {
                 ResolveRuntimeServiceCachesOnColdCadence();
+                RefreshOceanVisualBridgeOnColdCadence();
                 ResolveRuntimeVisualOwnersOnColdCadence();
                 if (enableHudFogLuminanceGpuReadback)
                     EnsureHudFogLuminanceResources(allowAllocate: true);
@@ -2346,6 +2373,7 @@ namespace Hecton8.Environment
 
             CachePhysicsEngine();
             CacheAtmosphereManager();
+            CacheOceanVisualBridgeCold();
             _runtimeServiceResolveRequested = false;
         }
 
@@ -2368,6 +2396,7 @@ namespace Hecton8.Environment
             _runtimeServiceResolveRequested = false;
             CachePhysicsEngine();
             CacheAtmosphereManager();
+            CacheOceanVisualBridgeCold();
         }
 
         private void TryRegisterHotSwapListener()
@@ -2869,7 +2898,10 @@ namespace Hecton8.Environment
         private void ApplySurfaceReadableRenderSettingsFloor()
         {
             if (RenderSettings.fog)
+            {
+                RenderSettings.fogColor = ResolveSurfaceFogColor();
                 RenderSettings.fogDensity = ResolveReadableSurfaceFogDensity(RenderSettings.fogDensity);
+            }
 
             if (IsGIRelayAmbientAuthorityActive())
                 return;
@@ -2916,6 +2948,7 @@ namespace Hecton8.Environment
             }
 
             _cachedUnderwaterFogColor = fogColor;
+            RenderSettings.fogColor = fogColor;
 
             float baseDensity = LerpClamped(maxFogDensity, minFogDensity, lightFactor);
             float targetDensity = baseDensity * _currentTurbidity;
@@ -2974,6 +3007,7 @@ namespace Hecton8.Environment
             {
                 RenderSettings.fog = true;
                 RenderSettings.fogMode = FogMode.ExponentialSquared;
+                RenderSettings.fogColor = ResolveSurfaceFogColor();
                 RenderSettings.fogDensity = ResolveSurfaceFogDensity();
             }
             else
@@ -2981,6 +3015,7 @@ namespace Hecton8.Environment
                 if (enableSurfaceFog)
                 {
                     RenderSettings.fog = true;
+                    RenderSettings.fogColor = ResolveSurfaceFogColor();
                     RenderSettings.fogDensity = ResolveSurfaceFogDensity();
                 }
                 else
@@ -3622,6 +3657,7 @@ namespace Hecton8.Environment
             {
                 RenderSettings.fog = true;
                 RenderSettings.fogMode = FogMode.ExponentialSquared;
+                RenderSettings.fogColor = ResolveSurfaceFogColor();
                 RenderSettings.fogDensity = ResolveReadableSurfaceFogDensity(surfaceState.FogDensity);
                 if (!giRelayAmbientAuthority)
                 {
@@ -3636,6 +3672,7 @@ namespace Hecton8.Environment
             {
                 RenderSettings.fog        = true;
                 RenderSettings.fogMode    = FogMode.ExponentialSquared;
+                RenderSettings.fogColor   = ResolveSurfaceFogColor();
                 RenderSettings.fogDensity = ResolveReadableSurfaceFogDensity(ResolveSurfaceFogDensity());
                 if (!giRelayAmbientAuthority)
                 {
@@ -4277,7 +4314,7 @@ namespace Hecton8.Environment
                 ApplyGIRelaySurfaceEmissionToMaterial(targetMaterial, _giRelaySurfaceEmissionColor);
         }
 
-        private static void ApplyOceanUnderwaterGlobals(
+        private void ApplyOceanUnderwaterGlobals(
             bool runtimeCallbacksActive,
             Material targetMaterial,
             Vector3 depthFogDensity,
@@ -4937,6 +4974,8 @@ namespace Hecton8.Environment
             if (mainCamera == null || !IsRuntimeMainCamera(mainCamera))
                 ResolveMainCamera();
 
+            EnsurePrimarySunReference();
+
             if (sunVisualTransform == null)
                 ResolveSunVisualTransform();
 
@@ -4982,6 +5021,7 @@ namespace Hecton8.Environment
                 _playerMovement == null ||
                 mainCamera == null ||
                 !IsRuntimeMainCamera(mainCamera) ||
+                !IsPrimarySunLightValid(sunLight) ||
                 sunVisualTransform == null ||
                 transitionCameraVfx == null ||
                 transitionVisorController == null ||
@@ -5116,7 +5156,7 @@ namespace Hecton8.Environment
             }
         }
 
-        private static void CopyUnderwaterPassSettings(
+        private void CopyUnderwaterPassSettings(
             Component source,
             Component target)
         {
@@ -5529,6 +5569,8 @@ namespace Hecton8.Environment
 
         private void ResolveSunVisualTransform()
         {
+            EnsurePrimarySunReference();
+
             if (sunVisualTransform != null)
                 return;
 
@@ -5549,6 +5591,31 @@ namespace Hecton8.Environment
             Transform resolvedSunVisual = sunLight.transform.Find("Sun_Body");
             if (resolvedSunVisual != null)
                 sunVisualTransform = resolvedSunVisual;
+        }
+
+        private void EnsurePrimarySunReference()
+        {
+            Light renderSun = RenderSettings.sun;
+            if (IsPrimarySunLightValid(renderSun) && !ReferenceEquals(sunLight, renderSun))
+                sunLight = renderSun;
+
+            if (!IsPrimarySunLightValid(sunLight))
+                sunLight = IsPrimarySunLightValid(renderSun) ? renderSun : null;
+
+            if (sunVisualTransform == null)
+                return;
+
+            Light visualLight = sunVisualTransform.GetComponent<Light>();
+            if (visualLight != null && !ReferenceEquals(visualLight, sunLight))
+                sunVisualTransform = null;
+        }
+
+        private static bool IsPrimarySunLightValid(Light candidate)
+        {
+            return candidate != null &&
+                   candidate.type == LightType.Directional &&
+                   candidate.enabled &&
+                   candidate.gameObject.activeInHierarchy;
         }
 
         private void UpdateSubmergeImpulse(float deltaTime)
@@ -5702,6 +5769,8 @@ namespace Hecton8.Environment
             if (underwaterSuspendedMotes == null)
                 return;
 
+            RefreshSuspendedMotesQualityCap();
+
             if (math.abs(targetEmission - _cachedSuspendedMotesEmission) > 0.05f)
             {
                 ParticleSystem.EmissionModule emission = underwaterSuspendedMotes.emission;
@@ -5727,6 +5796,43 @@ namespace Hecton8.Environment
 #endif
         }
 
+        private void RefreshSuspendedMotesQualityCap()
+        {
+            if (underwaterSuspendedMotes == null)
+                return;
+
+            float qualityWeight = ResolveVisualQualityWeight01();
+            if (_cachedSuspendedMotesParticleCap > 0 &&
+                math.abs(qualityWeight - _cachedSuspendedMotesQualityWeight) < SuspendedMotesQualityRefreshEpsilon)
+            {
+                return;
+            }
+
+            int particleCap = VfxComputeParticleBudgetCatalog.ResolvePoolCapacity(
+                qualityWeight,
+                0,
+                VFXEmissionProfile.FluidType.Snow);
+            particleCap = math.clamp(
+                math.max(1, particleCap),
+                1,
+                VfxComputeParticleBudgetCatalog.OverkillQualityMarineSnowCount);
+
+            if (particleCap != _cachedSuspendedMotesParticleCap)
+            {
+                ParticleSystem.MainModule main = underwaterSuspendedMotes.main;
+                main.maxParticles = particleCap;
+                _cachedSuspendedMotesParticleCap = particleCap;
+            }
+
+            _cachedSuspendedMotesQualityWeight = qualityWeight;
+        }
+
+        private static float ResolveVisualQualityWeight01()
+        {
+            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(0f, qualityWeight, math.isfinite(qualityWeight)));
+        }
+
         private void UpdateHudFogLuminanceDownsample()
         {
             if (!enableHudFogLuminanceGpuReadback)
@@ -5739,7 +5845,7 @@ namespace Hecton8.Environment
             if (sourceTexture == null || sourceTexture.width <= 0 || sourceTexture.height <= 0)
                 return;
 
-            if (!HasHudFogLuminanceResourcesReady() || _hudFogReadbackPending)
+            if (_hudFogLuminanceReleasePending || !HasHudFogLuminanceResourcesReady() || _hudFogReadbackPending)
                 return;
 
             if (!HasHudFogLuminanceReadbackData())
@@ -5757,6 +5863,9 @@ namespace Hecton8.Environment
             if (groupsX <= 0 || groupsY <= 0)
                 return;
 
+            if (_hudFogLuminanceReadbackCompleted == null)
+                _hudFogLuminanceReadbackCompleted = HandleHudFogLuminanceReadbackCompleted;
+
             _nextHudFogLuminanceReadbackTime = now + HudFogLuminanceReadbackIntervalSeconds;
             hudFogLuminanceCompute.SetTexture(_hudFogLuminanceKernel, _HectonHudFogSourceId, sourceTexture);
             hudFogLuminanceCompute.SetTexture(_hudFogLuminanceKernel, _HectonHudFogLuminanceOutputId, _hudFogLuminanceTexture);
@@ -5773,12 +5882,15 @@ namespace Hecton8.Environment
                 ref _hudFogLuminanceReadback.Data,
                 _hudFogLuminanceTexture,
                 0,
-                s_HudFogLuminanceReadbackCompleted);
+                _hudFogLuminanceReadbackCompleted);
             _hudFogReadbackPending = !request.hasError;
         }
 
         private void EnsureHudFogLuminanceResources(bool allowAllocate = true)
         {
+            if (_hudFogLuminanceReleasePending)
+                return;
+
             if (_hudFogLuminanceReady && _hudFogLuminanceTexture != null)
                 return;
 
@@ -5892,19 +6004,26 @@ namespace Hecton8.Environment
 
         private void ReleaseHudFogLuminanceResources()
         {
-            if (_hudFogReadbackPending)
-            {
-                // BLOCKING_SYNC_POINT: teardown only; do not release the luminance texture while readback owns it.
-                AsyncGPUReadback.WaitAllRequests();
-            }
-
-            _hudFogReadbackPending = false;
             _hudFogLuminanceReady = false;
             _hudFogLuminanceKernel = -1;
             _hudFogLuminanceThreadGroupSizeX = 0;
             _hudFogLuminanceThreadGroupSizeY = 0;
-            DisposeHudFogLuminanceReadbackData();
             _hudFogLuminanceReadbackRepairRequested = true;
+
+            if (_hudFogReadbackPending)
+            {
+                _hudFogLuminanceReleasePending = true;
+                return;
+            }
+
+            ReleaseHudFogLuminanceResourcesImmediate();
+        }
+
+        private void ReleaseHudFogLuminanceResourcesImmediate()
+        {
+            _hudFogReadbackPending = false;
+            _hudFogLuminanceReleasePending = false;
+            DisposeHudFogLuminanceReadbackData();
 
             if (_hudFogLuminanceTexture == null)
                 return;
@@ -5914,22 +6033,21 @@ namespace Hecton8.Environment
             _hudFogLuminanceTexture = null;
         }
 
-        private static void HandleHudFogLuminanceReadbackCompleted(AsyncGPUReadbackRequest request)
+        private void HandleHudFogLuminanceReadbackCompleted(AsyncGPUReadbackRequest request)
         {
-            HectonUnderwaterVisuals instance = ActiveRuntimeInstance;
-            if (instance == null)
-                return;
+            _hudFogReadbackPending = false;
+            if (!request.hasError)
+            {
+                NativeArray<float> luminance = _hudFogLuminanceReadback.Data;
+                if (luminance.IsCreated && luminance.Length > 0)
+                {
+                    float resolved = luminance[0];
+                    _hudFogDownsampledLuminance01 = math.isfinite(resolved) ? math.saturate(resolved) : 0f;
+                }
+            }
 
-            instance._hudFogReadbackPending = false;
-            if (request.hasError)
-                return;
-
-            NativeArray<float> luminance = instance._hudFogLuminanceReadback.Data;
-            if (!luminance.IsCreated || luminance.Length <= 0)
-                return;
-
-            float resolved = luminance[0];
-            instance._hudFogDownsampledLuminance01 = math.isfinite(resolved) ? math.saturate(resolved) : 0f;
+            if (_hudFogLuminanceReleasePending)
+                ReleaseHudFogLuminanceResourcesImmediate();
         }
 
         private void EnsureHudFogLuminanceReadbackData()
@@ -6983,6 +7101,7 @@ namespace Hecton8.Environment
             {
                 ResolvePlayerCamera();
                 ResolveMainCamera();
+                EnsurePrimarySunReference();
                 ResolveSunVisualTransform();
             }
 
@@ -7219,11 +7338,37 @@ namespace Hecton8.Environment
 
         private float ResolveWaterLevel()
         {
+            if (atmosphereManager != null)
+            {
+                float atmosphereSeaLevel = atmosphereManager.SeaLevelY;
+                if (math.isfinite(atmosphereSeaLevel))
+                    return atmosphereSeaLevel;
+            }
+
             if (!_physicsEngineLookupAttempted)
                 RequestRuntimeServiceCacheCold();
             if (_physicsEngine != null)
-                return _physicsEngine.WaterLevel;
-            return waterLevelFallback;
+                return SanitizeVisualWaterLevel(_physicsEngine.WaterLevel);
+
+            return SanitizeVisualWaterLevel(waterLevelFallback);
+        }
+
+        private float SanitizeVisualWaterLevel(float waterLevel)
+        {
+            if (!math.isfinite(waterLevel))
+                return 0f;
+
+            Camera camera = mainCamera;
+            if (camera == null && playerCamera != null)
+                camera = playerCamera.GetComponent<Camera>();
+
+            if (camera != null && math.isfinite(camera.transform.position.y) &&
+                math.abs(waterLevel - camera.transform.position.y) > 1000f)
+            {
+                return 0f;
+            }
+
+            return waterLevel;
         }
 
         private float ResolveCurrentDepth()

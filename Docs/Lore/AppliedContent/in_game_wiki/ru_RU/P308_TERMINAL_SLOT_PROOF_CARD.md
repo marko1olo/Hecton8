@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Proof card terminal slot
+# Terminal Slot Chain
 
-Terminal proof card ограничивает terminal text authored slots and baked strings.
+Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.
 
 ## Scanner
 
-Terminal proof: limited slots, packet hash, operator surface, no live markdown.
+Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.
 
 ## Terminal
 
-TERMINAL PROOF: terminal entries consume baked packet hashes and string-pool rows; no runtime markdown or JSON.
+Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.
 
 ## Audio
 
-Terminal slot - не архивный шкаф.
+A station terminal remembers what the crew typed there, not a distant narrator's explanation.
 
 ## Field Note
 
-TerminalOS expansion остается Unity placement task.
+Terminal rows bind to authored slot IDs, preserved text rows, and POI context.
 
 <!-- In-Game Wiki; generated from P308_TERMINAL_SLOT_PROOF_CARD/ru_RU. -->

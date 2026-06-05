@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Правило tier-label доказательств PDA
+# PDA Evidence Tier Label Rule
 
-Evidence tier labels сохраняют codex читаемым в долгой кампании, не превращая mystery в checklist morality.
+Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.
 
 ## Scanner
 
-Presentation rule: PDA evidence использует tier labels для rumor, artifact, physical proof, receiver authority и ending record.
+Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.
 
 ## Terminal
 
-PDA LABELS: не красить truth как good/bad. Маркировать custody strength, proof stage, spoiler gate и receiver pressure.
+PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.
 
 ## Audio
 
-PDA должен говорить, насколько силен proof, а не что чувствовать.
+The PDA should tell you how strong the proof is, not what to feel.
 
 ## Field Note
 
-Для PDA UI labels и localization glossary.
+PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe.
 
 <!-- In-Game Wiki; generated from P431_PDA_EVIDENCE_TIER_LABEL_RULE/ru_RU. -->

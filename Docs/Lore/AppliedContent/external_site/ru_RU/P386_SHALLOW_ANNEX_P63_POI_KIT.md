@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# POI-кит: Shallow Annex P-63
+# Shallow Annex P-63 POI Kit
 
-P-63 - первое playable proof, что HECTON-8 начинается как практическое выживание, прежде чем стать делом об ответственности.
+P-63 is the first playable proof that HECTON-8 is practical survival before it becomes a liability case.
 
 ## Scanner
 
-POI kit: P-63 содержит repair task, safe pocket и первое официальное противоречие.
+POI kit: P-63 contains repair task, safe pocket and the first official contradiction.
 
 ## Terminal
 
-P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet и sealed route notice.
+P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.
 
 ## Audio
 
-Первая комната с воздухом. Первая комната с ложью.
+First room with air. First room with a lie.
 
 ## Field Note
 
-Для first-hour POI placement checklist.
+POI evidence kit: Shallow Annex P-63 anchors first-hour shelter, repair pressure, and the first official contradiction.
 
 <!-- External Site; generated from P386_SHALLOW_ANNEX_P63_POI_KIT/ru_RU. -->

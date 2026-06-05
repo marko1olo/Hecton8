@@ -10,6 +10,7 @@ using Hecton8.Inventory;
 using Hecton8.SaveSystem;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -30,6 +31,8 @@ namespace Hecton8.Tools
         private const float BrineDensityThresholdKgPerCubicMeter = 1249f;
         private const ushort DegradedFlag = 1 << 0;
         private const ushort BrokenFlag = 1 << 1;
+        private const int PendingDurabilityCommandSizeBytes = 24;
+        private const int ItemStateSizeBytes = 16;
 
         [Header("── Settings ────────────────────────────────")]
         [Tooltip("Enable runtime tool wear processing.")]
@@ -108,6 +111,8 @@ namespace Hecton8.Tools
         private ISaveService _saveService;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private IBrineFluidDensityReadModel _brineDensityReadModel;
+        private static bool s_nativeLayoutValidated;
+        private static bool s_nativeLayoutValid;
 
         public int SavePriority => 20;
         public int LoadPriority => 20;
@@ -115,6 +120,9 @@ namespace Hecton8.Tools
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            s_x001ToolDurabilitySystemSignalPushDropCount = 0;
+            s_nativeLayoutValidated = false;
+            s_nativeLayoutValid = false;
         }
 
         private static void RunDurabilityDecayOwnerPhase(
@@ -1008,7 +1016,30 @@ namespace Hecton8.Tools
 
         private void EnsureNativeStateCold()
         {
+            if (!ValidateNativeLayoutCold())
+                return;
+
             EnsureNativeStateViews(out _, out _, out _, out _, out _, createIfMissing: true);
+        }
+
+        private static bool ValidateNativeLayoutCold()
+        {
+            if (s_nativeLayoutValidated)
+                return s_nativeLayoutValid;
+
+            int commandSize = UnsafeUtility.SizeOf<PendingDurabilityCommand>();
+            int itemStateSize = UnsafeUtility.SizeOf<ItemState>();
+            s_nativeLayoutValid =
+                commandSize == PendingDurabilityCommandSizeBytes &&
+                (commandSize & 7) == 0 &&
+                itemStateSize == ItemStateSizeBytes &&
+                (itemStateSize & 7) == 0;
+
+            s_nativeLayoutValidated = true;
+            if (!s_nativeLayoutValid)
+                Debug.LogError("ToolDurabilitySystem native layout violates the ARM64 8-byte DTO contract.");
+
+            return s_nativeLayoutValid;
         }
 
         private void DisposeNativeState()

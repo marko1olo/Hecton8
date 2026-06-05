@@ -10,13 +10,13 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Public Site Article Tier Rules
+# Public Article Tier Rules
 
-Public Site Article Tier Rules separate marketing/wiki copy from spoiler-gated campaign evidence.
+Public Article Tier Rules separate public summaries from spoiler-gated campaign evidence.
 
 ## Scanner
 
@@ -24,7 +24,7 @@ Public copy can name pressure, route cost and old lies; it must gate Atlas-basin
 
 ## Terminal
 
-SITE TIERS: T0 public premise, T1 early tools/routes, T2 corporate evidence, T3 Atlas-basin consequences, T4 internal-only table/runtime notes.
+ARTICLE TIERS: T0 public premise, T1 early tools and routes, T2 corporate evidence, T3 Atlas-basin consequences, T4 sealed implementation records.
 
 ## Audio
 
@@ -32,6 +32,6 @@ Market the wound. Do not sell the autopsy before the player earns it.
 
 ## Field Note
 
-Article tiers: public setting, early systems, mid-depth evidence, spoiler-gated endings, internal-only implementation.
+Article tiers separate public setting, early systems, mid-depth evidence, spoiler-gated endings, and sealed table records.
 
 <!-- In-Game Wiki; generated from P216_PUBLIC_SITE_ARTICLE_TIER_RULES/uk_UA. -->

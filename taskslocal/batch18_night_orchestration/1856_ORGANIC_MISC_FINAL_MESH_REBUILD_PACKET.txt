@@ -1,0 +1,58 @@
+AGENT ID: 1856
+ROLE: ORGANIC_MISC_FINAL_MESH_REBUILD_PACKET
+MODE: No-mutation production rebuild packet. Do not edit prefabs, assets, source, scenes, binaries, or `.meta`.
+
+PRIMARY GOAL
+Turn the 2 primitive `Nature/OrganicMisc/Final` blockers into a concrete production organic mesh rebuild packet. The packet must define how to replace egg cluster and giant plant primitive finals with believable non-primitive organic assets that support shallow/mid-depth beauty, alien ecology, LODs, materials, and future runtime proof.
+
+READ
+- AGENTS.md, PROJECT_BIBLES.md, VISION_LOCKS.md, TASTE.md, quality.md
+- creatures.md, world.md, terrain.md, vfx.md, 3dmodel.md, 3DMODEL_TEXTURES_MATERIALS.md, PROCEDURAL_ASSET_PIPELINE.md if present
+- Docs/Reports/Batch18/1851_GENERATED_ASSET_PRODUCTION_AUDIT.md
+- Docs/Reports/Batch18/1852_PROCEDURAL_PLACEHOLDER_FINAL_GATE.md
+- Docs/Reports/Batch18/1853_PRIMITIVE_FINAL_REPLACEMENT_PLAN.md
+- Assets/_Project/Scripts/Editor/WorldProceduralOrganicMiscFinalAuthoring.cs
+- Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_egg_cluster.asset
+- Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_plant_giant.asset
+- Assets/_Project/Prefabs/Nature/Flora/Baked if present
+- Assets/_Project/Art/Generated/Flora/BioForge if present
+- Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs if present
+- Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs if present
+- Assets/_Project/Scripts/Editor/WorldProceduralFloraBakedStarterGenerator.cs if present
+
+OWNED OUTPUTS
+- Docs/Tasks/Status_1856.md
+- Docs/AgentLogs/Rationale_1856.md for non-trivial decisions only
+- Docs/AgentLogs/LOG_1856.md
+- Docs/Reports/Batch18/1856_ORGANIC_MISC_FINAL_MESH_REBUILD_PACKET.md
+- Docs/Reports/Batch18/1856_ORGANIC_REBUILD_MATRIX.csv
+
+HARD RULES
+- Do not run Unity, PlayMode, builds, importers, bakes, or DataMonolith tools.
+- Do not edit current organic final prefabs or family assets.
+- Do not unblock `WorldProceduralOrganicMiscFinalAuthoring.RebuildOrganicMiscFinals`.
+- Do not propose primitive sphere/capsule/cylinder silhouettes as organic finals.
+- Do not claim baked flora is a drop-in replacement unless a concrete compatible prefab is proven.
+- Do not use darkness, turbidity, or depth grading to hide primitive organic shapes.
+
+20 TASKS
+01. Create tracking files and mark evidence class STATIC_SOURCE.
+02. Read authorities and 2-8 relevant mandates from `.agents-skills`.
+03. Reconfirm the egg cluster and giant plant primitive final prefabs and their family links.
+04. List built-in primitive mesh ref counts and current visible child roles for both prefabs.
+05. Inventory organic materials: egg shell, nest, plant, biolum, substrate, wetness, AO candidates.
+06. Inventory existing baked flora/BioForge candidates and classify as reusable source, carrier, inspiration, or invalid.
+07. Inspect `WorldProceduralOrganicMiscFinalAuthoring` enough to identify primitive-composite patterns to avoid.
+08. Define egg cluster production mesh: varied egg forms, membrane webbing, substrate pad, cavities, attachment points.
+09. Define egg material/texture semantics: shell translucency, membranes, wetness, biolum accents, AO/cavity vertex colors.
+10. Define egg gameplay separation: nest/scanner/spawn logic hidden or metadata-only, visible carrier non-primitive.
+11. Define giant plant production mesh: holdfast/root, tapering trunk/stalk, canopy/fronds, alien silhouette, asymmetry.
+12. Define giant plant material/texture semantics: sway weights, biolum, current response, wetness, age/damage variation.
+13. Define LOD0/LOD1/LOD2 or HLOD/impostor policy for each organic final.
+14. Define collider policy: invisible simple proxies allowed, visible art must not be collider primitive mesh.
+15. Define generator/authoring route: source files, output paths, naming, manifest/proof requirements.
+16. Define how generated assets should integrate with family variants only after proof.
+17. Define screenshot/render proof views: surface/shallow/medium-depth if applicable, close inspection and gameplay distance.
+18. Define validation gates: static primitive scan, material slots, LODs, family validator, visual proof, optional sway/biolum proof.
+19. Build CSV matrix with family, variant, current prefab, defect, rebuild spec, source candidates, proof owner.
+20. Append concise LOG/Rationale and mark PACKET_COMPLETE or BLOCKED with missing evidence.

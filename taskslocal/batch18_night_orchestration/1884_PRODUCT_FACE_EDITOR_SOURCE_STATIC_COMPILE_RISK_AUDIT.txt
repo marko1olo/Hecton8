@@ -1,0 +1,146 @@
+ID: 1884
+TITLE: PRODUCT_FACE_EDITOR_SOURCE_STATIC_COMPILE_RISK_AUDIT
+MODE: REPORT_ONLY_STATIC_AUDIT
+
+You are HECTON-8 batch agent 1884.
+You are running concurrently with other agents. Do not depend on sibling output that does not already exist on disk.
+Do not edit source code, Unity assets, prefabs, scenes, binaries, generated meshes, `.meta` files, DataMonolith files, or task files.
+
+PRIMARY GOAL
+
+Audit the new Batch18 product-face editor source routes for compile/API/path/ownership risk before a future single Unity owner imports or executes them.
+
+This is not a Unity compile and not runtime proof.
+It is a static guard pass that should prevent obvious source mistakes from reaching the Unity bottleneck.
+
+READ FIRST
+
+Read fully, but only the listed relevant files:
+
+- `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `VISION_LOCKS.md`
+- `TASTE.md`
+- `quality.md`
+- `3dmodel.md`
+- `3DMODEL_TEXTURES_MATERIALS.md`
+- `PROCEDURAL_ASSET_PIPELINE.md`
+- `Docs/Reports/Batch18/1867_PRODUCT_FACE_PREFAB_AUDIT_GATE.md`
+- `Docs/Reports/Batch18/1874_TOOL_MESH_SOURCE_AUTHORING_IMPLEMENTATION.md`
+- `Docs/Reports/Batch18/1875_RESOURCE_PICKUP_MESH_SOURCE_AUTHORING_IMPLEMENTATION.md`
+- `Docs/Reports/Batch18/1876_TRANSPORT_MESH_SOURCE_AUTHORING_IMPLEMENTATION.md`
+- `Docs/Reports/Batch18/1877_PLAYER_SUIT_MESH_SOURCE_AUTHORING_IMPLEMENTATION.md`
+- `Docs/Reports/Batch18/1878_SKY_OCEAN_SOURCE_VALIDATOR_IMPLEMENTATION.md`
+- `Docs/Reports/Batch18/1879_PRODUCT_FACE_RELINK_AND_PROOF_CONTRACT.md`
+- `Docs/Reports/Batch18/1879_PRODUCT_FACE_RELINK_SEQUENCE.csv`
+
+Read relevant mandates from `.agents-skills`:
+
+- `QA_Evidence_Text_Filter_Audit.txt`
+- `REND_URP_Graphics_HotPath_Optimization_HLOD.txt`
+- `MATH_AUP_Determinism_Sync.txt`
+
+AUDIT TARGETS
+
+Audit these files:
+
+- `Assets/_Project/Scripts/Editor/ProductFaceToolMeshSourceAuthoring.cs`
+- `Assets/_Project/Scripts/Editor/ProductFaceToolMeshSourceAuthoring.cs.meta`
+- `Assets/_Project/Scripts/Editor/ProductFaceResourcePickupMeshSourceAuthoring.cs`
+- `Assets/_Project/Scripts/Editor/ProductFaceResourcePickupMeshSourceAuthoring.cs.meta`
+- `Assets/_Project/Scripts/Editor/ProductFaceTransportMeshSourceAuthoring.cs`
+- `Assets/_Project/Scripts/Editor/ProductFaceTransportMeshSourceAuthoring.cs.meta`
+- `Assets/_Project/Scripts/Editor/ProductFacePlayerSuitMeshSourceAuthoring.cs`
+- `Assets/_Project/Scripts/Editor/ProductFacePlayerSuitMeshSourceAuthoring.cs.meta`
+- `Assets/_Project/Scripts/Editor/ProductFaceSkyOceanSourceValidator.cs`
+- `Assets/_Project/Scripts/Editor/ProductFaceSkyOceanSourceValidator.cs.meta`
+
+CHECKS REQUIRED
+
+1. Unity/C# API compatibility risk:
+   - scan for `float.IsFinite`, `double.IsFinite`, collection expressions, target-typed `new()` where project compiler risk is likely, raw string literals, unsupported pattern syntax, or other questionable syntax for Unity project compatibility;
+   - do not assume compile success without Unity or dotnet proof.
+
+2. Forbidden primitive/source shortcuts:
+   - scan for `GameObject.CreatePrimitive`, `CreatePrimitive`, direct hidden primitive promotion, or accepting Unity built-in primitive mesh as visible production art;
+   - narrow hidden Crest input exceptions must be explicitly tied to the 1878 gate, not generalized.
+
+3. Runtime/prefab/scene ownership leaks:
+   - scan for `new GameObject`, `AddComponent`, `PrefabUtility`, `SaveAsPrefab`, `AssetDatabase.DeleteAsset`, `Resources.Load`, `GameObject.Find`, `FindObject*`, `MeshCollider`, direct anchor mutation, scene traversal, runtime script mutation;
+   - classify findings as safe/unsafe based on file scope. Editor-only mesh asset writing is allowed only in source-authoring files and only for generated Mesh assets.
+
+4. AssetDatabase write scope:
+   - identify exactly which scripts write assets and where;
+   - confirm they write only expected future generated Mesh/source assets or read-only reports;
+   - flag any mismatch between source `OutputFolder` constants and the folders stated in `1879_PRODUCT_FACE_RELINK_SEQUENCE.csv`.
+
+5. Stable `.meta` GUID hygiene:
+   - verify each new `.meta` GUID is unique in the repository;
+   - flag any missing `.meta` or duplicated GUID.
+
+6. Menu item and namespace consistency:
+   - list every menu path introduced;
+   - flag inconsistent casing such as `HECTON-8` versus `Hecton8` only if it affects discoverability, future instructions, or validation runbooks.
+
+7. Report consistency:
+   - compare implementation reports with actual source;
+   - flag stale claims, missing follow-up notes, source/output path mismatches, or proof-label inflation.
+
+8. Acceptance boundary:
+   - explicitly state that this pass does not replace Unity import/compile/menu execution/screenshots/profiler proof.
+
+OUTPUTS YOU OWN
+
+Create/update only:
+
+- `Docs/Reports/Batch18/1884_PRODUCT_FACE_EDITOR_SOURCE_STATIC_COMPILE_RISK_AUDIT.md`
+- `Docs/Reports/Batch18/1884_PRODUCT_FACE_EDITOR_SOURCE_STATIC_COMPILE_RISK_MATRIX.csv`
+- `Docs/Tasks/Status_1884.md`
+- `Docs/AgentLogs/Rationale_1884.md`
+- `Docs/AgentLogs/LOG_1884.md`
+
+CSV REQUIREMENTS
+
+The CSV must parse with `Import-Csv`.
+Columns:
+
+- `file`
+- `check`
+- `severity`
+- `finding`
+- `evidence`
+- `recommended_followup`
+
+Severity values:
+
+- `BLOCKER`
+- `MAJOR`
+- `MINOR`
+- `INFO`
+
+Use `BLOCKER` only for a likely compile/import failure, destructive write risk, or source/route mismatch that would waste the Unity slot.
+
+PROHIBITIONS
+
+- Do not run Unity.
+- Do not run dotnet build.
+- Do not run menu items.
+- Do not edit the audited source files.
+- Do not generate Mesh assets.
+- Do not edit materials, textures, prefabs, scenes, `.meta`, binaries, or DataMonolith.
+- Do not claim visual acceptance.
+- Do not hide any finding because another agent produced the file.
+
+VERIFICATION REQUIRED
+
+Run and record:
+
+- `git diff --check -- Docs/Reports/Batch18/1884_PRODUCT_FACE_EDITOR_SOURCE_STATIC_COMPILE_RISK_AUDIT.md Docs/Reports/Batch18/1884_PRODUCT_FACE_EDITOR_SOURCE_STATIC_COMPILE_RISK_MATRIX.csv Docs/Tasks/Status_1884.md Docs/AgentLogs/Rationale_1884.md Docs/AgentLogs/LOG_1884.md`
+- a no-hit scan for finite APIs across the five audited `.cs` files;
+- a no-hit scan for `GameObject.CreatePrimitive|CreatePrimitive` across the five audited `.cs` files;
+- a GUID uniqueness scan for all five new script `.meta` GUIDs;
+- `Import-Csv Docs/Reports/Batch18/1884_PRODUCT_FACE_EDITOR_SOURCE_STATIC_COMPILE_RISK_MATRIX.csv | Measure-Object`.
+
+FINAL RESPONSE
+
+Report changed files, count of BLOCKER/MAJOR/MINOR/INFO findings, verification results, and the highest-risk follow-up for the orchestrator.

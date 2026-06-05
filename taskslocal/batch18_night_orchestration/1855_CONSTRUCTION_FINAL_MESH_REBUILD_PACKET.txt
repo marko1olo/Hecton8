@@ -1,0 +1,62 @@
+AGENT ID: 1855
+ROLE: CONSTRUCTION_FINAL_MESH_REBUILD_PACKET
+MODE: No-mutation production rebuild packet. Do not edit prefabs, assets, source, scenes, binaries, or `.meta`.
+
+PRIMARY GOAL
+Turn the 10 primitive `Construction/Final` blockers into a concrete production mesh rebuild packet. The packet must define how to replace primitive construction/wreck/ruin/power final prefabs with authored/generated non-primitive mesh packages while preserving gameplay/data ownership and future Unity validation boundaries.
+
+READ
+- AGENTS.md, PROJECT_BIBLES.md, VISION_LOCKS.md, TASTE.md, quality.md
+- construction.md, world.md, terrain.md, 3dmodel.md, 3DMODEL_TEXTURES_MATERIALS.md, PROCEDURAL_ASSET_PIPELINE.md if present
+- Docs/Reports/Batch18/1851_GENERATED_ASSET_PRODUCTION_AUDIT.md
+- Docs/Reports/Batch18/1852_PROCEDURAL_PLACEHOLDER_FINAL_GATE.md
+- Docs/Reports/Batch18/1853_PRIMITIVE_FINAL_REPLACEMENT_PLAN.md
+- Assets/_Project/Scripts/Editor/ConstructionBootstrapAuthoring.cs
+- Assets/_Project/Scripts/Construction/DeepReachStationModuleLibrary.cs if present
+- Assets/_Project/Editor/Assembly/WreckagePrefabFactory.cs if present
+- Assets/ScifiFacility/Prefabs if present
+- Assets/ScifiFacility/Models if present
+- Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_debris_field.asset
+- Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_debris_scatter.asset
+- Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_route_power.asset
+- Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_ruin_cluster_medium.asset
+- Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_ruin_megastructure.asset
+- Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_ruin_module_single.asset
+- Assets/_Project/Data/World/ProceduralFamilies/ProceduralFamily_family_service_scar.asset
+
+OWNED OUTPUTS
+- Docs/Tasks/Status_1855.md
+- Docs/AgentLogs/Rationale_1855.md for non-trivial decisions only
+- Docs/AgentLogs/LOG_1855.md
+- Docs/Reports/Batch18/1855_CONSTRUCTION_FINAL_MESH_REBUILD_PACKET.md
+- Docs/Reports/Batch18/1855_CONSTRUCTION_REBUILD_MATRIX.csv
+
+HARD RULES
+- Do not run Unity, PlayMode, builds, importers, bakes, or DataMonolith tools.
+- Do not edit current construction final prefabs or family assets.
+- Do not unblock `ConstructionBootstrapAuthoring.RebuildStarterConstructionKit`.
+- Do not propose rebuilding production finals from `GameObject.CreatePrimitive`.
+- Do not treat invisible collision proxies as visible production art.
+- Do not reuse `WorldProceduralProxy` primitive assets as finals.
+
+20 TASKS
+01. Create tracking files and mark evidence class STATIC_SOURCE.
+02. Read authorities and 2-8 relevant mandates from `.agents-skills`.
+03. Reconfirm the 10 construction primitive final prefabs and their family links.
+04. List built-in primitive mesh ref counts per prefab and current visible role.
+05. Inventory construction material/template assets that can support future rebuilds.
+06. Inventory valid non-primitive candidate sources, including `ScifiFacility` props/models and any project-owned wreckage source folders.
+07. Inventory invalid candidates: construction proxies, primitive resource pickup prefabs, primitive ruin finals.
+08. Inspect `ConstructionBootstrapAuthoring` enough to identify old primitive-composite generation patterns to avoid.
+09. Inspect module/library consumers enough to identify downstream expectations: sockets, colliders, bounds, metadata, interior trigger needs.
+10. Inspect `WreckagePrefabFactory` enough to decide whether it can assemble construction replacements from real source meshes.
+11. Define wreck-field mesh package: torn hull plates, ribs, pipes, salvage cuts, LOD/collision policy.
+12. Define scrap-cluster mesh package: beveled plates, cut pipes, cable glands, fasteners, readable salvage affordance.
+13. Define pylon package: pressure base, clamps, insulators, cable sockets, service panels, bolts.
+14. Define current turbine package: shroud, rotor/blades, hub, struts, cable anchors, non-runtime cheap animation/proof route.
+15. Define medium ruin cluster package: abandoned modules, broken sockets, corrosion, exposed frames, route gaps.
+16. Define megastructure package: landmark frames, internal voids, HLOD/impostor route, silhouette readability.
+17. Define foundation, corridor, and service pump packages: pressure shell, ribs/flanges/gaskets/socket frames, casing, ports, bolted panels.
+18. Define exact future generator/authoring source-route requirements and output folder/naming conventions.
+19. Define proof gates and CSV matrix: primitive scan, material slots, LOD0-2, collision proxy, screenshot/render proof, station library compatibility.
+20. Append concise LOG/Rationale and mark PACKET_COMPLETE or BLOCKED with missing evidence.

@@ -1,0 +1,107 @@
+{
+  "evidence_class": "LOCAL_SOURCE_BAKE_STATIC_ONLY",
+  "not_unity_imported": true,
+  "not_visual_acceptance": true,
+  "contact_sheet": "Docs/GeneratedAssets/Batch31_LocalPBR/Batch31_LocalPBR_contact_sheet.png",
+  "packages": [
+    {
+      "id": "TX_B31_WetBasaltShoreline_1429",
+      "evidence_class": "LOCAL_SOURCE_BAKE_STATIC_ONLY",
+      "source": "Docs/GeneratedAssets/Gemini/TX_H8_WetBasaltShoreline_Albedo_1429.png",
+      "note": "Watermark-cropped wet basalt source. Use as shoreline/wet rock source only; needs Unity material proof.",
+      "not_unity_imported": true,
+      "not_visual_acceptance": true,
+      "requires": [
+        "Unity material binding",
+        "BC7/BC5 import settings",
+        "2x2 seam review",
+        "route screenshot proof",
+        "MRAO channel convention verification"
+      ],
+      "outputs": {
+        "source_crop": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_SourceCrop.png",
+        "albedo": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_AlbedoSource.png",
+        "height": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_HeightSource.png",
+        "normal": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_NormalSource.png",
+        "mrao": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_MRAOSource.png",
+        "tile2x2": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_Albedo_tile2x2.png",
+        "normal_tile2x2": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_Normal_tile2x2.png"
+      },
+      "sha256": {
+        "source_crop": "c0697ecd96e3c316c391760bc24b87f9a3c8d313c472657bb57d222baf397490",
+        "albedo": "b7b25ec2925bd5804c309f95e85aeda3900d5d18553b2b33caf4af38c931b58d",
+        "height": "5b3a0067394162017ed33fac623fad5a2978ac2bacc733a99efc41ff412de5aa",
+        "normal": "7d1e06c266ddb42ed9e8284388d983b2350d37ee9c47e9d999aa486009d5e96f",
+        "mrao": "a5be772445da7829b5e591fc573f686099de011032aadf4cd4b6fbea74c0539b",
+        "tile2x2": "58872eca27229ee0d101e9b2a45cfa0a5c43b5809cfebbf48e7c8dd094458b6c",
+        "normal_tile2x2": "24f4bf28987843d4bd607cd66ffd301e05ac235541c05a74070c237e3edbc21d"
+      }
+    },
+    {
+      "id": "TX_B31_PhoticSeabedSubstrate_2102",
+      "evidence_class": "LOCAL_SOURCE_BAKE_STATIC_ONLY",
+      "source": "Docs/GeneratedAssets/Gemini/Outputs/Batch21/TX_B21_PhoticSeabedSubstrate_AlbedoHeightSource_20260604_Gemini_155742.png",
+      "note": "Photic seabed source with shell/debris detail. Baked shadows reduced; not final albedo proof.",
+      "not_unity_imported": true,
+      "not_visual_acceptance": true,
+      "requires": [
+        "Unity material binding",
+        "BC7/BC5 import settings",
+        "2x2 seam review",
+        "route screenshot proof",
+        "MRAO channel convention verification"
+      ],
+      "outputs": {
+        "source_crop": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_PhoticSeabedSubstrate_2102/TX_B31_PhoticSeabedSubstrate_2102_SourceCrop.png",
+        "albedo": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_PhoticSeabedSubstrate_2102/TX_B31_PhoticSeabedSubstrate_2102_AlbedoSource.png",
+        "height": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_PhoticSeabedSubstrate_2102/TX_B31_PhoticSeabedSubstrate_2102_HeightSource.png",
+        "normal": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_PhoticSeabedSubstrate_2102/TX_B31_PhoticSeabedSubstrate_2102_NormalSource.png",
+        "mrao": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_PhoticSeabedSubstrate_2102/TX_B31_PhoticSeabedSubstrate_2102_MRAOSource.png",
+        "tile2x2": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_PhoticSeabedSubstrate_2102/TX_B31_PhoticSeabedSubstrate_2102_Albedo_tile2x2.png",
+        "normal_tile2x2": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_PhoticSeabedSubstrate_2102/TX_B31_PhoticSeabedSubstrate_2102_Normal_tile2x2.png"
+      },
+      "sha256": {
+        "source_crop": "4fe8f691c2fed6cf4148183867ec9ddcf6661950f132866ab189aafe6a387d8e",
+        "albedo": "0f29bb37314c417c3825aee193cb752347cd33ec59245f73c0d5d1d4a36cf898",
+        "height": "f523e87c49905cfa84b1418b54bae3585f792910d1326a243bb545ecdc870173",
+        "normal": "f096cdaab727376fdce7cb4d3778dba8310f5bb1d46ee922c26eb7a35b40a828",
+        "mrao": "2c24414fd5b84dfdfc84d74974cd2a4a4dc401647e63beaf0a98e1939e8794a4",
+        "tile2x2": "169b80cc33a79a0c24e59b3c69a81a6710d5fabcb3b256ba9dc503343eed923f",
+        "normal_tile2x2": "0176cd9f3c31faa63fbf2a25c400b5a4a8cfb70d8d923876816402808855d33a"
+      }
+    },
+    {
+      "id": "TX_B31_PhoticShellSandSubstrate_2102",
+      "evidence_class": "LOCAL_SOURCE_BAKE_STATIC_ONLY",
+      "source": "Docs/GeneratedAssets/Gemini/Outputs/Batch21/TX_B21_PhoticShellSandSubstrate_AlbedoSource_20260604_Gemini_164642.png",
+      "note": "Bright shell sand source. Good shallow-route source; still requires PBR authoring and seam proof.",
+      "not_unity_imported": true,
+      "not_visual_acceptance": true,
+      "requires": [
+        "Unity material binding",
+        "BC7/BC5 import settings",
+        "2x2 seam review",
+        "route screenshot proof",
+        "MRAO channel convention verification"
+      ],
+      "outputs": {
+        "source_crop": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_PhoticShellSandSubstrate_2102/TX_B31_PhoticShellSandSubstrate_2102_SourceCrop.png",
+        "albedo": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_PhoticShellSandSubstrate_2102/TX_B31_PhoticShellSandSubstrate_2102_AlbedoSource.png",
+        "height": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_PhoticShellSandSubstrate_2102/TX_B31_PhoticShellSandSubstrate_2102_HeightSource.png",
+        "normal": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_PhoticShellSandSubstrate_2102/TX_B31_PhoticShellSandSubstrate_2102_NormalSource.png",
+        "mrao": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_PhoticShellSandSubstrate_2102/TX_B31_PhoticShellSandSubstrate_2102_MRAOSource.png",
+        "tile2x2": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_PhoticShellSandSubstrate_2102/TX_B31_PhoticShellSandSubstrate_2102_Albedo_tile2x2.png",
+        "normal_tile2x2": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_PhoticShellSandSubstrate_2102/TX_B31_PhoticShellSandSubstrate_2102_Normal_tile2x2.png"
+      },
+      "sha256": {
+        "source_crop": "cf8bde94f8f27bad273e63c3455fa8a7f3d46e7700d2e6a7759482a6afe8adac",
+        "albedo": "b2143da41b9c0f489996fcca3502d457b01c40911a9e357ddbdf814d4fee4cd9",
+        "height": "fc05442d7dbe77ced55f2cf4a28f21a25249bc952b492e6bd5e224b9dbad8bc7",
+        "normal": "eb8047e159a8f96f28ad826df9fa725577aaad160c0c78645ee75a606e2cb31f",
+        "mrao": "d674f6770d9388c2785226af876e2df452707d6d18879e9025e9a4f00b4fcdb1",
+        "tile2x2": "591cad77977d5ae6716ad326911991412fcaee539d47eaa46b66655481e30fb9",
+        "normal_tile2x2": "969e222f505491d7b09faaf98aace490a85e8172c04f4da702580d2ca274aa46"
+      }
+    }
+  ]
+}

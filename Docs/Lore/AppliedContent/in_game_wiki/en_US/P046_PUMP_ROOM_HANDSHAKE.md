@@ -10,21 +10,21 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Pump Room Handshake
 
-Pump Room Handshake defines Submerge machinery language. The player reads a physical system, changes one pressure condition, and learns that repair is never free.
+The pump room is useful after the local valve accepts your control, not before. Watch intake, outlet pressure, and the sound of the return corridor. A dry floor can mean the next room is taking the water. Treat every pump restart as a trade: safer access here, higher pressure or noise somewhere else.
 
 ## Scanner
 
-The pump room is the first honest machine: if the player cannot read intake, output and failure noise, the room is useless.
+Local pump authority accepted. Intake clears the room, but outlet pressure rises along the return corridor.
 
 ## Terminal
 
-Pump handshake: local valve authority accepted. Remote override denied by route-integrity check. Drain speed falls when return corridor pressure rises.
+PUMP HANDSHAKE: local valve accepted. Remote override denied. Drain rate falls as return-corridor pressure rises.
 
 ## Audio
 
@@ -32,6 +32,6 @@ The pump does not save you. It buys time and makes another room worse.
 
 ## Field Note
 
-The room only works when the safe path and the flooding path share the same hardware.
+Before stripping parts, listen to the outlet line. If it is hammering, the pump is moving the problem, not solving it.
 
 <!-- In-Game Wiki; generated from P046_PUMP_ROOM_HANDSHAKE/en_US. -->

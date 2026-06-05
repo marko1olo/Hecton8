@@ -1,0 +1,47 @@
+AGENT ID: 1814
+ROLE: COPPER_CATALOG_COLLISION_AUDITOR
+MODE: No-Unity source/data audit. Independent unless editing Data_Copper assets is explicitly proven safe.
+
+PRIMARY GOAL
+Investigate and prepare a fix for the first-20 blocker: two `Data_Copper` item assets share `stableId: Data_Copper` while disagreeing on raw-resource semantics and world prefab. The route cannot accept copper pickup/quest/craft/save until identity is unambiguous.
+
+READ
+- AGENTS.md, PROJECT_BIBLES.md, VISION_LOCKS.md, quality.md
+- gameplay.md, inventory.md, tools.md, survival.md, persistence.md
+- Docs/Reports/Batch18/1803_FIRST20_ROUTE_BLOCKER_MATRIX.md
+
+LIKELY FILES
+- Assets/_Project/Data/Items/Data_Copper.asset
+- Assets/_Project/Data/Items/Resources/Raw/Data_Copper.asset
+- Assets/_Project/Data/Quests/Quest_CopperSample.asset
+- Assets/_Project/Data/Recipes/Recipe_CopperWire.asset
+- Assets/_Project/Scripts/Gameplay/FirstHourDirector.cs
+- inventory/catalog/resource scripts located by rg
+
+OWNED OUTPUTS
+- Docs/Tasks/Status_1814.md
+- Docs/AgentLogs/Rationale_1814.md for decisions only
+- Docs/AgentLogs/LOG_1814.md
+- Docs/Reports/Batch18/1814_COPPER_CATALOG_COLLISION_AUDIT.md
+
+20 TASKS
+01. Create tracking files.
+02. Read authorities and relevant mandates.
+03. Inspect both Data_Copper assets.
+04. Inspect quest and recipe references.
+05. Inspect catalog/item lookup code for stableId/GUID behavior.
+06. Inspect FirstHourDirector copper checks.
+07. Determine which copper asset should be raw route truth.
+08. Determine whether legacy asset can be quarantined, renamed, or kept with distinct stableId.
+09. Do not edit assets unless safe and scoped; prefer report if uncertain.
+10. Build a reference matrix: asset path, guid, stableId, flags, prefab, quest use, recipe use.
+11. Identify save/load risk.
+12. Identify localization/UI title risk.
+13. Identify route migration steps.
+14. Write a safe implementation prompt for a future data owner.
+15. If a trivial data fix is safe, apply it and validate YAML shape; otherwise mark pending.
+16. Append log.
+17. Final scan for fake runtime proof.
+18. Mark static audit complete or blocked.
+19. Include Unity/PlayMode proof needed.
+20. Include rollback instructions if data is edited.

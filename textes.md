@@ -1,12 +1,19 @@
 # textes.md - Public Writing Rules
 
 Status: root writing authority for public copy.
+Evidence class: STATIC_DOC
 
 Use this file before writing advertising copy, social posts, profile bios, store text, trailer captions, creator outreach blurbs, community replies, or any public-facing text for Teni Games / Submerge.
 
 This is not a lore bible and not a campaign document. This is the rule set for making the text sound like a real developer instead of a content machine.
 
 Route note: game-world text, missions, logs, and evidence use `narrative.md`. In-world articles, encyclopedia pages, survivor diaries, technical notes, scanner/codex entries, and AppliedContent prose use `writing.md`. Public marketing text, store copy, social posts, creator outreach, community replies, captions, and profile text use this file. If public copy references visuals, performance, platforms, demo state, Steam status, mechanics, or release scope, `quality.md` evidence rules also apply.
+
+## First-20 Route Hook
+
+- First-20 moment: first public asset or route-facing capture needs short copy that names one visible pressure, machinery, salvage, or route decision without claiming demo, release, platform, or runtime proof.
+- Route blocker removed: prevents public copy from selling mood, broad readiness, or dark-ocean cliche before proof assets can carry the first product image.
+- Proof class: STATIC_DOC public-copy hook only; publication review still requires current asset/proof source, exact supported claim list, channel target, and owner approval for readiness-sensitive claims.
 
 ## 1. Prime Rule
 
@@ -95,13 +102,16 @@ But do not over-explain gates. Keep public text short.
 
 ## 5. What Submerge Text Should Sell
 
-Do not sell "an ocean game".
+Do not sell only "an ocean game".
 
 Sell:
 
 - pressure
 - machinery
 - salvage
+- bright alien surface water when the asset shows the surface
+- beautiful photic shallows when the asset shows early/medium-depth routes
+- Aegir, moons, sky, coastline, and ocean spectacle when they are visible
 - black water
 - bad return paths
 - weak light
@@ -111,11 +121,13 @@ Sell:
 - the cost of choosing a route
 - evidence left after something went wrong
 
-The core public promise is not "beautiful underwater world".
+The core public promise is not beauty alone and not darkness alone.
 
 The core public promise is:
 
-The player is inside failing machinery under pressure, trying to make a readable decision before the way back gets worse.
+The player is inside a beautiful alien ocean where pressure, machinery, oxygen, salvage, and route decisions can turn the way back bad.
+
+Public copy must not imply that the whole game is dark, ugly, muddy, or permanently noir. Darkness belongs to depth, caves, interiors, storms, and temporary eclipse windows. If the proof asset is surface or shallow water, the copy should let beauty, clarity, Aegir, water, terrain, and biota carry their share of the promise.
 
 ## 6. Words That Usually Work
 
@@ -473,7 +485,7 @@ Bio should be short and physical.
 Good Teni bio:
 
 ```text
-Making Submerge. Pressure, salvage, ugly machinery, black water.
+Making Submerge. Beautiful alien water, pressure, salvage, ugly machinery, black-water depth.
 ```
 
 Good game bio:

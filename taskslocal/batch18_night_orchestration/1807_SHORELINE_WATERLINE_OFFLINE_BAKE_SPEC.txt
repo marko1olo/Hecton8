@@ -1,0 +1,73 @@
+AGENT ID: 1807
+ROLE: SHORELINE_WATERLINE_OFFLINE_BAKE_SPEC
+MODE: Independent Wave 02 static/offline prep. Do not wait for 1803-1805.
+
+PRIMARY GOAL
+Prepare a production-grade offline/editor bake specification for shoreline foam, waterline breakup, wet basalt edge masks, and near-field water detail. This is for the surface/coastline failure seen in current screenshots. It must not be a vague art note.
+
+AUTHORITIES TO READ
+- C:\hades\Hecton8\AGENTS.md
+- C:\hades\Hecton8\PROJECT_BIBLES.md
+- C:\hades\Hecton8\VISION_LOCKS.md
+- C:\hades\Hecton8\TASTE.md
+- C:\hades\Hecton8\quality.md
+- C:\hades\Hecton8\water.md
+- C:\hades\Hecton8\terrain.md
+- C:\hades\Hecton8\vfx.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1801_WORLD_SURFACE_ROUTE_EVIDENCE.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1802_SURFACE_SHALLOW_ASSET_INVENTORY.md
+
+LIKELY PATHS TO INSPECT
+- Assets/_Project/Editor/ShorelineFoamGraftEditorTools.cs
+- Assets/_Project/Data/shoreline_foam_profiles.csv
+- Assets/_Project/Scripts/Rendering/WaterOptics/ShorelineFoamGraftContracts.cs
+- Assets/_Project/Scripts/Rendering/WaterOptics/ShorelineFoamGraftGizmos.cs
+- Assets/_Project/Art/Shaders/H8_ShorelineFoamRibbon_1428.shader
+- Assets/_Project/Art/Materials/MAT_H8_SurfaceCrestOcean_1428.mat
+- Assets/_Project/Art/Materials/World/MAT_H8SurfaceShoreFoam_1428.mat
+- Assets/_Project/Art/Materials/World/MAT_SurfaceSplashFoamDirty_1428.mat
+- Assets/_Project/Art/Materials/World/MAT_H8SurfaceWetBasaltReal_1428.mat
+- Assets/_Project/Art/Materials/World/MAT_SurfaceIslandWetBasalt_1428.mat
+- Assets/_Project/Art/Meshes/World/MESH_H8SurfaceShoreFoamRing_1428.asset
+- Assets/_Project/Art/Meshes/Generated/MESH_SurfaceCoastlineJagged_1428.asset
+- Assets/_Project/Art/Meshes/Generated/MESH_SurfaceIslandJagged_1428.asset
+
+OWNED OUTPUTS
+- Docs/Tasks/Status_1807.md
+- Docs/AgentLogs/Rationale_1807.md for decisions only
+- Docs/AgentLogs/LOG_1807.md
+- Docs/Reports/Batch18/1807_SHORELINE_WATERLINE_BAKE_SPEC.md
+- Docs/Reports/Batch18/1807_SHORELINE_WATERLINE_BAKE_INPUTS.csv
+
+HARD RULES
+- No live Unity ownership.
+- No blind changes to third-party Crest assets.
+- No scene/prefab material swaps in this task.
+- No runtime-generated hero waterline as final route.
+- Visual fake first is allowed only if it looks premium.
+- Do not write "use more foam" as a solution. Specify masks, slots, source paths, bake steps, proof shots, and rejection gates.
+
+20 TASKS
+01. Create Status_1807.md with all tasks and proof labels.
+02. Read required docs and 2-8 relevant mandates.
+03. Inspect shoreline/waterline tool and contract paths.
+04. Inspect foam/water/wet-rock material YAML for texture slots, missing base/detail/mask maps, shader names, and package boundaries.
+05. Inspect existing foam/waterline mesh paths and classify as candidate/active/unknown.
+06. Inspect current screenshots from 1801/1802 for visual failure mode and write a short diagnosis.
+07. Build a bake input CSV listing material, mesh, texture, profile, and intended bake role.
+08. Define offline bake products: foam edge masks, wet/dry masks, sediment bands, long-swell read cards, contact foam ribbons, caustic edge overlays if applicable.
+09. Define exact editor/offline generation route using existing tools first.
+10. Define material slot assignment plan without editing material files.
+11. Define Compact/Middle/High/Ultra behavior for waterline richness.
+12. Define profiler/Frame Debugger evidence needed after Unity application.
+13. Define screenshot angles: glancing water, vertical waterline, close wet rock, wide coast, underwater edge.
+14. Mark unsafe or rejected placeholder assets.
+15. Identify missing textures/masks that require generation or user-provided art.
+16. Create a Unity-slot implementer prompt.
+17. Create an offline image/texture generation prompt if masks/textures are missing.
+18. Append LOG_1807.md with findings and proof state.
+19. Final scan: no fake Unity proof, no destructive instructions, no "darkness hides it" route.
+20. Mark final state STATIC BAKE SPEC COMPLETE or BLOCKED BY MISSING STATIC TOOLING.
+
+ACCEPTANCE
+Done means an implementer can produce premium shore/waterline results from verified assets and a precise bake/spec path, with no procedural-placeholder shortcut.

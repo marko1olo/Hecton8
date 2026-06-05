@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Seed аудио-транскрипта worker dossier
+# Аудиотранскрипт рабочего досье
 
-Worker transcripts делают колонию человеческой через procedure, fatigue, jokes и competence.
+Рабочие транскрипты делают колонию человеческой через процедуру, усталость и компетентность. Без семейной мелодрамы.
 
 ## Scanner
 
-Audio seed: worker dossiers используют job pressure, routine и fatigue вместо family hooks.
+Аудио работника связывает ритм помпы с безопасностью маршрута и усталостью смены.
 
 ## Terminal
 
-TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate и triage queue. Human through work.
+WORKER AUDIO M-VENN-07: ритм помпы чистый; верхний маршрут безопасен только пока sump поднимается ниже отметки шесть.
 
 ## Audio
 
-Mara Venn, pump chief: если pump поет чисто, логируй. Если перестал петь - беги вверх.
+Мара Венн, начальник помпы. Если помпа поет чисто, внеси в журнал. Если кашляет дважды, не спорь и иди по верхней лестнице.
 
 ## Field Note
 
-Для VO fragments, dossier pages и prop evidence.
+Восстановленный голос работника. Человеческая деталь держится внутри давления работы, безопасности маршрута и изношенного оборудования.
 
 <!-- In-Game Wiki; generated from P438_WORKER_DOSSIER_AUDIO_TRANSCRIPT_SEED/ru_RU. -->

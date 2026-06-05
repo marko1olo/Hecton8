@@ -356,8 +356,18 @@ namespace Hecton8.Audio.Editor
             if (dynamicMusicSynth.Length > 0)
             {
                 string dynamicLaneConfig = ExtractMethodBody(dynamicMusicSynth, "private static void EnsureDynamicMusicSignalLaneCold()");
+                string dynamicAudioCallback = ExtractMethodBody(dynamicMusicSynth, "private void OnAudioFilterRead(float[] data, int channels)");
+                string dynamicLateFrame = ExtractMethodBody(dynamicMusicSynth, "public void LateFrameTick()");
                 AssertContains(dynamicLaneConfig, "lowTierFrameSignals: 64", "Dynamic music granular synth keeps full minimum-quality scalar lane capacity", builder, ref failureCount);
                 AssertContains(dynamicMusicSynth, "ResolveGlobalQualityWeightFromSnapshot()", "Dynamic music granular synth derives quality from the continuous quality snapshot", builder, ref failureCount);
+                AssertContains(dynamicAudioCallback, "TryResolvePublishedAudioThreadCopyBuffer", "Dynamic music managed callback only reads the published audio-thread copy buffer", builder, ref failureCount);
+                AssertContains(dynamicAudioCallback, "UnsafeUtility.MemCpy(destination, source", "Dynamic music managed callback copies prebuilt interleaved samples only", builder, ref failureCount);
+                AssertContains(dynamicLateFrame, "PublishAudioThreadCopyBufferLateFrame()", "Dynamic music publishes a dedicated audio-thread copy buffer from LateFrame", builder, ref failureCount);
+                AssertNotContains(dynamicAudioCallback, "TryAcquire", "Dynamic music managed callback must not acquire DataVault or mutation guards", builder, ref failureCount);
+                AssertNotContains(dynamicAudioCallback, "ScheduleSynthJobs", "Dynamic music managed callback must not schedule synthesis work", builder, ref failureCount);
+                AssertNotContains(dynamicAudioCallback, "GranularSynthesisJob", "Dynamic music managed callback must not synthesize samples", builder, ref failureCount);
+                AssertNotContains(dynamicAudioCallback, "Stopwatch", "Dynamic music managed callback must not measure timing on the audio thread", builder, ref failureCount);
+                AssertNotContains(dynamicAudioCallback, "AudioSettings", "Dynamic music managed callback must not query Unity audio settings on the audio thread", builder, ref failureCount);
             }
 
             if (indirectVegetationRenderer.Length > 0)

@@ -13,6 +13,9 @@ This file records what is fixed enough to build against. It does not replace `Lo
 - Horror comes from engineering failure, pressure, darkness, damaged repair logic, and ocean scale.
 - Shallows are allowed to be bright, beautiful, alien, and inviting.
 - Surface sky, Aegir, moons, clouds, coastline, ocean skin, and photic shallows are bright/beautiful spectacle and route context. Darkness belongs to depth, caves, interiors, storms, and temporary eclipse windows.
+- Depth/light lock: 0-100 m is mostly bright and beautiful in open water; deep caves may be dark; 200-400 m becomes twilight-like; 400-500 m and below may become true darkness/murk with route structure preserved.
+- Surface and shallows may be colorful and alien with coral-like biota, plus technogenic colony/industrial traces in selected areas.
+- Aegir's current blue/purple/methane-rich visual direction is allowed if the texture and atmosphere are premium and believable; reject muddy procedural scribbles, not the color premise.
 - Deep zones become progressively dirtier: industry enters biology, biology enters machinery.
 - Atlas-6 horror is not evil AI sadism. It is damaged classification and repair logic.
 - Gameplay truth stays stable. Presentation, evidence order, POIs, ecology, geology, and endings can vary by seed.

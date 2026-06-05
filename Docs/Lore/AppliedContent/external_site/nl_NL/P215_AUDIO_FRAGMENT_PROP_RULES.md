@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
 # Audio Fragment Prop Rules
 
-Audio Fragment Prop Rules defines how HECTON-8 uses voice without lore-dump fatigue.
+Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues.
 
 ## Scanner
 
@@ -32,6 +32,6 @@ If the room cannot prove me, cut the line.
 
 ## Field Note
 
-Audio fragments need source prop, transcript damage, route timestamp and one physical contradiction.
+Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.
 
 <!-- External Site; generated from P215_AUDIO_FRAGMENT_PROP_RULES/nl_NL. -->

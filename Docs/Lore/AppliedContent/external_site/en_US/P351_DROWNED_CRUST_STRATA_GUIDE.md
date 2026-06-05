@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -20,7 +20,7 @@ HECTON-8's geology supports replayability by changing local strata and POI route
 
 ## Scanner
 
-Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.
+Flooded strata expose old industry, pressure-glass seams and unstable mineral bands. Scan fracture lines before cutting.
 
 ## Terminal
 
@@ -32,6 +32,6 @@ The map is not terrain. It is a stack of drownings.
 
 ## Field Note
 
-Use for geology codex and procedural world labels.
+If a band rings hollow, do not trust the flat face. Mark the fracture, take the sample, and leave the wall holding.
 
 <!-- External Site; generated from P351_DROWNED_CRUST_STRATA_GUIDE/en_US. -->

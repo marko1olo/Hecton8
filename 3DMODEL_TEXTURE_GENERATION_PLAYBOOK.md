@@ -1,13 +1,22 @@
 # 3DMODEL_TEXTURE_GENERATION_PLAYBOOK
 
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
+Evidence class: STATIC_DOC
 Scope: offline creation of generated or AI-assisted texture families for hard-surface modules, flora, coral, fauna, geology, equipment, decals, atlases, and PBR masks.
+
+## First-20 Route Hook
+
+- First-20 moment: material read for the first shallow terrain, coral/flora, resource pickup, tool target, capsule/interior object, and route-facing industrial trace.
+- Route blocker removed: blurry, noisy, baked-light, or false-PBR texture families cannot make opening-route assets look finished or readable.
+- Proof class: STATIC_DOC until texture family manifests, tile tests, PBR channel validation, URP preview renders, import evidence, and route screenshots exist.
 
 ## 0. Prime Texture Product Law
 
 Textures are material proof, not color fill. A HECTON-8 texture family must make the surface read as a specific material with scale, age, pressure history, wetness, wear, contamination, and light response.
 
 Generated or AI-assisted textures are accepted only when they survive close inspection, mipmapping, compression, UV/triplanar placement, URP lighting, and material debug views. Random noise, blurred albedo, fake lighting, candy gradients, generic grunge, low-resolution mush, or "interesting" patterns that do not match the mesh and source material are rejected.
+
+Texture quality is part of the visual floor. Surface, coastline, shallow, medium-depth hero routes, capsules, structures, tools, flora, fauna, geology, and scanner-visible objects need detailed material identity. If a texture only makes procedural geometry look less empty, it is not enough. Use existing high-quality project textures first when they fit; otherwise generate or author a full PBR family and reject it until it looks credible under real scene lighting.
 
 The goal is not procedural variety. The goal is believable material identity with optimized reuse: albedo, normal, MRAO, emission, detail, decal, trim, atlas, and proof renders all saying the same thing.
 
@@ -163,6 +172,8 @@ Before a texture family can be referenced by a generated prefab, the texture val
 - Mip preview does not create dark seams, ringing, or unreadable hazard/detail decals.
 
 If any gate fails, the texture family must not be saved into the production asset route. The bake may write a diagnostic artifact under `Docs/AgentLogs` or an editor-only quarantine folder, but it must not become a referenced runtime material.
+
+Bad texture output is not a performance strategy. Compact lane may lower resolution and reuse atlases, but it still needs clear material read, correct roughness/normal behavior, and attractive scene response. "Optimized" blurry mud is rejected.
 
 ## 9. Implementation Order
 

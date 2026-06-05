@@ -4,6 +4,11 @@ Status: future setup / do not open too early
 Public stance: single-player-first scope / proof-first public copy
 Runtime impact: none
 
+## Authority Boundary
+
+Static documentation only. Public community, Discord, moderation, creator, demo, Steam, wishlist, platform, release, performance, publication, and support claims require root `textes.md` for voice plus `quality.md`, `release.md`, and `platform.md` with current proof artifacts and the local permission gates.
+No public post, Steam news, trailer/capsule approval, creator send, community launch, platform/release claim, demo claim, invite publication, server opening, or member-signal claim is authorized by drafts, examples, channel lists, role plans, or plan rows in this file.
+
 ## Hard Rule
 
 Do not create an official public Discord surface, publish an invite, announce a server, or count Discord members/signups unless `discord_open_permission_gate = ALLOW_DISCORD_OPEN_VERIFIED` for that exact server and invite route. A private draft checklist is not an open gate.

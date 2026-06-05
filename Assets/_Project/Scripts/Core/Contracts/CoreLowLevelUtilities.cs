@@ -241,6 +241,16 @@ namespace Hecton8.Core
         private static int _activeSwapWindowDepth;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void BeginPreSimulationSwapWindow() => _activeSwapWindowDepth++;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void EndPreSimulationSwapWindow()
+        {
+            if (_activeSwapWindowDepth > 0)
+                _activeSwapWindowDepth--;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void BeginLateFrameSwapWindow() => _activeSwapWindowDepth++;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

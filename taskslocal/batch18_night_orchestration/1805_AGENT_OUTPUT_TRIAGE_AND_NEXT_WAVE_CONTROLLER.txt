@@ -1,0 +1,94 @@
+ID: 1805
+Role: AGENT_OUTPUT_TRIAGE_AND_NEXT_WAVE_CONTROLLER
+Chat name: 1805 Agent Output Triage
+
+OBJECTIVE
+Audit recent agent outputs and build a controller-grade map of what is actually closed, what is pending, what is fake/unsafe, and what the next non-conflicting agent wave should do.
+
+This is not a code task. It is evidence control for the local orchestrator.
+
+FRESH EVIDENCE LEADS TO VERIFY
+- Batch 17 lore/content: `1778` reports stale `static_data.h8bin`, `P288_WORKER_LOCKER_NAMEPLATE_SAMPLE/ja_JP` CSV/blob scanner length mismatch, and weak scene/prefab placement coverage. `1777` reports localization blockers. `1771` may contain `ru_RU/P456` public-site mojibake/residue.
+- First-20/static blockers: `Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs` reportedly has runtime wreck mesh fallback (`BuildMergedMesh*`, `BuildProxyMesh`, runtime `new Mesh`).
+- First-20/navigation blocker: `Assets/_Project/Scripts/Quest/MissionMarkerSystem.cs` reportedly has runtime marker mesh/material fallback (`EnsureRuntimeResources()`, `CreateMarkerMesh()`).
+- Audio blocker: `DynamicMusicGranularSynthesizer.cs` and `VocalBankPlaybackRuntime.cs` reportedly use managed `OnAudioFilterRead(float[] data, int channels)` callbacks.
+- World truth blockers: `GroundPenetratingRadarRuntime.cs`, `FoundationPylonGpuBatch.cs`, and `DroneFleetManager.cs` reportedly rely on mock SDF/substrate/world truth.
+- Proof blocker: no current Unity import, Play Mode route run, profiler, GCMonitor, Frame Debugger, Memory Profiler, player build, save/load diff, or device capture exists for the first-20 route.
+
+Verify these from actual files/reports before ranking them.
+
+AUTHORITY DOCS
+Read:
+- AGENTS.md
+- HECTON8_ORCHESTRATOR.md
+- HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md
+- PROJECT_BIBLES.md
+- VISION_LOCKS.md
+- TASTE.md
+- quality.md
+- testing.md
+- release.md
+
+Before non-trivial conclusions, identify 2-8 relevant `.agents-skills` mandates and read only those.
+
+OWNED SCOPE
+Allowed:
+- Docs/Reports/Batch18/
+- Docs/Tasks/Status_1805.md
+- Docs/AgentLogs/Rationale_1805.md
+- Docs/AgentLogs/LOG_1805.md
+- recent Status/LOG/Rationale/HANDOFF files
+- taskslocal batch folders
+
+Do not:
+- edit project code;
+- edit scenes/assets;
+- run Unity;
+- trust old batch prompts over root docs;
+- bulk-copy logs into your report.
+
+TASKS
+Phase 0 - Scope And Evidence
+01. Create Status_1805.md with all tasks and proof labels.
+02. Read authority docs and record the proof-label rules in Rationale_1805.md.
+03. List recent task batches under `taskslocal` and recent agent logs/statuses by timestamp.
+04. Identify the most relevant recent IDs: active Unity verifier if visible in logs/status, 1770-1779 lore/content, 1741-1750 visual/presentation, and major route/proof agents around 1700-1740.
+05. Do not read every giant log. Sample only relevant final sections and handoffs needed for current orchestration.
+Checkpoint A: update Status_1805 with inspected evidence set.
+
+Phase 1 - Closure Matrix
+06. Build `Docs/Reports/Batch18/1805_AGENT_OUTPUT_TRIAGE_DASHBOARD.md`.
+07. For each inspected agent/output, classify: TRUSTED STATIC, TRUSTED EDITOR, TRUSTED PLAYMODE, TRUSTED PROFILER, PENDING, BLOCKED, STALE, UNSAFE, or DUPLICATE.
+08. For each claim that says done/complete, verify whether matching proof artifacts exist. Downgrade if needed.
+09. Identify outputs that should not be fed to future agents because they contain mojibake, fake metrics, `DO IT IN MIND`, fake hashes, fabricated paths, or old dark-surface doctrine.
+10. Identify outputs that are useful and should be referenced by the orchestrator.
+Checkpoint B: closure matrix must distinguish proof class from prose confidence.
+
+Phase 2 - Next Wave Planning
+11. Produce a ranked list of 10-20 future agent tasks that materially improve the project.
+12. Split them into: no-Unity tasks, Unity-slot tasks, player-build/profiler tasks, content/lore tasks, visual asset tasks, integration tasks.
+13. For each future task, state why it is independent or what staged dependency exists.
+14. Identify tasks that would conflict with the current Unity verifier and mark PENDING UNITY SLOT.
+15. Identify any immediate dobivka prompts needed for already finished agents with weak reports.
+Checkpoint C: update Status_1805 with dashboard path and next wave list.
+
+Phase 3 - Orchestrator Handoff
+16. Write a concise `NEXT_8_HOURS` section in the dashboard: what the local GUI orchestrator should launch next, what to monitor, and when to sleep/poll.
+17. Write a `DO_NOT_LAUNCH_TOGETHER` section for Unity/editor/build conflicts.
+18. Write a `DOBIVKA_PROMPTS` section with exact prompts for weak agents, but do not send them yourself.
+19. Append LOG_1805.md with what was inspected, what is safe to trust, and what remains pending.
+20. Final scan: no fake acceptance, no stale old batch instructions, no full-log dump.
+
+PROOF PACKET
+Required:
+- Status_1805.md
+- Rationale_1805.md
+- LOG_1805.md
+- Docs/Reports/Batch18/1805_AGENT_OUTPUT_TRIAGE_DASHBOARD.md
+
+REJECTION GATES
+- No code edits.
+- No Unity control.
+- No accepting agent claims without proof.
+- No reading stale logs as authority.
+- No sibling dependency.

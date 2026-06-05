@@ -26,6 +26,7 @@ namespace Hecton8.Prologue.VFX
         private int _signalPushDropCount;
         private const int TelemetryCapacity = 300;
         private const int TelemetryEntrySizeBytes = 64;
+        private const int TelemetryEntryAlignmentBytes = 8;
         private const uint DumpMagic = 0x4F525646u; // ORVF
         private const int DumpVersion = 1;
         private const uint PrologueSequenceSourceHash = PrologueSignalSourceHashes.SequenceDirector;
@@ -52,6 +53,10 @@ namespace Hecton8.Prologue.VFX
         private static readonly int _FullScreenFlashId = Shader.PropertyToID("_FullScreenFlash");
         private static readonly int _HectonReentryAmbientId = Shader.PropertyToID("_HectonReentryAmbient");
         private static readonly Color _defaultOceanAmbientColor = new Color(0.02f, 0.52f, 0.62f, 1f);
+        private static readonly int _telemetryEntryRuntimeSizeBytes = UnsafeUtility.SizeOf<ReentryVfxTelemetryEntry>();
+        private static readonly bool _telemetryEntryLayoutValid =
+            _telemetryEntryRuntimeSizeBytes == TelemetryEntrySizeBytes &&
+            (_telemetryEntryRuntimeSizeBytes & (TelemetryEntryAlignmentBytes - 1)) == 0;
 
         private enum ReentryPhase : byte
         {
@@ -245,12 +250,7 @@ namespace Hecton8.Prologue.VFX
 
         private void OnDisable()
         {
-            if (_registeredLateFrame)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-                _registeredLateFrame = false;
-            }
-
+            UnregisterLateFrame();
             TryUnregisterHotSwap();
             SyncOverlayRendererEnabled(false);
             ResetTransientState();
@@ -277,8 +277,8 @@ namespace Hecton8.Prologue.VFX
                     return;
                 }
 
+                UnregisterLateFrame();
                 _tickDispatcher = currentService as ITickDispatcher;
-                _registeredLateFrame = false;
                 if (_tickDispatcher != null && isActiveAndEnabled)
                     RegisterLateFrame();
                 return;
@@ -315,7 +315,12 @@ namespace Hecton8.Prologue.VFX
                 bool hasActivePresentationState = HasActivePresentationState();
                 SyncOverlayRendererEnabled(hasActivePresentationState);
                 if (!hasActivePresentationState)
+                {
+                    if (_phase == ReentryPhase.Complete)
+                        UnregisterLateFrame();
+
                     return;
+                }
 
                 UpdateTargetsFromPhase();
                 IntegrateState(deltaTime);
@@ -328,6 +333,12 @@ namespace Hecton8.Prologue.VFX
 
         private void EnsureNativeTelemetry()
         {
+            if (!_telemetryEntryLayoutValid)
+            {
+                _telemetryHandle = default;
+                return;
+            }
+
             IDataVault vault = CacheDataVaultCold();
             if (vault == null)
                 return;
@@ -430,6 +441,15 @@ namespace Hecton8.Prologue.VFX
                 return;
 
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void UnregisterLateFrame()
+        {
+            if (!_registeredLateFrame)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredLateFrame = false;
         }
 
         private void TryRegisterHotSwap()
@@ -958,9 +978,36 @@ namespace Hecton8.Prologue.VFX
         private void WriteTelemetry(byte extraFlags)
         {
             IDataVault vault = _dataVault;
-            if (vault == null || !IsVaultHandleCreated(in _telemetryHandle))
+            if (!_telemetryEntryLayoutValid || vault == null || !IsVaultHandleCreated(in _telemetryHandle))
                 return;
 
+            byte flags = extraFlags;
+            if (_opacity01 >= 0.995f)
+                flags |= ReentryVfxStateSignal.FlagWhiteout;
+            if (_phase == ReentryPhase.HydratedFade || _phase == ReentryPhase.Complete)
+                flags |= ReentryVfxStateSignal.FlagHydrated;
+            if (_hasSpatialAnchor)
+                flags |= ReentryVfxStateSignal.FlagSpatialAnchor;
+
+            ReentryVfxTelemetryEntry entry = default;
+            entry.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
+            entry.Sequence = _stateSequence;
+            entry.HydrationSequence = _hydrationSequence;
+            entry.Heat01 = _heat01;
+            entry.Opacity01 = _opacity01;
+            entry.AltitudeMeters = _altitudeMeters;
+            entry.VelocityMetersPerSecond = _velocityMetersPerSecond;
+            entry.AmbientBlend01 = _ambientBlend01;
+            entry.OverlayDistanceMeters = ResolveTelemetryOverlayDistanceMeters();
+            entry.Phase = (byte)_phase;
+            entry.QualityWeightByte = _qualityWeightByte;
+            entry.Flags = flags;
+            entry.Reserved = 0;
+            entry.StateHash = ResolveStateHash();
+            entry.SectorHashLo = 0u;
+            entry.Reserved2 = 0;
+            int telemetryIndex = math.clamp(_telemetryCursor, 0, TelemetryCapacity - 1);
+            int nextTelemetryCursor = (telemetryIndex + 1) % TelemetryCapacity;
             if (!vault.TryAcquireWriteLock(in _telemetryHandle, VaultOwnerSystemId, out NativeArray<ReentryVfxTelemetryEntry> telemetry))
                 return;
 
@@ -969,34 +1016,8 @@ namespace Hecton8.Prologue.VFX
                 if (!telemetry.IsCreated || telemetry.Length < TelemetryCapacity)
                     return;
 
-                byte flags = extraFlags;
-                if (_opacity01 >= 0.995f)
-                    flags |= ReentryVfxStateSignal.FlagWhiteout;
-                if (_phase == ReentryPhase.HydratedFade || _phase == ReentryPhase.Complete)
-                    flags |= ReentryVfxStateSignal.FlagHydrated;
-                if (_hasSpatialAnchor)
-                    flags |= ReentryVfxStateSignal.FlagSpatialAnchor;
-
-                ReentryVfxTelemetryEntry entry = default;
-                entry.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
-                entry.Sequence = _stateSequence;
-                entry.HydrationSequence = _hydrationSequence;
-                entry.Heat01 = _heat01;
-                entry.Opacity01 = _opacity01;
-                entry.AltitudeMeters = _altitudeMeters;
-                entry.VelocityMetersPerSecond = _velocityMetersPerSecond;
-                entry.AmbientBlend01 = _ambientBlend01;
-                entry.OverlayDistanceMeters = ResolveTelemetryOverlayDistanceMeters();
-                entry.Phase = (byte)_phase;
-                entry.QualityWeightByte = _qualityWeightByte;
-                entry.Flags = flags;
-                entry.Reserved = 0;
-                entry.StateHash = ResolveStateHash();
-                entry.SectorHashLo = 0u;
-                entry.Reserved2 = 0;
-
-                telemetry[_telemetryCursor] = entry;
-                _telemetryCursor = (_telemetryCursor + 1) % TelemetryCapacity;
+                telemetry[telemetryIndex] = entry;
+                _telemetryCursor = nextTelemetryCursor;
             }
             finally
             {
@@ -1040,7 +1061,8 @@ namespace Hecton8.Prologue.VFX
         private void DumpBlackBoxOnce()
         {
             IDataVault vault = _dataVault;
-            if (_blackBoxDumped ||
+            if (!_telemetryEntryLayoutValid ||
+                _blackBoxDumped ||
                 vault == null ||
                 !IsVaultHandleCreated(in _telemetryHandle) ||
                 !vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<ReentryVfxTelemetryEntry>.ReadOnly telemetry) ||

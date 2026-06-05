@@ -10,17 +10,17 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Replay seed: Recovery Compliance bait
+# Recovery Compliance Bait Contract Seed
 
-Поздний replay seed может показать, что корпоративное cleanup pressure начинается до Atlas.
+A late replay seed can reveal how corporate cleanup pressure starts before the player ever reaches Atlas.
 
 ## Scanner
 
-Contract seed: Recovery Compliance bait. Высокий payout, высокая receiver contamination.
+Contract seed: Recovery Compliance bait. High payout, high receiver contamination.
 
 ## Terminal
 
@@ -28,10 +28,10 @@ SEED BAIT: Recovery Compliance receiver implied, coordinate demand hidden, payou
 
 ## Audio
 
-Некоторые контракты не предложения. Это конверты, где твое имя уже стоит в обратном адресе.
+Some contracts are not offers. They are envelopes with your name already on the return line.
 
 ## Field Note
 
-Для high-spoiler replay contract и ending-pressure setup.
+Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap.
 
 <!-- External Site; generated from P395_RECOVERY_COMPLIANCE_BAIT_CONTRACT_SEED/ru_RU. -->

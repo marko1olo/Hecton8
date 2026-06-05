@@ -65,7 +65,7 @@ Do not launch the page as a vague underwater project. Launch only when it has:
 
 ### Short Description Draft A
 
-HECTON-8 is a single player first underwater survival game about pressure, salvage, heavy machinery, and deep sea noir isolation. Build below the light, keep the systems alive, and find what is corrupting the black water.
+HECTON-8 is a single player first underwater survival game about a beautiful alien ocean, pressure, salvage, heavy machinery, and deep sea noir isolation. Build below the light, keep the systems alive, and find what is corrupting the black water.
 
 ### Short Description Draft B
 
@@ -73,7 +73,7 @@ Survive an industrial ocean nightmare where pressure is the enemy, machinery is 
 
 ### Short Description Draft C
 
-NASA punk underwater survival in black water. Salvage wrecks, maintain pressure rated habitats, pilot heavy machines, and follow a corrupted signal into the deep.
+NASA punk underwater survival from bright alien shallows into black water. Salvage wrecks, maintain pressure rated habitats, pilot heavy machines, and follow a corrupted signal into the deep.
 
 ### Short Description Draft D
 

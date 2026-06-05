@@ -1193,6 +1193,7 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct LoreFragmentScannedSignal : ISignal
     {
+        public const int SizeBytes = 64;
         public const byte FlagPairedScanComplete = 1 << 0;
         public const byte FlagHasAup = 1 << 1;
 
@@ -1209,6 +1210,7 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct AppliedLoreTerminalPreviewSignal : ISignal
     {
+        public const int SizeBytes = 32;
         public const int ExpectedCapacity = 64;
         public const int MaxFrameSignals = 64;
         public const int LowTierFrameSignals = 8;

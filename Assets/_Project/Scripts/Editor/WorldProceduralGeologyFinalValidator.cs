@@ -168,8 +168,8 @@ namespace Hecton8.EditorTools
 
             if (metrics.RealFinalCount <= 0 && metrics.PlaceholderFinalCount > 0)
             {
-                Debug.LogWarning($"[WorldProceduralGeologyFinalValidator] {record.AssetPath}: only placeholder geological finals are linked.");
-                warningCount++;
+                Debug.LogError($"[WorldProceduralGeologyFinalValidator] {record.AssetPath}: only placeholder geological finals are linked. Surface/shallow geology requires real final prefabs or generated production meshes.");
+                errorCount++;
             }
             else if (metrics.RealFinalCount <= 0)
             {
@@ -184,7 +184,18 @@ namespace Hecton8.EditorTools
                     continue;
 
                 if (WorldProceduralPlaceholderAuthoring.IsPlaceholderFinalVariant(variant))
+                {
+                    Debug.LogError($"[WorldProceduralGeologyFinalValidator] {record.AssetPath}: geological variant '{variant.variantId}' is final-ready but still points at procedural placeholder prefab '{AssetDatabase.GetAssetPath(variant.prefab)}'.");
+                    errorCount++;
                     continue;
+                }
+
+                if (WorldProceduralFinalPrefabQualityGate.UsesUnityBuiltInPrimitiveMesh(variant.prefab))
+                {
+                    Debug.LogError($"[WorldProceduralGeologyFinalValidator] {record.AssetPath}: geological variant '{variant.variantId}' uses Unity built-in primitive mesh ids in prefab '{AssetDatabase.GetAssetPath(variant.prefab)}'.");
+                    errorCount++;
+                    continue;
+                }
 
                 GameObject prefab = variant.prefab;
                 s_RendererScratch.Clear();

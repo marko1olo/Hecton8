@@ -35,6 +35,8 @@ namespace Hecton8.EditorValidation
         private const string MenuPath = "Hecton8/Data Monolith/Bake Static Data";
         private const int InitialBlobCapacity = 128 * 1024;
         private const int Utf8ScratchBytes = 16384;
+        private const int LocalizationPoolExpectedValueCapacity = 65536;
+        private const int LocalizationPoolInitialByteCapacity = 8 * 1024 * 1024;
         private const string TempOutputSuffix = ".tmp";
         private const string BackupOutputSuffix = ".bak";
         private const int MoveFileReplaceExisting = 0x1;
@@ -1789,31 +1791,31 @@ namespace Hecton8.EditorValidation
             ValidateUniqueProductionHashes(dataSet);
             ValidateProductionNumericRanges(dataSet);
 
-            HashSet<uint> itemHashes = new HashSet<uint>(); // COLD ALLOC: HashSet<uint>[item count] - editor-only cross-reference validation - owner: H8DataMonolithCompiler
+            HashSet<uint> itemHashes = new HashSet<uint>(dataSet.Items.Count); // COLD ALLOC: HashSet<uint>[item count] - editor-only cross-reference validation - owner: H8DataMonolithCompiler
             for (int i = 0; i < dataSet.Items.Count; i++)
                 itemHashes.Add(dataSet.Items[i].HashId);
 
-            HashSet<uint> creatureHashes = new HashSet<uint>(); // COLD ALLOC: HashSet<uint>[creature count] - editor-only semantic validation - owner: H8DataMonolithCompiler
+            HashSet<uint> creatureHashes = new HashSet<uint>(dataSet.Creatures.Count); // COLD ALLOC: HashSet<uint>[creature count] - editor-only semantic validation - owner: H8DataMonolithCompiler
             for (int i = 0; i < dataSet.Creatures.Count; i++)
                 creatureHashes.Add(dataSet.Creatures[i].SpeciesHash);
 
-            HashSet<uint> biomeHashes = new HashSet<uint>(); // COLD ALLOC: HashSet<uint>[biome count] - editor-only semantic validation - owner: H8DataMonolithCompiler
+            HashSet<uint> biomeHashes = new HashSet<uint>(dataSet.Biomes.Count); // COLD ALLOC: HashSet<uint>[biome count] - editor-only semantic validation - owner: H8DataMonolithCompiler
             for (int i = 0; i < dataSet.Biomes.Count; i++)
                 biomeHashes.Add(dataSet.Biomes[i].BiomeHash);
 
-            HashSet<uint> recipeOutputHashes = new HashSet<uint>(); // COLD ALLOC: HashSet<uint>[recipe count] - editor-only semantic validation - owner: H8DataMonolithCompiler
+            HashSet<uint> recipeOutputHashes = new HashSet<uint>(dataSet.Recipes.Count); // COLD ALLOC: HashSet<uint>[recipe count] - editor-only semantic validation - owner: H8DataMonolithCompiler
             for (int i = 0; i < dataSet.Recipes.Count; i++)
                 recipeOutputHashes.Add(dataSet.Recipes[i].OutputHash);
 
-            HashSet<uint> voxelMaterialHashes = new HashSet<uint>(); // COLD ALLOC: HashSet<uint>[voxel material count] - editor-only semantic validation - owner: H8DataMonolithCompiler
+            HashSet<uint> voxelMaterialHashes = new HashSet<uint>(dataSet.VoxelMaterials.Count); // COLD ALLOC: HashSet<uint>[voxel material count] - editor-only semantic validation - owner: H8DataMonolithCompiler
             for (int i = 0; i < dataSet.VoxelMaterials.Count; i++)
                 voxelMaterialHashes.Add(dataSet.VoxelMaterials[i].VoxelHash);
 
-            HashSet<uint> physicsSurfaceHashes = new HashSet<uint>(); // COLD ALLOC: HashSet<uint>[physics material count] - editor-only semantic validation - owner: H8DataMonolithCompiler
+            HashSet<uint> physicsSurfaceHashes = new HashSet<uint>(dataSet.PhysicsMaterials.Count); // COLD ALLOC: HashSet<uint>[physics material count] - editor-only semantic validation - owner: H8DataMonolithCompiler
             for (int i = 0; i < dataSet.PhysicsMaterials.Count; i++)
                 physicsSurfaceHashes.Add(dataSet.PhysicsMaterials[i].SurfaceHash);
 
-            HashSet<uint> appliedLorePacketHashes = new HashSet<uint>(); // COLD ALLOC: HashSet<uint>[applied lore packet count] - editor-only route validation - owner: H8DataMonolithCompiler
+            HashSet<uint> appliedLorePacketHashes = new HashSet<uint>(dataSet.AppliedLorePackets.Count); // COLD ALLOC: HashSet<uint>[applied lore packet count] - editor-only route validation - owner: H8DataMonolithCompiler
             for (int i = 0; i < dataSet.AppliedLorePackets.Count; i++)
                 appliedLorePacketHashes.Add(dataSet.AppliedLorePackets[i].PacketHash);
 
@@ -1938,7 +1940,13 @@ namespace Hecton8.EditorValidation
 
         private static void ValidateUniqueProductionHashes(DataSet dataSet)
         {
-            HashSet<uint> seen = new HashSet<uint>(); // COLD ALLOC: HashSet<uint>[section max row count] - editor-only duplicate validation - owner: H8DataMonolithCompiler
+            int uniqueHashCapacity = Math.Max(
+                Math.Max(Math.Max(dataSet.VoxelMaterials.Count, dataSet.AudioClips.Count), Math.Max(dataSet.VfxScalars.Count, dataSet.ToolHeat.Count)),
+                Math.Max(Math.Max(dataSet.HullConstants.Count, dataSet.PhysicsMaterials.Count), Math.Max(dataSet.GhostModules.Count, dataSet.AppliedLoreRoutes.Count)));
+            uniqueHashCapacity = Math.Max(
+                uniqueHashCapacity,
+                Math.Max(Math.Max(dataSet.SpawnCredits.Count, dataSet.SopErrors.Count), Math.Max(dataSet.HudLayouts.Count, dataSet.SectorPages.Count)));
+            HashSet<uint> seen = new HashSet<uint>(uniqueHashCapacity); // COLD ALLOC: HashSet<uint>[section max row count] - editor-only duplicate validation - owner: H8DataMonolithCompiler
             for (int i = 0; i < dataSet.VoxelMaterials.Count; i++)
                 RequireUniqueHash(seen, dataSet.VoxelMaterials[i].VoxelHash, "VoxelMaterials", i, "VoxelHash");
 
@@ -2179,6 +2187,7 @@ namespace Hecton8.EditorValidation
             for (int i = 0; i < dataSet.AppliedLoreRoutes.Count; i++)
                 ValidateAppliedLoreRoutePacketReferences(dataSet.AppliedLoreRoutes[i], i, appliedLorePacketHashes);
 
+            ValidateAppliedLoreRoutePacketOwnership(dataSet.AppliedLoreRoutes);
             ValidateAppliedLorePrerequisiteGraph(dataSet.AppliedLoreRoutes);
         }
 
@@ -2191,6 +2200,39 @@ namespace Hecton8.EditorValidation
             uint requiredCount = math.min(route.RequiredPacketCount, (uint)H8DataLayoutConstants.AppliedLoreRoutePrerequisiteCapacity);
             for (uint i = 0u; i < requiredCount; i++)
                 RequireHashReference(GetAppliedLoreRouteRequiredPacketHash(in route, i), appliedLorePacketHashes, "AppliedLoreRoutes", recordIndex, "RequiredPacketHash" + i, "AppliedLorePackets.PacketHash");
+        }
+
+        private static void ValidateAppliedLoreRoutePacketOwnership(List<H8AppliedLoreRouteRecord> routes)
+        {
+            int ownerCapacity = Math.Max(
+                32,
+                routes.Count * H8DataLayoutConstants.AppliedLoreRoutePacketCapacity);
+            Dictionary<uint, uint> ownerByPacket = new Dictionary<uint, uint>(ownerCapacity);
+
+            for (int routeIndex = 0; routeIndex < routes.Count; routeIndex++)
+            {
+                H8AppliedLoreRouteRecord route = routes[routeIndex];
+                uint packetCount = math.min(route.PacketCount, (uint)H8DataLayoutConstants.AppliedLoreRoutePacketCapacity);
+                for (uint packetIndex = 0u; packetIndex < packetCount; packetIndex++)
+                {
+                    uint packetHash = GetAppliedLoreRoutePacketHash(in route, packetIndex);
+                    if (packetHash == 0u)
+                        continue;
+
+                    if (ownerByPacket.TryGetValue(packetHash, out uint ownerRouteHash))
+                    {
+                        throw new InvalidOperationException(
+                            "[H8DataMonolithCompiler] FatalArchitectureException: Applied lore packet has multiple route owners: packet=0x" +
+                            packetHash.ToString("X8") +
+                            ", owner_route=0x" +
+                            ownerRouteHash.ToString("X8") +
+                            ", duplicate_route=0x" +
+                            route.RouteCardHash.ToString("X8"));
+                    }
+
+                    ownerByPacket.Add(packetHash, route.RouteCardHash);
+                }
+            }
         }
 
         private static void ValidateAppliedLorePrerequisiteGraph(List<H8AppliedLoreRouteRecord> routes)
@@ -2220,8 +2262,9 @@ namespace Hecton8.EditorValidation
                 }
             }
 
-            HashSet<uint> visiting = new HashSet<uint>();
-            HashSet<uint> visited = new HashSet<uint>();
+            int prerequisiteNodeCapacity = Math.Max(32, prerequisitesByPacket.Count);
+            HashSet<uint> visiting = new HashSet<uint>(prerequisiteNodeCapacity);
+            HashSet<uint> visited = new HashSet<uint>(prerequisiteNodeCapacity);
             foreach (uint packetHash in prerequisitesByPacket.Keys)
                 ValidateAppliedLorePrerequisiteNode(packetHash, prerequisitesByPacket, visiting, visited);
         }
@@ -3735,7 +3778,7 @@ namespace Hecton8.EditorValidation
                     continue;
 
                 string[] values = SplitCsvLine(lines[i]);
-                CsvRow row = new CsvRow(absolutePath, i + 1, -1);
+                CsvRow row = new CsvRow(absolutePath, i + 1, -1, headers.Length);
                 if (values.Length != headers.Length)
                 {
                     throw new InvalidOperationException(
@@ -4391,7 +4434,7 @@ namespace Hecton8.EditorValidation
 
         private static CsvRow ToJsonItemReferenceRow(string absolutePath, int sourceIndex, JsonItem item)
         {
-            CsvRow row = new CsvRow(absolutePath, 0, sourceIndex);
+            CsvRow row = new CsvRow(absolutePath, 0, sourceIndex, 4);
             row.Fields["id"] = item.id;
             row.Fields["recipe"] = item.recipe;
             return row;
@@ -4399,7 +4442,7 @@ namespace Hecton8.EditorValidation
 
         private static CsvRow ToJsonRecipeReferenceRow(string absolutePath, int sourceIndex, JsonRecipe recipe)
         {
-            CsvRow row = new CsvRow(absolutePath, 0, sourceIndex);
+            CsvRow row = new CsvRow(absolutePath, 0, sourceIndex, 4);
             row.Fields["output"] = recipe.output;
             row.Fields["station"] = recipe.station;
             row.Fields["ingredients"] = recipe.ingredients;
@@ -4408,8 +4451,8 @@ namespace Hecton8.EditorValidation
 
         private sealed class LocalizationPool
         {
-            private readonly Dictionary<string, uint> _offsetByValue = new Dictionary<string, uint>(StringComparer.Ordinal); // COLD ALLOC: Dictionary<string,uint>[source loc count] - editor-only localization pool de-duplication - owner: H8DataMonolithCompiler
-            private readonly MemoryStream _bytes = new MemoryStream(4096); // COLD ALLOC: MemoryStream[4KB] - editor-only UTF-8 string block writer - owner: H8DataMonolithCompiler
+            private readonly Dictionary<string, uint> _offsetByValue = new Dictionary<string, uint>(LocalizationPoolExpectedValueCapacity, StringComparer.Ordinal); // COLD ALLOC: Dictionary<string,uint>[source loc count] - editor-only localization pool de-duplication - owner: H8DataMonolithCompiler
+            private readonly MemoryStream _bytes = new MemoryStream(LocalizationPoolInitialByteCapacity); // COLD ALLOC: MemoryStream[source UTF-8 block] - editor-only UTF-8 string block writer - owner: H8DataMonolithCompiler
             private readonly byte[] _scratch = new byte[Utf8ScratchBytes]; // COLD ALLOC: byte[16KB] - editor-only UTF-8 encoding scratch - owner: H8DataMonolithCompiler
 
             internal uint Add(string value)
@@ -4451,13 +4494,14 @@ namespace Hecton8.EditorValidation
 
         private sealed class CsvRow
         {
-            internal readonly Dictionary<string, string> Fields = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            internal readonly Dictionary<string, string> Fields;
             internal readonly string AbsolutePath;
             internal readonly int LineNumber;
             internal readonly int SourceIndex;
 
-            internal CsvRow(string absolutePath, int lineNumber, int sourceIndex)
+            internal CsvRow(string absolutePath, int lineNumber, int sourceIndex, int fieldCapacity)
             {
+                Fields = new Dictionary<string, string>(Math.Max(4, fieldCapacity), StringComparer.OrdinalIgnoreCase);
                 AbsolutePath = absolutePath;
                 LineNumber = lineNumber;
                 SourceIndex = sourceIndex;
@@ -4507,8 +4551,8 @@ namespace Hecton8.EditorValidation
             internal readonly List<H8SectorPageRecord> SectorPages = new List<H8SectorPageRecord>(64);
             internal readonly List<H8EconomyRecord> Economy = new List<H8EconomyRecord>(128);
             internal readonly List<H8PhysicsConstantsRecord> PhysicsConstants = new List<H8PhysicsConstantsRecord>(64);
-            internal readonly List<H8AppliedLorePacketRecord> AppliedLorePackets = new List<H8AppliedLorePacketRecord>(256);
-            internal readonly List<H8AppliedLoreRouteRecord> AppliedLoreRoutes = new List<H8AppliedLoreRouteRecord>(32);
+            internal readonly List<H8AppliedLorePacketRecord> AppliedLorePackets = new List<H8AppliedLorePacketRecord>(8192);
+            internal readonly List<H8AppliedLoreRouteRecord> AppliedLoreRoutes = new List<H8AppliedLoreRouteRecord>(512);
         }
 
         // Assigned by Unity JsonUtility during editor/offline bake.

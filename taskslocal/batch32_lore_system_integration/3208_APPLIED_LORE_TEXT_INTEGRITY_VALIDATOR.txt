@@ -1,0 +1,49 @@
+ID: 3208
+Role: APPLIED_LORE_TEXT_INTEGRITY_VALIDATOR
+
+Objective:
+Implement a script-aware static validator for AppliedContent mojibake markers and English-clone publication risk.
+
+Why this is needed:
+3204 proved U+FFFD-only checks are insufficient and P456-P460 generated non-English pages are exact English clones while still structurally valid. Future lore export needs a cheap validator that reports this automatically without claiming native quality.
+
+Owned scope:
+- Prefer new tool: `Tools/AppliedLoreTextIntegrityAudit.py`.
+- Optional docs/report output: `Docs/Reports/Batch32/3208_APPLIED_LORE_TEXT_INTEGRITY_VALIDATOR.md`.
+- Create/update only `Docs/Tasks/Status_3208.md`, `Docs/AgentLogs/LOG_3208.md`, and `Docs/AgentLogs/Rationale_3208.md` if needed.
+- Do not edit packet content, generated pages, route_cards, source CSV, h8bin, Unity assets/scenes, project settings, or existing importer/exporter behavior unless a tiny importable helper is unavoidable.
+
+Authority docs:
+AGENTS.md, writing.md, localization.md, quality.md, authoring.md, data.md, Docs/Lore/Lore_Localization_Model.md, Docs/Lore/Lore_Multilingual_Content_Architecture.md.
+
+Inputs:
+- `Docs/Reports/Batch32/3204_UTF8_MOJIBAKE_AND_CLONE_AUDIT.md`
+- `Tools/AppliedLoreRuntimeAudit.py` for CLI style only; do not merge unless necessary.
+- `Docs/Lore/AppliedContent/production_packets/*.md`
+- `Docs/Lore/AppliedContent/in_game_wiki/*/*.md`
+- `Docs/Lore/AppliedContent/external_site/*/*.md`
+
+Tasks:
+1. Read authority docs and relevant mandates from BATCH_INDEX.
+2. Implement CLI with `--root .`.
+3. Support production packet marker scan over current `production_packets/*.md`.
+4. Support generated page clone scan by comparing non-English title/body to `en_US` after stripping frontmatter and generated comments.
+5. Fail on U+FFFD.
+6. Warn, not fail, on broad single-codepoint marker hits U+00C2/U+00C3/U+00D0/U+00D1/U+00D8/U+00E2/U+00E6/U+00EC/U+00D7 unless exact known mojibake sequence detection proves failure.
+7. Warn on non-English generated pages that exactly clone en_US while status is draft/pending.
+8. Fail if any non-English exact clone is marked native/runtime/publication-ready.
+9. Keep output concise: counts, first few sample paths, and final `PASS`, `WARN`, or `FAIL`.
+10. Run the validator in a cheap mode. If scanning all generated pages is too expensive under current process gate, support `--packet-glob P45[6-9]*,P460*` or equivalent and validate the P456-P460 sample.
+
+Proof packet:
+- Tool path.
+- Command run.
+- Output.
+- Evidence class STATIC_SOURCE.
+- Residual blockers.
+
+Rejection gates:
+- No runtime/native localization claim.
+- No generated page edits.
+- No heavy Unity/build/dotnet work.
+- No false pass if clone risk remains; report WARN if drafts clone en_US.

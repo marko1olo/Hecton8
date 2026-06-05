@@ -1,5 +1,9 @@
 ﻿# Biota Density Map Baker SHINOBU_308
 
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
+
+Owner domain: world generation / biota density baker
+
 - Status:
   - DOMAIN ASMDEF COMPILED.
   - GLOBAL COMPILE WALL BLOCKS EDITOR BAKE.

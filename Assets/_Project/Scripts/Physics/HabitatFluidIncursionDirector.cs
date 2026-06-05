@@ -1274,7 +1274,18 @@ namespace Hecton8.Physics
                 return;
 
             // COLD SYNC JOB: topology/CSV/mock author writes must not race a pending flood worker.
-            if (!DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true))
+            bool completed;
+            DispatcherJobFence.BeginPostFixedSwapWindow();
+            try
+            {
+                completed = DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostFixedSwapWindow();
+            }
+
+            if (!completed)
                 return;
 
             try

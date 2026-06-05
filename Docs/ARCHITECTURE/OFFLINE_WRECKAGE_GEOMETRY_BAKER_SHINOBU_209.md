@@ -4,6 +4,8 @@
 
 Date: 2026-05-20
 
+Owner domain: environment/wreckage offline geometry baker
+
 
 
 Status: STATIC IMPLEMENTATION / PROJECT COMPILE BLOCKED OUTSIDE DOMAIN

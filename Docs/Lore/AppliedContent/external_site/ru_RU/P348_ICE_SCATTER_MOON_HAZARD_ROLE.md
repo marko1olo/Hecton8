@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Роль ice-scatter moon
+# Ice Scatter Moon Hazard Role
 
-Moon ladder Aegir даёт believable geography: relay moons, ice hazards, dead beacons and HECTON-8.
+Aegir's moon ladder gives the setting believable geography: relay moons, ice-scatter hazards, dead beacons and the drowned HECTON-8 claim.
 
 ## Scanner
 
-Запись outer ice-scatter. Salvage traffic избегает луну, пока debris lanes закрыты.
+Outer ice-scatter record. Salvage traffic avoids this moon until debris lanes open.
 
 ## Terminal
 
-MOON LEDGER: ice-scatter moon сыплет яркий debris и old claim dust. Ценная на бумаге, мерзкая для navigation.
+MOON LEDGER: the ice-scatter moon sheds bright debris and old claim dust. It is valuable on paper and miserable for navigation.
 
 ## Audio
 
-В каждой системе есть луна, которую любят бухгалтеры и ненавидят пилоты.
+Every system has one moon that accountants love and pilots curse.
 
 ## Field Note
 
-Для map annotations и salvage rumor text.
+Map annotation record: ice scatter, debris lanes, and salvage pressure make Aegir feel like a working system around HECTON-8.
 
 <!-- External Site; generated from P348_ICE_SCATTER_MOON_HAZARD_ROLE/ru_RU. -->

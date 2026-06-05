@@ -1,0 +1,2 @@
+path,width,height,mode,role,verdict,issues,warnings,seam_lr_mean,seam_tb_mean,luminance_mean,luminance_min,luminance_max,aspect,preview_path
+Assets/_Project/Art/TEXTURES/Terrain Textures/basalt/TX_H8_WetBasaltShoreline_Albedo_1428.png,1024,1024,RGBA,Albedo,REJECT,left_right_edge_mismatch;top_bottom_edge_mismatch,possible_crushed_range_or_baked_lighting,30.78,33.396,85.971,0,255,square,Docs/GeneratedAssets/Gemini/QA/WetBasalt1428/tile_previews/TX_H8_WetBasaltShoreline_Albedo_1428_tile2x2.png

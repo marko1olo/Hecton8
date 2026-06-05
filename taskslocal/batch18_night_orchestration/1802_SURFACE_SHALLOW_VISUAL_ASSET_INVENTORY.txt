@@ -1,0 +1,100 @@
+ID: 1802
+Role: SURFACE_SHALLOW_VISUAL_ASSET_INVENTORY
+Chat name: 1802 Surface Shallow Visual Assets
+
+OBJECTIVE
+Find and classify existing assets that can make the surface, waterline, coastline, photic shallows, Aegir/sky, rocks, coral/flora, and industrial traces look premium instead of procedural/primitive.
+
+You are not asked to make beauty claims from prose. You are building a usable inventory and replacement plan from actual project assets.
+
+FRESH EVIDENCE LEADS TO VERIFY
+- Screenshots `Assets/Screenshots/h8_water_ui_baseline_before_08.png` and `Assets/Screenshots/h8_scene_water_ui_baseline_before_08.png` show readable but not premium surface visuals.
+- `Assets/_Project/_PROLOGUE_CONTENT/Prefabs/Hecton8_Surface.prefab` reportedly has missing surface material binding.
+- Candidate Aegir assets: `Assets/_Project/Art/TEXTURES/TX_H8AegirGasGiantBakedDisc_1428.png`, `TX_H8SurfaceGasGiantBands_1428.asset`, `TX_H8SurfaceGasGiantStormBands_1428.asset`, `Assets/_Project/_PROLOGUE_CONTENT/Prefabs/GasGiant_Aegir.prefab`, and `_PROLOGUE_CONTENT/Textures/Planets/Clouds/GASgIANT/Aegir_storms.png`.
+- Candidate wet basalt/coast assets: `TX_H8SurfaceBasaltWetSediment_1428.asset`, `TX_SurfaceBasaltWetStrata_1428.asset`, `H8_TerrainLayer_AbyssBasalt_1428.terrainlayer`, and finalized rocks under `Assets/_Project/Prefabs/Nature/Rocks/ProceduralFinals/`.
+- Candidate photic biota assets: `Assets/_Project/Art/TEXTURES/WorldProceduralFlora/`, `Assets/_Project/Prefabs/WorldProceduralProxy/`, and placement rules such as `ProceduralRule_rule_kelp_starter.asset`, `ProceduralRule_rule_coral_branching.asset`, `ProceduralRule_rule_coral_plate.asset`.
+- Avoid production use of placeholder families under `Assets/_Project/Materials/WorldRuntime/ProceduralPlaceholders/` and `Assets/_Project/Prefabs/WorldRuntime/ProceduralPlaceholders/`.
+
+Verify every lead locally before treating it as a hard fact.
+
+AUTHORITY DOCS
+Read:
+- AGENTS.md
+- PROJECT_BIBLES.md
+- VISION_LOCKS.md
+- TASTE.md
+- quality.md
+- 3dmodel.md
+- PROCEDURAL_ASSET_PIPELINE.md
+- 3DMODEL_TEXTURES_MATERIALS.md
+- 3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md
+- 3DMODEL_HERO_REALISM_OVERKILL.md
+- 3DMODEL_FLORA_CORAL.md
+- 3DMODEL_GEOLOGY_ROCKS.md
+- water.md
+- terrain.md
+- celestial.md
+- lighting.md
+- rendering.md
+
+Before non-trivial design conclusions, identify 2-8 relevant `.agents-skills` mandates and read only those.
+
+OWNED SCOPE
+Allowed:
+- Docs/Reports/Batch18/
+- Docs/Tasks/Status_1802.md
+- Docs/AgentLogs/Rationale_1802.md
+- Docs/AgentLogs/LOG_1802.md
+- static scan of Assets/Crest, Assets/_Project/Art, Assets/_Project/Prefabs, Assets/_SourceData, Assets/GPUInstancer, MapMagic assets, generated asset manifests, texture/material files
+
+Do not:
+- overwrite third-party Crest/MapMagic code or materials;
+- create runtime material clones;
+- delete assets;
+- claim final visual quality without render/screenshot proof;
+- fight live Unity.
+
+TASKS
+Phase 0 - Evidence Basis
+01. Create Status_1802.md with the full checklist and proof labels.
+02. Read the authority docs and record the exact visual floor in Rationale_1802.md.
+03. Use file search to locate existing water textures/materials: Crest ocean materials, wave normals, foam, caustics, underwater materials, Hecton water shaders, shoreline tools. Verify paths.
+04. Use file search to locate terrain/geology textures/materials: basalt, gravel, strata, wet rock, splat profiles, MapMagic graphs, MicroSplat/MeshBaker materials if present.
+05. Use file search to locate sky/Aegir/moon/cloud textures/materials and any celestial generation or presentation scripts.
+Checkpoint A: update Status_1802 with verified asset families and missing families.
+
+Phase 1 - Surface/Shallow Visual Inventory
+06. Build `Docs/Reports/Batch18/1802_SURFACE_SHALLOW_ASSET_INVENTORY.md`.
+07. In the report, group assets by: Ocean Skin, Underwater Optics, Coast/Rock, Terrain/Sediment, Coral/Flora, Industrial Traces, Sky/Aegir/Moons/Clouds, VFX/Particles, UI/Instrument overlays.
+08. For each asset family, record: verified path, type, likely use, proof state, import/preview state if knowable statically, and risk.
+09. Mark any asset as CANDIDATE if you did not inspect enough to prove usability.
+10. Identify primitive/procedural-looking families that should not be used as final production references.
+Checkpoint B: no asset may be marked production-ready from static path existence alone.
+
+Phase 2 - Replacement And Upgrade Plan
+11. Produce a prioritized list of concrete asset upgrades that can raise visuals toward the reference screenshots: water color/specular/foam, waterline, wet rock breakup, Aegir texture softness, shallow coral/biota density, industrial traces.
+12. For each upgrade, state whether it can be done by assigning existing assets, offline generating assets, baking manifests, or needs live Unity placement.
+13. For each existing third-party asset family, state "use as-is", "configure in Unity slot", "wrap via first-party bridge", or "do not touch".
+14. Define Compact/Middle/High/Ultra visual scaling for each family without ugly compact mode.
+15. Identify any runtime-generation risk: generated mesh/texture must be editor/offline, not runtime placeholder.
+Checkpoint C: update Status_1802 with upgrade plan path.
+
+Phase 3 - Agent Handoff
+16. Write a concise future prompt for a Unity visual implementer to apply your inventory when Unity is free.
+17. Write a concise future prompt for an offline generated asset agent if missing rocks/corals/flora/industrial traces are found.
+18. Write a list of screenshot angles required to prove each asset family after implementation.
+19. Append LOG_1802.md with what is STATIC VERIFIED, what remains PENDING UNITY VISUAL PROOF, and what must be rejected.
+20. Final scan: remove fake metrics, fake line numbers, and any "asset exists therefore final quality" claim.
+
+PROOF PACKET
+Required:
+- Status_1802.md
+- Rationale_1802.md if decisions were made
+- LOG_1802.md
+- Docs/Reports/Batch18/1802_SURFACE_SHALLOW_ASSET_INVENTORY.md
+
+REJECTION GATES
+- No cheap procedural scribbles.
+- No runtime generation for production hero assets.
+- No darkness/fog as cover for missing art.
+- No third-party asset mutation without explicit safe route.

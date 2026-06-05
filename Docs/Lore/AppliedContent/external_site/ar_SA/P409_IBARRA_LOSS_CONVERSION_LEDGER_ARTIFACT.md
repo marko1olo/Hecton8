@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# AR LOC: Ibarra Loss Ledger
+# Ibarra Loss Ledger
 
-AR LOC HOLD: Deep Reach wants HECTON-8 back because loss conversion never stopped being profitable.
+Deep Reach and its insurers keep HECTON-8 valuable by converting loss into recoverable claim material.
 
 ## Scanner
 
-AR LOC HOLD: Deep Reach artifact: loss ledger. People, modules and claims share a conversion column.
+Keelmark loss ledger. People, modules and claims share a conversion column.
 
 ## Terminal
 
-AR LOC: IBARRA LEDGER. Personnel load held as continuity loss; claims retain asset rights.
+KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel mass unresolved. Habitat modules, tools and claims retain recoverable asset status pending final witness packet.
 
 ## Audio
 
-AR LOC HOLD: The ledger did not forget names. It made them payable later.
+The ledger did not forget names. It made them payable later.
 
 ## Field Note
 
-AR LOC HOLD: Use in claim-pool, carrier debt and public liability modules.
+The ledger did not forget the names. It moved them under unresolved personnel load and kept the hardware recoverable.
 
 <!-- External Site; generated from P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT/ar_SA. -->

@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ The route remembers what you proved. The ocean does not owe you your tools.
 
 ## Field Note
 
-Use for same-seed return UI and meta dossier.
+Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment.
 
 <!-- In-Game Wiki; generated from P337_PARTIAL_RETURN_LIEN_EXTENSION/en_US. -->

@@ -4,6 +4,11 @@ Status: content pipeline / pre-public
 Public stance: single-player-first scope / proof-first public copy
 Runtime impact: none
 
+## Authority Boundary
+
+Static documentation only. Public devlog, Steam news/event, community reuse, creator context, demo, wishlist, performance, platform, release, publication, support, and gameplay-proof claims require root `textes.md` for voice plus `quality.md`, `release.md`, and `platform.md` with current proof artifacts and the local permission gates.
+No public post, Steam news, trailer/capsule approval, creator send, community launch, platform/release claim, demo claim, Steam event publication, newsletter reuse, or devlog publication is authorized by drafts, examples, templates, cadence rows, or plan rows in this file.
+
 ## Hard Rule
 
 Do not publish or schedule a Steam announcement/news/event, reuse a devlog as Steam news, or count Steam announcement signal unless `steam_announcement_permission_gate = ALLOW_STEAM_ANNOUNCEMENT_VERIFIED` for the exact app/event/post. A devlog draft, Steam page existence, event template, public post approval, CTA approval, or demo existence is not Steam announcement permission.

@@ -6,6 +6,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
+using Hecton8.Input;
 using Hecton8.Narrative;
 using Hecton8.World;
 using TMPro;
@@ -177,11 +178,20 @@ namespace Hecton8.UI
         private const float AudioLogCueMinimumImpulseRadius = 1.5f;
         private const float AudioLogCueMaximumImpulseRadius = 5.5f;
         private const float AudioLogCueMaximumCameraShake = 0.18f;
+        private const float AudioLogCueCameraAmplitudeScale = 0.55f;
+        private const float AudioLogCueCameraTranslationGain = 0.25f;
+        private const float AudioLogCueCameraRotationGain = 0.45f;
         private const byte PowerTextGlitchBatteryThresholdPercent = 25;
         private const float PowerTextGlitchEnergyThreshold01 = 0.18f;
         private const float PowerTextGlitchRiseSpeed = 11f;
         private const float PowerTextGlitchDecaySpeed = 3.5f;
         private const float PowerTextGlitchMaximumMutationRate = 0.11f;
+        private const float SubtitleBaseFontSize = 22f;
+        private const float SubtitleMinimumFontSize = 16f;
+        private const uint SubtitleSpeakerHashVocalWarning = 0x41565753u; // AVWS
+        private const uint SubtitleSpeakerHashVocalWarningSystem = 0x56333532u; // V352
+        private const uint SubtitleSpeakerHashBabel = 0xBA150150u;
+        private const uint SubtitleSpeakerHashWfcAudioLog = 0x57464341u; // WFCA
 
         private static readonly Color BackdropColor = new Color(0.01f, 0.04f, 0.06f, 0.64f);
         private static readonly Color TextColor = new Color(0.86f, 0.96f, 1f, 0.96f);
@@ -289,6 +299,11 @@ namespace Hecton8.UI
         private float _powerTextGlitchHoldSeconds;
         private byte _powerTextGlitchBucket;
         private uint _powerTextGlitchPhase;
+        private float _appliedSubtitleTextScale = 1f;
+        private uint _lastUiRescaleFrame;
+        private uint _lastUiRescaleSourceHash;
+        private uint _lastUiRescaleFontScaleBits;
+        private ushort _lastUiRescaleReason;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -352,10 +367,12 @@ namespace Hecton8.UI
             TryRegisterHotSwapListener();
             CacheRegistryServicesCold();
             BabelSubtitleSyncRuntime.EnsureInitialized();
+            SignalBus<UIRescaleRequestSignal>.EnsureInitialized();
             font = LocalizedFontResolver.ResolveReadableFont(font);
             NotificationEvents.Register(this);
             AudioLogEvents.Register(this);
             EnsureBuilt();
+            ApplyCurrentSettingsTextScaleCold();
             RegisterToTickManager();
             RegisterLateFrameSwap();
         }
@@ -449,6 +466,10 @@ namespace Hecton8.UI
                 IDataVault dataVault = currentService as IDataVault;
                 CharBufferPool.BindDataVaultCold(dataVault);
                 BabelSubtitleSyncRuntime.BindDataVaultCold(dataVault);
+            }
+            else if (serviceSlot == GlobalRegistryServiceSlot.SettingsRuntime)
+            {
+                ApplyCurrentSettingsTextScaleCold();
             }
         }
 
@@ -750,6 +771,7 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
+            ConsumeUiRescaleRequestsVisualSync();
             DrainPendingAudioLogEventsVisualSync();
             AdvanceSubtitlePresentation(SystemDispatcher.CurrentFrameUnscaledDeltaTime);
 
@@ -757,6 +779,73 @@ namespace Hecton8.UI
                 return;
 
             FlushPendingSubtitleSwap();
+        }
+
+        private void ConsumeUiRescaleRequestsVisualSync()
+        {
+            ReadOnlySpan<UIRescaleRequestSignal> signals = SignalBus<UIRescaleRequestSignal>.GetFrameSnapshot();
+            if (signals.Length == 0)
+                return;
+
+            float scale = _appliedSubtitleTextScale;
+            bool hasRequest = false;
+            for (int i = 0; i < signals.Length; i++)
+            {
+                UIRescaleRequestSignal signal = signals[i];
+                uint fontScaleBits = math.asuint(signal.FontScale);
+                if (signal.Frame == _lastUiRescaleFrame &&
+                    signal.SourceHash == _lastUiRescaleSourceHash &&
+                    fontScaleBits == _lastUiRescaleFontScaleBits &&
+                    signal.Reason == _lastUiRescaleReason)
+                {
+                    continue;
+                }
+
+                _lastUiRescaleFrame = signal.Frame;
+                _lastUiRescaleSourceHash = signal.SourceHash;
+                _lastUiRescaleFontScaleBits = fontScaleBits;
+                _lastUiRescaleReason = signal.Reason;
+                scale = ResolveSubtitleTextScale(signal.FontScale);
+                hasRequest = true;
+            }
+
+            if (hasRequest)
+                ApplySubtitleTextScaleVisualSync(scale);
+        }
+
+        private void ApplyCurrentSettingsTextScaleCold()
+        {
+            float scale = 1f;
+            if (SettingsManager.TryGetInstance(out SettingsManager settings))
+                scale = settings.TextScale;
+
+            ApplySubtitleTextScaleVisualSync(ResolveSubtitleTextScale(scale));
+        }
+
+        private static float ResolveSubtitleTextScale(float requestedScale)
+        {
+            float scale = math.isfinite(requestedScale) && requestedScale > 0f ? requestedScale : 1f;
+            return math.clamp(scale, AccessibilitySettings.MinimumTextScale, AccessibilitySettings.MaximumTextScale);
+        }
+
+        private void ApplySubtitleTextScaleVisualSync(float scale)
+        {
+            if (_subtitleText == null)
+                return;
+
+            float safeScale = ResolveSubtitleTextScale(scale);
+            if (math.abs(safeScale - _appliedSubtitleTextScale) <= 0.001f)
+                return;
+
+            _appliedSubtitleTextScale = safeScale;
+            float fontSize = SubtitleBaseFontSize * safeScale;
+            float minimumFontSize = SubtitleMinimumFontSize * safeScale;
+            _subtitleText.fontSize = fontSize;
+            _subtitleText.enableAutoSizing = true;
+            _subtitleText.fontSizeMin = minimumFontSize;
+            _subtitleText.fontSizeMax = math.max(minimumFontSize, fontSize);
+            _subtitleText.overflowMode = TextOverflowModes.Ellipsis;
+            _subtitleText.textWrappingMode = TextWrappingModes.Normal;
         }
 
         /// <summary>
@@ -985,6 +1074,7 @@ namespace Hecton8.UI
                 consumed++;
                 SubtitleCommandDTO command = new SubtitleCommandDTO
                 {
+                    SpeakerHash = cue.SourceHash,
                     TextHash = cue.TokenHash,
                     Duration = cue.DisplayDuration,
                     _pad0 = cue.Flags
@@ -1022,15 +1112,23 @@ namespace Hecton8.UI
             {
                 Span<char> destination = lease.Span;
                 bool stripRichText = ShouldStripBabelRichText(command.TextHash);
+                bool allowRichPrefix = BabelRichTextLodPolicy.ShouldEnableTmpRichTextParsing();
+                int prefixLength = 0;
+                AppendSpeakerPrefix(command.SpeakerHash, allowRichPrefix, destination, ref prefixLength);
+                Span<char> textDestination = destination.Slice(prefixLength);
                 long decodeStart = Stopwatch.GetTimestamp();
                 bool found = LocRegistry.TryWriteVisualSpanFromUtf8(
                     command.TextHash,
-                    destination,
-                    out int length,
+                    textDestination,
+                    out int textLength,
                     stripRichText);
-                AppendDirectionalArrow(command._pad0, destination, ref length);
                 float decodeMs = ResolveStopwatchElapsedMilliseconds(decodeStart);
-                BabelSubtitleSyncRuntime.RecordDecode(command.TextHash, length, !found, decodeMs);
+                BabelSubtitleSyncRuntime.RecordDecode(command.TextHash, textLength, !found, decodeMs);
+                if (textLength <= 0)
+                    return false;
+
+                int length = prefixLength + textLength;
+                AppendDirectionalArrow(command._pad0, destination, ref length);
                 length = lease.CopyToTmpBuffer(length);
                 if (length <= 0)
                     return false;
@@ -1052,6 +1150,87 @@ namespace Hecton8.UI
             {
                 CharBufferPool.Release(in lease);
             }
+        }
+
+        private static void AppendSpeakerPrefix(uint speakerHash, bool allowRichText, Span<char> destination, ref int length)
+        {
+            if (speakerHash == 0u || (uint)length >= (uint)destination.Length)
+                return;
+
+            if (destination.Length - length < ResolveSpeakerPrefixLength(speakerHash, allowRichText))
+                return;
+
+            if (allowRichText)
+                AppendSpeakerColorOpen(speakerHash, destination, ref length);
+
+            AppendSpeakerLabel(speakerHash, destination, ref length);
+
+            if (allowRichText)
+                AppendLiteral("</color>".AsSpan(), destination, ref length);
+
+            AppendLiteral(" ".AsSpan(), destination, ref length);
+        }
+
+        private static int ResolveSpeakerPrefixLength(uint speakerHash, bool allowRichText)
+        {
+            int labelLength = ResolveSpeakerLabelLength(speakerHash);
+            return allowRichText
+                ? 15 + labelLength + 8 + 1
+                : labelLength + 1;
+        }
+
+        private static int ResolveSpeakerLabelLength(uint speakerHash)
+        {
+            return speakerHash == SubtitleSpeakerHashBabel ? 8 : 6;
+        }
+
+        private static void AppendSpeakerColorOpen(uint speakerHash, Span<char> destination, ref int length)
+        {
+            switch (speakerHash)
+            {
+                case SubtitleSpeakerHashVocalWarning:
+                case SubtitleSpeakerHashVocalWarningSystem:
+                    AppendLiteral("<color=#FFB547>".AsSpan(), destination, ref length);
+                    return;
+                case SubtitleSpeakerHashBabel:
+                    AppendLiteral("<color=#8FE8FF>".AsSpan(), destination, ref length);
+                    return;
+                case SubtitleSpeakerHashWfcAudioLog:
+                    AppendLiteral("<color=#B7FFC8>".AsSpan(), destination, ref length);
+                    return;
+                default:
+                    AppendLiteral("<color=#D7F4FF>".AsSpan(), destination, ref length);
+                    return;
+            }
+        }
+
+        private static void AppendSpeakerLabel(uint speakerHash, Span<char> destination, ref int length)
+        {
+            switch (speakerHash)
+            {
+                case SubtitleSpeakerHashVocalWarning:
+                case SubtitleSpeakerHashVocalWarningSystem:
+                    AppendLiteral("[VWS]:".AsSpan(), destination, ref length);
+                    return;
+                case SubtitleSpeakerHashBabel:
+                    AppendLiteral("[BABEL]:".AsSpan(), destination, ref length);
+                    return;
+                case SubtitleSpeakerHashWfcAudioLog:
+                    AppendLiteral("[LOG]:".AsSpan(), destination, ref length);
+                    return;
+                default:
+                    AppendLiteral("[COM]:".AsSpan(), destination, ref length);
+                    return;
+            }
+        }
+
+        private static void AppendLiteral(ReadOnlySpan<char> literal, Span<char> destination, ref int length)
+        {
+            int safeLength = math.min(literal.Length, math.max(0, destination.Length - length));
+            for (int i = 0; i < safeLength; i++)
+                destination[length + i] = literal[i];
+
+            length += safeLength;
         }
 
         private static float ResolveStopwatchElapsedMilliseconds(long startTimestamp)
@@ -1874,7 +2053,14 @@ namespace Hecton8.UI
             CameraJuiceSignals.TryPublishImpact(
                 math.min(AudioLogCueMaximumCameraShake, intensity * 0.12f),
                 runtimePosition,
-                direction);
+                direction,
+                CameraJuiceSignals.HighFreqToolVibrationProfileHash,
+                AudioLogCueCameraAmplitudeScale,
+                CameraJuiceSignals.LowPriority,
+                radiusMeters,
+                AudioLogCueCameraTranslationGain,
+                AudioLogCueCameraRotationGain,
+                _currentAudioLogHash);
         }
 
         private void ResolveAudioLogCueTransform(out Vector3 runtimePosition, out Vector3 direction)
@@ -2170,7 +2356,7 @@ namespace Hecton8.UI
 
             _subtitleText = textOwner.AddComponent<TextMeshProUGUI>();
             _subtitleText.font = font;
-            _subtitleText.fontSize = 22f;
+            _subtitleText.fontSize = SubtitleBaseFontSize;
             _subtitleText.fontStyle = FontStyles.Bold;
             _subtitleText.alignment = TextAlignmentOptions.BottomGeoAligned;
             _subtitleText.textWrappingMode = TextWrappingModes.Normal;
@@ -2179,7 +2365,7 @@ namespace Hecton8.UI
             RefreshSubtitleTextLodPolicy();
             LocalizedTMPAutoSizer.Configure(
                 _subtitleText,
-                16f,
+                SubtitleMinimumFontSize,
                 _subtitleText.fontSize,
                 TextOverflowModes.Ellipsis,
                 TextWrappingModes.Normal);

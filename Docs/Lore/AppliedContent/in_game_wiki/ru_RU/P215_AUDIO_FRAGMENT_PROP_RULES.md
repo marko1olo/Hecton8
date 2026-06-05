@@ -10,8 +10,8 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
 # Правила audio fragments
@@ -32,6 +32,6 @@ AUDIO RULE: без free-floating monologues. Voice принадлежит hydrop
 
 ## Field Note
 
-Audio fragments требуют source prop, transcript damage, route timestamp и одно physical contradiction.
+Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.
 
 <!-- In-Game Wiki; generated from P215_AUDIO_FRAGMENT_PROP_RULES/ru_RU. -->

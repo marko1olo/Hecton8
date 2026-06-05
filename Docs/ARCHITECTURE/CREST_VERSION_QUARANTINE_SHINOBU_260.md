@@ -1,5 +1,10 @@
 ﻿# Crest Version Quarantine - SHINOBU_260
 
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
+Evidence class: STATIC_DOC / STATIC_SOURCE
+Owner domain: CREST_VERSION_QUARANTINE_DIRECTOR
+Review disposition: YELLOW / STATIC_DOC_ONLY until compile/import/runtime/profiler/player proof exists.
+
 ## Ownership
 
 Agent: SHINOBU_260

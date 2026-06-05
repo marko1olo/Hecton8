@@ -1,0 +1,40 @@
+HECTON-8 Local Task - Documentation Wave 1
+
+Mission: resolve procedural asset pipeline authority identity after governance patch lands.
+
+Prerequisite:
+- Do not start until Huygens Wave 0 governance patch is integrated or the controller explicitly clears this task.
+
+Read:
+- AGENTS.md, only enough to obey evidence/doc rules.
+- HECTON8_ORCHESTRATOR.md, only enough to obey local task rules.
+- Docs/Reports/DocumentationCompleteness_20260605/DOC_COMPLETENESS_SYNTHESIS_AND_PATCH_QUEUE_20260605.md
+- Docs/Reports/DocumentationCompleteness_20260605/DOC_INDEX_GOVERNANCE_CONSISTENCY_3225_20260605.md
+- PROJECT_BIBLES.md
+- Docs/README.md
+- PROCEDURAL_ASSET_PIPELINE.md
+- Docs/PROCEDURAL_ASSET_PIPELINE.md
+
+Write scope:
+- Docs/README.md
+- PROJECT_BIBLES.md
+- PROCEDURAL_ASSET_PIPELINE.md
+- Docs/PROCEDURAL_ASSET_PIPELINE.md
+
+Task:
+- Decide and document one binding procedural asset pipeline authority path.
+- Preferred route from synthesis: root PROCEDURAL_ASSET_PIPELINE.md remains standing route bible unless source-backed review proves otherwise.
+- If Docs/PROCEDURAL_ASSET_PIPELINE.md is stale/duplicate, relabel it clearly as duplicate/supporting/historical or add a top warning that it is not the binding route bible.
+- Redirect active index language so agents do not treat both files as equal authority.
+- Do not delete either file in this wave.
+
+Verification:
+- git diff --check for touched files.
+- rg scan for both PROCEDURAL_ASSET_PIPELINE.md paths in active docs and report which active docs still cite each.
+- Final report in chat only: files changed, chosen authority path, remaining citations, residual risk.
+
+Reject:
+- No Unity/build/import/runtime proof claims.
+- No asset import setting changes.
+- No generated asset edits.
+- No file moves/deletions.

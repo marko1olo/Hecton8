@@ -1,5 +1,10 @@
 ﻿# ARM Texture Packing Pipeline
 
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
+Evidence class: STATIC_DOC / STATIC_SOURCE
+Owner domain: Editor-only tech-art texture packing
+Review disposition: YELLOW / STATIC_DOC_ONLY until compile/import/runtime/profiler/player proof exists.
+
 Owner: `SHINOBU_214`
 
 Domain: Editor-only tech-art texture packing.

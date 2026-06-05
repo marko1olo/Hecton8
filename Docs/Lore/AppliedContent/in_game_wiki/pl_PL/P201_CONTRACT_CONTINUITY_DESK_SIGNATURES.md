@@ -10,13 +10,13 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
 # Contract Continuity Desk Signatures
 
-Contract Continuity Desk signatures let mission text show how a salvage job becomes legal pressure without inventing a new villain.
+Contract Continuity Desk signatures show how a salvage job becomes legal pressure without inventing a new villain.
 
 ## Scanner
 
@@ -32,6 +32,6 @@ Nobody says trap. They say continuity.
 
 ## Field Note
 
-Use lower signatures as stamps of procedure: lien merge, oxygen addendum, blacklist risk and payload hold.
+Lower signatures act as procedure stamps: lien merge, oxygen addendum, blacklist risk, and payload hold.
 
 <!-- In-Game Wiki; generated from P201_CONTRACT_CONTINUITY_DESK_SIGNATURES/pl_PL. -->

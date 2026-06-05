@@ -1,0 +1,68 @@
+{
+  "agentId": "1746",
+  "status": "IMPLEMENTED_STATIC_VERIFIED_RUNTIME_PENDING",
+  "date": "2026-06-03",
+  "ownerRoute": "CameraJuiceSystem / CameraJuiceSignals / SignalBus<CameraJuiceImpactSignal>",
+  "stalePromptFindings": [
+    "No first-party Cinemachine impulse route found.",
+    "No CameraShakeSignal contract found.",
+    "No SignalBus<T>.Publish API found; project uses TryPush/TryPushTracked and frame snapshots.",
+    "No SettingsManager.Accessibility_MotionReduction setting found."
+  ],
+  "changedFiles": [
+    "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.CoreFoundation.cs",
+    "Assets/_Project/Scripts/Core/CameraJuiceSignals.cs",
+    "Assets/_Project/Scripts/VFX/CameraJuiceSystem.cs",
+    "Assets/_Project/Scripts/VFX/CameraJuiceSystem_CameraJuiceBurst.cs",
+    "Assets/_Project/Data/VFX/camera_trauma_profiles.csv",
+    "Docs/ARCHITECTURE/SHINOBU_354_PROCEDURAL_CAMERA_SHAKE_ROUTE_CARD.md",
+    "Docs/Tasks/Status_1746.md",
+    "Docs/AgentLogs/Rationale_1746.md",
+    "Docs/AgentLogs/LOG_1746.md",
+    "Docs/Reports/CAMERA_KINETICS_DIRECTOR_REPORT_1746.json"
+  ],
+  "implementation": {
+    "cameraImpactSignalAbiBytes": 128,
+    "newSignalFields": [
+      "ProfileHash",
+      "SourceHash",
+      "AmplitudeScale",
+      "RadiusOverrideMeters",
+      "TranslationGain",
+      "RotationGain",
+      "Priority",
+      "Flags"
+    ],
+    "profiles": [
+      "SharpKineticImpact",
+      "LowFreqSeismicHeave",
+      "HighFreqToolVibration",
+      "ContinuousPressureStress"
+    ],
+    "maxProceduralImpactRecordsPerFrame": 32,
+    "priorityBands": [
+      "critical",
+      "high",
+      "normal",
+      "low"
+    ],
+    "settingsScalar": "SettingsManager.UiMotionScale cached on slow tick; presentation-only shake/FOV scale"
+  },
+  "verification": {
+    "unityValidateScript": {
+      "Assets/_Project/Scripts/Core/CameraJuiceSignals.cs": "PASS_NO_DIAGNOSTICS",
+      "Assets/_Project/Scripts/VFX/CameraJuiceSystem_CameraJuiceBurst.cs": "PASS_NO_DIAGNOSTICS",
+      "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.CoreFoundation.cs": "TOOL_BLOCKED_DOTTED_FILENAME",
+      "Assets/_Project/Scripts/VFX/CameraJuiceSystem.cs": "TOOL_HEURISTIC_DUPLICATE_SIGNATURE_FALSE_POSITIVE_MANUAL_RG_FOUND_ONE_DECLARATION"
+    },
+    "unityConsoleErrors": 0,
+    "diffCheck": "PASS_WITH_LINE_ENDING_WARNINGS_ONLY",
+    "dotnetBuild": "NOT_RUN_CPU_100_AND_DOTNET_ACTIVE"
+  },
+  "runtimeProof": {
+    "playMode": "PENDING",
+    "profiler": "PENDING",
+    "gcPerFrame": "PENDING",
+    "inGameFeel": "PENDING"
+  }
+}

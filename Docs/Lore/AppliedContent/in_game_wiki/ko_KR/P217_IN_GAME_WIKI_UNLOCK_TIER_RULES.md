@@ -10,13 +10,13 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# In-Game Wiki Unlock Tier Rules
+# PDA Unlock Tier Rules
 
-In-Game Wiki Unlock Tier Rules keep the PDA tied to exploration and evidence.
+PDA Unlock Tier Rules keep the codex tied to exploration and evidence instead of revealing truth before the object is found.
 
 ## Scanner
 

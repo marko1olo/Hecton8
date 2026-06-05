@@ -54,6 +54,54 @@ Required for large domains:
 - async write path;
 - crash-safe temp file then atomic replace.
 
+## 2026-06-05 H8BinaryWorldPager Source Anchor
+
+Evidence class: STATIC_SOURCE / STATIC_DOC. Runtime proof is not implied.
+
+Source: `Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs`.
+
+Owner and route:
+
+- Owner: `Hecton8.Core.Persistence.Paging.H8BinaryWorldPager`.
+- DataVault owner id: `SystemID.SavePersistence`.
+- Storage route: `world_data.h8bin` with write-ahead log `h8_delta.wal`.
+- File format markers visible in source: page magic `H8PG`, WAL magic `H8WL`, `PageVersion = 1`, `WalVersion = 1`.
+- Static capacities: `SectorSizeBytes = 256 KB`, `SectorHeaderBytes = 64`, `MaxSectors = 8192`, `WriteSlotCount = 8`, `ReadSlotCount = 4`, `QueueCapacity = 64`, telemetry `Capacity = 300`.
+
+Phase boundary:
+
+- The class starts a background worker thread named `H8 Binary World Pager` for queued writes, reads, dump requests, and flush requests.
+- Caller-side phase is not self-declared in this file. Any owner using `TryEnqueueWrite`, `TryRequestRead`, `TryCopyCompletedPage`, `TryRetireCompletedPage`, or direct read staging must document PRE_SIMULATION/SIMULATION/POST_SIMULATION/VISUAL_SYNC ownership before acceptance.
+- `GlobalRegistry.DataVault` appears in allocation/setup and the class implements DataVault hot-swap cleanup; this is not a hot polling pattern.
+
+DataVault and native lifetime:
+
+- DataVault handles: `BufferID.SaveWorldPagerReadStaging` and `BufferID.SaveWorldPagerTelemetryRing`.
+- DataVault write-lock helpers release locks in `finally`.
+- Current source also contains local persistent `PagerNativeState` native arrays registered with `NativeMemorySentinel`. This is source reality for this pager only, not approval for other systems to bypass DataVault sovereignty.
+
+Fault boundary:
+
+- Telemetry record: `H8BinaryWorldPagerTelemetryEntry` stores sector hash, offset, UTC ticks, payload type, frame, request id, payload bytes, pending read/write counts, page faults, metrics, directory slot, flags, operation, and status.
+- Declared dump files: `Dump_1312_VoxelPaging.bin`, `Dump_CRASH.bin`, `Dump_SAVE_SURGEON.h8dump`, and `Dump_CRASH.h8dump`.
+- Static source currently leaves `WriteBlackBoxDumps()` and `WriteBlackBoxDump(...)` empty. Black-box dump output is PENDING VERIFICATION.
+
+Hot-path prohibitions:
+
+- No UI button, gameplay Tick, or presentation path may block on pager FileStream, WAL, worker join, direct page copy, or dump output.
+- No caller may treat a missing page as silent world truth repair; status must route to the owning persistence/streaming failure policy.
+- No runtime report may claim `0 GC`, save/load readiness, WAL safety, or corruption recovery from this source anchor alone.
+
+Missing proof artifacts:
+
+- compile/import result for the pager assembly.
+- write/read/copy roundtrip for `world_data.h8bin`.
+- WAL append/replay/truncation/corruption recovery artifact.
+- DataVault stale-handle/relocation/hot-swap test artifact.
+- actual 300-entry dump artifact for pager telemetry.
+- GC/profiler capture for enqueue, worker drain, direct read staging, flush, and shutdown.
+- player save/load proof on the target file-system path.
+
 ## World Scars
 
 The save must preserve evidence:
@@ -70,6 +118,8 @@ The save must preserve evidence:
 - creature or hazard state where gameplay-relevant.
 
 If the world forgets visible consequences, the game becomes fake.
+
+Death/respawn persistence lock: ordinary player death respawns at the current valid base, safe anchor, or approved recovery point. Carried resources may drop into a recoverable container/world package similar to Minecraft/Subnautica loss pressure. Core tools remain with the player unless a specific authored event or system rule explicitly says otherwise. Save/load must preserve dropped-resource packages, death/recovery evidence, and tool ownership without turning death into either a free teleport or a full wipe.
 
 ## Voxel And Generated Asset Persistence
 
@@ -98,6 +148,12 @@ Forbidden:
 ## Quality Scaling
 
 `GlobalQualityWeight` may scale optional save diagnostics, checkpoint presentation, compression aggressiveness chosen during cold save windows, and black-box export verbosity. It must not change save identity, schema version, checksum meaning, gameplay truth, migration route, or whether a player decision is preserved.
+
+## First-20 Route Hook
+
+- First-20 moment: save/load must restore position, inventory/resource chain, opened/looted/scanned flags, tool/world changes, hazard state, death/drop recovery state, and route evidence for the selected opening route.
+- Route blocker removed: persistence cannot claim route readiness from schema text, static source, or UI save buttons without a restored-state artifact.
+- Proof class: save/load artifact, Play Mode/player capture for roundtrip, Profiler/GCMonitor for save/load runtime paths, and static-only schema review when no runtime path changed.
 
 ## Migration
 

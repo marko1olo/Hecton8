@@ -1,0 +1,49 @@
+ID: 3102
+Role: PROOF_HARNESS_1475_OWNER
+Objective: implement or specify the owner-correct h8_1475 manifest-bound proof harness route, replacing raw MCP screenshot acceptance.
+
+Why this exists:
+- Raw h8_1474/h8_1912/h8_1913 screenshots are rejected.
+- ProofGate rejects raw PNG sets with no manifest.
+- Future visual claims need six route-correct views with checksums, log window, route/depth predicates, and continuous quality metadata.
+
+Authority docs:
+- AGENTS.md
+- quality.md
+- camera.md
+- presentation.md
+- rendering.md
+- water.md
+- Docs/Reports/Batch30/3002_PROOF_HARNESS_REPLACEMENT_SPEC.md
+- Tools/ProofGate/README.md if present
+- .agents-skills/QA_Evidence_Text_Filter_Audit.txt
+- .agents-skills/DBG_Telemetry_Crash_Reporting_PostMortem.txt
+
+Owned scope:
+- Tools/ProofGate/
+- Candidate editor harness path: Assets/_Project/Scripts/Editor/Proof/
+- Docs/Screenshots/HectonProofPackets/
+- Report output: Docs/Reports/Batch31/3102_PROOF_HARNESS_1475_OWNER.md
+
+Tasks:
+1. Read Batch30 3002 and current ProofGate validator code.
+2. Verify required manifest schema and exact six production screenshot names.
+3. Determine whether implementation is safe now or should remain a spec until Unity scene state is controlled.
+4. If editing code, keep the write set narrow and owner-correct.
+5. Ensure diagnostics never write under Assets and never save production scenes.
+6. Ensure log window is offset-bound and post-capture clean.
+7. Ensure `global_quality_weight` is continuous float and labels are qNNN, not low/medium/high.
+8. Add or update Python tests only if needed and safe.
+9. Run `python -m unittest discover -s Tools\ProofGate -p test_*.py` if environment permits.
+10. Write Status_3102.md, Rationale_3102.md, LOG_3102.md, and Batch31 report.
+
+Proof packet:
+- STATIC VERIFIED for schema/source/tests.
+- EDITOR VERIFIED only if Unity harness runs.
+- ProofGate PASS_STATIC_GATE is not visual acceptance.
+
+Reject if:
+- You promote raw MCP PNGs.
+- You write proof junk into Assets.
+- You mutate scene visibility and save it from capture code.
+

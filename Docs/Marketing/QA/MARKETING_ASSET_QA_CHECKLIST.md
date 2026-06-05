@@ -4,6 +4,12 @@ Status: mandatory pre-publication gate
 Owner lane: Marketing / creative QA
 Runtime impact: none
 
+## Authority Boundary
+
+Static asset QA checklist only. Public voice routes through root `textes.md`.
+Any quality, release, platform, Steam, wishlist, demo, performance, press, review-key, embargo, showcase, curator, asset-QA, schedule, SEO, pricing, discount, publication, website, or presskit claim requires `quality.md`, `release.md`, `platform.md`, current proof artifacts, and the matching local permission gate.
+Checklist scores and QA rows do not approve Steam page, wishlist, pricing, discount, review-key, presskit, showcase, publication, platform, or release claims.
+
 ## Purpose
 
 This checklist prevents expensive first-impression failure. Every screenshot, clip, capsule, post, press email, and creator pitch must pass a proof gate before public use.
@@ -17,6 +23,7 @@ An asset is not publishable if it fails any of these:
 - claims performance without a build/profiler receipt;
 - needs a paragraph to explain what the player is doing;
 - looks like generic sci-fi plastic;
+- makes surface, sky, coastline, ocean skin, Aegir, or photic shallows look dark, muddy, cheap, or below the `TASTE.md` visual floor;
 - uses "Subnautica killer" or similar public competitor-war language;
 - hides the game behind logos, fog, or UI text;
 - shows empty space without route, hazard, machinery, or goal;
@@ -42,7 +49,7 @@ Score 0-2 each.
 | Criterion | 0 | 1 | 2 |
 |---|---|---|---|
 | Genre clarity | unclear | partly clear | instantly clear |
-| HECTON identity | generic | some identity | pressure/machinery/noir unmistakable |
+| HECTON identity | generic | some identity | beautiful alien ocean plus pressure/machinery/depth risk unmistakable |
 | Gameplay implication | static scene | implied action | clear player goal/problem |
 | Readability | noisy/dark | readable after looking | readable at thumbnail size |
 | Novelty | familiar | decent | hard to confuse with competitor |
@@ -80,7 +87,7 @@ Score 0-1 each:
 |---|---|
 | Fresh pain signal | For any SN2-derived first-pack priority, the monitoring file has a same-day row and `pain_freshness_checked_at`; current-week is allowed only for non-SN2 background trend triage and cannot move first-pack priority. |
 | Answers one real audience fear | The asset clearly addresses one private bucket from `Monitoring/COMPETITOR_AND_SENTIMENT_MONITORING_QUERIES.md`: thin loop, trust, no player verb, base friction, defensive agency, performance proof boundary, save/recovery fairness, or clone risk. |
-| Keeps HECTON identity primary | The frame still reads as pressure, machinery, salvage, corrosion, black water, Seed Ship signal, or base-as-machine before it reads as "response to competitor complaint." |
+| Keeps HECTON identity primary | The frame still reads as beautiful alien ocean, pressure, machinery, salvage, corrosion, black-water depth risk, Seed Ship signal, or base-as-machine before it reads as "response to competitor complaint." |
 | Does not quote competitor pain | Caption, pitch, and metadata do not mention SN2 bugs, EULA, multiplayer-scope issues, poor performance, or "we do it better." |
 | Has a proof route | The asset can point to an internal proof field: asset ID, build/source, QA score, creator utility score, reject code, or later profiler/build artifact if performance is involved. |
 
@@ -109,7 +116,7 @@ Before capture, assign every planned shot one job. If a shot has no job, do not 
 
 | Shot job | Must show | Reject if |
 |---|---|---|
-| Identity hero | black water, industrial silhouette, pressure/machinery cue | it is just pretty dark water or a generic underwater vista |
+| Identity hero | bright surface/photic spectacle with route cue, or black water with industrial silhouette and pressure/machinery cue | it is just pretty dark water, muddy surface, generic reef, or a generic underwater vista |
 | Player verb | tool, salvage target, repair, scan, build, pilot, or route decision | player action needs a caption to understand |
 | Base system | gauge, leak, power conduit, pump, seal, pressure door, alarm, or maintenance surface | base reads as cozy room or clean sci-fi corridor |
 | Threat/scale | sonar mark, huge silhouette, unsafe route, hull warning, depth/pressure implication | threat is only a monster pose with no player decision |
@@ -119,6 +126,7 @@ Before capture, assign every planned shot one job. If a shot has no job, do not 
 Mandatory first pack composition:
 
 - 2 identity/gameplay exterior shots;
+- at least 1 surface/photic beauty shot when the current build can prove it;
 - 2 base/interior machinery shots;
 - 1 salvage/player-action shot;
 - 1 agency/decision proof: threat/scale shot with a readable choice, pressure-leak decision clip, or salvage-failure decision clip;

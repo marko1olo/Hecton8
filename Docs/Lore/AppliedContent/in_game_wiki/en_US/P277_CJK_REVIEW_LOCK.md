@@ -10,13 +10,13 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
-# CJK Review Gate
+# CJK Font And Width Contract
 
-CJK Review Lock defines release checks for Japanese, Chinese and Korean text surfaces.
+Japanese, Chinese, and Korean text require font atlas coverage, stable names, readable units, and predictable wrapping across compact instruments.
 
 ## Scanner
 
@@ -24,14 +24,14 @@ A missing glyph can erase an alarm.
 
 ## Terminal
 
-CJK REVIEW: prove font, wrap, unit, name and terminal-width behavior before publication.
+CJK copy must fit PDA, scanner, terminal, subtitle, and web surfaces without hiding numbers or names.
 
 ## Audio
 
-Short text can still overflow if the grid is wrong.
+Short text can still fail when the grid is wrong.
 
 ## Field Note
 
-Review gate: glyph subset, overflow proof, mixed Latin names, meters/tonne-window labels and spoiler-tier article lengths.
+Check glyph coverage, line wrapping, mixed Latin names, meter and tonne-window labels, terminal monospace alternatives, and article length.
 
 <!-- In-Game Wiki; generated from P277_CJK_REVIEW_LOCK/en_US. -->

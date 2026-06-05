@@ -129,29 +129,6 @@ namespace Hecton8.Construction
             return true;
         }
 
-        public bool TryGetJointByBoneIndex(int boneIndex, out DroneBoneJointDescriptor descriptor)
-        {
-            DroneBoneJointDescriptor[] source = joints;
-            if (source == null)
-            {
-                descriptor = default;
-                return false;
-            }
-
-            for (int i = 0; i < source.Length; i++)
-            {
-                DroneBoneJointDescriptor candidate = source[i];
-                if (candidate.BoneIndex == boneIndex)
-                {
-                    descriptor = candidate;
-                    return true;
-                }
-            }
-
-            descriptor = default;
-            return false;
-        }
-
         public int CopyJointTableTo(NativeArray<DroneBoneJointRuntimeData> destination)
         {
             DroneBoneJointDescriptor[] source = joints;
@@ -228,6 +205,12 @@ namespace Hecton8.Construction
             for (int i = 0; i < descriptors.Length; i++)
             {
                 DroneBoneJointDescriptor descriptor = descriptors[i];
+                if (descriptor.BoneIndex != i)
+                {
+                    failureReason = "DroneBoneMetadata joint table is not bone-index ordered.";
+                    return false;
+                }
+
                 if ((uint)descriptor.BoneIndex >= (uint)boneRefs.Length ||
                     boneRefs[descriptor.BoneIndex] == null)
                 {
@@ -235,7 +218,9 @@ namespace Hecton8.Construction
                     return false;
                 }
 
-                if (descriptor.ParentIndex >= boneRefs.Length ||
+                if (descriptor.ParentIndex < -1 ||
+                    descriptor.ParentIndex >= i ||
+                    descriptor.ParentIndex >= boneRefs.Length ||
                     descriptor.ParentIndex == descriptor.BoneIndex ||
                     descriptor.BoneHash == 0u ||
                     !IsFinite(descriptor.BindLocalPosition) ||
@@ -249,6 +234,10 @@ namespace Hecton8.Construction
                     !math.isfinite(descriptor.Stiffness) ||
                     !math.isfinite(descriptor.Damping) ||
                     !math.isfinite(descriptor.SolverWeight) ||
+                    descriptor.Stiffness < 0f ||
+                    descriptor.Damping < 0f ||
+                    descriptor.SolverWeight < 0f ||
+                    descriptor.SolverWeight > 1f ||
                     math.lengthsq(ToFloat3(descriptor.LocalAxis)) <= 0.000001f ||
                     math.lengthsq(ToFloat3(descriptor.LimitPlaneNormal)) <= 0.000001f)
                 {

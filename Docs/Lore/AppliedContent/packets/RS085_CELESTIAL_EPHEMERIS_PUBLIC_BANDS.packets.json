@@ -33,133 +33,133 @@
           "audio": "Ten light-years is close on a map and brutal for a contract.",
           "in_game_wiki": "Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
           "external_site": "The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
-          "field_note": "Use for site astronomy primer and codex route map. Do not claim final ephemeris constants."
+          "field_note": "Public astronomy record: distance bands and route maps are explanatory ranges, not final ephemeris constants."
         },
         "ru_RU": {
-          "title": "Дистанция Ran/Aegir",
-          "scanner": "Публичная полоса: Ran/Aegir - 10.5 ly без FTL от Sol.",
-          "terminal": "EPHEMERIS BAND. Используй 10.5 ly до заморозки констант. Без FTL-спасения.",
-          "audio": "Десять световых лет близко на карте и жестоко для контракта.",
-          "in_game_wiki": "Ran/Aegir остается hard-sci-fi целью ближней звезды. Игроку показывается дистанционная полоса, а не финальная ephemeris-симуляция.",
-          "external_site": "Система Aegir лежит в достижимом, но жестком no-FTL диапазоне: достаточно близко для индустрии и достаточно далеко, чтобы заброшенность имела цену.",
-          "field_note": "Для астрономического вступления сайта и route map кодекса. Не объявлять финальные ephemeris constants."
+          "title": "Draft RU localization pending native pass. Ran/Aegir Distance Band",
+          "scanner": "Draft RU localization pending native pass. Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.",
+          "terminal": "Draft RU localization pending native pass. EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.",
+          "audio": "Draft RU localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+          "in_game_wiki": "Draft RU localization pending native pass. Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
+          "external_site": "Draft RU localization pending native pass. The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
+          "field_note": "Draft RU localization pending native pass. Public astronomy record: distance bands and route maps are explanatory ranges, not final ephemeris constants."
         },
         "ja_JP": {
-          "title": "JA LOC: Ran/Aegir Distance Band",
-          "scanner": "JA LOC: Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.",
-          "terminal": "JA LOC: EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.",
-          "audio": "JA LOC HOLD: Ten light-years is close on a map and brutal for a contract.",
-          "in_game_wiki": "JA LOC HOLD: Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
-          "external_site": "JA LOC HOLD: The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
-          "field_note": "JA LOC HOLD: Use for site astronomy primer and codex route map. Do not claim final ephemeris constants."
+          "title": "Draft JA localization pending native pass. Ran/Aegir Distance Band",
+          "scanner": "Draft JA localization pending native pass. Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.",
+          "terminal": "Draft JA localization pending native pass. EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.",
+          "audio": "Draft JA localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+          "in_game_wiki": "Draft JA localization pending native pass. Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
+          "external_site": "Draft JA localization pending native pass. The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
+          "field_note": "Draft JA localization pending native pass. Public astronomy record: distance bands and route maps are explanatory ranges, not final ephemeris constants."
         },
         "zh_CN": {
-          "title": "ZH LOC: Ran/Aegir Distance Band",
-          "scanner": "ZH LOC: Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.",
-          "terminal": "ZH LOC: EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.",
-          "audio": "ZH LOC HOLD: Ten light-years is close on a map and brutal for a contract.",
-          "in_game_wiki": "ZH LOC HOLD: Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
-          "external_site": "ZH LOC HOLD: The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
-          "field_note": "ZH LOC HOLD: Use for site astronomy primer and codex route map. Do not claim final ephemeris constants."
+          "title": "Draft ZH localization pending native pass. Ran/Aegir Distance Band",
+          "scanner": "Draft ZH localization pending native pass. Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.",
+          "terminal": "Draft ZH localization pending native pass. EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.",
+          "audio": "Draft ZH localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
+          "external_site": "Draft ZH localization pending native pass. The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
+          "field_note": "Draft ZH localization pending native pass. Public astronomy record: distance bands and route maps are explanatory ranges, not final ephemeris constants."
         },
         "fr_FR": {
-          "title": "FR LOC: Ran/Aegir Distance Band",
-          "scanner": "FR LOC: Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.",
-          "terminal": "FR LOC: EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.",
-          "audio": "FR LOC HOLD: Ten light-years is close on a map and brutal for a contract.",
-          "in_game_wiki": "FR LOC HOLD: Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
-          "external_site": "FR LOC HOLD: The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
-          "field_note": "FR LOC HOLD: Use for site astronomy primer and codex route map. Do not claim final ephemeris constants."
+          "title": "Draft FR localization pending native pass. Ran/Aegir Distance Band",
+          "scanner": "Draft FR localization pending native pass. Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.",
+          "terminal": "Draft FR localization pending native pass. EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.",
+          "audio": "Draft FR localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+          "in_game_wiki": "Draft FR localization pending native pass. Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
+          "external_site": "Draft FR localization pending native pass. The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
+          "field_note": "Draft FR localization pending native pass. Public astronomy record: distance bands and route maps are explanatory ranges, not final ephemeris constants."
         },
         "es_ES": {
-          "title": "ES LOC: Ran/Aegir Distance Band",
-          "scanner": "ES LOC: Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.",
-          "terminal": "ES LOC: EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.",
-          "audio": "ES LOC HOLD: Ten light-years is close on a map and brutal for a contract.",
-          "in_game_wiki": "ES LOC HOLD: Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
-          "external_site": "ES LOC HOLD: The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
-          "field_note": "ES LOC HOLD: Use for site astronomy primer and codex route map. Do not claim final ephemeris constants."
+          "title": "Draft ES localization pending native pass. Ran/Aegir Distance Band",
+          "scanner": "Draft ES localization pending native pass. Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.",
+          "terminal": "Draft ES localization pending native pass. EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.",
+          "audio": "Draft ES localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+          "in_game_wiki": "Draft ES localization pending native pass. Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
+          "external_site": "Draft ES localization pending native pass. The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
+          "field_note": "Draft ES localization pending native pass. Public astronomy record: distance bands and route maps are explanatory ranges, not final ephemeris constants."
         },
         "de_DE": {
-          "title": "DE LOC: Ran/Aegir Distance Band",
-          "scanner": "DE LOC: Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.",
-          "terminal": "DE LOC: EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.",
-          "audio": "DE LOC HOLD: Ten light-years is close on a map and brutal for a contract.",
-          "in_game_wiki": "DE LOC HOLD: Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
-          "external_site": "DE LOC HOLD: The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
-          "field_note": "DE LOC HOLD: Use for site astronomy primer and codex route map. Do not claim final ephemeris constants."
+          "title": "Draft DE localization pending native pass. Ran/Aegir Distance Band",
+          "scanner": "Draft DE localization pending native pass. Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.",
+          "terminal": "Draft DE localization pending native pass. EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.",
+          "audio": "Draft DE localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+          "in_game_wiki": "Draft DE localization pending native pass. Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
+          "external_site": "Draft DE localization pending native pass. The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
+          "field_note": "Draft DE localization pending native pass. Public astronomy record: distance bands and route maps are explanatory ranges, not final ephemeris constants."
         },
         "pl_PL": {
-          "title": "PL LOC: Ran/Aegir Distance Band",
-          "scanner": "PL LOC: Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.",
-          "terminal": "PL LOC: EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.",
-          "audio": "PL LOC HOLD: Ten light-years is close on a map and brutal for a contract.",
-          "in_game_wiki": "PL LOC HOLD: Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
-          "external_site": "PL LOC HOLD: The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
-          "field_note": "PL LOC HOLD: Use for site astronomy primer and codex route map. Do not claim final ephemeris constants."
+          "title": "Draft PL localization pending native pass. Ran/Aegir Distance Band",
+          "scanner": "Draft PL localization pending native pass. Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.",
+          "terminal": "Draft PL localization pending native pass. EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.",
+          "audio": "Draft PL localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+          "in_game_wiki": "Draft PL localization pending native pass. Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
+          "external_site": "Draft PL localization pending native pass. The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
+          "field_note": "Draft PL localization pending native pass. Public astronomy record: distance bands and route maps are explanatory ranges, not final ephemeris constants."
         },
         "uk_UA": {
-          "title": "UK LOC: Ran/Aegir Distance Band",
-          "scanner": "UK LOC: Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.",
-          "terminal": "UK LOC: EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.",
-          "audio": "UK LOC HOLD: Ten light-years is close on a map and brutal for a contract.",
-          "in_game_wiki": "UK LOC HOLD: Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
-          "external_site": "UK LOC HOLD: The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
-          "field_note": "UK LOC HOLD: Use for site astronomy primer and codex route map. Do not claim final ephemeris constants."
+          "title": "Draft UK localization pending native pass. Ran/Aegir Distance Band",
+          "scanner": "Draft UK localization pending native pass. Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.",
+          "terminal": "Draft UK localization pending native pass. EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.",
+          "audio": "Draft UK localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+          "in_game_wiki": "Draft UK localization pending native pass. Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
+          "external_site": "Draft UK localization pending native pass. The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
+          "field_note": "Draft UK localization pending native pass. Public astronomy record: distance bands and route maps are explanatory ranges, not final ephemeris constants."
         },
         "ar_SA": {
-          "title": "AR LOC: Ran/Aegir Distance Band",
-          "scanner": "AR LOC: Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.",
-          "terminal": "AR LOC: EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.",
-          "audio": "AR LOC HOLD: Ten light-years is close on a map and brutal for a contract.",
-          "in_game_wiki": "AR LOC HOLD: Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
-          "external_site": "AR LOC HOLD: The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
-          "field_note": "AR LOC HOLD: Use for site astronomy primer and codex route map. Do not claim final ephemeris constants."
+          "title": "Draft AR localization pending native pass. Ran/Aegir Distance Band",
+          "scanner": "Draft AR localization pending native pass. Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.",
+          "terminal": "Draft AR localization pending native pass. EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.",
+          "audio": "Draft AR localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+          "in_game_wiki": "Draft AR localization pending native pass. Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
+          "external_site": "Draft AR localization pending native pass. The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
+          "field_note": "Draft AR localization pending native pass. Public astronomy record: distance bands and route maps are explanatory ranges, not final ephemeris constants."
         },
         "id_ID": {
-          "title": "ID LOC: Ran/Aegir Distance Band",
-          "scanner": "ID LOC: Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.",
-          "terminal": "ID LOC: EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.",
-          "audio": "ID LOC HOLD: Ten light-years is close on a map and brutal for a contract.",
-          "in_game_wiki": "ID LOC HOLD: Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
-          "external_site": "ID LOC HOLD: The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
-          "field_note": "ID LOC HOLD: Use for site astronomy primer and codex route map. Do not claim final ephemeris constants."
+          "title": "Draft ID localization pending native pass. Ran/Aegir Distance Band",
+          "scanner": "Draft ID localization pending native pass. Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.",
+          "terminal": "Draft ID localization pending native pass. EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.",
+          "audio": "Draft ID localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+          "in_game_wiki": "Draft ID localization pending native pass. Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
+          "external_site": "Draft ID localization pending native pass. The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
+          "field_note": "Draft ID localization pending native pass. Public astronomy record: distance bands and route maps are explanatory ranges, not final ephemeris constants."
         },
         "ko_KR": {
-          "title": "KO LOC: Ran/Aegir Distance Band",
-          "scanner": "KO LOC: Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.",
-          "terminal": "KO LOC: EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.",
-          "audio": "KO LOC HOLD: Ten light-years is close on a map and brutal for a contract.",
-          "in_game_wiki": "KO LOC HOLD: Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
-          "external_site": "KO LOC HOLD: The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
-          "field_note": "KO LOC HOLD: Use for site astronomy primer and codex route map. Do not claim final ephemeris constants."
+          "title": "Draft KO localization pending native pass. Ran/Aegir Distance Band",
+          "scanner": "Draft KO localization pending native pass. Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.",
+          "terminal": "Draft KO localization pending native pass. EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.",
+          "audio": "Draft KO localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+          "in_game_wiki": "Draft KO localization pending native pass. Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
+          "external_site": "Draft KO localization pending native pass. The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
+          "field_note": "Draft KO localization pending native pass. Public astronomy record: distance bands and route maps are explanatory ranges, not final ephemeris constants."
         },
         "he_IL": {
-          "title": "HE LOC: Ran/Aegir Distance Band",
-          "scanner": "HE LOC: Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.",
-          "terminal": "HE LOC: EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.",
-          "audio": "HE LOC HOLD: Ten light-years is close on a map and brutal for a contract.",
-          "in_game_wiki": "HE LOC HOLD: Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
-          "external_site": "HE LOC HOLD: The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
-          "field_note": "HE LOC HOLD: Use for site astronomy primer and codex route map. Do not claim final ephemeris constants."
+          "title": "Draft HE localization pending native pass. Ran/Aegir Distance Band",
+          "scanner": "Draft HE localization pending native pass. Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.",
+          "terminal": "Draft HE localization pending native pass. EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.",
+          "audio": "Draft HE localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+          "in_game_wiki": "Draft HE localization pending native pass. Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
+          "external_site": "Draft HE localization pending native pass. The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
+          "field_note": "Draft HE localization pending native pass. Public astronomy record: distance bands and route maps are explanatory ranges, not final ephemeris constants."
         },
         "pt_BR": {
-          "title": "PT-BR LOC: Ran/Aegir Distance Band",
-          "scanner": "PT-BR LOC: Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.",
-          "terminal": "PT-BR LOC: EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.",
-          "audio": "PT LOC HOLD: Ten light-years is close on a map and brutal for a contract.",
-          "in_game_wiki": "PT LOC HOLD: Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
-          "external_site": "PT LOC HOLD: The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
-          "field_note": "PT LOC HOLD: Use for site astronomy primer and codex route map. Do not claim final ephemeris constants."
+          "title": "Draft PT localization pending native pass. Ran/Aegir Distance Band",
+          "scanner": "Draft PT localization pending native pass. Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.",
+          "terminal": "Draft PT localization pending native pass. EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.",
+          "audio": "Draft PT localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+          "in_game_wiki": "Draft PT localization pending native pass. Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
+          "external_site": "Draft PT localization pending native pass. The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
+          "field_note": "Draft PT localization pending native pass. Public astronomy record: distance bands and route maps are explanatory ranges, not final ephemeris constants."
         },
         "nl_NL": {
-          "title": "NL LOC: Ran/Aegir Distance Band",
-          "scanner": "NL LOC: Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.",
-          "terminal": "NL LOC: EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.",
-          "audio": "NL LOC HOLD: Ten light-years is close on a map and brutal for a contract.",
-          "in_game_wiki": "NL LOC HOLD: Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
-          "external_site": "NL LOC HOLD: The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
-          "field_note": "NL LOC HOLD: Use for site astronomy primer and codex route map. Do not claim final ephemeris constants."
+          "title": "Draft NL localization pending native pass. Ran/Aegir Distance Band",
+          "scanner": "Draft NL localization pending native pass. Public band: Ran/Aegir is a 10.5 ly no-FTL route from Sol.",
+          "terminal": "Draft NL localization pending native pass. EPHEMERIS BAND. Use 10.5 ly class until celestial constants freeze. No FTL rescue.",
+          "audio": "Draft NL localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+          "in_game_wiki": "Draft NL localization pending native pass. Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
+          "external_site": "Draft NL localization pending native pass. The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
+          "field_note": "Draft NL localization pending native pass. Public astronomy record: distance bands and route maps are explanatory ranges, not final ephemeris constants."
         }
       }
     },
@@ -188,133 +188,133 @@
           "audio": "The carrier can hear you and still be in the wrong sky.",
           "in_game_wiki": "Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.",
           "external_site": "Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.",
-          "field_note": "Use for Black Keel timing UI, in-game wiki and spoiler-light site systems page."
+          "field_note": "Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints."
         },
         "ru_RU": {
-          "title": "Окна Aegir",
-          "scanner": "Локальная полоса: подъем ждет окон часы-дни.",
-          "terminal": "WINDOW BAND. Заслон, затмение, реле, шторм, фаза и право должны сойтись.",
-          "audio": "Carrier может тебя слышать и все равно быть не в том небе.",
-          "in_game_wiki": "Локальные окна превращают орбитальную механику в игровое давление. Даже починенной капсуле нужны timing, relay и weather permission.",
-          "external_site": "Локальный трафик Aegir управляется узкими transfer bands вокруг radiation, eclipse и relay geometry.",
-          "field_note": "Для Black Keel timing UI, in-game wiki и spoiler-light страницы системы."
+          "title": "Draft RU localization pending native pass. Aegir Window Bands",
+          "scanner": "Draft RU localization pending native pass. Local band: ascent waits on hours-to-days windows, not instant rescue.",
+          "terminal": "Draft RU localization pending native pass. WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.",
+          "audio": "Draft RU localization pending native pass. The carrier can hear you and still be in the wrong sky.",
+          "in_game_wiki": "Draft RU localization pending native pass. Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.",
+          "external_site": "Draft RU localization pending native pass. Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.",
+          "field_note": "Draft RU localization pending native pass. Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints."
         },
         "ja_JP": {
-          "title": "JA LOC: Aegir Window Bands",
-          "scanner": "JA LOC: Local band: ascent waits on hours-to-days windows, not instant rescue.",
-          "terminal": "JA LOC: WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.",
-          "audio": "JA LOC HOLD: The carrier can hear you and still be in the wrong sky.",
-          "in_game_wiki": "JA LOC HOLD: Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.",
-          "external_site": "JA LOC HOLD: Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.",
-          "field_note": "JA LOC HOLD: Use for Black Keel timing UI, in-game wiki and spoiler-light site systems page."
+          "title": "Draft JA localization pending native pass. Aegir Window Bands",
+          "scanner": "Draft JA localization pending native pass. Local band: ascent waits on hours-to-days windows, not instant rescue.",
+          "terminal": "Draft JA localization pending native pass. WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.",
+          "audio": "Draft JA localization pending native pass. The carrier can hear you and still be in the wrong sky.",
+          "in_game_wiki": "Draft JA localization pending native pass. Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.",
+          "external_site": "Draft JA localization pending native pass. Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.",
+          "field_note": "Draft JA localization pending native pass. Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints."
         },
         "zh_CN": {
-          "title": "ZH LOC: Aegir Window Bands",
-          "scanner": "ZH LOC: Local band: ascent waits on hours-to-days windows, not instant rescue.",
-          "terminal": "ZH LOC: WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.",
-          "audio": "ZH LOC HOLD: The carrier can hear you and still be in the wrong sky.",
-          "in_game_wiki": "ZH LOC HOLD: Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.",
-          "external_site": "ZH LOC HOLD: Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.",
-          "field_note": "ZH LOC HOLD: Use for Black Keel timing UI, in-game wiki and spoiler-light site systems page."
+          "title": "Draft ZH localization pending native pass. Aegir Window Bands",
+          "scanner": "Draft ZH localization pending native pass. Local band: ascent waits on hours-to-days windows, not instant rescue.",
+          "terminal": "Draft ZH localization pending native pass. WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.",
+          "audio": "Draft ZH localization pending native pass. The carrier can hear you and still be in the wrong sky.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.",
+          "external_site": "Draft ZH localization pending native pass. Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.",
+          "field_note": "Draft ZH localization pending native pass. Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints."
         },
         "fr_FR": {
-          "title": "FR LOC: Aegir Window Bands",
-          "scanner": "FR LOC: Local band: ascent waits on hours-to-days windows, not instant rescue.",
-          "terminal": "FR LOC: WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.",
-          "audio": "FR LOC HOLD: The carrier can hear you and still be in the wrong sky.",
-          "in_game_wiki": "FR LOC HOLD: Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.",
-          "external_site": "FR LOC HOLD: Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.",
-          "field_note": "FR LOC HOLD: Use for Black Keel timing UI, in-game wiki and spoiler-light site systems page."
+          "title": "Draft FR localization pending native pass. Aegir Window Bands",
+          "scanner": "Draft FR localization pending native pass. Local band: ascent waits on hours-to-days windows, not instant rescue.",
+          "terminal": "Draft FR localization pending native pass. WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.",
+          "audio": "Draft FR localization pending native pass. The carrier can hear you and still be in the wrong sky.",
+          "in_game_wiki": "Draft FR localization pending native pass. Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.",
+          "external_site": "Draft FR localization pending native pass. Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.",
+          "field_note": "Draft FR localization pending native pass. Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints."
         },
         "es_ES": {
-          "title": "ES LOC: Aegir Window Bands",
-          "scanner": "ES LOC: Local band: ascent waits on hours-to-days windows, not instant rescue.",
-          "terminal": "ES LOC: WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.",
-          "audio": "ES LOC HOLD: The carrier can hear you and still be in the wrong sky.",
-          "in_game_wiki": "ES LOC HOLD: Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.",
-          "external_site": "ES LOC HOLD: Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.",
-          "field_note": "ES LOC HOLD: Use for Black Keel timing UI, in-game wiki and spoiler-light site systems page."
+          "title": "Draft ES localization pending native pass. Aegir Window Bands",
+          "scanner": "Draft ES localization pending native pass. Local band: ascent waits on hours-to-days windows, not instant rescue.",
+          "terminal": "Draft ES localization pending native pass. WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.",
+          "audio": "Draft ES localization pending native pass. The carrier can hear you and still be in the wrong sky.",
+          "in_game_wiki": "Draft ES localization pending native pass. Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.",
+          "external_site": "Draft ES localization pending native pass. Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.",
+          "field_note": "Draft ES localization pending native pass. Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints."
         },
         "de_DE": {
-          "title": "DE LOC: Aegir Window Bands",
-          "scanner": "DE LOC: Local band: ascent waits on hours-to-days windows, not instant rescue.",
-          "terminal": "DE LOC: WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.",
-          "audio": "DE LOC HOLD: The carrier can hear you and still be in the wrong sky.",
-          "in_game_wiki": "DE LOC HOLD: Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.",
-          "external_site": "DE LOC HOLD: Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.",
-          "field_note": "DE LOC HOLD: Use for Black Keel timing UI, in-game wiki and spoiler-light site systems page."
+          "title": "Draft DE localization pending native pass. Aegir Window Bands",
+          "scanner": "Draft DE localization pending native pass. Local band: ascent waits on hours-to-days windows, not instant rescue.",
+          "terminal": "Draft DE localization pending native pass. WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.",
+          "audio": "Draft DE localization pending native pass. The carrier can hear you and still be in the wrong sky.",
+          "in_game_wiki": "Draft DE localization pending native pass. Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.",
+          "external_site": "Draft DE localization pending native pass. Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.",
+          "field_note": "Draft DE localization pending native pass. Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints."
         },
         "pl_PL": {
-          "title": "PL LOC: Aegir Window Bands",
-          "scanner": "PL LOC: Local band: ascent waits on hours-to-days windows, not instant rescue.",
-          "terminal": "PL LOC: WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.",
-          "audio": "PL LOC HOLD: The carrier can hear you and still be in the wrong sky.",
-          "in_game_wiki": "PL LOC HOLD: Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.",
-          "external_site": "PL LOC HOLD: Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.",
-          "field_note": "PL LOC HOLD: Use for Black Keel timing UI, in-game wiki and spoiler-light site systems page."
+          "title": "Draft PL localization pending native pass. Aegir Window Bands",
+          "scanner": "Draft PL localization pending native pass. Local band: ascent waits on hours-to-days windows, not instant rescue.",
+          "terminal": "Draft PL localization pending native pass. WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.",
+          "audio": "Draft PL localization pending native pass. The carrier can hear you and still be in the wrong sky.",
+          "in_game_wiki": "Draft PL localization pending native pass. Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.",
+          "external_site": "Draft PL localization pending native pass. Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.",
+          "field_note": "Draft PL localization pending native pass. Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints."
         },
         "uk_UA": {
-          "title": "UK LOC: Aegir Window Bands",
-          "scanner": "UK LOC: Local band: ascent waits on hours-to-days windows, not instant rescue.",
-          "terminal": "UK LOC: WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.",
-          "audio": "UK LOC HOLD: The carrier can hear you and still be in the wrong sky.",
-          "in_game_wiki": "UK LOC HOLD: Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.",
-          "external_site": "UK LOC HOLD: Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.",
-          "field_note": "UK LOC HOLD: Use for Black Keel timing UI, in-game wiki and spoiler-light site systems page."
+          "title": "Draft UK localization pending native pass. Aegir Window Bands",
+          "scanner": "Draft UK localization pending native pass. Local band: ascent waits on hours-to-days windows, not instant rescue.",
+          "terminal": "Draft UK localization pending native pass. WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.",
+          "audio": "Draft UK localization pending native pass. The carrier can hear you and still be in the wrong sky.",
+          "in_game_wiki": "Draft UK localization pending native pass. Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.",
+          "external_site": "Draft UK localization pending native pass. Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.",
+          "field_note": "Draft UK localization pending native pass. Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints."
         },
         "ar_SA": {
-          "title": "AR LOC: Aegir Window Bands",
-          "scanner": "AR LOC: Local band: ascent waits on hours-to-days windows, not instant rescue.",
-          "terminal": "AR LOC: WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.",
-          "audio": "AR LOC HOLD: The carrier can hear you and still be in the wrong sky.",
-          "in_game_wiki": "AR LOC HOLD: Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.",
-          "external_site": "AR LOC HOLD: Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.",
-          "field_note": "AR LOC HOLD: Use for Black Keel timing UI, in-game wiki and spoiler-light site systems page."
+          "title": "Draft AR localization pending native pass. Aegir Window Bands",
+          "scanner": "Draft AR localization pending native pass. Local band: ascent waits on hours-to-days windows, not instant rescue.",
+          "terminal": "Draft AR localization pending native pass. WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.",
+          "audio": "Draft AR localization pending native pass. The carrier can hear you and still be in the wrong sky.",
+          "in_game_wiki": "Draft AR localization pending native pass. Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.",
+          "external_site": "Draft AR localization pending native pass. Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.",
+          "field_note": "Draft AR localization pending native pass. Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints."
         },
         "id_ID": {
-          "title": "ID LOC: Aegir Window Bands",
-          "scanner": "ID LOC: Local band: ascent waits on hours-to-days windows, not instant rescue.",
-          "terminal": "ID LOC: WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.",
-          "audio": "ID LOC HOLD: The carrier can hear you and still be in the wrong sky.",
-          "in_game_wiki": "ID LOC HOLD: Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.",
-          "external_site": "ID LOC HOLD: Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.",
-          "field_note": "ID LOC HOLD: Use for Black Keel timing UI, in-game wiki and spoiler-light site systems page."
+          "title": "Draft ID localization pending native pass. Aegir Window Bands",
+          "scanner": "Draft ID localization pending native pass. Local band: ascent waits on hours-to-days windows, not instant rescue.",
+          "terminal": "Draft ID localization pending native pass. WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.",
+          "audio": "Draft ID localization pending native pass. The carrier can hear you and still be in the wrong sky.",
+          "in_game_wiki": "Draft ID localization pending native pass. Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.",
+          "external_site": "Draft ID localization pending native pass. Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.",
+          "field_note": "Draft ID localization pending native pass. Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints."
         },
         "ko_KR": {
-          "title": "KO LOC: Aegir Window Bands",
-          "scanner": "KO LOC: Local band: ascent waits on hours-to-days windows, not instant rescue.",
-          "terminal": "KO LOC: WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.",
-          "audio": "KO LOC HOLD: The carrier can hear you and still be in the wrong sky.",
-          "in_game_wiki": "KO LOC HOLD: Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.",
-          "external_site": "KO LOC HOLD: Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.",
-          "field_note": "KO LOC HOLD: Use for Black Keel timing UI, in-game wiki and spoiler-light site systems page."
+          "title": "Draft KO localization pending native pass. Aegir Window Bands",
+          "scanner": "Draft KO localization pending native pass. Local band: ascent waits on hours-to-days windows, not instant rescue.",
+          "terminal": "Draft KO localization pending native pass. WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.",
+          "audio": "Draft KO localization pending native pass. The carrier can hear you and still be in the wrong sky.",
+          "in_game_wiki": "Draft KO localization pending native pass. Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.",
+          "external_site": "Draft KO localization pending native pass. Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.",
+          "field_note": "Draft KO localization pending native pass. Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints."
         },
         "he_IL": {
-          "title": "HE LOC: Aegir Window Bands",
-          "scanner": "HE LOC: Local band: ascent waits on hours-to-days windows, not instant rescue.",
-          "terminal": "HE LOC: WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.",
-          "audio": "HE LOC HOLD: The carrier can hear you and still be in the wrong sky.",
-          "in_game_wiki": "HE LOC HOLD: Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.",
-          "external_site": "HE LOC HOLD: Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.",
-          "field_note": "HE LOC HOLD: Use for Black Keel timing UI, in-game wiki and spoiler-light site systems page."
+          "title": "Draft HE localization pending native pass. Aegir Window Bands",
+          "scanner": "Draft HE localization pending native pass. Local band: ascent waits on hours-to-days windows, not instant rescue.",
+          "terminal": "Draft HE localization pending native pass. WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.",
+          "audio": "Draft HE localization pending native pass. The carrier can hear you and still be in the wrong sky.",
+          "in_game_wiki": "Draft HE localization pending native pass. Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.",
+          "external_site": "Draft HE localization pending native pass. Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.",
+          "field_note": "Draft HE localization pending native pass. Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints."
         },
         "pt_BR": {
-          "title": "PT-BR LOC: Aegir Window Bands",
-          "scanner": "PT-BR LOC: Local band: ascent waits on hours-to-days windows, not instant rescue.",
-          "terminal": "PT-BR LOC: WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.",
-          "audio": "PT LOC HOLD: The carrier can hear you and still be in the wrong sky.",
-          "in_game_wiki": "PT LOC HOLD: Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.",
-          "external_site": "PT LOC HOLD: Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.",
-          "field_note": "PT LOC HOLD: Use for Black Keel timing UI, in-game wiki and spoiler-light site systems page."
+          "title": "Draft PT localization pending native pass. Aegir Window Bands",
+          "scanner": "Draft PT localization pending native pass. Local band: ascent waits on hours-to-days windows, not instant rescue.",
+          "terminal": "Draft PT localization pending native pass. WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.",
+          "audio": "Draft PT localization pending native pass. The carrier can hear you and still be in the wrong sky.",
+          "in_game_wiki": "Draft PT localization pending native pass. Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.",
+          "external_site": "Draft PT localization pending native pass. Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.",
+          "field_note": "Draft PT localization pending native pass. Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints."
         },
         "nl_NL": {
-          "title": "NL LOC: Aegir Window Bands",
-          "scanner": "NL LOC: Local band: ascent waits on hours-to-days windows, not instant rescue.",
-          "terminal": "NL LOC: WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.",
-          "audio": "NL LOC HOLD: The carrier can hear you and still be in the wrong sky.",
-          "in_game_wiki": "NL LOC HOLD: Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.",
-          "external_site": "NL LOC HOLD: Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.",
-          "field_note": "NL LOC HOLD: Use for Black Keel timing UI, in-game wiki and spoiler-light site systems page."
+          "title": "Draft NL localization pending native pass. Aegir Window Bands",
+          "scanner": "Draft NL localization pending native pass. Local band: ascent waits on hours-to-days windows, not instant rescue.",
+          "terminal": "Draft NL localization pending native pass. WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.",
+          "audio": "Draft NL localization pending native pass. The carrier can hear you and still be in the wrong sky.",
+          "in_game_wiki": "Draft NL localization pending native pass. Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.",
+          "external_site": "Draft NL localization pending native pass. Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.",
+          "field_note": "Draft NL localization pending native pass. Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints."
         }
       }
     },
@@ -343,133 +343,133 @@
           "audio": "Other moons are not side quests. They are why the route has teeth.",
           "in_game_wiki": "The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.",
           "external_site": "HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.",
-          "field_note": "Use for public system map and in-game atlas; avoid promising playable moons."
+          "field_note": "Moon ladder record: public maps can show Aegir scale without promising playable moons."
         },
         "ru_RU": {
-          "title": "Лестница лун HECTON-8",
-          "scanner": "Лестница лун: HECTON-8 - один клейм, не весь Aegir.",
-          "terminal": "MOON LADDER. Только роли; точные орбиты владеет таблица.",
-          "audio": "Другие луны - не side quests. Они причина, почему маршрут кусается.",
-          "in_game_wiki": "Лунная лестница дает Aegir масштаб, сохраняя playable campaign сфокусированной на HECTON-8.",
-          "external_site": "HECTON-8 находится внутри рабочей multi-moon claim system, где важны relay, ice-scatter, quarantine и salvage traffic.",
-          "field_note": "Для публичной system map и in-game atlas; не обещать playable moons."
+          "title": "Draft RU localization pending native pass. HECTON-8 Moon Ladder",
+          "scanner": "Draft RU localization pending native pass. Moon ladder: HECTON-8 is one claim, not the whole Aegir system.",
+          "terminal": "Draft RU localization pending native pass. MOON LADDER. Public role labels only; exact orbital elements stay table-owned.",
+          "audio": "Draft RU localization pending native pass. Other moons are not side quests. They are why the route has teeth.",
+          "in_game_wiki": "Draft RU localization pending native pass. The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.",
+          "external_site": "Draft RU localization pending native pass. HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.",
+          "field_note": "Draft RU localization pending native pass. Moon ladder record: public maps can show Aegir scale without promising playable moons."
         },
         "ja_JP": {
-          "title": "JA LOC: HECTON-8 Moon Ladder",
-          "scanner": "JA LOC: Moon ladder: HECTON-8 is one claim, not the whole Aegir system.",
-          "terminal": "JA LOC: MOON LADDER. Public role labels only; exact orbital elements stay table-owned.",
-          "audio": "JA LOC HOLD: Other moons are not side quests. They are why the route has teeth.",
-          "in_game_wiki": "JA LOC HOLD: The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.",
-          "external_site": "JA LOC HOLD: HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.",
-          "field_note": "JA LOC HOLD: Use for public system map and in-game atlas; avoid promising playable moons."
+          "title": "Draft JA localization pending native pass. HECTON-8 Moon Ladder",
+          "scanner": "Draft JA localization pending native pass. Moon ladder: HECTON-8 is one claim, not the whole Aegir system.",
+          "terminal": "Draft JA localization pending native pass. MOON LADDER. Public role labels only; exact orbital elements stay table-owned.",
+          "audio": "Draft JA localization pending native pass. Other moons are not side quests. They are why the route has teeth.",
+          "in_game_wiki": "Draft JA localization pending native pass. The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.",
+          "external_site": "Draft JA localization pending native pass. HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.",
+          "field_note": "Draft JA localization pending native pass. Moon ladder record: public maps can show Aegir scale without promising playable moons."
         },
         "zh_CN": {
-          "title": "ZH LOC: HECTON-8 Moon Ladder",
-          "scanner": "ZH LOC: Moon ladder: HECTON-8 is one claim, not the whole Aegir system.",
-          "terminal": "ZH LOC: MOON LADDER. Public role labels only; exact orbital elements stay table-owned.",
-          "audio": "ZH LOC HOLD: Other moons are not side quests. They are why the route has teeth.",
-          "in_game_wiki": "ZH LOC HOLD: The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.",
-          "external_site": "ZH LOC HOLD: HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.",
-          "field_note": "ZH LOC HOLD: Use for public system map and in-game atlas; avoid promising playable moons."
+          "title": "Draft ZH localization pending native pass. HECTON-8 Moon Ladder",
+          "scanner": "Draft ZH localization pending native pass. Moon ladder: HECTON-8 is one claim, not the whole Aegir system.",
+          "terminal": "Draft ZH localization pending native pass. MOON LADDER. Public role labels only; exact orbital elements stay table-owned.",
+          "audio": "Draft ZH localization pending native pass. Other moons are not side quests. They are why the route has teeth.",
+          "in_game_wiki": "Draft ZH localization pending native pass. The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.",
+          "external_site": "Draft ZH localization pending native pass. HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.",
+          "field_note": "Draft ZH localization pending native pass. Moon ladder record: public maps can show Aegir scale without promising playable moons."
         },
         "fr_FR": {
-          "title": "FR LOC: HECTON-8 Moon Ladder",
-          "scanner": "FR LOC: Moon ladder: HECTON-8 is one claim, not the whole Aegir system.",
-          "terminal": "FR LOC: MOON LADDER. Public role labels only; exact orbital elements stay table-owned.",
-          "audio": "FR LOC HOLD: Other moons are not side quests. They are why the route has teeth.",
-          "in_game_wiki": "FR LOC HOLD: The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.",
-          "external_site": "FR LOC HOLD: HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.",
-          "field_note": "FR LOC HOLD: Use for public system map and in-game atlas; avoid promising playable moons."
+          "title": "Draft FR localization pending native pass. HECTON-8 Moon Ladder",
+          "scanner": "Draft FR localization pending native pass. Moon ladder: HECTON-8 is one claim, not the whole Aegir system.",
+          "terminal": "Draft FR localization pending native pass. MOON LADDER. Public role labels only; exact orbital elements stay table-owned.",
+          "audio": "Draft FR localization pending native pass. Other moons are not side quests. They are why the route has teeth.",
+          "in_game_wiki": "Draft FR localization pending native pass. The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.",
+          "external_site": "Draft FR localization pending native pass. HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.",
+          "field_note": "Draft FR localization pending native pass. Moon ladder record: public maps can show Aegir scale without promising playable moons."
         },
         "es_ES": {
-          "title": "ES LOC: HECTON-8 Moon Ladder",
-          "scanner": "ES LOC: Moon ladder: HECTON-8 is one claim, not the whole Aegir system.",
-          "terminal": "ES LOC: MOON LADDER. Public role labels only; exact orbital elements stay table-owned.",
-          "audio": "ES LOC HOLD: Other moons are not side quests. They are why the route has teeth.",
-          "in_game_wiki": "ES LOC HOLD: The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.",
-          "external_site": "ES LOC HOLD: HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.",
-          "field_note": "ES LOC HOLD: Use for public system map and in-game atlas; avoid promising playable moons."
+          "title": "Draft ES localization pending native pass. HECTON-8 Moon Ladder",
+          "scanner": "Draft ES localization pending native pass. Moon ladder: HECTON-8 is one claim, not the whole Aegir system.",
+          "terminal": "Draft ES localization pending native pass. MOON LADDER. Public role labels only; exact orbital elements stay table-owned.",
+          "audio": "Draft ES localization pending native pass. Other moons are not side quests. They are why the route has teeth.",
+          "in_game_wiki": "Draft ES localization pending native pass. The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.",
+          "external_site": "Draft ES localization pending native pass. HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.",
+          "field_note": "Draft ES localization pending native pass. Moon ladder record: public maps can show Aegir scale without promising playable moons."
         },
         "de_DE": {
-          "title": "DE LOC: HECTON-8 Moon Ladder",
-          "scanner": "DE LOC: Moon ladder: HECTON-8 is one claim, not the whole Aegir system.",
-          "terminal": "DE LOC: MOON LADDER. Public role labels only; exact orbital elements stay table-owned.",
-          "audio": "DE LOC HOLD: Other moons are not side quests. They are why the route has teeth.",
-          "in_game_wiki": "DE LOC HOLD: The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.",
-          "external_site": "DE LOC HOLD: HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.",
-          "field_note": "DE LOC HOLD: Use for public system map and in-game atlas; avoid promising playable moons."
+          "title": "Draft DE localization pending native pass. HECTON-8 Moon Ladder",
+          "scanner": "Draft DE localization pending native pass. Moon ladder: HECTON-8 is one claim, not the whole Aegir system.",
+          "terminal": "Draft DE localization pending native pass. MOON LADDER. Public role labels only; exact orbital elements stay table-owned.",
+          "audio": "Draft DE localization pending native pass. Other moons are not side quests. They are why the route has teeth.",
+          "in_game_wiki": "Draft DE localization pending native pass. The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.",
+          "external_site": "Draft DE localization pending native pass. HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.",
+          "field_note": "Draft DE localization pending native pass. Moon ladder record: public maps can show Aegir scale without promising playable moons."
         },
         "pl_PL": {
-          "title": "PL LOC: HECTON-8 Moon Ladder",
-          "scanner": "PL LOC: Moon ladder: HECTON-8 is one claim, not the whole Aegir system.",
-          "terminal": "PL LOC: MOON LADDER. Public role labels only; exact orbital elements stay table-owned.",
-          "audio": "PL LOC HOLD: Other moons are not side quests. They are why the route has teeth.",
-          "in_game_wiki": "PL LOC HOLD: The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.",
-          "external_site": "PL LOC HOLD: HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.",
-          "field_note": "PL LOC HOLD: Use for public system map and in-game atlas; avoid promising playable moons."
+          "title": "Draft PL localization pending native pass. HECTON-8 Moon Ladder",
+          "scanner": "Draft PL localization pending native pass. Moon ladder: HECTON-8 is one claim, not the whole Aegir system.",
+          "terminal": "Draft PL localization pending native pass. MOON LADDER. Public role labels only; exact orbital elements stay table-owned.",
+          "audio": "Draft PL localization pending native pass. Other moons are not side quests. They are why the route has teeth.",
+          "in_game_wiki": "Draft PL localization pending native pass. The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.",
+          "external_site": "Draft PL localization pending native pass. HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.",
+          "field_note": "Draft PL localization pending native pass. Moon ladder record: public maps can show Aegir scale without promising playable moons."
         },
         "uk_UA": {
-          "title": "UK LOC: HECTON-8 Moon Ladder",
-          "scanner": "UK LOC: Moon ladder: HECTON-8 is one claim, not the whole Aegir system.",
-          "terminal": "UK LOC: MOON LADDER. Public role labels only; exact orbital elements stay table-owned.",
-          "audio": "UK LOC HOLD: Other moons are not side quests. They are why the route has teeth.",
-          "in_game_wiki": "UK LOC HOLD: The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.",
-          "external_site": "UK LOC HOLD: HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.",
-          "field_note": "UK LOC HOLD: Use for public system map and in-game atlas; avoid promising playable moons."
+          "title": "Draft UK localization pending native pass. HECTON-8 Moon Ladder",
+          "scanner": "Draft UK localization pending native pass. Moon ladder: HECTON-8 is one claim, not the whole Aegir system.",
+          "terminal": "Draft UK localization pending native pass. MOON LADDER. Public role labels only; exact orbital elements stay table-owned.",
+          "audio": "Draft UK localization pending native pass. Other moons are not side quests. They are why the route has teeth.",
+          "in_game_wiki": "Draft UK localization pending native pass. The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.",
+          "external_site": "Draft UK localization pending native pass. HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.",
+          "field_note": "Draft UK localization pending native pass. Moon ladder record: public maps can show Aegir scale without promising playable moons."
         },
         "ar_SA": {
-          "title": "AR LOC: HECTON-8 Moon Ladder",
-          "scanner": "AR LOC: Moon ladder: HECTON-8 is one claim, not the whole Aegir system.",
-          "terminal": "AR LOC: MOON LADDER. Public role labels only; exact orbital elements stay table-owned.",
-          "audio": "AR LOC HOLD: Other moons are not side quests. They are why the route has teeth.",
-          "in_game_wiki": "AR LOC HOLD: The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.",
-          "external_site": "AR LOC HOLD: HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.",
-          "field_note": "AR LOC HOLD: Use for public system map and in-game atlas; avoid promising playable moons."
+          "title": "Draft AR localization pending native pass. HECTON-8 Moon Ladder",
+          "scanner": "Draft AR localization pending native pass. Moon ladder: HECTON-8 is one claim, not the whole Aegir system.",
+          "terminal": "Draft AR localization pending native pass. MOON LADDER. Public role labels only; exact orbital elements stay table-owned.",
+          "audio": "Draft AR localization pending native pass. Other moons are not side quests. They are why the route has teeth.",
+          "in_game_wiki": "Draft AR localization pending native pass. The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.",
+          "external_site": "Draft AR localization pending native pass. HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.",
+          "field_note": "Draft AR localization pending native pass. Moon ladder record: public maps can show Aegir scale without promising playable moons."
         },
         "id_ID": {
-          "title": "ID LOC: HECTON-8 Moon Ladder",
-          "scanner": "ID LOC: Moon ladder: HECTON-8 is one claim, not the whole Aegir system.",
-          "terminal": "ID LOC: MOON LADDER. Public role labels only; exact orbital elements stay table-owned.",
-          "audio": "ID LOC HOLD: Other moons are not side quests. They are why the route has teeth.",
-          "in_game_wiki": "ID LOC HOLD: The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.",
-          "external_site": "ID LOC HOLD: HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.",
-          "field_note": "ID LOC HOLD: Use for public system map and in-game atlas; avoid promising playable moons."
+          "title": "Draft ID localization pending native pass. HECTON-8 Moon Ladder",
+          "scanner": "Draft ID localization pending native pass. Moon ladder: HECTON-8 is one claim, not the whole Aegir system.",
+          "terminal": "Draft ID localization pending native pass. MOON LADDER. Public role labels only; exact orbital elements stay table-owned.",
+          "audio": "Draft ID localization pending native pass. Other moons are not side quests. They are why the route has teeth.",
+          "in_game_wiki": "Draft ID localization pending native pass. The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.",
+          "external_site": "Draft ID localization pending native pass. HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.",
+          "field_note": "Draft ID localization pending native pass. Moon ladder record: public maps can show Aegir scale without promising playable moons."
         },
         "ko_KR": {
-          "title": "KO LOC: HECTON-8 Moon Ladder",
-          "scanner": "KO LOC: Moon ladder: HECTON-8 is one claim, not the whole Aegir system.",
-          "terminal": "KO LOC: MOON LADDER. Public role labels only; exact orbital elements stay table-owned.",
-          "audio": "KO LOC HOLD: Other moons are not side quests. They are why the route has teeth.",
-          "in_game_wiki": "KO LOC HOLD: The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.",
-          "external_site": "KO LOC HOLD: HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.",
-          "field_note": "KO LOC HOLD: Use for public system map and in-game atlas; avoid promising playable moons."
+          "title": "Draft KO localization pending native pass. HECTON-8 Moon Ladder",
+          "scanner": "Draft KO localization pending native pass. Moon ladder: HECTON-8 is one claim, not the whole Aegir system.",
+          "terminal": "Draft KO localization pending native pass. MOON LADDER. Public role labels only; exact orbital elements stay table-owned.",
+          "audio": "Draft KO localization pending native pass. Other moons are not side quests. They are why the route has teeth.",
+          "in_game_wiki": "Draft KO localization pending native pass. The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.",
+          "external_site": "Draft KO localization pending native pass. HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.",
+          "field_note": "Draft KO localization pending native pass. Moon ladder record: public maps can show Aegir scale without promising playable moons."
         },
         "he_IL": {
-          "title": "HE LOC: HECTON-8 Moon Ladder",
-          "scanner": "HE LOC: Moon ladder: HECTON-8 is one claim, not the whole Aegir system.",
-          "terminal": "HE LOC: MOON LADDER. Public role labels only; exact orbital elements stay table-owned.",
-          "audio": "HE LOC HOLD: Other moons are not side quests. They are why the route has teeth.",
-          "in_game_wiki": "HE LOC HOLD: The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.",
-          "external_site": "HE LOC HOLD: HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.",
-          "field_note": "HE LOC HOLD: Use for public system map and in-game atlas; avoid promising playable moons."
+          "title": "Draft HE localization pending native pass. HECTON-8 Moon Ladder",
+          "scanner": "Draft HE localization pending native pass. Moon ladder: HECTON-8 is one claim, not the whole Aegir system.",
+          "terminal": "Draft HE localization pending native pass. MOON LADDER. Public role labels only; exact orbital elements stay table-owned.",
+          "audio": "Draft HE localization pending native pass. Other moons are not side quests. They are why the route has teeth.",
+          "in_game_wiki": "Draft HE localization pending native pass. The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.",
+          "external_site": "Draft HE localization pending native pass. HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.",
+          "field_note": "Draft HE localization pending native pass. Moon ladder record: public maps can show Aegir scale without promising playable moons."
         },
         "pt_BR": {
-          "title": "PT-BR LOC: HECTON-8 Moon Ladder",
-          "scanner": "PT-BR LOC: Moon ladder: HECTON-8 is one claim, not the whole Aegir system.",
-          "terminal": "PT-BR LOC: MOON LADDER. Public role labels only; exact orbital elements stay table-owned.",
-          "audio": "PT LOC HOLD: Other moons are not side quests. They are why the route has teeth.",
-          "in_game_wiki": "PT LOC HOLD: The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.",
-          "external_site": "PT LOC HOLD: HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.",
-          "field_note": "PT LOC HOLD: Use for public system map and in-game atlas; avoid promising playable moons."
+          "title": "Draft PT localization pending native pass. HECTON-8 Moon Ladder",
+          "scanner": "Draft PT localization pending native pass. Moon ladder: HECTON-8 is one claim, not the whole Aegir system.",
+          "terminal": "Draft PT localization pending native pass. MOON LADDER. Public role labels only; exact orbital elements stay table-owned.",
+          "audio": "Draft PT localization pending native pass. Other moons are not side quests. They are why the route has teeth.",
+          "in_game_wiki": "Draft PT localization pending native pass. The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.",
+          "external_site": "Draft PT localization pending native pass. HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.",
+          "field_note": "Draft PT localization pending native pass. Moon ladder record: public maps can show Aegir scale without promising playable moons."
         },
         "nl_NL": {
-          "title": "NL LOC: HECTON-8 Moon Ladder",
-          "scanner": "NL LOC: Moon ladder: HECTON-8 is one claim, not the whole Aegir system.",
-          "terminal": "NL LOC: MOON LADDER. Public role labels only; exact orbital elements stay table-owned.",
-          "audio": "NL LOC HOLD: Other moons are not side quests. They are why the route has teeth.",
-          "in_game_wiki": "NL LOC HOLD: The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.",
-          "external_site": "NL LOC HOLD: HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.",
-          "field_note": "NL LOC HOLD: Use for public system map and in-game atlas; avoid promising playable moons."
+          "title": "Draft NL localization pending native pass. HECTON-8 Moon Ladder",
+          "scanner": "Draft NL localization pending native pass. Moon ladder: HECTON-8 is one claim, not the whole Aegir system.",
+          "terminal": "Draft NL localization pending native pass. MOON LADDER. Public role labels only; exact orbital elements stay table-owned.",
+          "audio": "Draft NL localization pending native pass. Other moons are not side quests. They are why the route has teeth.",
+          "in_game_wiki": "Draft NL localization pending native pass. The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.",
+          "external_site": "Draft NL localization pending native pass. HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.",
+          "field_note": "Draft NL localization pending native pass. Moon ladder record: public maps can show Aegir scale without promising playable moons."
         }
       }
     },
@@ -498,133 +498,133 @@
           "audio": "It is not parked above you. It is waiting where insurance allows it to wait.",
           "in_game_wiki": "The carrier's orbit explains why contact, payload pickup and human extraction are different problems.",
           "external_site": "Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.",
-          "field_note": "Use for ship page, escape route UI and partial-exit explanation."
+          "field_note": "Carrier orbit record: Black Keel can receive payloads before it can retrieve people; that gap drives partial-exit logic."
         },
         "ru_RU": {
-          "title": "Полоса Black Keel",
-          "scanner": "Полоса носителя: Black Keel высоко, не над HECTON-8.",
-          "terminal": "CARRIER ORBIT. Высокая линия; масса спуска урезана и зависит от погоды.",
-          "audio": "Он не висит над тобой. Он ждет там, где страховка позволяет ждать.",
-          "in_game_wiki": "Орбита carrier объясняет, почему contact, payload pickup и human extraction - разные задачи.",
-          "external_site": "Black Keel - контрактный carrier на custody route. Он может принять payload раньше, чем безопасно забрать человека.",
-          "field_note": "Для ship page, escape route UI и объяснения partial exit."
+          "title": "Draft RU localization pending native pass. Black Keel Transfer Band",
+          "scanner": "Draft RU localization pending native pass. Carrier band: Black Keel loiters high, not above HECTON-8.",
+          "terminal": "Draft RU localization pending native pass. CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.",
+          "audio": "Draft RU localization pending native pass. It is not parked above you. It is waiting where insurance allows it to wait.",
+          "in_game_wiki": "Draft RU localization pending native pass. The carrier's orbit explains why contact, payload pickup and human extraction are different problems.",
+          "external_site": "Draft RU localization pending native pass. Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.",
+          "field_note": "Draft RU localization pending native pass. Carrier orbit record: Black Keel can receive payloads before it can retrieve people; that gap drives partial-exit logic."
         },
         "ja_JP": {
-          "title": "JA LOC: Black Keel Transfer Band",
-          "scanner": "JA LOC: Carrier band: Black Keel loiters high, not above HECTON-8.",
-          "terminal": "JA LOC: CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.",
-          "audio": "JA LOC HOLD: It is not parked above you. It is waiting where insurance allows it to wait.",
-          "in_game_wiki": "JA LOC HOLD: The carrier's orbit explains why contact, payload pickup and human extraction are different problems.",
-          "external_site": "JA LOC HOLD: Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.",
-          "field_note": "JA LOC HOLD: Use for ship page, escape route UI and partial-exit explanation."
+          "title": "Draft JA localization pending native pass. Black Keel Transfer Band",
+          "scanner": "Draft JA localization pending native pass. Carrier band: Black Keel loiters high, not above HECTON-8.",
+          "terminal": "Draft JA localization pending native pass. CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.",
+          "audio": "Draft JA localization pending native pass. It is not parked above you. It is waiting where insurance allows it to wait.",
+          "in_game_wiki": "Draft JA localization pending native pass. The carrier's orbit explains why contact, payload pickup and human extraction are different problems.",
+          "external_site": "Draft JA localization pending native pass. Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.",
+          "field_note": "Draft JA localization pending native pass. Carrier orbit record: Black Keel can receive payloads before it can retrieve people; that gap drives partial-exit logic."
         },
         "zh_CN": {
-          "title": "ZH LOC: Black Keel Transfer Band",
-          "scanner": "ZH LOC: Carrier band: Black Keel loiters high, not above HECTON-8.",
-          "terminal": "ZH LOC: CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.",
-          "audio": "ZH LOC HOLD: It is not parked above you. It is waiting where insurance allows it to wait.",
-          "in_game_wiki": "ZH LOC HOLD: The carrier's orbit explains why contact, payload pickup and human extraction are different problems.",
-          "external_site": "ZH LOC HOLD: Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.",
-          "field_note": "ZH LOC HOLD: Use for ship page, escape route UI and partial-exit explanation."
+          "title": "Draft ZH localization pending native pass. Black Keel Transfer Band",
+          "scanner": "Draft ZH localization pending native pass. Carrier band: Black Keel loiters high, not above HECTON-8.",
+          "terminal": "Draft ZH localization pending native pass. CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.",
+          "audio": "Draft ZH localization pending native pass. It is not parked above you. It is waiting where insurance allows it to wait.",
+          "in_game_wiki": "Draft ZH localization pending native pass. The carrier's orbit explains why contact, payload pickup and human extraction are different problems.",
+          "external_site": "Draft ZH localization pending native pass. Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.",
+          "field_note": "Draft ZH localization pending native pass. Carrier orbit record: Black Keel can receive payloads before it can retrieve people; that gap drives partial-exit logic."
         },
         "fr_FR": {
-          "title": "FR LOC: Black Keel Transfer Band",
-          "scanner": "FR LOC: Carrier band: Black Keel loiters high, not above HECTON-8.",
-          "terminal": "FR LOC: CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.",
-          "audio": "FR LOC HOLD: It is not parked above you. It is waiting where insurance allows it to wait.",
-          "in_game_wiki": "FR LOC HOLD: The carrier's orbit explains why contact, payload pickup and human extraction are different problems.",
-          "external_site": "FR LOC HOLD: Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.",
-          "field_note": "FR LOC HOLD: Use for ship page, escape route UI and partial-exit explanation."
+          "title": "Draft FR localization pending native pass. Black Keel Transfer Band",
+          "scanner": "Draft FR localization pending native pass. Carrier band: Black Keel loiters high, not above HECTON-8.",
+          "terminal": "Draft FR localization pending native pass. CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.",
+          "audio": "Draft FR localization pending native pass. It is not parked above you. It is waiting where insurance allows it to wait.",
+          "in_game_wiki": "Draft FR localization pending native pass. The carrier's orbit explains why contact, payload pickup and human extraction are different problems.",
+          "external_site": "Draft FR localization pending native pass. Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.",
+          "field_note": "Draft FR localization pending native pass. Carrier orbit record: Black Keel can receive payloads before it can retrieve people; that gap drives partial-exit logic."
         },
         "es_ES": {
-          "title": "ES LOC: Black Keel Transfer Band",
-          "scanner": "ES LOC: Carrier band: Black Keel loiters high, not above HECTON-8.",
-          "terminal": "ES LOC: CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.",
-          "audio": "ES LOC HOLD: It is not parked above you. It is waiting where insurance allows it to wait.",
-          "in_game_wiki": "ES LOC HOLD: The carrier's orbit explains why contact, payload pickup and human extraction are different problems.",
-          "external_site": "ES LOC HOLD: Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.",
-          "field_note": "ES LOC HOLD: Use for ship page, escape route UI and partial-exit explanation."
+          "title": "Draft ES localization pending native pass. Black Keel Transfer Band",
+          "scanner": "Draft ES localization pending native pass. Carrier band: Black Keel loiters high, not above HECTON-8.",
+          "terminal": "Draft ES localization pending native pass. CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.",
+          "audio": "Draft ES localization pending native pass. It is not parked above you. It is waiting where insurance allows it to wait.",
+          "in_game_wiki": "Draft ES localization pending native pass. The carrier's orbit explains why contact, payload pickup and human extraction are different problems.",
+          "external_site": "Draft ES localization pending native pass. Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.",
+          "field_note": "Draft ES localization pending native pass. Carrier orbit record: Black Keel can receive payloads before it can retrieve people; that gap drives partial-exit logic."
         },
         "de_DE": {
-          "title": "DE LOC: Black Keel Transfer Band",
-          "scanner": "DE LOC: Carrier band: Black Keel loiters high, not above HECTON-8.",
-          "terminal": "DE LOC: CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.",
-          "audio": "DE LOC HOLD: It is not parked above you. It is waiting where insurance allows it to wait.",
-          "in_game_wiki": "DE LOC HOLD: The carrier's orbit explains why contact, payload pickup and human extraction are different problems.",
-          "external_site": "DE LOC HOLD: Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.",
-          "field_note": "DE LOC HOLD: Use for ship page, escape route UI and partial-exit explanation."
+          "title": "Draft DE localization pending native pass. Black Keel Transfer Band",
+          "scanner": "Draft DE localization pending native pass. Carrier band: Black Keel loiters high, not above HECTON-8.",
+          "terminal": "Draft DE localization pending native pass. CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.",
+          "audio": "Draft DE localization pending native pass. It is not parked above you. It is waiting where insurance allows it to wait.",
+          "in_game_wiki": "Draft DE localization pending native pass. The carrier's orbit explains why contact, payload pickup and human extraction are different problems.",
+          "external_site": "Draft DE localization pending native pass. Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.",
+          "field_note": "Draft DE localization pending native pass. Carrier orbit record: Black Keel can receive payloads before it can retrieve people; that gap drives partial-exit logic."
         },
         "pl_PL": {
-          "title": "PL LOC: Black Keel Transfer Band",
-          "scanner": "PL LOC: Carrier band: Black Keel loiters high, not above HECTON-8.",
-          "terminal": "PL LOC: CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.",
-          "audio": "PL LOC HOLD: It is not parked above you. It is waiting where insurance allows it to wait.",
-          "in_game_wiki": "PL LOC HOLD: The carrier's orbit explains why contact, payload pickup and human extraction are different problems.",
-          "external_site": "PL LOC HOLD: Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.",
-          "field_note": "PL LOC HOLD: Use for ship page, escape route UI and partial-exit explanation."
+          "title": "Draft PL localization pending native pass. Black Keel Transfer Band",
+          "scanner": "Draft PL localization pending native pass. Carrier band: Black Keel loiters high, not above HECTON-8.",
+          "terminal": "Draft PL localization pending native pass. CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.",
+          "audio": "Draft PL localization pending native pass. It is not parked above you. It is waiting where insurance allows it to wait.",
+          "in_game_wiki": "Draft PL localization pending native pass. The carrier's orbit explains why contact, payload pickup and human extraction are different problems.",
+          "external_site": "Draft PL localization pending native pass. Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.",
+          "field_note": "Draft PL localization pending native pass. Carrier orbit record: Black Keel can receive payloads before it can retrieve people; that gap drives partial-exit logic."
         },
         "uk_UA": {
-          "title": "UK LOC: Black Keel Transfer Band",
-          "scanner": "UK LOC: Carrier band: Black Keel loiters high, not above HECTON-8.",
-          "terminal": "UK LOC: CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.",
-          "audio": "UK LOC HOLD: It is not parked above you. It is waiting where insurance allows it to wait.",
-          "in_game_wiki": "UK LOC HOLD: The carrier's orbit explains why contact, payload pickup and human extraction are different problems.",
-          "external_site": "UK LOC HOLD: Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.",
-          "field_note": "UK LOC HOLD: Use for ship page, escape route UI and partial-exit explanation."
+          "title": "Draft UK localization pending native pass. Black Keel Transfer Band",
+          "scanner": "Draft UK localization pending native pass. Carrier band: Black Keel loiters high, not above HECTON-8.",
+          "terminal": "Draft UK localization pending native pass. CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.",
+          "audio": "Draft UK localization pending native pass. It is not parked above you. It is waiting where insurance allows it to wait.",
+          "in_game_wiki": "Draft UK localization pending native pass. The carrier's orbit explains why contact, payload pickup and human extraction are different problems.",
+          "external_site": "Draft UK localization pending native pass. Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.",
+          "field_note": "Draft UK localization pending native pass. Carrier orbit record: Black Keel can receive payloads before it can retrieve people; that gap drives partial-exit logic."
         },
         "ar_SA": {
-          "title": "AR LOC: Black Keel Transfer Band",
-          "scanner": "AR LOC: Carrier band: Black Keel loiters high, not above HECTON-8.",
-          "terminal": "AR LOC: CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.",
-          "audio": "AR LOC HOLD: It is not parked above you. It is waiting where insurance allows it to wait.",
-          "in_game_wiki": "AR LOC HOLD: The carrier's orbit explains why contact, payload pickup and human extraction are different problems.",
-          "external_site": "AR LOC HOLD: Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.",
-          "field_note": "AR LOC HOLD: Use for ship page, escape route UI and partial-exit explanation."
+          "title": "Draft AR localization pending native pass. Black Keel Transfer Band",
+          "scanner": "Draft AR localization pending native pass. Carrier band: Black Keel loiters high, not above HECTON-8.",
+          "terminal": "Draft AR localization pending native pass. CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.",
+          "audio": "Draft AR localization pending native pass. It is not parked above you. It is waiting where insurance allows it to wait.",
+          "in_game_wiki": "Draft AR localization pending native pass. The carrier's orbit explains why contact, payload pickup and human extraction are different problems.",
+          "external_site": "Draft AR localization pending native pass. Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.",
+          "field_note": "Draft AR localization pending native pass. Carrier orbit record: Black Keel can receive payloads before it can retrieve people; that gap drives partial-exit logic."
         },
         "id_ID": {
-          "title": "ID LOC: Black Keel Transfer Band",
-          "scanner": "ID LOC: Carrier band: Black Keel loiters high, not above HECTON-8.",
-          "terminal": "ID LOC: CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.",
-          "audio": "ID LOC HOLD: It is not parked above you. It is waiting where insurance allows it to wait.",
-          "in_game_wiki": "ID LOC HOLD: The carrier's orbit explains why contact, payload pickup and human extraction are different problems.",
-          "external_site": "ID LOC HOLD: Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.",
-          "field_note": "ID LOC HOLD: Use for ship page, escape route UI and partial-exit explanation."
+          "title": "Draft ID localization pending native pass. Black Keel Transfer Band",
+          "scanner": "Draft ID localization pending native pass. Carrier band: Black Keel loiters high, not above HECTON-8.",
+          "terminal": "Draft ID localization pending native pass. CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.",
+          "audio": "Draft ID localization pending native pass. It is not parked above you. It is waiting where insurance allows it to wait.",
+          "in_game_wiki": "Draft ID localization pending native pass. The carrier's orbit explains why contact, payload pickup and human extraction are different problems.",
+          "external_site": "Draft ID localization pending native pass. Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.",
+          "field_note": "Draft ID localization pending native pass. Carrier orbit record: Black Keel can receive payloads before it can retrieve people; that gap drives partial-exit logic."
         },
         "ko_KR": {
-          "title": "KO LOC: Black Keel Transfer Band",
-          "scanner": "KO LOC: Carrier band: Black Keel loiters high, not above HECTON-8.",
-          "terminal": "KO LOC: CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.",
-          "audio": "KO LOC HOLD: It is not parked above you. It is waiting where insurance allows it to wait.",
-          "in_game_wiki": "KO LOC HOLD: The carrier's orbit explains why contact, payload pickup and human extraction are different problems.",
-          "external_site": "KO LOC HOLD: Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.",
-          "field_note": "KO LOC HOLD: Use for ship page, escape route UI and partial-exit explanation."
+          "title": "Draft KO localization pending native pass. Black Keel Transfer Band",
+          "scanner": "Draft KO localization pending native pass. Carrier band: Black Keel loiters high, not above HECTON-8.",
+          "terminal": "Draft KO localization pending native pass. CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.",
+          "audio": "Draft KO localization pending native pass. It is not parked above you. It is waiting where insurance allows it to wait.",
+          "in_game_wiki": "Draft KO localization pending native pass. The carrier's orbit explains why contact, payload pickup and human extraction are different problems.",
+          "external_site": "Draft KO localization pending native pass. Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.",
+          "field_note": "Draft KO localization pending native pass. Carrier orbit record: Black Keel can receive payloads before it can retrieve people; that gap drives partial-exit logic."
         },
         "he_IL": {
-          "title": "HE LOC: Black Keel Transfer Band",
-          "scanner": "HE LOC: Carrier band: Black Keel loiters high, not above HECTON-8.",
-          "terminal": "HE LOC: CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.",
-          "audio": "HE LOC HOLD: It is not parked above you. It is waiting where insurance allows it to wait.",
-          "in_game_wiki": "HE LOC HOLD: The carrier's orbit explains why contact, payload pickup and human extraction are different problems.",
-          "external_site": "HE LOC HOLD: Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.",
-          "field_note": "HE LOC HOLD: Use for ship page, escape route UI and partial-exit explanation."
+          "title": "Draft HE localization pending native pass. Black Keel Transfer Band",
+          "scanner": "Draft HE localization pending native pass. Carrier band: Black Keel loiters high, not above HECTON-8.",
+          "terminal": "Draft HE localization pending native pass. CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.",
+          "audio": "Draft HE localization pending native pass. It is not parked above you. It is waiting where insurance allows it to wait.",
+          "in_game_wiki": "Draft HE localization pending native pass. The carrier's orbit explains why contact, payload pickup and human extraction are different problems.",
+          "external_site": "Draft HE localization pending native pass. Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.",
+          "field_note": "Draft HE localization pending native pass. Carrier orbit record: Black Keel can receive payloads before it can retrieve people; that gap drives partial-exit logic."
         },
         "pt_BR": {
-          "title": "PT-BR LOC: Black Keel Transfer Band",
-          "scanner": "PT-BR LOC: Carrier band: Black Keel loiters high, not above HECTON-8.",
-          "terminal": "PT-BR LOC: CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.",
-          "audio": "PT LOC HOLD: It is not parked above you. It is waiting where insurance allows it to wait.",
-          "in_game_wiki": "PT LOC HOLD: The carrier's orbit explains why contact, payload pickup and human extraction are different problems.",
-          "external_site": "PT LOC HOLD: Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.",
-          "field_note": "PT LOC HOLD: Use for ship page, escape route UI and partial-exit explanation."
+          "title": "Draft PT localization pending native pass. Black Keel Transfer Band",
+          "scanner": "Draft PT localization pending native pass. Carrier band: Black Keel loiters high, not above HECTON-8.",
+          "terminal": "Draft PT localization pending native pass. CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.",
+          "audio": "Draft PT localization pending native pass. It is not parked above you. It is waiting where insurance allows it to wait.",
+          "in_game_wiki": "Draft PT localization pending native pass. The carrier's orbit explains why contact, payload pickup and human extraction are different problems.",
+          "external_site": "Draft PT localization pending native pass. Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.",
+          "field_note": "Draft PT localization pending native pass. Carrier orbit record: Black Keel can receive payloads before it can retrieve people; that gap drives partial-exit logic."
         },
         "nl_NL": {
-          "title": "NL LOC: Black Keel Transfer Band",
-          "scanner": "NL LOC: Carrier band: Black Keel loiters high, not above HECTON-8.",
-          "terminal": "NL LOC: CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.",
-          "audio": "NL LOC HOLD: It is not parked above you. It is waiting where insurance allows it to wait.",
-          "in_game_wiki": "NL LOC HOLD: The carrier's orbit explains why contact, payload pickup and human extraction are different problems.",
-          "external_site": "NL LOC HOLD: Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.",
-          "field_note": "NL LOC HOLD: Use for ship page, escape route UI and partial-exit explanation."
+          "title": "Draft NL localization pending native pass. Black Keel Transfer Band",
+          "scanner": "Draft NL localization pending native pass. Carrier band: Black Keel loiters high, not above HECTON-8.",
+          "terminal": "Draft NL localization pending native pass. CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.",
+          "audio": "Draft NL localization pending native pass. It is not parked above you. It is waiting where insurance allows it to wait.",
+          "in_game_wiki": "Draft NL localization pending native pass. The carrier's orbit explains why contact, payload pickup and human extraction are different problems.",
+          "external_site": "Draft NL localization pending native pass. Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.",
+          "field_note": "Draft NL localization pending native pass. Carrier orbit record: Black Keel can receive payloads before it can retrieve people; that gap drives partial-exit logic."
         }
       }
     },
@@ -647,139 +647,139 @@
       },
       "localized": {
         "en_US": {
-          "title": "Ephemeris Handoff Rule",
-          "scanner": "Authoring rule: prose owns bands; final orbital numbers stay table-owned.",
-          "terminal": "HANDOFF. Prose may state roles, hazards and bands. Exact orbital values stay out.",
+          "title": "Ephemeris Data Boundary Rule",
+          "scanner": "Data boundary: prose owns bands; final orbital numbers stay table-owned.",
+          "terminal": "DATA BOUNDARY: prose may state roles, hazards, and bands. Exact orbital values stay out.",
           "audio": "Numbers are allowed when the table owns them.",
           "in_game_wiki": "This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.",
-          "external_site": "Public pages can explain the system now; exact mechanics remain authored through dedicated celestial data later.",
-          "field_note": "Use as internal/public source boundary for astronomy articles and future DataMonolith table work."
+          "external_site": "Public pages can explain Aegir, HECTON-8, transfer windows, and route hazards without freezing exact orbital constants in prose.",
+          "field_note": "Ephemeris records explain route logic while exact constants remain table-owned data."
         },
         "ru_RU": {
-          "title": "Правило ephemeris handoff",
-          "scanner": "Правило: текст владеет полосами; числа ждут таблицу.",
-          "terminal": "HANDOFF. Текст может дать роли, риски и полосы; точных орбит нет.",
-          "audio": "Числа допустимы, когда ими владеет таблица.",
-          "in_game_wiki": "Это правило сохраняет hard-sci-fi lore полезным, не замораживая simulation constants в narrative prose.",
-          "external_site": "Публичные страницы уже могут объяснять систему; точная механика позже задается отдельными celestial data.",
-          "field_note": "Для внутренней/публичной границы astronomy articles и будущей работы с DataMonolith tables."
+          "title": "Draft RU localization pending native pass. Ephemeris Data Boundary Rule",
+          "scanner": "Draft RU localization pending native pass. Data boundary: prose owns bands; final orbital numbers stay table-owned.",
+          "terminal": "Draft RU localization pending native pass. DATA BOUNDARY: prose may state roles, hazards, and bands. Exact orbital values stay out.",
+          "audio": "Draft RU localization pending native pass. Numbers are allowed when the table owns them.",
+          "in_game_wiki": "Draft RU localization pending native pass. This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.",
+          "external_site": "Draft RU localization pending native pass. Public pages can explain Aegir, HECTON-8, transfer windows, and route hazards without freezing exact orbital constants in prose.",
+          "field_note": "Draft RU localization pending native pass. Ephemeris records explain route logic while exact constants remain table-owned data."
         },
         "ja_JP": {
-          "title": "JA LOC: Ephemeris Handoff Rule",
-          "scanner": "JA LOC: Authoring rule: prose owns bands; final orbital numbers stay table-owned.",
-          "terminal": "JA LOC: HANDOFF. Prose may state roles, hazards and bands. Exact orbital values stay out.",
-          "audio": "JA LOC HOLD: Numbers are allowed when the table owns them.",
-          "in_game_wiki": "JA LOC HOLD: This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.",
-          "external_site": "JA LOC HOLD: Public pages can explain the system now; exact mechanics remain authored through dedicated celestial data later.",
-          "field_note": "JA LOC HOLD: Use as internal/public source boundary for astronomy articles and future DataMonolith table work."
+          "title": "Draft JP localization pending native pass. Ephemeris Data Boundary Rule",
+          "scanner": "Draft JP localization pending native pass. Data boundary: prose owns bands; final orbital numbers stay table-owned.",
+          "terminal": "Draft JP localization pending native pass. DATA BOUNDARY: prose may state roles, hazards, and bands. Exact orbital values stay out.",
+          "audio": "Draft JA localization pending native pass. Numbers are allowed when the table owns them.",
+          "in_game_wiki": "Draft JA localization pending native pass. This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.",
+          "external_site": "Draft JP localization pending native pass. Public pages can explain Aegir, HECTON-8, transfer windows, and route hazards without freezing exact orbital constants in prose.",
+          "field_note": "Draft JP localization pending native pass. Ephemeris records explain route logic while exact constants remain table-owned data."
         },
         "zh_CN": {
-          "title": "ZH LOC: Ephemeris Handoff Rule",
-          "scanner": "ZH LOC: Authoring rule: prose owns bands; final orbital numbers stay table-owned.",
-          "terminal": "ZH LOC: HANDOFF. Prose may state roles, hazards and bands. Exact orbital values stay out.",
-          "audio": "ZH LOC HOLD: Numbers are allowed when the table owns them.",
-          "in_game_wiki": "ZH LOC HOLD: This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.",
-          "external_site": "ZH LOC HOLD: Public pages can explain the system now; exact mechanics remain authored through dedicated celestial data later.",
-          "field_note": "ZH LOC HOLD: Use as internal/public source boundary for astronomy articles and future DataMonolith table work."
+          "title": "Draft CN localization pending native pass. Ephemeris Data Boundary Rule",
+          "scanner": "Draft CN localization pending native pass. Data boundary: prose owns bands; final orbital numbers stay table-owned.",
+          "terminal": "Draft CN localization pending native pass. DATA BOUNDARY: prose may state roles, hazards, and bands. Exact orbital values stay out.",
+          "audio": "Draft ZH localization pending native pass. Numbers are allowed when the table owns them.",
+          "in_game_wiki": "Draft ZH localization pending native pass. This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.",
+          "external_site": "Draft CN localization pending native pass. Public pages can explain Aegir, HECTON-8, transfer windows, and route hazards without freezing exact orbital constants in prose.",
+          "field_note": "Draft CN localization pending native pass. Ephemeris records explain route logic while exact constants remain table-owned data."
         },
         "fr_FR": {
-          "title": "FR LOC: Ephemeris Handoff Rule",
-          "scanner": "FR LOC: Authoring rule: prose owns bands; final orbital numbers stay table-owned.",
-          "terminal": "FR LOC: HANDOFF. Prose may state roles, hazards and bands. Exact orbital values stay out.",
-          "audio": "FR LOC HOLD: Numbers are allowed when the table owns them.",
-          "in_game_wiki": "FR LOC HOLD: This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.",
-          "external_site": "FR LOC HOLD: Public pages can explain the system now; exact mechanics remain authored through dedicated celestial data later.",
-          "field_note": "FR LOC HOLD: Use as internal/public source boundary for astronomy articles and future DataMonolith table work."
+          "title": "Draft FR localization pending native pass. Ephemeris Data Boundary Rule",
+          "scanner": "Draft FR localization pending native pass. Data boundary: prose owns bands; final orbital numbers stay table-owned.",
+          "terminal": "Draft FR localization pending native pass. DATA BOUNDARY: prose may state roles, hazards, and bands. Exact orbital values stay out.",
+          "audio": "Draft FR localization pending native pass. Numbers are allowed when the table owns them.",
+          "in_game_wiki": "Draft FR localization pending native pass. This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.",
+          "external_site": "Draft FR localization pending native pass. Public pages can explain Aegir, HECTON-8, transfer windows, and route hazards without freezing exact orbital constants in prose.",
+          "field_note": "Draft FR localization pending native pass. Ephemeris records explain route logic while exact constants remain table-owned data."
         },
         "es_ES": {
-          "title": "ES LOC: Ephemeris Handoff Rule",
-          "scanner": "ES LOC: Authoring rule: prose owns bands; final orbital numbers stay table-owned.",
-          "terminal": "ES LOC: HANDOFF. Prose may state roles, hazards and bands. Exact orbital values stay out.",
-          "audio": "ES LOC HOLD: Numbers are allowed when the table owns them.",
-          "in_game_wiki": "ES LOC HOLD: This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.",
-          "external_site": "ES LOC HOLD: Public pages can explain the system now; exact mechanics remain authored through dedicated celestial data later.",
-          "field_note": "ES LOC HOLD: Use as internal/public source boundary for astronomy articles and future DataMonolith table work."
+          "title": "Draft ES localization pending native pass. Ephemeris Data Boundary Rule",
+          "scanner": "Draft ES localization pending native pass. Data boundary: prose owns bands; final orbital numbers stay table-owned.",
+          "terminal": "Draft ES localization pending native pass. DATA BOUNDARY: prose may state roles, hazards, and bands. Exact orbital values stay out.",
+          "audio": "Draft ES localization pending native pass. Numbers are allowed when the table owns them.",
+          "in_game_wiki": "Draft ES localization pending native pass. This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.",
+          "external_site": "Draft ES localization pending native pass. Public pages can explain Aegir, HECTON-8, transfer windows, and route hazards without freezing exact orbital constants in prose.",
+          "field_note": "Draft ES localization pending native pass. Ephemeris records explain route logic while exact constants remain table-owned data."
         },
         "de_DE": {
-          "title": "DE LOC: Ephemeris Handoff Rule",
-          "scanner": "DE LOC: Authoring rule: prose owns bands; final orbital numbers stay table-owned.",
-          "terminal": "DE LOC: HANDOFF. Prose may state roles, hazards and bands. Exact orbital values stay out.",
-          "audio": "DE LOC HOLD: Numbers are allowed when the table owns them.",
-          "in_game_wiki": "DE LOC HOLD: This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.",
-          "external_site": "DE LOC HOLD: Public pages can explain the system now; exact mechanics remain authored through dedicated celestial data later.",
-          "field_note": "DE LOC HOLD: Use as internal/public source boundary for astronomy articles and future DataMonolith table work."
+          "title": "Draft DE localization pending native pass. Ephemeris Data Boundary Rule",
+          "scanner": "Draft DE localization pending native pass. Data boundary: prose owns bands; final orbital numbers stay table-owned.",
+          "terminal": "Draft DE localization pending native pass. DATA BOUNDARY: prose may state roles, hazards, and bands. Exact orbital values stay out.",
+          "audio": "Draft DE localization pending native pass. Numbers are allowed when the table owns them.",
+          "in_game_wiki": "Draft DE localization pending native pass. This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.",
+          "external_site": "Draft DE localization pending native pass. Public pages can explain Aegir, HECTON-8, transfer windows, and route hazards without freezing exact orbital constants in prose.",
+          "field_note": "Draft DE localization pending native pass. Ephemeris records explain route logic while exact constants remain table-owned data."
         },
         "pl_PL": {
-          "title": "PL LOC: Ephemeris Handoff Rule",
-          "scanner": "PL LOC: Authoring rule: prose owns bands; final orbital numbers stay table-owned.",
-          "terminal": "PL LOC: HANDOFF. Prose may state roles, hazards and bands. Exact orbital values stay out.",
-          "audio": "PL LOC HOLD: Numbers are allowed when the table owns them.",
-          "in_game_wiki": "PL LOC HOLD: This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.",
-          "external_site": "PL LOC HOLD: Public pages can explain the system now; exact mechanics remain authored through dedicated celestial data later.",
-          "field_note": "PL LOC HOLD: Use as internal/public source boundary for astronomy articles and future DataMonolith table work."
+          "title": "Draft PL localization pending native pass. Ephemeris Data Boundary Rule",
+          "scanner": "Draft PL localization pending native pass. Data boundary: prose owns bands; final orbital numbers stay table-owned.",
+          "terminal": "Draft PL localization pending native pass. DATA BOUNDARY: prose may state roles, hazards, and bands. Exact orbital values stay out.",
+          "audio": "Draft PL localization pending native pass. Numbers are allowed when the table owns them.",
+          "in_game_wiki": "Draft PL localization pending native pass. This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.",
+          "external_site": "Draft PL localization pending native pass. Public pages can explain Aegir, HECTON-8, transfer windows, and route hazards without freezing exact orbital constants in prose.",
+          "field_note": "Draft PL localization pending native pass. Ephemeris records explain route logic while exact constants remain table-owned data."
         },
         "uk_UA": {
-          "title": "UK LOC: Ephemeris Handoff Rule",
-          "scanner": "UK LOC: Authoring rule: prose owns bands; final orbital numbers stay table-owned.",
-          "terminal": "UK LOC: HANDOFF. Prose may state roles, hazards and bands. Exact orbital values stay out.",
-          "audio": "UK LOC HOLD: Numbers are allowed when the table owns them.",
-          "in_game_wiki": "UK LOC HOLD: This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.",
-          "external_site": "UK LOC HOLD: Public pages can explain the system now; exact mechanics remain authored through dedicated celestial data later.",
-          "field_note": "UK LOC HOLD: Use as internal/public source boundary for astronomy articles and future DataMonolith table work."
+          "title": "Draft UA localization pending native pass. Ephemeris Data Boundary Rule",
+          "scanner": "Draft UA localization pending native pass. Data boundary: prose owns bands; final orbital numbers stay table-owned.",
+          "terminal": "Draft UA localization pending native pass. DATA BOUNDARY: prose may state roles, hazards, and bands. Exact orbital values stay out.",
+          "audio": "Draft UK localization pending native pass. Numbers are allowed when the table owns them.",
+          "in_game_wiki": "Draft UK localization pending native pass. This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.",
+          "external_site": "Draft UA localization pending native pass. Public pages can explain Aegir, HECTON-8, transfer windows, and route hazards without freezing exact orbital constants in prose.",
+          "field_note": "Draft UA localization pending native pass. Ephemeris records explain route logic while exact constants remain table-owned data."
         },
         "ar_SA": {
-          "title": "AR LOC: Ephemeris Handoff Rule",
-          "scanner": "AR LOC: Authoring rule: prose owns bands; final orbital numbers stay table-owned.",
-          "terminal": "AR LOC: HANDOFF. Prose may state roles, hazards and bands. Exact orbital values stay out.",
-          "audio": "AR LOC HOLD: Numbers are allowed when the table owns them.",
-          "in_game_wiki": "AR LOC HOLD: This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.",
-          "external_site": "AR LOC HOLD: Public pages can explain the system now; exact mechanics remain authored through dedicated celestial data later.",
-          "field_note": "AR LOC HOLD: Use as internal/public source boundary for astronomy articles and future DataMonolith table work."
+          "title": "Draft AR localization pending native pass. Ephemeris Data Boundary Rule",
+          "scanner": "Draft AR localization pending native pass. Data boundary: prose owns bands; final orbital numbers stay table-owned.",
+          "terminal": "Draft AR localization pending native pass. DATA BOUNDARY: prose may state roles, hazards, and bands. Exact orbital values stay out.",
+          "audio": "Draft AR localization pending native pass. Numbers are allowed when the table owns them.",
+          "in_game_wiki": "Draft AR localization pending native pass. This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.",
+          "external_site": "Draft AR localization pending native pass. Public pages can explain Aegir, HECTON-8, transfer windows, and route hazards without freezing exact orbital constants in prose.",
+          "field_note": "Draft AR localization pending native pass. Ephemeris records explain route logic while exact constants remain table-owned data."
         },
         "id_ID": {
-          "title": "ID LOC: Ephemeris Handoff Rule",
-          "scanner": "ID LOC: Authoring rule: prose owns bands; final orbital numbers stay table-owned.",
-          "terminal": "ID LOC: HANDOFF. Prose may state roles, hazards and bands. Exact orbital values stay out.",
-          "audio": "ID LOC HOLD: Numbers are allowed when the table owns them.",
-          "in_game_wiki": "ID LOC HOLD: This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.",
-          "external_site": "ID LOC HOLD: Public pages can explain the system now; exact mechanics remain authored through dedicated celestial data later.",
-          "field_note": "ID LOC HOLD: Use as internal/public source boundary for astronomy articles and future DataMonolith table work."
+          "title": "Draft ID localization pending native pass. Ephemeris Data Boundary Rule",
+          "scanner": "Draft ID localization pending native pass. Data boundary: prose owns bands; final orbital numbers stay table-owned.",
+          "terminal": "Draft ID localization pending native pass. DATA BOUNDARY: prose may state roles, hazards, and bands. Exact orbital values stay out.",
+          "audio": "Draft ID localization pending native pass. Numbers are allowed when the table owns them.",
+          "in_game_wiki": "Draft ID localization pending native pass. This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.",
+          "external_site": "Draft ID localization pending native pass. Public pages can explain Aegir, HECTON-8, transfer windows, and route hazards without freezing exact orbital constants in prose.",
+          "field_note": "Draft ID localization pending native pass. Ephemeris records explain route logic while exact constants remain table-owned data."
         },
         "ko_KR": {
-          "title": "KO LOC: Ephemeris Handoff Rule",
-          "scanner": "KO LOC: Authoring rule: prose owns bands; final orbital numbers stay table-owned.",
-          "terminal": "KO LOC: HANDOFF. Prose may state roles, hazards and bands. Exact orbital values stay out.",
-          "audio": "KO LOC HOLD: Numbers are allowed when the table owns them.",
-          "in_game_wiki": "KO LOC HOLD: This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.",
-          "external_site": "KO LOC HOLD: Public pages can explain the system now; exact mechanics remain authored through dedicated celestial data later.",
-          "field_note": "KO LOC HOLD: Use as internal/public source boundary for astronomy articles and future DataMonolith table work."
+          "title": "Draft KO localization pending native pass. Ephemeris Data Boundary Rule",
+          "scanner": "Draft KO localization pending native pass. Data boundary: prose owns bands; final orbital numbers stay table-owned.",
+          "terminal": "Draft KO localization pending native pass. DATA BOUNDARY: prose may state roles, hazards, and bands. Exact orbital values stay out.",
+          "audio": "Draft KO localization pending native pass. Numbers are allowed when the table owns them.",
+          "in_game_wiki": "Draft KO localization pending native pass. This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.",
+          "external_site": "Draft KO localization pending native pass. Public pages can explain Aegir, HECTON-8, transfer windows, and route hazards without freezing exact orbital constants in prose.",
+          "field_note": "Draft KO localization pending native pass. Ephemeris records explain route logic while exact constants remain table-owned data."
         },
         "he_IL": {
-          "title": "HE LOC: Ephemeris Handoff Rule",
-          "scanner": "HE LOC: Authoring rule: prose owns bands; final orbital numbers stay table-owned.",
-          "terminal": "HE LOC: HANDOFF. Prose may state roles, hazards and bands. Exact orbital values stay out.",
-          "audio": "HE LOC HOLD: Numbers are allowed when the table owns them.",
-          "in_game_wiki": "HE LOC HOLD: This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.",
-          "external_site": "HE LOC HOLD: Public pages can explain the system now; exact mechanics remain authored through dedicated celestial data later.",
-          "field_note": "HE LOC HOLD: Use as internal/public source boundary for astronomy articles and future DataMonolith table work."
+          "title": "Draft HE localization pending native pass. Ephemeris Data Boundary Rule",
+          "scanner": "Draft HE localization pending native pass. Data boundary: prose owns bands; final orbital numbers stay table-owned.",
+          "terminal": "Draft HE localization pending native pass. DATA BOUNDARY: prose may state roles, hazards, and bands. Exact orbital values stay out.",
+          "audio": "Draft HE localization pending native pass. Numbers are allowed when the table owns them.",
+          "in_game_wiki": "Draft HE localization pending native pass. This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.",
+          "external_site": "Draft HE localization pending native pass. Public pages can explain Aegir, HECTON-8, transfer windows, and route hazards without freezing exact orbital constants in prose.",
+          "field_note": "Draft HE localization pending native pass. Ephemeris records explain route logic while exact constants remain table-owned data."
         },
         "pt_BR": {
-          "title": "PT-BR LOC: Ephemeris Handoff Rule",
-          "scanner": "PT-BR LOC: Authoring rule: prose owns bands; final orbital numbers stay table-owned.",
-          "terminal": "PT-BR LOC: HANDOFF. Prose may state roles, hazards and bands. Exact orbital values stay out.",
-          "audio": "PT LOC HOLD: Numbers are allowed when the table owns them.",
-          "in_game_wiki": "PT LOC HOLD: This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.",
-          "external_site": "PT LOC HOLD: Public pages can explain the system now; exact mechanics remain authored through dedicated celestial data later.",
-          "field_note": "PT LOC HOLD: Use as internal/public source boundary for astronomy articles and future DataMonolith table work."
+          "title": "Draft PT localization pending native pass. Ephemeris Data Boundary Rule",
+          "scanner": "Draft PT localization pending native pass. Data boundary: prose owns bands; final orbital numbers stay table-owned.",
+          "terminal": "Draft PT localization pending native pass. DATA BOUNDARY: prose may state roles, hazards, and bands. Exact orbital values stay out.",
+          "audio": "Draft PT localization pending native pass. Numbers are allowed when the table owns them.",
+          "in_game_wiki": "Draft PT localization pending native pass. This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.",
+          "external_site": "Draft PT localization pending native pass. Public pages can explain Aegir, HECTON-8, transfer windows, and route hazards without freezing exact orbital constants in prose.",
+          "field_note": "Draft PT localization pending native pass. Ephemeris records explain route logic while exact constants remain table-owned data."
         },
         "nl_NL": {
-          "title": "NL LOC: Ephemeris Handoff Rule",
-          "scanner": "NL LOC: Authoring rule: prose owns bands; final orbital numbers stay table-owned.",
-          "terminal": "NL LOC: HANDOFF. Prose may state roles, hazards and bands. Exact orbital values stay out.",
-          "audio": "NL LOC HOLD: Numbers are allowed when the table owns them.",
-          "in_game_wiki": "NL LOC HOLD: This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.",
-          "external_site": "NL LOC HOLD: Public pages can explain the system now; exact mechanics remain authored through dedicated celestial data later.",
-          "field_note": "NL LOC HOLD: Use as internal/public source boundary for astronomy articles and future DataMonolith table work."
+          "title": "Draft NL localization pending native pass. Ephemeris Data Boundary Rule",
+          "scanner": "Draft NL localization pending native pass. Data boundary: prose owns bands; final orbital numbers stay table-owned.",
+          "terminal": "Draft NL localization pending native pass. DATA BOUNDARY: prose may state roles, hazards, and bands. Exact orbital values stay out.",
+          "audio": "Draft NL localization pending native pass. Numbers are allowed when the table owns them.",
+          "in_game_wiki": "Draft NL localization pending native pass. This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.",
+          "external_site": "Draft NL localization pending native pass. Public pages can explain Aegir, HECTON-8, transfer windows, and route hazards without freezing exact orbital constants in prose.",
+          "field_note": "Draft NL localization pending native pass. Ephemeris records explain route logic while exact constants remain table-owned data."
         }
       }
     }

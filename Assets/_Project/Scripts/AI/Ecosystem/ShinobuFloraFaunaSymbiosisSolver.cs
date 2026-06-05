@@ -1049,23 +1049,33 @@ namespace Hecton8.AI.Ecosystem
             if (vault == null || !snapshot.IsCreated || vault.IsCompactionFenceActive)
                 return false;
 
-            if (!TryResolveVaultBuffer(vault, in handle, bufferId, out NativeArray<T> source))
+            if (!TryAcquireSymbiosisMutationGuard(vault, bufferId))
                 return false;
 
-            int safeCount = math.min(source.Length, snapshot.Length);
-            int stride = UnsafeUtility.SizeOf<T>();
-            byte* snapshotPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(snapshot);
-            if (safeCount > 0)
+            try
             {
-                void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
-                UnsafeUtility.MemCpy(snapshotPtr, sourcePtr, (long)stride * safeCount);
+                if (!TryResolveVaultBuffer(vault, in handle, bufferId, out NativeArray<T> source))
+                    return false;
+
+                int safeCount = math.min(source.Length, snapshot.Length);
+                int stride = UnsafeUtility.SizeOf<T>();
+                byte* snapshotPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(snapshot);
+                if (safeCount > 0)
+                {
+                    void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
+                    UnsafeUtility.MemCpy(snapshotPtr, sourcePtr, (long)stride * safeCount);
+                }
+
+                int tailCount = snapshot.Length - safeCount;
+                if (tailCount > 0)
+                    UnsafeUtility.MemClear(snapshotPtr + ((long)stride * safeCount), (long)stride * tailCount);
+
+                return true;
             }
-
-            int tailCount = snapshot.Length - safeCount;
-            if (tailCount > 0)
-                UnsafeUtility.MemClear(snapshotPtr + ((long)stride * safeCount), (long)stride * tailCount);
-
-            return true;
+            finally
+            {
+                ReleaseSymbiosisMutationGuard(vault, bufferId);
+            }
         }
 
         private void RefreshAupSignals()
@@ -1338,16 +1348,28 @@ namespace Hecton8.AI.Ecosystem
                 return false;
             }
 
-            if (!TryResolveOwnedVaultBuffer(vault, in _tuningHandle, BufferID.ShinobuSymbiosisTuning, out NativeArray<SymbiosisTuningDTO> tuning) ||
-                !tuning.IsCreated ||
-                tuning.Length <= 0)
+            if (!TryAcquireSymbiosisMutationGuard(vault, BufferID.ShinobuSymbiosisTuning))
             {
                 return false;
             }
 
-            raw = tuning[0];
-            dto = SymbiosisTuningDTO.Sanitize(raw);
-            return true;
+            try
+            {
+                if (!TryResolveOwnedVaultBuffer(vault, in _tuningHandle, BufferID.ShinobuSymbiosisTuning, out NativeArray<SymbiosisTuningDTO> tuning) ||
+                    !tuning.IsCreated ||
+                    tuning.Length <= 0)
+                {
+                    return false;
+                }
+
+                raw = tuning[0];
+                dto = SymbiosisTuningDTO.Sanitize(raw);
+                return true;
+            }
+            finally
+            {
+                ReleaseSymbiosisMutationGuard(vault, BufferID.ShinobuSymbiosisTuning);
+            }
         }
 
         private bool TryWriteSymbiosisTuning(IDataVault vault, SymbiosisTuningDTO dto)
@@ -1430,15 +1452,27 @@ namespace Hecton8.AI.Ecosystem
                 return false;
             }
 
-            if (!TryResolveOwnedVaultBuffer(vault, in _counterHandle, BufferID.ShinobuSymbiosisCounters, out NativeArray<SymbiosisCounterDTO> counters) ||
-                !counters.IsCreated ||
-                counters.Length <= 0)
+            if (!TryAcquireSymbiosisMutationGuard(vault, BufferID.ShinobuSymbiosisCounters))
             {
                 return false;
             }
 
-            counter = counters[0];
-            return true;
+            try
+            {
+                if (!TryResolveOwnedVaultBuffer(vault, in _counterHandle, BufferID.ShinobuSymbiosisCounters, out NativeArray<SymbiosisCounterDTO> counters) ||
+                    !counters.IsCreated ||
+                    counters.Length <= 0)
+                {
+                    return false;
+                }
+
+                counter = counters[0];
+                return true;
+            }
+            finally
+            {
+                ReleaseSymbiosisMutationGuard(vault, BufferID.ShinobuSymbiosisCounters);
+            }
         }
 
         private bool TryWriteSymbiosisCounter(IDataVault vault, SymbiosisCounterDTO counter)

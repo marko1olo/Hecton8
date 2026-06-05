@@ -1,0 +1,91 @@
+AGENT ID: 1809
+ROLE: PHOTIC_SHALLOWS_BIOTA_PLACEMENT_MANIFEST
+MODE: Independent Wave 02 static placement/data task. Do not wait for 1803-1805.
+
+PRIMARY GOAL
+Prepare a concrete photic-shallows biota placement manifest for 0-100 m. The route needs colorful alien biota, corals, kelp, navigation-useful bioluminescence, and living silhouettes, not empty water and not random runtime procedural clutter.
+
+AUTHORITIES TO READ
+- C:\hades\Hecton8\AGENTS.md
+- C:\hades\Hecton8\PROJECT_BIBLES.md
+- C:\hades\Hecton8\VISION_LOCKS.md
+- C:\hades\Hecton8\TASTE.md
+- C:\hades\Hecton8\quality.md
+- C:\hades\Hecton8\world.md
+- C:\hades\Hecton8\creatures.md
+- C:\hades\Hecton8\vfx.md
+- C:\hades\Hecton8\water.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1801_WORLD_SURFACE_ROUTE_EVIDENCE.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1802_SURFACE_SHALLOW_ASSET_INVENTORY.md
+
+LIKELY PATHS TO INSPECT
+- Assets/_Project/Prefabs/Nature/Flora/Baked/
+- Assets/_Project/Art/TEXTURES/WorldProceduralFlora/
+- Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_coral_*.mat
+- Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_kelp_*.mat
+- Assets/_Project/Art/Shaders/Hecton_CoralMaster_GPUI.shader
+- Assets/_Project/Art/Shaders/Hecton_KelpMaster_GPUI.shader
+- Assets/_Project/Art/Generated/Flora/BioForge/Shallows/
+- Assets/_Project/Data/World/ProceduralPlacementRules/
+- Assets/_Project/Data/Biomes/MatrixProfiles/
+- Assets/_Project/Data/World/ZonePlans/
+- Assets/_Project/Scenes/02_HECTON_WORLD.unity
+
+OWNED OUTPUTS
+- Docs/Tasks/Status_1809.md
+- Docs/AgentLogs/Rationale_1809.md for decisions only
+- Docs/AgentLogs/LOG_1809.md
+- Docs/Reports/Batch18/1809_PHOTIC_SHALLOWS_BIOTA_MANIFEST.md
+- Docs/Reports/Batch18/1809_PHOTIC_SHALLOWS_BIOTA_MANIFEST.csv
+
+HARD RULES
+- No live Unity control.
+- No scene edits.
+- No runtime-generated hero biota as final route.
+- Use baked/offline assets and placement rules as candidates, not proof.
+- Compact mode must still be colorful and beautiful.
+- Bioluminescence can help navigation and attract life, but cannot be random noise.
+
+MANIFEST COLUMNS
+- route_zone
+- depth_band
+- biome_or_zone_plan
+- candidate_prefab_or_asset
+- material_family
+- silhouette_role
+- color_role
+- navigation_role
+- hazard_or_fauna_role
+- density_compact
+- density_middle
+- density_high
+- density_ultra
+- runtime_risk
+- required_unity_capture
+- rejection_gate
+- proof_source
+
+20 TASKS
+01. Create Status_1809.md with proof labels.
+02. Read required docs and selected mandates.
+03. Confirm 0-100 m bright/beautiful lock and depth-band boundaries from VISION_LOCKS.
+04. Inspect baked flora prefab families and representative metadata/YAML.
+05. Inspect placement rules for starter kelp/coral and depth ranges.
+06. Inspect biome matrix/zone plans relevant to starter surface/photic route.
+07. Inspect material/shader candidate families for coral/kelp and any missing texture refs.
+08. Build manifest CSV with depth bands and route roles.
+09. Build Markdown report explaining density strategy and proof boundary.
+10. Separate beauty/navigation/hazard roles.
+11. Define Compact/Middle/High/Ultra densities without ugly compact mode.
+12. Identify assets that are layout/proxy only and rejected as final references.
+13. Define screenshot proof: 5-20 m, 30-100 m, route-facing, top-down, compact comparison.
+14. Define profiler/GC proof needed for any scatter/instancing path.
+15. Add fauna-shadow and living-silhouette caveats from 1801 without claiming behavior.
+16. Write Unity-slot implementer prompt for biota placement.
+17. Write offline asset/bake prompt for missing masks/textures/variants.
+18. Append LOG_1809.md.
+19. Final scan for fake density, fake counts, fake runtime proof.
+20. Mark final state STATIC BIOTA MANIFEST COMPLETE or BLOCKED BY MISSING STATIC EVIDENCE.
+
+ACCEPTANCE
+Done means the first photic route has a path-based biota placement plan with visual, gameplay, and performance acceptance criteria.

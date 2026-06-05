@@ -10,17 +10,17 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Протокол приемника: публичный ledger
+# Payload Public Ledger Receiver Protocol
 
-Public truth в HECTON-8 не clean win. Он ломает silence, но игрок теряет контроль над тем, кто использует evidence.
+Public truth in HECTON-8 is not a clean win. It breaks silence, but the player loses control over who uses the evidence.
 
 ## Scanner
 
-Ledger route. Public proof уходит из океана раньше, чем кто-то сможет cleanly own the story.
+Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.
 
 ## Terminal
 
@@ -28,10 +28,10 @@ PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordina
 
 ## Audio
 
-Когда это уйдет, это уже не твоя truth. В этом смысл и цена.
+Once it leaves, it is no longer your truth. That is the point and the cost.
 
 ## Field Note
 
-Для spoiler-gated article и late-game uplink record.
+Receiver record: public ledger release moves proof outside Deep Reach custody and outside player control.
 
 <!-- External Site; generated from P379_PAYLOAD_PUBLIC_LEDGER_RECEIVER_PROTOCOL/ru_RU. -->

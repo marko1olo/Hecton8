@@ -10,21 +10,21 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Lock композиции home page
+# Public Opening Composition Rule
 
-Site home lock держит public copy concrete and spoiler-safe.
+Public Opening Composition Rule keeps public copy concrete and spoiler-safe.
 
 ## Scanner
 
-Site home lock: one real machine/route image before lore.
+Public opening: one real machine or route image before lore explanation.
 
 ## Terminal
 
-PUBLIC COMPOSITION: home page starts with pressure, machinery, salvage and bad return path; no demo/platform/release claims without proof.
+PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.
 
 ## Audio
 
@@ -32,6 +32,6 @@ PUBLIC COMPOSITION: home page starts with pressure, machinery, salvage and bad r
 
 ## Field Note
 
-Use textes.md: no hype, no wishlist/release/demo claim without proof.
+No hype calendar, wishlist, release, or demo claim appears without proof.
 
 <!-- In-Game Wiki; generated from P311_SITE_HOME_PAGE_COMPOSITION_LOCK/ru_RU. -->

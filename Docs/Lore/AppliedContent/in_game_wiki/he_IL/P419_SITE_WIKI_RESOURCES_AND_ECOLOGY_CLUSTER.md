@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Site Wiki Resources and Ecology Cluster
+# Resources and Ecology
 
-This cluster ties resource recipes to geology and ecology. It separates native processes from Deep-Reach amplification and Atlas-altered maintenance life.
+Resource/ecology hub: drowned crust, brine ladders, vent chemistry, living systems and Atlas' damaged repair logic.
 
 ## Scanner
 
-Publication cluster: resources and ecology. Geology, blue debt, fauna grammar and repair misuse.
+Publication hub: geology, blue debt, fauna grammar and Atlas repair-network misuse.
 
 ## Terminal
 
-SITE NAV: group native geology, process feedstock, Atlas-altered resources, shallow ecology and encounter grammar as one process map.
+SITE NAV: native geology, process feedstock, Atlas-altered resources, shallow ecology and encounter grammar as one process map.
 
 ## Audio
 
-Nothing here is just loot. Even the useful pieces came from pressure, life or a broken repair system.
+Nothing here is just loot.
 
 ## Field Note
 
-Use for wiki resource hub, ecology index and art brief grouping.
+Navigation cluster record: resources and ecology belong together when materials, biota, and evidence pressure share the same route.
 
 <!-- In-Game Wiki; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/he_IL. -->

@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ Once it leaves, it is no longer your truth. That is the point and the cost.
 
 ## Field Note
 
-Use as spoiler-gated article and late-game uplink record.
+Receiver record: public ledger release moves proof outside Deep Reach custody and outside player control.
 
 <!-- External Site; generated from P379_PAYLOAD_PUBLIC_LEDGER_RECEIVER_PROTOCOL/en_US. -->

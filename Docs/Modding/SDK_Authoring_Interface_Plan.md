@@ -6,6 +6,10 @@ Owner domain: Modding SDK product contract
 Runtime authority: `Docs/Modding/Mod_API_Sandbox_Quarantine.md`
 Product blueprint: `Docs/Modding/SDK_Product_Blueprint.md`
 
+## Authority Boundary
+
+Root `modding.md` owns the public modding boundary. This SDK authoring plan describes editor/offline authoring surfaces only; it is not runtime loader readiness, platform readiness, release proof, or public API approval. Workbench, CLI, starter-kit, local install, diagnosis, graph, manifest, and submission routes remain authoring/review states until `Docs/Modding/Runtime_Verification_Playbook.md` passes with current proof artifacts; platform and release claims still require `platform.md` and `release.md`.
+
 ## Purpose
 
 This document defines how human modders should work with HECTON-8 modding after the UGC sandbox quarantine.

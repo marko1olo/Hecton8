@@ -1,7 +1,10 @@
 ﻿# VISOR AR Stencil Renderer
 
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
 Owner: SHINOBU_270
+Owner domain: Echelon 8 Presentation & UX / Visor AR
 Domain: ECHELON 8 Presentation & UX / Visor AR (HUD)
+Review disposition: YELLOW / STATIC_DOC_ONLY until compile/import/runtime/profiler/player proof exists.
 
 ## Authority Boundary
 
@@ -38,6 +41,13 @@ Player/runtime builds must not load human-readable visor profiles from `Streamin
 - Local descriptors are tombstoned after release.
 - It must not use `ReleaseOwnerBuffers(SystemID.UI)`.
 - UI owns neighboring lanes outside SHINOBU_270.
+
+## 2026-06-05 Adjacent Visor Source Anchors
+
+Evidence class: STATIC_SOURCE / STATIC_DOC only. This addendum does not change SHINOBU_270 ownership and does not prove Unity import, RenderGraph execution, GPU timing, GC, or visual quality.
+
+- `Assets/_Project/Scripts/Visor/SpectrumSystem.cs` is an adjacent visor spectrum/sonar owner, not SHINOBU_270 AR stencil truth. It owns bounded presentation queues for spectrum mode, sonar pulse/ping, spatial sonar snapshots, acoustic echo returns, and ping-return signals; consumes `SignalBus<AcousticPingSignal>` for active sonar geo presentation; and writes active-sonar geo telemetry under `SystemID.UI`. Stencil AR may consume only stable owner-published sensor/UI facts, not poll Spectrum internals.
+- `Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs` is an adjacent fullscreen visor fluid distortion renderer, not AR target, route, or HUD-vital authority. Its RenderGraph pass reads camera color/depth/opaque texture, optional lens mask, and constant buffers, then writes the camera color replacement for visor wetness/leak refraction. It is a visual fake boundary over cached wet-lens, hull-stress, rain, water-density, and quality fields. It must not own gameplay water truth, damage truth, objective truth, or AR waypoint truth. Required proof remains Frame Debugger/RenderGraph Viewer, profiler/GC, renderer asset binding, and compact/high readability captures.
 
 ## Render Route
 

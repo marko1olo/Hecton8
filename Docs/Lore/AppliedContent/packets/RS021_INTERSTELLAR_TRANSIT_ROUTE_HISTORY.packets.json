@@ -498,133 +498,133 @@
           "terminal": "CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.",
           "audio": "The star chart calls it H8. The people who died here called it HECTON.",
           "in_game_wiki": "HECTON-8 can carry two names without confusing the setting. Dry route catalogs use RAN-B:H8: Ran system, Aegir-class giant, eighth indexed major moon. Deep Reach and Marauders mostly use HECTON-8 because that is the claim name attached to contracts, deaths and salvage law.",
-          "external_site": "RAN-B:H8 Public Catalog gives the website/wiki a hard-sci-fi label while preserving HECTON-8 as the game's emotional and legal name. It also lets future astronomy pages distinguish real-system inspiration from fictional moon content."
+          "external_site": "RAN-B:H8 is the hard astronomy label for the HECTON-8 destination: a real-scale route name beside the survivor-facing moon name."
         },
         "ru_RU": {
-          "title": "Публичный каталог RAN-B:H8",
-          "scanner": "Catalog plate. Публичная route label RAN-B:H8; project label Deep Reach - HECTON-8.",
-          "field_note": "В игре использовать HECTON-8. RAN-B:H8 использовать там, где документу нужна сухая астрономия.",
-          "terminal": "CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.",
-          "audio": "Звездная карта зовет это H8. Люди, которые умерли здесь, звали это HECTON.",
-          "in_game_wiki": "HECTON-8 может иметь два имени без путаницы. Сухие route catalogs используют RAN-B:H8: система Ran, гигант Aegir-class, восьмая индексированная крупная луна. Deep Reach и Marauders чаще используют HECTON-8, потому что это имя claim привязано к контрактам, смертям и salvage law.",
-          "external_site": "Публичный каталог RAN-B:H8 дает сайту/вики hard-sci-fi label, сохраняя HECTON-8 как эмоциональное и юридическое имя игры. Это также позволит будущим астрономическим страницам отделить real-system inspiration от fictional moon content."
+          "title": "Draft RU localization pending native pass. RAN-B:H8 Public Catalog",
+          "scanner": "Draft RU localization pending native pass. Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.",
+          "field_note": "Draft RU localization pending native pass. Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.",
+          "terminal": "Draft RU localization pending native pass. CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.",
+          "audio": "Draft RU localization pending native pass. The star chart calls it H8. The people who died here called it HECTON.",
+          "in_game_wiki": "Draft RU localization pending native pass. HECTON-8 can carry two names without confusing the setting. Dry route catalogs use RAN-B:H8: Ran system, Aegir-class giant, eighth indexed major moon. Deep Reach and Marauders mostly use HECTON-8 because that is the claim name attached to contracts, deaths and salvage law.",
+          "external_site": "Draft RU localization pending native pass. RAN-B:H8 is the hard astronomy label for the HECTON-8 destination: a real-scale route name beside the survivor-facing moon name."
         },
         "ja_JP": {
-          "title": "RAN-B:H8 Public Catalog",
-          "scanner": "Draft JP localization pending native pass. Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.",
-          "field_note": "Draft JP localization pending native pass. Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.",
-          "terminal": "Draft JP localization pending native pass. CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.",
-          "audio": "Draft JP localization pending native pass. The star chart calls it H8. The people who died here called it HECTON.",
-          "in_game_wiki": "Draft JP localization pending native pass. HECTON-8 can carry two names without confusing the setting. Dry route catalogs use RAN-B:H8: Ran system, Aegir-class giant, eighth indexed major moon. Deep Reach and Marauders mostly use HECTON-8 because that is the claim name attached to contracts, deaths and salvage law.",
-          "external_site": "Draft JP localization pending native pass. RAN-B:H8 Public Catalog gives the website/wiki a hard-sci-fi label while preserving HECTON-8 as the game's emotional and legal name. It also lets future astronomy pages distinguish real-system inspiration from fictional moon content."
+          "title": "Draft JA localization pending native pass. RAN-B:H8 Public Catalog",
+          "scanner": "Draft JA localization pending native pass. Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.",
+          "field_note": "Draft JA localization pending native pass. Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.",
+          "terminal": "Draft JA localization pending native pass. CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.",
+          "audio": "Draft JA localization pending native pass. The star chart calls it H8. The people who died here called it HECTON.",
+          "in_game_wiki": "Draft JA localization pending native pass. HECTON-8 can carry two names without confusing the setting. Dry route catalogs use RAN-B:H8: Ran system, Aegir-class giant, eighth indexed major moon. Deep Reach and Marauders mostly use HECTON-8 because that is the claim name attached to contracts, deaths and salvage law.",
+          "external_site": "Draft JA localization pending native pass. RAN-B:H8 is the hard astronomy label for the HECTON-8 destination: a real-scale route name beside the survivor-facing moon name."
         },
         "zh_CN": {
-          "title": "RAN-B:H8 Public Catalog",
-          "scanner": "Draft CN localization pending native pass. Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.",
-          "field_note": "Draft CN localization pending native pass. Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.",
-          "terminal": "Draft CN localization pending native pass. CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.",
-          "audio": "Draft CN localization pending native pass. The star chart calls it H8. The people who died here called it HECTON.",
-          "in_game_wiki": "Draft CN localization pending native pass. HECTON-8 can carry two names without confusing the setting. Dry route catalogs use RAN-B:H8: Ran system, Aegir-class giant, eighth indexed major moon. Deep Reach and Marauders mostly use HECTON-8 because that is the claim name attached to contracts, deaths and salvage law.",
-          "external_site": "Draft CN localization pending native pass. RAN-B:H8 Public Catalog gives the website/wiki a hard-sci-fi label while preserving HECTON-8 as the game's emotional and legal name. It also lets future astronomy pages distinguish real-system inspiration from fictional moon content."
+          "title": "Draft ZH localization pending native pass. RAN-B:H8 Public Catalog",
+          "scanner": "Draft ZH localization pending native pass. Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.",
+          "field_note": "Draft ZH localization pending native pass. Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.",
+          "terminal": "Draft ZH localization pending native pass. CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.",
+          "audio": "Draft ZH localization pending native pass. The star chart calls it H8. The people who died here called it HECTON.",
+          "in_game_wiki": "Draft ZH localization pending native pass. HECTON-8 can carry two names without confusing the setting. Dry route catalogs use RAN-B:H8: Ran system, Aegir-class giant, eighth indexed major moon. Deep Reach and Marauders mostly use HECTON-8 because that is the claim name attached to contracts, deaths and salvage law.",
+          "external_site": "Draft ZH localization pending native pass. RAN-B:H8 is the hard astronomy label for the HECTON-8 destination: a real-scale route name beside the survivor-facing moon name."
         },
         "fr_FR": {
-          "title": "RAN-B:H8 Public Catalog",
+          "title": "Draft FR localization pending native pass. RAN-B:H8 Public Catalog",
           "scanner": "Draft FR localization pending native pass. Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.",
           "field_note": "Draft FR localization pending native pass. Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.",
           "terminal": "Draft FR localization pending native pass. CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.",
           "audio": "Draft FR localization pending native pass. The star chart calls it H8. The people who died here called it HECTON.",
           "in_game_wiki": "Draft FR localization pending native pass. HECTON-8 can carry two names without confusing the setting. Dry route catalogs use RAN-B:H8: Ran system, Aegir-class giant, eighth indexed major moon. Deep Reach and Marauders mostly use HECTON-8 because that is the claim name attached to contracts, deaths and salvage law.",
-          "external_site": "Draft FR localization pending native pass. RAN-B:H8 Public Catalog gives the website/wiki a hard-sci-fi label while preserving HECTON-8 as the game's emotional and legal name. It also lets future astronomy pages distinguish real-system inspiration from fictional moon content."
+          "external_site": "Draft FR localization pending native pass. RAN-B:H8 is the hard astronomy label for the HECTON-8 destination: a real-scale route name beside the survivor-facing moon name."
         },
         "es_ES": {
-          "title": "RAN-B:H8 Public Catalog",
+          "title": "Draft ES localization pending native pass. RAN-B:H8 Public Catalog",
           "scanner": "Draft ES localization pending native pass. Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.",
           "field_note": "Draft ES localization pending native pass. Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.",
           "terminal": "Draft ES localization pending native pass. CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.",
           "audio": "Draft ES localization pending native pass. The star chart calls it H8. The people who died here called it HECTON.",
           "in_game_wiki": "Draft ES localization pending native pass. HECTON-8 can carry two names without confusing the setting. Dry route catalogs use RAN-B:H8: Ran system, Aegir-class giant, eighth indexed major moon. Deep Reach and Marauders mostly use HECTON-8 because that is the claim name attached to contracts, deaths and salvage law.",
-          "external_site": "Draft ES localization pending native pass. RAN-B:H8 Public Catalog gives the website/wiki a hard-sci-fi label while preserving HECTON-8 as the game's emotional and legal name. It also lets future astronomy pages distinguish real-system inspiration from fictional moon content."
+          "external_site": "Draft ES localization pending native pass. RAN-B:H8 is the hard astronomy label for the HECTON-8 destination: a real-scale route name beside the survivor-facing moon name."
         },
         "de_DE": {
-          "title": "RAN-B:H8 Public Catalog",
+          "title": "Draft DE localization pending native pass. RAN-B:H8 Public Catalog",
           "scanner": "Draft DE localization pending native pass. Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.",
           "field_note": "Draft DE localization pending native pass. Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.",
           "terminal": "Draft DE localization pending native pass. CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.",
           "audio": "Draft DE localization pending native pass. The star chart calls it H8. The people who died here called it HECTON.",
           "in_game_wiki": "Draft DE localization pending native pass. HECTON-8 can carry two names without confusing the setting. Dry route catalogs use RAN-B:H8: Ran system, Aegir-class giant, eighth indexed major moon. Deep Reach and Marauders mostly use HECTON-8 because that is the claim name attached to contracts, deaths and salvage law.",
-          "external_site": "Draft DE localization pending native pass. RAN-B:H8 Public Catalog gives the website/wiki a hard-sci-fi label while preserving HECTON-8 as the game's emotional and legal name. It also lets future astronomy pages distinguish real-system inspiration from fictional moon content."
+          "external_site": "Draft DE localization pending native pass. RAN-B:H8 is the hard astronomy label for the HECTON-8 destination: a real-scale route name beside the survivor-facing moon name."
         },
         "pl_PL": {
-          "title": "RAN-B:H8 Public Catalog",
+          "title": "Draft PL localization pending native pass. RAN-B:H8 Public Catalog",
           "scanner": "Draft PL localization pending native pass. Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.",
           "field_note": "Draft PL localization pending native pass. Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.",
           "terminal": "Draft PL localization pending native pass. CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.",
           "audio": "Draft PL localization pending native pass. The star chart calls it H8. The people who died here called it HECTON.",
           "in_game_wiki": "Draft PL localization pending native pass. HECTON-8 can carry two names without confusing the setting. Dry route catalogs use RAN-B:H8: Ran system, Aegir-class giant, eighth indexed major moon. Deep Reach and Marauders mostly use HECTON-8 because that is the claim name attached to contracts, deaths and salvage law.",
-          "external_site": "Draft PL localization pending native pass. RAN-B:H8 Public Catalog gives the website/wiki a hard-sci-fi label while preserving HECTON-8 as the game's emotional and legal name. It also lets future astronomy pages distinguish real-system inspiration from fictional moon content."
+          "external_site": "Draft PL localization pending native pass. RAN-B:H8 is the hard astronomy label for the HECTON-8 destination: a real-scale route name beside the survivor-facing moon name."
         },
         "uk_UA": {
-          "title": "RAN-B:H8 Public Catalog",
-          "scanner": "Draft UA localization pending native pass. Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.",
-          "field_note": "Draft UA localization pending native pass. Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.",
-          "terminal": "Draft UA localization pending native pass. CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.",
-          "audio": "Draft UA localization pending native pass. The star chart calls it H8. The people who died here called it HECTON.",
-          "in_game_wiki": "Draft UA localization pending native pass. HECTON-8 can carry two names without confusing the setting. Dry route catalogs use RAN-B:H8: Ran system, Aegir-class giant, eighth indexed major moon. Deep Reach and Marauders mostly use HECTON-8 because that is the claim name attached to contracts, deaths and salvage law.",
-          "external_site": "Draft UA localization pending native pass. RAN-B:H8 Public Catalog gives the website/wiki a hard-sci-fi label while preserving HECTON-8 as the game's emotional and legal name. It also lets future astronomy pages distinguish real-system inspiration from fictional moon content."
+          "title": "Draft UK localization pending native pass. RAN-B:H8 Public Catalog",
+          "scanner": "Draft UK localization pending native pass. Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.",
+          "field_note": "Draft UK localization pending native pass. Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.",
+          "terminal": "Draft UK localization pending native pass. CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.",
+          "audio": "Draft UK localization pending native pass. The star chart calls it H8. The people who died here called it HECTON.",
+          "in_game_wiki": "Draft UK localization pending native pass. HECTON-8 can carry two names without confusing the setting. Dry route catalogs use RAN-B:H8: Ran system, Aegir-class giant, eighth indexed major moon. Deep Reach and Marauders mostly use HECTON-8 because that is the claim name attached to contracts, deaths and salvage law.",
+          "external_site": "Draft UK localization pending native pass. RAN-B:H8 is the hard astronomy label for the HECTON-8 destination: a real-scale route name beside the survivor-facing moon name."
         },
         "ar_SA": {
-          "title": "RAN-B:H8 Public Catalog",
+          "title": "Draft AR localization pending native pass. RAN-B:H8 Public Catalog",
           "scanner": "Draft AR localization pending native pass. Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.",
           "field_note": "Draft AR localization pending native pass. Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.",
           "terminal": "Draft AR localization pending native pass. CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.",
           "audio": "Draft AR localization pending native pass. The star chart calls it H8. The people who died here called it HECTON.",
           "in_game_wiki": "Draft AR localization pending native pass. HECTON-8 can carry two names without confusing the setting. Dry route catalogs use RAN-B:H8: Ran system, Aegir-class giant, eighth indexed major moon. Deep Reach and Marauders mostly use HECTON-8 because that is the claim name attached to contracts, deaths and salvage law.",
-          "external_site": "Draft AR localization pending native pass. RAN-B:H8 Public Catalog gives the website/wiki a hard-sci-fi label while preserving HECTON-8 as the game's emotional and legal name. It also lets future astronomy pages distinguish real-system inspiration from fictional moon content."
+          "external_site": "Draft AR localization pending native pass. RAN-B:H8 is the hard astronomy label for the HECTON-8 destination: a real-scale route name beside the survivor-facing moon name."
         },
         "id_ID": {
-          "title": "RAN-B:H8 Public Catalog",
+          "title": "Draft ID localization pending native pass. RAN-B:H8 Public Catalog",
           "scanner": "Draft ID localization pending native pass. Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.",
           "field_note": "Draft ID localization pending native pass. Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.",
           "terminal": "Draft ID localization pending native pass. CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.",
           "audio": "Draft ID localization pending native pass. The star chart calls it H8. The people who died here called it HECTON.",
           "in_game_wiki": "Draft ID localization pending native pass. HECTON-8 can carry two names without confusing the setting. Dry route catalogs use RAN-B:H8: Ran system, Aegir-class giant, eighth indexed major moon. Deep Reach and Marauders mostly use HECTON-8 because that is the claim name attached to contracts, deaths and salvage law.",
-          "external_site": "Draft ID localization pending native pass. RAN-B:H8 Public Catalog gives the website/wiki a hard-sci-fi label while preserving HECTON-8 as the game's emotional and legal name. It also lets future astronomy pages distinguish real-system inspiration from fictional moon content."
+          "external_site": "Draft ID localization pending native pass. RAN-B:H8 is the hard astronomy label for the HECTON-8 destination: a real-scale route name beside the survivor-facing moon name."
         },
         "ko_KR": {
-          "title": "RAN-B:H8 Public Catalog",
+          "title": "Draft KO localization pending native pass. RAN-B:H8 Public Catalog",
           "scanner": "Draft KO localization pending native pass. Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.",
           "field_note": "Draft KO localization pending native pass. Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.",
           "terminal": "Draft KO localization pending native pass. CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.",
           "audio": "Draft KO localization pending native pass. The star chart calls it H8. The people who died here called it HECTON.",
           "in_game_wiki": "Draft KO localization pending native pass. HECTON-8 can carry two names without confusing the setting. Dry route catalogs use RAN-B:H8: Ran system, Aegir-class giant, eighth indexed major moon. Deep Reach and Marauders mostly use HECTON-8 because that is the claim name attached to contracts, deaths and salvage law.",
-          "external_site": "Draft KO localization pending native pass. RAN-B:H8 Public Catalog gives the website/wiki a hard-sci-fi label while preserving HECTON-8 as the game's emotional and legal name. It also lets future astronomy pages distinguish real-system inspiration from fictional moon content."
+          "external_site": "Draft KO localization pending native pass. RAN-B:H8 is the hard astronomy label for the HECTON-8 destination: a real-scale route name beside the survivor-facing moon name."
         },
         "he_IL": {
-          "title": "RAN-B:H8 Public Catalog",
+          "title": "Draft HE localization pending native pass. RAN-B:H8 Public Catalog",
           "scanner": "Draft HE localization pending native pass. Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.",
           "field_note": "Draft HE localization pending native pass. Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.",
           "terminal": "Draft HE localization pending native pass. CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.",
           "audio": "Draft HE localization pending native pass. The star chart calls it H8. The people who died here called it HECTON.",
           "in_game_wiki": "Draft HE localization pending native pass. HECTON-8 can carry two names without confusing the setting. Dry route catalogs use RAN-B:H8: Ran system, Aegir-class giant, eighth indexed major moon. Deep Reach and Marauders mostly use HECTON-8 because that is the claim name attached to contracts, deaths and salvage law.",
-          "external_site": "Draft HE localization pending native pass. RAN-B:H8 Public Catalog gives the website/wiki a hard-sci-fi label while preserving HECTON-8 as the game's emotional and legal name. It also lets future astronomy pages distinguish real-system inspiration from fictional moon content."
+          "external_site": "Draft HE localization pending native pass. RAN-B:H8 is the hard astronomy label for the HECTON-8 destination: a real-scale route name beside the survivor-facing moon name."
         },
         "pt_BR": {
-          "title": "RAN-B:H8 Public Catalog",
+          "title": "Draft PT localization pending native pass. RAN-B:H8 Public Catalog",
           "scanner": "Draft PT localization pending native pass. Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.",
           "field_note": "Draft PT localization pending native pass. Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.",
           "terminal": "Draft PT localization pending native pass. CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.",
           "audio": "Draft PT localization pending native pass. The star chart calls it H8. The people who died here called it HECTON.",
           "in_game_wiki": "Draft PT localization pending native pass. HECTON-8 can carry two names without confusing the setting. Dry route catalogs use RAN-B:H8: Ran system, Aegir-class giant, eighth indexed major moon. Deep Reach and Marauders mostly use HECTON-8 because that is the claim name attached to contracts, deaths and salvage law.",
-          "external_site": "Draft PT localization pending native pass. RAN-B:H8 Public Catalog gives the website/wiki a hard-sci-fi label while preserving HECTON-8 as the game's emotional and legal name. It also lets future astronomy pages distinguish real-system inspiration from fictional moon content."
+          "external_site": "Draft PT localization pending native pass. RAN-B:H8 is the hard astronomy label for the HECTON-8 destination: a real-scale route name beside the survivor-facing moon name."
         },
         "nl_NL": {
-          "title": "RAN-B:H8 Public Catalog",
+          "title": "Draft NL localization pending native pass. RAN-B:H8 Public Catalog",
           "scanner": "Draft NL localization pending native pass. Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.",
           "field_note": "Draft NL localization pending native pass. Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.",
           "terminal": "Draft NL localization pending native pass. CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common name HECTON-8 retained for claim continuity and insurance history.",
           "audio": "Draft NL localization pending native pass. The star chart calls it H8. The people who died here called it HECTON.",
           "in_game_wiki": "Draft NL localization pending native pass. HECTON-8 can carry two names without confusing the setting. Dry route catalogs use RAN-B:H8: Ran system, Aegir-class giant, eighth indexed major moon. Deep Reach and Marauders mostly use HECTON-8 because that is the claim name attached to contracts, deaths and salvage law.",
-          "external_site": "Draft NL localization pending native pass. RAN-B:H8 Public Catalog gives the website/wiki a hard-sci-fi label while preserving HECTON-8 as the game's emotional and legal name. It also lets future astronomy pages distinguish real-system inspiration from fictional moon content."
+          "external_site": "Draft NL localization pending native pass. RAN-B:H8 is the hard astronomy label for the HECTON-8 destination: a real-scale route name beside the survivor-facing moon name."
         }
       }
     },

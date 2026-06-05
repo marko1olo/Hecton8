@@ -1,7 +1,14 @@
 # HECTON-8 Camera, View, And Capture Bible
 
 Status: AUTHORING LAW / STATIC DOC / RUNTIME PROOF NOT IMPLIED
+Evidence class: STATIC_DOC
 Scope: player camera, cockpit camera, tool camera response, camera shake, cutscenes, screenshot/trailer capture, FOV, comfort, culling visibility, and camera proof gates.
+
+## First-20 Route Hook
+
+- First-20 moment: first exit, swim, resource pickup, tool interaction, and first hazard response need a stable pressure-view that keeps route cues, oxygen/pressure instruments, and target affordances visible.
+- Route blocker removed: prevents the opening route from hiding weak assets, interaction targets, or return paths behind shake, cinematic drift, fog framing, or capture-only beauty.
+- Proof class: STATIC_DOC only; route acceptance still requires real gameplay view capture, compact readability proof, interaction target proof, and profiler/GC/GPU evidence when runtime camera effects change.
 
 ## Prime Law
 

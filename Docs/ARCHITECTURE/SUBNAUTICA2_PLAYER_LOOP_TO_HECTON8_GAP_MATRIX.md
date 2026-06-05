@@ -3,6 +3,9 @@
 Date: 2026-05-17
 
 Status: ACTIVE PLAYER-LOOP GAP MATRIX / RUNTIME PENDING
+Evidence class: STATIC_DOC
+Owner domain: Echelon 5 Gameplay / static player-loop gap matrix
+Review disposition: YELLOW / STATIC_DOC_ONLY until compile/import/runtime/profiler/player proof exists.
 
 ## Clean-Room Boundary
 

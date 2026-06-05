@@ -19,6 +19,7 @@ namespace Hecton8.EditorTools
             HashSet<string> discoveredFamilies = new HashSet<string>(familyGuids.Length, StringComparer.Ordinal);
             int linkedVariants = 0;
             int missingPrefabs = 0;
+            int rejectedPrimitivePrefabs = 0;
 
             foreach (string familyGuid in familyGuids)
             {
@@ -31,7 +32,7 @@ namespace Hecton8.EditorTools
                     continue;
 
                 discoveredFamilies.Add(family.familyId);
-                if (ApplyVariantWave(family, specs, ref linkedVariants, ref missingPrefabs))
+                if (ApplyVariantWave(family, specs, ref linkedVariants, ref missingPrefabs, ref rejectedPrimitivePrefabs))
                     touchedFamilies.Add(family.familyId);
             }
 
@@ -49,14 +50,15 @@ namespace Hecton8.EditorTools
             AssetDatabase.Refresh();
 
             Debug.Log(
-                $"[WorldFinalVariantAuthoring] First-wave final variants applied. FamiliesTouched={touchedFamilies.Count}, VariantsLinked={linkedVariants}, MissingPrefabs={missingPrefabs}, MissingFamilies={missingFamilies}.");
+                $"[WorldFinalVariantAuthoring] First-wave final variants applied. FamiliesTouched={touchedFamilies.Count}, VariantsLinked={linkedVariants}, MissingPrefabs={missingPrefabs}, RejectedPrimitivePrefabs={rejectedPrimitivePrefabs}, MissingFamilies={missingFamilies}.");
         }
 
         private static bool ApplyVariantWave(
             WorldPrefabFamilyProfile family,
             IReadOnlyList<VariantSpec> specs,
             ref int linkedVariants,
-            ref int missingPrefabs)
+            ref int missingPrefabs,
+            ref int rejectedPrimitivePrefabs)
         {
             List<WorldPrefabFamilyProfile.VariantEntry> variants = new List<WorldPrefabFamilyProfile.VariantEntry>(family.variants ?? Array.Empty<WorldPrefabFamilyProfile.VariantEntry>());
             bool changed = false;
@@ -69,6 +71,13 @@ namespace Hecton8.EditorTools
                 {
                     missingPrefabs++;
                     Debug.LogWarning($"[WorldFinalVariantAuthoring] Missing prefab '{spec.PrefabPath}' for family '{family.familyId}'.");
+                    continue;
+                }
+
+                if (WorldProceduralFinalPrefabQualityGate.UsesUnityBuiltInPrimitiveMesh(prefab))
+                {
+                    rejectedPrimitivePrefabs++;
+                    Debug.LogError($"[WorldFinalVariantAuthoring] Rejecting primitive final prefab '{spec.PrefabPath}' for family '{family.familyId}' variant '{spec.VariantId}'.");
                     continue;
                 }
 

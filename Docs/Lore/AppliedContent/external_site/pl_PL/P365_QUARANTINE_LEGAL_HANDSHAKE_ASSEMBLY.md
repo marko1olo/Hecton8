@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ The last part is not metal. It is who gets to call you recovered.
 
 ## Field Note
 
-Use for exit UI, late terminal proof and ending payload bridge.
+Exit readiness is mechanical, legal, and evidentiary at once; the chosen receiver defines what recovery means.
 
 <!-- External Site; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/pl_PL. -->

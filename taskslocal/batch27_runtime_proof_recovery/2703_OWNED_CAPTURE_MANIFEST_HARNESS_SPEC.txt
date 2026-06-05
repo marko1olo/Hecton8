@@ -1,0 +1,48 @@
+ID: 2703
+Role: Owned Capture Manifest Harness Spec Auditor
+Mode: report-only, static/source/spec work. Do not edit project files except the required report.
+
+Objective:
+Produce a precise implementation spec for a HECTON-owned proof capture harness that prevents another false-labeled packet like 1474.
+
+Evidence basis:
+- Batch26 2601 proves generic MCP/dev screenshot routes do not emit route/depth/quality/log proof.
+- Acceptance now requires route-correct views plus manifest/checksums/camera/depth/quality/toggles/log path.
+
+Read first:
+- `AGENTS.md`
+- `camera.md`
+- `presentation.md`
+- `rendering.md`
+- `water.md`
+- `quality.md`
+- `Docs/Reports/Batch26/2601_CAPTURE_HARNESS_DEPTH_METADATA_AUDIT.md`
+- `Docs/Reports/Batch26/2606_PROOF_WATCHDOG_PROCESS_HYGIENE_AUDIT.md`
+
+Owned inspection scope:
+- `Assets/_Project/Editor/HectonDevToolsMenu.cs`
+- MCP screenshot package sources under `Library/PackageCache/com.coplaydev.unity-mcp*/`
+- first-party runtime owner sources only for read-only metadata targets: underwater visuals, depth zone director, quality/render scale owners, camera route owners
+- no Unity Editor control
+
+Tasks:
+1. Identify best file location/name for a first-party editor/runtime dev proof harness.
+2. Define six/seven required view IDs and strict route/depth predicates.
+3. Define manifest schema and exact fields using Batch26 2601/2606 as base.
+4. Define how harness reads owner snapshots without hot scene search in capture loop.
+5. Define how it computes SHA256, timestamps, sizes, and log binding.
+6. Define clean-window check and forbidden token filter.
+7. Define failure behavior: fail fast on false label, no screenshot or reject manifest only.
+8. Define minimal implementation phases that do not trigger broad Unity churn.
+9. Define what can be built without runtime route movement, and what must wait for Unity-owner.
+
+Required report:
+`Docs/Reports/Batch27/2703_OWNED_CAPTURE_MANIFEST_HARNESS_SPEC.md`
+
+Report must include:
+- proposed files/classes;
+- manifest schema;
+- route predicates;
+- owner snapshot sources;
+- no-Unity static implementation boundary;
+- runtime proof procedure for packet 1475.

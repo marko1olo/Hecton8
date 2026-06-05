@@ -1,5 +1,10 @@
 ﻿# SHINOBU_340 Pipe Drainage Route Card
 
+Status: `STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING`
+Evidence class: `STATIC_DOC / STATIC_SOURCE`
+Owner domain: construction/fluid drainage logistics
+Review disposition: `YELLOW / STATIC_DOC_ONLY` until compile/import/runtime/profiler/player proof exists.
+
 Owner: Construction / PIPE_CONDUCTANCE_SUMP_PUMP_FLOW
 
 ## Authority

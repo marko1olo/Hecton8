@@ -1,7 +1,14 @@
 # HECTON-8 Telemetry And Black Box Bible
 
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
+Evidence class: STATIC_DOC
 Scope: black-box rings, crash dumps, profiler markers, budget watchdogs, fault evidence, debug flags, post-mortem records, proof artifacts, and anti-fake reporting.
+
+## First-20 Route Hook
+
+- First-20 moment: boot, world load, first shallow exit, swim, interaction, hazard response, and save/load faults must leave bounded evidence instead of chat guesses.
+- Route blocker removed: silent route failures, unowned profiler markers, missing 300-record black boxes, log spam used as proof, and crash reports with no owner/sequence/fault class.
+- Proof class: `STATIC_DOC` until route-critical systems emit black-box records, dump manifests, profiler captures, GC proof, and failure/recovery artifacts.
 
 ## 1. Prime Law
 

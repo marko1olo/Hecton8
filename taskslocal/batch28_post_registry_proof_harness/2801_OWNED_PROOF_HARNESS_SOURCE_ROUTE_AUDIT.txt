@@ -1,0 +1,30 @@
+ID: 2801_OWNED_PROOF_HARNESS_SOURCE_ROUTE_AUDIT
+Role: proof harness source-route auditor
+
+Read:
+- `C:\hades\Hecton8\AGENTS.md`
+- `C:\hades\Hecton8\PROJECT_BIBLES.md`
+- `C:\hades\Hecton8\quality.md`
+- relevant `.agents-skills`: `QA_Evidence_Text_Filter_Audit.txt`, `ARCH_Execution_Phases.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
+- `Docs/Reports/Batch27/2703_OWNED_CAPTURE_MANIFEST_HARNESS_SPEC.md`
+- `Docs/Reports/Batch27/BATCH27_SYNTHESIS_FOR_UNITY_OWNER.md`
+
+Mission:
+Audit existing screenshot/capture/editor/MCP code and identify the smallest owner-correct path to produce an owned `1475` proof packet under `Docs/Screenshots/HectonProofPackets/h8_1475_{session_id}/`.
+
+Do:
+1. Find existing first-party capture/screenshot/proof scripts and MCP bridge helpers.
+2. Identify exact owner files/classes that can write manifest/checksum/timestamp/dimension/log binding without runtime allocations in hot paths.
+3. Specify required fields for the `1475` manifest.
+4. Specify how the harness proves route id, camera pose, depth zone, UI state, quality weight, material toggles, owner ids, log path, and clean post-capture log window.
+5. Identify compile/runtime risks and missing public proof snapshots.
+
+Do not:
+- Run Unity.
+- Start a build.
+- Modify `Assets/**`.
+- Claim runtime proof.
+
+Deliver:
+- `Docs/Reports/Batch28/2801_OWNED_PROOF_HARNESS_SOURCE_ROUTE_AUDIT.md`
+with exact file paths, candidate methods/classes, rejection gates, and a minimal implementation sequence.

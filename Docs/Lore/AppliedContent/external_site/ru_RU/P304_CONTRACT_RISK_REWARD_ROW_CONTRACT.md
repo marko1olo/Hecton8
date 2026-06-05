@@ -10,21 +10,21 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Контракт строки риска и награды
+# Contract Risk Reward Boundary
 
 Реиграбельность здесь не наследуемая сила, а худший контракт и более дорогой маршрут.
 
 ## Scanner
 
-Contract row: lien, storm window, custody, evidence order, clause weight.
+Contract boundary: lien, storm window, custody, evidence order, clause weight.
 
 ## Terminal
 
-CONTRACT HANDOFF: risk_reward rows требуют lien severity, payout ceiling, storm window, sample custody, evidence order и Deep Reach clause weight.
+CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.
 
 ## Audio
 
@@ -32,6 +32,6 @@ CONTRACT HANDOFF: risk_reward rows требуют lien severity, payout ceiling,
 
 ## Field Note
 
-Reward настраивается строкой, не новым лором.
+Reward changes belong to the contract row, not to improvised lore text.
 
 <!-- External Site; generated from P304_CONTRACT_RISK_REWARD_ROW_CONTRACT/ru_RU. -->

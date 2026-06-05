@@ -1,5 +1,10 @@
 ﻿# SHINOBU_237 Propwash GPU Director
 
+Status: `STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING`.
+Evidence class: `STATIC_DOC` / `STATIC_SOURCE`.
+Owner domain: VFX presentation / propwash GPU director.
+Review disposition: `YELLOW / STATIC_DOC_ONLY` until compile/import/runtime/profiler/player proof exists.
+
 Domain: presentation-only silt and propwash rendering.
 
 Authority route:

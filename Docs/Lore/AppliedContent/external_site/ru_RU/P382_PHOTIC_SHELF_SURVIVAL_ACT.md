@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Акт: выживание на фотической полке
+# Photic Shelf Survival Act
 
-Мелководье специально яркое. HECTON-8 не темная пустота; темнота приходит от давления, отказов и глубины.
+The shallows are deliberately vivid. HECTON-8 is not a dark void; the darkness comes from pressure, failure and depth.
 
 ## Scanner
 
-Гейт акта: мелководье. Яркая жизнь, первые инструменты, первый полезный след ремонта Atlas.
+Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
 
 ## Terminal
 
-АКТ ВЫЖИВАНИЯ: качать, герметизировать, резать и пинговать. Мгновенный побег невозможен: ascent hardware потрачен на выживание.
+SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
 
 ## Audio
 
-Мелкая вода не безопасна. Она просто читаемая.
+The shallow water is not safe. It is only readable.
 
 ## Field Note
 
-Для first-hour маршрута, темпа shallow ecology и ранних scanner/wiki unlocks.
+Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
 
 <!-- External Site; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/ru_RU. -->

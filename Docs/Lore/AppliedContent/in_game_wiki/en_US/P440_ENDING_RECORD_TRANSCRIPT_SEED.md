@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
-# Ending Record Transcript Seed
+# Ending Record Transcript
 
-Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.
+Ending record transcripts make outcomes loggable and replay-comparable without converting knowledge into inherited power.
 
 ## Scanner
 
-Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.
+Ending record fragment itemizes receiver, payload hash, debt state and unresolved cost.
 
 ## Terminal
 
-AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.
+AFTER-ACTION RECORD: receiver accepted; payload hash retained; claim closed for accounting; truth state unresolved; suppression flag unknown.
 
 ## Audio
 
-Dossier entry: claim closed for accounting. Truth status unresolved by design.
+After-action record. Receiver accepted payload hash. Claim closed for accounting. Suppression flag unreadable. Truth custody unresolved.
 
 ## Field Note
 
-Use for ending dossier, spoiler pages and final VO captions.
+Ending dossier record. It must name receiver, custody and unresolved cost, not clean moral closure.
 
 <!-- In-Game Wiki; generated from P440_ENDING_RECORD_TRANSCRIPT_SEED/en_US. -->

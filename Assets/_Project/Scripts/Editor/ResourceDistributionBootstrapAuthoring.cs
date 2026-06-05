@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
 using Hecton8.Core;
+using Hecton8.EditorTools;
 using Hecton8.Scavenging;
 using Hecton8.World;
 using UnityEditor;
@@ -46,6 +47,11 @@ namespace Hecton8.Editor
         [MenuItem("HECTON-8/World/Install Resource Distribution Director", priority = 230)]
         private static void Install()
         {
+            if (!WorldProceduralFinalPrefabQualityGate.AllowLegacyPrimitiveProductionAuthoring(
+                    nameof(ResourceDistributionBootstrapAuthoring),
+                    RuntimeOrePrefabFolder))
+                return;
+
             ResourceDistributionDirector director = Object.FindAnyObjectByType<ResourceDistributionDirector>(FindObjectsInactive.Include);
             if (director == null)
             {

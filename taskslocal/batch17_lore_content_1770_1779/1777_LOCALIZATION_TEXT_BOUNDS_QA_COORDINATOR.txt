@@ -1,0 +1,107 @@
+HECTON-8 LOCAL TASK FILE
+Batch: batch17_lore_content_1770_1779
+Agent ID: 1777
+Role: Localization, RTL/CJK, and Text-Bounds QA Coordinator
+Distribution: give this whole file to one agent. No XML extraction is required.
+Wave mode: PARALLEL. Agents 1770-1779 work simultaneously. Do not wait for them, do not depend on their future output.
+
+IDENTIFICATION LINE
+First response must begin exactly:
+PROMPT IDENTIFIED: 1777 | DOMAIN: Lore Localization / Text Bounds QA | TASK COUNT: 20
+
+OBJECTIVE
+Make the Applied Lore localization state honest, complete, and usable for production.
+This agent does not pretend to be native review. It verifies coverage, status flags, text expansion risks, RTL/CJK risks, mojibake, stale source/localized drift, and player-visible draft leakage.
+
+AUTHORITY DOCS
+Read fully before editing:
+- AGENTS.md
+- PROJECT_BIBLES.md
+- writing.md
+- narrative.md
+- localization.md
+- textes.md
+- Docs/Lore/Lore_Content_System.md
+- Docs/Lore/Lore_Localization_Model.md
+- Docs/Lore/Lore_Multilingual_Content_Architecture.md
+- Docs/Lore/AppliedContent/README.md
+- Docs/Lore/AppliedContent/Localization_Status_Index.md
+
+OWNED SCOPE
+Primary inspect/edit scope:
+- Docs/Lore/AppliedContent/Localization_Status_Index.md
+- Docs/Lore/AppliedContent/packets/*.packets.json
+- Docs/Lore/AppliedContent/in_game_wiki/
+- Docs/Lore/AppliedContent/external_site/
+- Docs/Lore/AppliedContent/Publication_Surface_Index.csv
+- Tools/LoreTextBoundsVerifier.py if present and only for inspection/running
+- Tools/AppliedLoreRuntimeAudit.py only for safe audit runs
+- Docs/Lore/AppliedContent/production_audits/1777/
+
+Do not rewrite creative prose unless fixing encoding, visible draft markers, or tiny formatting issues.
+Do not depend on agents 1770-1776 or 1778-1779.
+
+LOCALE ROSTER
+en_US, ru_RU, ja_JP, zh_CN, fr_FR, es_ES, de_DE, pl_PL, uk_UA, ar_SA, id_ID, ko_KR, he_IL, pt_BR, nl_NL.
+RTL: ar_SA, he_IL.
+CJK: ja_JP, zh_CN, ko_KR.
+
+STATUS TRUTH
+Allowed status examples: source_ready, machine_draft, pending_native_review, native_review_needed, stale_after_source_edit, missing, blocked, source_only, runtime_blocked.
+Do not mark native_final without proof.
+Do not put status disclaimers inside player-visible prose.
+
+TASKS
+Task 01: Create/update Docs/Tasks/Status_1777.md with all 20 tasks and checkpoints after Tasks 05, 10, 15, and 20.
+
+Task 02: Create/update Docs/AgentLogs/Rationale_1777.md with exact localization/status decisions.
+
+Task 03: Inventory AppliedContent locale directories for external_site and in_game_wiki. Output production_audits/1777/locale_directory_inventory.csv with locale, direction, page counts, missing dirs, extra dirs.
+
+Task 04: Parse packet bundles and count required localized fields by locale: title, scanner, terminal, audio, in_game_wiki, external_site, field_note where present. Output packet_locale_field_matrix.csv.
+
+Task 05: Checkpoint. Identify top localization risks that can be fixed or documented without waiting for sibling agents.
+
+Task 06: Audit for player-visible draft/status strings in localized pages and packet fields: TODO, draft, placeholder, machine, translate later, lorem, temp, FIXME. Patch or mark exact blockers.
+
+Task 07: Audit for mojibake or encoding corruption symptoms in all locales, especially ru_RU/uk_UA/pl_PL and RTL. Patch only if the intended source is obvious; otherwise mark suspect.
+
+Task 08: Audit RTL pages and data for dir handling assumptions. Do not invent UI code; document content/index needs and static reader needs.
+
+Task 09: Audit CJK locales for overlong Latin fallback, missing titles, wrong script, or duplicated English bodies.
+
+Task 10: Checkpoint. Reopen any edited content and verify no player-visible status marker remains.
+
+Task 11: Update Localization_Status_Index.md if counts/statuses are provably stale. Keep edits concise and evidence-based.
+
+Task 12: Produce production_audits/1777/text_expansion_risk.md listing high-risk fields by surface: scanner, subtitle/audio, PDA title, terminal title, public summary, cluster nav.
+
+Task 13: Run Tools/LoreTextBoundsVerifier.py if present and safe. If it needs parameters, inspect help first. Capture exact command/output.
+
+Task 14: Run AppliedLoreRuntimeAudit source-only if safe. Capture exact command/output.
+
+Task 15: Checkpoint. Verify that every changed status/count file remains parseable/readable.
+
+Task 16: Produce production_audits/1777/native_review_queue.md grouped by locale and surface with packet/page IDs. This is for human/native review, not a claim of completion.
+
+Task 17: Produce production_audits/1777/rtl_cjk_static_reader_requirements.md for the protosite agent using existing reader.html path only. Do not require 1779 completion.
+
+Task 18: Write Docs/AgentLogs/HANDOFF_1777.md with exact localization blockers and review queues. No sibling dependency.
+
+Task 19: Search edited files for invented locale codes or missing official locales. Fix any typo.
+
+Task 20: Final verification. Reopen edited files, update Status_1777.md, append final report to Docs/AgentLogs/LOG_1777.md.
+
+ACCEPTANCE PROOF
+- locale_directory_inventory.csv exists.
+- packet_locale_field_matrix.csv exists.
+- Localization status is more accurate or exact blockers are documented.
+- Native review queue exists.
+- Final LOG_1777.md lists validation commands and edited files.
+
+REJECTION CONDITIONS
+- Native-final is claimed without proof.
+- Draft status appears inside player-visible content.
+- Creative rewrite replaces localization QA.
+- Sibling output is required.
+- 15-locale roster is changed or truncated.

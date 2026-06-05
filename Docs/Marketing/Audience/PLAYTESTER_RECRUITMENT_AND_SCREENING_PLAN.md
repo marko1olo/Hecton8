@@ -4,6 +4,12 @@ Status: pre-playtest plan
 Owner lane: Marketing / player research
 Runtime impact: none
 
+## Authority Boundary
+
+Static marketing plan only. Public voice routes to root `textes.md`.
+Claims about quality, release, platform support, Steam, wishlist, demo/playtest state, performance, spend, audience size, recruitment permission, or public-readiness route through `quality.md`, `release.md`, `platform.md`, current proof artifacts, and the local permission gates named in this file.
+Rows, drafts, screening forms, tester segments, source lists, or gate names in this file do not approve public send, paid spend, recruitment, Steam page/demo/wishlist claims, platform claims, or release claims.
+
 ## Purpose
 
 The first playtesters must not be random hype traffic. They need to expose whether the survival loop, pressure identity, UI, and first route work.

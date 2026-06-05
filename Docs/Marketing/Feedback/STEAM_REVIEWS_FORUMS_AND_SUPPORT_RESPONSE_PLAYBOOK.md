@@ -1,5 +1,11 @@
 ﻿# HECTON-8 Steam Reviews, Forums, And Support Response Playbook
 
+## Authority Boundary
+
+Static Steam support policy only. Templates, moderation notes, known-issues language, digest forms, and source notes do not prove quality, release, platform, Steam, wishlist, demo, performance, review/forum response, support-route, legal/compliance, localization, monitoring, launch, or public-response readiness.
+Public voice routes to root `textes.md`. Quality, release, platform, Steam, wishlist, demo, performance, feedback, review/forum response, legal/compliance, localization, monitoring, operations, partnership, contract, and launch claims route through root `quality.md`, `release.md`, and `platform.md` with current proof artifacts, current Steam rules, and local permission gates where present.
+No launch/release readiness, localized public use, public Steam review/forum/support response, creator contract send, platform claim, Steam approval, wishlist claim, demo approval, or public send approval exists from this static playbook; exact Steam public response requires `steam_support_permission_gate = ALLOW_STEAM_SUPPORT_ROUTE_VERIFIED`.
+
 Status: pre-launch response policy
 Owner lane: Marketing / community support
 Runtime impact: none

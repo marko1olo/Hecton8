@@ -1,6 +1,7 @@
 ﻿# SHINOBU_317 Crafting Fast-Fail Route
 
 Owner: `SHINOBU_317 / CRAFTING_FAST_FAIL_VALIDATOR`
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
 Runtime owner ID: `SystemID.Crafting` (`75`)
 Evidence class: static source, static docs, scanner output. Unity import/Burst Inspector/profiler proof remains pending under compile guard.
 

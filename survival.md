@@ -1,7 +1,14 @@
 # HECTON-8 Survival, Damage, And Physiology Bible
 
 Status: AUTHORING LAW / STATIC DOC / RUNTIME PROOF NOT IMPLIED
+Evidence class: STATIC_DOC
 Scope: oxygen, pressure, hull/suit integrity, trauma, clarity, power, temperature, radiation, hypoxia, decompression, death prevention, survival recovery, and survival proof gates.
+
+## First-20 Route Hook
+
+- First-20 moment: swim, first resource trip, first fair hazard, and save/load return need visible oxygen, pressure, depth, damage/faint/death reasons, and recovery consequences.
+- Route blocker removed: prevents the opening route from becoming a harmless collection loop or a hidden spreadsheet death timer with no instrument read, counterplay, or recorded physical cause.
+- Proof class: STATIC_DOC only; route acceptance still requires formula/unit tests, compact UI readability proof, black-box fatal-state fields, save/load proof for persistent survival state, and profiler/GC evidence for runtime changes.
 
 ## Prime Law
 
@@ -57,6 +64,10 @@ Required:
 
 Oxygen must scale with route cost, panic/stress, suit integrity, leak state, exertion, and life-support power where relevant. It must not become generic stamina. Refill sources must have physical identity and route risk.
 
+Oxygen experience lock: early oxygen should be immediately understandable, broadly comparable to Subnautica's reserve-and-route-planning model. The player has a visible supply, can upgrade tanks, can plan longer trips, and may later use physical extension routes such as hoses/tethers from a ship or base. Ignoring oxygen can kill immediately.
+
+Early survival channel lock: oxygen and pressure are the first active survival pressures. Thermal, gas, contamination, radiation, and complex multi-channel failures may enter later as route complexity grows.
+
 ## Damage And Trauma
 
 Damage intake must route through typed damage packets, not direct health mutation.
@@ -100,6 +111,8 @@ Required:
 - stress/damage preservation unless a repair route changed it;
 - black-box dump for fatal state;
 - no coroutine-only death/recovery state machines in gameplay truth.
+
+Ordinary death policy: respawn at a base or safe anchor, drop carried resources where appropriate, preserve core tools unless an authored special case says otherwise, and retain enough evidence to teach why the player died.
 
 ## UI And Presentation Boundary
 

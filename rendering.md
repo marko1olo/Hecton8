@@ -46,6 +46,14 @@ Forbidden:
 - material instantiation in render sync;
 - post stacks with no gameplay/readability value.
 
+## Live Source Anchors - 2026-06-05
+
+Evidence class: STATIC_SOURCE / STATIC_DOC only. These anchors do not prove Unity import, Frame Debugger, RenderGraph Viewer, profiler, GC, visual quality, or player-build readiness.
+
+- `Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs` is the current fullscreen visor droplet/leak distortion renderer. Static source shows `HectonVisorFluidDistortionFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener, ILateFrameTickable`; it caches player, fluid, and DataVault dependencies through lifecycle/hot-swap paths, registers visual-sync work, writes a 300-row `BufferID.VisorRefractionBlackBox` telemetry ring under `SystemID.Vfx`, and dumps `Docs/AgentLogs/Dump_1335_VisorFluidRefraction.bin` only on non-finite input.
+- RenderGraph ownership: `VisorFluidPass.RecordRenderGraph` reads active color, depth, opaque color, optional compute-resolved diegetic lens mask, and imported constant buffers; writes `_HectonVisorFluidDistortion`; and assigns `resourceData.cameraColor`. It uses authored `FeatureSettings.material` and optional `lensComputeShader`; it is not allowed to instantiate runtime materials or become gameplay water/pressure truth.
+- Visual fake boundary: wet lens, hull-stress leaks, rain, water-density signal, dust, Snell/chromatic refraction, and lens-mask distortion are presentation fakes. They may sell water/pressure/visor material belief and scale through `GlobalQualityWeight`/visual-overkill fields, but they must not own flooding, pressure damage, fluid simulation, survival truth, save state, or navigation truth. Missing proof: renderer asset binding/import, Frame Debugger or RenderGraph Viewer pass order, GPU/CPU timing, GCMonitor, compact/high captures, and verification that the effect preserves center readability instead of hiding weak art.
+
 ## Noir Color Doctrine
 
 Pure black is forbidden on scene geometry. Black water needs structure. The minimum abyssal floor luminance must preserve silhouette, route, and instrument readability.
@@ -155,6 +163,12 @@ High: denser VFX, better shadows where readable, longer HLOD residency, more rea
 Ultra: sensory overkill through richer near-field detail, volumetric zones, better water layers, and cinematic captures, without changing gameplay truth.
 
 `GlobalQualityWeight` may scale render scale, local light count, shadow eligibility, volumetric zone quality, fog sample count, decal density, shader feature depth, VFX density, HLOD distance, and capture polish. It must not change gameplay truth, sensed truth, UI command semantics, save identity, material identity, or platform proof state.
+
+## First-20 Route Hook
+
+- First-20 moment: world load and first exit must render surface, sky/Aegir/moons where visible, ocean skin, photic water, terrain, HUD, tool feedback, and hazard readability without crushed darkness.
+- Route blocker removed: rendering cannot use post, fog, bloom, or noir grade to hide weak surface/shallow art or unproven route visibility.
+- Proof class: screenshot, Frame Debugger or RenderGraph Viewer for changed passes, Profiler/GCMonitor for runtime render work, and Play Mode/player capture for route readability.
 
 ## Rejection Gates
 

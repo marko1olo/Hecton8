@@ -10,8 +10,8 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
 # Таблица pressure crew archetypes
@@ -32,6 +32,6 @@ CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure 
 
 ## Field Note
 
-Используй восемь crew families: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany и Payload Witness.
+Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.
 
 <!-- In-Game Wiki; generated from P207_PRESSURE_CREW_ARCHETYPE_TABLE/ru_RU. -->

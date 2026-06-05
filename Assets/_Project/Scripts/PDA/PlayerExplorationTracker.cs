@@ -1413,8 +1413,21 @@ namespace Hecton8.PDA
             if (!_cartographySimulationPending)
                 return true;
 
-            if (!DispatcherJobFence.TryFinalizeCompleted(ref _cartographySimulationHandle) &&
-                (!forceComplete || !DispatcherJobFence.TryComplete(ref _cartographySimulationHandle, forceComplete: true)))
+            bool completed = DispatcherJobFence.TryFinalizeCompleted(ref _cartographySimulationHandle);
+            if (!completed && forceComplete)
+            {
+                DispatcherJobFence.BeginPostSimulationSwapWindow();
+                try
+                {
+                    completed = DispatcherJobFence.TryComplete(ref _cartographySimulationHandle, forceComplete: true);
+                }
+                finally
+                {
+                    DispatcherJobFence.EndPostSimulationSwapWindow();
+                }
+            }
+
+            if (!completed)
             {
                 return false;
             }
@@ -1466,7 +1479,17 @@ namespace Hecton8.PDA
 
             bool completed = DispatcherJobFence.TryFinalizeCompleted(ref _cartographyUploadHandle);
             if (!completed && forceComplete)
-                completed = DispatcherJobFence.TryComplete(ref _cartographyUploadHandle, forceComplete: true);
+            {
+                DispatcherJobFence.BeginLateFrameSwapWindow();
+                try
+                {
+                    completed = DispatcherJobFence.TryComplete(ref _cartographyUploadHandle, forceComplete: true);
+                }
+                finally
+                {
+                    DispatcherJobFence.EndLateFrameSwapWindow();
+                }
+            }
 
             if (!completed)
                 return false;
@@ -1508,8 +1531,21 @@ namespace Hecton8.PDA
             if (!_cartographyUploadPending)
                 return true;
 
-            if (!DispatcherJobFence.TryFinalizeCompleted(ref _cartographyUploadHandle) &&
-                !DispatcherJobFence.TryComplete(ref _cartographyUploadHandle, forceComplete: true))
+            bool completed = DispatcherJobFence.TryFinalizeCompleted(ref _cartographyUploadHandle);
+            if (!completed)
+            {
+                DispatcherJobFence.BeginLateFrameSwapWindow();
+                try
+                {
+                    completed = DispatcherJobFence.TryComplete(ref _cartographyUploadHandle, forceComplete: true);
+                }
+                finally
+                {
+                    DispatcherJobFence.EndLateFrameSwapWindow();
+                }
+            }
+
+            if (!completed)
             {
                 return false;
             }

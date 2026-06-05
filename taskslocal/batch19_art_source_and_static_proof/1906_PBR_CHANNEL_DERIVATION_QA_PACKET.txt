@@ -1,0 +1,137 @@
+ID: 1906
+ROLE: PBR_CHANNEL_DERIVATION_QA_SPECIALIST
+LANE: PBR channel derivation QA and shader-channel contract validation
+UNITY OWNER: NO
+BUILD OWNER: NO
+SCENE OWNER: NO
+
+MISSION
+Validate, derive-source-check, and document PBR channel readiness for generated or existing texture source candidates without importing them into Unity. This agent owns static channel logic only. It does not bind shaders, create materials, edit import settings, or prove runtime visuals.
+
+MANDATORY FIRST LINE IN CHAT WHEN LAUNCHED
+PROMPT IDENTIFIED: 1906 PBR_CHANNEL_DERIVATION_QA_SPECIALIST
+
+AUTHORITY TO READ BEFORE WORK
+- AGENTS.md
+- PROJECT_BIBLES.md
+- TASTE.md
+- VISION_LOCKS.md
+- Docs/Orchestration/GEMINI_BROWSER_IMAGE_ASSET_WORKFLOW.md
+- 3DMODEL_TEXTURES_MATERIALS.md
+- 3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md
+- rendering.md
+- performance.md
+- quality.md
+- Docs/Reports/Batch18/1886_PRODUCT_FACE_TEXTURE_AUTHORING_PIPELINE_DISCOVERY.md
+- Docs/Reports/Batch18/1888_PRODUCT_FACE_TEXTURE_CHANNEL_MANIFEST_AND_SHADER_AUDIT.md
+- Docs/Reports/Batch18/1891_AITEXTURE_PRODUCT_FACE_HARDENING_PACKET.md
+- Docs/Reports/Batch18/1894_PRODUCT_FACE_TEXTURE_SOURCE_MANIFEST_SCHEMA.md
+
+MANDATES TO READ
+- .agents-skills/STRM_Async_Asset_Upload_Texture_Settings.txt
+- .agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt
+- .agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt
+- .agents-skills/QA_Evidence_Text_Filter_Audit.txt
+
+OWNED OUTPUT SCOPE WHEN LAUNCHED
+- Docs/GeneratedAssets/Gemini/QA/1906/**
+- Docs/Reports/Batch19/1906_PBR_CHANNEL_DERIVATION_QA.md
+- Docs/Reports/Batch19/1906_PBR_CHANNEL_DERIVATION_QA.csv
+- Docs/Reports/Batch19/1906_SHADER_CHANNEL_CONTRACT_MATRIX.csv
+- Docs/Tasks/Status_1906.md
+- Docs/AgentLogs/Rationale_1906.md
+- Docs/AgentLogs/LOG_1906.md
+
+FORBIDDEN OUTPUTS AND ACTIONS
+- Do not write under Assets/**.
+- Do not create or modify Unity textures, importers, materials, shaders, prefabs, scenes, or scripts.
+- Do not create .meta, .mat, .asset, .prefab, .unity, .shader, .cs, .asmdef, or serialized Unity files.
+- Do not open Unity.
+- Do not call Unity MCP tools.
+- Do not run dotnet build, Unity build, player build, or package restore.
+- Do not claim import settings were applied.
+- Do not claim material slots were assigned.
+- Do not infer shader channel meanings from filename terms like ARM, MRAO, ORM, mask, packed, or control map.
+- Do not treat static image QA as visual pass in Unity.
+
+STATIC CHANNEL CONTRACTS FROM BATCH18
+- ToolDecayLit _MaskMap: R Metallic, G AO/Occlusion, B Smoothness, A EmissionMask. Contract name: PackedMaskV1.
+- ProceduralBio _ORMAtlas: R Occlusion, G Roughness, B Metallic, A EmissionMask.
+- MraoAtlasLit _MraoMap: R Metallic, G Roughness, B AO, A EmissionMask.
+- SuitVisor dedicated slots are not generic PBR: _VisorMaskTex R Dirt, G Scratch, B Salt, A Condensation.
+- AI/UberNoir ARM remains BLOCKED unless an exact shader contract is located and cited.
+
+PHASE 0 - AUTHORITY AND CONTRACT LOCK
+1. Read all authority files and mandates listed above. Record the exact files read in Status_1906.md.
+2. Create only the owned output folders listed above.
+3. Copy the no-Unity/no-build/no-asset-edit gate into Status_1906.md.
+4. Build 1906_SHADER_CHANNEL_CONTRACT_MATRIX.csv from the static channel contracts above and any additional exact contracts found in authority reports.
+5. Mark any missing or ambiguous contract as BLOCKED_CHANNEL_CONTRACT. Do not infer.
+
+CHECKPOINT A AFTER TASK 5
+- The shader channel contract matrix exists.
+- Every row has an evidence source path and evidence class.
+- Ambiguous channel names are blocked, not guessed.
+
+PHASE 1 - SOURCE INVENTORY
+6. Inventory source candidates from Docs/GeneratedAssets/Gemini/**, Docs/Reports/Batch18/**, and any existing Batch19 source ledgers if present. Missing 1905 output is PENDING SOURCE, not a blocker.
+7. For each source candidate, record file path, family, intended role, image dimensions if available, extension, and source status.
+8. Exclude any candidate under Assets/** even if present; this task is not allowed to classify project assets as owned output.
+9. Categorize each candidate into ALBEDO_SOURCE, HEIGHT_SOURCE, NORMAL_SOURCE, AO_SOURCE, ROUGHNESS_SOURCE, METALLIC_SOURCE, EMISSION_SOURCE, PACKED_SOURCE_CANDIDATE, or REFERENCE_ONLY_STATIC.
+10. Reject source candidates with baked lighting, perspective, horizon, text, logos, UI, watermark, object silhouette, cartoon style, painterly style, blur, darkness/noir cover, or obvious seams.
+11. Write inventory rows to 1906_PBR_CHANNEL_DERIVATION_QA.csv with status STATIC VERIFIED, STATIC REJECTED, PENDING SOURCE, or BLOCKED_CHANNEL_CONTRACT.
+
+CHECKPOINT B AFTER TASK 11
+- Source inventory exists and does not require 1905 completion.
+- Every candidate status has a cited static reason.
+- No Unity import or material assignment claim appears.
+
+PHASE 2 - DERIVATION LOGIC QA
+12. For every ALBEDO_SOURCE accepted source, decide whether it is suitable for normal, height, roughness, AO, metallic, and emission derivation. Record why.
+13. Reject fake PBR where roughness is just inverted albedo without material logic, AO is a generic dark vignette, metallic is random noise, or emission is broad neon paint without gameplay/ecology reason.
+14. For hard-surface product-face sources, require wear logic: exposed metal only where paint is chipped, salt/scratches directional but not tiled like wallpaper, roughness separated from albedo color.
+15. For wet basalt/coastline sources, require wetness, salt, sediment, erosion, waterline, and roughness variation that reads in bright surface/photic lighting.
+16. For coral/kelp sources, require porous or fibrous organic logic, constrained biolum masks, thickness/readability notes, and no dense alpha-blend dependence.
+17. For foam/waterline sources, require tileable breakup, non-noisy shape control, and mask logic that can be packed without making water muddy.
+
+CHECKPOINT C AFTER TASK 17
+- Derivation notes exist for each accepted source.
+- Rejections distinguish source-art failure from PBR-channel failure.
+- Continuous GlobalQualityWeight consequences are present for each material family.
+
+PHASE 3 - STATIC PREVIEW QA
+18. If safe local image tooling exists without code edits, create static contact sheets under Docs/GeneratedAssets/Gemini/QA/1906/** showing source, proposed derived grayscale channels, and 2x2 tile previews.
+19. If image tooling is unavailable, do not write ad hoc scripts. Mark PREVIEW_PENDING_TOOL and continue with manual text/image inspection notes.
+20. Inspect proposed normals for direction consistency, useful strength, no embossed albedo text, no seam spikes, and no excessive high-frequency shimmer risk.
+21. Inspect AO for cavity-only logic. Reject broad darkening that would make surface/photic content muddy.
+22. Inspect roughness/smoothness for material-specific logic. Wet basalt may be smoother in wet regions; dry sediment must not become plastic.
+23. Inspect metallic for physical plausibility. Organic, stone, foam, and sediment are non-metal unless a cited product-face or ore material requires metal.
+24. Inspect emission for constrained system/ecology reason. Reject broad emission that turns coral/kelp into flat neon.
+
+CHECKPOINT D AFTER TASK 24
+- QA previews, if generated, are stored only under Docs/GeneratedAssets/Gemini/QA/1906/**.
+- Static QA never claims Unity shader rendering.
+- Every packed-map candidate cites exact channel order.
+
+PHASE 4 - HANDOFF AND BLOCKER REPORT
+25. Write 1906_PBR_CHANNEL_DERIVATION_QA.md with accepted source-channel candidates, rejected candidates, blocked shader contracts, and required Unity-owner actions.
+26. Write one explicit section titled "Not Proven" listing import policy, compression, sRGB/linear setting, shader assignment, material preview, runtime visual proof, profiler proof, and player capture as PENDING UNITY OWNER.
+27. Write final CSV rows with columns: source_path, family, role, candidate_channel_set, exact_shader_contract, channel_order, qa_status, rejection_reason, static_preview_path, global_quality_weight_consequence, unity_owner_needed.
+28. Update Status_1906.md, LOG_1906.md, and Rationale_1906.md with factual decisions and no fake metrics.
+
+FINAL PROOF PACKET REQUIRED
+- Status_1906.md
+- LOG_1906.md
+- Rationale_1906.md for channel decisions
+- 1906_SHADER_CHANNEL_CONTRACT_MATRIX.csv
+- 1906_PBR_CHANNEL_DERIVATION_QA.md
+- 1906_PBR_CHANNEL_DERIVATION_QA.csv
+- QA preview paths if generated
+
+REJECTION GATES
+- Any Assets/** write is failure.
+- Any Unity launch or Unity MCP call is failure.
+- Any build command is failure.
+- Any channel inference without cited exact shader contract is failure.
+- Any static evidence upgraded to runtime/editor/playmode/profiler proof is failure.
+- Any binary quality switch language is failure.

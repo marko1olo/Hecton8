@@ -1,4 +1,10 @@
-﻿# HECTON-8 Competitor And Sentiment Monitoring Queries
+# HECTON-8 Competitor And Sentiment Monitoring Queries
+
+## Authority Boundary
+
+Static monitoring playbook only. Query lists, competitor snapshots, sentiment rows, pain buckets, and digest templates do not prove HECTON-8 quality, release, platform, Steam, wishlist, demo, performance, feedback, legal/compliance, localization, monitoring, launch, or public-response readiness.
+Public voice routes to root `textes.md`. Quality, release, platform, Steam, wishlist, demo, performance, feedback, review/forum response, legal/compliance, localization, monitoring, operations, partnership, contract, and launch claims route through root `quality.md`, `release.md`, and `platform.md` with current proof artifacts, fresh source checks, and local permission gates where present.
+No launch/release readiness, localized public use, public response, creator contract send, platform claim, Steam approval, wishlist claim, demo approval, competitor-comparison claim, or public send approval exists from planning rows, static risk registers, monitoring rows, or competitor source snapshots.
 
 Status: living monitoring playbook
 Owner lane: Marketing / competitive intelligence
@@ -199,7 +205,7 @@ V7 operational read:
 - SN2 visual strength is readability, color, cozy alien wonder, co-op presence, and clean base fantasy.
 - SN2 visual gap, based on official screenshots, is industrial severity: pressure-vessel logic, dirty machinery, corrosion, damage response, black water, and instrument-led dread.
 - Recent positive and negative samples both make base, story/content loop, agency, and trust visible; this reinforces `PLAN-SHOT-002`, `PLAN-SHOT-005`, `PLAN-SHOT-006`, `PLAN-CLIP-001`, and `PLAN-CLIP-003`.
-- First HECTON capture must beat SN2's screenshot language with `PLAN-SHOT-001`, `PLAN-SHOT-002`, `PLAN-SHOT-005`, `PLAN-SHOT-006`, `PLAN-CLIP-001`, `PLAN-CLIP-003`, and `PLAN-CLIP-004` if the build can prove them honestly.
+- First HECTON capture must beat SN2's screenshot language with `PLAN-SHOT-000`, `PLAN-SHOT-001`, `PLAN-SHOT-002`, `PLAN-SHOT-005`, `PLAN-SHOT-006`, `PLAN-CLIP-001`, `PLAN-CLIP-003`, and `PLAN-CLIP-004` if the build can prove them honestly.
 - Performance and low-end claims remain blocked. Use fake-first visual methods internally, but do not publish any "runs better" claim without profiler/build/hardware/settings receipts.
 - Public copy boundary is unchanged: no "Subnautica killer," no SN2 pain callouts, no EULA moralizing, no co-op bait, no unsupported performance superiority.
 

@@ -104,13 +104,13 @@ Material:
     - _Caustics: 0
     - _CausticsBase: 0.07
     - _CausticsBias: 0.7
-    - _CausticsDepthOfField: 0.33
+    - _CausticsDepthOfField: 0.48
     - _CausticsDistortionScale: 25
     - _CausticsDistortionStrength: 0.16
     - _CausticsFocalDepth: 2
     - _CausticsStrength: 0
-    - _CausticsTextureAverage: 0.07
-    - _CausticsTextureScale: 5
+    - _CausticsTextureAverage: 0.045
+    - _CausticsTextureScale: 6.5
     - _ClipSurface: 1
     - _ClipUnderTerrain: 1
     - _CompileShaderWithDebugInfo: 0
@@ -194,19 +194,19 @@ Material:
     - _WaveFoamStart: 0
     - _WaveFoamStrength: 1.25
     m_Colors:
-    - _DepthFogDensity: {r: 0.03, g: 0.03, b: 0.026635999, a: 0}
-    - _Diffuse: {r: 0.1491131, g: 0.22524673, b: 0.24578543, a: 1}
+    - _DepthFogDensity: {r: 0.02, g: 0.028, b: 0.032, a: 0}
+    - _Diffuse: {r: 0.25041765, g: 0.43691278, b: 0.45708025, a: 1}
     - _DiffuseGrazing: {r: 0.5733176, g: 0.57345146, b: 0.55580646, a: 1}
-    - _DiffuseShadow: {r: 0.22219539, g: 0.38760203, b: 0.43372357, a: 1}
-    - _FoamBubbleColor: {r: 0, g: 0, b: 0, a: 1}
-    - _FoamWhiteColor: {r: 1, g: 0.99634784, b: 0.97199994, a: 0.6862745}
-    - _SkyAwayFromSun: {r: 0.39893147, g: 0.4361955, b: 0.49895874, a: 1}
+    - _DiffuseShadow: {r: 0.22036754, g: 0.38448325, b: 0.40223062, a: 1}
+    - _FoamBubbleColor: {r: 0.72, g: 0.92, b: 1, a: 1}
+    - _FoamWhiteColor: {r: 1, g: 0.996, b: 0.96, a: 0.86}
+    - _SkyAwayFromSun: {r: 0.614, g: 0.75299996, b: 0.85400003, a: 1}
     - _SkyBase: {r: 0.6664, g: 0.7356, b: 0.8, a: 1}
     - _SkyTowardsSun: {r: 0.81534445, g: 0.5707411, b: 0.24460335, a: 1}
-    - _SubSurface: {r: 0.06, g: 0.34, b: 0.55, a: 1}
+    - _SubSurface: {r: 0.12, g: 0.42, b: 0.68, a: 1}
     - _SubSurfaceColour: {r: 0.5733176, g: 0.57345146, b: 0.55580646, a: 1}
     - _SubSurfaceShallowCol: {r: 0.5733176, g: 0.57345146, b: 0.55580646, a: 1}
-    - _SubSurfaceShallowColShadow: {r: 0.69860816, g: 0.7142061, b: 0.69966835, a: 1}
-    - _SubSurfaceShallowColour: {r: 0.38, g: 0.62, b: 0.78, a: 1}
+    - _SubSurfaceShallowColShadow: {r: 0.5345696, g: 0.62, b: 0.68, a: 1}
+    - _SubSurfaceShallowColour: {r: 0.46, g: 0.72, b: 0.9, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

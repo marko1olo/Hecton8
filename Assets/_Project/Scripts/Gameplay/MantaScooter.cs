@@ -49,6 +49,11 @@ namespace Hecton8.Gameplay
         private const float HeadlightNoiseCellsPerSecond = 64f;
         private const float HeadlightSignalMinIntensity = 0.0001f;
         private const uint HeadlightSignalSourceSalt = 0x4D484C54u;
+        private const uint MantaCameraImpactSourceHash = 0x4D4E5441u;
+        private const float MantaCameraImpactRadiusMeters = 12f;
+        private const float MantaCameraImpactAmplitudeScale = 0.78f;
+        private const float MantaCameraImpactTranslationGain = 0.72f;
+        private const float MantaCameraImpactRotationGain = 0.55f;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR
@@ -400,6 +405,7 @@ namespace Hecton8.Gameplay
             RefreshMantaLocalizationCache();
             RegisterHeadlightShadowBudget();
             ConfigureMantaSignalLanesCold();
+            CameraJuiceSignals.EnsurePrewarmed();
             EnsureTransportLifecycleInitialized();
             PlayerTransportLifecycleRegistry.Register(this, this);
         }
@@ -1135,6 +1141,7 @@ namespace Hecton8.Gameplay
             _currentIntegrity = math.max(0f, _currentIntegrity - damage);
             float nextIntegrityNormalized = ResolveCurrentIntegrityNormalized();
             HabitatDamageSignal damageSignal = BuildDamageSignal(impactSpeed, hitPoint, (uint)DamageTypeMask.Impact, previousIntegrityNormalized, nextIntegrityNormalized);
+            PublishMantaCameraImpact(damageT, impactSpeed, hitPoint, hitNormal);
             DispatchIntegrityChanged(previousIntegrityNormalized, nextIntegrityNormalized, damageSignal);
 
             float previousPowerChannel = ResolvePowerChannel(previousIntegrityNormalized);
@@ -1661,6 +1668,31 @@ namespace Hecton8.Gameplay
             return signal;
         }
 
+        private static void PublishMantaCameraImpact(float damageT, float impactSpeed, Vector3 hitPoint, Vector3 hitNormal)
+        {
+            float severity = math.saturate(math.max(damageT, impactSpeed * 0.08f));
+            if (severity <= 0.0001f || !IsFiniteVector(hitPoint))
+                return;
+
+            Vector3 direction = IsFiniteVector(hitNormal)
+                ? -hitNormal
+                : Vector3.zero;
+            byte priority = severity >= 0.72f
+                ? CameraJuiceSignals.HighPriority
+                : CameraJuiceSignals.NormalPriority;
+            CameraJuiceSignals.TryPublishImpact(
+                severity,
+                hitPoint,
+                direction,
+                CameraJuiceSignals.SharpKineticImpactProfileHash,
+                MantaCameraImpactAmplitudeScale,
+                priority,
+                MantaCameraImpactRadiusMeters,
+                MantaCameraImpactTranslationGain,
+                MantaCameraImpactRotationGain,
+                MantaCameraImpactSourceHash);
+        }
+
         private static float ResolvePowerChannel(float integrityNormalized)
         {
             return integrityNormalized >= 0.4f
@@ -1896,9 +1928,14 @@ namespace Hecton8.Gameplay
             return float.IsFinite(reciprocal);
         }
 
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
+        }
+
         private static Vector3 SanitizeFiniteVector(Vector3 value)
         {
-            return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z)
+            return IsFiniteVector(value)
                 ? value
                 : Vector3.zero;
         }

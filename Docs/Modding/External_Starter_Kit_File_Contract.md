@@ -4,6 +4,10 @@ Date: 2026-05-28
 Status: CURRENT AUTHORING CONTRACT / ENVELOPE-ONLY RUNTIME / STATIC PROOF REQUIRED
 Owner domain: Modding SDK public authoring surface
 
+## Authority Boundary
+
+Static documentation only. Root `modding.md` owns the public modding boundary: envelope-only public API planning until Unity runtime proof exists. Starter kit files, Workbench screens, no-Unity tools, `install-local`, `diagnose-local`, discovery copies, review manifests, and submission zips are authoring/discovery states, not runtime loader readiness, SDK readiness, platform readiness, release proof, or public mod-loading approval. Runtime pending remains the default label.
+
 ## Purpose
 
 This file answers the practical public-modder question: what program and what files are needed.

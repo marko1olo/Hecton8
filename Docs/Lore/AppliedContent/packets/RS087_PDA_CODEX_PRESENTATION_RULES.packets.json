@@ -33,16 +33,16 @@
           "audio": "The PDA should tell you how strong the proof is, not what to feel.",
           "in_game_wiki": "Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
           "external_site": "In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
-          "field_note": "Use for PDA UI labels and localization glossary."
+          "field_note": "PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
         },
         "ru_RU": {
-          "title": "Правило tier-label доказательств PDA",
-          "scanner": "Presentation rule: PDA evidence использует tier labels для rumor, artifact, physical proof, receiver authority и ending record.",
-          "terminal": "PDA LABELS: не красить truth как good/bad. Маркировать custody strength, proof stage, spoiler gate и receiver pressure.",
-          "audio": "PDA должен говорить, насколько силен proof, а не что чувствовать.",
-          "in_game_wiki": "Evidence tier labels сохраняют codex читаемым в долгой кампании, не превращая mystery в checklist morality.",
-          "external_site": "Внутриигровые документы организованы по evidence strength и custody, а не по quest-good/quest-bad labels.",
-          "field_note": "Для PDA UI labels и localization glossary."
+          "title": "Draft RU localization pending native pass. PDA Evidence Tier Label Rule",
+          "scanner": "Draft RU localization pending native pass. Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
+          "terminal": "Draft RU localization pending native pass. PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
+          "audio": "Draft RU localization pending native pass. The PDA should tell you how strong the proof is, not what to feel.",
+          "in_game_wiki": "Draft RU localization pending native pass. Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
+          "external_site": "Draft RU localization pending native pass. In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
+          "field_note": "Draft RU localization pending native pass. PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. PDA Evidence Tier Label Rule",
@@ -51,7 +51,7 @@
           "audio": "Draft JA localization pending native pass. The PDA should tell you how strong the proof is, not what to feel.",
           "in_game_wiki": "Draft JA localization pending native pass. Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
           "external_site": "Draft JA localization pending native pass. In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
-          "field_note": "Draft JA localization pending native pass. Use for PDA UI labels and localization glossary."
+          "field_note": "Draft JA localization pending native pass. PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. PDA Evidence Tier Label Rule",
@@ -60,7 +60,7 @@
           "audio": "Draft ZH localization pending native pass. The PDA should tell you how strong the proof is, not what to feel.",
           "in_game_wiki": "Draft ZH localization pending native pass. Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
           "external_site": "Draft ZH localization pending native pass. In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
-          "field_note": "Draft ZH localization pending native pass. Use for PDA UI labels and localization glossary."
+          "field_note": "Draft ZH localization pending native pass. PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. PDA Evidence Tier Label Rule",
@@ -69,7 +69,7 @@
           "audio": "Draft FR localization pending native pass. The PDA should tell you how strong the proof is, not what to feel.",
           "in_game_wiki": "Draft FR localization pending native pass. Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
           "external_site": "Draft FR localization pending native pass. In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
-          "field_note": "Draft FR localization pending native pass. Use for PDA UI labels and localization glossary."
+          "field_note": "Draft FR localization pending native pass. PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. PDA Evidence Tier Label Rule",
@@ -78,7 +78,7 @@
           "audio": "Draft ES localization pending native pass. The PDA should tell you how strong the proof is, not what to feel.",
           "in_game_wiki": "Draft ES localization pending native pass. Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
           "external_site": "Draft ES localization pending native pass. In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
-          "field_note": "Draft ES localization pending native pass. Use for PDA UI labels and localization glossary."
+          "field_note": "Draft ES localization pending native pass. PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. PDA Evidence Tier Label Rule",
@@ -87,7 +87,7 @@
           "audio": "Draft DE localization pending native pass. The PDA should tell you how strong the proof is, not what to feel.",
           "in_game_wiki": "Draft DE localization pending native pass. Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
           "external_site": "Draft DE localization pending native pass. In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
-          "field_note": "Draft DE localization pending native pass. Use for PDA UI labels and localization glossary."
+          "field_note": "Draft DE localization pending native pass. PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. PDA Evidence Tier Label Rule",
@@ -96,7 +96,7 @@
           "audio": "Draft PL localization pending native pass. The PDA should tell you how strong the proof is, not what to feel.",
           "in_game_wiki": "Draft PL localization pending native pass. Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
           "external_site": "Draft PL localization pending native pass. In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
-          "field_note": "Draft PL localization pending native pass. Use for PDA UI labels and localization glossary."
+          "field_note": "Draft PL localization pending native pass. PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. PDA Evidence Tier Label Rule",
@@ -105,7 +105,7 @@
           "audio": "Draft UK localization pending native pass. The PDA should tell you how strong the proof is, not what to feel.",
           "in_game_wiki": "Draft UK localization pending native pass. Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
           "external_site": "Draft UK localization pending native pass. In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
-          "field_note": "Draft UK localization pending native pass. Use for PDA UI labels and localization glossary."
+          "field_note": "Draft UK localization pending native pass. PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. PDA Evidence Tier Label Rule",
@@ -114,7 +114,7 @@
           "audio": "Draft AR localization pending native pass. The PDA should tell you how strong the proof is, not what to feel.",
           "in_game_wiki": "Draft AR localization pending native pass. Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
           "external_site": "Draft AR localization pending native pass. In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
-          "field_note": "Draft AR localization pending native pass. Use for PDA UI labels and localization glossary."
+          "field_note": "Draft AR localization pending native pass. PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. PDA Evidence Tier Label Rule",
@@ -123,7 +123,7 @@
           "audio": "Draft ID localization pending native pass. The PDA should tell you how strong the proof is, not what to feel.",
           "in_game_wiki": "Draft ID localization pending native pass. Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
           "external_site": "Draft ID localization pending native pass. In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
-          "field_note": "Draft ID localization pending native pass. Use for PDA UI labels and localization glossary."
+          "field_note": "Draft ID localization pending native pass. PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. PDA Evidence Tier Label Rule",
@@ -132,7 +132,7 @@
           "audio": "Draft KO localization pending native pass. The PDA should tell you how strong the proof is, not what to feel.",
           "in_game_wiki": "Draft KO localization pending native pass. Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
           "external_site": "Draft KO localization pending native pass. In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
-          "field_note": "Draft KO localization pending native pass. Use for PDA UI labels and localization glossary."
+          "field_note": "Draft KO localization pending native pass. PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. PDA Evidence Tier Label Rule",
@@ -141,7 +141,7 @@
           "audio": "Draft HE localization pending native pass. The PDA should tell you how strong the proof is, not what to feel.",
           "in_game_wiki": "Draft HE localization pending native pass. Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
           "external_site": "Draft HE localization pending native pass. In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
-          "field_note": "Draft HE localization pending native pass. Use for PDA UI labels and localization glossary."
+          "field_note": "Draft HE localization pending native pass. PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. PDA Evidence Tier Label Rule",
@@ -150,7 +150,7 @@
           "audio": "Draft PT localization pending native pass. The PDA should tell you how strong the proof is, not what to feel.",
           "in_game_wiki": "Draft PT localization pending native pass. Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
           "external_site": "Draft PT localization pending native pass. In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
-          "field_note": "Draft PT localization pending native pass. Use for PDA UI labels and localization glossary."
+          "field_note": "Draft PT localization pending native pass. PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. PDA Evidence Tier Label Rule",
@@ -159,7 +159,7 @@
           "audio": "Draft NL localization pending native pass. The PDA should tell you how strong the proof is, not what to feel.",
           "in_game_wiki": "Draft NL localization pending native pass. Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
           "external_site": "Draft NL localization pending native pass. In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
-          "field_note": "Draft NL localization pending native pass. Use for PDA UI labels and localization glossary."
+          "field_note": "Draft NL localization pending native pass. PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
         }
       }
     },
@@ -188,16 +188,16 @@
           "audio": "A scanner should get scared slowly and for reasons.",
           "in_game_wiki": "Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
           "external_site": "HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
-          "field_note": "Use for scanner UI copy decks and scan-stage binding tests."
+          "field_note": "Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
         },
         "ru_RU": {
-          "title": "Правило escalation-copy для scanner stage",
-          "scanner": "Scanner copy эскалируется от safe classification к route risk и Atlas contamination только при наличии evidence.",
-          "terminal": "SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
-          "audio": "Scanner должен пугаться медленно и по причинам.",
-          "in_game_wiki": "Scanner writing делает horror заслуженным: тот же объект становится страннее только по мере улучшения tool chain игрока.",
-          "external_site": "HECTON-8 раскрывает ecology и machine contamination через staged evidence, а не instant lore dumps.",
-          "field_note": "Для scanner UI copy decks и scan-stage binding tests."
+          "title": "Draft RU localization pending native pass. Scanner Stage Copy Escalation Rule",
+          "scanner": "Draft RU localization pending native pass. Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
+          "terminal": "Draft RU localization pending native pass. SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
+          "audio": "Draft RU localization pending native pass. A scanner should get scared slowly and for reasons.",
+          "in_game_wiki": "Draft RU localization pending native pass. Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
+          "external_site": "Draft RU localization pending native pass. HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
+          "field_note": "Draft RU localization pending native pass. Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Scanner Stage Copy Escalation Rule",
@@ -206,7 +206,7 @@
           "audio": "Draft JA localization pending native pass. A scanner should get scared slowly and for reasons.",
           "in_game_wiki": "Draft JA localization pending native pass. Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
           "external_site": "Draft JA localization pending native pass. HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
-          "field_note": "Draft JA localization pending native pass. Use for scanner UI copy decks and scan-stage binding tests."
+          "field_note": "Draft JA localization pending native pass. Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Scanner Stage Copy Escalation Rule",
@@ -215,7 +215,7 @@
           "audio": "Draft ZH localization pending native pass. A scanner should get scared slowly and for reasons.",
           "in_game_wiki": "Draft ZH localization pending native pass. Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
           "external_site": "Draft ZH localization pending native pass. HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
-          "field_note": "Draft ZH localization pending native pass. Use for scanner UI copy decks and scan-stage binding tests."
+          "field_note": "Draft ZH localization pending native pass. Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Scanner Stage Copy Escalation Rule",
@@ -224,7 +224,7 @@
           "audio": "Draft FR localization pending native pass. A scanner should get scared slowly and for reasons.",
           "in_game_wiki": "Draft FR localization pending native pass. Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
           "external_site": "Draft FR localization pending native pass. HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
-          "field_note": "Draft FR localization pending native pass. Use for scanner UI copy decks and scan-stage binding tests."
+          "field_note": "Draft FR localization pending native pass. Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Scanner Stage Copy Escalation Rule",
@@ -233,7 +233,7 @@
           "audio": "Draft ES localization pending native pass. A scanner should get scared slowly and for reasons.",
           "in_game_wiki": "Draft ES localization pending native pass. Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
           "external_site": "Draft ES localization pending native pass. HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
-          "field_note": "Draft ES localization pending native pass. Use for scanner UI copy decks and scan-stage binding tests."
+          "field_note": "Draft ES localization pending native pass. Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Scanner Stage Copy Escalation Rule",
@@ -242,7 +242,7 @@
           "audio": "Draft DE localization pending native pass. A scanner should get scared slowly and for reasons.",
           "in_game_wiki": "Draft DE localization pending native pass. Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
           "external_site": "Draft DE localization pending native pass. HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
-          "field_note": "Draft DE localization pending native pass. Use for scanner UI copy decks and scan-stage binding tests."
+          "field_note": "Draft DE localization pending native pass. Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Scanner Stage Copy Escalation Rule",
@@ -251,7 +251,7 @@
           "audio": "Draft PL localization pending native pass. A scanner should get scared slowly and for reasons.",
           "in_game_wiki": "Draft PL localization pending native pass. Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
           "external_site": "Draft PL localization pending native pass. HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
-          "field_note": "Draft PL localization pending native pass. Use for scanner UI copy decks and scan-stage binding tests."
+          "field_note": "Draft PL localization pending native pass. Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Scanner Stage Copy Escalation Rule",
@@ -260,7 +260,7 @@
           "audio": "Draft UK localization pending native pass. A scanner should get scared slowly and for reasons.",
           "in_game_wiki": "Draft UK localization pending native pass. Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
           "external_site": "Draft UK localization pending native pass. HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
-          "field_note": "Draft UK localization pending native pass. Use for scanner UI copy decks and scan-stage binding tests."
+          "field_note": "Draft UK localization pending native pass. Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Scanner Stage Copy Escalation Rule",
@@ -269,7 +269,7 @@
           "audio": "Draft AR localization pending native pass. A scanner should get scared slowly and for reasons.",
           "in_game_wiki": "Draft AR localization pending native pass. Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
           "external_site": "Draft AR localization pending native pass. HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
-          "field_note": "Draft AR localization pending native pass. Use for scanner UI copy decks and scan-stage binding tests."
+          "field_note": "Draft AR localization pending native pass. Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Scanner Stage Copy Escalation Rule",
@@ -278,7 +278,7 @@
           "audio": "Draft ID localization pending native pass. A scanner should get scared slowly and for reasons.",
           "in_game_wiki": "Draft ID localization pending native pass. Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
           "external_site": "Draft ID localization pending native pass. HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
-          "field_note": "Draft ID localization pending native pass. Use for scanner UI copy decks and scan-stage binding tests."
+          "field_note": "Draft ID localization pending native pass. Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Scanner Stage Copy Escalation Rule",
@@ -287,7 +287,7 @@
           "audio": "Draft KO localization pending native pass. A scanner should get scared slowly and for reasons.",
           "in_game_wiki": "Draft KO localization pending native pass. Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
           "external_site": "Draft KO localization pending native pass. HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
-          "field_note": "Draft KO localization pending native pass. Use for scanner UI copy decks and scan-stage binding tests."
+          "field_note": "Draft KO localization pending native pass. Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Scanner Stage Copy Escalation Rule",
@@ -296,7 +296,7 @@
           "audio": "Draft HE localization pending native pass. A scanner should get scared slowly and for reasons.",
           "in_game_wiki": "Draft HE localization pending native pass. Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
           "external_site": "Draft HE localization pending native pass. HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
-          "field_note": "Draft HE localization pending native pass. Use for scanner UI copy decks and scan-stage binding tests."
+          "field_note": "Draft HE localization pending native pass. Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Scanner Stage Copy Escalation Rule",
@@ -305,7 +305,7 @@
           "audio": "Draft PT localization pending native pass. A scanner should get scared slowly and for reasons.",
           "in_game_wiki": "Draft PT localization pending native pass. Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
           "external_site": "Draft PT localization pending native pass. HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
-          "field_note": "Draft PT localization pending native pass. Use for scanner UI copy decks and scan-stage binding tests."
+          "field_note": "Draft PT localization pending native pass. Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Scanner Stage Copy Escalation Rule",
@@ -314,7 +314,7 @@
           "audio": "Draft NL localization pending native pass. A scanner should get scared slowly and for reasons.",
           "in_game_wiki": "Draft NL localization pending native pass. Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
           "external_site": "Draft NL localization pending native pass. HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
-          "field_note": "Draft NL localization pending native pass. Use for scanner UI copy decks and scan-stage binding tests."
+          "field_note": "Draft NL localization pending native pass. Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
         }
       }
     },
@@ -343,16 +343,16 @@
           "audio": "A terminal should sound like it was used by tired people.",
           "in_game_wiki": "Terminal surfaces carry human texture through procedure, not exposition speeches.",
           "external_site": "The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
-          "field_note": "Use for terminal copy style and voice direction."
+          "field_note": "Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
         },
         "ru_RU": {
-          "title": "Правило operator surface для терминала",
-          "scanner": "Terminal rule: старые colony terminals говорят как operators, logs и systems, а не omniscient lore narrators.",
-          "terminal": "TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence и failure stamps. Без villain monologue.",
-          "audio": "Терминал должен звучать так, будто им пользовались уставшие люди.",
-          "in_game_wiki": "Terminal surfaces несут human texture через procedure, а не exposition speeches.",
-          "external_site": "Колония понимается через work systems: pumps, queues, certifications и broken legal packets.",
-          "field_note": "Для terminal copy style и voice direction."
+          "title": "Draft RU localization pending native pass. Terminal Operator Surface Rule",
+          "scanner": "Draft RU localization pending native pass. Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
+          "terminal": "Draft RU localization pending native pass. TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
+          "audio": "Draft RU localization pending native pass. A terminal should sound like it was used by tired people.",
+          "in_game_wiki": "Draft RU localization pending native pass. Terminal surfaces carry human texture through procedure, not exposition speeches.",
+          "external_site": "Draft RU localization pending native pass. The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
+          "field_note": "Draft RU localization pending native pass. Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Terminal Operator Surface Rule",
@@ -361,7 +361,7 @@
           "audio": "Draft JA localization pending native pass. A terminal should sound like it was used by tired people.",
           "in_game_wiki": "Draft JA localization pending native pass. Terminal surfaces carry human texture through procedure, not exposition speeches.",
           "external_site": "Draft JA localization pending native pass. The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
-          "field_note": "Draft JA localization pending native pass. Use for terminal copy style and voice direction."
+          "field_note": "Draft JA localization pending native pass. Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Terminal Operator Surface Rule",
@@ -370,7 +370,7 @@
           "audio": "Draft ZH localization pending native pass. A terminal should sound like it was used by tired people.",
           "in_game_wiki": "Draft ZH localization pending native pass. Terminal surfaces carry human texture through procedure, not exposition speeches.",
           "external_site": "Draft ZH localization pending native pass. The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
-          "field_note": "Draft ZH localization pending native pass. Use for terminal copy style and voice direction."
+          "field_note": "Draft ZH localization pending native pass. Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Terminal Operator Surface Rule",
@@ -379,7 +379,7 @@
           "audio": "Draft FR localization pending native pass. A terminal should sound like it was used by tired people.",
           "in_game_wiki": "Draft FR localization pending native pass. Terminal surfaces carry human texture through procedure, not exposition speeches.",
           "external_site": "Draft FR localization pending native pass. The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
-          "field_note": "Draft FR localization pending native pass. Use for terminal copy style and voice direction."
+          "field_note": "Draft FR localization pending native pass. Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Terminal Operator Surface Rule",
@@ -388,7 +388,7 @@
           "audio": "Draft ES localization pending native pass. A terminal should sound like it was used by tired people.",
           "in_game_wiki": "Draft ES localization pending native pass. Terminal surfaces carry human texture through procedure, not exposition speeches.",
           "external_site": "Draft ES localization pending native pass. The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
-          "field_note": "Draft ES localization pending native pass. Use for terminal copy style and voice direction."
+          "field_note": "Draft ES localization pending native pass. Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Terminal Operator Surface Rule",
@@ -397,7 +397,7 @@
           "audio": "Draft DE localization pending native pass. A terminal should sound like it was used by tired people.",
           "in_game_wiki": "Draft DE localization pending native pass. Terminal surfaces carry human texture through procedure, not exposition speeches.",
           "external_site": "Draft DE localization pending native pass. The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
-          "field_note": "Draft DE localization pending native pass. Use for terminal copy style and voice direction."
+          "field_note": "Draft DE localization pending native pass. Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Terminal Operator Surface Rule",
@@ -406,7 +406,7 @@
           "audio": "Draft PL localization pending native pass. A terminal should sound like it was used by tired people.",
           "in_game_wiki": "Draft PL localization pending native pass. Terminal surfaces carry human texture through procedure, not exposition speeches.",
           "external_site": "Draft PL localization pending native pass. The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
-          "field_note": "Draft PL localization pending native pass. Use for terminal copy style and voice direction."
+          "field_note": "Draft PL localization pending native pass. Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Terminal Operator Surface Rule",
@@ -415,7 +415,7 @@
           "audio": "Draft UK localization pending native pass. A terminal should sound like it was used by tired people.",
           "in_game_wiki": "Draft UK localization pending native pass. Terminal surfaces carry human texture through procedure, not exposition speeches.",
           "external_site": "Draft UK localization pending native pass. The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
-          "field_note": "Draft UK localization pending native pass. Use for terminal copy style and voice direction."
+          "field_note": "Draft UK localization pending native pass. Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Terminal Operator Surface Rule",
@@ -424,7 +424,7 @@
           "audio": "Draft AR localization pending native pass. A terminal should sound like it was used by tired people.",
           "in_game_wiki": "Draft AR localization pending native pass. Terminal surfaces carry human texture through procedure, not exposition speeches.",
           "external_site": "Draft AR localization pending native pass. The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
-          "field_note": "Draft AR localization pending native pass. Use for terminal copy style and voice direction."
+          "field_note": "Draft AR localization pending native pass. Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Terminal Operator Surface Rule",
@@ -433,7 +433,7 @@
           "audio": "Draft ID localization pending native pass. A terminal should sound like it was used by tired people.",
           "in_game_wiki": "Draft ID localization pending native pass. Terminal surfaces carry human texture through procedure, not exposition speeches.",
           "external_site": "Draft ID localization pending native pass. The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
-          "field_note": "Draft ID localization pending native pass. Use for terminal copy style and voice direction."
+          "field_note": "Draft ID localization pending native pass. Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Terminal Operator Surface Rule",
@@ -442,7 +442,7 @@
           "audio": "Draft KO localization pending native pass. A terminal should sound like it was used by tired people.",
           "in_game_wiki": "Draft KO localization pending native pass. Terminal surfaces carry human texture through procedure, not exposition speeches.",
           "external_site": "Draft KO localization pending native pass. The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
-          "field_note": "Draft KO localization pending native pass. Use for terminal copy style and voice direction."
+          "field_note": "Draft KO localization pending native pass. Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Terminal Operator Surface Rule",
@@ -451,7 +451,7 @@
           "audio": "Draft HE localization pending native pass. A terminal should sound like it was used by tired people.",
           "in_game_wiki": "Draft HE localization pending native pass. Terminal surfaces carry human texture through procedure, not exposition speeches.",
           "external_site": "Draft HE localization pending native pass. The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
-          "field_note": "Draft HE localization pending native pass. Use for terminal copy style and voice direction."
+          "field_note": "Draft HE localization pending native pass. Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Terminal Operator Surface Rule",
@@ -460,7 +460,7 @@
           "audio": "Draft PT localization pending native pass. A terminal should sound like it was used by tired people.",
           "in_game_wiki": "Draft PT localization pending native pass. Terminal surfaces carry human texture through procedure, not exposition speeches.",
           "external_site": "Draft PT localization pending native pass. The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
-          "field_note": "Draft PT localization pending native pass. Use for terminal copy style and voice direction."
+          "field_note": "Draft PT localization pending native pass. Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Terminal Operator Surface Rule",
@@ -469,7 +469,7 @@
           "audio": "Draft NL localization pending native pass. A terminal should sound like it was used by tired people.",
           "in_game_wiki": "Draft NL localization pending native pass. Terminal surfaces carry human texture through procedure, not exposition speeches.",
           "external_site": "Draft NL localization pending native pass. The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
-          "field_note": "Draft NL localization pending native pass. Use for terminal copy style and voice direction."
+          "field_note": "Draft NL localization pending native pass. Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
         }
       }
     },
@@ -498,16 +498,16 @@
           "audio": "The record does not congratulate you. It itemizes what changed hands.",
           "in_game_wiki": "Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
           "external_site": "Spoiler pages should describe endings through custody and consequence, not moral score.",
-          "field_note": "Use for ending dossier UI and spoiler-site layout."
+          "field_note": "Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
         },
         "ru_RU": {
-          "title": "Правило layout для dossier ending record",
-          "scanner": "Dossier rule: ending records показывают receiver, custody, proof state, Atlas continuity, player survival и debt outcome.",
-          "terminal": "ENDING RECORD: не показывать clean victory stamp. Показывать payload receiver, suppressed/open evidence, survival route и unresolved cost.",
-          "audio": "Record не поздравляет. Он перечисляет, что перешло из рук в руки.",
-          "in_game_wiki": "Ending dossier layout делает outcomes сравнимыми, не сводя их к good/bad endings.",
-          "external_site": "Spoiler pages должны описывать endings через custody и consequence, а не moral score.",
-          "field_note": "Для ending dossier UI и spoiler-site layout."
+          "title": "Draft RU localization pending native pass. Dossier Ending Record Layout Rule",
+          "scanner": "Draft RU localization pending native pass. Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
+          "terminal": "Draft RU localization pending native pass. ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
+          "audio": "Draft RU localization pending native pass. The record does not congratulate you. It itemizes what changed hands.",
+          "in_game_wiki": "Draft RU localization pending native pass. Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
+          "external_site": "Draft RU localization pending native pass. Spoiler pages should describe endings through custody and consequence, not moral score.",
+          "field_note": "Draft RU localization pending native pass. Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Dossier Ending Record Layout Rule",
@@ -516,7 +516,7 @@
           "audio": "Draft JA localization pending native pass. The record does not congratulate you. It itemizes what changed hands.",
           "in_game_wiki": "Draft JA localization pending native pass. Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
           "external_site": "Draft JA localization pending native pass. Spoiler pages should describe endings through custody and consequence, not moral score.",
-          "field_note": "Draft JA localization pending native pass. Use for ending dossier UI and spoiler-site layout."
+          "field_note": "Draft JA localization pending native pass. Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Dossier Ending Record Layout Rule",
@@ -525,7 +525,7 @@
           "audio": "Draft ZH localization pending native pass. The record does not congratulate you. It itemizes what changed hands.",
           "in_game_wiki": "Draft ZH localization pending native pass. Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
           "external_site": "Draft ZH localization pending native pass. Spoiler pages should describe endings through custody and consequence, not moral score.",
-          "field_note": "Draft ZH localization pending native pass. Use for ending dossier UI and spoiler-site layout."
+          "field_note": "Draft ZH localization pending native pass. Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Dossier Ending Record Layout Rule",
@@ -534,7 +534,7 @@
           "audio": "Draft FR localization pending native pass. The record does not congratulate you. It itemizes what changed hands.",
           "in_game_wiki": "Draft FR localization pending native pass. Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
           "external_site": "Draft FR localization pending native pass. Spoiler pages should describe endings through custody and consequence, not moral score.",
-          "field_note": "Draft FR localization pending native pass. Use for ending dossier UI and spoiler-site layout."
+          "field_note": "Draft FR localization pending native pass. Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Dossier Ending Record Layout Rule",
@@ -543,7 +543,7 @@
           "audio": "Draft ES localization pending native pass. The record does not congratulate you. It itemizes what changed hands.",
           "in_game_wiki": "Draft ES localization pending native pass. Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
           "external_site": "Draft ES localization pending native pass. Spoiler pages should describe endings through custody and consequence, not moral score.",
-          "field_note": "Draft ES localization pending native pass. Use for ending dossier UI and spoiler-site layout."
+          "field_note": "Draft ES localization pending native pass. Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Dossier Ending Record Layout Rule",
@@ -552,7 +552,7 @@
           "audio": "Draft DE localization pending native pass. The record does not congratulate you. It itemizes what changed hands.",
           "in_game_wiki": "Draft DE localization pending native pass. Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
           "external_site": "Draft DE localization pending native pass. Spoiler pages should describe endings through custody and consequence, not moral score.",
-          "field_note": "Draft DE localization pending native pass. Use for ending dossier UI and spoiler-site layout."
+          "field_note": "Draft DE localization pending native pass. Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Dossier Ending Record Layout Rule",
@@ -561,7 +561,7 @@
           "audio": "Draft PL localization pending native pass. The record does not congratulate you. It itemizes what changed hands.",
           "in_game_wiki": "Draft PL localization pending native pass. Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
           "external_site": "Draft PL localization pending native pass. Spoiler pages should describe endings through custody and consequence, not moral score.",
-          "field_note": "Draft PL localization pending native pass. Use for ending dossier UI and spoiler-site layout."
+          "field_note": "Draft PL localization pending native pass. Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Dossier Ending Record Layout Rule",
@@ -570,7 +570,7 @@
           "audio": "Draft UK localization pending native pass. The record does not congratulate you. It itemizes what changed hands.",
           "in_game_wiki": "Draft UK localization pending native pass. Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
           "external_site": "Draft UK localization pending native pass. Spoiler pages should describe endings through custody and consequence, not moral score.",
-          "field_note": "Draft UK localization pending native pass. Use for ending dossier UI and spoiler-site layout."
+          "field_note": "Draft UK localization pending native pass. Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Dossier Ending Record Layout Rule",
@@ -579,7 +579,7 @@
           "audio": "Draft AR localization pending native pass. The record does not congratulate you. It itemizes what changed hands.",
           "in_game_wiki": "Draft AR localization pending native pass. Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
           "external_site": "Draft AR localization pending native pass. Spoiler pages should describe endings through custody and consequence, not moral score.",
-          "field_note": "Draft AR localization pending native pass. Use for ending dossier UI and spoiler-site layout."
+          "field_note": "Draft AR localization pending native pass. Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Dossier Ending Record Layout Rule",
@@ -588,7 +588,7 @@
           "audio": "Draft ID localization pending native pass. The record does not congratulate you. It itemizes what changed hands.",
           "in_game_wiki": "Draft ID localization pending native pass. Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
           "external_site": "Draft ID localization pending native pass. Spoiler pages should describe endings through custody and consequence, not moral score.",
-          "field_note": "Draft ID localization pending native pass. Use for ending dossier UI and spoiler-site layout."
+          "field_note": "Draft ID localization pending native pass. Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Dossier Ending Record Layout Rule",
@@ -597,7 +597,7 @@
           "audio": "Draft KO localization pending native pass. The record does not congratulate you. It itemizes what changed hands.",
           "in_game_wiki": "Draft KO localization pending native pass. Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
           "external_site": "Draft KO localization pending native pass. Spoiler pages should describe endings through custody and consequence, not moral score.",
-          "field_note": "Draft KO localization pending native pass. Use for ending dossier UI and spoiler-site layout."
+          "field_note": "Draft KO localization pending native pass. Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Dossier Ending Record Layout Rule",
@@ -606,7 +606,7 @@
           "audio": "Draft HE localization pending native pass. The record does not congratulate you. It itemizes what changed hands.",
           "in_game_wiki": "Draft HE localization pending native pass. Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
           "external_site": "Draft HE localization pending native pass. Spoiler pages should describe endings through custody and consequence, not moral score.",
-          "field_note": "Draft HE localization pending native pass. Use for ending dossier UI and spoiler-site layout."
+          "field_note": "Draft HE localization pending native pass. Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Dossier Ending Record Layout Rule",
@@ -615,7 +615,7 @@
           "audio": "Draft PT localization pending native pass. The record does not congratulate you. It itemizes what changed hands.",
           "in_game_wiki": "Draft PT localization pending native pass. Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
           "external_site": "Draft PT localization pending native pass. Spoiler pages should describe endings through custody and consequence, not moral score.",
-          "field_note": "Draft PT localization pending native pass. Use for ending dossier UI and spoiler-site layout."
+          "field_note": "Draft PT localization pending native pass. Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Dossier Ending Record Layout Rule",
@@ -624,7 +624,7 @@
           "audio": "Draft NL localization pending native pass. The record does not congratulate you. It itemizes what changed hands.",
           "in_game_wiki": "Draft NL localization pending native pass. Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
           "external_site": "Draft NL localization pending native pass. Spoiler pages should describe endings through custody and consequence, not moral score.",
-          "field_note": "Draft NL localization pending native pass. Use for ending dossier UI and spoiler-site layout."
+          "field_note": "Draft NL localization pending native pass. Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
         }
       }
     },
@@ -648,138 +648,138 @@
       "localized": {
         "en_US": {
           "title": "Localized Overflow Presentation Rule",
-          "scanner": "Localization rule: long translations must collapse, page, or scroll inside UI; never shrink truth or change authority.",
-          "terminal": "OVERFLOW: source packet identity, receiver labels, units and evidence tiers survive all locales. Layout adapts; facts do not.",
+          "scanner": "Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
+          "terminal": "OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
           "audio": "A language can take more room. It cannot take a different truth.",
-          "in_game_wiki": "This presentation rule prepares the codex for world languages and RTL/CJK review without runtime translation.",
-          "external_site": "Localization is authored data. The UI must absorb length and directionality without changing content identity.",
-          "field_note": "Use for localization UI QA and final native review gates."
+          "in_game_wiki": "This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
+          "external_site": "Localization is authored data. The UI absorbs length and directionality without changing content identity.",
+          "field_note": "Localization layout records keep long or directional text from changing packet truth."
         },
         "ru_RU": {
-          "title": "Правило localized overflow presentation",
-          "scanner": "Localization rule: длинные переводы должны collapse, page или scroll внутри UI; нельзя сжимать truth или менять authority.",
-          "terminal": "OVERFLOW: source packet identity, receiver labels, units и evidence tiers сохраняются во всех locales. Layout adapts; facts do not.",
-          "audio": "Язык может занять больше места. Он не может получить другую truth.",
-          "in_game_wiki": "Это presentation rule готовит codex к world languages и RTL/CJK review без runtime translation.",
-          "external_site": "Localization - authored data. UI должен выдерживать length и directionality без смены content identity.",
-          "field_note": "Для localization UI QA и final native review gates."
+          "title": "Draft RU localization pending native pass. Localized Overflow Presentation Rule",
+          "scanner": "Draft RU localization pending native pass. Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
+          "terminal": "Draft RU localization pending native pass. OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
+          "audio": "Draft RU localization pending native pass. A language can take more room. It cannot take a different truth.",
+          "in_game_wiki": "Draft RU localization pending native pass. This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
+          "external_site": "Draft RU localization pending native pass. Localization is authored data. The UI absorbs length and directionality without changing content identity.",
+          "field_note": "Draft RU localization pending native pass. Localization layout records keep long or directional text from changing packet truth."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Localized Overflow Presentation Rule",
-          "scanner": "Draft JA localization pending native pass. Localization rule: long translations must collapse, page, or scroll inside UI; never shrink truth or change authority.",
-          "terminal": "Draft JA localization pending native pass. OVERFLOW: source packet identity, receiver labels, units and evidence tiers survive all locales. Layout adapts; facts do not.",
+          "scanner": "Draft JP localization pending native pass. Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
+          "terminal": "Draft JP localization pending native pass. OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
           "audio": "Draft JA localization pending native pass. A language can take more room. It cannot take a different truth.",
-          "in_game_wiki": "Draft JA localization pending native pass. This presentation rule prepares the codex for world languages and RTL/CJK review without runtime translation.",
-          "external_site": "Draft JA localization pending native pass. Localization is authored data. The UI must absorb length and directionality without changing content identity.",
-          "field_note": "Draft JA localization pending native pass. Use for localization UI QA and final native review gates."
+          "in_game_wiki": "Draft JP localization pending native pass. This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
+          "external_site": "Draft JP localization pending native pass. Localization is authored data. The UI absorbs length and directionality without changing content identity.",
+          "field_note": "Draft JP localization pending native pass. Localization layout records keep long or directional text from changing packet truth."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Localized Overflow Presentation Rule",
-          "scanner": "Draft ZH localization pending native pass. Localization rule: long translations must collapse, page, or scroll inside UI; never shrink truth or change authority.",
-          "terminal": "Draft ZH localization pending native pass. OVERFLOW: source packet identity, receiver labels, units and evidence tiers survive all locales. Layout adapts; facts do not.",
+          "scanner": "Draft CN localization pending native pass. Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
+          "terminal": "Draft CN localization pending native pass. OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
           "audio": "Draft ZH localization pending native pass. A language can take more room. It cannot take a different truth.",
-          "in_game_wiki": "Draft ZH localization pending native pass. This presentation rule prepares the codex for world languages and RTL/CJK review without runtime translation.",
-          "external_site": "Draft ZH localization pending native pass. Localization is authored data. The UI must absorb length and directionality without changing content identity.",
-          "field_note": "Draft ZH localization pending native pass. Use for localization UI QA and final native review gates."
+          "in_game_wiki": "Draft CN localization pending native pass. This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
+          "external_site": "Draft CN localization pending native pass. Localization is authored data. The UI absorbs length and directionality without changing content identity.",
+          "field_note": "Draft CN localization pending native pass. Localization layout records keep long or directional text from changing packet truth."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Localized Overflow Presentation Rule",
-          "scanner": "Draft FR localization pending native pass. Localization rule: long translations must collapse, page, or scroll inside UI; never shrink truth or change authority.",
-          "terminal": "Draft FR localization pending native pass. OVERFLOW: source packet identity, receiver labels, units and evidence tiers survive all locales. Layout adapts; facts do not.",
+          "scanner": "Draft FR localization pending native pass. Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
+          "terminal": "Draft FR localization pending native pass. OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
           "audio": "Draft FR localization pending native pass. A language can take more room. It cannot take a different truth.",
-          "in_game_wiki": "Draft FR localization pending native pass. This presentation rule prepares the codex for world languages and RTL/CJK review without runtime translation.",
-          "external_site": "Draft FR localization pending native pass. Localization is authored data. The UI must absorb length and directionality without changing content identity.",
-          "field_note": "Draft FR localization pending native pass. Use for localization UI QA and final native review gates."
+          "in_game_wiki": "Draft FR localization pending native pass. This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
+          "external_site": "Draft FR localization pending native pass. Localization is authored data. The UI absorbs length and directionality without changing content identity.",
+          "field_note": "Draft FR localization pending native pass. Localization layout records keep long or directional text from changing packet truth."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Localized Overflow Presentation Rule",
-          "scanner": "Draft ES localization pending native pass. Localization rule: long translations must collapse, page, or scroll inside UI; never shrink truth or change authority.",
-          "terminal": "Draft ES localization pending native pass. OVERFLOW: source packet identity, receiver labels, units and evidence tiers survive all locales. Layout adapts; facts do not.",
+          "scanner": "Draft ES localization pending native pass. Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
+          "terminal": "Draft ES localization pending native pass. OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
           "audio": "Draft ES localization pending native pass. A language can take more room. It cannot take a different truth.",
-          "in_game_wiki": "Draft ES localization pending native pass. This presentation rule prepares the codex for world languages and RTL/CJK review without runtime translation.",
-          "external_site": "Draft ES localization pending native pass. Localization is authored data. The UI must absorb length and directionality without changing content identity.",
-          "field_note": "Draft ES localization pending native pass. Use for localization UI QA and final native review gates."
+          "in_game_wiki": "Draft ES localization pending native pass. This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
+          "external_site": "Draft ES localization pending native pass. Localization is authored data. The UI absorbs length and directionality without changing content identity.",
+          "field_note": "Draft ES localization pending native pass. Localization layout records keep long or directional text from changing packet truth."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Localized Overflow Presentation Rule",
-          "scanner": "Draft DE localization pending native pass. Localization rule: long translations must collapse, page, or scroll inside UI; never shrink truth or change authority.",
-          "terminal": "Draft DE localization pending native pass. OVERFLOW: source packet identity, receiver labels, units and evidence tiers survive all locales. Layout adapts; facts do not.",
+          "scanner": "Draft DE localization pending native pass. Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
+          "terminal": "Draft DE localization pending native pass. OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
           "audio": "Draft DE localization pending native pass. A language can take more room. It cannot take a different truth.",
-          "in_game_wiki": "Draft DE localization pending native pass. This presentation rule prepares the codex for world languages and RTL/CJK review without runtime translation.",
-          "external_site": "Draft DE localization pending native pass. Localization is authored data. The UI must absorb length and directionality without changing content identity.",
-          "field_note": "Draft DE localization pending native pass. Use for localization UI QA and final native review gates."
+          "in_game_wiki": "Draft DE localization pending native pass. This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
+          "external_site": "Draft DE localization pending native pass. Localization is authored data. The UI absorbs length and directionality without changing content identity.",
+          "field_note": "Draft DE localization pending native pass. Localization layout records keep long or directional text from changing packet truth."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Localized Overflow Presentation Rule",
-          "scanner": "Draft PL localization pending native pass. Localization rule: long translations must collapse, page, or scroll inside UI; never shrink truth or change authority.",
-          "terminal": "Draft PL localization pending native pass. OVERFLOW: source packet identity, receiver labels, units and evidence tiers survive all locales. Layout adapts; facts do not.",
+          "scanner": "Draft PL localization pending native pass. Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
+          "terminal": "Draft PL localization pending native pass. OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
           "audio": "Draft PL localization pending native pass. A language can take more room. It cannot take a different truth.",
-          "in_game_wiki": "Draft PL localization pending native pass. This presentation rule prepares the codex for world languages and RTL/CJK review without runtime translation.",
-          "external_site": "Draft PL localization pending native pass. Localization is authored data. The UI must absorb length and directionality without changing content identity.",
-          "field_note": "Draft PL localization pending native pass. Use for localization UI QA and final native review gates."
+          "in_game_wiki": "Draft PL localization pending native pass. This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
+          "external_site": "Draft PL localization pending native pass. Localization is authored data. The UI absorbs length and directionality without changing content identity.",
+          "field_note": "Draft PL localization pending native pass. Localization layout records keep long or directional text from changing packet truth."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Localized Overflow Presentation Rule",
-          "scanner": "Draft UK localization pending native pass. Localization rule: long translations must collapse, page, or scroll inside UI; never shrink truth or change authority.",
-          "terminal": "Draft UK localization pending native pass. OVERFLOW: source packet identity, receiver labels, units and evidence tiers survive all locales. Layout adapts; facts do not.",
+          "scanner": "Draft UA localization pending native pass. Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
+          "terminal": "Draft UA localization pending native pass. OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
           "audio": "Draft UK localization pending native pass. A language can take more room. It cannot take a different truth.",
-          "in_game_wiki": "Draft UK localization pending native pass. This presentation rule prepares the codex for world languages and RTL/CJK review without runtime translation.",
-          "external_site": "Draft UK localization pending native pass. Localization is authored data. The UI must absorb length and directionality without changing content identity.",
-          "field_note": "Draft UK localization pending native pass. Use for localization UI QA and final native review gates."
+          "in_game_wiki": "Draft UA localization pending native pass. This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
+          "external_site": "Draft UA localization pending native pass. Localization is authored data. The UI absorbs length and directionality without changing content identity.",
+          "field_note": "Draft UA localization pending native pass. Localization layout records keep long or directional text from changing packet truth."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Localized Overflow Presentation Rule",
-          "scanner": "Draft AR localization pending native pass. Localization rule: long translations must collapse, page, or scroll inside UI; never shrink truth or change authority.",
-          "terminal": "Draft AR localization pending native pass. OVERFLOW: source packet identity, receiver labels, units and evidence tiers survive all locales. Layout adapts; facts do not.",
+          "scanner": "Draft AR localization pending native pass. Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
+          "terminal": "Draft AR localization pending native pass. OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
           "audio": "Draft AR localization pending native pass. A language can take more room. It cannot take a different truth.",
-          "in_game_wiki": "Draft AR localization pending native pass. This presentation rule prepares the codex for world languages and RTL/CJK review without runtime translation.",
-          "external_site": "Draft AR localization pending native pass. Localization is authored data. The UI must absorb length and directionality without changing content identity.",
-          "field_note": "Draft AR localization pending native pass. Use for localization UI QA and final native review gates."
+          "in_game_wiki": "Draft AR localization pending native pass. This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
+          "external_site": "Draft AR localization pending native pass. Localization is authored data. The UI absorbs length and directionality without changing content identity.",
+          "field_note": "Draft AR localization pending native pass. Localization layout records keep long or directional text from changing packet truth."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Localized Overflow Presentation Rule",
-          "scanner": "Draft ID localization pending native pass. Localization rule: long translations must collapse, page, or scroll inside UI; never shrink truth or change authority.",
-          "terminal": "Draft ID localization pending native pass. OVERFLOW: source packet identity, receiver labels, units and evidence tiers survive all locales. Layout adapts; facts do not.",
+          "scanner": "Draft ID localization pending native pass. Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
+          "terminal": "Draft ID localization pending native pass. OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
           "audio": "Draft ID localization pending native pass. A language can take more room. It cannot take a different truth.",
-          "in_game_wiki": "Draft ID localization pending native pass. This presentation rule prepares the codex for world languages and RTL/CJK review without runtime translation.",
-          "external_site": "Draft ID localization pending native pass. Localization is authored data. The UI must absorb length and directionality without changing content identity.",
-          "field_note": "Draft ID localization pending native pass. Use for localization UI QA and final native review gates."
+          "in_game_wiki": "Draft ID localization pending native pass. This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
+          "external_site": "Draft ID localization pending native pass. Localization is authored data. The UI absorbs length and directionality without changing content identity.",
+          "field_note": "Draft ID localization pending native pass. Localization layout records keep long or directional text from changing packet truth."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Localized Overflow Presentation Rule",
-          "scanner": "Draft KO localization pending native pass. Localization rule: long translations must collapse, page, or scroll inside UI; never shrink truth or change authority.",
-          "terminal": "Draft KO localization pending native pass. OVERFLOW: source packet identity, receiver labels, units and evidence tiers survive all locales. Layout adapts; facts do not.",
+          "scanner": "Draft KO localization pending native pass. Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
+          "terminal": "Draft KO localization pending native pass. OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
           "audio": "Draft KO localization pending native pass. A language can take more room. It cannot take a different truth.",
-          "in_game_wiki": "Draft KO localization pending native pass. This presentation rule prepares the codex for world languages and RTL/CJK review without runtime translation.",
-          "external_site": "Draft KO localization pending native pass. Localization is authored data. The UI must absorb length and directionality without changing content identity.",
-          "field_note": "Draft KO localization pending native pass. Use for localization UI QA and final native review gates."
+          "in_game_wiki": "Draft KO localization pending native pass. This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
+          "external_site": "Draft KO localization pending native pass. Localization is authored data. The UI absorbs length and directionality without changing content identity.",
+          "field_note": "Draft KO localization pending native pass. Localization layout records keep long or directional text from changing packet truth."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Localized Overflow Presentation Rule",
-          "scanner": "Draft HE localization pending native pass. Localization rule: long translations must collapse, page, or scroll inside UI; never shrink truth or change authority.",
-          "terminal": "Draft HE localization pending native pass. OVERFLOW: source packet identity, receiver labels, units and evidence tiers survive all locales. Layout adapts; facts do not.",
+          "scanner": "Draft HE localization pending native pass. Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
+          "terminal": "Draft HE localization pending native pass. OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
           "audio": "Draft HE localization pending native pass. A language can take more room. It cannot take a different truth.",
-          "in_game_wiki": "Draft HE localization pending native pass. This presentation rule prepares the codex for world languages and RTL/CJK review without runtime translation.",
-          "external_site": "Draft HE localization pending native pass. Localization is authored data. The UI must absorb length and directionality without changing content identity.",
-          "field_note": "Draft HE localization pending native pass. Use for localization UI QA and final native review gates."
+          "in_game_wiki": "Draft HE localization pending native pass. This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
+          "external_site": "Draft HE localization pending native pass. Localization is authored data. The UI absorbs length and directionality without changing content identity.",
+          "field_note": "Draft HE localization pending native pass. Localization layout records keep long or directional text from changing packet truth."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Localized Overflow Presentation Rule",
-          "scanner": "Draft PT localization pending native pass. Localization rule: long translations must collapse, page, or scroll inside UI; never shrink truth or change authority.",
-          "terminal": "Draft PT localization pending native pass. OVERFLOW: source packet identity, receiver labels, units and evidence tiers survive all locales. Layout adapts; facts do not.",
+          "scanner": "Draft PT localization pending native pass. Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
+          "terminal": "Draft PT localization pending native pass. OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
           "audio": "Draft PT localization pending native pass. A language can take more room. It cannot take a different truth.",
-          "in_game_wiki": "Draft PT localization pending native pass. This presentation rule prepares the codex for world languages and RTL/CJK review without runtime translation.",
-          "external_site": "Draft PT localization pending native pass. Localization is authored data. The UI must absorb length and directionality without changing content identity.",
-          "field_note": "Draft PT localization pending native pass. Use for localization UI QA and final native review gates."
+          "in_game_wiki": "Draft PT localization pending native pass. This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
+          "external_site": "Draft PT localization pending native pass. Localization is authored data. The UI absorbs length and directionality without changing content identity.",
+          "field_note": "Draft PT localization pending native pass. Localization layout records keep long or directional text from changing packet truth."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Localized Overflow Presentation Rule",
-          "scanner": "Draft NL localization pending native pass. Localization rule: long translations must collapse, page, or scroll inside UI; never shrink truth or change authority.",
-          "terminal": "Draft NL localization pending native pass. OVERFLOW: source packet identity, receiver labels, units and evidence tiers survive all locales. Layout adapts; facts do not.",
+          "scanner": "Draft NL localization pending native pass. Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
+          "terminal": "Draft NL localization pending native pass. OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
           "audio": "Draft NL localization pending native pass. A language can take more room. It cannot take a different truth.",
-          "in_game_wiki": "Draft NL localization pending native pass. This presentation rule prepares the codex for world languages and RTL/CJK review without runtime translation.",
-          "external_site": "Draft NL localization pending native pass. Localization is authored data. The UI must absorb length and directionality without changing content identity.",
-          "field_note": "Draft NL localization pending native pass. Use for localization UI QA and final native review gates."
+          "in_game_wiki": "Draft NL localization pending native pass. This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
+          "external_site": "Draft NL localization pending native pass. Localization is authored data. The UI absorbs length and directionality without changing content identity.",
+          "field_note": "Draft NL localization pending native pass. Localization layout records keep long or directional text from changing packet truth."
         }
       }
     }

@@ -1,0 +1,82 @@
+AGENT ID: 1810
+ROLE: RUNTIME_PROOF_HARNESS_PREP
+MODE: Independent Wave 02 verification-prep task. Do not wait for 1803-1805.
+
+PRIMARY GOAL
+Prepare the proof harness needed before any Unity visual implementation can be accepted: screenshot route list, Play Mode checks, profiler/GC/Frame Debugger expectations, and capture naming. This task should make it impossible for later agents to say "looks okay" without evidence.
+
+AUTHORITIES TO READ
+- C:\hades\Hecton8\AGENTS.md
+- C:\hades\Hecton8\PROJECT_BIBLES.md
+- C:\hades\Hecton8\VISION_LOCKS.md
+- C:\hades\Hecton8\TASTE.md
+- C:\hades\Hecton8\quality.md
+- C:\hades\Hecton8\presentation.md
+- C:\hades\Hecton8\gameplay.md
+- C:\hades\Hecton8\survival.md
+- C:\hades\Hecton8\water.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1801_WORLD_SURFACE_ROUTE_EVIDENCE.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1802_SURFACE_SHALLOW_ASSET_INVENTORY.md
+
+LIKELY PATHS TO INSPECT
+- Assets/_Project/Tests/
+- Assets/_Project/Scripts/Rendering/
+- Assets/_Project/Scripts/Gameplay/
+- Assets/_Project/Scripts/Player/
+- Assets/_Project/Scripts/UI/
+- Assets/_Project/Scenes/02_HECTON_WORLD.unity
+- Docs/Screenshots/
+- Assets/Screenshots/
+
+OWNED OUTPUTS
+- Docs/Tasks/Status_1810.md
+- Docs/AgentLogs/Rationale_1810.md for decisions only
+- Docs/AgentLogs/LOG_1810.md
+- Docs/Reports/Batch18/1810_RUNTIME_PROOF_HARNESS_PREP.md
+- Docs/Reports/Batch18/1810_SURFACE_ROUTE_CAPTURE_CHECKLIST.csv
+
+HARD RULES
+- No live Unity control unless there is no active Unity owner and all AGENTS.md build/CPU rules pass. Default: static prep only.
+- Do not run dotnet build if CPU is busy or dotnet/csc already running.
+- Do not invent profiler numbers, screenshots, test results, or Frame Debugger events.
+- Do not create broad test code unless required and conflict-safe. A checklist/proof harness doc is acceptable.
+- Acceptance must cover graphics, optimization, and gameplay together.
+
+CHECKLIST CSV COLUMNS
+- proof_id
+- route_moment
+- camera_position_or_scene_hint
+- visual_requirement
+- gameplay_requirement
+- performance_requirement
+- capture_type
+- file_naming
+- pass_gate
+- fail_gate
+- required_after_task
+- proof_label
+
+20 TASKS
+01. Create Status_1810.md with proof labels.
+02. Read required docs and selected mandates.
+03. Extract screenshot/capture angles from 1801/1802.
+04. Inspect existing test/capture/report folders to avoid duplicate naming.
+05. Build capture checklist CSV with at least 12 proof IDs.
+06. Build Markdown proof harness report.
+07. Define Play Mode route smoke checks: spawn, surface look, water entry, oxygen display, route anchor, resource/scrap, fabricator, return path.
+08. Define visual proof gates: waterline, coast, Aegir, shallow biota, UI legibility, compact tier.
+09. Define optimization proof gates: profiler sample, GC allocations, Frame Debugger material/pass proof, no hidden hot-path generation.
+10. Define gameplay proof gates: oxygen risk, hazard response, interaction/readability, death/respawn/drop rule where relevant.
+11. Define no-proof rejection language for future agents.
+12. Define capture storage paths and naming convention under Docs/Reports/Batch18 or Assets/Screenshots as appropriate.
+13. Define when Unity slot may be used and when to back off.
+14. Identify existing scripts/tests that may be leveraged, but do not edit them unless safe and necessary.
+15. Write Unity verifier prompt using the checklist.
+16. Write controller triage prompt for rejecting weak reports.
+17. Add Compact/Middle/High/Ultra proof expectations.
+18. Append LOG_1810.md.
+19. Final scan for fake proof and overbroad tooling.
+20. Mark final state STATIC PROOF HARNESS COMPLETE or BLOCKED BY MISSING STATIC EVIDENCE.
+
+ACCEPTANCE
+Done means a later Unity worker has a concrete route proof packet and future reports can be accepted or rejected without subjective hand-waving.

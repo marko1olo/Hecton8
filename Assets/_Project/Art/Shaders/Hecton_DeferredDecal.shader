@@ -33,6 +33,7 @@ Shader "Hidden/Hecton8/Deprecated/DeferredDecal_SHINOBU325_DO_NOT_BIND"
             #define VISOR_TRAUMA_HULL_DENT 3u
             #define VISOR_TRAUMA_GLASS_CRACK 4u
             #define VISOR_TRAUMA_BURN 5u
+            #define VISOR_TRAUMA_SALT_CRUST 6u
 
             struct Attributes
             {
@@ -160,6 +161,7 @@ Shader "Hidden/Hecton8/Deprecated/DeferredDecal_SHINOBU325_DO_NOT_BIND"
                 half3 dent = half3(0.16h, 0.15h, 0.13h);
                 half3 glass = half3(0.72h, 0.86h, 0.92h);
                 half3 burn = half3(0.13h, 0.045h, 0.018h);
+                half3 salt = half3(0.82h, 0.86h, 0.79h);
 
                 if (traumaType == VISOR_TRAUMA_GLASS_CRACK)
                     return half4(glass, half(saturate(crackAlpha + tornEdge * 0.16)));
@@ -175,6 +177,13 @@ Shader "Hidden/Hecton8/Deprecated/DeferredDecal_SHINOBU325_DO_NOT_BIND"
 
                 if (traumaType == VISOR_TRAUMA_BURN)
                     return half4(burn, half(bloodAlpha * 0.8 + tornEdge * 0.35));
+
+                if (traumaType == VISOR_TRAUMA_SALT_CRUST)
+                {
+                    float crustEdge = saturate(tornEdge * 1.25 + bloodAlpha * 0.22);
+                    float granular = saturate(0.76 + ringNoise * 0.24 + branchNoise * 0.06);
+                    return half4(salt, half(crustEdge * granular));
+                }
 
                 return half4(scorch, half(bloodAlpha));
             }
@@ -237,10 +246,13 @@ Shader "Hidden/Hecton8/Deprecated/DeferredDecal_SHINOBU325_DO_NOT_BIND"
                 if (_GlobalVisorTraumaCount <= 0)
                     return sourceColor;
 
-                if (!TryResolveScenePosition(input.screenUV, out float3 scenePositionWS))
+                float3 scenePositionWS;
+                if (!TryResolveScenePosition(input.screenUV, scenePositionWS))
                     return sourceColor;
 
-                ProjectVisorTrauma(scenePositionWS, out half3 traumaColor, out float2 refractOffset);
+                half3 traumaColor;
+                float2 refractOffset;
+                ProjectVisorTrauma(scenePositionWS, traumaColor, refractOffset);
                 float refractWeight = saturate(ApproximateMagnitude2D(refractOffset) * 180.0);
                 if (refractWeight > 0.001)
                 {

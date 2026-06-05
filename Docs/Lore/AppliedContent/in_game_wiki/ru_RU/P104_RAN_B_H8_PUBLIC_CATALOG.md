@@ -10,17 +10,17 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Публичный каталог RAN-B:H8
+# RAN-B:H8 Public Catalog
 
-HECTON-8 может иметь два имени без путаницы. Сухие route catalogs используют RAN-B:H8: система Ran, гигант Aegir-class, восьмая индексированная крупная луна. Deep Reach и Marauders чаще используют HECTON-8, потому что это имя claim привязано к контрактам, смертям и salvage law.
+HECTON-8 can carry two names without confusing the setting. Dry route catalogs use RAN-B:H8: Ran system, Aegir-class giant, eighth indexed major moon. Deep Reach and Marauders mostly use HECTON-8 because that is the claim name attached to contracts, deaths and salvage law.
 
 ## Scanner
 
-Catalog plate. Публичная route label RAN-B:H8; project label Deep Reach - HECTON-8.
+Catalog plate. Public route label RAN-B:H8; Deep Reach project label HECTON-8.
 
 ## Terminal
 
@@ -28,10 +28,10 @@ CATALOG CROSSWALK: Ran system / Aegir giant / moon index H8. Corporate common na
 
 ## Audio
 
-Звездная карта зовет это H8. Люди, которые умерли здесь, звали это HECTON.
+The star chart calls it H8. The people who died here called it HECTON.
 
 ## Field Note
 
-В игре использовать HECTON-8. RAN-B:H8 использовать там, где документу нужна сухая астрономия.
+Use HECTON-8 in play. Use RAN-B:H8 when the document needs dry astronomy.
 
 <!-- In-Game Wiki; generated from P104_RAN_B_H8_PUBLIC_CATALOG/ru_RU. -->

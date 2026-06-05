@@ -10,25 +10,25 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Ecology Registry
 
-HECTON-8 needs contrast: bright useful shallows, mid-depth adaptation to human structures, and deep Atlas repair intrusion. Horror works because native life existed before the damage.
+Use the ecology registry to separate native life from damage. Bright shelf mats and grazers show the baseline. Cable flora and filter bodies show life adapting to human hardware. Sensor-tagged fauna, conductive film and shell-seal growth point to Atlas repair routing. Do not cut every living thing off a cable; some of it may be keeping the line sealed.
 
 ## Scanner
 
-Bright shallow ecology confirmed. Deeper traces show cable flora, filter bodies and Atlas repair intrusion.
+Ecology split confirmed: native shelf life, cable-adapted biota and Atlas-routed repair organisms. Identify category before harvesting.
 
 ## Terminal
 
-Registry split: native pressure ecology, colony-adapted biota, Atlas-altered repair organisms. Do not merge categories.
+REGISTRY SPLIT: native pressure ecology; colony-adapted cable biota; Atlas-altered repair organisms. Mislabeling can destroy working seals.
 
 ## Audio
 
-If everything is monster, nothing is violation.
+If everything is a monster, you will cut the thing holding pressure.
 
 ## Field Note
 

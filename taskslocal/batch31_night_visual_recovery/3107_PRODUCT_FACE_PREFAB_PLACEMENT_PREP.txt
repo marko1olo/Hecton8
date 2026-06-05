@@ -1,0 +1,51 @@
+ID: 3107
+Role: PRODUCT_FACE_PREFAB_PLACEMENT_PREP
+Objective: prepare controlled placement of rocks, flora, coral, debris, route hardware, and scale witnesses after the base water/terrain/sky route is no longer trash.
+
+Why this exists:
+- User explicitly requires real object/prefab placement later, with harsh visual control.
+- Current scene cannot be fixed by empty material tuning; it needs credible authored/generative objects.
+- Placement before fixing base route can hide problems and create more clutter.
+
+Authority docs:
+- AGENTS.md
+- TASTE.md
+- VISION_LOCKS.md
+- quality.md
+- world.md
+- terrain.md
+- ecosystem.md
+- creatures.md if fauna is considered
+- 3dmodel.md
+- 3DMODEL_FLORA_CORAL.md
+- 3DMODEL_GEOLOGY_ROCKS.md
+- PROCEDURAL_ASSET_PIPELINE.md
+- Docs/Reports/Batch31/MATERIAL_TEXTURE_CRITICALS_20260605.md
+- .agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt
+
+Owned scope:
+- first-party prefab/object inventory only unless explicitly approved
+- Assets/_Project/Prefabs/
+- Assets/_Project/Art/Meshes/
+- Assets/_Project/Art/Materials/
+- Report output: Docs/Reports/Batch31/3107_PRODUCT_FACE_PREFAB_PLACEMENT_PREP.md
+
+Tasks:
+1. Read authority docs.
+2. Inventory candidate rocks/flora/coral/debris/route hardware assets.
+3. Classify candidates: usable now, needs material, needs LOD, needs collider/proxy, reject, unknown.
+4. Reject `WorldProceduralProxy` material binding for visible production placement unless Unity owner rebinding proof exists.
+5. Define placement rules: every object must serve route, scale, ecology, salvage, threat, return cue, or material witness.
+6. Define rejection gates: floating, primitive, unscaled, no material truth, no LOD, no collider/proxy plan, bad silhouette, clutter noise.
+7. Prepare staged placement plan for after Lane 1-6 are stabilized.
+8. Do not place anything in Unity until controller assigns Unity slot and base route is ready.
+9. Write compact/middle/high/ultra consequences.
+10. Write Status_3107.md, Rationale_3107.md, LOG_3107.md, and Batch31 report.
+
+Proof packet:
+- STATIC VERIFIED asset inventory only.
+- Unity placement/capture pending later.
+
+Reject if:
+- You dump prefabs to cover bad water/terrain.
+- You accept primitive models because they have textures.

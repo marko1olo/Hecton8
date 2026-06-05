@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ Dead infrastructure does not leave. It just becomes another error term.
 
 ## Field Note
 
-Use for comm-window lore and orbital system pages.
+Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary.
 
 <!-- External Site; generated from P350_OUTER_DEAD_BEACON_MOON_ROLE/en_US. -->

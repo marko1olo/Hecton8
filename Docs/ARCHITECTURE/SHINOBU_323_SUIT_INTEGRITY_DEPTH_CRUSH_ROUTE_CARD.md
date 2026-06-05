@@ -1,5 +1,10 @@
 ﻿# SHINOBU_323 Suit Integrity Depth Crush Route Card
 
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
+Evidence class: STATIC_DOC / STATIC_SOURCE
+Owner domain: Echelon 5 Combat & Survival Physiology / Crush Depth Integrity
+Review disposition: YELLOW / STATIC_DOC_ONLY until compile/import/runtime/profiler/player proof exists.
+
 - Route ID: `SHINOBU_323_SUIT_INTEGRITY_DEPTH_CRUSH_SOLVER`
 - Date: 2026-05-22
 - Owner: `SHINOBU_323`

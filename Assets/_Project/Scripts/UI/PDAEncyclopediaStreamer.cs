@@ -3,11 +3,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Data;
-using Hecton8.Core.Generated;
 using Hecton8.Core.Memory;
 using Hecton8.Data;
 using TMPro;
@@ -165,6 +165,7 @@ namespace Hecton8.UI
         ISlowTickable,
         ILateFrameTickable,
         IPDAEventListener,
+        ILocalizationLanguageChangedListener,
         IGlobalRegistryHotSwapListener
     {
         private static int s_x001PdaEncyclopediaStreamerSignalPushDropCount;
@@ -210,6 +211,8 @@ namespace Hecton8.UI
         private const uint TextSourceVaultMock = 3u;
         private const uint TextSourceDataMonolith = 4u;
         private const uint DataMonolithSourceId = H8DataLayoutConstants.BlobMagic;
+        private const int DataMonolithSeedMinRecordsPerFrame = 16;
+        private const int DataMonolithSeedMaxRecordsPerFrame = 96;
         private const BufferID UnlockMaskBufferId = (BufferID)70560;
         private const BufferID RuntimeStateBufferId = (BufferID)70561;
         private const BufferID MetadataBufferId = (BufferID)70562;
@@ -217,9 +220,6 @@ namespace Hecton8.UI
         private const BufferID TelemetryCursorBufferId = (BufferID)70564;
         private const BufferID MockUtf8BufferId = (BufferID)70565;
         private const BufferID MockIndexBufferId = (BufferID)70566;
-#if UNITY_EDITOR
-        private const BufferID CsvScratchBufferId = (BufferID)70567;
-#endif
         private const BufferID TypewriterStateBufferId = (BufferID)70569;
         internal const BufferID H8lrMirrorBufferId = (BufferID)70570;
         private const SystemID VaultOwnerSystemId = SystemID.UI;
@@ -247,6 +247,7 @@ namespace Hecton8.UI
 
         [Header("Data")]
         [SerializeField] private bool openDataMonolithAppliedLoreOnEnable = true;
+        [SerializeField] private bool followActiveLocalizationLanguage = true;
         [SerializeField] private uint dataMonolithLocaleHash = H8AppliedLoreRuntime.DefaultLocaleHash;
         [SerializeField] private bool openDefaultH8lrOnEnable = true;
         [SerializeField] private string h8lrPathOverride;
@@ -279,7 +280,7 @@ namespace Hecton8.UI
         private VaultGenerationHandle<byte> _mockUtf8Handle;
         private VaultGenerationHandle<BabelIndexDTO> _mockIndexHandle;
 #if UNITY_EDITOR
-        private VaultGenerationHandle<byte> _csvScratchHandle;
+        private byte[] _editorCsvScratch;
 #endif
         private VaultGenerationHandle<PdaTypewriterStateDTO> _typewriterStateHandle;
         private VaultGenerationHandle<byte> _h8lrMirrorHandle;
@@ -313,6 +314,10 @@ namespace Hecton8.UI
         private H8AppliedLorePacketRecord _activeAppliedLoreRecord;
         private uint _activeAppliedLoreRecordHash;
         private uint _activeAppliedLoreLocaleHash;
+        private uint _resolvedDataMonolithLocaleHash = H8AppliedLoreRuntime.DefaultLocaleHash;
+        private uint _dataMonolithMetadataSeedLocaleHash = H8AppliedLoreRuntime.DefaultLocaleHash;
+        private int _dataMonolithMetadataSeedCursor;
+        private int _dataMonolithMetadataSeedStage;
         private uint _lastFaultHash;
         private uint _activeUtf8SourceFlags;
         private bool _hasActiveAppliedLoreRecord;
@@ -342,6 +347,7 @@ namespace Hecton8.UI
         {
             EnsureTextLeases();
             TryBindPlayerContextCold();
+            RefreshAppliedLoreLocaleHash(LocRegistry.ActiveLanguage);
             TryColdBootstrap();
             SignalBus<ScanCompleteSignal>.EnsureInitialized();
             SignalBus<LoreFragmentScannedSignal>.EnsureInitialized();
@@ -349,6 +355,7 @@ namespace Hecton8.UI
             SignalCorridorRuntime.EnsureHapticPulseSignalLaneInitialized();
             CapturePdaTextFontBaselinesCold();
             TryRegisterPdaEvents();
+            LocalizationEvents.RegisterLanguageListener(this);
             TryRegisterHotSwapListener();
             TryRegisterDispatcherLanes();
             RefreshVisibility();
@@ -369,6 +376,7 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             UnregisterDispatcherLanes();
+            LocalizationEvents.UnregisterLanguageListener(this);
             UnregisterPdaEvents();
             TryUnregisterHotSwapListener();
             FlushQueuedBlackBoxDump();
@@ -392,6 +400,10 @@ namespace Hecton8.UI
                 _babelStore = null;
                 _ownsBabelStore = false;
             }
+
+#if UNITY_EDITOR
+            _editorCsvScratch = null;
+#endif
 
             if (_bodyLease.IsValid)
             {
@@ -450,6 +462,9 @@ namespace Hecton8.UI
 
             if (!_vaultReady)
                 return;
+
+            if (!_dataMonolithMetadataSeeded && openDataMonolithAppliedLoreOnEnable)
+                SeedDataMonolithAppliedLoreMetadata();
 
             if (_pendingSelectHash != 0u)
             {
@@ -532,6 +547,11 @@ namespace Hecton8.UI
                         _pendingSelectHash = payload.LogEventHashID;
                     return;
             }
+        }
+
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+        {
+            RefreshAppliedLoreLocaleHash((GameLanguage)payload.Language);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -664,25 +684,18 @@ namespace Hecton8.UI
             if (!EnsureVaultBuffers() || string.IsNullOrEmpty(path) || !File.Exists(path))
                 return false;
 
-            if (!TryReadVaultBuffer(in _csvScratchHandle, CsvScratchBufferId, out NativeArray<byte>.ReadOnly scratch) ||
-                scratch.Length <= 0)
-                return false;
-
+            byte[] scratch = EnsureEditorCsvScratchCold();
             int totalRead = 0;
             try
             {
                 using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, FileOptions.SequentialScan))
                 {
-                    Span<byte> ioBuffer = stackalloc byte[1024];
                     while (totalRead < scratch.Length)
                     {
-                        int readCapacity = math.min(ioBuffer.Length, scratch.Length - totalRead);
-                        int read = stream.Read(ioBuffer.Slice(0, readCapacity));
+                        int readCapacity = scratch.Length - totalRead;
+                        int read = stream.Read(scratch, totalRead, readCapacity);
                         if (read <= 0)
                             break;
-
-                        if (!TryWriteCsvScratchBytes(totalRead, ioBuffer.Slice(0, read)))
-                            return false;
 
                         totalRead += read;
                     }
@@ -697,7 +710,7 @@ namespace Hecton8.UI
                 return false;
             }
 
-            return ParseCsvMetadata(totalRead);
+            return ParseCsvMetadata(new ReadOnlySpan<byte>(scratch, 0, totalRead));
         }
 #endif
 
@@ -835,8 +848,12 @@ namespace Hecton8.UI
                     continue;
                 }
 
-                PdaAup48 signalAup = CaptureSignalAup(in signal);
-                if (UnlockEntry(signal.EntryHash, in signalAup, signal.SourceId, ResolvePdaFrame(), true, validatePayload: false, wasNewUnlock: out bool scanUnlocked))
+                PdaAup48 signalAup = default;
+                bool hasSignalAup = TryCaptureSignalAup(in signal, out signalAup);
+                if (!hasSignalAup && TryReadLastDiscoveryAup(out PdaAup48 lastAup))
+                    signalAup = lastAup;
+
+                if (UnlockEntry(signal.EntryHash, in signalAup, signal.SourceId, ResolvePdaFrame(), hasSignalAup, validatePayload: false, wasNewUnlock: out bool scanUnlocked))
                 {
                     if (scanUnlocked)
                         PublishLoreUnlockHaptic();
@@ -967,10 +984,15 @@ namespace Hecton8.UI
                 return false;
             }
 
-            bool prerequisitesSatisfied = AreAppliedLorePrerequisitesSatisfied(hash);
-            if (!TryReadVaultBuffer(in _unlockMaskHandle, UnlockMaskBufferId, out NativeArray<EncyclopediaStateDTO>.ReadOnly masks) ||
-                !TryReadVaultBuffer(in _runtimeStateHandle, RuntimeStateBufferId, out NativeArray<PdaEncyclopediaRuntimeStateDTO>.ReadOnly states) ||
-                !TryReadVaultBuffer(in _metadataHandle, MetadataBufferId, out NativeArray<PdaEncyclopediaEntryMetaDTO>.ReadOnly metadata) ||
+            NativeArray<EncyclopediaStateDTO>.ReadOnly masks;
+            NativeArray<PdaEncyclopediaRuntimeStateDTO>.ReadOnly states;
+            NativeArray<PdaEncyclopediaEntryMetaDTO>.ReadOnly metadata;
+            bool hasMaskSnapshot = TryReadVaultBuffer(in _unlockMaskHandle, UnlockMaskBufferId, out masks);
+            bool hasStateSnapshot = TryReadVaultBuffer(in _runtimeStateHandle, RuntimeStateBufferId, out states);
+            bool hasMetadataSnapshot = TryReadVaultBuffer(in _metadataHandle, MetadataBufferId, out metadata);
+            if (!hasMaskSnapshot ||
+                !hasStateSnapshot ||
+                !hasMetadataSnapshot ||
                 masks.Length < 1 ||
                 states.Length < 1 ||
                 metadata.Length < MaxMetadataEntries)
@@ -978,6 +1000,8 @@ namespace Hecton8.UI
                 return false;
             }
 
+            EncyclopediaStateDTO maskSnapshot = masks[0];
+            bool prerequisitesSatisfied = AreAppliedLorePrerequisitesSatisfiedSnapshot(hash, metadata, in maskSnapshot);
             if (!TryPlanUnlockEntry(
                     hash,
                     in aup,
@@ -1285,24 +1309,6 @@ namespace Hecton8.UI
             }
         }
 
-        private bool AreAppliedLorePrerequisitesSatisfied(uint hash)
-        {
-            if (hash == 0u || !H8AppliedLoreRuntime.TryFindRouteForPacket(hash, out H8AppliedLoreRouteRecord route))
-                return true;
-
-            uint requiredCount = math.min(route.RequiredPacketCount, (uint)H8DataLayoutConstants.AppliedLoreRoutePrerequisiteCapacity);
-            for (uint i = 0u; i < requiredCount; i++)
-            {
-                uint requiredHash = H8AppliedLoreRuntime.GetRouteRequiredPacketHash(in route, i);
-                if (requiredHash == 0u || requiredHash == hash)
-                    return false;
-                if (!IsUnlocked(requiredHash))
-                    return false;
-            }
-
-            return true;
-        }
-
         private bool AreAppliedLorePrerequisitesSatisfiedSnapshot(
             uint hash,
             NativeArray<PdaEncyclopediaEntryMetaDTO>.ReadOnly metadata,
@@ -1523,7 +1529,7 @@ namespace Hecton8.UI
 
         private bool TryGetAppliedLoreRecord(uint hash, out H8AppliedLorePacketRecord record)
         {
-            uint localeHash = dataMonolithLocaleHash != 0u ? dataMonolithLocaleHash : H8AppliedLoreRuntime.DefaultLocaleHash;
+            uint localeHash = ResolveActiveDataMonolithLocaleHash();
             if (_hasActiveAppliedLoreRecord &&
                 _activeAppliedLoreRecordHash == hash &&
                 _activeAppliedLoreLocaleHash == localeHash)
@@ -1583,6 +1589,32 @@ namespace Hecton8.UI
             _activeAppliedLoreRecordHash = 0u;
             _activeAppliedLoreLocaleHash = 0u;
             _hasActiveAppliedLoreRecord = false;
+        }
+
+        private void RefreshAppliedLoreLocaleHash(GameLanguage language)
+        {
+            uint localeHash = ResolveConfiguredDataMonolithLocaleHash(language);
+            if (_resolvedDataMonolithLocaleHash == localeHash)
+                return;
+
+            _resolvedDataMonolithLocaleHash = localeHash;
+            ResetDataMonolithMetadataSeed(localeHash);
+            _needsEntryReload = true;
+            ResetActiveSourceCache();
+        }
+
+        private uint ResolveActiveDataMonolithLocaleHash()
+        {
+            uint localeHash = _resolvedDataMonolithLocaleHash;
+            return localeHash != 0u ? localeHash : H8AppliedLoreRuntime.DefaultLocaleHash;
+        }
+
+        private uint ResolveConfiguredDataMonolithLocaleHash(GameLanguage language)
+        {
+            if (!followActiveLocalizationLanguage)
+                return dataMonolithLocaleHash != 0u ? dataMonolithLocaleHash : H8AppliedLoreRuntime.DefaultLocaleHash;
+
+            return H8AppliedLoreRuntime.ResolveLocaleHash(language);
         }
 
         private static bool IsBabelErrorSentinel(ReadOnlySpan<byte> source)
@@ -2026,6 +2058,12 @@ namespace Hecton8.UI
             return (int)math.round(math.lerp(32f, 2048f, q));
         }
 
+        private int ResolveDataMonolithSeedBudget(float quality)
+        {
+            float q = math.saturate(quality);
+            return (int)math.round(math.lerp(DataMonolithSeedMinRecordsPerFrame, DataMonolithSeedMaxRecordsPerFrame, q));
+        }
+
         private float ResolveGlobalQualityWeight01()
         {
             float quality = HomeostasisBrain.GlobalQualityWeight;
@@ -2457,23 +2495,7 @@ namespace Hecton8.UI
                 vault.ReleaseWriteLock(in _telemetryHandle, VaultOwnerSystemId);
             }
 
-            if (vault.IsCompactionFenceActive ||
-                !vault.TryAcquireWriteLock(in _telemetryCursorHandle, VaultOwnerSystemId, out NativeArray<int> cursorBuffer))
-            {
-                return;
-            }
-
-            try
-            {
-                if (!cursorBuffer.IsCreated || cursorBuffer.Length < 1)
-                    return;
-
-                cursorBuffer[0] = nextCursor;
-            }
-            finally
-            {
-                vault.ReleaseWriteLock(in _telemetryCursorHandle, VaultOwnerSystemId);
-            }
+            TryWriteTelemetryCursor(vault, nextCursor);
         }
 
         private bool EnsureVaultBuffers()
@@ -2481,33 +2503,6 @@ namespace Hecton8.UI
             return _vaultReady &&
                    _vault != null &&
                    ArePdaHandlesCreated();
-        }
-
-        private NativeArray<T> ResolveVaultBuffer<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId)
-            where T : unmanaged
-        {
-            return TryResolveVaultBuffer(in handle, expectedBufferId, out NativeArray<T> buffer) ? buffer : default;
-        }
-
-        private bool TryResolveVaultBuffer<T>(
-            in VaultGenerationHandle<T> handle,
-            BufferID expectedBufferId,
-            out NativeArray<T> buffer)
-            where T : unmanaged
-        {
-            buffer = default;
-            if (_vault == null ||
-                _vault.IsCompactionFenceActive ||
-                !IsPdaHandleCreated(in handle, expectedBufferId) ||
-                !_vault.TryResolveHandle(in handle, out buffer) ||
-                _vault.IsCompactionFenceActive ||
-                !buffer.IsCreated ||
-                buffer.Length <= 0)
-            {
-                return false;
-            }
-
-            return true;
         }
 
         private bool TryReadVaultBuffer<T>(
@@ -2641,6 +2636,29 @@ namespace Hecton8.UI
             }
         }
 
+        private bool TryWriteTelemetryCursor(IDataVault vault, int nextCursor)
+        {
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireWriteLock(in _telemetryCursorHandle, VaultOwnerSystemId, out NativeArray<int> cursorBuffer))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!cursorBuffer.IsCreated || cursorBuffer.Length < 1)
+                    return false;
+
+                cursorBuffer[0] = nextCursor;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _telemetryCursorHandle, VaultOwnerSystemId);
+            }
+        }
+
         private bool TryWriteUnlockMask(in EncyclopediaStateDTO plannedMask)
         {
             IDataVault vault = _vault;
@@ -2745,9 +2763,6 @@ namespace Hecton8.UI
                    IsPdaHandleCreated(in _telemetryCursorHandle, TelemetryCursorBufferId) &&
                    IsPdaHandleCreated(in _mockUtf8Handle, MockUtf8BufferId) &&
                    IsPdaHandleCreated(in _mockIndexHandle, MockIndexBufferId) &&
-#if UNITY_EDITOR
-                   IsPdaHandleCreated(in _csvScratchHandle, CsvScratchBufferId) &&
-#endif
                    IsPdaHandleCreated(in _typewriterStateHandle, TypewriterStateBufferId) &&
                    IsPdaHandleCreated(in _h8lrMirrorHandle, H8lrMirrorBufferId);
         }
@@ -2761,9 +2776,6 @@ namespace Hecton8.UI
                    IsPdaBufferResolvable(in _telemetryCursorHandle, TelemetryCursorBufferId, 1) &&
                    IsPdaBufferResolvable(in _mockUtf8Handle, MockUtf8BufferId, MockUtf8Bytes) &&
                    IsPdaBufferResolvable(in _mockIndexHandle, MockIndexBufferId, MockEntryCapacity) &&
-#if UNITY_EDITOR
-                   IsPdaBufferResolvable(in _csvScratchHandle, CsvScratchBufferId, CsvScratchBytes) &&
-#endif
                    IsPdaBufferResolvable(in _typewriterStateHandle, TypewriterStateBufferId, 1) &&
                    IsPdaBufferResolvable(in _h8lrMirrorHandle, H8lrMirrorBufferId, H8lrMirrorBytes);
         }
@@ -2788,7 +2800,7 @@ namespace Hecton8.UI
             _vaultReady = false;
             _mockSeeded = false;
             _h8lrMetadataSeeded = false;
-            _dataMonolithMetadataSeeded = false;
+            ResetDataMonolithMetadataSeed(ResolveActiveDataMonolithLocaleHash());
             _coldBootstrapAttempted = false;
             ResetActiveSourceCache();
         }
@@ -2802,9 +2814,6 @@ namespace Hecton8.UI
             ReleasePdaVaultHandle(vault, ref _telemetryCursorHandle, TelemetryCursorBufferId);
             ReleasePdaVaultHandle(vault, ref _mockUtf8Handle, MockUtf8BufferId);
             ReleasePdaVaultHandle(vault, ref _mockIndexHandle, MockIndexBufferId);
-#if UNITY_EDITOR
-            ReleasePdaVaultHandle(vault, ref _csvScratchHandle, CsvScratchBufferId);
-#endif
             ReleasePdaVaultHandle(vault, ref _typewriterStateHandle, TypewriterStateBufferId);
             ReleasePdaVaultHandle(vault, ref _h8lrMirrorHandle, H8lrMirrorBufferId);
         }
@@ -2884,13 +2893,6 @@ namespace Hecton8.UI
                 MockEntryCapacity,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-#if UNITY_EDITOR
-            _csvScratchHandle = _vault.EnsureGenerationHandle<byte>(
-                CsvScratchBufferId,
-                CsvScratchBytes,
-                SystemID.UI,
-                NativeArrayOptions.UninitializedMemory);
-#endif
             _typewriterStateHandle = _vault.EnsureGenerationHandle<PdaTypewriterStateDTO>(
                 TypewriterStateBufferId,
                 1,
@@ -3021,27 +3023,70 @@ namespace Hecton8.UI
 
             ReadOnlySpan<H8AppliedLorePacketRecord> records = H8AppliedLoreRuntime.GetPacketRecords();
             if (records.Length <= 0)
+            {
+                _dataMonolithMetadataSeeded = true;
                 return;
+            }
 
-            uint localeHash = dataMonolithLocaleHash != 0u ? dataMonolithLocaleHash : H8AppliedLoreRuntime.DefaultLocaleHash;
-            int imported = SeedAppliedLoreMetadataForLocale(records, localeHash, false);
-            if (localeHash != H8AppliedLoreRuntime.DefaultLocaleHash)
-                imported += SeedAppliedLoreMetadataForLocale(records, H8AppliedLoreRuntime.DefaultLocaleHash, true);
+            uint localeHash = ResolveActiveDataMonolithLocaleHash();
+            if (_dataMonolithMetadataSeedLocaleHash != localeHash)
+                ResetDataMonolithMetadataSeed(localeHash);
 
-            if (imported > 0)
+            int remainingBudget = ResolveDataMonolithSeedBudget(ResolveGlobalQualityWeight01());
+            int metadataWrites = 0;
+            while (remainingBudget > 0 && !_dataMonolithMetadataSeeded)
+            {
+                uint stageLocaleHash = _dataMonolithMetadataSeedStage == 0
+                    ? localeHash
+                    : H8AppliedLoreRuntime.DefaultLocaleHash;
+                bool fillOnlyMissing = _dataMonolithMetadataSeedStage != 0;
+
+                int scanned = SeedAppliedLoreMetadataForLocale(
+                    records,
+                    stageLocaleHash,
+                    fillOnlyMissing,
+                    ref _dataMonolithMetadataSeedCursor,
+                    remainingBudget,
+                    out int metadataWritesThisSlice);
+
+                metadataWrites += metadataWritesThisSlice;
+                remainingBudget -= scanned > 0 ? scanned : remainingBudget;
+                if (_dataMonolithMetadataSeedCursor < records.Length)
+                    break;
+
+                if (_dataMonolithMetadataSeedStage == 0 &&
+                    localeHash != H8AppliedLoreRuntime.DefaultLocaleHash)
+                {
+                    _dataMonolithMetadataSeedStage = 1;
+                    _dataMonolithMetadataSeedCursor = 0;
+                    continue;
+                }
+
+                _dataMonolithMetadataSeeded = true;
+            }
+
+            if (metadataWrites > 0)
                 TryCommitMetadataRevision(true);
-
-            _dataMonolithMetadataSeeded = true;
         }
 
         private int SeedAppliedLoreMetadataForLocale(
             ReadOnlySpan<H8AppliedLorePacketRecord> records,
             uint localeHash,
-            bool fillOnlyMissingDataMonolithRows)
+            bool fillOnlyMissingDataMonolithRows,
+            ref int cursor,
+            int recordBudget,
+            out int metadataWrites)
         {
-            int imported = 0;
-            for (int i = 0; i < records.Length && imported < MaxMetadataEntries; i++)
+            metadataWrites = 0;
+            if (recordBudget <= 0)
+                return 0;
+
+            int scanned = 0;
+            int start = math.clamp(cursor, 0, records.Length);
+            for (int i = start; i < records.Length && scanned < recordBudget && metadataWrites < MaxMetadataEntries; i++)
             {
+                scanned++;
+                cursor = i + 1;
                 H8AppliedLorePacketRecord record = records[i];
                 if (record.PacketHash == 0u || record.LocaleHash != localeHash)
                     continue;
@@ -3076,11 +3121,20 @@ namespace Hecton8.UI
                     break;
                 }
 
-                if (!hasDataMonolithMetadata)
-                    imported++;
+                metadataWrites++;
             }
 
-            return imported;
+            return scanned;
+        }
+
+        private void ResetDataMonolithMetadataSeed(uint localeHash)
+        {
+            _dataMonolithMetadataSeeded = false;
+            _dataMonolithMetadataSeedCursor = 0;
+            _dataMonolithMetadataSeedStage = 0;
+            _dataMonolithMetadataSeedLocaleHash = localeHash != 0u
+                ? localeHash
+                : H8AppliedLoreRuntime.DefaultLocaleHash;
         }
 
         private void SeedH8lrMetadata()
@@ -3093,7 +3147,7 @@ namespace Hecton8.UI
                 return;
 
             int count = math.min(store.EntryCount, MaxMetadataEntries);
-            int imported = 0;
+            int metadataWrites = 0;
             for (int i = 0; i < count; i++)
             {
                 if (!store.TryGetRecord(i, out PdaH8lrRecordDTO record) || record.Hash == 0u)
@@ -3112,7 +3166,6 @@ namespace Hecton8.UI
                 }
 
                 PdaEncyclopediaEntryMetaDTO meta = metadata[bitIndex];
-                bool importedNewSource = meta.SourceId != H8lrSourceId;
 
                 meta.EntryHash = record.Hash;
                 meta.BitIndex = bitIndex;
@@ -3127,11 +3180,10 @@ namespace Hecton8.UI
                     break;
                 }
 
-                if (importedNewSource)
-                    imported++;
+                metadataWrites++;
             }
 
-            if (imported > 0)
+            if (metadataWrites > 0)
                 TryCommitMetadataRevision(true);
 
             _h8lrMetadataSeeded = true;
@@ -3361,52 +3413,13 @@ namespace Hecton8.UI
         }
 
 #if UNITY_EDITOR
-        private bool TryWriteCsvScratchBytes(int offset, ReadOnlySpan<byte> source)
+        private bool ParseCsvMetadata(ReadOnlySpan<byte> bytes)
         {
-            IDataVault vault = _vault;
-            if (!CanUsePdaVaultHandles() ||
-                vault == null ||
-                vault.IsCompactionFenceActive ||
-                source.Length <= 0 ||
-                !vault.TryAcquireWriteLock(in _csvScratchHandle, VaultOwnerSystemId, out NativeArray<byte> scratch))
+            if (bytes.Length <= 0 || !EnsureVaultBuffers())
             {
                 return false;
             }
 
-            try
-            {
-                if (!scratch.IsCreated ||
-                    offset < 0 ||
-                    source.Length > scratch.Length - offset)
-                {
-                    return false;
-                }
-
-                for (int i = 0; i < source.Length; i++)
-                    scratch[offset + i] = source[i];
-
-                return true;
-            }
-            finally
-            {
-                vault.ReleaseWriteLock(in _csvScratchHandle, VaultOwnerSystemId);
-            }
-        }
-
-        private bool ParseCsvMetadata(int byteLength)
-        {
-            if (byteLength <= 0 ||
-                !EnsureVaultBuffers() ||
-                !TryResolveVaultBuffer(in _csvScratchHandle, CsvScratchBufferId, out NativeArray<byte> scratch) ||
-                !scratch.IsCreated)
-            {
-                return false;
-            }
-
-            byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch);
-            ReadOnlySpan<byte> bytes = MemoryMarshal.CreateReadOnlySpan(
-                ref UnsafeUtility.AsRef<byte>(ptr),
-                math.min(byteLength, scratch.Length));
             int lineStart = 0;
             int imported = 0;
             for (int i = 0; i <= bytes.Length; i++)
@@ -3473,6 +3486,18 @@ namespace Hecton8.UI
                 TryCommitMetadataRevision(true);
 
             return imported > 0;
+        }
+
+        private byte[] EnsureEditorCsvScratchCold()
+        {
+            byte[] scratch = _editorCsvScratch;
+            if (scratch == null || scratch.Length != CsvScratchBytes)
+            {
+                scratch = new byte[CsvScratchBytes]; // EDITOR COLD ALLOC: local metadata CSV scratch, not GlobalDataVault ownership.
+                _editorCsvScratch = scratch;
+            }
+
+            return scratch;
         }
 
         private bool TryParseCsvLine(ReadOnlySpan<byte> line, out uint hash, out ushort bitIndex, out bool explicitBitIndex)
@@ -3686,10 +3711,11 @@ namespace Hecton8.UI
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static PdaAup48 CaptureSignalAup(in ScanCompleteSignal signal)
+        private static bool TryCaptureSignalAup(in ScanCompleteSignal signal, out PdaAup48 aup)
         {
             ScanCompleteSignal copy = signal;
-            return UnsafeUtility.As<ScanCompleteSignal, PdaAup48>(ref copy);
+            aup = UnsafeUtility.As<ScanCompleteSignal, PdaAup48>(ref copy);
+            return IsFiniteAup(in aup);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

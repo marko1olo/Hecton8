@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Record aftershock public ledger
+# Public Ledger Aftershock Record
 
-Truth ending HECTON-8 - не purity. Это решение усложнить сокрытие и принять uncontrolled consequence.
+HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.
 
 ## Scanner
 
@@ -28,10 +28,10 @@ PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and At
 
 ## Audio
 
-Правда вышла из комнаты. Она не спросила, куда идти дальше.
+Truth left the room. It did not ask where to go next.
 
 ## Field Note
 
-Для public truth ending record и spoiler-gated site copy.
+Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation.
 
 <!-- External Site; generated from P340_PUBLIC_LEDGER_AFTERSHOCK_RECORD/ru_RU. -->

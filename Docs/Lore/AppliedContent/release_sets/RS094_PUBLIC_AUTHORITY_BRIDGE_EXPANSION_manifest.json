@@ -1,0 +1,28 @@
+{
+    "schema":  "H8.APPLIED_LORE_RELEASE_SET.V0",
+    "release_set_id":  "RS094_PUBLIC_AUTHORITY_BRIDGE_EXPANSION",
+    "status":  "canonical_source_candidate_pending_manifest_wiring_native_localization_and_bake",
+    "packets":  [
+                    "P467_ATLAS6_PUBLIC_REPAIR_NETWORK_BRIDGE",
+                    "P468_XENON_OMEGA_PUBLIC_MATERIAL_BRIDGE",
+                    "P469_AEGIR_RELAY_WINDOW_BRIDGE",
+                    "P470_KEELMARK_TONNE_WINDOW_BRIDGE",
+                    "P471_LUYTEN_PACKET_CUSTODY_RELAY_BRIDGE",
+                    "P472_TAU_CETI_PUBLIC_LEDGER_PRESSURE_BRIDGE",
+                    "P473_BARNARD_YARDS_SALVAGE_ORIGIN_BRIDGE",
+                    "P474_SOL_CORE_REMOTE_CLAIM_AUTHORITY_BRIDGE"
+                ],
+    "authoring_packet_sources":  [
+                                     "Docs/Lore/AppliedContent/production_packets/P467_ATLAS6_PUBLIC_REPAIR_NETWORK_BRIDGE.production.md",
+                                     "Docs/Lore/AppliedContent/production_packets/P468_XENON_OMEGA_PUBLIC_MATERIAL_BRIDGE.production.md",
+                                     "Docs/Lore/AppliedContent/production_packets/P469_AEGIR_RELAY_WINDOW_BRIDGE.production.md",
+                                     "Docs/Lore/AppliedContent/production_packets/P470_KEELMARK_TONNE_WINDOW_BRIDGE.production.md",
+                                     "Docs/Lore/AppliedContent/production_packets/P471_LUYTEN_PACKET_CUSTODY_RELAY_BRIDGE.production.md",
+                                     "Docs/Lore/AppliedContent/production_packets/P472_TAU_CETI_PUBLIC_LEDGER_PRESSURE_BRIDGE.production.md",
+                                     "Docs/Lore/AppliedContent/production_packets/P473_BARNARD_YARDS_SALVAGE_ORIGIN_BRIDGE.production.md",
+                                     "Docs/Lore/AppliedContent/production_packets/P474_SOL_CORE_REMOTE_CLAIM_AUTHORITY_BRIDGE.production.md"
+                                 ],
+    "canonical_importer_ready":  false,
+    "runtime_ready":  false,
+    "evidence_class":  "STATIC_SOURCE"
+}

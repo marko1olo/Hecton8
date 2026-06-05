@@ -649,7 +649,7 @@
         "en_US": {
           "title": "No Clean Ending Dossier Note",
           "scanner": "Dossier note: closure denied; consequence retained.",
-          "field_note": "Use as post-ending summary seed and replay bridge; never call it perfect victory.",
+          "field_note": "The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
           "terminal": "DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
           "audio": "You saved something. That is not the same as clearing it.",
           "in_game_wiki": "No Clean Ending Dossier Note defines the post-ending memory tone.",
@@ -658,7 +658,7 @@
         "ru_RU": {
           "title": "Dossier note: нет чистой концовки",
           "scanner": "Dossier note: closure denied; consequence retained.",
-          "field_note": "Post-ending summary seed and replay bridge; never call it perfect victory.",
+          "field_note": "Draft RU localization pending native pass. The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
           "terminal": "DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
           "audio": "Ты что-то спас. Это не значит, что все очищено.",
           "in_game_wiki": "Dossier note no clean ending задает post-ending memory tone.",
@@ -667,7 +667,7 @@
         "ja_JP": {
           "title": "Draft JA localization pending native pass. No Clean Ending Dossier Note",
           "scanner": "Draft JA localization pending native pass. Dossier note: closure denied; consequence retained.",
-          "field_note": "Draft JA localization pending native pass. Use as post-ending summary seed and replay bridge; never call it perfect victory.",
+          "field_note": "Draft JP localization pending native pass. The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
           "terminal": "Draft JA localization pending native pass. DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
           "audio": "Draft JA localization pending native pass. You saved something. That is not the same as clearing it.",
           "in_game_wiki": "Draft JA localization pending native pass. No Clean Ending Dossier Note defines the post-ending memory tone.",
@@ -676,7 +676,7 @@
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. No Clean Ending Dossier Note",
           "scanner": "Draft ZH localization pending native pass. Dossier note: closure denied; consequence retained.",
-          "field_note": "Draft ZH localization pending native pass. Use as post-ending summary seed and replay bridge; never call it perfect victory.",
+          "field_note": "Draft CN localization pending native pass. The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
           "terminal": "Draft ZH localization pending native pass. DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
           "audio": "Draft ZH localization pending native pass. You saved something. That is not the same as clearing it.",
           "in_game_wiki": "Draft ZH localization pending native pass. No Clean Ending Dossier Note defines the post-ending memory tone.",
@@ -685,7 +685,7 @@
         "fr_FR": {
           "title": "Draft FR localization pending native pass. No Clean Ending Dossier Note",
           "scanner": "Draft FR localization pending native pass. Dossier note: closure denied; consequence retained.",
-          "field_note": "Draft FR localization pending native pass. Use as post-ending summary seed and replay bridge; never call it perfect victory.",
+          "field_note": "Draft FR localization pending native pass. The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
           "terminal": "Draft FR localization pending native pass. DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
           "audio": "Draft FR localization pending native pass. You saved something. That is not the same as clearing it.",
           "in_game_wiki": "Draft FR localization pending native pass. No Clean Ending Dossier Note defines the post-ending memory tone.",
@@ -694,7 +694,7 @@
         "es_ES": {
           "title": "Draft ES localization pending native pass. No Clean Ending Dossier Note",
           "scanner": "Draft ES localization pending native pass. Dossier note: closure denied; consequence retained.",
-          "field_note": "Draft ES localization pending native pass. Use as post-ending summary seed and replay bridge; never call it perfect victory.",
+          "field_note": "Draft ES localization pending native pass. The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
           "terminal": "Draft ES localization pending native pass. DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
           "audio": "Draft ES localization pending native pass. You saved something. That is not the same as clearing it.",
           "in_game_wiki": "Draft ES localization pending native pass. No Clean Ending Dossier Note defines the post-ending memory tone.",
@@ -703,7 +703,7 @@
         "de_DE": {
           "title": "Draft DE localization pending native pass. No Clean Ending Dossier Note",
           "scanner": "Draft DE localization pending native pass. Dossier note: closure denied; consequence retained.",
-          "field_note": "Draft DE localization pending native pass. Use as post-ending summary seed and replay bridge; never call it perfect victory.",
+          "field_note": "Draft DE localization pending native pass. The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
           "terminal": "Draft DE localization pending native pass. DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
           "audio": "Draft DE localization pending native pass. You saved something. That is not the same as clearing it.",
           "in_game_wiki": "Draft DE localization pending native pass. No Clean Ending Dossier Note defines the post-ending memory tone.",
@@ -712,7 +712,7 @@
         "pl_PL": {
           "title": "Draft PL localization pending native pass. No Clean Ending Dossier Note",
           "scanner": "Draft PL localization pending native pass. Dossier note: closure denied; consequence retained.",
-          "field_note": "Draft PL localization pending native pass. Use as post-ending summary seed and replay bridge; never call it perfect victory.",
+          "field_note": "Draft PL localization pending native pass. The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
           "terminal": "Draft PL localization pending native pass. DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
           "audio": "Draft PL localization pending native pass. You saved something. That is not the same as clearing it.",
           "in_game_wiki": "Draft PL localization pending native pass. No Clean Ending Dossier Note defines the post-ending memory tone.",
@@ -721,7 +721,7 @@
         "uk_UA": {
           "title": "Draft UK localization pending native pass. No Clean Ending Dossier Note",
           "scanner": "Draft UK localization pending native pass. Dossier note: closure denied; consequence retained.",
-          "field_note": "Draft UK localization pending native pass. Use as post-ending summary seed and replay bridge; never call it perfect victory.",
+          "field_note": "Draft UA localization pending native pass. The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
           "terminal": "Draft UK localization pending native pass. DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
           "audio": "Draft UK localization pending native pass. You saved something. That is not the same as clearing it.",
           "in_game_wiki": "Draft UK localization pending native pass. No Clean Ending Dossier Note defines the post-ending memory tone.",
@@ -730,7 +730,7 @@
         "ar_SA": {
           "title": "Draft AR localization pending native pass. No Clean Ending Dossier Note",
           "scanner": "Draft AR localization pending native pass. Dossier note: closure denied; consequence retained.",
-          "field_note": "Draft AR localization pending native pass. Use as post-ending summary seed and replay bridge; never call it perfect victory.",
+          "field_note": "Draft AR localization pending native pass. The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
           "terminal": "Draft AR localization pending native pass. DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
           "audio": "Draft AR localization pending native pass. You saved something. That is not the same as clearing it.",
           "in_game_wiki": "Draft AR localization pending native pass. No Clean Ending Dossier Note defines the post-ending memory tone.",
@@ -739,7 +739,7 @@
         "id_ID": {
           "title": "Draft ID localization pending native pass. No Clean Ending Dossier Note",
           "scanner": "Draft ID localization pending native pass. Dossier note: closure denied; consequence retained.",
-          "field_note": "Draft ID localization pending native pass. Use as post-ending summary seed and replay bridge; never call it perfect victory.",
+          "field_note": "Draft ID localization pending native pass. The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
           "terminal": "Draft ID localization pending native pass. DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
           "audio": "Draft ID localization pending native pass. You saved something. That is not the same as clearing it.",
           "in_game_wiki": "Draft ID localization pending native pass. No Clean Ending Dossier Note defines the post-ending memory tone.",
@@ -748,7 +748,7 @@
         "ko_KR": {
           "title": "Draft KO localization pending native pass. No Clean Ending Dossier Note",
           "scanner": "Draft KO localization pending native pass. Dossier note: closure denied; consequence retained.",
-          "field_note": "Draft KO localization pending native pass. Use as post-ending summary seed and replay bridge; never call it perfect victory.",
+          "field_note": "Draft KO localization pending native pass. The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
           "terminal": "Draft KO localization pending native pass. DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
           "audio": "Draft KO localization pending native pass. You saved something. That is not the same as clearing it.",
           "in_game_wiki": "Draft KO localization pending native pass. No Clean Ending Dossier Note defines the post-ending memory tone.",
@@ -757,7 +757,7 @@
         "he_IL": {
           "title": "Draft HE localization pending native pass. No Clean Ending Dossier Note",
           "scanner": "Draft HE localization pending native pass. Dossier note: closure denied; consequence retained.",
-          "field_note": "Draft HE localization pending native pass. Use as post-ending summary seed and replay bridge; never call it perfect victory.",
+          "field_note": "Draft HE localization pending native pass. The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
           "terminal": "Draft HE localization pending native pass. DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
           "audio": "Draft HE localization pending native pass. You saved something. That is not the same as clearing it.",
           "in_game_wiki": "Draft HE localization pending native pass. No Clean Ending Dossier Note defines the post-ending memory tone.",
@@ -766,7 +766,7 @@
         "pt_BR": {
           "title": "Draft PT localization pending native pass. No Clean Ending Dossier Note",
           "scanner": "Draft PT localization pending native pass. Dossier note: closure denied; consequence retained.",
-          "field_note": "Draft PT localization pending native pass. Use as post-ending summary seed and replay bridge; never call it perfect victory.",
+          "field_note": "Draft PT localization pending native pass. The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
           "terminal": "Draft PT localization pending native pass. DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
           "audio": "Draft PT localization pending native pass. You saved something. That is not the same as clearing it.",
           "in_game_wiki": "Draft PT localization pending native pass. No Clean Ending Dossier Note defines the post-ending memory tone.",
@@ -775,7 +775,7 @@
         "nl_NL": {
           "title": "Draft NL localization pending native pass. No Clean Ending Dossier Note",
           "scanner": "Draft NL localization pending native pass. Dossier note: closure denied; consequence retained.",
-          "field_note": "Draft NL localization pending native pass. Use as post-ending summary seed and replay bridge; never call it perfect victory.",
+          "field_note": "Draft NL localization pending native pass. The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
           "terminal": "Draft NL localization pending native pass. DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
           "audio": "Draft NL localization pending native pass. You saved something. That is not the same as clearing it.",
           "in_game_wiki": "Draft NL localization pending native pass. No Clean Ending Dossier Note defines the post-ending memory tone.",

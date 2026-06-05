@@ -1,0 +1,48 @@
+AGENT ID: 1815
+ROLE: STARTER_TOOL_AND_ROUTE_CRAFT_AUTHORITY_AUDITOR
+MODE: No-Unity source/design audit. Independent.
+
+PRIMARY GOAL
+Resolve the static first-20 design/code blocker: copper extraction requires tool class 2, but visible starter tool provisioning is disabled development helper; first craft completion can be any craft instead of a route-relevant repair/build/improvement.
+
+READ
+- AGENTS.md, PROJECT_BIBLES.md, VISION_LOCKS.md, TASTE.md, quality.md
+- gameplay.md, survival.md, tools.md, inventory.md, construction.md
+- Docs/Reports/Batch18/1803_FIRST20_ROUTE_BLOCKER_MATRIX.md
+
+LIKELY FILES
+- Assets/_Project/Scripts/Gameplay/FirstHourDirector.cs
+- Assets/_Project/Scripts/Tools/
+- Assets/_Project/Scripts/Gameplay/Mining/
+- Assets/_Project/Scripts/Gameplay/Fabricator.cs
+- Assets/_Project/Data/ResourceNodeTemplate_CopperVein.asset or equivalent found path
+- ToolLoadoutProvisioner.cs
+- Copper Wire recipe asset
+
+OWNED OUTPUTS
+- Docs/Tasks/Status_1815.md
+- Docs/AgentLogs/Rationale_1815.md for decisions only
+- Docs/AgentLogs/LOG_1815.md
+- Docs/Reports/Batch18/1815_STARTER_TOOL_AND_ROUTE_CRAFT_AUTHORITY.md
+
+20 TASKS
+01. Create tracking files.
+02. Read authorities and relevant mandates.
+03. Locate copper node template and required tool class.
+04. Locate starter loadout/provisioning routes.
+05. Prove why disabled dev provisioner is not product acceptance.
+06. Inspect tool ownership and save/load implications.
+07. Inspect FirstHourDirector craft completion logic.
+08. Inspect Fabricator craft-completed signaling.
+09. Identify route-relevant craft/repair/build candidate.
+10. Propose product-owned starter tool authority.
+11. Propose route-specific craft completion gate, not any craft.
+12. Keep systems decoupled: GlobalRegistry cold identity, SignalBus/native route for hot events.
+13. Define Compact/Middle/High/Ultra consequences.
+14. Define PlayMode proof packet.
+15. If a narrow source fix is safe, implement only with strong evidence; otherwise write implementation prompt.
+16. Do not use dev helper as proof.
+17. Append log.
+18. Final scan for fake runtime proof.
+19. Mark complete/blocked.
+20. Include exact files inspected and required Unity slot proof.

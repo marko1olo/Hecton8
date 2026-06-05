@@ -1,0 +1,109 @@
+ID: 3109
+Role: FULL_UI_PLAYER_MOVEMENT_OWNER
+Objective: audit and plan the real playable product slice for full UI, swimming, walking/shore/interior movement, camera, input, interaction visibility, and runtime proof.
+
+Why this exists:
+- HECTON-8 is rejected if it is only a beauty capture.
+- The player must move, swim, walk, look, interact, read instruments, and understand oxygen/depth/pressure/route state.
+- "UI on" and "movement works" claims are forbidden without code/runtime evidence.
+
+Authority docs:
+- AGENTS.md
+- TASTE.md
+- VISION_LOCKS.md
+- PROJECT_BIBLES.md
+- quality.md
+- gameplay.md
+- player.md
+- input.md
+- camera.md
+- ui.md
+- UI_DIEGETIC_HUD_STANDARDS.md
+- survival.md
+- tools.md
+- Docs/Reports/Batch31/PLAYER_HUD_BOOTSTRAP_BINDING_BLOCKER_20260605.md
+- accessibility.md if remapping/comfort/readability is touched
+- .agents-skills/UI_Diegetic_Physical_Interfaces.txt
+- .agents-skills/UI_Data_Streaming_ZeroGC_Optimization.txt
+- .agents-skills/UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt
+- .agents-skills/CTRL_Device_Abstraction_Haptics.txt
+- .agents-skills/CORE_Submarine_Vehicles_Kinematics_AUP.txt
+- .agents-skills/PHYS_Kinematic_Interaction_Hands.txt if hands/interactions are in scope
+
+Owned scope:
+- Static audit only unless explicitly assigned runtime edits.
+- Existing player movement, input, camera, visor/HUD, survival UI, and interaction prompt code.
+- Report output: Docs/Reports/Batch31/3109_FULL_UI_PLAYER_MOVEMENT_OWNER.md
+
+Likely code areas to inspect before proposing anything:
+- Assets/_Project/Scripts/HectonPlayerMovement.cs
+- Assets/_Project/Scripts/HectonPlayerSpawner.cs
+- Assets/_Project/Scripts/Core/PlayerInputState.cs
+- Assets/_Project/Scripts/Core/InputDispatcher.cs
+- Assets/_Project/Scripts/Core/PlayerRuntimeContext*.cs
+- Assets/_Project/Scripts/Core/Contracts/PlayerMovementContracts.cs
+- Assets/_Project/Scripts/Core/ExosuitKinematicAuthority.cs
+- Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs
+- Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsJobs.cs
+- Assets/_Project/Scripts/Core/Signals/PlayerMovementPresentationSignals.cs
+- Assets/_Project/Scripts/Visor/VisorHUDController.cs
+- Assets/_Project/Scripts/Visor/SuitHUDPresentationController.cs
+- Assets/_Project/Scripts/Visor/SuitHUDScreenCompositor.cs
+- Assets/_Project/Scripts/UI/SurvivalHUDController.cs
+- Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs
+- Assets/_Project/Scripts/UI/InteractionUI.cs
+- Assets/_Project/Scripts/UI/TMP_TextRegistry.cs
+- Assets/_Project/Scripts/UI/TmpTextNoAlloc.cs
+
+Tasks:
+1. Read the authority docs and mandates listed above. Do not bulk-read unrelated archives.
+2. Grep/read existing code before proposing implementation.
+3. Start from the bootstrap blocker: static source suggests the tagged scene `Player` shell with `HectonWorldShellController1428` can win over `Player.prefab`. Verify or disprove this before claiming movement/HUD acceptance.
+4. Build a state matrix:
+   - implemented and likely wired;
+   - implemented but wiring unknown;
+   - diagnostic/fake/unsafe;
+   - missing;
+   - forbidden by AGENTS.md.
+5. Define the minimum playable movement slice:
+   - walk/interior/shore movement;
+   - swim;
+   - ascend/descend;
+   - surface/shore transition;
+   - look/camera;
+   - interaction prompt;
+   - tool aim/use placeholder only if real tool route exists;
+   - pause/PDA/UI focus.
+6. Define the minimum UI slice:
+   - oxygen;
+   - depth;
+   - pressure/hull/suit risk;
+   - route/return cue;
+   - interaction prompt;
+   - tool state;
+   - warning/advisory;
+   - PDA/visor/cockpit ownership distinction.
+7. Identify zero-GC risks:
+   - Update/LateUpdate/FixedUpdate in gameplay;
+   - direct Unity input polling;
+   - TMP_Text.text or SetText(string);
+   - SetActive in hot UI paths;
+   - Camera.main;
+   - GetComponent/Find in hot paths;
+   - string formatting in HUD.
+8. Propose an implementation order with disjoint owners and no sibling dependency fantasies.
+9. State Low / Middle / High / Ultra consequences using continuous GlobalQualityWeight.
+10. Write Status_3109.md, Rationale_3109.md if non-trivial decisions are made, LOG_3109.md, and the Batch31 report.
+
+Proof packet:
+- STATIC VERIFIED only for codebase audit.
+- Runtime movement proof is PENDING until Play Mode capture.
+- GC/profiler proof is mandatory before any acceptance claim.
+
+Reject if:
+- movement is a generic FPS camera with ocean around it;
+- UI is a fake overlay or filename claim;
+- controls poll Unity input APIs directly in gameplay;
+- hot HUD paths allocate strings;
+- camera hides route or interaction targets;
+- implementation invents public APIs without checking existing contracts.

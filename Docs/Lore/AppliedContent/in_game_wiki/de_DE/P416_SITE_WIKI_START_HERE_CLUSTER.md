@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Site Wiki Start Here Cluster
+# Start Here: HECTON-8
 
-The start-here cluster is the codex front door: contract, player role, HECTON-8 survival pressure and the first Deep Reach contradiction.
+Start here: contract, player role, HECTON-8 survival pressure and the first contradiction in the Deep Reach story.
 
 ## Scanner
 
-Publication cluster: start here. Premise, player frame and first constraints.
+Publication hub: premise, player role, first constraints and the first Deep Reach lie.
 
 ## Terminal
 
-SITE NAV: start with contract approach, ex-Deep-Reach professional frame, no-family motive and first salvage lie.
+SITE NAV: contract approach, former Deep Reach specialist, debt-bound Marauder, damaged capsule, no family hook, first Atlas repair trace.
 
 ## Audio
 
-Start with why you came. Delay why you stayed.
+You came for salvage. The ocean will make that motive too small.
 
 ## Field Note
 
-Use as site/wiki navigation root and spoiler-light intro.
+Spoiler-light navigation starts here: premise first, evidence second, endings only after the player earns them.
 
 <!-- In-Game Wiki; generated from P416_SITE_WIKI_START_HERE_CLUSTER/de_DE. -->

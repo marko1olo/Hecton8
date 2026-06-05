@@ -227,7 +227,7 @@ namespace Hecton8.Vehicles.DropPod
             _elapsedSeconds += dt;
             float t = DropPodSplineMath.ResolveTransitT(_elapsedSeconds, ResolveTransitDuration(transitSeconds));
             Vector3 position = DropPodSplineMath.ResolveBezierPosition(_startPosition, _controlA, _controlB, _endPosition, t);
-            Quaternion rotation = DropPodSplineMath.ResolveNlerp(_startRotation, _endRotation, t);
+            Quaternion rotation = DropPodSplineMath.ResolveSlerp(_startRotation, _endRotation, t);
             ApplyCameraPose(position, rotation);
 
             if (t < 0.999f)
@@ -461,7 +461,7 @@ namespace Hecton8.Vehicles.DropPod
                 return target;
 
             Quaternion noRoll = Quaternion.LookRotation(forward, Vector3.up);
-            return DropPodSplineMath.ResolveNlerp(noRoll, target, rollBlend);
+            return DropPodSplineMath.ResolveSlerp(noRoll, target, rollBlend);
         }
 
         private void ApplyCameraPose(Vector3 position, Quaternion rotation)

@@ -10,8 +10,8 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
 # Сборка энергетического заряда ascent
@@ -32,6 +32,6 @@ ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp.
 
 ## Field Note
 
-Использовать на vent forge / blue debt маршруте, где escape и payout пересекаются.
+The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout.
 
 <!-- In-Game Wiki; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/ru_RU. -->

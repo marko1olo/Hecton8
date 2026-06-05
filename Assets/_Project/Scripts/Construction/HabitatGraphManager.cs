@@ -2053,7 +2053,14 @@ namespace Hecton8.Construction
             CameraJuiceSignals.TryPublishImpact(
                 math.saturate(safeStress * 0.35f),
                 worldPosition,
-                Vector3.zero);
+                Vector3.zero,
+                CameraJuiceSignals.ContinuousPressureStressProfileHash,
+                0.85f,
+                safeStress >= 0.75f ? CameraJuiceSignals.HighPriority : CameraJuiceSignals.NormalPriority,
+                math.lerp(8f, 32f, safeStress),
+                0.65f,
+                0.95f,
+                RuptureCascadeEventHash);
         }
 
         private bool TryResolveMostStressedRoomPosition(out Vector3 position, out float stress01, out float depthMeters)

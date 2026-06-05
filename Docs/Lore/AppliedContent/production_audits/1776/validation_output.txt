@@ -1,0 +1,19 @@
+required_artifacts_missing=0
+bundle_json_files=91 parse=ok
+single_packet_json_files=9 parse=ok
+bundle_packet_rows=451
+bundle_duplicate_packet_ids=0
+bundle_duplicate_article_ids=0
+bundle_locale_roster_mismatches=0
+csv_parse=Docs/Lore/AppliedContent/Publication_Surface_Index.csv rows=13800 columns=13
+csv_parse=Docs/Lore/AppliedContent/Publication_Cluster_Index.csv rows=150 columns=21
+csv_parse=Docs/Lore/AppliedContent/production_audits/1776/crosslink_inventory.csv rows=460 columns=7
+csv_parse=Docs/Lore/AppliedContent/production_audits/1776/fact_owner_matrix.csv rows=462 columns=7
+csv_parse=Docs/Lore/AppliedContent/production_audits/1776/player_note_candidates.csv rows=18 columns=7
+csv_parse=Docs/Lore/AppliedContent/production_audits/1776/cluster_surface_purpose_audit.csv rows=5 columns=8
+surface_packet_ids_not_in_bundle=9
+surface_packet_ids_not_in_bundle_but_single_packet_exists=9
+cluster_refs_without_packet_evidence=0
+inventory_unique_packet_ids=460
+fact_owner_bad_contradiction_states=0
+non_1776_agent_refs_in_edited_files=0

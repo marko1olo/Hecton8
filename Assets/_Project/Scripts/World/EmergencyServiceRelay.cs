@@ -8,6 +8,7 @@ using Hecton8.Interaction;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Narrative;
+using Hecton8.Quest;
 using Hecton8.UI;
 using Unity.Mathematics;
 using UnityEngine;
@@ -55,7 +56,7 @@ namespace Hecton8.World
         private const string DefaultOpenInteractText = "OPEN RELAY EMERGENCY SERVICE RELAY";
         private const string DefaultReviewInteractText = "REVIEW RELAY EMERGENCY SERVICE RELAY";
 
-        // COLD ALLOC: EmergencyServiceRelay[16] — active authored relay registry — owner: EmergencyServiceRelay
+        // COLD ALLOC: EmergencyServiceRelay[16] - active authored relay registry - owner: EmergencyServiceRelay
         private static readonly List<EmergencyServiceRelay> s_ActiveRelays = new List<EmergencyServiceRelay>(16);
         private static int s_RegistryVersion;
         private readonly char[] _cachedInteractTextBuffer = new char[128];
@@ -119,6 +120,7 @@ namespace Hecton8.World
         private Transform _cachedTransform;
         private uint _relayHash;
         private uint _chainHash;
+        private uint _linkedAudioLogHash;
         private AbsoluteUniversePosition _cachedRelayAup;
         private bool _hasCachedRelayAup;
         private INarrativeDiscoveryReadModel _cachedNarrativeDiscovery;
@@ -287,8 +289,8 @@ namespace Hecton8.World
                 NotificationEvents.TryPushInfo(resolvedLoreMessage);
 
             IAudioLogRuntime audioLogSystem = _cachedAudioLogSystem;
-            if (linkedAudioLog != null && audioLogSystem != null)
-                audioLogSystem.TryPlayAudioLog(linkedAudioLog.logId);
+            if (audioLogSystem != null && _linkedAudioLogHash != 0u)
+                audioLogSystem.TryPlayAudioLogByHash(_linkedAudioLogHash);
 
             TryGrantRewards(interactor);
             EmergencyServiceRelayEvents.TryRaiseRelayActivated(this, firstActivation);
@@ -351,6 +353,7 @@ namespace Hecton8.World
                 ? DefaultChainId
                 : chainId;
             _chainHash = unchecked((uint)LocHash.Compute(resolvedChainId));
+            _linkedAudioLogHash = linkedAudioLog != null ? QuestFlagHashKernel.ComputeStableHash(linkedAudioLog.logId) : 0u;
             Transform relayTransform = _cachedTransform;
             if (relayTransform == null)
             {

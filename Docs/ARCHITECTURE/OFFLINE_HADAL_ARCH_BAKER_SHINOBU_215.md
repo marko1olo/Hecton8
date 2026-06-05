@@ -1,5 +1,10 @@
 ﻿# OFFLINE_HADAL_ARCH_BAKER_SHINOBU_215
 
+Status: `STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING`.
+Evidence class: `STATIC_DOC` / `STATIC_SOURCE`.
+Owner domain: world generation / offline hadal arch baker.
+Review disposition: `YELLOW / STATIC_DOC_ONLY` until compile/import/runtime/profiler/player proof exists.
+
 Date: 2026-05-20
 
 Domain: Echelon 2 World Generation / Offline Hadal Arch Baker

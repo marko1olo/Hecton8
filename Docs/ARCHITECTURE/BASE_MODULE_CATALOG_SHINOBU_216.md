@@ -1,5 +1,10 @@
 ﻿# Base Module Catalog - SHINOBU_216
 
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
+Evidence class: STATIC_DOC / STATIC_SOURCE
+Owner domain: Construction base module catalog
+Review disposition: YELLOW / STATIC_DOC_ONLY until compile/import/runtime/profiler/player proof exists.
+
 ## Authority
 
 - Runtime authority is `GlobalDataVault`, not prefab hierarchies.

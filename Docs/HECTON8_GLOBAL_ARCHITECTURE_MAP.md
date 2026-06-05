@@ -25,7 +25,7 @@ Static source/filesystem check on 2026-06-01:
 
 Do not treat these facts as route proof. They only state what current project files expose.
 
-Scene authority drift remains open: `AGENTS.md` still contains older no-orbit handoff wording. `PROJECT_RUNTIME_TOPOLOGY.md` records the current static conflict and proof boundary.
+Scene authority drift remains open: `AGENTS.md` still contains older no-orbit handoff wording. `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md` records the current static conflict and proof boundary.
 
 ## Runtime Authority Flow
 

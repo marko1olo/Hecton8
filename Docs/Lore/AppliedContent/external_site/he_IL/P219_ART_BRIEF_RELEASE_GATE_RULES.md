@@ -10,21 +10,21 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Art Brief Release Gate Rules
+# Evidence Image Release Rules
 
-Art Brief Release Gate Rules defines publication-safe image requirements for HECTON-8.
+Public imagery should sell beauty and evidence together: real ocean, readable object, pressure state, and no generic sci-fi decoration.
 
 ## Scanner
 
-An image is release-ready only if it shows an evidence object, route, tool or pressure state.
+An image earns release only when it shows evidence object, route, tool, creature sign, or pressure state.
 
 ## Terminal
 
-ART GATE: no decorative generic sci-fi. Image must expose route, tool, ledger, pressure state, creature evidence or public-safe moon/ship context.
+IMAGE GATE: no decorative generic sci-fi. Image must expose route, tool, ledger, pressure state, creature evidence, or public-safe moon and ship context.
 
 ## Audio
 
@@ -32,6 +32,6 @@ Pretty is not a proof artifact.
 
 ## Field Note
 
-Every art brief needs spoiler tier, primary evidence object, low/mid/high/ultra presentation note and crop-safe text boundary.
+Every image brief needs spoiler tier, primary evidence object, scalable presentation note, and crop-safe text boundary.
 
 <!-- External Site; generated from P219_ART_BRIEF_RELEASE_GATE_RULES/he_IL. -->

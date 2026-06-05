@@ -1,0 +1,90 @@
+ID: 2205
+ROLE: VISUAL_PROOF_PACKET_AND_RUNTIME_FAULT_AUDITOR
+CHAT NAME: 2205 proof runtime faults
+
+MISSION
+The 1465-1472 visual repair loop must not claim stability while runtime faults, forced-load exits, missing underwater captures, or weak proof packets remain. Audit logs/screenshots/proof scripts and produce a clean acceptance checklist for the Unity owner and controller.
+
+DO NOT TAKE UNITY SLOT BY DEFAULT.
+This is a file/log/proof audit. No build. No Play Mode unless explicitly assigned later.
+
+AUTHORITIES TO READ
+1. `AGENTS.md`
+2. `PROJECT_BIBLES.md`
+3. `TASTE.md`
+4. `VISION_LOCKS.md`
+5. `quality.md`
+6. `water.md`
+7. `world.md`
+8. `.agents-skills/DBG_Telemetry_Crash_Reporting_PostMortem.txt`
+9. `.agents-skills/ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`
+10. `.agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
+
+EVIDENCE BASIS
+- 1465 log reportedly had repeated `ArgumentNullException` and `H8_PLAYMODE_EXIT_AFTER_INVALID_FORCED_LOAD_1465`.
+- 1466 lacked underwater proof.
+- 1468-1472 provided packets but visually failed.
+- User latest critique says proof still fails foam/caustics/underwater depth.
+
+OWNED SCOPE
+Read-only unless later permitted:
+- `Docs/Screenshots/MCP/**`
+- `Docs/AgentLogs/UnityEditor_visual_audit_restart*.log`
+- `Docs/AgentLogs/**1465**`
+- `Docs/AgentLogs/**1466**`
+- `Docs/AgentLogs/**1467**`
+- `Docs/AgentLogs/**1468**`
+- `Docs/AgentLogs/**1469**`
+- `Docs/AgentLogs/**1470**`
+- `Docs/AgentLogs/**1471**`
+- `Docs/AgentLogs/**1472**`
+- `Assets/_Project/Scripts/**Bootstrap**`
+- `Assets/_Project/Scripts/**Scene**`
+- `Assets/_Project/Scripts/**ScreenCapture**`
+- `Assets/Feel/MMTools/**Screenshot**`
+- `Docs/Reports/Batch22/**`
+
+MANDATES
+- Proof labels must match artifacts.
+- Runtime stability cannot be inferred from static/source changes.
+- Screenshots must not go into `Assets/Screenshots` because that can trigger import/rebuild loops.
+- No "accepted" without surface, shoreline close, underwater 0-5 m, underwater 20-50 m, Aegir/celestial, regression low oblique, and clean runtime fault status.
+- Crash/NaN/null faults need owner, route, and proof.
+
+TASKS
+01. Read authorities and record active mandates in `Status_2205.md`.
+02. Inventory screenshots from 1465 through latest under `Docs/Screenshots/MCP`.
+03. Build a proof matrix with rows per packet number and columns: surface, shoreline, underwater 0-5, underwater 20-50, Aegir/celestial, regression, log, fault status, verdict.
+04. Inspect Unity logs around 1465-1472 for `Exception`, `ArgumentNullException`, `NullReferenceException`, `Invalid`, `Forced`, `H8_PLAYMODE_EXIT`, `isCompiling`, `Failed`, `Shader error`, `Material`, `missing`.
+05. Separate old resolved warnings from current unresolved faults; do not inflate stale noise.
+06. Identify the latest log file that corresponds to 1472 or later and whether it contains runtime errors after capture.
+07. Verify whether screenshot tools write to `Docs/Screenshots/MCP`, `Assets/Screenshots`, or both.
+08. Inspect `MMScreenshot` and `MMScreenshotEditor` modifications only enough to confirm screenshot output route risk.
+09. Inspect custom screen capture scripts if named in logs/reports.
+10. Identify whether detached temp-camera proof was used for underwater and why it is insufficient if GameView/post stack differs.
+11. Define the minimum full proof packet for visual acceptance.
+12. Define the minimum runtime proof for stability: clean route 00 -> 01 -> 02 or direct 02 if assigned, no forced invalid load exit, no repeated nulls, no screenshot import loop.
+13. Define the proof labels that are allowed for each artifact.
+14. Create a current fault matrix: unresolved, pending proof, resolved by evidence, stale/not-current.
+15. Identify exact owner domains for any unresolved fault: bootstrap, scene load, water render, material, screenshot tool, MCP bridge, unknown.
+16. Do not fix code unless a narrow typo/proof script path bug is obvious, isolated, and not Unity-contentious. Prefer report.
+17. Gate after task 16: if no edits made, state read-only proof. If edits made, list files and why.
+18. Write `Docs/Reports/Batch22/2205_VISUAL_PROOF_PACKET_MATRIX.md`.
+19. Write `Docs/Reports/Batch22/2205_RUNTIME_FAULT_MATRIX.md`.
+20. Write `Docs/Reports/Batch22/2205_ACCEPTANCE_PACKET_CHECKLIST.md`.
+21. Write `Docs/Orchestration/UNITY_OWNER_HANDOFF_2205_PROOF_AND_FAULTS.md` with only actionable gates.
+22. Append concise `LOG_2205.md`.
+23. Final report: latest accepted status is reject/pending unless proof says otherwise.
+
+PROOF PACKET
+- `Status_2205.md`
+- `LOG_2205.md`
+- `2205_VISUAL_PROOF_PACKET_MATRIX.md`
+- `2205_RUNTIME_FAULT_MATRIX.md`
+- `2205_ACCEPTANCE_PACKET_CHECKLIST.md`
+
+REJECT
+- Claiming runtime clean without log proof.
+- Claiming visual acceptance without full packet.
+- Writing screenshots to Assets.
+- Running builds/Unity while slot is busy.

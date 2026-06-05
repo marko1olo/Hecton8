@@ -1,0 +1,98 @@
+HECTON-8 LOCAL TASK FILE
+ID: 2106
+Role: PRODUCTFACE_RESOURCE_TOOL_PICKUP_MATERIAL_MESH_SOURCE_PACKAGE
+Batch: batch21_art_replacement_wave
+
+OBJECTIVE
+Create source package constraints and QA gates for product-face tools, scanner/tool surfaces, resource/ore pickup materials, and pickup mesh replacements so future agents can remove cube/plane/primitive visual debt without guessing paths or fighting Unity ownership.
+
+WHY THIS EXISTS
+2022 ranks scanner tool material and resource ore pickup material as lower-priority but real source candidates, citing Batch18 product-face cube/plane primitive debt. This task must verify any Batch18 evidence locally or mark it CANDIDATE. Product-face instruments and pickups are close-camera objects and cannot be primitives with better textures.
+
+AUTHORITY DOCS TO READ
+- AGENTS.md
+- TASTE.md
+- VISION_LOCKS.md
+- PROJECT_BIBLES.md
+- quality.md
+- PROCEDURAL_ASSET_PIPELINE.md
+- 3dmodel.md
+- 3DMODEL_EQUIPMENT_PROPS.md
+- 3DMODEL_TEXTURES_MATERIALS.md
+- 3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md
+- 3DMODEL_HERO_REALISM_OVERKILL.md for inspected product-face tools/pickups
+- tools.md
+- inventory.md
+- rendering.md
+- shaders.md
+- Docs/Reports/Batch21/2022_GEMINI_TEXTURE_BUDGET_AND_PROMPT_QUEUE.md
+- Any Batch18 product-face/tool/pickup report discovered by targeted search only. Do not bulk-read old archives.
+
+OWNED DOMAIN
+Product-face tool/resource pickup source package constraints, prompt requirements, QA gates, and future Unity-owner handoff. No implementation/import.
+
+OWNED OUTPUT SCOPE
+- Docs/Reports/Batch21/2106_*
+- Docs/GeneratedAssets/Gemini/Prompts/Batch21/2106_* if prompt files are needed.
+- Docs/Tasks/Status_2106.md
+- Docs/AgentLogs/Rationale_2106.md only for real decisions.
+- Docs/AgentLogs/LOG_2106.md
+
+FORBIDDEN ACTIONS
+- Do not run Unity, MCP, Play Mode, profiler, imports, dotnet build, csc, or any project build.
+- Do not edit Assets, Packages, ProjectSettings, Library, Temp, UserSettings, scenes, prefabs, materials, shaders, item data, tools, inventory code, or runtime scripts.
+- Do not fabricate scanner, pickup, item, tool, prefab, material, or class paths.
+- Do not accept a cube, plane, capsule, or primitive with a new material as final product-face art.
+- Do not depend on sibling task outputs.
+
+QUALITY SCALING EXPECTATION
+Low: clear tool/pickup silhouette, physical material identity, readable function, simple shared materials, no primitive final.
+Middle: expected player lane; bevels, grip zones, material masks, pickup identity, compact UI/icon readability.
+High: richer scratches, labels, grime, wetness, ore inclusions, display/emission masks, better normals.
+Ultra: close-inspection hero detail only after source, mesh, import, capture, and profiler proof.
+
+PHASE 0 - DISCOVERY AND EVIDENCE
+01. Read required authorities. Proof: Status_2106.md doc list.
+02. Read 2022 scanner/resource pickup decision. Proof: evidence entry. Blocker: 2022 is static source review only.
+03. Targeted search for Batch18 reports mentioning scanner, tool, pickup, cube, plane, resource, ore, primitive, ProductFace. Proof: discovered file list. Blocker: do not bulk-read unrelated old archives.
+04. If Batch18 evidence is found, read only relevant files/sections and extract blocker rows. Proof: evidence table. If absent, mark scanner/pickup blockers CANDIDATE.
+05. Separate tool/product-face scope from broad inventory redesign. Proof: scope statement.
+06. Write Status_2106.md with evidence and CANDIDATE status for every unverified path.
+
+PHASE 1 - SOURCE PACKAGE CONSTRAINTS
+07. Define product-face families supported by evidence: scanner/tool casing material, tool grip/rubber, display/emissive glass, resource ore pickup material, salvage plate/chunk pickup, pickup proxy mesh replacement. Proof: family matrix. Blocker: unsupported families are CANDIDATE.
+08. Define functional geometry requirements: grip zone, bevels, screen inset, latch/fastener, cable/connector, pickup scale witness, ore host-rock boundary, no pure primitive read with textures disabled. Proof: geometry contract.
+09. Define material truth per family: painted metal/composite, rubber, glass/emissive, wet grime, scratched labels, ore inclusions, host rock, corrosion or sediment. Proof: material truth table.
+10. Define map stack: albedo, normal, MRAO/mask, detail, emission/display, decal/label mask, ore inclusion mask. Proof: role table. Blocker: no guessed channel order.
+11. Write prompt requirements for scanner tool material and resource ore pickup material without running generation. Proof: prompt pack. Blocker: no browser/Gemini work.
+12. Define source QA: no baked lighting, no object render when material sample required, no text/logos unless decal workflow explicitly handles it, no toy plastic, no random glowing ore, no generic colored currency. Proof: QA checklist.
+13. Define mesh replacement constraints for future generation: LOD0/1/2, COL_* proxy, anchors if interactable, pivot/orientation, material slot order, proof renders. Proof: mesh source constraints.
+14. Define item/tool truth boundary: source art does not own tool verb, item id, recipe, save identity, or economy truth. Proof: owner boundary section.
+
+PHASE 2 - QA AND FUTURE HANDOFF
+15. Define future product-face proof packet: flat-material silhouette, final material, albedo/normal/mask/emission debug, wireframe, collider overlay, icon/UI compact read if applicable. Proof: proof template.
+16. Define future Unity-owner import/bind packet: asset paths, GUIDs, material slots, shared material/SRP Batcher note, no material clones, prefab/anchor proof. Proof: handoff template.
+17. Define rejection gates: primitive final, colored-rock currency, no visible function, un-beveled close edges, generic sci-fi glow, wrong material truth, runtime mesh/texture generation, LOD0 collider. Proof: rejection list.
+18. Define continuous GlobalQualityWeight consequences across visual source and future mesh quality. Proof: scaling table.
+19. Define dependency scan: future owner must prove old primitive/default pickup/tool route is fixed or production-excluded. Proof: scan template.
+20. Cross-check no sibling dependency exists. Proof: self-audit.
+21. Cross-check no static source/path evidence is upgraded to visual/runtime proof. Proof: evidence label audit.
+22. Write 2106 final source package report under Docs/Reports/Batch21. Proof: report path.
+
+PHASE 3 - REPORTING
+23. Update Status_2106.md with checklist, files created, CANDIDATE unresolved evidence, and PENDING Unity proof.
+24. Update Rationale_2106.md only for real decisions, especially if Batch18 evidence is absent and scope remains CANDIDATE.
+25. Append LOG_2106.md with concise proof.
+26. Final chat report: list output files and future Unity-owner pending items. Do not claim product-face art is fixed.
+
+PROOF PACKET
+- STATIC VERIFIED: 2022 evidence read, Batch18 relevant evidence found or marked CANDIDATE, source constraints and QA gates written.
+- PENDING VERIFICATION: image generation, mesh generation, Unity import, prefab binding, scene/tool/pickup captures, interaction proof, profiler/GC/memory/VRAM.
+
+BLOCKER RULES
+- If Batch18 evidence is absent, do not fabricate blocker paths. Deliver CANDIDATE source package constraints only.
+- If a path/class/asset is unverified, label CANDIDATE.
+- If the solution would require Unity or Assets writes, move it to future Unity-owner handoff.
+
+FINAL REPORT REQUIREMENTS
+Use exact proof labels and include all CANDIDATE unresolved evidence.

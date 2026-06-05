@@ -1,0 +1,27 @@
+ArtifactType,ArtifactPath,RelatedAssetFamily,EvidenceClass,Disposition,UseFor,RejectAs,NextOwner
+contact_sheet,Docs/AssetAudit/ContactSheets/water_foam_caustic_contact_sheet.png,water_foam_caustic,STATIC_IMAGE_QA,PENDING_VERIFICATION,Water/foam/caustic visual triage,In-game visual acceptance,Unity material readback plus texture authoring
+contact_sheet,Docs/AssetAudit/ContactSheets/sky_aegir_cloud_contact_sheet.png,sky_aegir_cloud,STATIC_IMAGE_QA,PENDING_VERIFICATION,Sky/Aegir/cloud candidate comparison,In-game sky/Aegir acceptance,Unity sky/material readback owner
+contact_sheet,Docs/AssetAudit/ContactSheets/terrain_geology_contact_sheet.png,terrain_geology,STATIC_IMAGE_QA,PENDING_VERIFICATION,Terrain/geology source triage,Broad terrain material acceptance,Texture/PBR authoring owner
+contact_sheet,Docs/AssetAudit/ContactSheets/flora_coral_fauna_contact_sheet.png,flora_coral_fauna,STATIC_IMAGE_QA,PENDING_VERIFICATION,Flora/coral/fauna source triage,Visible flora placement acceptance,Mesh/prefab/material owner
+contact_sheet,Docs/AssetAudit/ContactSheets/ui_textures_contact_sheet.png,ui_sprites,STATIC_IMAGE_QA,PENDING_VERIFICATION,UI sprite candidate triage,HUD binding/readability acceptance,UI sprite route owner
+contact_sheet,Docs/AssetAudit/ContactSheets/unknown_textures_contact_sheet.png,unassigned_textures,STATIC_IMAGE_QA,PENDING_VERIFICATION,Unassigned source discovery,Route art promotion without owner,Asset owner assignment
+contact_sheet,Docs/AssetAudit/ContactSheets/generated_source_only_contact_sheet.png,generated_sources,STATIC_IMAGE_QA,SOURCE_ONLY,Generated/source-only overview,Final art acceptance,Texture authoring owner
+waveform,Docs/AssetAudit/AudioVisual/audio_waveform_contact_sheet_20260605.png,audio_overview,AUDIO_WAVEFORM_QA,PENDING_VERIFICATION,Cross-cue waveform overview,Listening/mix acceptance,Audio listening owner
+waveform_stats,Docs/AssetAudit/AudioVisual/audio_preview_waveform_stats_20260605.csv,audio_overview,AUDIO_WAVEFORM_QA,PENDING_VERIFICATION,Peak/RMS static stats,Loudness/mix acceptance,Audio listening owner
+waveform,Docs/AssetAudit/AudioVisual/Underwater_Ambient_waveform.png,ambient_direct_ref,AUDIO_WAVEFORM_QA,PENDING_VERIFICATION,Direct Player.prefab ambient risk cue,Owner/release proof,Audio lifecycle owner
+waveform,Docs/AssetAudit/AudioVisual/breathing_breath_in_and_out_1_waveform.png,player_breath_loop,AUDIO_WAVEFORM_QA,PENDING_VERIFICATION,Player breath loop triage,Generic SFX classification,Audio/player-loop owner
+waveform,Docs/AssetAudit/AudioVisual/inside_suit_sounds_too_loud_waveform.png,suit_interior_loop,AUDIO_WAVEFORM_QA,PENDING_VERIFICATION,First-person suit mix debt,Accepted first-person mix,Audio mix owner
+waveform,Docs/AssetAudit/AudioVisual/swimming_onwater_waveform.png,player_swim_loop,AUDIO_WAVEFORM_QA,PENDING_VERIFICATION,Player swim loop triage,Latency/start acceptance,Audio/player-loop owner
+waveform,Docs/AssetAudit/AudioVisual/Atmos_1_Loop_waveform.png,ambient_bed,AUDIO_WAVEFORM_QA,PENDING_VERIFICATION,Dense ambience bed triage,Warning/readability acceptance,Ambient-bank owner
+waveform,Docs/AssetAudit/AudioVisual/spaceship_sounds_ambient_waveform.png,ambient_bed,AUDIO_WAVEFORM_QA,PENDING_VERIFICATION,Ambience bed triage,Route role acceptance,Ambient-bank owner
+waveform,Docs/AssetAudit/AudioVisual/shelf_1_Abandoned_Depths_waveform.png,long_music_bed,AUDIO_WAVEFORM_QA,PENDING_VERIFICATION,First-route music bed triage,MusicDirector acceptance,MusicDirector owner
+waveform,Docs/AssetAudit/AudioVisual/abyss_3_Deep_Trench_Drone_waveform.png,long_music_bed,AUDIO_WAVEFORM_QA,PENDING_VERIFICATION,Tense drone triage,Tension/mix acceptance,MusicDirector owner
+waveform,Docs/AssetAudit/AudioVisual/stinger_dangerous_1_Iron_Teeth_waveform.png,stinger,AUDIO_WAVEFORM_QA,PENDING_VERIFICATION,Danger stinger triage,Cooldown/priority acceptance,MusicDirector owner
+waveform,Docs/AssetAudit/AudioVisual/click_sound_waveform.png,ui_sfx,AUDIO_WAVEFORM_QA,PENDING_VERIFICATION,UI click triage,HUD audibility acceptance,UI audio owner
+waveform,Docs/AssetAudit/AudioVisual/VOStub_Chen_Log01_EN_waveform.png,voice_stub,AUDIO_WAVEFORM_QA,PLACEHOLDER_BLOCKED,Placeholder VO sanity,Final VO/localization acceptance,VO/localization owner
+generated_pack,Docs/GeneratedAssets/AssetSystem_20260605/FoamContactPrototype_20260605/,foam_contact_source,STATIC_DOC,SOURCE_ONLY,Initial foam/contact source reference,Direct final import,Texture authoring owner
+generated_pack,Docs/GeneratedAssets/AssetSystem_20260605/AegirCloudPrototype_20260605/,aegir_cloud_source,STATIC_DOC,SOURCE_ONLY,Initial Aegir/cloud source reference,Direct final import,Celestial/sky texture authoring owner
+generated_pack,Docs/GeneratedAssets/AssetSystem_20260605/CleanupPass_20260605/,foam_aegir_cleanup_source,STATIC_DOC,SOURCE_ONLY_USEFUL,Cleaned source direction,Product art acceptance,Texture authoring/import owner
+generated_manifest,Docs/GeneratedAssets/AssetSystem_20260605/TEXTURE_AUTHORING_MANIFEST_3212_20260605.md,texture_authoring,STATIC_DOC,PENDING_VERIFICATION,Prior texture authoring summary,Stable authority or acceptance,Texture authoring owner
+taxonomy,Docs/AssetAudit/AUDIO_ASSET_TAXONOMY_20260605.csv,audio_music_taxonomy,STATIC_DOC,PENDING_VERIFICATION,Audio/music owner orientation,Runtime audio acceptance,Audio owner
+taxonomy,Docs/AssetAudit/VISUAL_MESH_ASSET_TAXONOMY_20260605.csv,visual_mesh_taxonomy,STATIC_DOC,PENDING_VERIFICATION,Visual/mesh owner orientation,Visual/prefab acceptance,Visual/mesh owner

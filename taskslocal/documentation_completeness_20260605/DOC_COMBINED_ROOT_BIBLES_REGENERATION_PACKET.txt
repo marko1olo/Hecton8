@@ -1,0 +1,48 @@
+HECTON-8 Documentation Completeness Task - Combined Root Bibles Regeneration
+
+Status: TASK_PACKET_READY / STATIC_DOC_ONLY
+Evidence class: STATIC_DOC / FILESYSTEM
+
+Objective:
+Regenerate or create a deterministic regeneration script for `Docs/PROJECT_ROOT_BIBLES_COMBINED.md` after the 2026-06-05 root-bible hook wave.
+
+Evidence basis:
+- `Docs/Reports/DocumentationCompleteness_20260605/COMBINED_ROOT_BIBLES_STALE_SNAPSHOT_AUDIT_20260605.md`
+- `PROJECT_BIBLES.md`
+- `Docs/PROJECT_ROOT_BIBLES_COMBINED.md`
+
+Current proven defect:
+- The combined snapshot is stale.
+- Selected live root source files have 58 `First-20 Route Hook` sections.
+- The combined snapshot has 1 hit only because the stale-warning header mentions the phrase.
+- The combined snapshot is marked `STALE_GENERATED_SNAPSHOT / REGENERATION_REQUIRED`.
+
+Owned scope:
+- May inspect root `.md` files routed by `PROJECT_BIBLES.md`.
+- May inspect `Docs/PROJECT_ROOT_BIBLES_COMBINED.md`.
+- May create or update a deterministic generator under `Tools/Docs/` only if no suitable generator exists.
+- May regenerate `Docs/PROJECT_ROOT_BIBLES_COMBINED.md` only from verified live root sources.
+
+Forbidden:
+- Do not edit `AGENTS.md`.
+- Do not include generated reports, status files, task logs, old batch prompts, archives, or deprecated docs in the combined root source.
+- Do not claim runtime, Unity, build, profiler, GC, visual, save/load, or platform proof.
+- Do not run Unity, dotnet build, importers, tests, Play Mode, Addressables, or asset import.
+- Do not hand-edit doctrine inside the combined file. Fix source files or regenerate.
+
+Required phases:
+1. Discover whether a generator already exists.
+2. Verify the intended source list against `PROJECT_BIBLES.md` and the existing source index.
+3. If no generator exists, create a deterministic script with explicit source list and no archive/report inclusion.
+4. Regenerate `Docs/PROJECT_ROOT_BIBLES_COMBINED.md`.
+5. Preserve a header that identifies it as generated and points to live roots as binding if stale.
+6. Verify hook count, source index count, and overclaim language.
+
+Acceptance proof:
+- `git diff --check -- Docs/PROJECT_ROOT_BIBLES_COMBINED.md Tools/Docs`
+- Combined snapshot `First-20 Route Hook` count matches live selected source count, except for any explicit header mention counted separately and documented.
+- Source index count matches the intended root source list.
+- No positive `runtime-ready`, `ship-ready`, `platform-ready`, `release-ready`, or `fully verified` claims are introduced.
+
+Final report shape:
+What was stale -> what was regenerated/scripted -> proof commands -> residual risk.

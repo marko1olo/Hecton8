@@ -10,13 +10,13 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
 # Recipe Tier Pressure Bands
 
-Recipe pressure bands let crafting, scanner text and site articles share one progression grammar.
+Recipe pressure bands let crafting, scanner text, and material lore share one progression grammar.
 
 ## Scanner
 

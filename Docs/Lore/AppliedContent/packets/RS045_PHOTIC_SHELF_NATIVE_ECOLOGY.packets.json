@@ -28,11 +28,11 @@
       "localized": {
         "en_US": {
           "title": "Photic Mat Baseline",
-          "scanner": "Thin living mats make the first shelf bright, oxygenated and readable; they also mark where pressure chemistry is already abnormal.",
-          "field_note": "Baseline mat: mineral-fed film, shallow oxygen skin, salt-hardened edge, weak acoustic texture. Beauty is evidence, not safety.",
+          "scanner": "Thin living mats brighten and oxygenate the first shelf. Hardened edges mark abnormal pressure chemistry.",
+          "field_note": "Read the color first, then the edge. Bright growth means oxygen exchange; salt-hard rims mean the chemistry is already under stress.",
           "terminal": "ECOLOGY BASELINE: photic mats hold the first safe-water pockets. Do not classify the shelf as benign.",
           "audio": "It looks clean because it is working hard. That is not the same as safe.",
-          "in_game_wiki": "Photic Mat Baseline defines HECTON-8's shallow contrast: vivid water, hard mineral film, living oxygen skin and pressure chemistry in the same object.",
+          "in_game_wiki": "Photic mats are why the early shelf can be bright without being safe. The film feeds on mineral runoff and light, skins shallow rock with oxygen-rich growth, and leaves salt-hard edges where pressure chemistry is wrong. Use the color as a route cue, but do not tear mats near seams or sealed equipment; the oxygen pocket can collapse into contamination.",
           "external_site": "Photic Mat Baseline is the public ecology anchor for HECTON-8's opening zone. The shallow shelf is colorful and readable, but every bright surface is a survival instrument: algae-mineral film, oxygen exchange, acoustic texture and early evidence that the moon's ocean is already industrially altered."
         },
         "ru_RU": {

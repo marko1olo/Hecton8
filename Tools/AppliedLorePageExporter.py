@@ -10,9 +10,11 @@ from pathlib import Path
 
 from AppliedLoreImporter import (
     ROW_FLAG_DRAFT_LOCALIZATION,
+    SURFACE_MASKS,
     TARGET_LOCALES,
     collect_packets,
     localized_row_flags,
+    resolve_packet_surface_mask,
     sanitize_localized_text,
     write_text_if_changed,
 )
@@ -92,6 +94,21 @@ INDEX_TITLES = {
     "nl_NL": ("HECTON-8 codexindex", "HECTON-8 veldarchief"),
 }
 RTL_LOCALES = {"ar_SA", "he_IL"}
+SOURCE_AUTHORITY_STATUS = "source_authority"
+DRAFT_MACHINE_OR_LLM_STATUS = "draft_machine_or_llm"
+
+
+def is_surface_enabled(packet: dict, surface_key: str) -> bool:
+    return (resolve_packet_surface_mask(packet) & SURFACE_MASKS.get(surface_key, 0)) != 0
+
+
+def publication_page_count(packets: list[dict]) -> int:
+    count = 0
+    for packet in packets:
+        for _folder, surface_key, _surface_title in SURFACES:
+            if is_surface_enabled(packet, surface_key):
+                count += 1
+    return count
 
 
 def safe_text(value: object) -> str:
@@ -120,8 +137,11 @@ def cluster_id_from_route_moment(route_moment: str) -> str:
     return route_moment[6:] if route_moment.startswith("first_") else route_moment
 
 
-def localization_status_from_flags(flags: int) -> str:
-    return "draft_native_pass_pending" if (flags & ROW_FLAG_DRAFT_LOCALIZATION) != 0 else "source_ready"
+def localization_status_from_flags(flags: int, locale: str) -> str:
+    if locale == "en_US":
+        return SOURCE_AUTHORITY_STATUS
+
+    return DRAFT_MACHINE_OR_LLM_STATUS
 
 
 def read_article_body(base: Path, article_path: object) -> str:
@@ -152,6 +172,23 @@ def localized_surface_body(base: Path, localized: dict, surface_key: str) -> tup
     return clean_text(localized.get(surface_key)), False
 
 
+def frontmatter_localization_state(markdown: str) -> tuple[str, str]:
+    status = ""
+    flags = ""
+    for line in markdown.splitlines():
+        if line == "---" and (status or flags):
+            break
+        if line.startswith("localization_status:"):
+            status = line.split(":", 1)[1].strip()
+        elif line.startswith("localization_flags:"):
+            flags = line.split(":", 1)[1].strip()
+    return status, flags
+
+
+def localization_frontmatter_matches(existing: str, rendered: str) -> bool:
+    return frontmatter_localization_state(existing) == frontmatter_localization_state(rendered)
+
+
 def render_page(base: Path, packet: dict, locale: str, surface_key: str, surface_title: str) -> str:
     packet_id = safe_text(packet.get("packet_id"))
     release_set_id = safe_text(packet.get("release_set_id"))
@@ -165,7 +202,7 @@ def render_page(base: Path, packet: dict, locale: str, surface_key: str, surface
     biome_tags = metadata_list(unlock.get("biome_tags"))
     localized = packet.get("localized", {}).get(locale, {})
     flags = localized_row_flags(localized) if isinstance(localized, dict) else 0
-    status = localization_status_from_flags(flags)
+    status = localization_status_from_flags(flags, locale)
     direction = "rtl" if locale in RTL_LOCALES else "ltr"
     title = clean_text(localized.get("title")) or packet_id
     body, has_publication_article = localized_surface_body(base, localized, surface_key)
@@ -221,7 +258,8 @@ def render_index(packets: list[dict], locale: str, folder: str, surface_key: str
     titles = INDEX_TITLES.get(locale, INDEX_TITLES["en_US"])
     title = titles[0] if folder == "in_game_wiki" else titles[1]
     direction = "rtl" if locale in RTL_LOCALES else "ltr"
-    draft_count = count_draft_rows(packets, locale)
+    draft_marker_count = count_draft_rows(packets, locale)
+    machine_draft_count = count_machine_draft_rows(packets, locale)
 
     lines: list[str] = [
         "---",
@@ -231,7 +269,8 @@ def render_index(packets: list[dict], locale: str, folder: str, surface_key: str
         "runtime_reads_markdown: false",
         f"direction: {direction}",
         f"localized_pages: {len(packets)}",
-        f"draft_native_pass_pending_pages: {draft_count}",
+        f"draft_machine_or_llm_pages: {machine_draft_count}",
+        f"draft_marker_pages: {draft_marker_count}",
         "---",
         "",
         f"# {title}",
@@ -257,27 +296,38 @@ def count_draft_rows(packets: list[dict], locale: str) -> int:
     return count
 
 
+def count_machine_draft_rows(packets: list[dict], locale: str) -> int:
+    if locale == "en_US":
+        return 0
+
+    return len(packets)
+
+
 def render_localization_status_index(packets: list[dict]) -> str:
+    exported_pages_per_locale = publication_page_count(packets)
     lines: list[str] = [
         "# AppliedLore Localization Status",
         "",
-        "Generated from `Docs/Lore/AppliedContent/packets/*.packets.json`.",
+        "Generated from AppliedContent release-set manifests and packet JSON sources.",
         "The game reads baked CSV/blob records; markdown is publication output only.",
         "",
         "Status meanings:",
-        "- `source_ready`: no draft/native-review marker was present in packet text.",
-        "- `draft_native_pass_pending`: visible text was stripped of draft markers, but the locale still needs native review.",
+        "- `source_authority`: English authority row for current AppliedContent export.",
+        "- `draft_machine_or_llm`: non-English generated draft row; native/fluent review not proven.",
+        "- Reviewed states (`fluent_reviewed`, `native_reviewed`, `runtime_ready`) require explicit per-locale proof and are not inferred from packet presence.",
         "",
         "Locale rows:",
     ]
 
     for locale in TARGET_LOCALES:
-        draft = count_draft_rows(packets, locale)
-        ready = len(packets) - draft
+        source_authority = len(packets) if locale == "en_US" else 0
+        machine_draft = count_machine_draft_rows(packets, locale)
+        draft_markers = count_draft_rows(packets, locale)
         direction = "rtl" if locale in RTL_LOCALES else "ltr"
         lines.append(
-            f"- `{locale}`: source_ready={ready}, draft_native_pass_pending={draft}, "
-            f"packet_rows={len(packets)}, exported_pages={len(packets) * len(SURFACES)}, direction={direction}"
+            f"- `{locale}`: source_authority={source_authority}, draft_machine_or_llm={machine_draft}, "
+            f"draft_marker_rows={draft_markers}, packet_rows={len(packets)}, "
+            f"exported_pages={exported_pages_per_locale}, direction={direction}"
         )
 
     lines.extend(
@@ -285,6 +335,7 @@ def render_localization_status_index(packets: list[dict]) -> str:
             "",
             "Operational rule: do not encode native-review state inside player-visible prose.",
             "Use `flags`/frontmatter/status index for routing, QA and publication gates.",
+            "Canonical packet JSON and publication pages are source/export evidence only; native/fluent review, route cards, h8bin bake, Unity placement, and runtime readiness require separate proof.",
             "",
         ]
     )
@@ -301,6 +352,9 @@ def publication_surface_rows(base: Path, packets: list[dict]) -> list[dict[str, 
         for locale in TARGET_LOCALES:
             direction = "rtl" if locale in RTL_LOCALES else "ltr"
             for packet in sorted(packets, key=lambda item: safe_text(item.get("packet_id"))):
+                if not is_surface_enabled(packet, surface_key):
+                    continue
+
                 packet_id = safe_text(packet.get("packet_id"))
                 release_set_id = safe_text(packet.get("release_set_id"))
                 article_id = safe_text(packet.get("article_id"))
@@ -320,7 +374,7 @@ def publication_surface_rows(base: Path, packets: list[dict]) -> list[dict[str, 
                         "release_set_id": release_set_id,
                         "article_id": article_id,
                         "unlock_id": safe_text(unlock.get("primary")),
-                        "localization_status": localization_status_from_flags(flags),
+                        "localization_status": localization_status_from_flags(flags, locale),
                         "localization_flags": str(flags),
                         "poi_tags": metadata_list(unlock.get("poi_tags")),
                         "biome_tags": metadata_list(unlock.get("biome_tags")),
@@ -374,6 +428,9 @@ def publication_cluster_rows(base: Path, packets: list[dict]) -> list[dict[str, 
 
         cluster_id = cluster_id_from_route_moment(safe_text(cluster.get("route_moment")))
         for folder, surface_key, _surface_title in SURFACES:
+            if not is_surface_enabled(packet, surface_key):
+                continue
+
             for locale in TARGET_LOCALES:
                 direction = "rtl" if locale in RTL_LOCALES else "ltr"
                 localized = packet.get("localized", {}).get(locale, {})
@@ -394,7 +451,7 @@ def publication_cluster_rows(base: Path, packets: list[dict]) -> list[dict[str, 
                         "primary_surface": safe_text(cluster.get("primary_surface")),
                         "prereq_packet_ids": safe_text(cluster.get("prereq_packet_ids")),
                         "next_cluster_packet_ids": safe_text(cluster.get("next_packet_ids")),
-                        "localization_status": localization_status_from_flags(flags),
+                        "localization_status": localization_status_from_flags(flags, locale),
                         "localization_flags": str(flags),
                         "poi_tags": metadata_list(unlock.get("poi_tags")),
                         "biome_tags": metadata_list(unlock.get("biome_tags")),
@@ -415,11 +472,30 @@ def write_publication_cluster_index(base: Path, packets: list[dict]) -> None:
     write_text_if_changed(base / "Publication_Cluster_Index.csv", buffer.getvalue())
 
 
-def export_pages(root: Path, overwrite: bool) -> tuple[int, int, int]:
+def remove_generated_disabled_page(path: Path, packet_id: str, surface_key: str) -> bool:
+    if not path.exists():
+        return False
+
+    text = path.read_text(encoding="utf-8")
+    generated_markers = (
+        f"packet_id: {packet_id}" in text,
+        f"surface: {surface_key}" in text,
+        "source: AppliedContent packet JSON" in text,
+        "runtime_reads_markdown: false" in text,
+    )
+    if not all(generated_markers):
+        return False
+
+    path.unlink()
+    return True
+
+
+def export_pages(root: Path, overwrite: bool) -> tuple[int, int, int, int]:
     packets = collect_packets(root)
     base = root / "Docs" / "Lore" / "AppliedContent"
     written = 0
     skipped = 0
+    removed_disabled = 0
     indexes_written = 0
 
     for packet in packets:
@@ -435,7 +511,19 @@ def export_pages(root: Path, overwrite: bool) -> tuple[int, int, int]:
 
             for folder, surface_key, surface_title in SURFACES:
                 path = base / folder / locale / f"{packet_id}.md"
+                if not is_surface_enabled(packet, surface_key):
+                    if remove_generated_disabled_page(path, packet_id, surface_key):
+                        removed_disabled += 1
+                    continue
+
                 if path.exists() and not overwrite:
+                    rendered = render_page(base, packet, locale, surface_key, surface_title)
+                    existing = path.read_text(encoding="utf-8")
+                    if not localization_frontmatter_matches(existing, rendered):
+                        path.write_text(rendered, encoding="utf-8", newline="\n")
+                        written += 1
+                        continue
+
                     skipped += 1
                     continue
 
@@ -446,14 +534,15 @@ def export_pages(root: Path, overwrite: bool) -> tuple[int, int, int]:
     for locale in TARGET_LOCALES:
         for folder, surface_key, _surface_title in SURFACES:
             path = base / folder / locale / "INDEX.md"
+            surface_packets = [packet for packet in packets if is_surface_enabled(packet, surface_key)]
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(render_index(packets, locale, folder, surface_key), encoding="utf-8", newline="\n")
+            path.write_text(render_index(surface_packets, locale, folder, surface_key), encoding="utf-8", newline="\n")
             indexes_written += 1
 
     write_localization_status_index(base, packets)
     write_publication_surface_index(base, packets)
     write_publication_cluster_index(base, packets)
-    return written, skipped, indexes_written
+    return written, skipped, removed_disabled, indexes_written
 
 
 def main() -> int:
@@ -461,8 +550,11 @@ def main() -> int:
     parser.add_argument("--root", default=".", help="Repository root.")
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing localized markdown pages.")
     args = parser.parse_args()
-    written, skipped, indexes_written = export_pages(Path(args.root).resolve(), args.overwrite)
-    print(f"applied_lore_pages_written={written} skipped_existing={skipped} index_pages_written={indexes_written}")
+    written, skipped, removed_disabled, indexes_written = export_pages(Path(args.root).resolve(), args.overwrite)
+    print(
+        f"applied_lore_pages_written={written} skipped_existing={skipped} "
+        f"removed_disabled={removed_disabled} index_pages_written={indexes_written}"
+    )
     return 0
 
 

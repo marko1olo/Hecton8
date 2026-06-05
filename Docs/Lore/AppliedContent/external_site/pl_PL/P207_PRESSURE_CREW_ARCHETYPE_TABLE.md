@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
 # Pressure Crew Archetype Table
 
-Pressure Crew Archetype Table gives HECTON-8 colony writing a practical labor structure.
+Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness.
 
 ## Scanner
 
@@ -32,6 +32,6 @@ Job first. Memory second. That is how the colony survives.
 
 ## Field Note
 
-Use eight crew families: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany and Payload Witness.
+Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.
 
 <!-- External Site; generated from P207_PRESSURE_CREW_ARCHETYPE_TABLE/pl_PL. -->

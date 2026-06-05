@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ The record does not congratulate you. It itemizes what changed hands.
 
 ## Field Note
 
-Use for ending dossier UI and spoiler-site layout.
+Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression.
 
 <!-- External Site; generated from P434_DOSSIER_ENDING_RECORD_LAYOUT_RULE/en_US. -->

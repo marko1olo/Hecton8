@@ -1,0 +1,52 @@
+material,mesh,texture,tool,path,role,risk
+-,-,-,-,Assets/_Project/Scenes/02_HECTON_WORLD.unity,Static source scene for coast and foam object names,STATIC_ONLY_NO_RUNTIME_PROOF
+-,-,-,-,Assets/_Project/Prefabs/Ocean_Crest.prefab,Ocean prefab candidate for later Unity inspection,DO_NOT_BLINDLY_ENABLE_CREST_DEPTH_OR_FOAM_CAMERAS
+MAT_H8_SurfaceCrestOcean_1428,-,-,-,Assets/_Project/Art/Materials/MAT_H8_SurfaceCrestOcean_1428.mat,First-party Crest ocean material candidate with foam caustics normals,PACKAGE_SHADER_REFERENCE_ONLY_BINDING_PENDING
+MAT_H8_SurfaceCrestOcean_1428,-,Foam2.png,-,Assets/Crest/Crest/Textures/Foam2.png,Crest foam texture already referenced by ocean material,THIRD_PARTY_ASSET_READ_ONLY
+MAT_H8_SurfaceCrestOcean_1428,-,Caustics_tex_color.png,-,Assets/Crest/Crest/Textures/Caustics/Caustics_tex_color.png,Crest caustic texture already referenced by ocean material,THIRD_PARTY_ASSET_READ_ONLY
+MAT_H8_SurfaceCrestOcean_1428,-,TX_H8_SurfaceWaterNormals_1428,-,Assets/_Project/Art/TEXTURES/TX_H8_SurfaceWaterNormals_1428.asset,First-party ocean normal texture referenced by ocean material,STATIC_BINDING_ONLY
+MAT_H8SurfaceShoreFoam_1428,-,foam.png,-,Assets/_Project/Art/Materials/World/MAT_H8SurfaceShoreFoam_1428.mat,Primary current shoreline foam material candidate,SCENE_OBJECT_INACTIVE_PENDING_UNITY
+MAT_H8SurfaceShoreFoam_1428,-,foam.png,-,Assets/_Project/Art/TEXTURES/foam.png,First-party foam texture wired to shoreline foam material,STATIC_TEXTURE_ONLY_VISUAL_PENDING
+MAT_H8_SurfaceFoamRibbons_1428,-,-,-,Assets/_Project/Art/Materials/MAT_H8_SurfaceFoamRibbons_1428.mat,Foam ribbon material candidate requiring packed texture assignment,EMPTY_TEXTURE_SLOTS_REJECT_AS_FINAL
+-,-,-,-,Assets/_Project/Art/Shaders/H8_ShorelineFoamRibbon_1428.shader,First-party foam ribbon shader using RGB breakup channels,DO_NOT_EDIT_SHADER_IN_THIS_TASK
+-,-,TX_H8_ShorelineFoamRibbonPacked_1821,-,Assets/_Project/Art/TEXTURES/Generated/TX_H8_ShorelineFoamRibbonPacked_1821.png,Required future packed foam ribbon bake output,MISSING_GENERATED_ASSET
+-,-,TX_H8_ShorelineWaterlineMask_1821,CausticOpticsBaker1719,Assets/_Project/Art/TEXTURES/Generated/TX_H8_ShorelineWaterlineMask_1821.png,Required future waterline coverage mask output,MISSING_GENERATED_ASSET
+MAT_H8SurfaceWetBasaltReal_1428,-,TX_H8SurfaceBasaltWetSediment_1428,-,Assets/_Project/Art/Materials/World/MAT_H8SurfaceWetBasaltReal_1428.mat,Primary wet basalt material candidate with base and normal maps,UNITY_BINDING_AND_VISUAL_PROOF_PENDING
+MAT_H8SurfaceWetBasaltReal_1428,-,TX_H8SurfaceBasaltWetSediment_1428,-,Assets/_Project/Art/TEXTURES/TX_H8SurfaceBasaltWetSediment_1428.asset,Wet basalt sediment base map,STATIC_TEXTURE_ONLY
+MAT_H8SurfaceWetBasaltReal_1428,-,Rock031_1K-JPG_NormalGL,-,Assets/_Project/Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_NormalGL.jpg,Wet basalt normal map referenced by primary material,STATIC_TEXTURE_ONLY
+MAT_SurfaceIslandWetBasalt_1428,-,TX_H8SurfaceBasaltWetSediment_1428,-,Assets/_Project/Art/Materials/World/MAT_SurfaceIslandWetBasalt_1428.mat,Secondary island wet basalt material candidate,NO_NORMAL_MAP_WEAKER_CANDIDATE
+-,-,TX_SurfaceBasaltWetStrata_1428,-,Assets/_Project/Art/TEXTURES/TX_SurfaceBasaltWetStrata_1428.asset,Existing wet strata texture candidate for channel packing or detail,STATIC_TEXTURE_ONLY
+-,-,TX_H8_WetDryBasaltMask_1821,-,Assets/_Project/Art/TEXTURES/Generated/TX_H8_WetDryBasaltMask_1821.png,Required future wet dry vertical waterline mask,MISSING_GENERATED_ASSET
+MAT_H8TerrainLit_BasaltSediment_1428,-,-,BiomeSplatmapForgeWindow,Assets/_Project/Art/Materials/World/MAT_H8TerrainLit_BasaltSediment_1428.mat,Terrain basalt sediment shader material needing control and layer textures,EMPTY_CONTROL_AND_LAYER_TEXTURES_PENDING_BAKE
+-,-,-,BiomeSplatmapForgeWindow,Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeSplatmapForgeWindow.cs,Existing editor splatmap forge for rock sand silt erosion channels,UNITY_EDITOR_ONLY_NO_RUNTIME_CLAIM
+-,-,-,BiomeWeightMapBakePipeline,Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakePipeline.cs,Existing BC7 splatmap bake pipeline for terrain control map,UNITY_EDITOR_ONLY_NO_RUNTIME_CLAIM
+-,-,-,-,Assets/_SourceData/Terrain/terrain_splatmap_profiles.csv,Source profile for rock sand silt erosion rules,STATIC_INPUT_ONLY
+-,-,TX_BiomeWeightMap_SHORELINE_1821,BiomeSplatmapForgeWindow,Assets/_Project/BakedGeometry/Splatmaps/TX_BiomeWeightMap_SHORELINE_1821.asset,Required future shoreline terrain control output,MISSING_GENERATED_ASSET
+-,-,-,CausticOpticsBaker1719,Assets/_Project/Editor/Bakers/CausticOpticsBaker1719.cs,Existing offline caustic flipbook light cookie and waterline mask baker,UNITY_EDITOR_ONLY_NO_RUNTIME_CLAIM
+-,-,-,-,Assets/_Project/Data/Rendering/caustic_lighting_profiles.csv,Existing caustic state profiles for calm storm thermocline halocline biolume,STATIC_INPUT_ONLY
+-,-,TX_CausticFlipbook_shoreline_1821,CausticOpticsBaker1719,Assets/_Project/Art/Textures/Lighting/TX_CausticFlipbook_shoreline_1821.png,Required future shoreline edge caustic flipbook,MISSING_GENERATED_ASSET
+-,-,TX_CausticLightCookie_shoreline_1821,CausticOpticsBaker1719,Assets/_Project/Art/Textures/Lighting/TX_CausticLightCookie_shoreline_1821.png,Required future shallow edge caustic light cookie,MISSING_GENERATED_ASSET
+-,-,TX_CausticWaterlineMask_shoreline_1821,CausticOpticsBaker1719,Assets/_Project/Art/Textures/Lighting/TX_CausticWaterlineMask_shoreline_1821.png,Required future caustic waterline mask,MISSING_GENERATED_ASSET
+-,-,-,ShorelineFoamGraftEditorTools,Assets/_Project/Editor/ShorelineFoamGraftEditorTools.cs,Existing layout validator and tuner for ShorelineFoam DTOs and profile,UNITY_EDITOR_ONLY_NO_RUNTIME_CLAIM
+-,-,-,ShorelineFoamGraftContracts,Assets/_Project/Scripts/Rendering/OceanSinglePass/ShorelineFoamGraftContracts.cs,Runtime-facing foam DTO profile and telemetry contract,NO_CODE_EDIT_THIS_TASK
+-,-,-,-,Assets/_Project/Data/shoreline_foam_profiles.csv,Existing active shoreline foam profile input,STATIC_INPUT_ONLY
+-,-,-,OceanSinglePassRuntime,Assets/_Project/Scripts/Rendering/OceanSinglePass/OceanSinglePassRuntime.cs,Existing first-party ocean single pass owner path for later verification,NO_CODE_EDIT_THIS_TASK
+-,-,-,HectonSinglePassOceanFeature,Assets/_Project/Scripts/Rendering/OceanSinglePass/HectonSinglePassOceanFeature.cs,Existing render feature path for future Frame Debugger proof,NO_CODE_EDIT_THIS_TASK
+-,-,-,WaterOpticsRuntime,Assets/_Project/Scripts/Rendering/WaterOptics/WaterOpticsRuntime.cs,Existing water optics runtime for later route proof,NO_CODE_EDIT_THIS_TASK
+-,-,-,SedimentAccumulationManager,Assets/_Project/Scripts/World/SedimentAccumulationManager.cs,Existing shader-only sediment global publisher,NO_CAPTURE_OWNER_HERE
+-,-,-,SedimentAccumulation.compute,Assets/_Project/Art/Shaders/SedimentAccumulation.compute,Existing sediment compute shader candidate for future offline mask accumulation,DO_NOT_EDIT_SHADER_IN_THIS_TASK
+-,-,TX_H8SurfaceOceanLongSwell_1428,-,Assets/_Project/Art/TEXTURES/TX_H8SurfaceOceanLongSwell_1428.asset,Existing long-swell read texture candidate,STATIC_TEXTURE_ONLY
+-,-,TX_SurfaceOceanInterference_1428,-,Assets/_Project/Art/TEXTURES/TX_SurfaceOceanInterference_1428.asset,Existing surface interference texture candidate,STATIC_TEXTURE_ONLY
+-,MESH_H8SurfaceCoastalIsland_1428,-,-,Assets/_Project/Art/Meshes/World/MESH_H8SurfaceCoastalIsland_1428.asset,Primary coastal island mesh candidate,UNITY_BINDING_PENDING
+-,MESH_H8SurfaceShoreFoamRing_1428,-,-,Assets/_Project/Art/Meshes/World/MESH_H8SurfaceShoreFoamRing_1428.asset,Primary foam ring mesh candidate,SCENE_OBJECT_INACTIVE_PENDING_UNITY
+-,MESH_SurfaceFoamRingAAA_1428,-,-,Assets/_Project/Art/Meshes/Generated/MESH_SurfaceFoamRingAAA_1428.asset,Generated foam ring candidate,UNITY_BINDING_PENDING
+-,MESH_SurfaceCoastlineJagged_1428,-,-,Assets/_Project/Art/Meshes/Generated/MESH_SurfaceCoastlineJagged_1428.asset,Jagged coastline candidate for wet edge bake source,UNITY_BINDING_PENDING
+-,MESH_SurfaceBasaltStack_1428,-,-,Assets/_Project/Art/Meshes/Generated/MESH_SurfaceBasaltStack_1428.asset,Basalt stack candidate for near waterline dressing,UNITY_BINDING_PENDING
+-,-,-,-,Assets/_Project/Prefabs/WorldRuntime/ProceduralPlaceholders,Rejected final placeholder prefab folder,REJECT_FINAL_VISUAL_REFERENCE
+-,-,-,-,Assets/_Project/Materials/WorldRuntime/ProceduralPlaceholders,Rejected final placeholder material folder,REJECT_FINAL_VISUAL_REFERENCE
+-,-,bubble vent atlas bad redo,-,Assets/_Project/Art/TEXTURES/Detali/bubble vent atlas - bad - redo.png,Rejected texture reference,REJECT_FINAL_VISUAL_REFERENCE
+-,-,-,-,Assets/Crest,Third-party ocean package boundary,READ_ONLY_DO_NOT_MUTATE_PACKAGE
+-,-,-,-,Assets/MapMagic,Third-party terrain package boundary if present,READ_ONLY_DO_NOT_MUTATE_PACKAGE
+-,-,-,-,Assets/GPUInstancer,Third-party instancing package boundary if present,READ_ONLY_DO_NOT_MUTATE_PACKAGE
+-,-,-,-,Assets/MeshBaker,Third-party mesh package boundary if present,READ_ONLY_DO_NOT_MUTATE_PACKAGE
+-,-,-,-,Assets/SciFiFacility,Third-party industrial source kit boundary if present,READ_ONLY_DO_NOT_MUTATE_PACKAGE

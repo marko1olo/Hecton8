@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ This is where dead workers became a clean column.
 
 ## Field Note
 
-Use as final proof before public ledger or payload receiver choice.
+Final proof stands between the public ledger and the payload receiver: one preserves the dead, the other controls the claim.
 
 <!-- External Site; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/en_US. -->

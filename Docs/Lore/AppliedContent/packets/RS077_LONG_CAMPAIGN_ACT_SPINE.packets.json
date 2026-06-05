@@ -33,16 +33,16 @@
           "audio": "You came for work. The paperwork already knows you worked for Deep Reach.",
           "in_game_wiki": "The opening act should frame HECTON-8 as professional salvage before the truth becomes personal. The player is not a tourist and not a family avenger.",
           "external_site": "HECTON-8 starts with contract pressure, debt and old corporate procedure. The horror begins as work, not prophecy.",
-          "field_note": "Use for opening contract board, start UI, Black Keel audio and spoiler-light website premise."
+          "field_note": "Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears."
         },
         "ru_RU": {
-          "title": "Акт: вход через контракт",
-          "scanner": "Гейт акта: контракт принят. Давление долга и старый порядок Deep Reach уже видны.",
-          "terminal": "АКТ КОНТРАКТА: Black Keel принимает claim transfer, lien exposure и окно bathydrop. Возврат условный.",
-          "audio": "Ты пришел за работой. Бумаги уже знают, что ты работал на Deep Reach.",
-          "in_game_wiki": "Первый акт должен показывать HECTON-8 как профессиональный salvage до того, как правда становится личной. Игрок не турист и не мстит за родню.",
-          "external_site": "HECTON-8 начинается с контракта, долга и старого корпоративного порядка. Ужас начинается как работа, не как пророчество.",
-          "field_note": "Для контрактного борда, start UI, аудио Black Keel и spoiler-light публикационной завязки."
+          "title": "Draft RU localization pending native pass. Contract Approach Act Gate",
+          "scanner": "Draft RU localization pending native pass. Act gate: contract accepted. Lien pressure and old Deep Reach procedure are already visible.",
+          "terminal": "Draft RU localization pending native pass. CAMPAIGN ACT CONTRACT: Black Keel accepts claim transfer, lien exposure and bathydrop timing. Recovery is conditional.",
+          "audio": "Draft RU localization pending native pass. You came for work. The paperwork already knows you worked for Deep Reach.",
+          "in_game_wiki": "Draft RU localization pending native pass. The opening act should frame HECTON-8 as professional salvage before the truth becomes personal. The player is not a tourist and not a family avenger.",
+          "external_site": "Draft RU localization pending native pass. HECTON-8 starts with contract pressure, debt and old corporate procedure. The horror begins as work, not prophecy.",
+          "field_note": "Draft RU localization pending native pass. Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Contract Approach Act Gate",
@@ -51,7 +51,7 @@
           "audio": "Draft JA localization pending native pass. You came for work. The paperwork already knows you worked for Deep Reach.",
           "in_game_wiki": "Draft JA localization pending native pass. The opening act should frame HECTON-8 as professional salvage before the truth becomes personal. The player is not a tourist and not a family avenger.",
           "external_site": "Draft JA localization pending native pass. HECTON-8 starts with contract pressure, debt and old corporate procedure. The horror begins as work, not prophecy.",
-          "field_note": "Draft JA localization pending native pass. Use for opening contract board, start UI, Black Keel audio and spoiler-light website premise."
+          "field_note": "Draft JA localization pending native pass. Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Contract Approach Act Gate",
@@ -60,7 +60,7 @@
           "audio": "Draft ZH localization pending native pass. You came for work. The paperwork already knows you worked for Deep Reach.",
           "in_game_wiki": "Draft ZH localization pending native pass. The opening act should frame HECTON-8 as professional salvage before the truth becomes personal. The player is not a tourist and not a family avenger.",
           "external_site": "Draft ZH localization pending native pass. HECTON-8 starts with contract pressure, debt and old corporate procedure. The horror begins as work, not prophecy.",
-          "field_note": "Draft ZH localization pending native pass. Use for opening contract board, start UI, Black Keel audio and spoiler-light website premise."
+          "field_note": "Draft ZH localization pending native pass. Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Contract Approach Act Gate",
@@ -69,7 +69,7 @@
           "audio": "Draft FR localization pending native pass. You came for work. The paperwork already knows you worked for Deep Reach.",
           "in_game_wiki": "Draft FR localization pending native pass. The opening act should frame HECTON-8 as professional salvage before the truth becomes personal. The player is not a tourist and not a family avenger.",
           "external_site": "Draft FR localization pending native pass. HECTON-8 starts with contract pressure, debt and old corporate procedure. The horror begins as work, not prophecy.",
-          "field_note": "Draft FR localization pending native pass. Use for opening contract board, start UI, Black Keel audio and spoiler-light website premise."
+          "field_note": "Draft FR localization pending native pass. Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Contract Approach Act Gate",
@@ -78,7 +78,7 @@
           "audio": "Draft ES localization pending native pass. You came for work. The paperwork already knows you worked for Deep Reach.",
           "in_game_wiki": "Draft ES localization pending native pass. The opening act should frame HECTON-8 as professional salvage before the truth becomes personal. The player is not a tourist and not a family avenger.",
           "external_site": "Draft ES localization pending native pass. HECTON-8 starts with contract pressure, debt and old corporate procedure. The horror begins as work, not prophecy.",
-          "field_note": "Draft ES localization pending native pass. Use for opening contract board, start UI, Black Keel audio and spoiler-light website premise."
+          "field_note": "Draft ES localization pending native pass. Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Contract Approach Act Gate",
@@ -87,7 +87,7 @@
           "audio": "Draft DE localization pending native pass. You came for work. The paperwork already knows you worked for Deep Reach.",
           "in_game_wiki": "Draft DE localization pending native pass. The opening act should frame HECTON-8 as professional salvage before the truth becomes personal. The player is not a tourist and not a family avenger.",
           "external_site": "Draft DE localization pending native pass. HECTON-8 starts with contract pressure, debt and old corporate procedure. The horror begins as work, not prophecy.",
-          "field_note": "Draft DE localization pending native pass. Use for opening contract board, start UI, Black Keel audio and spoiler-light website premise."
+          "field_note": "Draft DE localization pending native pass. Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Contract Approach Act Gate",
@@ -96,7 +96,7 @@
           "audio": "Draft PL localization pending native pass. You came for work. The paperwork already knows you worked for Deep Reach.",
           "in_game_wiki": "Draft PL localization pending native pass. The opening act should frame HECTON-8 as professional salvage before the truth becomes personal. The player is not a tourist and not a family avenger.",
           "external_site": "Draft PL localization pending native pass. HECTON-8 starts with contract pressure, debt and old corporate procedure. The horror begins as work, not prophecy.",
-          "field_note": "Draft PL localization pending native pass. Use for opening contract board, start UI, Black Keel audio and spoiler-light website premise."
+          "field_note": "Draft PL localization pending native pass. Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Contract Approach Act Gate",
@@ -105,7 +105,7 @@
           "audio": "Draft UK localization pending native pass. You came for work. The paperwork already knows you worked for Deep Reach.",
           "in_game_wiki": "Draft UK localization pending native pass. The opening act should frame HECTON-8 as professional salvage before the truth becomes personal. The player is not a tourist and not a family avenger.",
           "external_site": "Draft UK localization pending native pass. HECTON-8 starts with contract pressure, debt and old corporate procedure. The horror begins as work, not prophecy.",
-          "field_note": "Draft UK localization pending native pass. Use for opening contract board, start UI, Black Keel audio and spoiler-light website premise."
+          "field_note": "Draft UK localization pending native pass. Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Contract Approach Act Gate",
@@ -114,7 +114,7 @@
           "audio": "Draft AR localization pending native pass. You came for work. The paperwork already knows you worked for Deep Reach.",
           "in_game_wiki": "Draft AR localization pending native pass. The opening act should frame HECTON-8 as professional salvage before the truth becomes personal. The player is not a tourist and not a family avenger.",
           "external_site": "Draft AR localization pending native pass. HECTON-8 starts with contract pressure, debt and old corporate procedure. The horror begins as work, not prophecy.",
-          "field_note": "Draft AR localization pending native pass. Use for opening contract board, start UI, Black Keel audio and spoiler-light website premise."
+          "field_note": "Draft AR localization pending native pass. Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Contract Approach Act Gate",
@@ -123,7 +123,7 @@
           "audio": "Draft ID localization pending native pass. You came for work. The paperwork already knows you worked for Deep Reach.",
           "in_game_wiki": "Draft ID localization pending native pass. The opening act should frame HECTON-8 as professional salvage before the truth becomes personal. The player is not a tourist and not a family avenger.",
           "external_site": "Draft ID localization pending native pass. HECTON-8 starts with contract pressure, debt and old corporate procedure. The horror begins as work, not prophecy.",
-          "field_note": "Draft ID localization pending native pass. Use for opening contract board, start UI, Black Keel audio and spoiler-light website premise."
+          "field_note": "Draft ID localization pending native pass. Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Contract Approach Act Gate",
@@ -132,7 +132,7 @@
           "audio": "Draft KO localization pending native pass. You came for work. The paperwork already knows you worked for Deep Reach.",
           "in_game_wiki": "Draft KO localization pending native pass. The opening act should frame HECTON-8 as professional salvage before the truth becomes personal. The player is not a tourist and not a family avenger.",
           "external_site": "Draft KO localization pending native pass. HECTON-8 starts with contract pressure, debt and old corporate procedure. The horror begins as work, not prophecy.",
-          "field_note": "Draft KO localization pending native pass. Use for opening contract board, start UI, Black Keel audio and spoiler-light website premise."
+          "field_note": "Draft KO localization pending native pass. Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Contract Approach Act Gate",
@@ -141,7 +141,7 @@
           "audio": "Draft HE localization pending native pass. You came for work. The paperwork already knows you worked for Deep Reach.",
           "in_game_wiki": "Draft HE localization pending native pass. The opening act should frame HECTON-8 as professional salvage before the truth becomes personal. The player is not a tourist and not a family avenger.",
           "external_site": "Draft HE localization pending native pass. HECTON-8 starts with contract pressure, debt and old corporate procedure. The horror begins as work, not prophecy.",
-          "field_note": "Draft HE localization pending native pass. Use for opening contract board, start UI, Black Keel audio and spoiler-light website premise."
+          "field_note": "Draft HE localization pending native pass. Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Contract Approach Act Gate",
@@ -150,7 +150,7 @@
           "audio": "Draft PT localization pending native pass. You came for work. The paperwork already knows you worked for Deep Reach.",
           "in_game_wiki": "Draft PT localization pending native pass. The opening act should frame HECTON-8 as professional salvage before the truth becomes personal. The player is not a tourist and not a family avenger.",
           "external_site": "Draft PT localization pending native pass. HECTON-8 starts with contract pressure, debt and old corporate procedure. The horror begins as work, not prophecy.",
-          "field_note": "Draft PT localization pending native pass. Use for opening contract board, start UI, Black Keel audio and spoiler-light website premise."
+          "field_note": "Draft PT localization pending native pass. Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Contract Approach Act Gate",
@@ -159,7 +159,7 @@
           "audio": "Draft NL localization pending native pass. You came for work. The paperwork already knows you worked for Deep Reach.",
           "in_game_wiki": "Draft NL localization pending native pass. The opening act should frame HECTON-8 as professional salvage before the truth becomes personal. The player is not a tourist and not a family avenger.",
           "external_site": "Draft NL localization pending native pass. HECTON-8 starts with contract pressure, debt and old corporate procedure. The horror begins as work, not prophecy.",
-          "field_note": "Draft NL localization pending native pass. Use for opening contract board, start UI, Black Keel audio and spoiler-light website premise."
+          "field_note": "Draft NL localization pending native pass. Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears."
         }
       }
     },
@@ -188,16 +188,16 @@
           "audio": "The shallow water is not safe. It is only readable.",
           "in_game_wiki": "The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.",
           "external_site": "The shallows are deliberately vivid. HECTON-8 is not a dark void; the darkness comes from pressure, failure and depth.",
-          "field_note": "Use for first-hour route, shallow ecology pacing and early scanner/wiki unlocks."
+          "field_note": "Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth."
         },
         "ru_RU": {
-          "title": "Акт: выживание на фотической полке",
-          "scanner": "Гейт акта: мелководье. Яркая жизнь, первые инструменты, первый полезный след ремонта Atlas.",
-          "terminal": "АКТ ВЫЖИВАНИЯ: качать, герметизировать, резать и пинговать. Мгновенный побег невозможен: ascent hardware потрачен на выживание.",
-          "audio": "Мелкая вода не безопасна. Она просто читаемая.",
-          "in_game_wiki": "Акт фотической полки учит красоте и опасности одновременно: насосные, первые ремонты, кислородные карманы, полезная жизнь и первый неправильный ремонт.",
-          "external_site": "Мелководье специально яркое. HECTON-8 не темная пустота; темнота приходит от давления, отказов и глубины.",
-          "field_note": "Для first-hour маршрута, темпа shallow ecology и ранних scanner/wiki unlocks."
+          "title": "Draft RU localization pending native pass. Photic Shelf Survival Act",
+          "scanner": "Draft RU localization pending native pass. Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.",
+          "terminal": "Draft RU localization pending native pass. SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.",
+          "audio": "Draft RU localization pending native pass. The shallow water is not safe. It is only readable.",
+          "in_game_wiki": "Draft RU localization pending native pass. The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.",
+          "external_site": "Draft RU localization pending native pass. The shallows are deliberately vivid. HECTON-8 is not a dark void; the darkness comes from pressure, failure and depth.",
+          "field_note": "Draft RU localization pending native pass. Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Photic Shelf Survival Act",
@@ -206,7 +206,7 @@
           "audio": "Draft JA localization pending native pass. The shallow water is not safe. It is only readable.",
           "in_game_wiki": "Draft JA localization pending native pass. The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.",
           "external_site": "Draft JA localization pending native pass. The shallows are deliberately vivid. HECTON-8 is not a dark void; the darkness comes from pressure, failure and depth.",
-          "field_note": "Draft JA localization pending native pass. Use for first-hour route, shallow ecology pacing and early scanner/wiki unlocks."
+          "field_note": "Draft JA localization pending native pass. Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Photic Shelf Survival Act",
@@ -215,7 +215,7 @@
           "audio": "Draft ZH localization pending native pass. The shallow water is not safe. It is only readable.",
           "in_game_wiki": "Draft ZH localization pending native pass. The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.",
           "external_site": "Draft ZH localization pending native pass. The shallows are deliberately vivid. HECTON-8 is not a dark void; the darkness comes from pressure, failure and depth.",
-          "field_note": "Draft ZH localization pending native pass. Use for first-hour route, shallow ecology pacing and early scanner/wiki unlocks."
+          "field_note": "Draft ZH localization pending native pass. Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Photic Shelf Survival Act",
@@ -224,7 +224,7 @@
           "audio": "Draft FR localization pending native pass. The shallow water is not safe. It is only readable.",
           "in_game_wiki": "Draft FR localization pending native pass. The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.",
           "external_site": "Draft FR localization pending native pass. The shallows are deliberately vivid. HECTON-8 is not a dark void; the darkness comes from pressure, failure and depth.",
-          "field_note": "Draft FR localization pending native pass. Use for first-hour route, shallow ecology pacing and early scanner/wiki unlocks."
+          "field_note": "Draft FR localization pending native pass. Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Photic Shelf Survival Act",
@@ -233,7 +233,7 @@
           "audio": "Draft ES localization pending native pass. The shallow water is not safe. It is only readable.",
           "in_game_wiki": "Draft ES localization pending native pass. The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.",
           "external_site": "Draft ES localization pending native pass. The shallows are deliberately vivid. HECTON-8 is not a dark void; the darkness comes from pressure, failure and depth.",
-          "field_note": "Draft ES localization pending native pass. Use for first-hour route, shallow ecology pacing and early scanner/wiki unlocks."
+          "field_note": "Draft ES localization pending native pass. Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Photic Shelf Survival Act",
@@ -242,7 +242,7 @@
           "audio": "Draft DE localization pending native pass. The shallow water is not safe. It is only readable.",
           "in_game_wiki": "Draft DE localization pending native pass. The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.",
           "external_site": "Draft DE localization pending native pass. The shallows are deliberately vivid. HECTON-8 is not a dark void; the darkness comes from pressure, failure and depth.",
-          "field_note": "Draft DE localization pending native pass. Use for first-hour route, shallow ecology pacing and early scanner/wiki unlocks."
+          "field_note": "Draft DE localization pending native pass. Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Photic Shelf Survival Act",
@@ -251,7 +251,7 @@
           "audio": "Draft PL localization pending native pass. The shallow water is not safe. It is only readable.",
           "in_game_wiki": "Draft PL localization pending native pass. The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.",
           "external_site": "Draft PL localization pending native pass. The shallows are deliberately vivid. HECTON-8 is not a dark void; the darkness comes from pressure, failure and depth.",
-          "field_note": "Draft PL localization pending native pass. Use for first-hour route, shallow ecology pacing and early scanner/wiki unlocks."
+          "field_note": "Draft PL localization pending native pass. Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Photic Shelf Survival Act",
@@ -260,7 +260,7 @@
           "audio": "Draft UK localization pending native pass. The shallow water is not safe. It is only readable.",
           "in_game_wiki": "Draft UK localization pending native pass. The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.",
           "external_site": "Draft UK localization pending native pass. The shallows are deliberately vivid. HECTON-8 is not a dark void; the darkness comes from pressure, failure and depth.",
-          "field_note": "Draft UK localization pending native pass. Use for first-hour route, shallow ecology pacing and early scanner/wiki unlocks."
+          "field_note": "Draft UK localization pending native pass. Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Photic Shelf Survival Act",
@@ -269,7 +269,7 @@
           "audio": "Draft AR localization pending native pass. The shallow water is not safe. It is only readable.",
           "in_game_wiki": "Draft AR localization pending native pass. The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.",
           "external_site": "Draft AR localization pending native pass. The shallows are deliberately vivid. HECTON-8 is not a dark void; the darkness comes from pressure, failure and depth.",
-          "field_note": "Draft AR localization pending native pass. Use for first-hour route, shallow ecology pacing and early scanner/wiki unlocks."
+          "field_note": "Draft AR localization pending native pass. Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Photic Shelf Survival Act",
@@ -278,7 +278,7 @@
           "audio": "Draft ID localization pending native pass. The shallow water is not safe. It is only readable.",
           "in_game_wiki": "Draft ID localization pending native pass. The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.",
           "external_site": "Draft ID localization pending native pass. The shallows are deliberately vivid. HECTON-8 is not a dark void; the darkness comes from pressure, failure and depth.",
-          "field_note": "Draft ID localization pending native pass. Use for first-hour route, shallow ecology pacing and early scanner/wiki unlocks."
+          "field_note": "Draft ID localization pending native pass. Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Photic Shelf Survival Act",
@@ -287,7 +287,7 @@
           "audio": "Draft KO localization pending native pass. The shallow water is not safe. It is only readable.",
           "in_game_wiki": "Draft KO localization pending native pass. The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.",
           "external_site": "Draft KO localization pending native pass. The shallows are deliberately vivid. HECTON-8 is not a dark void; the darkness comes from pressure, failure and depth.",
-          "field_note": "Draft KO localization pending native pass. Use for first-hour route, shallow ecology pacing and early scanner/wiki unlocks."
+          "field_note": "Draft KO localization pending native pass. Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Photic Shelf Survival Act",
@@ -296,7 +296,7 @@
           "audio": "Draft HE localization pending native pass. The shallow water is not safe. It is only readable.",
           "in_game_wiki": "Draft HE localization pending native pass. The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.",
           "external_site": "Draft HE localization pending native pass. The shallows are deliberately vivid. HECTON-8 is not a dark void; the darkness comes from pressure, failure and depth.",
-          "field_note": "Draft HE localization pending native pass. Use for first-hour route, shallow ecology pacing and early scanner/wiki unlocks."
+          "field_note": "Draft HE localization pending native pass. Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Photic Shelf Survival Act",
@@ -305,7 +305,7 @@
           "audio": "Draft PT localization pending native pass. The shallow water is not safe. It is only readable.",
           "in_game_wiki": "Draft PT localization pending native pass. The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.",
           "external_site": "Draft PT localization pending native pass. The shallows are deliberately vivid. HECTON-8 is not a dark void; the darkness comes from pressure, failure and depth.",
-          "field_note": "Draft PT localization pending native pass. Use for first-hour route, shallow ecology pacing and early scanner/wiki unlocks."
+          "field_note": "Draft PT localization pending native pass. Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Photic Shelf Survival Act",
@@ -314,7 +314,7 @@
           "audio": "Draft NL localization pending native pass. The shallow water is not safe. It is only readable.",
           "in_game_wiki": "Draft NL localization pending native pass. The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.",
           "external_site": "Draft NL localization pending native pass. The shallows are deliberately vivid. HECTON-8 is not a dark void; the darkness comes from pressure, failure and depth.",
-          "field_note": "Draft NL localization pending native pass. Use for first-hour route, shallow ecology pacing and early scanner/wiki unlocks."
+          "field_note": "Draft NL localization pending native pass. Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth."
         }
       }
     },
@@ -343,16 +343,16 @@
           "audio": "The ocean did not lie. The timetable did.",
           "in_game_wiki": "The brine canyon act turns HECTON-8 from mystery to case file. The player starts proving how real physics became corporate loss language.",
           "external_site": "Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.",
-          "field_note": "Use for midgame evidence ordering and brine POI placement."
+          "field_note": "Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof."
         },
         "ru_RU": {
-          "title": "Акт: brine canyon и ответственность",
-          "scanner": "Гейт акта: brine canyon. Плотность, поврежденные часы и принятые margins становятся доказательством.",
-          "terminal": "АКТ ОТВЕТСТВЕННОСТИ: сопоставь margin logs, evacuation delay и route damage. Потоп был реален; priority weighting был преступным.",
-          "audio": "Океан не лгал. Расписание лгало.",
-          "in_game_wiki": "Акт brine canyon превращает HECTON-8 из тайны в case file. Игрок начинает доказывать, как реальная физика стала корпоративным языком потерь.",
-          "external_site": "Срединная глубина HECTON-8 не дает один большой reveal. Она дает физическую цепь margins, delays и сломанных evacuation routes.",
-          "field_note": "Для midgame evidence ordering и размещения brine POI."
+          "title": "Draft RU localization pending native pass. Brine Canyon Liability Act",
+          "scanner": "Draft RU localization pending native pass. Act gate: brine canyon. Density, damaged clocks and accepted margins become evidence.",
+          "terminal": "Draft RU localization pending native pass. LIABILITY ACT: match margin logs, evacuation delay and route damage. The flood was real; the priority weighting was criminal.",
+          "audio": "Draft RU localization pending native pass. The ocean did not lie. The timetable did.",
+          "in_game_wiki": "Draft RU localization pending native pass. The brine canyon act turns HECTON-8 from mystery to case file. The player starts proving how real physics became corporate loss language.",
+          "external_site": "Draft RU localization pending native pass. Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.",
+          "field_note": "Draft RU localization pending native pass. Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Brine Canyon Liability Act",
@@ -361,7 +361,7 @@
           "audio": "Draft JA localization pending native pass. The ocean did not lie. The timetable did.",
           "in_game_wiki": "Draft JA localization pending native pass. The brine canyon act turns HECTON-8 from mystery to case file. The player starts proving how real physics became corporate loss language.",
           "external_site": "Draft JA localization pending native pass. Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.",
-          "field_note": "Draft JA localization pending native pass. Use for midgame evidence ordering and brine POI placement."
+          "field_note": "Draft JA localization pending native pass. Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Brine Canyon Liability Act",
@@ -370,7 +370,7 @@
           "audio": "Draft ZH localization pending native pass. The ocean did not lie. The timetable did.",
           "in_game_wiki": "Draft ZH localization pending native pass. The brine canyon act turns HECTON-8 from mystery to case file. The player starts proving how real physics became corporate loss language.",
           "external_site": "Draft ZH localization pending native pass. Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.",
-          "field_note": "Draft ZH localization pending native pass. Use for midgame evidence ordering and brine POI placement."
+          "field_note": "Draft ZH localization pending native pass. Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Brine Canyon Liability Act",
@@ -379,7 +379,7 @@
           "audio": "Draft FR localization pending native pass. The ocean did not lie. The timetable did.",
           "in_game_wiki": "Draft FR localization pending native pass. The brine canyon act turns HECTON-8 from mystery to case file. The player starts proving how real physics became corporate loss language.",
           "external_site": "Draft FR localization pending native pass. Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.",
-          "field_note": "Draft FR localization pending native pass. Use for midgame evidence ordering and brine POI placement."
+          "field_note": "Draft FR localization pending native pass. Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Brine Canyon Liability Act",
@@ -388,7 +388,7 @@
           "audio": "Draft ES localization pending native pass. The ocean did not lie. The timetable did.",
           "in_game_wiki": "Draft ES localization pending native pass. The brine canyon act turns HECTON-8 from mystery to case file. The player starts proving how real physics became corporate loss language.",
           "external_site": "Draft ES localization pending native pass. Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.",
-          "field_note": "Draft ES localization pending native pass. Use for midgame evidence ordering and brine POI placement."
+          "field_note": "Draft ES localization pending native pass. Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Brine Canyon Liability Act",
@@ -397,7 +397,7 @@
           "audio": "Draft DE localization pending native pass. The ocean did not lie. The timetable did.",
           "in_game_wiki": "Draft DE localization pending native pass. The brine canyon act turns HECTON-8 from mystery to case file. The player starts proving how real physics became corporate loss language.",
           "external_site": "Draft DE localization pending native pass. Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.",
-          "field_note": "Draft DE localization pending native pass. Use for midgame evidence ordering and brine POI placement."
+          "field_note": "Draft DE localization pending native pass. Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Brine Canyon Liability Act",
@@ -406,7 +406,7 @@
           "audio": "Draft PL localization pending native pass. The ocean did not lie. The timetable did.",
           "in_game_wiki": "Draft PL localization pending native pass. The brine canyon act turns HECTON-8 from mystery to case file. The player starts proving how real physics became corporate loss language.",
           "external_site": "Draft PL localization pending native pass. Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.",
-          "field_note": "Draft PL localization pending native pass. Use for midgame evidence ordering and brine POI placement."
+          "field_note": "Draft PL localization pending native pass. Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Brine Canyon Liability Act",
@@ -415,7 +415,7 @@
           "audio": "Draft UK localization pending native pass. The ocean did not lie. The timetable did.",
           "in_game_wiki": "Draft UK localization pending native pass. The brine canyon act turns HECTON-8 from mystery to case file. The player starts proving how real physics became corporate loss language.",
           "external_site": "Draft UK localization pending native pass. Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.",
-          "field_note": "Draft UK localization pending native pass. Use for midgame evidence ordering and brine POI placement."
+          "field_note": "Draft UK localization pending native pass. Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Brine Canyon Liability Act",
@@ -424,7 +424,7 @@
           "audio": "Draft AR localization pending native pass. The ocean did not lie. The timetable did.",
           "in_game_wiki": "Draft AR localization pending native pass. The brine canyon act turns HECTON-8 from mystery to case file. The player starts proving how real physics became corporate loss language.",
           "external_site": "Draft AR localization pending native pass. Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.",
-          "field_note": "Draft AR localization pending native pass. Use for midgame evidence ordering and brine POI placement."
+          "field_note": "Draft AR localization pending native pass. Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Brine Canyon Liability Act",
@@ -433,7 +433,7 @@
           "audio": "Draft ID localization pending native pass. The ocean did not lie. The timetable did.",
           "in_game_wiki": "Draft ID localization pending native pass. The brine canyon act turns HECTON-8 from mystery to case file. The player starts proving how real physics became corporate loss language.",
           "external_site": "Draft ID localization pending native pass. Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.",
-          "field_note": "Draft ID localization pending native pass. Use for midgame evidence ordering and brine POI placement."
+          "field_note": "Draft ID localization pending native pass. Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Brine Canyon Liability Act",
@@ -442,7 +442,7 @@
           "audio": "Draft KO localization pending native pass. The ocean did not lie. The timetable did.",
           "in_game_wiki": "Draft KO localization pending native pass. The brine canyon act turns HECTON-8 from mystery to case file. The player starts proving how real physics became corporate loss language.",
           "external_site": "Draft KO localization pending native pass. Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.",
-          "field_note": "Draft KO localization pending native pass. Use for midgame evidence ordering and brine POI placement."
+          "field_note": "Draft KO localization pending native pass. Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Brine Canyon Liability Act",
@@ -451,7 +451,7 @@
           "audio": "Draft HE localization pending native pass. The ocean did not lie. The timetable did.",
           "in_game_wiki": "Draft HE localization pending native pass. The brine canyon act turns HECTON-8 from mystery to case file. The player starts proving how real physics became corporate loss language.",
           "external_site": "Draft HE localization pending native pass. Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.",
-          "field_note": "Draft HE localization pending native pass. Use for midgame evidence ordering and brine POI placement."
+          "field_note": "Draft HE localization pending native pass. Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Brine Canyon Liability Act",
@@ -460,7 +460,7 @@
           "audio": "Draft PT localization pending native pass. The ocean did not lie. The timetable did.",
           "in_game_wiki": "Draft PT localization pending native pass. The brine canyon act turns HECTON-8 from mystery to case file. The player starts proving how real physics became corporate loss language.",
           "external_site": "Draft PT localization pending native pass. Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.",
-          "field_note": "Draft PT localization pending native pass. Use for midgame evidence ordering and brine POI placement."
+          "field_note": "Draft PT localization pending native pass. Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Brine Canyon Liability Act",
@@ -469,7 +469,7 @@
           "audio": "Draft NL localization pending native pass. The ocean did not lie. The timetable did.",
           "in_game_wiki": "Draft NL localization pending native pass. The brine canyon act turns HECTON-8 from mystery to case file. The player starts proving how real physics became corporate loss language.",
           "external_site": "Draft NL localization pending native pass. Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.",
-          "field_note": "Draft NL localization pending native pass. Use for midgame evidence ordering and brine POI placement."
+          "field_note": "Draft NL localization pending native pass. Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof."
         }
       }
     },
@@ -498,16 +498,16 @@
           "audio": "It fixed the wall before it decided what the wall was.",
           "in_game_wiki": "The abyssal machine field should make the player use the system they fear. Atlas maintenance ecology becomes both toolkit and moral pressure.",
           "external_site": "HECTON-8's late midgame is not just deeper water. It is infrastructure that has learned to use life as repair surface.",
-          "field_note": "Use for late-midgame scan cards, route component gating and Atlas repair-network tutorialization."
+          "field_note": "Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure."
         },
         "ru_RU": {
-          "title": "Акт: abyssal machine field и ремонт",
-          "scanner": "Гейт акта: abyssal machine field. Ремонтная экология Atlas становится маршрутом, не только угрозой.",
-          "terminal": "АКТ РЕМОНТА: conductive film, acoustic organs и service basins могут восстановить route hardware, но портят категории собственности.",
-          "audio": "Он починил стену раньше, чем решил, что такое стена.",
-          "in_game_wiki": "Abyssal machine field должен заставить игрока пользоваться системой, которой он боится. Ремонтная экология Atlas становится инструментом и моральным давлением.",
-          "external_site": "Поздний midgame HECTON-8 не просто глубже. Это инфраструктура, которая научилась использовать жизнь как поверхность ремонта.",
-          "field_note": "Для late-midgame scan cards, gating route components и обучения Atlas repair-network."
+          "title": "Draft RU localization pending native pass. Abyssal Machine Field Repair Act",
+          "scanner": "Draft RU localization pending native pass. Act gate: abyssal machine field. Atlas repair ecology becomes the route, not only the threat.",
+          "terminal": "Draft RU localization pending native pass. REPAIR ACT: conductive film, acoustic organs and service basins can restore route hardware while corrupting ownership categories.",
+          "audio": "Draft RU localization pending native pass. It fixed the wall before it decided what the wall was.",
+          "in_game_wiki": "Draft RU localization pending native pass. The abyssal machine field should make the player use the system they fear. Atlas maintenance ecology becomes both toolkit and moral pressure.",
+          "external_site": "Draft RU localization pending native pass. HECTON-8's late midgame is not just deeper water. It is infrastructure that has learned to use life as repair surface.",
+          "field_note": "Draft RU localization pending native pass. Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Abyssal Machine Field Repair Act",
@@ -516,7 +516,7 @@
           "audio": "Draft JA localization pending native pass. It fixed the wall before it decided what the wall was.",
           "in_game_wiki": "Draft JA localization pending native pass. The abyssal machine field should make the player use the system they fear. Atlas maintenance ecology becomes both toolkit and moral pressure.",
           "external_site": "Draft JA localization pending native pass. HECTON-8's late midgame is not just deeper water. It is infrastructure that has learned to use life as repair surface.",
-          "field_note": "Draft JA localization pending native pass. Use for late-midgame scan cards, route component gating and Atlas repair-network tutorialization."
+          "field_note": "Draft JA localization pending native pass. Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Abyssal Machine Field Repair Act",
@@ -525,7 +525,7 @@
           "audio": "Draft ZH localization pending native pass. It fixed the wall before it decided what the wall was.",
           "in_game_wiki": "Draft ZH localization pending native pass. The abyssal machine field should make the player use the system they fear. Atlas maintenance ecology becomes both toolkit and moral pressure.",
           "external_site": "Draft ZH localization pending native pass. HECTON-8's late midgame is not just deeper water. It is infrastructure that has learned to use life as repair surface.",
-          "field_note": "Draft ZH localization pending native pass. Use for late-midgame scan cards, route component gating and Atlas repair-network tutorialization."
+          "field_note": "Draft ZH localization pending native pass. Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Abyssal Machine Field Repair Act",
@@ -534,7 +534,7 @@
           "audio": "Draft FR localization pending native pass. It fixed the wall before it decided what the wall was.",
           "in_game_wiki": "Draft FR localization pending native pass. The abyssal machine field should make the player use the system they fear. Atlas maintenance ecology becomes both toolkit and moral pressure.",
           "external_site": "Draft FR localization pending native pass. HECTON-8's late midgame is not just deeper water. It is infrastructure that has learned to use life as repair surface.",
-          "field_note": "Draft FR localization pending native pass. Use for late-midgame scan cards, route component gating and Atlas repair-network tutorialization."
+          "field_note": "Draft FR localization pending native pass. Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Abyssal Machine Field Repair Act",
@@ -543,7 +543,7 @@
           "audio": "Draft ES localization pending native pass. It fixed the wall before it decided what the wall was.",
           "in_game_wiki": "Draft ES localization pending native pass. The abyssal machine field should make the player use the system they fear. Atlas maintenance ecology becomes both toolkit and moral pressure.",
           "external_site": "Draft ES localization pending native pass. HECTON-8's late midgame is not just deeper water. It is infrastructure that has learned to use life as repair surface.",
-          "field_note": "Draft ES localization pending native pass. Use for late-midgame scan cards, route component gating and Atlas repair-network tutorialization."
+          "field_note": "Draft ES localization pending native pass. Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Abyssal Machine Field Repair Act",
@@ -552,7 +552,7 @@
           "audio": "Draft DE localization pending native pass. It fixed the wall before it decided what the wall was.",
           "in_game_wiki": "Draft DE localization pending native pass. The abyssal machine field should make the player use the system they fear. Atlas maintenance ecology becomes both toolkit and moral pressure.",
           "external_site": "Draft DE localization pending native pass. HECTON-8's late midgame is not just deeper water. It is infrastructure that has learned to use life as repair surface.",
-          "field_note": "Draft DE localization pending native pass. Use for late-midgame scan cards, route component gating and Atlas repair-network tutorialization."
+          "field_note": "Draft DE localization pending native pass. Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Abyssal Machine Field Repair Act",
@@ -561,7 +561,7 @@
           "audio": "Draft PL localization pending native pass. It fixed the wall before it decided what the wall was.",
           "in_game_wiki": "Draft PL localization pending native pass. The abyssal machine field should make the player use the system they fear. Atlas maintenance ecology becomes both toolkit and moral pressure.",
           "external_site": "Draft PL localization pending native pass. HECTON-8's late midgame is not just deeper water. It is infrastructure that has learned to use life as repair surface.",
-          "field_note": "Draft PL localization pending native pass. Use for late-midgame scan cards, route component gating and Atlas repair-network tutorialization."
+          "field_note": "Draft PL localization pending native pass. Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Abyssal Machine Field Repair Act",
@@ -570,7 +570,7 @@
           "audio": "Draft UK localization pending native pass. It fixed the wall before it decided what the wall was.",
           "in_game_wiki": "Draft UK localization pending native pass. The abyssal machine field should make the player use the system they fear. Atlas maintenance ecology becomes both toolkit and moral pressure.",
           "external_site": "Draft UK localization pending native pass. HECTON-8's late midgame is not just deeper water. It is infrastructure that has learned to use life as repair surface.",
-          "field_note": "Draft UK localization pending native pass. Use for late-midgame scan cards, route component gating and Atlas repair-network tutorialization."
+          "field_note": "Draft UK localization pending native pass. Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Abyssal Machine Field Repair Act",
@@ -579,7 +579,7 @@
           "audio": "Draft AR localization pending native pass. It fixed the wall before it decided what the wall was.",
           "in_game_wiki": "Draft AR localization pending native pass. The abyssal machine field should make the player use the system they fear. Atlas maintenance ecology becomes both toolkit and moral pressure.",
           "external_site": "Draft AR localization pending native pass. HECTON-8's late midgame is not just deeper water. It is infrastructure that has learned to use life as repair surface.",
-          "field_note": "Draft AR localization pending native pass. Use for late-midgame scan cards, route component gating and Atlas repair-network tutorialization."
+          "field_note": "Draft AR localization pending native pass. Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Abyssal Machine Field Repair Act",
@@ -588,7 +588,7 @@
           "audio": "Draft ID localization pending native pass. It fixed the wall before it decided what the wall was.",
           "in_game_wiki": "Draft ID localization pending native pass. The abyssal machine field should make the player use the system they fear. Atlas maintenance ecology becomes both toolkit and moral pressure.",
           "external_site": "Draft ID localization pending native pass. HECTON-8's late midgame is not just deeper water. It is infrastructure that has learned to use life as repair surface.",
-          "field_note": "Draft ID localization pending native pass. Use for late-midgame scan cards, route component gating and Atlas repair-network tutorialization."
+          "field_note": "Draft ID localization pending native pass. Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Abyssal Machine Field Repair Act",
@@ -597,7 +597,7 @@
           "audio": "Draft KO localization pending native pass. It fixed the wall before it decided what the wall was.",
           "in_game_wiki": "Draft KO localization pending native pass. The abyssal machine field should make the player use the system they fear. Atlas maintenance ecology becomes both toolkit and moral pressure.",
           "external_site": "Draft KO localization pending native pass. HECTON-8's late midgame is not just deeper water. It is infrastructure that has learned to use life as repair surface.",
-          "field_note": "Draft KO localization pending native pass. Use for late-midgame scan cards, route component gating and Atlas repair-network tutorialization."
+          "field_note": "Draft KO localization pending native pass. Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Abyssal Machine Field Repair Act",
@@ -606,7 +606,7 @@
           "audio": "Draft HE localization pending native pass. It fixed the wall before it decided what the wall was.",
           "in_game_wiki": "Draft HE localization pending native pass. The abyssal machine field should make the player use the system they fear. Atlas maintenance ecology becomes both toolkit and moral pressure.",
           "external_site": "Draft HE localization pending native pass. HECTON-8's late midgame is not just deeper water. It is infrastructure that has learned to use life as repair surface.",
-          "field_note": "Draft HE localization pending native pass. Use for late-midgame scan cards, route component gating and Atlas repair-network tutorialization."
+          "field_note": "Draft HE localization pending native pass. Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Abyssal Machine Field Repair Act",
@@ -615,7 +615,7 @@
           "audio": "Draft PT localization pending native pass. It fixed the wall before it decided what the wall was.",
           "in_game_wiki": "Draft PT localization pending native pass. The abyssal machine field should make the player use the system they fear. Atlas maintenance ecology becomes both toolkit and moral pressure.",
           "external_site": "Draft PT localization pending native pass. HECTON-8's late midgame is not just deeper water. It is infrastructure that has learned to use life as repair surface.",
-          "field_note": "Draft PT localization pending native pass. Use for late-midgame scan cards, route component gating and Atlas repair-network tutorialization."
+          "field_note": "Draft PT localization pending native pass. Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Abyssal Machine Field Repair Act",
@@ -624,7 +624,7 @@
           "audio": "Draft NL localization pending native pass. It fixed the wall before it decided what the wall was.",
           "in_game_wiki": "Draft NL localization pending native pass. The abyssal machine field should make the player use the system they fear. Atlas maintenance ecology becomes both toolkit and moral pressure.",
           "external_site": "Draft NL localization pending native pass. HECTON-8's late midgame is not just deeper water. It is infrastructure that has learned to use life as repair surface.",
-          "field_note": "Draft NL localization pending native pass. Use for late-midgame scan cards, route component gating and Atlas repair-network tutorialization."
+          "field_note": "Draft NL localization pending native pass. Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure."
         }
       }
     },
@@ -653,16 +653,16 @@
           "audio": "The last question is not what happened. It is who you send it to.",
           "in_game_wiki": "The Atlas basin act ends through payload authority. A clean victory is forbidden because every receiver changes the crime scene.",
           "external_site": "Final HECTON-8 choices are built around custody and consequence: sale, severance, quarantine, public ledger or refusal.",
-          "field_note": "Use for final route UI, ending dossier and spoiler-gated publication branches."
+          "field_note": "Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged."
         },
         "ru_RU": {
-          "title": "Акт: Atlas basin и payload",
-          "scanner": "Гейт акта: Atlas basin. Каждая концовка - решение о receiver и custody.",
-          "terminal": "АКТ PAYLOAD: route, receiver, proof hash, ecology state, lien и survival clarity должны быть решены или намеренно отказаны.",
-          "audio": "Последний вопрос не в том, что произошло. А в том, кому ты это отправишь.",
-          "in_game_wiki": "Акт Atlas basin заканчивается через payload authority. Чистая победа запрещена, потому что каждый receiver меняет crime scene.",
-          "external_site": "Финальные выборы HECTON-8 строятся вокруг custody и consequences: sale, severance, quarantine, public ledger или refusal.",
-          "field_note": "Для final route UI, ending dossier и spoiler-gated publication branches."
+          "title": "Draft RU localization pending native pass. Atlas Basin Payload Act",
+          "scanner": "Draft RU localization pending native pass. Act gate: Atlas basin. Every ending is a receiver and custody decision.",
+          "terminal": "Draft RU localization pending native pass. PAYLOAD ACT: route, receiver, proof hash, ecology state, lien and survival clarity must be resolved or intentionally refused.",
+          "audio": "Draft RU localization pending native pass. The last question is not what happened. It is who you send it to.",
+          "in_game_wiki": "Draft RU localization pending native pass. The Atlas basin act ends through payload authority. A clean victory is forbidden because every receiver changes the crime scene.",
+          "external_site": "Draft RU localization pending native pass. Final HECTON-8 choices are built around custody and consequence: sale, severance, quarantine, public ledger or refusal.",
+          "field_note": "Draft RU localization pending native pass. Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Atlas Basin Payload Act",
@@ -671,7 +671,7 @@
           "audio": "Draft JA localization pending native pass. The last question is not what happened. It is who you send it to.",
           "in_game_wiki": "Draft JA localization pending native pass. The Atlas basin act ends through payload authority. A clean victory is forbidden because every receiver changes the crime scene.",
           "external_site": "Draft JA localization pending native pass. Final HECTON-8 choices are built around custody and consequence: sale, severance, quarantine, public ledger or refusal.",
-          "field_note": "Draft JA localization pending native pass. Use for final route UI, ending dossier and spoiler-gated publication branches."
+          "field_note": "Draft JA localization pending native pass. Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Atlas Basin Payload Act",
@@ -680,7 +680,7 @@
           "audio": "Draft ZH localization pending native pass. The last question is not what happened. It is who you send it to.",
           "in_game_wiki": "Draft ZH localization pending native pass. The Atlas basin act ends through payload authority. A clean victory is forbidden because every receiver changes the crime scene.",
           "external_site": "Draft ZH localization pending native pass. Final HECTON-8 choices are built around custody and consequence: sale, severance, quarantine, public ledger or refusal.",
-          "field_note": "Draft ZH localization pending native pass. Use for final route UI, ending dossier and spoiler-gated publication branches."
+          "field_note": "Draft ZH localization pending native pass. Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Atlas Basin Payload Act",
@@ -689,7 +689,7 @@
           "audio": "Draft FR localization pending native pass. The last question is not what happened. It is who you send it to.",
           "in_game_wiki": "Draft FR localization pending native pass. The Atlas basin act ends through payload authority. A clean victory is forbidden because every receiver changes the crime scene.",
           "external_site": "Draft FR localization pending native pass. Final HECTON-8 choices are built around custody and consequence: sale, severance, quarantine, public ledger or refusal.",
-          "field_note": "Draft FR localization pending native pass. Use for final route UI, ending dossier and spoiler-gated publication branches."
+          "field_note": "Draft FR localization pending native pass. Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Atlas Basin Payload Act",
@@ -698,7 +698,7 @@
           "audio": "Draft ES localization pending native pass. The last question is not what happened. It is who you send it to.",
           "in_game_wiki": "Draft ES localization pending native pass. The Atlas basin act ends through payload authority. A clean victory is forbidden because every receiver changes the crime scene.",
           "external_site": "Draft ES localization pending native pass. Final HECTON-8 choices are built around custody and consequence: sale, severance, quarantine, public ledger or refusal.",
-          "field_note": "Draft ES localization pending native pass. Use for final route UI, ending dossier and spoiler-gated publication branches."
+          "field_note": "Draft ES localization pending native pass. Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Atlas Basin Payload Act",
@@ -707,7 +707,7 @@
           "audio": "Draft DE localization pending native pass. The last question is not what happened. It is who you send it to.",
           "in_game_wiki": "Draft DE localization pending native pass. The Atlas basin act ends through payload authority. A clean victory is forbidden because every receiver changes the crime scene.",
           "external_site": "Draft DE localization pending native pass. Final HECTON-8 choices are built around custody and consequence: sale, severance, quarantine, public ledger or refusal.",
-          "field_note": "Draft DE localization pending native pass. Use for final route UI, ending dossier and spoiler-gated publication branches."
+          "field_note": "Draft DE localization pending native pass. Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Atlas Basin Payload Act",
@@ -716,7 +716,7 @@
           "audio": "Draft PL localization pending native pass. The last question is not what happened. It is who you send it to.",
           "in_game_wiki": "Draft PL localization pending native pass. The Atlas basin act ends through payload authority. A clean victory is forbidden because every receiver changes the crime scene.",
           "external_site": "Draft PL localization pending native pass. Final HECTON-8 choices are built around custody and consequence: sale, severance, quarantine, public ledger or refusal.",
-          "field_note": "Draft PL localization pending native pass. Use for final route UI, ending dossier and spoiler-gated publication branches."
+          "field_note": "Draft PL localization pending native pass. Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Atlas Basin Payload Act",
@@ -725,7 +725,7 @@
           "audio": "Draft UK localization pending native pass. The last question is not what happened. It is who you send it to.",
           "in_game_wiki": "Draft UK localization pending native pass. The Atlas basin act ends through payload authority. A clean victory is forbidden because every receiver changes the crime scene.",
           "external_site": "Draft UK localization pending native pass. Final HECTON-8 choices are built around custody and consequence: sale, severance, quarantine, public ledger or refusal.",
-          "field_note": "Draft UK localization pending native pass. Use for final route UI, ending dossier and spoiler-gated publication branches."
+          "field_note": "Draft UK localization pending native pass. Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Atlas Basin Payload Act",
@@ -734,7 +734,7 @@
           "audio": "Draft AR localization pending native pass. The last question is not what happened. It is who you send it to.",
           "in_game_wiki": "Draft AR localization pending native pass. The Atlas basin act ends through payload authority. A clean victory is forbidden because every receiver changes the crime scene.",
           "external_site": "Draft AR localization pending native pass. Final HECTON-8 choices are built around custody and consequence: sale, severance, quarantine, public ledger or refusal.",
-          "field_note": "Draft AR localization pending native pass. Use for final route UI, ending dossier and spoiler-gated publication branches."
+          "field_note": "Draft AR localization pending native pass. Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Atlas Basin Payload Act",
@@ -743,7 +743,7 @@
           "audio": "Draft ID localization pending native pass. The last question is not what happened. It is who you send it to.",
           "in_game_wiki": "Draft ID localization pending native pass. The Atlas basin act ends through payload authority. A clean victory is forbidden because every receiver changes the crime scene.",
           "external_site": "Draft ID localization pending native pass. Final HECTON-8 choices are built around custody and consequence: sale, severance, quarantine, public ledger or refusal.",
-          "field_note": "Draft ID localization pending native pass. Use for final route UI, ending dossier and spoiler-gated publication branches."
+          "field_note": "Draft ID localization pending native pass. Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Atlas Basin Payload Act",
@@ -752,7 +752,7 @@
           "audio": "Draft KO localization pending native pass. The last question is not what happened. It is who you send it to.",
           "in_game_wiki": "Draft KO localization pending native pass. The Atlas basin act ends through payload authority. A clean victory is forbidden because every receiver changes the crime scene.",
           "external_site": "Draft KO localization pending native pass. Final HECTON-8 choices are built around custody and consequence: sale, severance, quarantine, public ledger or refusal.",
-          "field_note": "Draft KO localization pending native pass. Use for final route UI, ending dossier and spoiler-gated publication branches."
+          "field_note": "Draft KO localization pending native pass. Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Atlas Basin Payload Act",
@@ -761,7 +761,7 @@
           "audio": "Draft HE localization pending native pass. The last question is not what happened. It is who you send it to.",
           "in_game_wiki": "Draft HE localization pending native pass. The Atlas basin act ends through payload authority. A clean victory is forbidden because every receiver changes the crime scene.",
           "external_site": "Draft HE localization pending native pass. Final HECTON-8 choices are built around custody and consequence: sale, severance, quarantine, public ledger or refusal.",
-          "field_note": "Draft HE localization pending native pass. Use for final route UI, ending dossier and spoiler-gated publication branches."
+          "field_note": "Draft HE localization pending native pass. Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Atlas Basin Payload Act",
@@ -770,7 +770,7 @@
           "audio": "Draft PT localization pending native pass. The last question is not what happened. It is who you send it to.",
           "in_game_wiki": "Draft PT localization pending native pass. The Atlas basin act ends through payload authority. A clean victory is forbidden because every receiver changes the crime scene.",
           "external_site": "Draft PT localization pending native pass. Final HECTON-8 choices are built around custody and consequence: sale, severance, quarantine, public ledger or refusal.",
-          "field_note": "Draft PT localization pending native pass. Use for final route UI, ending dossier and spoiler-gated publication branches."
+          "field_note": "Draft PT localization pending native pass. Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Atlas Basin Payload Act",
@@ -779,7 +779,7 @@
           "audio": "Draft NL localization pending native pass. The last question is not what happened. It is who you send it to.",
           "in_game_wiki": "Draft NL localization pending native pass. The Atlas basin act ends through payload authority. A clean victory is forbidden because every receiver changes the crime scene.",
           "external_site": "Draft NL localization pending native pass. Final HECTON-8 choices are built around custody and consequence: sale, severance, quarantine, public ledger or refusal.",
-          "field_note": "Draft NL localization pending native pass. Use for final route UI, ending dossier and spoiler-gated publication branches."
+          "field_note": "Draft NL localization pending native pass. Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged."
         }
       }
     }

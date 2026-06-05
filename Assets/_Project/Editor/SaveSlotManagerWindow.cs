@@ -26,6 +26,7 @@ namespace Hecton8.Editor
         private string _lastRepairSummary = string.Empty;
         private Dictionary<string, Texture2D> _thumbnailCache = new Dictionary<string, Texture2D>(MaxCachedThumbnails, StringComparer.OrdinalIgnoreCase);
         private List<string> _thumbnailCacheOrder = new List<string>(MaxCachedThumbnails);
+        private readonly string[] _artifactPathScratch = new string[SaveManager.MaxKnownArtifactPathCount];
 
         [MenuItem("Tools/Hecton/Save Slot Manager", false, 1)]
         public static void ShowWindow()
@@ -402,13 +403,15 @@ namespace Hecton8.Editor
 
         private void DeleteSlotFiles(string slotName)
         {
-            string[] relativePaths = SaveManager.GetAllKnownArtifactPaths(slotName);
+            int relativePathCount = SaveManager.CollectAllKnownArtifactPaths(slotName, _artifactPathScratch);
 
-            for (int i = 0; i < relativePaths.Length; i++)
+            for (int i = 0; i < relativePathCount; i++)
             {
-                string path = Path.Combine(Application.persistentDataPath, relativePaths[i]);
+                string path = Path.Combine(Application.persistentDataPath, _artifactPathScratch[i]);
                 if (File.Exists(path))
                     File.Delete(path);
+
+                _artifactPathScratch[i] = null;
             }
 
             SaveThumbnailSystem.DeleteThumbnail(slotName);

@@ -78,6 +78,16 @@ namespace Hecton8.Audio.Editor
             Require(vocalRuntimeText.IndexOf("TryResolveSourceDistanceSq", StringComparison.Ordinal) >= 0 &&
                     vocalRuntimeText.IndexOf("AbsoluteUniversePosition.DeltaMetersClamped", StringComparison.Ordinal) >= 0,
                 "Vocal spatial gain ignores source/listener AUP grid deltas.");
+            Require(vocalRuntimeText.IndexOf("#if !UNITY_EDITOR && !DEVELOPMENT_BUILD", StringComparison.Ordinal) >= 0,
+                "Vocal runtime lacks release-player managed callback fail-closed guard.");
+            string releaseCallbackBody = ExtractMethodBody(vocalRuntimeText, "private void OnAudioFilterRead(float[] data, int channels)");
+            Require(releaseCallbackBody.IndexOf("VocalDecodeKernel.DecodeIntoAudioBuffer", StringComparison.Ordinal) < 0,
+                "Release vocal callback still decodes audio.");
+            Require(releaseCallbackBody.IndexOf("TryAcquireAudioCallbackViews", StringComparison.Ordinal) < 0 &&
+                    releaseCallbackBody.IndexOf("TryAcquireLockedView", StringComparison.Ordinal) < 0,
+                "Release vocal callback still locks DataVault views.");
+            Require(releaseCallbackBody.IndexOf("Stopwatch.GetTimestamp", StringComparison.Ordinal) < 0,
+                "Release vocal callback still measures DSP timing in managed audio thread.");
             RequireHotPathClean(vwsText, "public void Tick(");
             RequireHotPathClean(vwsText, "public void SlowTick(");
             RequireHotPathClean(vwsText, "private void RunVocalWarningFrame(");

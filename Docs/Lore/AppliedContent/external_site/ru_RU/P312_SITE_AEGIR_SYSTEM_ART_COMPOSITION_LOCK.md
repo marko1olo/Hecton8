@@ -10,17 +10,17 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Lock art-композиции системы Aegir
+# Aegir System Art Rule
 
 Aegir должен читаться как route system: moons, relay shadows, charged windows, transfer debt, salvage timing.
 
 ## Scanner
 
-Aegir art lock: orbital window, moon ladder, relay shadow, not fantasy skybox.
+Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.
 
 ## Terminal
 

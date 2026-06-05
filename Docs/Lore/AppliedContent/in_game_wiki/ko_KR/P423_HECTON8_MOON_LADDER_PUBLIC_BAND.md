@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# KO LOC: HECTON-8 Moon Ladder
+# HECTON-8 Moon Ladder
 
-KO LOC HOLD: The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.
+The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.
 
 ## Scanner
 
-KO LOC: Moon ladder: HECTON-8 is one claim, not the whole Aegir system.
+Moon ladder: HECTON-8 is one claim, not the whole Aegir system.
 
 ## Terminal
 
-KO LOC: MOON LADDER. Public role labels only; exact orbital elements stay table-owned.
+MOON LADDER. Public role labels only; exact orbital elements stay table-owned.
 
 ## Audio
 
-KO LOC HOLD: Other moons are not side quests. They are why the route has teeth.
+Other moons are not side quests. They are why the route has teeth.
 
 ## Field Note
 
-KO LOC HOLD: Use for public system map and in-game atlas; avoid promising playable moons.
+Moon ladder record: public maps can show Aegir scale without promising playable moons.
 
 <!-- In-Game Wiki; generated from P423_HECTON8_MOON_LADDER_PUBLIC_BAND/ko_KR. -->

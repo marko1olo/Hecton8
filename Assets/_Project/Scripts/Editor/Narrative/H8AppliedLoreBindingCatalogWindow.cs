@@ -631,6 +631,24 @@ namespace Hecton8.Editor
                 PrefabPath = TerminalAnchorPrefabPath
             };
 
+            Mesh mesh = AssetDatabase.LoadAssetAtPath<Mesh>(TerminalAnchorMeshPath);
+            if (mesh == null)
+            {
+                Debug.LogError(
+                    "[AppliedLoreTerminalAnchor] Missing required curved panel mesh. Refusing to save primitive fallback: " +
+                    TerminalAnchorMeshPath);
+                return report;
+            }
+
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(TerminalAnchorMaterialPath);
+            if (material == null)
+            {
+                Debug.LogError(
+                    "[AppliedLoreTerminalAnchor] Missing required diegetic HUD material. Refusing to save primitive fallback: " +
+                    TerminalAnchorMaterialPath);
+                return report;
+            }
+
             string directory = Path.GetDirectoryName(TerminalAnchorPrefabPath);
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
@@ -642,21 +660,24 @@ namespace Hecton8.Editor
                 root.name = "PFB_AppliedLore_MessageTerminalAnchor";
                 root.transform.localScale = new Vector3(1.2f, 0.08f, 0.72f);
 
-                Mesh mesh = AssetDatabase.LoadAssetAtPath<Mesh>(TerminalAnchorMeshPath);
-                if (mesh != null)
+                MeshFilter meshFilter = root.GetComponent<MeshFilter>();
+                if (meshFilter != null)
                 {
-                    MeshFilter meshFilter = root.GetComponent<MeshFilter>();
-                    if (meshFilter != null)
-                        meshFilter.sharedMesh = mesh;
+                    meshFilter.sharedMesh = mesh;
                     report.UsedMesh = true;
                 }
 
                 Renderer renderer = root.GetComponent<Renderer>();
-                Material material = AssetDatabase.LoadAssetAtPath<Material>(TerminalAnchorMaterialPath);
-                if (renderer != null && material != null)
+                if (renderer != null)
                 {
                     renderer.sharedMaterial = material;
                     report.UsedMaterial = true;
+                }
+
+                if (!report.UsedMesh || !report.UsedMaterial)
+                {
+                    Debug.LogError("[AppliedLoreTerminalAnchor] Primitive root could not bind required mesh/material. Save blocked.");
+                    return report;
                 }
 
                 MessageTerminal terminal = root.AddComponent<MessageTerminal>();

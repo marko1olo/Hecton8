@@ -1382,6 +1382,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable gameplay audio request consumed by the central audio service queue.
     /// EventID maps to an authored clip-table slot owned by the audio runtime.
+    /// ClipHash is optional; non-zero hashes are resolved by the audio owner when EventID is absent or stale.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public readonly struct AudioEvent
@@ -1390,16 +1391,21 @@ namespace Hecton8.Core
         [FieldOffset(4)] public readonly Vector3 Position;
         [FieldOffset(16)] public readonly float Volume;
         [FieldOffset(20)] public readonly float Pitch;
-        [FieldOffset(24)] private readonly uint _reserved0;
+        [FieldOffset(24)] public readonly uint ClipHash;
         [FieldOffset(28)] private readonly uint _reserved1;
 
         public AudioEvent(uint eventID, Vector3 position, float volume, float pitch)
+            : this(eventID, 0u, position, volume, pitch)
+        {
+        }
+
+        public AudioEvent(uint eventID, uint clipHash, Vector3 position, float volume, float pitch)
         {
             EventID = eventID;
+            ClipHash = clipHash;
             Position = position;
             Volume = volume;
             Pitch = pitch;
-            _reserved0 = 0u;
             _reserved1 = 0u;
         }
     }
@@ -1535,7 +1541,7 @@ namespace Hecton8.Core
         /// <summary>
         /// Queues one world-space audio event for the central NativeQueue-backed audio drain.
         /// </summary>
-        /// <param name="audioEvent">Blittable event payload. EventID is one-based into the authored audio event table.</param>
+        /// <param name="audioEvent">Blittable event payload. EventID is one-based into the authored audio event table; ClipHash is a zero-GC fallback key.</param>
         /// <returns>True when the event was accepted by the queue.</returns>
         bool QueueAudioEvent(in AudioEvent audioEvent);
 
@@ -1706,6 +1712,8 @@ namespace Hecton8.Core
         bool TryPlayStatic2DBitCrushed(AudioClip clip, float volume);
 
         void SetNarrativeRadioInterference(float interference01);
+
+        void SetNarrativeRadioGlitch(float corruption01, float bitCrushMix01, float pitchShiftCents, float qualityWeight01);
     }
 
     public interface ISpatialAudioInventoryRunawaySink

@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# KO LOC: Lian Torres/Vent Forge
+# Lian Torres/Vent Forge
 
-KO LOC HOLD: Lian Torres' dossier turns pressure glass into labor evidence. The glove, timer and reject tray show that HECTON-8 resources were worked by people before they became salvage categories.
+Lian Torres' dossier turns pressure glass into labor evidence. The glove, timer and reject tray show that HECTON-8 resources were worked by people before they became salvage categories.
 
 ## Scanner
 
-KO LOC: Dossier: Lian Torres. Glove, timer and reject tray match.
+Dossier: Lian Torres. Glove, timer and reject tray match.
 
 ## Terminal
 
-KO LOC: LIAN TORRES/VENT FORGE. Reject trays logged pressure history and the price of each seal.
+LIAN TORRES/VENT FORGE. Reject trays logged pressure history and the price of each seal.
 
 ## Audio
 
-KO LOC HOLD: Torres knew which failures could still teach the next seal to hold.
+Torres knew which failures could still teach the next seal to hold.
 
 ## Field Note
 
-KO LOC HOLD: Place in vent forge or pressure-glass salvage chains.
+Place in vent forge or pressure-glass salvage chains.
 
 <!-- In-Game Wiki; generated from P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER/ko_KR. -->

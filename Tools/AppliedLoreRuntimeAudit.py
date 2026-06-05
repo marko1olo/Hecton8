@@ -101,6 +101,10 @@ SURFACES = (
     ("external_site", 1 << 5, 44, 72),
     ("field_note", 1 << 6, 48, 76),
 )
+PUBLICATION_SURFACE_BITS = {
+    "in_game_wiki": 1 << 4,
+    "external_site": 1 << 5,
+}
 
 PLAYER_VISIBLE_TEXT_FIELDS = (
     "title",
@@ -116,6 +120,14 @@ FORBIDDEN_LOCALIZATION_MARKERS = (
     "localization pending native pass",
     "Draf ID menunggu native review.",
     "NL-concept wacht op native review.",
+)
+MOJIBAKE_PATTERNS = (
+    re.compile("\ufffd"),
+    re.compile("[\u00c2\u00c3][\u0080-\u00bf]"),
+    re.compile("[\u00d0\u00d1][\u0080-\u00bf]"),
+    re.compile("[\u00d8\u00d9][\u0080-\u00bf]"),
+    re.compile("\u00e2(?:[\u0080-\u009f]|\u20ac)"),
+    re.compile("\u00e3(?:[\u0080-\u009f]|\u0192|\u201a)"),
 )
 
 FNV_OFFSET = 2166136261
@@ -582,8 +594,20 @@ def has_forbidden_localization_marker(value: str) -> bool:
     return False
 
 
+def has_mojibake_marker(value: str) -> bool:
+    if not value:
+        return False
+
+    for pattern in MOJIBAKE_PATTERNS:
+        if pattern.search(value) is not None:
+            return True
+
+    return False
+
+
 def validate_no_visible_localization_markers(root: Path, rows: list[CsvPacketRow]) -> tuple[int, int]:
     hits: list[str] = []
+    mojibake_hits: list[str] = []
     csv_fields_scanned = 0
     pages_scanned = 0
     for row in rows:
@@ -594,7 +618,13 @@ def validate_no_visible_localization_markers(root: Path, rows: list[CsvPacketRow
                 hits.append(f"csv:{row.packet_id}/{row.locale}/{field}")
                 if len(hits) >= 12:
                     break
+            if has_mojibake_marker(value):
+                mojibake_hits.append(f"csv:{row.packet_id}/{row.locale}/{field}")
+                if len(mojibake_hits) >= 12:
+                    break
         if len(hits) >= 12:
+            break
+        if len(mojibake_hits) >= 12:
             break
 
     publication_base = root / "Docs" / "Lore" / "AppliedContent"
@@ -614,18 +644,29 @@ def validate_no_visible_localization_markers(root: Path, rows: list[CsvPacketRow
                 hits.append(f"page:{path.relative_to(root).as_posix()}")
                 if len(hits) >= 12:
                     break
+            if has_mojibake_marker(text):
+                mojibake_hits.append(f"page:{path.relative_to(root).as_posix()}")
+                if len(mojibake_hits) >= 12:
+                    break
 
         if len(hits) >= 12:
+            break
+        if len(mojibake_hits) >= 12:
             break
 
     if hits:
         fail("Player-visible localization draft markers leaked: " + "; ".join(hits))
+    if mojibake_hits:
+        fail("Player-visible localization mojibake marker leaked: " + "; ".join(mojibake_hits))
 
     return csv_fields_scanned, pages_scanned
 
 
-def localization_status_from_flags(flags: int) -> str:
-    return "draft_native_pass_pending" if (flags & 1) != 0 else "source_ready"
+def localization_status_from_flags(flags: int, locale: str) -> str:
+    if locale == "en_US":
+        return "source_authority"
+
+    return "draft_machine_or_llm"
 
 
 def direction_for_locale(locale: str) -> str:
@@ -638,6 +679,19 @@ def cluster_id_from_route_moment(route_moment: str) -> str:
 
 def format_tag_tuple(tags: tuple[str, ...]) -> str:
     return ";".join(tags)
+
+
+def is_publication_surface_enabled(row: CsvPacketRow, surface: str) -> bool:
+    return (row.surface_mask & PUBLICATION_SURFACE_BITS.get(surface, 0)) != 0
+
+
+def is_generated_publication_page(text: str, packet_id: str, surface: str) -> bool:
+    return (
+        f"packet_id: {packet_id}" in text and
+        f"surface: {surface}" in text and
+        "source: AppliedContent packet JSON" in text and
+        "runtime_reads_markdown: false" in text
+    )
 
 
 def require_page_line(text: str, path: Path, expected_line: str) -> None:
@@ -2150,7 +2204,6 @@ def validate_evidence_graph(root: Path, rows: list[CsvPacketRow]) -> int:
 
 def validate_publication_pages(root: Path, rows: list[CsvPacketRow]) -> tuple[int, int, int, int]:
     base = root / "Docs" / "Lore" / "AppliedContent"
-    packet_ids = sorted({row.packet_id for row in rows})
     locales = sorted({row.locale for row in rows})
     rows_by_key = {(row.packet_id, row.locale): row for row in rows}
     counts: list[int] = []
@@ -2160,26 +2213,41 @@ def validate_publication_pages(root: Path, rows: list[CsvPacketRow]) -> tuple[in
     for folder in ("in_game_wiki", "external_site"):
         count = 0
         for locale in locales:
+            locale_rows = sorted((row for row in rows if row.locale == locale), key=lambda item: item.packet_id)
+            enabled_packet_ids = {
+                row.packet_id for row in locale_rows if is_publication_surface_enabled(row, folder)
+            }
+            disabled_packet_ids = {
+                row.packet_id for row in locale_rows if not is_publication_surface_enabled(row, folder)
+            }
             index_path = base / folder / locale / "INDEX.md"
             if not index_path.exists():
                 fail(f"Missing publication index: {index_path}")
             index_text = index_path.read_text(encoding="utf-8")
             if not index_text:
                 fail(f"Empty publication index: {index_path}")
-            for packet_id in packet_ids:
-                if packet_id not in index_text:
+            for packet_id in enabled_packet_ids:
+                if f"`{packet_id}`" not in index_text:
                     fail(f"Publication index {index_path} missing packet id {packet_id}")
+            for packet_id in disabled_packet_ids:
+                if f"`{packet_id}`" in index_text:
+                    fail(f"Publication index {index_path} includes disabled surface packet id {packet_id}")
             index_count += 1
 
-            for packet_id in packet_ids:
+            for row in locale_rows:
+                packet_id = row.packet_id
                 path = base / folder / locale / f"{packet_id}.md"
+                if not is_publication_surface_enabled(row, folder):
+                    if path.exists():
+                        page_text = path.read_text(encoding="utf-8")
+                        if is_generated_publication_page(page_text, packet_id, folder):
+                            fail(f"Disabled publication surface still has generated page: {path}")
+                    continue
+
                 if not path.exists():
                     fail(f"Missing publication page: {path}")
                 if path.stat().st_size <= 0:
                     fail(f"Empty publication page: {path}")
-                row = rows_by_key.get((packet_id, locale))
-                if row is None:
-                    fail(f"Publication page has no CSV row: {path}")
 
                 page_text = path.read_text(encoding="utf-8")
                 require_page_line(page_text, path, f"packet_id: {packet_id}")
@@ -2192,7 +2260,7 @@ def validate_publication_pages(root: Path, rows: list[CsvPacketRow]) -> tuple[in
                 require_page_line(page_text, path, f"surface: {folder}")
                 require_page_line(page_text, path, "runtime_reads_markdown: false")
                 require_page_line(page_text, path, f"direction: {direction_for_locale(locale)}")
-                require_page_line(page_text, path, f"localization_status: {localization_status_from_flags(row.flags)}")
+                require_page_line(page_text, path, f"localization_status: {localization_status_from_flags(row.flags, locale)}")
                 require_page_line(page_text, path, f"localization_flags: {row.flags}")
                 frontmatter_count += 1
                 count += 1
@@ -2207,7 +2275,12 @@ def validate_publication_surface_index(root: Path, rows: list[CsvPacketRow]) -> 
         fail(f"Missing publication surface index: {path}")
 
     source_by_key = {(row.packet_id, row.locale): row for row in rows}
-    expected_count = len(rows) * 2
+    expected_count = sum(
+        1
+        for row in rows
+        for surface in ("in_game_wiki", "external_site")
+        if is_publication_surface_enabled(row, surface)
+    )
     seen: set[tuple[str, str, str]] = set()
     count = 0
 
@@ -2231,6 +2304,8 @@ def validate_publication_surface_index(root: Path, rows: list[CsvPacketRow]) -> 
             source = source_by_key.get((packet_id, locale))
             if source is None:
                 fail(f"Publication surface index line {line_number}: no CSV row for {packet_id}/{locale}")
+            if not is_publication_surface_enabled(source, surface):
+                fail(f"Publication surface index line {line_number}: disabled surface exported for {packet_id}/{locale}/{surface}")
 
             if require_cell(item, "direction", line_number) != direction_for_locale(locale):
                 fail(f"Publication surface index line {line_number}: direction mismatch")
@@ -2240,7 +2315,7 @@ def validate_publication_surface_index(root: Path, rows: list[CsvPacketRow]) -> 
                 fail(f"Publication surface index line {line_number}: article_id mismatch")
             if require_cell(item, "unlock_id", line_number) != source.unlock_id:
                 fail(f"Publication surface index line {line_number}: unlock_id mismatch")
-            if require_cell(item, "localization_status", line_number) != localization_status_from_flags(source.flags):
+            if require_cell(item, "localization_status", line_number) != localization_status_from_flags(source.flags, locale):
                 fail(f"Publication surface index line {line_number}: localization_status mismatch")
             if require_cell(item, "localization_flags", line_number) != str(source.flags):
                 fail(f"Publication surface index line {line_number}: localization_flags mismatch")
@@ -2323,7 +2398,16 @@ def validate_publication_cluster_index(root: Path, rows: list[CsvPacketRow]) -> 
     graph_rows = load_navigation_cluster_graph(root, expected_packet_ids)
     graph_by_packet = {row["packet_id"]: row for row in graph_rows}
     source_by_key = {(row.packet_id, row.locale): row for row in rows}
-    expected_count = len(graph_rows) * len(locales) * 2
+    expected_count = 0
+    for graph in graph_rows:
+        packet_id = graph["packet_id"]
+        for locale in locales:
+            source = source_by_key.get((packet_id, locale))
+            if source is None:
+                continue
+            for surface in ("in_game_wiki", "external_site"):
+                if is_publication_surface_enabled(source, surface):
+                    expected_count += 1
     seen: set[tuple[str, str, str]] = set()
     count = 0
 
@@ -2351,6 +2435,8 @@ def validate_publication_cluster_index(root: Path, rows: list[CsvPacketRow]) -> 
             source = source_by_key.get((packet_id, locale))
             if source is None:
                 fail(f"Publication cluster index line {line_number}: no CSV row for {packet_id}/{locale}")
+            if not is_publication_surface_enabled(source, surface):
+                fail(f"Publication cluster index line {line_number}: disabled surface exported for {packet_id}/{locale}/{surface}")
 
             graph_order = graph_rows.index(graph)
             if require_cell(item, "direction", line_number) != direction_for_locale(locale):
@@ -2373,7 +2459,7 @@ def validate_publication_cluster_index(root: Path, rows: list[CsvPacketRow]) -> 
                 fail(f"Publication cluster index line {line_number}: prereq_packet_ids mismatch")
             if item.get("next_cluster_packet_ids", "") != graph.get("next_packet_ids", ""):
                 fail(f"Publication cluster index line {line_number}: next_cluster_packet_ids mismatch")
-            if require_cell(item, "localization_status", line_number) != localization_status_from_flags(source.flags):
+            if require_cell(item, "localization_status", line_number) != localization_status_from_flags(source.flags, locale):
                 fail(f"Publication cluster index line {line_number}: localization_status mismatch")
             if require_cell(item, "localization_flags", line_number) != str(source.flags):
                 fail(f"Publication cluster index line {line_number}: localization_flags mismatch")
@@ -2405,6 +2491,7 @@ def validate_route_cards(root: Path, rows: list[CsvPacketRow]) -> int:
     expected = {row.packet_id for row in rows}
     seen_cards: set[str] = set()
     covered_packets: set[str] = set()
+    owner_by_packet: dict[str, str] = {}
     prerequisite_graph: dict[str, set[str]] = {packet_id: set() for packet_id in expected}
     for path in iter_applied_content_csv_sources(root, "route_cards", "*_route_cards.csv"):
         with path.open("r", encoding="utf-8", newline="") as handle:
@@ -2425,6 +2512,12 @@ def validate_route_cards(root: Path, rows: list[CsvPacketRow]) -> int:
                 for packet_id in packet_refs:
                     if packet_id not in expected:
                         fail(f"Route cards {path}:{line_number}: unknown packet_id {packet_id!r}")
+                    owner = owner_by_packet.get(packet_id)
+                    if owner is not None:
+                        fail(
+                            f"Route cards {path}:{line_number}: packet_id {packet_id!r} already owned by {owner}"
+                        )
+                    owner_by_packet[packet_id] = route_card_id
                     covered_packets.add(packet_id)
 
                 for ref in parse_packet_refs(row.get("required_packet_ids", "")):

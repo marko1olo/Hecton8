@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ Nobody discovered Aegir in person first. The machines got there, waited, and sol
 
 ## Field Note
 
-Use for encyclopedia route history and public hard-sci-fi primer.
+Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived.
 
 <!-- External Site; generated from P341_NEEDLEPROBE_PRECURSOR_PROGRAM/ar_SA. -->

@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Акт: Atlas basin и payload
+# Atlas Basin Payload Act
 
-Финальные выборы HECTON-8 строятся вокруг custody и consequences: sale, severance, quarantine, public ledger или refusal.
+Final HECTON-8 choices are built around custody and consequence: sale, severance, quarantine, public ledger or refusal.
 
 ## Scanner
 
-Гейт акта: Atlas basin. Каждая концовка - решение о receiver и custody.
+Act gate: Atlas basin. Every ending is a receiver and custody decision.
 
 ## Terminal
 
-АКТ PAYLOAD: route, receiver, proof hash, ecology state, lien и survival clarity должны быть решены или намеренно отказаны.
+PAYLOAD ACT: route, receiver, proof hash, ecology state, lien and survival clarity must be resolved or intentionally refused.
 
 ## Audio
 
-Последний вопрос не в том, что произошло. А в том, кому ты это отправишь.
+The last question is not what happened. It is who you send it to.
 
 ## Field Note
 
-Для final route UI, ending dossier и spoiler-gated publication branches.
+Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged.
 
 <!-- External Site; generated from P385_ATLAS_BASIN_PAYLOAD_ACT/ru_RU. -->

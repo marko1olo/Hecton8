@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
-# In-Game Wiki Unlock Tier Rules
+# PDA Unlock Tier Rules
 
-In-Game Wiki Unlock Tier Rules describes the evidence-first codex policy for HECTON-8.
+PDA unlock tiers follow evidence order: hint, fragment, proof, synthesis, and ending record.
 
 ## Scanner
 

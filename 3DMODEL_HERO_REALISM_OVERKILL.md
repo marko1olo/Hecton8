@@ -1,7 +1,14 @@
 # 3DMODEL_HERO_REALISM_OVERKILL
 
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
+Evidence class: STATIC_DOC
 Scope: hero-grade generated models, close-camera setpieces, premium creatures, premium flora/coral, premium geology, major base modules, command equipment, and any generated asset that must read as handcrafted AAA work.
+
+## First-20 Route Hook
+
+- First-20 moment: close-camera inspection of the first shelter exit, airlock/dock machinery, shallow landmark, premium resource node, major wreck fragment, or threatening fauna silhouette.
+- Route blocker removed: texture-hidden primitives, weak hero silhouettes, and unproven close-camera assets cannot carry the product-facing opening route.
+- Proof class: STATIC_DOC until reference contracts, bake manifests, multi-light renders, wireframe/collider views, Unity import evidence, and route captures exist.
 
 ## 0. Prime Hero Asset Law
 

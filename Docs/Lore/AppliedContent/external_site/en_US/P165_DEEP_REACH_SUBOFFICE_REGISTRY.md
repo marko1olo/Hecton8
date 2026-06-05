@@ -10,21 +10,21 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Deep Reach Suboffice Registry
 
-Deep Reach Suboffice Registry makes legal terminals and site articles consistent.
+Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences.
 
 ## Scanner
 
-The shell chain needs small offices for mission text and terminal stamps.
+Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.
 
 ## Terminal
 
-SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Review Gate, Asset Silence Board, and Return Action Queue are valid lower-level Deep Reach surfaces.
+SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.
 
 ## Audio
 

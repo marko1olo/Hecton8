@@ -10,21 +10,21 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Публичный хук страницы HECTON-8
+# HECTON-8 Public Opening Hook
 
 HECTON-8 - затонувшая луна Aegir: яркая вода над сломанной промышленностью, salvage-контракты над похороненной колонией и спуск, где профессиональный интерес превращается в доказательство.
 
 ## Scanner
 
-Публичный текст: сначала красота, потом давление, Atlas не раскрывать.
+Public primer: beauty first, pressure second, Atlas unnamed.
 
 ## Terminal
 
-PUBLIC COPY LOCK: страница HECTON-8 может говорить о мертвой колонии и salvage, но не о маршрутах payload в Atlas basin.
+PUBLIC PRIMER: open summary may name bright water, dead colony, salvage contract, and pressure geography; final payload routes stay sealed.
 
 ## Audio
 
@@ -32,6 +32,6 @@ PUBLIC COPY LOCK: страница HECTON-8 может говорить о ме�
 
 ## Field Note
 
-Зерно для сайта: океаническая луна, мертвая колония, salvage-контракт, давление, без спойлеров финального payload.
+Opening copy starts with ocean moon, dead colony, salvage contract, pressure geography, and no final-truth spoilers.
 
 <!-- External Site; generated from P281_HECTON8_SITE_OPENING_HOOK/ru_RU. -->

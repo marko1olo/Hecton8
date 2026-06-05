@@ -373,7 +373,7 @@ Steam/news body:
 ```text
 These are the first in-game screenshots for HECTON-8.
 
-The target is single-player deep-sea survival where pressure, salvage, machinery, and black water are the first read. Public scope stays inside current build proof, performance language waits for measured evidence, and the screenshots only carry features the build can show.
+The target is single-player underwater survival where beautiful alien water, pressure, salvage, machinery, and black-water depth are the first read. Public scope stays inside current build proof, performance language waits for measured evidence, and the screenshots only carry features the build can show.
 
 What we are checking now:
 - does the base read as a pressure machine with a survival function;
@@ -387,7 +387,7 @@ Reddit critique post:
 ```text
 Title: Does this read as industrial underwater survival, or just generic sci-fi?
 
-I am working on HECTON-8, a single-player deep-sea survival game about pressure, salvage, machinery, and black water.
+I am working on HECTON-8, a single-player underwater survival game about beautiful alien water, pressure, salvage, machinery, and black-water depth.
 
 This is feedback-only: in the first 5 seconds, do these screenshots communicate a playable survival loop, or are they just dark mood shots?
 
@@ -399,7 +399,7 @@ X/Bluesky:
 ```text
 First in-game HECTON-8 screenshots.
 
-Goal: pressure, salvage, machinery, black water.
+Goal: beautiful alien water, pressure, salvage, machinery, black-water depth.
 Single-player-first scope. No performance claim yet. Just checking whether the visual identity reads in one glance.
 ```
 
@@ -520,7 +520,8 @@ Reporting rule: every published row needs a dashboard/event-log record with `rou
 
 | Queue ID | Required asset | Primary platform | Draft copy | CTA | Kill if |
 |---|---|---|---|---|---|
-| POST-001 | Identity hero screenshot: black water, industrial silhouette, player light | X/Bluesky | `One floodlight, too much water. HECTON-8 is single-player deep-sea survival about pressure, salvage, machinery, and the cost of coming back.` | `Does the identity read without a caption?` | Viewers read it as empty water or generic bright-ocean survival scenery. |
+| POST-000 | Bright photic route screenshot: beautiful alien water, terrain/material detail, technogenic trace, route cue | X/Bluesky / Steam screenshot candidate | `The shallow water is beautiful. That is not the same thing as safe. HECTON-8 is single-player underwater survival about pressure, salvage, machinery, and the cost of coming back.` | `Does this read as a route, not just scenery?` | Viewers read it as generic pretty water, muddy surface, no route cost, or no HECTON identity. |
+| POST-001 | Depth identity hero screenshot: structured black water, industrial silhouette, player/machine light | X/Bluesky | `One floodlight, too much water. HECTON-8 is single-player underwater survival about pressure, salvage, machinery, and the cost of coming back when the route drops below the light.` | `Does the depth identity read without a caption?` | Viewers read it as empty water, generic diver ocean, or a darkened surface pretending to be depth. |
 | POST-002 | Pressure room interior screenshot | Reddit critique | `I am testing whether this room reads as a pressure vessel with survival function. What detail sells or breaks that read first: gauges, seals, grime, lighting, or layout?` | `Ask for critique only, no Steam CTA.` | Comments focus on clean sci-fi room or cannot identify the survival system. |
 | POST-003 | Salvage contact screenshot | X/Bluesky | `A good salvage route should look profitable and stupid. If the player cannot tell what they are risking, the shot failed.` | `Would you go farther?` | Player verb is unclear or the salvage target looks like decorative junk. |
 | POST-004 | Base under stress screenshot | Reddit critique | `Survival players: does this base failure look fair, or does it look like random punishment? I need the harsh read before this becomes Steam material.` | `Ask fairness/readability question.` | Users cannot tell what failed or what the player should do next. |
@@ -538,6 +539,9 @@ Reporting rule: every published row needs a dashboard/event-log record with `rou
 Use one caption per screenshot. Do not stack all captions into one post.
 
 ```text
+Bright route:
+The shallow water is beautiful. That does not make it safe.
+
 Identity hero:
 One floodlight, too much water.
 

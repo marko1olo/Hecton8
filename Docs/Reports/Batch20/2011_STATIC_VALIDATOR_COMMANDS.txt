@@ -1,0 +1,59 @@
+ID: 2011
+TASK: STATIC VALIDATOR RUNBOOK FOR VISUAL DEBT
+EVIDENCE_BOUNDARY: STATIC ONLY. NO UNITY. NO BUILD. NO ASSETS WRITES.
+
+SAFE COMMANDS EXECUTED
+1. Get-Content -Path C:\hades\Hecton8\AGENTS.md -TotalCount 240
+2. Get-Content -Path C:\hades\Hecton8\HECTON8_ORCHESTRATOR.md -TotalCount 220
+3. Get-Content -Path C:\hades\Hecton8\HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md -TotalCount 220
+4. Get-Content -Path C:\hades\Hecton8\quality.md -TotalCount 220
+5. Get-Content -Path C:\hades\Hecton8\performance.md -TotalCount 260
+6. Get-Content -Path C:\hades\Hecton8\presentation.md -TotalCount 260
+7. Get-Content -Path C:\hades\Hecton8\PROCEDURAL_ASSET_PIPELINE.md -TotalCount 260
+8. Get-Content -Path C:\hades\Hecton8\3DMODEL_TEXTURES_MATERIALS.md -TotalCount 260
+9. Get-Content -Path C:\hades\Hecton8\.agents-skills\OPT_Zero_GC_Policy_AllocFree_Mandate.txt -TotalCount 220
+10. Get-Content -Path C:\hades\Hecton8\.agents-skills\OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt -TotalCount 220
+11. Get-Content -Path C:\hades\Hecton8\.agents-skills\REND_URP_Graphics_HotPath_Optimization_HLOD.txt -TotalCount 220
+12. rg --files C:\hades\Hecton8\Tools
+13. rg --files Assets/_Project
+14. Get-Content -Path taskslocal\batch19_art_source_and_static_proof\1909_STATIC_VISUAL_DEBT_AUDIT_PROOF_MATRIX.txt -TotalCount 260
+15. Select-String on requested tool files for argparse/write/mkdir/delete patterns.
+16. python Tools\ProductFaceStaticRouteAudit.py --root .
+17. python Tools\MaterialAudit.py --root Assets/_Project --resolve-root Assets --sample-size 128
+18. python Tools\VerifyVisualLodMatrix.py
+19. python Tools\VisualStressSim.py --frames 720 --seed 8808
+20. rg -n --glob '!*.meta' --glob '!Library/**' --glob '!Temp/**' --glob '!Logs/**' "(PlacementRule|ProceduralRule_|kelp|coral|rock|depth|slope|biome|dry|shore|waterline)" Assets/_Project Docs/Reports/Batch19/1909_STATIC_VISUAL_DEBT_AUDIT_PROOF_MATRIX.csv taskslocal/batch19_art_source_and_static_proof/1909_STATIC_VISUAL_DEBT_AUDIT_PROOF_MATRIX.txt
+21. rg --files Assets/_Project | rg -i "(ProceduralRule_|PlacementRule|Biome|Kelp|Coral|Rock|TerrainLod|WorldRuntime|ProceduralPlaceholders)"
+22. rg -n --glob '!*.meta' "(Placeholder|Default-Material|m_Name: MAT_family_|m_Name:.*Placeholder|m_Materials:|guid: 0000000000000000|fileID: 10303|fileID: 2100000)" Assets/_Project/Materials Assets/_Project/Prefabs Assets/_Project/Data
+23. Get-Content -Path Docs\Reports\Batch19\1909_STATIC_VISUAL_DEBT_AUDIT_PROOF_MATRIX.csv -TotalCount 80
+24. Get-Content -Path Docs\Reports\Batch18\1851_GENERATED_ASSET_PRODUCTION_AUDIT.md -TotalCount 160
+25. Get-Content -Path Docs\Reports\CREST_QUARANTINE_POLISH_AUDIT.json -TotalCount 120
+26. Get-Content -Path Data\System\Visual_Scalability_Matrix.manifest.json -TotalCount 120
+27. Get-Content -Path Docs\Tasks\POLISH.txt -TotalCount 120
+28. Get-Content selected placement rule assets:
+    - Assets\_Project\Data\World\ProceduralPlacementRules\ProceduralRule_rule_kelp_starter.asset
+    - Assets\_Project\Data\World\ProceduralPlacementRules\ProceduralRule_rule_coral_reef.asset
+    - Assets\_Project\Data\World\ProceduralPlacementRules\ProceduralRule_rule_rocks_shelf.asset
+
+SKIPPED REQUESTED TOOLS
+1. Tools\GeneratedAssetProductionAudit.py
+   Reason: default execution writes Docs/Reports/Batch18/1851_GENERATED_ASSET_PRODUCTION_AUDIT.json and .md. Existing Batch18 static output was inspected instead.
+2. Tools\TextureAuditAndBakeDirector_SHINOBU_361.py
+   Reason: execution creates output directories and writes JSON, CSV, markdown, manifest, prompt, and queue artifacts. No read-only mode found.
+3. Tools\Crest_Quarantine_Polish_Audit.py
+   Reason: hardcoded REPORT_PATH writes Docs/Reports/CREST_QUARANTINE_POLISH_AUDIT.json. Existing static output was inspected instead.
+4. Tools\VisualLodMatrixBaker.py
+   Reason: writes Data/System/Visual_Scalability_Matrix.bin and .manifest.json by default. Verifier and stress sim were used instead.
+5. Tools\PolishMandateStaticAudit.py
+   Reason: run path writes JSON and markdown reports. No stdout-only run path found.
+6. Tools\ArchitectureRiskHotlistAudit.py
+   Reason: run path writes JSON and markdown reports. No stdout-only run path found.
+
+NOT RUN
+- Unity Editor
+- Unity MCP
+- dotnet build
+- dotnet test
+- player build
+- destructive cleanup
+- any command intentionally writing under Assets/**

@@ -3211,6 +3211,9 @@ namespace Hecton8.World
                 return;
             }
 
+            for (int cellIndex = 0; cellIndex < cellCount; cellIndex++)
+                uploadSnapshot[cellIndex] = threatGrid[cellIndex];
+
             try
             {
                 if (!vault.TryAcquireWriteLock(in _threatGridUploadHandle, SystemID.WorldSargassum, out NativeArray<uint> threatGridUpload))
@@ -3228,11 +3231,7 @@ namespace Hecton8.World
                 }
 
                 for (int cellIndex = 0; cellIndex < cellCount; cellIndex++)
-                {
-                    uint packedThreat = threatGrid[cellIndex];
-                    threatGridUpload[cellIndex] = packedThreat;
-                    uploadSnapshot[cellIndex] = packedThreat;
-                }
+                    threatGridUpload[cellIndex] = uploadSnapshot[cellIndex];
 
                 uploadReady = true;
             }

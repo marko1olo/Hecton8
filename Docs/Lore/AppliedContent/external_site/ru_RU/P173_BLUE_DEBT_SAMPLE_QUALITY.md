@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Качество образца blue debt
+# Blue Debt Sample Quality
 
-Качество образца blue debt задает payout и evidence classes.
+Blue Debt Sample Quality defines payout and evidence classes.
 
 ## Scanner
 
-Качество blue debt - цена, риск и доказательство в одном числе.
+Blue debt quality is value, risk and evidence in one number.
 
 ## Terminal
 
-QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample и dead contaminated glass. Более высокая цена усиливает давление Deep Reach и цену handling.
+QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.
 
 ## Audio
 
-Чем оно дороже, тем меньше оно просто loot.
+The more it is worth, the less it is only loot.
 
 ## Field Note
 
-Качество должно влиять на payout, containment и ending pressure.
+Quality should affect payout, containment and ending pressure.
 
 <!-- External Site; generated from P173_BLUE_DEBT_SAMPLE_QUALITY/ru_RU. -->

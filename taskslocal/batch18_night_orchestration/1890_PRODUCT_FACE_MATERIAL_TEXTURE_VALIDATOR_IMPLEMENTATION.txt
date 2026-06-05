@@ -1,0 +1,80 @@
+ID: 1890
+TITLE: PRODUCT_FACE_MATERIAL_TEXTURE_VALIDATOR_IMPLEMENTATION
+MODE: EDITOR_SOURCE_IMPLEMENTATION_NO_UNITY_RUN
+
+You are HECTON-8 batch agent 1890.
+You are not alone in the codebase. Do not revert unrelated changes.
+
+PRIMARY GOAL
+
+Implement an editor-only product-face material/texture validator source route that can later reject missing texture slots, default/package materials, unresolved GUIDs, placeholder materials, and missing channel declarations before visual prefab relink.
+
+This is source implementation only. Do not run Unity, dotnet build, menu items, import, PlayMode, screenshots, profiler, DataMonolith, or generated mesh/texture authoring.
+
+READ
+
+- `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `VISION_LOCKS.md`
+- `TASTE.md`
+- `quality.md`
+- `3dmodel.md`
+- `3DMODEL_TEXTURES_MATERIALS.md`
+- `Docs/Reports/Batch18/1880_TOOL_MATERIAL_TEXTURE_ROLE_PACKAGE.md`
+- `Docs/Reports/Batch18/1881_RESOURCE_MATERIAL_TEXTURE_ROLE_PACKAGE.md`
+- `Docs/Reports/Batch18/1882_TRANSPORT_PLAYER_MATERIAL_TEXTURE_ROLE_PACKAGE.md`
+- `Docs/Reports/Batch18/1883_SKY_OCEAN_MATERIAL_TEXTURE_ROLE_PACKAGE.md`
+- `Docs/Reports/Batch18/1886_PRODUCT_FACE_TEXTURE_AUTHORING_PIPELINE_DISCOVERY.md`
+- existing validator patterns:
+  - `Assets/_Project/Scripts/Editor/ProductFacePrefabQualityValidator.cs`
+  - `Assets/_Project/Scripts/Editor/ProductFaceSkyOceanSourceValidator.cs`
+  - `Assets/_Project/Scripts/Editor/AITextureControlMapBaker/Shinobu269/Material_Setup_Scanner.cs`
+
+Mandates:
+
+- `.agents-skills/QA_Evidence_Text_Filter_Audit.txt`
+- `.agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt`
+- `.agents-skills/MATH_AUP_Determinism_Sync.txt`
+
+WRITE SCOPE
+
+You may create/update only:
+
+- `Assets/_Project/Scripts/Editor/ProductFaceMaterialTextureValidator.cs`
+- `Assets/_Project/Scripts/Editor/ProductFaceMaterialTextureValidator.cs.meta`
+- `Docs/Reports/Batch18/1890_PRODUCT_FACE_MATERIAL_TEXTURE_VALIDATOR_IMPLEMENTATION.md`
+- `Docs/Tasks/Status_1890.md`
+- `Docs/AgentLogs/Rationale_1890.md`
+- `Docs/AgentLogs/LOG_1890.md`
+
+REQUIREMENTS
+
+- Use `#if UNITY_EDITOR`.
+- Namespace must match nearby product-face editor validators.
+- Add a menu item under `Hecton8/Validation/Product-Face Material Texture Gate`.
+- Read-only validator: no repairs, no material creation, no texture import, no prefab edit, no asset deletion.
+- Static target materials should include product-face material paths from 1880-1883 and known placeholder/default/package routes.
+- Reject or flag:
+  - missing albedo/base texture when the role requires it;
+  - missing normal map when the role requires it;
+  - missing packed mask when the role requires it;
+  - unresolved/default GUID `31321ba15b8f8eb4c954353edc038b1d` in product-face prefabs/reports where scanned;
+  - package-cache `Lit.mat` or package material routes for product-face bodies;
+  - `Mat_Tool_*_Placeholder`, `MAT_PlayerSwimBlockout`, diagnostics/error/checker/flat-color materials;
+  - environment route assets used outside allowed route scope.
+- Must not use `GameObject.CreatePrimitive`, `CreatePrimitive`, `new GameObject`, `AddComponent`, `PrefabUtility`, `SaveAsPrefab`, `AssetDatabase.DeleteAsset`, `Resources.Load`, `GameObject.Find`, or scene mutation.
+- Must not use `float.IsFinite` or `double.IsFinite`.
+- Produce a report object/counts in code and log result; future Unity owner will run it.
+
+VERIFICATION
+
+Run and record:
+
+- `git diff --check -- Assets/_Project/Scripts/Editor/ProductFaceMaterialTextureValidator.cs Assets/_Project/Scripts/Editor/ProductFaceMaterialTextureValidator.cs.meta Docs/Reports/Batch18/1890_PRODUCT_FACE_MATERIAL_TEXTURE_VALIDATOR_IMPLEMENTATION.md Docs/Tasks/Status_1890.md Docs/AgentLogs/Rationale_1890.md Docs/AgentLogs/LOG_1890.md`
+- scan new source for forbidden APIs above;
+- scan new source for menu path, default GUID, `PackageCache`, placeholder names, and `Product-Face Material Texture Gate`;
+- GUID uniqueness scan for new `.meta`.
+
+FINAL RESPONSE
+
+List changed files, what the validator rejects, verification results, and remaining Unity proof gap.

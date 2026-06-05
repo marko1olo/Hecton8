@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ The ocean did not lie. The timetable did.
 
 ## Field Note
 
-Use for midgame evidence ordering and brine POI placement.
+Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
 
 <!-- In-Game Wiki; generated from P383_BRINE_CANYON_LIABILITY_ACT/zh_CN. -->

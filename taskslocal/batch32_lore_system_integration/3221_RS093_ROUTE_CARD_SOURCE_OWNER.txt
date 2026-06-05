@@ -1,0 +1,84 @@
+ID: 3221
+Role: RS093_ROUTE_CARD_SOURCE_OWNER
+
+Objective:
+Repair the next RS093 source-only audit blocker by adding route-card source rows for P461-P464 and exporting route-card source data, without touching h8bin, Unity scenes/prefabs, runtime scripts, or packet Markdown.
+
+Why this is needed:
+After 3220 added the RS093 evidence graph, `python Tools/AppliedLoreRuntimeAudit.py --root . --source-only` advanced to: `Route cards missing packets: P461_PACKET_CUSTODY_BRIDGE, P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE, P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE, P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE`.
+
+Owned scope:
+- `Docs/Lore/AppliedContent/route_cards/RS093_route_cards.csv`
+- `Assets/_SourceData/DataMonolith/Narrative/applied_lore_route_cards.csv`
+- `Docs/Reports/Batch32/3221_RS093_ROUTE_CARD_SOURCE.md`
+- `Docs/Tasks/Status_3221.md`
+- `Docs/AgentLogs/LOG_3221.md`
+- `Docs/AgentLogs/Rationale_3221.md` only if needed
+
+Do not edit:
+- h8bin
+- Unity scenes/prefabs/assets
+- runtime scripts
+- production packet Markdown
+- graphs
+- binding maps
+- existing route-card CSVs other than adding the new RS093 file
+- other agents' status/log/rationale files
+
+Authority docs:
+AGENTS.md, authoring.md, data.md, localization.md, writing.md, quality.md, Docs/Lore/Lore_Content_System.md, Docs/Lore/AppliedContent/route_cards/README.md.
+
+Mandates:
+- QA_Evidence_Text_Filter_Audit.txt
+- UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt
+- DATA_Runtime_Struct_Layout_ARM64.txt
+- TOOL_Designer_Facades_CSV_Binary_Bridge.txt
+- OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+
+Required source CSV schema:
+`route_card_id,phase_id,depth_min_m,depth_max_m,packet_ids,required_packet_ids,primary_surface,world_object_hint,player_question,truth_payload,replay_axis,ending_pressure`
+
+Required route rows:
+- `RC495_P461_PACKET_CUSTODY_BRIDGE`
+- `RC496_P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE`
+- `RC497_P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE`
+- `RC498_P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE`
+
+Route constraints:
+- Use phase `lore_system_integration_bridge` for all four rows. P462's packet note says `first_repair_bridge`, but RS093 uses one integration phase and the route-card audit only requires consistency and known packet references.
+- Keep packet ownership one route per packet.
+- Keep dependencies acyclic:
+  - P461 required packets empty.
+  - P462 requires P461.
+  - P463 requires P461;P462.
+  - P464 requires P461;P463.
+- Use primary surfaces accepted by route-card audit:
+  - P461 scanner
+  - P462 scanner
+  - P463 external_site
+  - P464 in_game_wiki
+- Ending pressure: `truth`.
+- Depth bounds:
+  - P461 `0,5600`
+  - P462 `0,300`
+  - P463 `0,5600`
+  - P464 `0,5600`
+- Record in report that P463 and P464 packet Markdown both named RC497 as a candidate, so this source pass resolves collision by assigning P464 RC498.
+
+Exporter:
+- If process gate is clean, run `python Tools/AppliedLoreRouteCardExporter.py --root .`.
+- If exporter runs, then run `python Tools/AppliedLoreRuntimeAudit.py --root . --source-only`.
+- If process gate is red, create only route-card source CSV and report exact blocker; do not run Python.
+
+Proof packet:
+- Files changed.
+- Route-card source row count.
+- Exporter output if run.
+- Source-only audit output or exact next blocker if audit fails.
+- Evidence class STATIC_SOURCE.
+
+Rejection gates:
+- No h8bin edit.
+- No Unity/build/dotnet.
+- No runtime/native/DataMonolith-ready claim.
+- No production packet Markdown edits.

@@ -3,6 +3,12 @@
 Status: AUTHORING LAW / STATIC DOC / RUNTIME PROOF NOT IMPLIED
 Scope: DTOs, NativeArray payloads, SignalBus packets, telemetry entries, save staging records, GPU upload records, struct layout, memory ownership, and data proof.
 
+## First-20 Route Hook
+
+- First-20 moment: boot-to-route data truth for player position, inventory item, route object state, interaction flags, hazard state, telemetry, GPU upload records, and save/load restoration.
+- Route blocker removed: opening-route systems cannot exchange managed, unstable, unowned, or layout-ambiguous payloads that corrupt save/load, UI, rendering, or gameplay authority.
+- Proof class: STATIC_DOC until layout reports, owner/lifetime maps, finite-value scans, Unity/Burst evidence, profiler/GC captures, and save/load artifacts exist.
+
 ## Prime Law
 
 Data is not a bag of fields. Data is the shape of runtime truth. HECTON-8 rejects managed references, unstable layouts, hidden heap ownership, scene-object identity, and DTOs that only work on one desktop configuration.
@@ -42,6 +48,50 @@ Required owner record:
 - reader phases;
 - disposal route;
 - black-box fields if critical.
+
+## 2026-06-05 VaultMemoryContracts Source Anchor
+
+Evidence class: STATIC_SOURCE / STATIC_DOC. Runtime proof is not implied.
+
+Source: `Assets/_Project/Scripts/Core/Memory/VaultMemoryContracts.cs`.
+
+Owner and route:
+
+- Owner: Core DataVault memory sovereignty, `SystemID.CoreDataVault`.
+- Route: `IDataVault` generation handles, read-only handles, write locks, mutation guards, and Core-owned `BufferID` lanes.
+- Phase visible in source: `VaultSovereigntyMaintenance` documents Core `PRE_SIMULATION` FrostTick maintenance. Other consumers must state their own phase before using these DTOs.
+
+DTO/lifetime map:
+
+| DTO / helper | Static role | Owner boundary |
+|---|---|---|
+| `VaultMemoryLayoutConfig` | 64 B runtime sizing profile: arena limit, buffer capacity, hot/cold entity capacity, bucket capacity, source hash, version, scalability profile, stride aggressiveness | written through DataVault configuration/bootstrap only |
+| `VaultAup64` and `VaultAupSectorLocal32` | AUP authority and rollback-friendly sector/local split | DataVault-owned spatial truth, not transform scene state |
+| `VaultHotEntityData` and `VaultColdEntityData` | hot simulation stream and cold metadata stream | hot stream is simulation data; cold stream is not tight-loop display/lore text |
+| `VaultTransformAlias` | matrix-buffer alias record | descriptor only; no scene object reference |
+| `VaultSovereigntyTelemetryEntry` | 300-entry memory sovereignty black-box record | `BufferID.VaultSovereigntyTelemetryRing`, `SystemID.CoreDataVault` |
+| `VaultMemoryAddressShiftRecord` | relocation/swap-pop movement record | DataVault record; typed signal publication is owned by the dispatcher/signal route, not this DTO file |
+| `VaultBufferContract` | compile-time size/offset/buffer-id constants and Core-owned `OwnsBufferId` map | static contract; not proof that buffers are live in Unity |
+| `VaultSovereigntyMaintenance` | prewarm plus bounded AUP wrap/orphan sweep maintenance | acquires mutation guard and releases it in `finally`; uses continuous `GlobalQualityWeight` for sweep budget |
+
+Hot-path boundary:
+
+- DataVault `EnsureGenerationHandle` and buffer growth are cold/prewarm/setup work unless a route card proves an owned swap window.
+- Runtime consumers use generation-checked handles, read-only handles, or owned write locks scoped to the phase. They do not hold stale aliases across relocation or compaction.
+- The static helper names `TryResolve*`, `TryRead*`, and `Resolve*` are not permission to allocate, publish, complete jobs, or search scenes from a read accessor.
+
+Fault boundary:
+
+- `VaultSovereigntyTelemetry` declares `Capacity = 300`, `FaultFlag`, and dump target `Docs/AgentLogs/Dump_SHINOBU_100.bin`.
+- `TryDump` uses a transient native payload via `NativeFaultDumpWriter`; no dump file was generated in this documentation pass.
+
+Missing proof artifacts:
+
+- ABI report: offsets, `UnsafeUtility.SizeOf<T>()`, padding, and managed-reference scan.
+- Unity compile/import proof for the Core memory assembly.
+- DataVault relocation/stale-handle/mutation-guard stress artifact.
+- actual `Dump_SHINOBU_100.bin` or manifest-backed substitute.
+- GC/profiler capture for maintenance cadence at low, middle, high, and ultra `GlobalQualityWeight`.
 
 ## Front/Back Buffer Law
 
@@ -117,7 +167,7 @@ Data work must attach the artifact that proves the claim:
 - Burst/Jobs/IL2CPP/player proof where runtime layout or platform behavior is claimed;
 - profiler/GC/memory proof when data route changes affect runtime allocation, upload, or completion cadence.
 
-If only static inspection was performed, label the work `STATIC VERIFIED` and do not claim runtime readiness.
+If only static inspection was performed, label the work `STATIC_SOURCE_REVIEWED` or `STATIC_DOC_REVIEWED` and do not claim runtime readiness.
 
 ## Scalability
 

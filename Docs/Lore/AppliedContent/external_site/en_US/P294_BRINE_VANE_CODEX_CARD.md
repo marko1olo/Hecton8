@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -20,7 +20,7 @@ In the brine canyons, ecology becomes a map because only pressure-adapted growth
 
 ## Scanner
 
-Brine vane: roots in density shear. Follow aligned edges, not open glow.
+Brine vane: density-shear root. Follow aligned edges; avoid open glow and false-floor returns.
 
 ## Terminal
 
@@ -32,6 +32,6 @@ The plant is not pointing up. It is pointing through.
 
 ## Field Note
 
-Use as mid-depth codex: beautiful vertical structures that are also navigation logic.
+Vertical beauty, bad floor. Keep one vane edge in sight and one hand on buoyancy trim.
 
 <!-- External Site; generated from P294_BRINE_VANE_CODEX_CARD/en_US. -->

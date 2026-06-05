@@ -1,0 +1,57 @@
+<AGENT_PROMPT id="1881">
+ROLE: Resource pickup material and texture role package auditor.
+
+READ FIRST:
+- C:\hades\Hecton8\AGENTS.md
+- C:\hades\Hecton8\PROJECT_BIBLES.md
+- C:\hades\Hecton8\VISION_LOCKS.md
+- C:\hades\Hecton8\TASTE.md
+- C:\hades\Hecton8\quality.md
+- C:\hades\Hecton8\inventory.md
+- C:\hades\Hecton8\world.md
+- C:\hades\Hecton8\3dmodel.md
+- C:\hades\Hecton8\3DMODEL_TEXTURES_MATERIALS.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1870_RESOURCE_PICKUP_VISUAL_SOURCE_PACKAGE.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1875_RESOURCE_PICKUP_MESH_SOURCE_AUTHORING_IMPLEMENTATION.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1879_PRODUCT_FACE_RELINK_AND_PROOF_CONTRACT.md
+- Relevant .agents-skills only: QA_Evidence_Text_Filter_Audit, DATA_Inventory_Resources_Items_SOA_Layout, REND_Terrain_VirtualTexturing.
+
+OWNED WRITE SCOPE:
+- Docs/Tasks/Status_1881.md
+- Docs/AgentLogs/Rationale_1881.md
+- Docs/AgentLogs/LOG_1881.md
+- Docs/Reports/Batch18/1881_RESOURCE_MATERIAL_TEXTURE_ROLE_PACKAGE.md
+- Docs/Reports/Batch18/1881_RESOURCE_MATERIAL_TEXTURE_MATRIX.csv
+
+NO SOURCE/PREFAB/ASSET/SCENE/META/BINARY EDITS.
+NO UNITY MENU, IMPORT, BAKE, PLAYMODE, PROFILER, DOTNET BUILD, OR DATA MONOLITH RUN.
+
+PARALLEL LAW:
+- You may run alongside 1877, 1880, 1882, and 1883.
+- Do not depend on sibling output.
+
+TASK:
+Build the concrete material/texture role package for resource pickups so future meshes read as distinct physical materials, not recolored rocks.
+
+Requirements:
+1. Cover CopperOre, FiberKelp, HydrocarbonResin, MembraneTissue, SilicaShards, SilverOre, SulfurClumps, TitaniumScrap, plus legacy `Item_Titanium` quarantine/relink decision.
+2. Preserve data truth: CopperOre maps to canonical `Data_Copper.asset`; do not invent `Data_CopperOre.asset`.
+3. Inspect actual project-owned material/texture candidates under `Assets/_Project/Art` and data refs under `Assets/_Project/Data`.
+4. For each resource, define material roles:
+   - ore host rock / mineral seam / fracture normal / wetness / AO;
+   - biological wet tissue/frond/translucency/veins;
+   - resin oily amber body/grit/translucency;
+   - scrap bent metal/paint/salt/oil wear.
+5. Map credible candidates to existing paths or mark `MISSING_SOURCE_REQUIRED`.
+6. Explicitly reject generic recolor, flat primitive material, and unresolved GUID carry-forward.
+7. Define shader/texture semantics for albedo, normal, packed MRAO, translucency/emission if needed, detail/wear masks.
+8. Define continuous quality scaling for material richness.
+9. List future Unity proof steps and screenshots. Do not claim acceptance.
+
+VERIFY:
+- `git diff --check` on owned report/log/status files.
+- CSV parse check with `Import-Csv`.
+- Static cross-check that all required resource ids and `Data_Copper` appear in report and CSV.
+- Do not run Unity or dotnet.
+</AGENT_PROMPT>
+

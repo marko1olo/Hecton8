@@ -1,0 +1,61 @@
+ID: 2302
+ROLE: UNDERWATER_PROOF_HARNESS_AND_CAMERA_ROUTE_AUDITOR
+CHAT NAME: 2302 underwater proof harness
+
+MISSION
+The 1473 underwater captures were invalid or weak. Audit screenshot/proof harness routes and define a complete proof packet that cannot fake underwater by labels, detached cameras, wrong active scene, disabled post stack, or surface-state captures. Do not run Unity.
+
+AUTHORITIES TO READ
+1. `AGENTS.md`
+2. `PROJECT_BIBLES.md`
+3. `TASTE.md`
+4. `VISION_LOCKS.md`
+5. `quality.md`
+6. `water.md`
+7. `vfx.md`
+8. `.agents-skills/QA_Evidence_Text_Filter_Audit.txt`
+9. `.agents-skills/DBG_Telemetry_Crash_Reporting_PostMortem.txt`
+10. `.agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
+
+EVIDENCE BASIS
+- `Docs/Screenshots/MCP/h8_1473_underwater_0_5m.png`
+- `Docs/Screenshots/MCP/h8_1473_underwater_20_50m_route.png`
+- `Docs/Screenshots/MCP/h8_1473_mainrt_underwater_0_5m.png`
+- `Docs/Reports/Batch22/2205_VISUAL_PROOF_PACKET_MATRIX.md`
+- `Docs/Reports/Batch22/2205_RUNTIME_FAULT_MATRIX.md`
+
+OWNED SCOPE
+Read-only:
+- screenshot/editor/MCP capture scripts
+- `Assets/Feel/MMTools/**`
+- `Assets/_Project/Scripts/**Screenshot**`
+- `Assets/_Project/Scripts/**Capture**`
+- `Assets/_Project/Scripts/**Proof**`
+- `Assets/_Project/Scripts/**Mcp**`
+- `Docs/Screenshots/MCP/**`
+- Unity visual-audit logs.
+
+TASKS
+01. Record relevant mandates in `Docs/Tasks/Status_2302.md`.
+02. Inventory all screenshot/capture tools and paths; prove whether any still write under `Assets/Screenshots`.
+03. Identify exact script/mechanism that produced `h8_1473_*` files if possible from logs/source.
+04. Define what qualifies as a valid underwater capture: camera source, active scene, player/camera depth, underwater state, post stack, fog/water writer, no detached debug camera unless explicitly marked.
+05. Define what qualifies as invalid underwater proof.
+06. Produce a per-capture metadata schema: scene, camera, position, depth, state, profile, RenderSettings fog, underwater renderer enabled, Crest pass state, exceptions count.
+07. Inspect whether existing tools can emit this metadata without allocations during gameplay; if not, propose an editor-only capture wrapper.
+08. Specify required complete proof packet: surface, shoreline close, 0-5 m underwater, 20-50 m underwater, Aegir/celestial, low oblique regression, runtime log tail.
+09. Specify exact reject conditions for 1474+: missing underwater, false label, surface duplicate, no foam, no caustics, green swamp cast, slab plane, runtime fault, screenshot import loop.
+10. Audit logs for capture timing vs log timing; identify stale log risk.
+11. Produce a minimal Unity-owner checklist that can be pasted into the active Unity thread.
+12. Include rollback/no-op behavior: proof harness must not change scene visuals except camera movement required for capture.
+13. Include tier/performance consequences: proof capture must not become runtime shipping code.
+14. Write `Docs/Reports/Batch23/2302_UNDERWATER_PROOF_HARNESS_AUDIT.md`.
+15. Write `Docs/Reports/Batch23/2302_PROOF_PACKET_METADATA_SCHEMA.csv`.
+16. Append concise facts to `Docs/AgentLogs/LOG_2302.md`.
+17. Final answer: proof packet gate and exact missing evidence.
+
+REJECT
+- Claiming "looks underwater" without state/depth metadata.
+- Accepting stale logs.
+- Writing screenshot artifacts into `Assets`.
+- Running Unity.

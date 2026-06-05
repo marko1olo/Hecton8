@@ -1,5 +1,11 @@
 ﻿# HECTON-8 Marketing Risk Register
 
+## Authority Boundary
+
+Static risk register only. Risk rows identify failure modes; they do not prove quality, release, platform, Steam, wishlist, demo, performance, feedback, legal/compliance, localization, monitoring, operations, partnership, contract, launch, or public-response readiness.
+Public voice routes to root `textes.md`. Quality, release, platform, Steam, wishlist, demo, performance, feedback, review/forum response, legal/compliance, localization, monitoring, operations, partnership, contract, and launch claims route through root `quality.md`, `release.md`, and `platform.md` with current proof artifacts plus local permission gates where present.
+No launch/release readiness, localized public use, public response, creator contract send, platform claim, Steam approval, wishlist claim, demo approval, or public send approval exists from planning rows or this static risk register.
+
 Status: living risk table
 Owner lane: Marketing / risk control
 Runtime impact: none

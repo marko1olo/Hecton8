@@ -942,13 +942,22 @@ namespace Hecton8.UI
                 localization != null &&
                 localization.TryExpandText(source, _promptCharBuffer, out int expandedLength))
             {
+                // COLD ALLOC: string[<=256 chars] - cached localized prompt text - owner: InteractionUI
                 return new string(_promptCharBuffer, 0, math.min(expandedLength, _promptCharBuffer.Length));
             }
 
             if (source.SequenceEqual(fallbackSpan))
                 return fallback;
 
-            return source.ToString();
+            return CreatePromptCacheString(source);
+        }
+
+        private string CreatePromptCacheString(ReadOnlySpan<char> source)
+        {
+            int safeLength = math.min(source.Length, _promptCharBuffer.Length);
+            source.Slice(0, safeLength).CopyTo(_promptCharBuffer);
+            // COLD ALLOC: string[<=256 chars] - cached localized prompt text - owner: InteractionUI
+            return new string(_promptCharBuffer, 0, safeLength);
         }
 
         private static bool ContainsInlineTokenStart(ReadOnlySpan<char> text)

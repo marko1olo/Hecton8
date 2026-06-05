@@ -434,27 +434,31 @@ namespace Hecton8.Core
             bool allowAllocation)
         {
             fallback = value;
-            if (TryPrepareSlotsVault(vault, allowAllocation) &&
-                vault.TryAcquireMutationGuard(ShaderGlobalStateMutationGuardMask))
+            if ((uint)slot >= (uint)SlotCount)
+                return fallback;
+
+            if (!TryPrepareSlotsVault(vault, allowAllocation))
+                return fallback;
+
+            VaultGenerationHandle<float4> slotsHandle = _slotsHandle;
+            if (IsSlotsHandleOwned(in slotsHandle) &&
+                vault.TryAcquireWriteLock(in slotsHandle, SystemID.GraphicsScalability, out NativeArray<float4> slots))
             {
                 try
                 {
-                    if (IsSlotsHandleOwned(in _slotsHandle) &&
-                        vault.TryResolveHandle(in _slotsHandle, out NativeArray<float4> slots) &&
-                        slots.IsCreated &&
+                    if (slots.IsCreated &&
                         slots.Length >= SlotCount &&
-                        slot >= 0 &&
                         slot < slots.Length)
                     {
                         slots[slot] = value;
-                        return slots[slot];
+                        return value;
                     }
 
                     InvalidateSlotsCache();
                 }
                 finally
                 {
-                    vault.ReleaseMutationGuard(ShaderGlobalStateMutationGuardMask);
+                    vault.ReleaseWriteLock(in slotsHandle, SystemID.GraphicsScalability);
                 }
             }
 

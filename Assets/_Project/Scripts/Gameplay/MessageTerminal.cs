@@ -98,6 +98,8 @@ namespace Hecton8.Gameplay
         [SerializeField] private uint appliedLorePacketHash;
         [Tooltip("Optional baked AppliedContent locale hash. Zero falls back to en_US.")]
         [SerializeField] private uint appliedLoreLocaleHash = H8AppliedLoreRuntime.DefaultLocaleHash;
+        [Tooltip("When enabled, terminal AppliedContent follows the active localization language.")]
+        [SerializeField] private bool followActiveLocalizationLanguage = true;
         [Tooltip("TerminalOS preview row. -1 disables the diegetic preview bridge.")]
         [SerializeField, Min(-1)] private int terminalOsPreviewIndex = -1;
         [Tooltip("Optional TerminalOS hash fallback. Zero uses terminalOsPreviewIndex only.")]
@@ -183,6 +185,7 @@ namespace Hecton8.Gameplay
         private TerminalState _pendingStateChangedEvent;
         private byte _pendingTerminalEventMask;
         private int _emissionPropertyId;
+        private uint _resolvedAppliedLoreLocaleHash = H8AppliedLoreRuntime.DefaultLocaleHash;
 
         // Track read messages (for persistence)
         private HashSet<string> _readMessageIds;
@@ -228,27 +231,30 @@ namespace Hecton8.Gameplay
 
         public bool TryGetAppliedLoreTerminalUtf8(out ReadOnlySpan<byte> utf8)
         {
+            uint localeHash = ResolveActiveAppliedLoreLocaleHash();
             return H8AppliedLoreRuntime.TryGetUtf8(
                 appliedLorePacketHash,
-                appliedLoreLocaleHash,
+                localeHash,
                 H8AppliedLoreSurface.Terminal,
                 out utf8);
         }
 
         public bool TryGetAppliedLoreAudioSubtitleUtf8(out ReadOnlySpan<byte> utf8)
         {
+            uint localeHash = ResolveActiveAppliedLoreLocaleHash();
             return H8AppliedLoreRuntime.TryGetUtf8(
                 appliedLorePacketHash,
-                appliedLoreLocaleHash,
+                localeHash,
                 H8AppliedLoreSurface.Audio,
                 out utf8);
         }
 
         public bool TryCopyAppliedLoreTitle(Span<char> destination, out int length)
         {
+            uint localeHash = ResolveActiveAppliedLoreLocaleHash();
             return H8AppliedLoreRuntime.TryWriteSurfaceUtf16(
                 appliedLorePacketHash,
-                appliedLoreLocaleHash,
+                localeHash,
                 H8AppliedLoreSurface.Title,
                 destination,
                 out length);
@@ -256,9 +262,10 @@ namespace Hecton8.Gameplay
 
         public bool TryCopyAppliedLoreTerminalText(Span<char> destination, out int length)
         {
+            uint localeHash = ResolveActiveAppliedLoreLocaleHash();
             return H8AppliedLoreRuntime.TryWriteSurfaceUtf16(
                 appliedLorePacketHash,
-                appliedLoreLocaleHash,
+                localeHash,
                 H8AppliedLoreSurface.Terminal,
                 destination,
                 out length);
@@ -266,9 +273,10 @@ namespace Hecton8.Gameplay
 
         public bool TryCopyAppliedLoreAudioSubtitle(Span<char> destination, out int length)
         {
+            uint localeHash = ResolveActiveAppliedLoreLocaleHash();
             return H8AppliedLoreRuntime.TryWriteSurfaceUtf16(
                 appliedLorePacketHash,
-                appliedLoreLocaleHash,
+                localeHash,
                 H8AppliedLoreSurface.Audio,
                 destination,
                 out length);
@@ -331,6 +339,7 @@ namespace Hecton8.Gameplay
             TryRegisterHotSwapListener();
             CacheRegistryServicesCold();
             InteractableRegistry.RegisterTree(this);
+            RefreshAppliedLoreLocaleHash(LocRegistry.ActiveLanguage);
             LocalizationEvents.RegisterLanguageListener(this);
             TryRegister();
             RebuildLocalizedTextCache();
@@ -352,6 +361,7 @@ namespace Hecton8.Gameplay
         private void OnDestroy()
         {
             InteractableRegistry.InvalidateTree(this);
+            LocalizationEvents.UnregisterLanguageListener(this);
             TryUnregister();
             TryUnregisterHotSwapListener();
             ClearQueuedStaticAudio();
@@ -599,7 +609,7 @@ namespace Hecton8.Gameplay
             AppliedLoreTerminalPreviewSignal signal = new AppliedLoreTerminalPreviewSignal
             {
                 PacketHash = appliedLorePacketHash,
-                LocaleHash = appliedLoreLocaleHash,
+                LocaleHash = ResolveActiveAppliedLoreLocaleHash(),
                 TerminalHash = terminalOsPreviewHash,
                 Frame = SystemDispatcher.CurrentFrameId,
                 TerminalIndex = terminalOsPreviewIndex,
@@ -1394,17 +1404,34 @@ namespace Hecton8.Gameplay
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
-
         {
-
             HandleLanguageChanged((GameLanguage)payload.Language);
-
         }
 
 
         private void HandleLanguageChanged(GameLanguage language)
         {
+            RefreshAppliedLoreLocaleHash(language);
             RebuildLocalizedTextCache();
+        }
+
+        private void RefreshAppliedLoreLocaleHash(GameLanguage language)
+        {
+            _resolvedAppliedLoreLocaleHash = ResolveConfiguredAppliedLoreLocaleHash(language);
+        }
+
+        private uint ResolveActiveAppliedLoreLocaleHash()
+        {
+            uint localeHash = _resolvedAppliedLoreLocaleHash;
+            return localeHash != 0u ? localeHash : H8AppliedLoreRuntime.DefaultLocaleHash;
+        }
+
+        private uint ResolveConfiguredAppliedLoreLocaleHash(GameLanguage language)
+        {
+            if (!followActiveLocalizationLanguage)
+                return appliedLoreLocaleHash != 0u ? appliedLoreLocaleHash : H8AppliedLoreRuntime.DefaultLocaleHash;
+
+            return H8AppliedLoreRuntime.ResolveLocaleHash(language);
         }
 
     }

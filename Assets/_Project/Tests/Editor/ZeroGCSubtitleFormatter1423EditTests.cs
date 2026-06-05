@@ -202,6 +202,97 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void SubtitleCueDto1749_PreservesSourceHashInsideFixedLayout()
+        {
+            string runtimeSource = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs"));
+            string registerCue = ExtractMethodBody(runtimeSource, "private static bool RegisterCue(");
+            string drainSignals = ExtractMethodBody(runtimeSource, "private static void DrainCueSignals()");
+            string acquireMutation = ExtractMethodBody(runtimeSource, "private static bool TryAcquireSubtitleMutationBuffer<T>(");
+
+            StringAssert.Contains("[FieldOffset(20)] public uint SourceHash;", runtimeSource);
+            StringAssert.Contains("OffsetOf<SubtitleCueDTO>(nameof(SubtitleCueDTO.SourceHash)) == 20", runtimeSource);
+            StringAssert.Contains("cue.SourceHash = sourceHash;", runtimeSource);
+            StringAssert.Contains("RegisterCue(signal.TokenHash, startAudioFrame, duration, flags, signal.SourceHash)", runtimeSource);
+            StringAssert.Contains("UnsafeUtility.SizeOf<SubtitleCueDTO>() == 32", runtimeSource);
+            StringAssert.Contains("s_activeMutationGuardMask != 0ul", acquireMutation);
+            Assert.AreEqual(1, CountToken(acquireMutation, "TryAcquireMutationGuard("), "subtitle mutation acquire count");
+            Assert.AreEqual(1, CountToken(acquireMutation, "ReleaseMutationGuard("), "subtitle mutation failed-acquire release count");
+            Assert.AreEqual(1, CountToken(acquireMutation, "finally"), "subtitle mutation acquire finally");
+            AssertHotBodyHasNoColdLookups(registerCue, "BabelSubtitleSyncRuntime.RegisterCue");
+            AssertHotBodyHasNoColdLookups(drainSignals, "BabelSubtitleSyncRuntime.DrainCueSignals");
+            AssertForbiddenTextBridgeAbsent(registerCue, "BabelSubtitleSyncRuntime.RegisterCue", "WaitForCompletion");
+            AssertForbiddenTextBridgeAbsent(registerCue, "BabelSubtitleSyncRuntime.RegisterCue", ".Complete(");
+        }
+
+        [Test]
+        public void SubtitleManager1749_RendersSpeakerPrefixAndConsumesTextScaleSignal()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/SubtitleManager.cs"));
+            string fontStreaming = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/FontStreamingManager.cs"));
+            string lateFrame = ExtractMethodBody(source, "public void LateFrameTick()");
+            string registryRebind = ExtractMethodBody(source, "public void OnGlobalRegistryServiceReplaced(");
+            string drainBabel = ExtractMethodBody(source, "private void DrainBabelCueSignals()");
+            string showCommand = ExtractMethodBody(source, "private bool ShowSubtitleCommand(");
+            string appendPrefix = ExtractMethodBody(source, "private static void AppendSpeakerPrefix(");
+            string prefixLength = ExtractMethodBody(source, "private static int ResolveSpeakerPrefixLength(");
+            string labelLength = ExtractMethodBody(source, "private static int ResolveSpeakerLabelLength(");
+            string appendColor = ExtractMethodBody(source, "private static void AppendSpeakerColorOpen(");
+            string appendLabel = ExtractMethodBody(source, "private static void AppendSpeakerLabel(");
+            string appendLiteral = ExtractMethodBody(source, "private static void AppendLiteral(");
+            string consumeRescale = ExtractMethodBody(source, "private void ConsumeUiRescaleRequestsVisualSync()");
+            string applySettings = ExtractMethodBody(source, "private void ApplyCurrentSettingsTextScaleCold()");
+            string resolveScale = ExtractMethodBody(source, "private static float ResolveSubtitleTextScale(");
+            string applyScale = ExtractMethodBody(source, "private void ApplySubtitleTextScaleVisualSync(");
+            string fontScale = ExtractMethodBody(fontStreaming, "private static float ResolveSafeTextScale(");
+
+            int prefixIndex = showCommand.IndexOf("AppendSpeakerPrefix(command.SpeakerHash", StringComparison.Ordinal);
+            int decodeIndex = showCommand.IndexOf("LocRegistry.TryWriteVisualSpanFromUtf8", StringComparison.Ordinal);
+            Assert.GreaterOrEqual(prefixIndex, 0);
+            Assert.Greater(decodeIndex, prefixIndex);
+
+            StringAssert.Contains("Span<char> textDestination = destination.Slice(prefixLength);", showCommand);
+            StringAssert.Contains("BabelSubtitleSyncRuntime.RecordDecode(command.TextHash, textLength", showCommand);
+            StringAssert.Contains("SpeakerHash = cue.SourceHash", drainBabel);
+            StringAssert.Contains("SignalBus<UIRescaleRequestSignal>.EnsureInitialized();", source);
+            StringAssert.Contains("ConsumeUiRescaleRequestsVisualSync();", lateFrame);
+            StringAssert.Contains("SignalBus<UIRescaleRequestSignal>.GetFrameSnapshot()", consumeRescale);
+            StringAssert.Contains("GlobalRegistryServiceSlot.SettingsRuntime", registryRebind);
+            StringAssert.Contains("ApplyCurrentSettingsTextScaleCold();", registryRebind);
+            StringAssert.Contains("SettingsManager.TryGetInstance(out SettingsManager settings)", applySettings);
+            StringAssert.Contains("scale = settings.TextScale;", applySettings);
+            StringAssert.Contains("AccessibilitySettings.MinimumTextScale", resolveScale);
+            StringAssert.Contains("AccessibilitySettings.MaximumTextScale", resolveScale);
+            StringAssert.Contains("AccessibilitySettings.MinimumTextScale", fontScale);
+            StringAssert.Contains("AccessibilitySettings.MaximumTextScale", fontScale);
+            StringAssert.DoesNotContain("MinimumAccessibilityTextScale", fontStreaming);
+            StringAssert.DoesNotContain("MaximumAccessibilityTextScale", fontStreaming);
+            StringAssert.Contains("_subtitleText.fontSize = fontSize;", applyScale);
+            StringAssert.Contains("_subtitleText.fontSizeMin = minimumFontSize;", applyScale);
+            StringAssert.Contains("_subtitleText.fontSizeMax = math.max(minimumFontSize, fontSize);", applyScale);
+            StringAssert.DoesNotContain("LocalizedTMPAutoSizer.Configure(", applyScale);
+            StringAssert.Contains("SubtitleSpeakerHashVocalWarning", appendLabel);
+            StringAssert.Contains("[VWS]:", appendLabel);
+            StringAssert.Contains("[BABEL]:", appendLabel);
+            StringAssert.Contains("destination.Length - length < ResolveSpeakerPrefixLength", appendPrefix);
+            StringAssert.Contains("15 + labelLength + 8 + 1", prefixLength);
+            StringAssert.Contains("speakerHash == SubtitleSpeakerHashBabel ? 8 : 6", labelLength);
+
+            AssertHotBodyHasNoColdLookups(consumeRescale, "SubtitleManager.ConsumeUiRescaleRequestsVisualSync");
+            AssertHotBodyHasNoColdLookups(applyScale, "SubtitleManager.ApplySubtitleTextScaleVisualSync");
+            AssertHotBodyHasNoColdLookups(showCommand, "SubtitleManager.ShowSubtitleCommand");
+            AssertZeroGcTextBody(showCommand, "SubtitleManager.ShowSubtitleCommand");
+            AssertZeroGcTextBody(appendPrefix, "SubtitleManager.AppendSpeakerPrefix");
+            AssertZeroGcTextBody(prefixLength, "SubtitleManager.ResolveSpeakerPrefixLength");
+            AssertZeroGcTextBody(labelLength, "SubtitleManager.ResolveSpeakerLabelLength");
+            AssertZeroGcTextBody(appendColor, "SubtitleManager.AppendSpeakerColorOpen");
+            AssertZeroGcTextBody(appendLabel, "SubtitleManager.AppendSpeakerLabel");
+            AssertZeroGcTextBody(appendLiteral, "SubtitleManager.AppendLiteral");
+            AssertZeroGcTextBody(consumeRescale, "SubtitleManager.ConsumeUiRescaleRequestsVisualSync");
+            AssertZeroGcTextBody(resolveScale, "SubtitleManager.ResolveSubtitleTextScale");
+            AssertZeroGcTextBody(fontScale, "FontStreamingManager.ResolveSafeTextScale");
+        }
+
+        [Test]
         public void AudioCaptionRequest_DoesNotCarryManagedCaptionText()
         {
             string audioSource = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/SpatialAudioManager.cs"));
@@ -1038,6 +1129,32 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("_localizedPresentationDirty ||", process);
             StringAssert.Contains("RebuildLocalizationCache();", process);
             StringAssert.Contains("InvalidateVisualCaches();", process);
+        }
+
+        [Test]
+        public void SuitHudReticle1749_CachesStaticDimensionsDuringSpreadUpdates()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs"));
+            string updateReticle = ExtractMethodBody(source, "private void UpdateReticleSpread(");
+            string invalidate = ExtractMethodBody(source, "private void InvalidateVisualCaches()");
+
+            StringAssert.Contains("private float _appliedReticleLineLength = float.NaN;", source);
+            StringAssert.Contains("private float _appliedReticleLineThickness = float.NaN;", source);
+            StringAssert.Contains("private float _appliedReticleBracketLength = float.NaN;", source);
+            StringAssert.Contains("math.clamp(reticleLineLength, 8f, 36f)", updateReticle);
+            StringAssert.Contains("math.clamp(reticleLineThickness, 1f, 6f)", updateReticle);
+            StringAssert.Contains("math.clamp(reticleBracketLength, 4f, 24f)", updateReticle);
+            StringAssert.Contains("bool dimensionsDirty =", updateReticle);
+            StringAssert.Contains("if (!dimensionsDirty && math.abs(_appliedReticleSpreadPixels - _reticleSpreadPixels) <= 0.05f)", updateReticle);
+            StringAssert.Contains("if (dimensionsDirty)", updateReticle);
+            StringAssert.Contains("_appliedReticleLineLength = safeLineLength;", updateReticle);
+            StringAssert.Contains("_appliedReticleLineThickness = safeLineThickness;", updateReticle);
+            StringAssert.Contains("_appliedReticleBracketLength = safeBracketLength;", updateReticle);
+            StringAssert.Contains("_appliedReticleLineLength = float.NaN;", invalidate);
+            StringAssert.Contains("_appliedReticleLineThickness = float.NaN;", invalidate);
+            StringAssert.Contains("_appliedReticleBracketLength = float.NaN;", invalidate);
+            AssertHotBodyHasNoColdLookups(updateReticle, "SuitHUDV4CanvasOverlay.UpdateReticleSpread");
+            AssertZeroGcTextBody(updateReticle, "SuitHUDV4CanvasOverlay.UpdateReticleSpread");
         }
 
         [Test]

@@ -6,6 +6,8 @@ Owner: SHINOBU_243 / BIOME_WEIGHT_MAP_BAKER
 
 Domain: World Generation & Terrain, offline/editor only
 
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
+
 Evidence class: STATIC_SOURCE / FILESYSTEM. Unity import, script compile, Burst Inspector, Forge bake execution, BC7 importer inspection, Frame Debugger, profiler, GCMonitor, player-build, and visual proof remain pending.
 
 ## Boundary

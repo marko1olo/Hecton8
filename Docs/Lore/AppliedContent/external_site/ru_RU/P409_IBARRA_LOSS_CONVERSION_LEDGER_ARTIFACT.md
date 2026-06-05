@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Журнал потерь Ибарры
+# Ibarra Loss Ledger
 
-Deep Reach хочет вернуть HECTON-8, потому что конвертация потерь так и не перестала быть выгодной.
+Deep Reach and its insurers keep HECTON-8 valuable by converting loss into recoverable claim material.
 
 ## Scanner
 
-Артефакт Deep Reach: журнал потерь. Люди, модули и claims делят одну колонку конвертации.
+Keelmark loss ledger. People, modules and claims share a conversion column.
 
 ## Terminal
 
-ЖУРНАЛ ИБАРРЫ. Люди учтены как потеря непрерывности; права активов целы.
+KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel mass unresolved. Habitat modules, tools and claims retain recoverable asset status pending final witness packet.
 
 ## Audio
 
-Журнал не забыл имена. Он сделал их payable later.
+The ledger did not forget names. It made them payable later.
 
 ## Field Note
 
-Использовать в claim-pool, carrier debt и публичных liability modules.
+The ledger did not forget the names. It moved them under unresolved personnel load and kept the hardware recoverable.
 
 <!-- External Site; generated from P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT/ru_RU. -->

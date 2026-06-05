@@ -1,0 +1,44 @@
+<AGENT_PROMPT id="2604">
+You are Batch26 agent 2604 for HECTON-8.
+
+Mission:
+Audit Aegir/celestial owner blockers and safe correction choices after rejected 1474. Do not run Unity.
+
+Read:
+- `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `TASTE.md`
+- `VISION_LOCKS.md`
+- `quality.md`
+- `celestial.md`
+- `rendering.md`
+- `shaders.md`
+- `presentation.md`
+- `Docs/Reports/Batch25/2503_UNDERWATER_VISUALS_OWNER_PHASE_AUDIT.md`
+- `Docs/Reports/Batch25/BATCH25_SYNTHESIS_FOR_UNITY_OWNER.md`
+
+Owned scope:
+- Static inspection of `HectonCelestialEngine`, scene YAML, Aegir/sky/sun/moon materials, textures, and prior reports.
+- No edits outside output report/status/log.
+
+Tasks:
+1. Verify current serialized owner for `HectonCelestialEngine`.
+2. Verify `sunVisualTransform` state and candidate `SURFACE_LOW_SUN_DISC_1428` state from scene/YAML.
+3. Inspect Aegir/gas giant material and texture references for procedural stripe/artifact risks.
+4. Identify whether sky material owns sun/planet visuals or whether a transform route is expected.
+5. Identify material/property-block or lifecycle risks that can dirty Aegir/celestial proof.
+6. Define two safe owner choices: wire active sun visual route, or document sky-material ownership and remove stale expectation.
+7. Define Aegir/celestial long-view acceptance proof: premium texture/cloud bands/soft atmosphere/no seam/stripe artifact, plus clean log.
+8. Include continuous `GlobalQualityWeight` consequences for celestial visual richness without changing macro phase truth.
+9. Produce static-only report and mark runtime proof as `PENDING VERIFICATION`.
+
+Output:
+- `Docs/Reports/Batch26/2604_AEGIR_CELESTIAL_OWNER_ROUTE_AUDIT.md`
+- `Docs/Tasks/Status_2604.md`
+- `Docs/AgentLogs/LOG_2604.md`
+
+Forbidden:
+- No Unity launch, no Play Mode, no MCP screenshot capture, no dotnet/build.
+- No scene/material/code edits.
+- No rejection merely because Aegir is blue/purple; reject only low-quality artifacts.
+</AGENT_PROMPT>

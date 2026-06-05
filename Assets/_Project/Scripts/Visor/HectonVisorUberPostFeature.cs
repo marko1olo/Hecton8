@@ -33,6 +33,7 @@ namespace Hecton8.Visor
         private const float InternalWaterlineFullScreenSplit = 1.08f;
         private const float InternalWaterlineSubmergeOffsetMeters = 0.03f;
         private const float InternalWaterlineSubmergeFadeMeters = 0.12f;
+        private const float InternalWaterlineSplitBypassDepthMeters = 10f;
         private const uint ReconstructionModeNativeHash = 0x4E415456u; // NATV
         private const uint ReconstructionModeBilateralHash = 0x42494C55u; // BILU
         private const uint ReconstructionModeTemporalHash = 0x54454D50u; // TEMP
@@ -2462,7 +2463,10 @@ namespace Hecton8.Visor
 
             Transform cameraTransform = renderCamera.transform;
             float cameraY = cameraTransform.position.y;
-            float submerged01 = ResolveInternalWaterlineSubmergedWeight01(cameraY, waterlineY);
+            float depthBelowWaterline = waterlineY - cameraY;
+            float submerged01 = ResolveInternalWaterlineSubmergedWeight01FromDepth(depthBelowWaterline);
+            if (depthBelowWaterline >= InternalWaterlineSplitBypassDepthMeters)
+                submerged01 = 1f;
             float splitLine = InternalWaterlineFullScreenSplit;
             if (submerged01 < 0.999f)
             {
@@ -2480,7 +2484,11 @@ namespace Hecton8.Visor
 
         private static float ResolveInternalWaterlineSubmergedWeight01(float cameraY, float waterlineY)
         {
-            float depthBelowWaterline = waterlineY - cameraY;
+            return ResolveInternalWaterlineSubmergedWeight01FromDepth(waterlineY - cameraY);
+        }
+
+        private static float ResolveInternalWaterlineSubmergedWeight01FromDepth(float depthBelowWaterline)
+        {
             float fadeStart = InternalWaterlineSubmergeOffsetMeters - InternalWaterlineSubmergeFadeMeters;
             float fadeEnd = InternalWaterlineSubmergeOffsetMeters + InternalWaterlineSubmergeFadeMeters;
             float fadeRange = math.max(0.001f, fadeEnd - fadeStart);

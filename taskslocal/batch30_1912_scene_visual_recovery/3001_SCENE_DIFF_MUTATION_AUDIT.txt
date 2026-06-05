@@ -1,0 +1,47 @@
+ID: 3001_SCENE_DIFF_MUTATION_AUDIT
+Role: Scene Diff / Quarantine Mutation Auditor
+
+Objective:
+Determine what `H8VisualProofCapture1912.cs` likely changed in `Assets/_Project/Scenes/02_HECTON_WORLD.unity`, classify the diff as diagnostic quarantine vs owner-correct cleanup candidate, and produce a controller-safe report. No Unity, no build, no scene edits.
+
+Evidence basis:
+- `Assets/_Project/Scripts/Editor/H8VisualProofCapture1912.cs`
+- `Docs/Screenshots/MCP/h8_1912_surface_quarantine.txt`
+- `Docs/Screenshots/MCP/h8_1912_surface_edit_main.txt`
+- `Docs/Reports/Batch29/BATCH29_SYNTHESIS_FOR_CONTROLLER.md`
+- `git diff --stat -- Assets/_Project/Scenes/02_HECTON_WORLD.unity`
+
+Authority docs:
+- `AGENTS.md`
+- `TASTE.md`
+- `VISION_LOCKS.md`
+- `quality.md`
+- `terrain.md`
+- `rendering.md`
+
+Owned scope:
+- Read-only: scene YAML diff, 1912 editor script, 1912 metadata.
+- Write: `Docs/Reports/Batch30/3001_SCENE_DIFF_MUTATION_AUDIT.md`.
+
+Tasks:
+1. Read the authority docs listed above.
+2. Read `H8VisualProofCapture1912.cs` fully.
+3. Read `h8_1912_surface_quarantine.txt` and extract every renderer/object name and reason.
+4. Run static `git diff --stat` for `02_HECTON_WORLD.unity`.
+5. Use text tools to inspect the scene diff only enough to identify object enable/active changes and references to names in the quarantine list.
+6. Separate likely diagnostic objects from likely production cleanup candidates.
+7. Identify any high-risk change categories: scene object ordering churn, renderer disable, GameObject active state, material assignment, camera/lighting, prefab/fileID reference.
+8. Do not revert anything.
+9. Do not edit `Assets/**`.
+10. Report exact command outputs that matter, not giant pasted diffs.
+11. State whether the diff is acceptable as cleanup. Expected answer: not without Unity-owner review and rollback.
+12. Provide a rollback/review plan that does not execute destructive commands.
+13. State evidence class for every claim.
+14. Create the report at the owned path.
+15. Final report in chat/file must list files inspected and residual risks.
+
+Rejection gates:
+- No fake line numbers.
+- No "scene clean" claim without Unity/runtime proof.
+- No deletion/revert instruction without explicit rollback and owner permission.
+

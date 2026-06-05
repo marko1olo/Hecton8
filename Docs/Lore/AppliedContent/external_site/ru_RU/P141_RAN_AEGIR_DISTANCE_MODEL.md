@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Модель дистанции Ran-Aegir
+# Ran-Aegir Distance Model
 
-Модель дистанции Ran-Aegir дает сайту и wiki чистый масштаб: reachable by infrastructure, unreachable by sympathy.
+The Ran-Aegir distance model sets the scale: reachable by infrastructure, unreachable by sympathy.
 
 ## Scanner
 
-Aegir достаточно близок, чтобы к 2190 году туда добрались, и достаточно далек, чтобы помощь стала историей.
+Aegir is close enough to be reachable by 2190, far enough that help is history.
 
 ## Terminal
 
-ROUTE MODEL: Ran/Aegir трактуется как цель класса примерно 10.5 световых лет от Sol. В игровом тексте используется Aegir; сухие каталоги используют RAN-B:H8. Точная ephemeris остается table work.
+ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.
 
 ## Audio
 
-Десять световых лет - немного для астрономии. Этого хватает, чтобы спасение стало банкротством.
+Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.
 
 ## Field Note
 
-Числа маршрута нужны как давление на игрока, а не как декоративная звездная карта.
+Use approximate route numbers as pressure, not as a decorative star chart.
 
 <!-- External Site; generated from P141_RAN_AEGIR_DISTANCE_MODEL/ru_RU. -->

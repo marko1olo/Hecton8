@@ -32,133 +32,133 @@
           "field_note": "Tie recipe tiers to pressure rating and route cost.",
           "terminal": "RECIPE BANDS: Tier 0 survival patches live in shallows; Tier 1 rated repairs need industrial shelf parts; Tier 2 pressure hardware needs brine/vent process; Tier 3 ascent/Atlas work needs abyssal authority and containment.",
           "audio": "A recipe is a depth permission form with bolts.",
-          "in_game_wiki": "Recipe pressure bands let crafting, scanner text and site articles share one progression grammar.",
+          "in_game_wiki": "Recipe pressure bands let crafting, scanner text, and material lore share one progression grammar.",
           "external_site": "Recipe Tier Pressure Bands defines release-facing resource progression."
         },
         "ru_RU": {
-          "title": "Диапазоны давления рецептов",
-          "scanner": "Рецепты должны быть спором с глубиной, а не списком покупок.",
-          "field_note": "Привязывать tiers рецептов к pressure rating и цене маршрута.",
-          "terminal": "RECIPE BANDS: Tier 0 survival patches живут на мелководье; Tier 1 rated repairs требуют industrial shelf parts; Tier 2 pressure hardware требует brine/vent process; Tier 3 ascent/Atlas work требует abyssal authority и containment.",
-          "audio": "Рецепт - это разрешение на глубину с болтами.",
-          "in_game_wiki": "Диапазоны давления рецептов дают crafting, scanner text и статьям один язык progression.",
-          "external_site": "Диапазоны давления рецептов задают release-facing progression ресурсов."
+          "title": "Draft RU localization pending native pass. Recipe Tier Pressure Bands",
+          "scanner": "Draft RU localization pending native pass. Recipes should be depth arguments, not shopping lists.",
+          "field_note": "Draft RU localization pending native pass. Tie recipe tiers to pressure rating and route cost.",
+          "terminal": "Draft RU localization pending native pass. RECIPE BANDS: Tier 0 survival patches live in shallows; Tier 1 rated repairs need industrial shelf parts; Tier 2 pressure hardware needs brine/vent process; Tier 3 ascent/Atlas work needs abyssal authority and containment.",
+          "audio": "Draft RU localization pending native pass. A recipe is a depth permission form with bolts.",
+          "in_game_wiki": "Draft RU localization pending native pass. Recipe pressure bands let crafting, scanner text, and material lore share one progression grammar.",
+          "external_site": "Draft RU localization pending native pass. Recipe Tier Pressure Bands defines release-facing resource progression."
         },
         "ja_JP": {
-          "title": "Recipe Tier Pressure Bands",
-          "scanner": "Draft JP localization pending native pass. Recipes should be depth arguments, not shopping lists.",
-          "field_note": "Draft JP localization pending native pass. Tie recipe tiers to pressure rating and route cost.",
-          "terminal": "Draft JP localization pending native pass. RECIPE BANDS: Tier 0 survival patches live in shallows; Tier 1 rated repairs need industrial shelf parts; Tier 2 pressure hardware needs brine/vent process; Tier 3 ascent/Atlas work needs abyssal authority and containment.",
-          "audio": "Draft JP localization pending native pass. A recipe is a depth permission form with bolts.",
-          "in_game_wiki": "Draft JP localization pending native pass. Recipe pressure bands let crafting, scanner text and site articles share one progression grammar.",
-          "external_site": "Draft JP localization pending native pass. Recipe Tier Pressure Bands defines release-facing resource progression."
+          "title": "Draft JA localization pending native pass. Recipe Tier Pressure Bands",
+          "scanner": "Draft JA localization pending native pass. Recipes should be depth arguments, not shopping lists.",
+          "field_note": "Draft JA localization pending native pass. Tie recipe tiers to pressure rating and route cost.",
+          "terminal": "Draft JA localization pending native pass. RECIPE BANDS: Tier 0 survival patches live in shallows; Tier 1 rated repairs need industrial shelf parts; Tier 2 pressure hardware needs brine/vent process; Tier 3 ascent/Atlas work needs abyssal authority and containment.",
+          "audio": "Draft JA localization pending native pass. A recipe is a depth permission form with bolts.",
+          "in_game_wiki": "Draft JA localization pending native pass. Recipe pressure bands let crafting, scanner text, and material lore share one progression grammar.",
+          "external_site": "Draft JA localization pending native pass. Recipe Tier Pressure Bands defines release-facing resource progression."
         },
         "zh_CN": {
-          "title": "Recipe Tier Pressure Bands",
-          "scanner": "Draft CN localization pending native pass. Recipes should be depth arguments, not shopping lists.",
-          "field_note": "Draft CN localization pending native pass. Tie recipe tiers to pressure rating and route cost.",
-          "terminal": "Draft CN localization pending native pass. RECIPE BANDS: Tier 0 survival patches live in shallows; Tier 1 rated repairs need industrial shelf parts; Tier 2 pressure hardware needs brine/vent process; Tier 3 ascent/Atlas work needs abyssal authority and containment.",
-          "audio": "Draft CN localization pending native pass. A recipe is a depth permission form with bolts.",
-          "in_game_wiki": "Draft CN localization pending native pass. Recipe pressure bands let crafting, scanner text and site articles share one progression grammar.",
-          "external_site": "Draft CN localization pending native pass. Recipe Tier Pressure Bands defines release-facing resource progression."
+          "title": "Draft ZH localization pending native pass. Recipe Tier Pressure Bands",
+          "scanner": "Draft ZH localization pending native pass. Recipes should be depth arguments, not shopping lists.",
+          "field_note": "Draft ZH localization pending native pass. Tie recipe tiers to pressure rating and route cost.",
+          "terminal": "Draft ZH localization pending native pass. RECIPE BANDS: Tier 0 survival patches live in shallows; Tier 1 rated repairs need industrial shelf parts; Tier 2 pressure hardware needs brine/vent process; Tier 3 ascent/Atlas work needs abyssal authority and containment.",
+          "audio": "Draft ZH localization pending native pass. A recipe is a depth permission form with bolts.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Recipe pressure bands let crafting, scanner text, and material lore share one progression grammar.",
+          "external_site": "Draft ZH localization pending native pass. Recipe Tier Pressure Bands defines release-facing resource progression."
         },
         "fr_FR": {
-          "title": "Recipe Tier Pressure Bands",
+          "title": "Draft FR localization pending native pass. Recipe Tier Pressure Bands",
           "scanner": "Draft FR localization pending native pass. Recipes should be depth arguments, not shopping lists.",
           "field_note": "Draft FR localization pending native pass. Tie recipe tiers to pressure rating and route cost.",
           "terminal": "Draft FR localization pending native pass. RECIPE BANDS: Tier 0 survival patches live in shallows; Tier 1 rated repairs need industrial shelf parts; Tier 2 pressure hardware needs brine/vent process; Tier 3 ascent/Atlas work needs abyssal authority and containment.",
           "audio": "Draft FR localization pending native pass. A recipe is a depth permission form with bolts.",
-          "in_game_wiki": "Draft FR localization pending native pass. Recipe pressure bands let crafting, scanner text and site articles share one progression grammar.",
+          "in_game_wiki": "Draft FR localization pending native pass. Recipe pressure bands let crafting, scanner text, and material lore share one progression grammar.",
           "external_site": "Draft FR localization pending native pass. Recipe Tier Pressure Bands defines release-facing resource progression."
         },
         "es_ES": {
-          "title": "Recipe Tier Pressure Bands",
+          "title": "Draft ES localization pending native pass. Recipe Tier Pressure Bands",
           "scanner": "Draft ES localization pending native pass. Recipes should be depth arguments, not shopping lists.",
           "field_note": "Draft ES localization pending native pass. Tie recipe tiers to pressure rating and route cost.",
           "terminal": "Draft ES localization pending native pass. RECIPE BANDS: Tier 0 survival patches live in shallows; Tier 1 rated repairs need industrial shelf parts; Tier 2 pressure hardware needs brine/vent process; Tier 3 ascent/Atlas work needs abyssal authority and containment.",
           "audio": "Draft ES localization pending native pass. A recipe is a depth permission form with bolts.",
-          "in_game_wiki": "Draft ES localization pending native pass. Recipe pressure bands let crafting, scanner text and site articles share one progression grammar.",
+          "in_game_wiki": "Draft ES localization pending native pass. Recipe pressure bands let crafting, scanner text, and material lore share one progression grammar.",
           "external_site": "Draft ES localization pending native pass. Recipe Tier Pressure Bands defines release-facing resource progression."
         },
         "de_DE": {
-          "title": "Recipe Tier Pressure Bands",
+          "title": "Draft DE localization pending native pass. Recipe Tier Pressure Bands",
           "scanner": "Draft DE localization pending native pass. Recipes should be depth arguments, not shopping lists.",
           "field_note": "Draft DE localization pending native pass. Tie recipe tiers to pressure rating and route cost.",
           "terminal": "Draft DE localization pending native pass. RECIPE BANDS: Tier 0 survival patches live in shallows; Tier 1 rated repairs need industrial shelf parts; Tier 2 pressure hardware needs brine/vent process; Tier 3 ascent/Atlas work needs abyssal authority and containment.",
           "audio": "Draft DE localization pending native pass. A recipe is a depth permission form with bolts.",
-          "in_game_wiki": "Draft DE localization pending native pass. Recipe pressure bands let crafting, scanner text and site articles share one progression grammar.",
+          "in_game_wiki": "Draft DE localization pending native pass. Recipe pressure bands let crafting, scanner text, and material lore share one progression grammar.",
           "external_site": "Draft DE localization pending native pass. Recipe Tier Pressure Bands defines release-facing resource progression."
         },
         "pl_PL": {
-          "title": "Recipe Tier Pressure Bands",
+          "title": "Draft PL localization pending native pass. Recipe Tier Pressure Bands",
           "scanner": "Draft PL localization pending native pass. Recipes should be depth arguments, not shopping lists.",
           "field_note": "Draft PL localization pending native pass. Tie recipe tiers to pressure rating and route cost.",
           "terminal": "Draft PL localization pending native pass. RECIPE BANDS: Tier 0 survival patches live in shallows; Tier 1 rated repairs need industrial shelf parts; Tier 2 pressure hardware needs brine/vent process; Tier 3 ascent/Atlas work needs abyssal authority and containment.",
           "audio": "Draft PL localization pending native pass. A recipe is a depth permission form with bolts.",
-          "in_game_wiki": "Draft PL localization pending native pass. Recipe pressure bands let crafting, scanner text and site articles share one progression grammar.",
+          "in_game_wiki": "Draft PL localization pending native pass. Recipe pressure bands let crafting, scanner text, and material lore share one progression grammar.",
           "external_site": "Draft PL localization pending native pass. Recipe Tier Pressure Bands defines release-facing resource progression."
         },
         "uk_UA": {
-          "title": "Recipe Tier Pressure Bands",
-          "scanner": "Draft UA localization pending native pass. Recipes should be depth arguments, not shopping lists.",
-          "field_note": "Draft UA localization pending native pass. Tie recipe tiers to pressure rating and route cost.",
-          "terminal": "Draft UA localization pending native pass. RECIPE BANDS: Tier 0 survival patches live in shallows; Tier 1 rated repairs need industrial shelf parts; Tier 2 pressure hardware needs brine/vent process; Tier 3 ascent/Atlas work needs abyssal authority and containment.",
-          "audio": "Draft UA localization pending native pass. A recipe is a depth permission form with bolts.",
-          "in_game_wiki": "Draft UA localization pending native pass. Recipe pressure bands let crafting, scanner text and site articles share one progression grammar.",
-          "external_site": "Draft UA localization pending native pass. Recipe Tier Pressure Bands defines release-facing resource progression."
+          "title": "Draft UK localization pending native pass. Recipe Tier Pressure Bands",
+          "scanner": "Draft UK localization pending native pass. Recipes should be depth arguments, not shopping lists.",
+          "field_note": "Draft UK localization pending native pass. Tie recipe tiers to pressure rating and route cost.",
+          "terminal": "Draft UK localization pending native pass. RECIPE BANDS: Tier 0 survival patches live in shallows; Tier 1 rated repairs need industrial shelf parts; Tier 2 pressure hardware needs brine/vent process; Tier 3 ascent/Atlas work needs abyssal authority and containment.",
+          "audio": "Draft UK localization pending native pass. A recipe is a depth permission form with bolts.",
+          "in_game_wiki": "Draft UK localization pending native pass. Recipe pressure bands let crafting, scanner text, and material lore share one progression grammar.",
+          "external_site": "Draft UK localization pending native pass. Recipe Tier Pressure Bands defines release-facing resource progression."
         },
         "ar_SA": {
-          "title": "Recipe Tier Pressure Bands",
+          "title": "Draft AR localization pending native pass. Recipe Tier Pressure Bands",
           "scanner": "Draft AR localization pending native pass. Recipes should be depth arguments, not shopping lists.",
           "field_note": "Draft AR localization pending native pass. Tie recipe tiers to pressure rating and route cost.",
           "terminal": "Draft AR localization pending native pass. RECIPE BANDS: Tier 0 survival patches live in shallows; Tier 1 rated repairs need industrial shelf parts; Tier 2 pressure hardware needs brine/vent process; Tier 3 ascent/Atlas work needs abyssal authority and containment.",
           "audio": "Draft AR localization pending native pass. A recipe is a depth permission form with bolts.",
-          "in_game_wiki": "Draft AR localization pending native pass. Recipe pressure bands let crafting, scanner text and site articles share one progression grammar.",
+          "in_game_wiki": "Draft AR localization pending native pass. Recipe pressure bands let crafting, scanner text, and material lore share one progression grammar.",
           "external_site": "Draft AR localization pending native pass. Recipe Tier Pressure Bands defines release-facing resource progression."
         },
         "id_ID": {
-          "title": "Recipe Tier Pressure Bands",
+          "title": "Draft ID localization pending native pass. Recipe Tier Pressure Bands",
           "scanner": "Draft ID localization pending native pass. Recipes should be depth arguments, not shopping lists.",
           "field_note": "Draft ID localization pending native pass. Tie recipe tiers to pressure rating and route cost.",
           "terminal": "Draft ID localization pending native pass. RECIPE BANDS: Tier 0 survival patches live in shallows; Tier 1 rated repairs need industrial shelf parts; Tier 2 pressure hardware needs brine/vent process; Tier 3 ascent/Atlas work needs abyssal authority and containment.",
           "audio": "Draft ID localization pending native pass. A recipe is a depth permission form with bolts.",
-          "in_game_wiki": "Draft ID localization pending native pass. Recipe pressure bands let crafting, scanner text and site articles share one progression grammar.",
+          "in_game_wiki": "Draft ID localization pending native pass. Recipe pressure bands let crafting, scanner text, and material lore share one progression grammar.",
           "external_site": "Draft ID localization pending native pass. Recipe Tier Pressure Bands defines release-facing resource progression."
         },
         "ko_KR": {
-          "title": "Recipe Tier Pressure Bands",
+          "title": "Draft KO localization pending native pass. Recipe Tier Pressure Bands",
           "scanner": "Draft KO localization pending native pass. Recipes should be depth arguments, not shopping lists.",
           "field_note": "Draft KO localization pending native pass. Tie recipe tiers to pressure rating and route cost.",
           "terminal": "Draft KO localization pending native pass. RECIPE BANDS: Tier 0 survival patches live in shallows; Tier 1 rated repairs need industrial shelf parts; Tier 2 pressure hardware needs brine/vent process; Tier 3 ascent/Atlas work needs abyssal authority and containment.",
           "audio": "Draft KO localization pending native pass. A recipe is a depth permission form with bolts.",
-          "in_game_wiki": "Draft KO localization pending native pass. Recipe pressure bands let crafting, scanner text and site articles share one progression grammar.",
+          "in_game_wiki": "Draft KO localization pending native pass. Recipe pressure bands let crafting, scanner text, and material lore share one progression grammar.",
           "external_site": "Draft KO localization pending native pass. Recipe Tier Pressure Bands defines release-facing resource progression."
         },
         "he_IL": {
-          "title": "Recipe Tier Pressure Bands",
+          "title": "Draft HE localization pending native pass. Recipe Tier Pressure Bands",
           "scanner": "Draft HE localization pending native pass. Recipes should be depth arguments, not shopping lists.",
           "field_note": "Draft HE localization pending native pass. Tie recipe tiers to pressure rating and route cost.",
           "terminal": "Draft HE localization pending native pass. RECIPE BANDS: Tier 0 survival patches live in shallows; Tier 1 rated repairs need industrial shelf parts; Tier 2 pressure hardware needs brine/vent process; Tier 3 ascent/Atlas work needs abyssal authority and containment.",
           "audio": "Draft HE localization pending native pass. A recipe is a depth permission form with bolts.",
-          "in_game_wiki": "Draft HE localization pending native pass. Recipe pressure bands let crafting, scanner text and site articles share one progression grammar.",
+          "in_game_wiki": "Draft HE localization pending native pass. Recipe pressure bands let crafting, scanner text, and material lore share one progression grammar.",
           "external_site": "Draft HE localization pending native pass. Recipe Tier Pressure Bands defines release-facing resource progression."
         },
         "pt_BR": {
-          "title": "Recipe Tier Pressure Bands",
+          "title": "Draft PT localization pending native pass. Recipe Tier Pressure Bands",
           "scanner": "Draft PT localization pending native pass. Recipes should be depth arguments, not shopping lists.",
           "field_note": "Draft PT localization pending native pass. Tie recipe tiers to pressure rating and route cost.",
           "terminal": "Draft PT localization pending native pass. RECIPE BANDS: Tier 0 survival patches live in shallows; Tier 1 rated repairs need industrial shelf parts; Tier 2 pressure hardware needs brine/vent process; Tier 3 ascent/Atlas work needs abyssal authority and containment.",
           "audio": "Draft PT localization pending native pass. A recipe is a depth permission form with bolts.",
-          "in_game_wiki": "Draft PT localization pending native pass. Recipe pressure bands let crafting, scanner text and site articles share one progression grammar.",
+          "in_game_wiki": "Draft PT localization pending native pass. Recipe pressure bands let crafting, scanner text, and material lore share one progression grammar.",
           "external_site": "Draft PT localization pending native pass. Recipe Tier Pressure Bands defines release-facing resource progression."
         },
         "nl_NL": {
-          "title": "Recipe Tier Pressure Bands",
+          "title": "Draft NL localization pending native pass. Recipe Tier Pressure Bands",
           "scanner": "Draft NL localization pending native pass. Recipes should be depth arguments, not shopping lists.",
           "field_note": "Draft NL localization pending native pass. Tie recipe tiers to pressure rating and route cost.",
           "terminal": "Draft NL localization pending native pass. RECIPE BANDS: Tier 0 survival patches live in shallows; Tier 1 rated repairs need industrial shelf parts; Tier 2 pressure hardware needs brine/vent process; Tier 3 ascent/Atlas work needs abyssal authority and containment.",
           "audio": "Draft NL localization pending native pass. A recipe is a depth permission form with bolts.",
-          "in_game_wiki": "Draft NL localization pending native pass. Recipe pressure bands let crafting, scanner text and site articles share one progression grammar.",
+          "in_game_wiki": "Draft NL localization pending native pass. Recipe pressure bands let crafting, scanner text, and material lore share one progression grammar.",
           "external_site": "Draft NL localization pending native pass. Recipe Tier Pressure Bands defines release-facing resource progression."
         }
       }
@@ -188,7 +188,7 @@
           "terminal": "THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.",
           "audio": "Pressure does not care that the label was almost right.",
           "in_game_wiki": "Pressure failure thresholds make salvage decisions physical and visible instead of abstract inventory math.",
-          "external_site": "Pressure Failure Thresholds defines containment risk for crafting and route cards."
+          "external_site": "Pressure failure thresholds define when containment, crafting, and salvage cross from useful sample into fracture, bloom, drift, or contamination."
         },
         "ru_RU": {
           "title": "Пороги отказа под давлением",
@@ -197,7 +197,7 @@
           "terminal": "THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated и Atlas-rated containers различаются. Несовпадение вызывает drift, fracture, bloom или dead-sample contamination.",
           "audio": "Давлению все равно, что ярлык был почти верным.",
           "in_game_wiki": "Пороги отказа делают salvage decisions физическими и видимыми, а не абстрактной inventory math.",
-          "external_site": "Пороги отказа под давлением задают containment risk для crafting и route cards."
+          "external_site": "Draft RU localization pending native pass. Pressure failure thresholds define when containment, crafting, and salvage cross from useful sample into fracture, bloom, drift, or contamination."
         },
         "ja_JP": {
           "title": "Pressure Failure Thresholds",
@@ -206,7 +206,7 @@
           "terminal": "Draft JP localization pending native pass. THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.",
           "audio": "Draft JP localization pending native pass. Pressure does not care that the label was almost right.",
           "in_game_wiki": "Draft JP localization pending native pass. Pressure failure thresholds make salvage decisions physical and visible instead of abstract inventory math.",
-          "external_site": "Draft JP localization pending native pass. Pressure Failure Thresholds defines containment risk for crafting and route cards."
+          "external_site": "Draft JP localization pending native pass. Pressure failure thresholds define when containment, crafting, and salvage cross from useful sample into fracture, bloom, drift, or contamination."
         },
         "zh_CN": {
           "title": "Pressure Failure Thresholds",
@@ -215,7 +215,7 @@
           "terminal": "Draft CN localization pending native pass. THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.",
           "audio": "Draft CN localization pending native pass. Pressure does not care that the label was almost right.",
           "in_game_wiki": "Draft CN localization pending native pass. Pressure failure thresholds make salvage decisions physical and visible instead of abstract inventory math.",
-          "external_site": "Draft CN localization pending native pass. Pressure Failure Thresholds defines containment risk for crafting and route cards."
+          "external_site": "Draft CN localization pending native pass. Pressure failure thresholds define when containment, crafting, and salvage cross from useful sample into fracture, bloom, drift, or contamination."
         },
         "fr_FR": {
           "title": "Pressure Failure Thresholds",
@@ -224,7 +224,7 @@
           "terminal": "Draft FR localization pending native pass. THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.",
           "audio": "Draft FR localization pending native pass. Pressure does not care that the label was almost right.",
           "in_game_wiki": "Draft FR localization pending native pass. Pressure failure thresholds make salvage decisions physical and visible instead of abstract inventory math.",
-          "external_site": "Draft FR localization pending native pass. Pressure Failure Thresholds defines containment risk for crafting and route cards."
+          "external_site": "Draft FR localization pending native pass. Pressure failure thresholds define when containment, crafting, and salvage cross from useful sample into fracture, bloom, drift, or contamination."
         },
         "es_ES": {
           "title": "Pressure Failure Thresholds",
@@ -233,7 +233,7 @@
           "terminal": "Draft ES localization pending native pass. THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.",
           "audio": "Draft ES localization pending native pass. Pressure does not care that the label was almost right.",
           "in_game_wiki": "Draft ES localization pending native pass. Pressure failure thresholds make salvage decisions physical and visible instead of abstract inventory math.",
-          "external_site": "Draft ES localization pending native pass. Pressure Failure Thresholds defines containment risk for crafting and route cards."
+          "external_site": "Draft ES localization pending native pass. Pressure failure thresholds define when containment, crafting, and salvage cross from useful sample into fracture, bloom, drift, or contamination."
         },
         "de_DE": {
           "title": "Pressure Failure Thresholds",
@@ -242,7 +242,7 @@
           "terminal": "Draft DE localization pending native pass. THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.",
           "audio": "Draft DE localization pending native pass. Pressure does not care that the label was almost right.",
           "in_game_wiki": "Draft DE localization pending native pass. Pressure failure thresholds make salvage decisions physical and visible instead of abstract inventory math.",
-          "external_site": "Draft DE localization pending native pass. Pressure Failure Thresholds defines containment risk for crafting and route cards."
+          "external_site": "Draft DE localization pending native pass. Pressure failure thresholds define when containment, crafting, and salvage cross from useful sample into fracture, bloom, drift, or contamination."
         },
         "pl_PL": {
           "title": "Pressure Failure Thresholds",
@@ -251,7 +251,7 @@
           "terminal": "Draft PL localization pending native pass. THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.",
           "audio": "Draft PL localization pending native pass. Pressure does not care that the label was almost right.",
           "in_game_wiki": "Draft PL localization pending native pass. Pressure failure thresholds make salvage decisions physical and visible instead of abstract inventory math.",
-          "external_site": "Draft PL localization pending native pass. Pressure Failure Thresholds defines containment risk for crafting and route cards."
+          "external_site": "Draft PL localization pending native pass. Pressure failure thresholds define when containment, crafting, and salvage cross from useful sample into fracture, bloom, drift, or contamination."
         },
         "uk_UA": {
           "title": "Pressure Failure Thresholds",
@@ -260,7 +260,7 @@
           "terminal": "Draft UA localization pending native pass. THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.",
           "audio": "Draft UA localization pending native pass. Pressure does not care that the label was almost right.",
           "in_game_wiki": "Draft UA localization pending native pass. Pressure failure thresholds make salvage decisions physical and visible instead of abstract inventory math.",
-          "external_site": "Draft UA localization pending native pass. Pressure Failure Thresholds defines containment risk for crafting and route cards."
+          "external_site": "Draft UA localization pending native pass. Pressure failure thresholds define when containment, crafting, and salvage cross from useful sample into fracture, bloom, drift, or contamination."
         },
         "ar_SA": {
           "title": "Pressure Failure Thresholds",
@@ -269,7 +269,7 @@
           "terminal": "Draft AR localization pending native pass. THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.",
           "audio": "Draft AR localization pending native pass. Pressure does not care that the label was almost right.",
           "in_game_wiki": "Draft AR localization pending native pass. Pressure failure thresholds make salvage decisions physical and visible instead of abstract inventory math.",
-          "external_site": "Draft AR localization pending native pass. Pressure Failure Thresholds defines containment risk for crafting and route cards."
+          "external_site": "Draft AR localization pending native pass. Pressure failure thresholds define when containment, crafting, and salvage cross from useful sample into fracture, bloom, drift, or contamination."
         },
         "id_ID": {
           "title": "Pressure Failure Thresholds",
@@ -278,7 +278,7 @@
           "terminal": "Draft ID localization pending native pass. THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.",
           "audio": "Draft ID localization pending native pass. Pressure does not care that the label was almost right.",
           "in_game_wiki": "Draft ID localization pending native pass. Pressure failure thresholds make salvage decisions physical and visible instead of abstract inventory math.",
-          "external_site": "Draft ID localization pending native pass. Pressure Failure Thresholds defines containment risk for crafting and route cards."
+          "external_site": "Draft ID localization pending native pass. Pressure failure thresholds define when containment, crafting, and salvage cross from useful sample into fracture, bloom, drift, or contamination."
         },
         "ko_KR": {
           "title": "Pressure Failure Thresholds",
@@ -287,7 +287,7 @@
           "terminal": "Draft KO localization pending native pass. THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.",
           "audio": "Draft KO localization pending native pass. Pressure does not care that the label was almost right.",
           "in_game_wiki": "Draft KO localization pending native pass. Pressure failure thresholds make salvage decisions physical and visible instead of abstract inventory math.",
-          "external_site": "Draft KO localization pending native pass. Pressure Failure Thresholds defines containment risk for crafting and route cards."
+          "external_site": "Draft KO localization pending native pass. Pressure failure thresholds define when containment, crafting, and salvage cross from useful sample into fracture, bloom, drift, or contamination."
         },
         "he_IL": {
           "title": "Pressure Failure Thresholds",
@@ -296,7 +296,7 @@
           "terminal": "Draft HE localization pending native pass. THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.",
           "audio": "Draft HE localization pending native pass. Pressure does not care that the label was almost right.",
           "in_game_wiki": "Draft HE localization pending native pass. Pressure failure thresholds make salvage decisions physical and visible instead of abstract inventory math.",
-          "external_site": "Draft HE localization pending native pass. Pressure Failure Thresholds defines containment risk for crafting and route cards."
+          "external_site": "Draft HE localization pending native pass. Pressure failure thresholds define when containment, crafting, and salvage cross from useful sample into fracture, bloom, drift, or contamination."
         },
         "pt_BR": {
           "title": "Pressure Failure Thresholds",
@@ -305,7 +305,7 @@
           "terminal": "Draft PT localization pending native pass. THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.",
           "audio": "Draft PT localization pending native pass. Pressure does not care that the label was almost right.",
           "in_game_wiki": "Draft PT localization pending native pass. Pressure failure thresholds make salvage decisions physical and visible instead of abstract inventory math.",
-          "external_site": "Draft PT localization pending native pass. Pressure Failure Thresholds defines containment risk for crafting and route cards."
+          "external_site": "Draft PT localization pending native pass. Pressure failure thresholds define when containment, crafting, and salvage cross from useful sample into fracture, bloom, drift, or contamination."
         },
         "nl_NL": {
           "title": "Pressure Failure Thresholds",
@@ -314,7 +314,7 @@
           "terminal": "Draft NL localization pending native pass. THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.",
           "audio": "Draft NL localization pending native pass. Pressure does not care that the label was almost right.",
           "in_game_wiki": "Draft NL localization pending native pass. Pressure failure thresholds make salvage decisions physical and visible instead of abstract inventory math.",
-          "external_site": "Draft NL localization pending native pass. Pressure Failure Thresholds defines containment risk for crafting and route cards."
+          "external_site": "Draft NL localization pending native pass. Pressure failure thresholds define when containment, crafting, and salvage cross from useful sample into fracture, bloom, drift, or contamination."
         }
       }
     },
@@ -342,133 +342,133 @@
           "field_note": "Quality should affect payout, containment and ending pressure.",
           "terminal": "QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.",
           "audio": "The more it is worth, the less it is only loot.",
-          "in_game_wiki": "Blue debt quality lets material endings, scanner warnings and site articles treat resources as moral pressure.",
+          "in_game_wiki": "Blue debt sample quality lets endings, scanner warnings, and material records treat resources as moral pressure rather than generic loot.",
           "external_site": "Blue Debt Sample Quality defines payout and evidence classes."
         },
         "ru_RU": {
-          "title": "Качество образца blue debt",
-          "scanner": "Качество blue debt - цена, риск и доказательство в одном числе.",
-          "field_note": "Качество должно влиять на payout, containment и ending pressure.",
-          "terminal": "QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample и dead contaminated glass. Более высокая цена усиливает давление Deep Reach и цену handling.",
-          "audio": "Чем оно дороже, тем меньше оно просто loot.",
-          "in_game_wiki": "Качество blue debt позволяет material endings, scanner warnings и статьям трактовать ресурсы как моральное давление.",
-          "external_site": "Качество образца blue debt задает payout и evidence classes."
+          "title": "Draft RU localization pending native pass. Blue Debt Sample Quality",
+          "scanner": "Draft RU localization pending native pass. Blue debt quality is value, risk and evidence in one number.",
+          "field_note": "Draft RU localization pending native pass. Quality should affect payout, containment and ending pressure.",
+          "terminal": "Draft RU localization pending native pass. QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.",
+          "audio": "Draft RU localization pending native pass. The more it is worth, the less it is only loot.",
+          "in_game_wiki": "Draft RU localization pending native pass. Blue debt sample quality lets endings, scanner warnings, and material records treat resources as moral pressure rather than generic loot.",
+          "external_site": "Draft RU localization pending native pass. Blue Debt Sample Quality defines payout and evidence classes."
         },
         "ja_JP": {
-          "title": "Blue Debt Sample Quality",
-          "scanner": "Draft JP localization pending native pass. Blue debt quality is value, risk and evidence in one number.",
-          "field_note": "Draft JP localization pending native pass. Quality should affect payout, containment and ending pressure.",
-          "terminal": "Draft JP localization pending native pass. QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.",
-          "audio": "Draft JP localization pending native pass. The more it is worth, the less it is only loot.",
-          "in_game_wiki": "Draft JP localization pending native pass. Blue debt quality lets material endings, scanner warnings and site articles treat resources as moral pressure.",
-          "external_site": "Draft JP localization pending native pass. Blue Debt Sample Quality defines payout and evidence classes."
+          "title": "Draft JA localization pending native pass. Blue Debt Sample Quality",
+          "scanner": "Draft JA localization pending native pass. Blue debt quality is value, risk and evidence in one number.",
+          "field_note": "Draft JA localization pending native pass. Quality should affect payout, containment and ending pressure.",
+          "terminal": "Draft JA localization pending native pass. QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.",
+          "audio": "Draft JA localization pending native pass. The more it is worth, the less it is only loot.",
+          "in_game_wiki": "Draft JA localization pending native pass. Blue debt sample quality lets endings, scanner warnings, and material records treat resources as moral pressure rather than generic loot.",
+          "external_site": "Draft JA localization pending native pass. Blue Debt Sample Quality defines payout and evidence classes."
         },
         "zh_CN": {
-          "title": "Blue Debt Sample Quality",
-          "scanner": "Draft CN localization pending native pass. Blue debt quality is value, risk and evidence in one number.",
-          "field_note": "Draft CN localization pending native pass. Quality should affect payout, containment and ending pressure.",
-          "terminal": "Draft CN localization pending native pass. QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.",
-          "audio": "Draft CN localization pending native pass. The more it is worth, the less it is only loot.",
-          "in_game_wiki": "Draft CN localization pending native pass. Blue debt quality lets material endings, scanner warnings and site articles treat resources as moral pressure.",
-          "external_site": "Draft CN localization pending native pass. Blue Debt Sample Quality defines payout and evidence classes."
+          "title": "Draft ZH localization pending native pass. Blue Debt Sample Quality",
+          "scanner": "Draft ZH localization pending native pass. Blue debt quality is value, risk and evidence in one number.",
+          "field_note": "Draft ZH localization pending native pass. Quality should affect payout, containment and ending pressure.",
+          "terminal": "Draft ZH localization pending native pass. QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.",
+          "audio": "Draft ZH localization pending native pass. The more it is worth, the less it is only loot.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Blue debt sample quality lets endings, scanner warnings, and material records treat resources as moral pressure rather than generic loot.",
+          "external_site": "Draft ZH localization pending native pass. Blue Debt Sample Quality defines payout and evidence classes."
         },
         "fr_FR": {
-          "title": "Blue Debt Sample Quality",
+          "title": "Draft FR localization pending native pass. Blue Debt Sample Quality",
           "scanner": "Draft FR localization pending native pass. Blue debt quality is value, risk and evidence in one number.",
           "field_note": "Draft FR localization pending native pass. Quality should affect payout, containment and ending pressure.",
           "terminal": "Draft FR localization pending native pass. QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.",
           "audio": "Draft FR localization pending native pass. The more it is worth, the less it is only loot.",
-          "in_game_wiki": "Draft FR localization pending native pass. Blue debt quality lets material endings, scanner warnings and site articles treat resources as moral pressure.",
+          "in_game_wiki": "Draft FR localization pending native pass. Blue debt sample quality lets endings, scanner warnings, and material records treat resources as moral pressure rather than generic loot.",
           "external_site": "Draft FR localization pending native pass. Blue Debt Sample Quality defines payout and evidence classes."
         },
         "es_ES": {
-          "title": "Blue Debt Sample Quality",
+          "title": "Draft ES localization pending native pass. Blue Debt Sample Quality",
           "scanner": "Draft ES localization pending native pass. Blue debt quality is value, risk and evidence in one number.",
           "field_note": "Draft ES localization pending native pass. Quality should affect payout, containment and ending pressure.",
           "terminal": "Draft ES localization pending native pass. QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.",
           "audio": "Draft ES localization pending native pass. The more it is worth, the less it is only loot.",
-          "in_game_wiki": "Draft ES localization pending native pass. Blue debt quality lets material endings, scanner warnings and site articles treat resources as moral pressure.",
+          "in_game_wiki": "Draft ES localization pending native pass. Blue debt sample quality lets endings, scanner warnings, and material records treat resources as moral pressure rather than generic loot.",
           "external_site": "Draft ES localization pending native pass. Blue Debt Sample Quality defines payout and evidence classes."
         },
         "de_DE": {
-          "title": "Blue Debt Sample Quality",
+          "title": "Draft DE localization pending native pass. Blue Debt Sample Quality",
           "scanner": "Draft DE localization pending native pass. Blue debt quality is value, risk and evidence in one number.",
           "field_note": "Draft DE localization pending native pass. Quality should affect payout, containment and ending pressure.",
           "terminal": "Draft DE localization pending native pass. QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.",
           "audio": "Draft DE localization pending native pass. The more it is worth, the less it is only loot.",
-          "in_game_wiki": "Draft DE localization pending native pass. Blue debt quality lets material endings, scanner warnings and site articles treat resources as moral pressure.",
+          "in_game_wiki": "Draft DE localization pending native pass. Blue debt sample quality lets endings, scanner warnings, and material records treat resources as moral pressure rather than generic loot.",
           "external_site": "Draft DE localization pending native pass. Blue Debt Sample Quality defines payout and evidence classes."
         },
         "pl_PL": {
-          "title": "Blue Debt Sample Quality",
+          "title": "Draft PL localization pending native pass. Blue Debt Sample Quality",
           "scanner": "Draft PL localization pending native pass. Blue debt quality is value, risk and evidence in one number.",
           "field_note": "Draft PL localization pending native pass. Quality should affect payout, containment and ending pressure.",
           "terminal": "Draft PL localization pending native pass. QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.",
           "audio": "Draft PL localization pending native pass. The more it is worth, the less it is only loot.",
-          "in_game_wiki": "Draft PL localization pending native pass. Blue debt quality lets material endings, scanner warnings and site articles treat resources as moral pressure.",
+          "in_game_wiki": "Draft PL localization pending native pass. Blue debt sample quality lets endings, scanner warnings, and material records treat resources as moral pressure rather than generic loot.",
           "external_site": "Draft PL localization pending native pass. Blue Debt Sample Quality defines payout and evidence classes."
         },
         "uk_UA": {
-          "title": "Blue Debt Sample Quality",
-          "scanner": "Draft UA localization pending native pass. Blue debt quality is value, risk and evidence in one number.",
-          "field_note": "Draft UA localization pending native pass. Quality should affect payout, containment and ending pressure.",
-          "terminal": "Draft UA localization pending native pass. QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.",
-          "audio": "Draft UA localization pending native pass. The more it is worth, the less it is only loot.",
-          "in_game_wiki": "Draft UA localization pending native pass. Blue debt quality lets material endings, scanner warnings and site articles treat resources as moral pressure.",
-          "external_site": "Draft UA localization pending native pass. Blue Debt Sample Quality defines payout and evidence classes."
+          "title": "Draft UK localization pending native pass. Blue Debt Sample Quality",
+          "scanner": "Draft UK localization pending native pass. Blue debt quality is value, risk and evidence in one number.",
+          "field_note": "Draft UK localization pending native pass. Quality should affect payout, containment and ending pressure.",
+          "terminal": "Draft UK localization pending native pass. QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.",
+          "audio": "Draft UK localization pending native pass. The more it is worth, the less it is only loot.",
+          "in_game_wiki": "Draft UK localization pending native pass. Blue debt sample quality lets endings, scanner warnings, and material records treat resources as moral pressure rather than generic loot.",
+          "external_site": "Draft UK localization pending native pass. Blue Debt Sample Quality defines payout and evidence classes."
         },
         "ar_SA": {
-          "title": "Blue Debt Sample Quality",
+          "title": "Draft AR localization pending native pass. Blue Debt Sample Quality",
           "scanner": "Draft AR localization pending native pass. Blue debt quality is value, risk and evidence in one number.",
           "field_note": "Draft AR localization pending native pass. Quality should affect payout, containment and ending pressure.",
           "terminal": "Draft AR localization pending native pass. QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.",
           "audio": "Draft AR localization pending native pass. The more it is worth, the less it is only loot.",
-          "in_game_wiki": "Draft AR localization pending native pass. Blue debt quality lets material endings, scanner warnings and site articles treat resources as moral pressure.",
+          "in_game_wiki": "Draft AR localization pending native pass. Blue debt sample quality lets endings, scanner warnings, and material records treat resources as moral pressure rather than generic loot.",
           "external_site": "Draft AR localization pending native pass. Blue Debt Sample Quality defines payout and evidence classes."
         },
         "id_ID": {
-          "title": "Blue Debt Sample Quality",
+          "title": "Draft ID localization pending native pass. Blue Debt Sample Quality",
           "scanner": "Draft ID localization pending native pass. Blue debt quality is value, risk and evidence in one number.",
           "field_note": "Draft ID localization pending native pass. Quality should affect payout, containment and ending pressure.",
           "terminal": "Draft ID localization pending native pass. QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.",
           "audio": "Draft ID localization pending native pass. The more it is worth, the less it is only loot.",
-          "in_game_wiki": "Draft ID localization pending native pass. Blue debt quality lets material endings, scanner warnings and site articles treat resources as moral pressure.",
+          "in_game_wiki": "Draft ID localization pending native pass. Blue debt sample quality lets endings, scanner warnings, and material records treat resources as moral pressure rather than generic loot.",
           "external_site": "Draft ID localization pending native pass. Blue Debt Sample Quality defines payout and evidence classes."
         },
         "ko_KR": {
-          "title": "Blue Debt Sample Quality",
+          "title": "Draft KO localization pending native pass. Blue Debt Sample Quality",
           "scanner": "Draft KO localization pending native pass. Blue debt quality is value, risk and evidence in one number.",
           "field_note": "Draft KO localization pending native pass. Quality should affect payout, containment and ending pressure.",
           "terminal": "Draft KO localization pending native pass. QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.",
           "audio": "Draft KO localization pending native pass. The more it is worth, the less it is only loot.",
-          "in_game_wiki": "Draft KO localization pending native pass. Blue debt quality lets material endings, scanner warnings and site articles treat resources as moral pressure.",
+          "in_game_wiki": "Draft KO localization pending native pass. Blue debt sample quality lets endings, scanner warnings, and material records treat resources as moral pressure rather than generic loot.",
           "external_site": "Draft KO localization pending native pass. Blue Debt Sample Quality defines payout and evidence classes."
         },
         "he_IL": {
-          "title": "Blue Debt Sample Quality",
+          "title": "Draft HE localization pending native pass. Blue Debt Sample Quality",
           "scanner": "Draft HE localization pending native pass. Blue debt quality is value, risk and evidence in one number.",
           "field_note": "Draft HE localization pending native pass. Quality should affect payout, containment and ending pressure.",
           "terminal": "Draft HE localization pending native pass. QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.",
           "audio": "Draft HE localization pending native pass. The more it is worth, the less it is only loot.",
-          "in_game_wiki": "Draft HE localization pending native pass. Blue debt quality lets material endings, scanner warnings and site articles treat resources as moral pressure.",
+          "in_game_wiki": "Draft HE localization pending native pass. Blue debt sample quality lets endings, scanner warnings, and material records treat resources as moral pressure rather than generic loot.",
           "external_site": "Draft HE localization pending native pass. Blue Debt Sample Quality defines payout and evidence classes."
         },
         "pt_BR": {
-          "title": "Blue Debt Sample Quality",
+          "title": "Draft PT localization pending native pass. Blue Debt Sample Quality",
           "scanner": "Draft PT localization pending native pass. Blue debt quality is value, risk and evidence in one number.",
           "field_note": "Draft PT localization pending native pass. Quality should affect payout, containment and ending pressure.",
           "terminal": "Draft PT localization pending native pass. QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.",
           "audio": "Draft PT localization pending native pass. The more it is worth, the less it is only loot.",
-          "in_game_wiki": "Draft PT localization pending native pass. Blue debt quality lets material endings, scanner warnings and site articles treat resources as moral pressure.",
+          "in_game_wiki": "Draft PT localization pending native pass. Blue debt sample quality lets endings, scanner warnings, and material records treat resources as moral pressure rather than generic loot.",
           "external_site": "Draft PT localization pending native pass. Blue Debt Sample Quality defines payout and evidence classes."
         },
         "nl_NL": {
-          "title": "Blue Debt Sample Quality",
+          "title": "Draft NL localization pending native pass. Blue Debt Sample Quality",
           "scanner": "Draft NL localization pending native pass. Blue debt quality is value, risk and evidence in one number.",
           "field_note": "Draft NL localization pending native pass. Quality should affect payout, containment and ending pressure.",
           "terminal": "Draft NL localization pending native pass. QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.",
           "audio": "Draft NL localization pending native pass. The more it is worth, the less it is only loot.",
-          "in_game_wiki": "Draft NL localization pending native pass. Blue debt quality lets material endings, scanner warnings and site articles treat resources as moral pressure.",
+          "in_game_wiki": "Draft NL localization pending native pass. Blue debt sample quality lets endings, scanner warnings, and material records treat resources as moral pressure rather than generic loot.",
           "external_site": "Draft NL localization pending native pass. Blue Debt Sample Quality defines payout and evidence classes."
         }
       }
@@ -498,133 +498,133 @@
           "terminal": "FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.",
           "audio": "The moon is the furnace. The player is only allowed to borrow it.",
           "in_game_wiki": "Vent forge steps turn hard-sci-fi resource lore into future crafting beats without simulating chemistry.",
-          "external_site": "Vent Forge Process Steps defines the site/wiki and in-game crafting fantasy."
+          "external_site": "Vent Forge Process Steps describe the industrial fantasy behind HECTON-8 crafting: heat, pressure, custody, and debt turned into usable parts."
         },
         "ru_RU": {
-          "title": "Шаги vent forge процесса",
-          "scanner": "Vent forging должен ощущаться как использование планеты против нее самой.",
-          "field_note": "Шаги forge должны читаться как heat, pressure, wait и risk.",
-          "terminal": "FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Неверный timing делает useful scrap.",
-          "audio": "Луна - печь. Игроку только разрешают ее занять.",
-          "in_game_wiki": "Шаги vent forge превращают hard-sci-fi resource lore в будущие crafting beats без симуляции химии.",
-          "external_site": "Шаги vent forge процесса задают site/wiki и in-game crafting fantasy."
+          "title": "Draft RU localization pending native pass. Vent Forge Process Steps",
+          "scanner": "Draft RU localization pending native pass. Vent forging should feel like using the planet against itself.",
+          "field_note": "Draft RU localization pending native pass. Make forge steps readable as heat, pressure, wait and risk.",
+          "terminal": "Draft RU localization pending native pass. FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.",
+          "audio": "Draft RU localization pending native pass. The moon is the furnace. The player is only allowed to borrow it.",
+          "in_game_wiki": "Draft RU localization pending native pass. Vent forge steps turn hard-sci-fi resource lore into future crafting beats without simulating chemistry.",
+          "external_site": "Draft RU localization pending native pass. Vent Forge Process Steps describe the industrial fantasy behind HECTON-8 crafting: heat, pressure, custody, and debt turned into usable parts."
         },
         "ja_JP": {
-          "title": "Vent Forge Process Steps",
-          "scanner": "Draft JP localization pending native pass. Vent forging should feel like using the planet against itself.",
-          "field_note": "Draft JP localization pending native pass. Make forge steps readable as heat, pressure, wait and risk.",
-          "terminal": "Draft JP localization pending native pass. FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.",
-          "audio": "Draft JP localization pending native pass. The moon is the furnace. The player is only allowed to borrow it.",
-          "in_game_wiki": "Draft JP localization pending native pass. Vent forge steps turn hard-sci-fi resource lore into future crafting beats without simulating chemistry.",
-          "external_site": "Draft JP localization pending native pass. Vent Forge Process Steps defines the site/wiki and in-game crafting fantasy."
+          "title": "Draft JA localization pending native pass. Vent Forge Process Steps",
+          "scanner": "Draft JA localization pending native pass. Vent forging should feel like using the planet against itself.",
+          "field_note": "Draft JA localization pending native pass. Make forge steps readable as heat, pressure, wait and risk.",
+          "terminal": "Draft JA localization pending native pass. FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.",
+          "audio": "Draft JA localization pending native pass. The moon is the furnace. The player is only allowed to borrow it.",
+          "in_game_wiki": "Draft JA localization pending native pass. Vent forge steps turn hard-sci-fi resource lore into future crafting beats without simulating chemistry.",
+          "external_site": "Draft JA localization pending native pass. Vent Forge Process Steps describe the industrial fantasy behind HECTON-8 crafting: heat, pressure, custody, and debt turned into usable parts."
         },
         "zh_CN": {
-          "title": "Vent Forge Process Steps",
-          "scanner": "Draft CN localization pending native pass. Vent forging should feel like using the planet against itself.",
-          "field_note": "Draft CN localization pending native pass. Make forge steps readable as heat, pressure, wait and risk.",
-          "terminal": "Draft CN localization pending native pass. FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.",
-          "audio": "Draft CN localization pending native pass. The moon is the furnace. The player is only allowed to borrow it.",
-          "in_game_wiki": "Draft CN localization pending native pass. Vent forge steps turn hard-sci-fi resource lore into future crafting beats without simulating chemistry.",
-          "external_site": "Draft CN localization pending native pass. Vent Forge Process Steps defines the site/wiki and in-game crafting fantasy."
+          "title": "Draft ZH localization pending native pass. Vent Forge Process Steps",
+          "scanner": "Draft ZH localization pending native pass. Vent forging should feel like using the planet against itself.",
+          "field_note": "Draft ZH localization pending native pass. Make forge steps readable as heat, pressure, wait and risk.",
+          "terminal": "Draft ZH localization pending native pass. FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.",
+          "audio": "Draft ZH localization pending native pass. The moon is the furnace. The player is only allowed to borrow it.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Vent forge steps turn hard-sci-fi resource lore into future crafting beats without simulating chemistry.",
+          "external_site": "Draft ZH localization pending native pass. Vent Forge Process Steps describe the industrial fantasy behind HECTON-8 crafting: heat, pressure, custody, and debt turned into usable parts."
         },
         "fr_FR": {
-          "title": "Vent Forge Process Steps",
+          "title": "Draft FR localization pending native pass. Vent Forge Process Steps",
           "scanner": "Draft FR localization pending native pass. Vent forging should feel like using the planet against itself.",
           "field_note": "Draft FR localization pending native pass. Make forge steps readable as heat, pressure, wait and risk.",
           "terminal": "Draft FR localization pending native pass. FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.",
           "audio": "Draft FR localization pending native pass. The moon is the furnace. The player is only allowed to borrow it.",
           "in_game_wiki": "Draft FR localization pending native pass. Vent forge steps turn hard-sci-fi resource lore into future crafting beats without simulating chemistry.",
-          "external_site": "Draft FR localization pending native pass. Vent Forge Process Steps defines the site/wiki and in-game crafting fantasy."
+          "external_site": "Draft FR localization pending native pass. Vent Forge Process Steps describe the industrial fantasy behind HECTON-8 crafting: heat, pressure, custody, and debt turned into usable parts."
         },
         "es_ES": {
-          "title": "Vent Forge Process Steps",
+          "title": "Draft ES localization pending native pass. Vent Forge Process Steps",
           "scanner": "Draft ES localization pending native pass. Vent forging should feel like using the planet against itself.",
           "field_note": "Draft ES localization pending native pass. Make forge steps readable as heat, pressure, wait and risk.",
           "terminal": "Draft ES localization pending native pass. FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.",
           "audio": "Draft ES localization pending native pass. The moon is the furnace. The player is only allowed to borrow it.",
           "in_game_wiki": "Draft ES localization pending native pass. Vent forge steps turn hard-sci-fi resource lore into future crafting beats without simulating chemistry.",
-          "external_site": "Draft ES localization pending native pass. Vent Forge Process Steps defines the site/wiki and in-game crafting fantasy."
+          "external_site": "Draft ES localization pending native pass. Vent Forge Process Steps describe the industrial fantasy behind HECTON-8 crafting: heat, pressure, custody, and debt turned into usable parts."
         },
         "de_DE": {
-          "title": "Vent Forge Process Steps",
+          "title": "Draft DE localization pending native pass. Vent Forge Process Steps",
           "scanner": "Draft DE localization pending native pass. Vent forging should feel like using the planet against itself.",
           "field_note": "Draft DE localization pending native pass. Make forge steps readable as heat, pressure, wait and risk.",
           "terminal": "Draft DE localization pending native pass. FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.",
           "audio": "Draft DE localization pending native pass. The moon is the furnace. The player is only allowed to borrow it.",
           "in_game_wiki": "Draft DE localization pending native pass. Vent forge steps turn hard-sci-fi resource lore into future crafting beats without simulating chemistry.",
-          "external_site": "Draft DE localization pending native pass. Vent Forge Process Steps defines the site/wiki and in-game crafting fantasy."
+          "external_site": "Draft DE localization pending native pass. Vent Forge Process Steps describe the industrial fantasy behind HECTON-8 crafting: heat, pressure, custody, and debt turned into usable parts."
         },
         "pl_PL": {
-          "title": "Vent Forge Process Steps",
+          "title": "Draft PL localization pending native pass. Vent Forge Process Steps",
           "scanner": "Draft PL localization pending native pass. Vent forging should feel like using the planet against itself.",
           "field_note": "Draft PL localization pending native pass. Make forge steps readable as heat, pressure, wait and risk.",
           "terminal": "Draft PL localization pending native pass. FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.",
           "audio": "Draft PL localization pending native pass. The moon is the furnace. The player is only allowed to borrow it.",
           "in_game_wiki": "Draft PL localization pending native pass. Vent forge steps turn hard-sci-fi resource lore into future crafting beats without simulating chemistry.",
-          "external_site": "Draft PL localization pending native pass. Vent Forge Process Steps defines the site/wiki and in-game crafting fantasy."
+          "external_site": "Draft PL localization pending native pass. Vent Forge Process Steps describe the industrial fantasy behind HECTON-8 crafting: heat, pressure, custody, and debt turned into usable parts."
         },
         "uk_UA": {
-          "title": "Vent Forge Process Steps",
-          "scanner": "Draft UA localization pending native pass. Vent forging should feel like using the planet against itself.",
-          "field_note": "Draft UA localization pending native pass. Make forge steps readable as heat, pressure, wait and risk.",
-          "terminal": "Draft UA localization pending native pass. FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.",
-          "audio": "Draft UA localization pending native pass. The moon is the furnace. The player is only allowed to borrow it.",
-          "in_game_wiki": "Draft UA localization pending native pass. Vent forge steps turn hard-sci-fi resource lore into future crafting beats without simulating chemistry.",
-          "external_site": "Draft UA localization pending native pass. Vent Forge Process Steps defines the site/wiki and in-game crafting fantasy."
+          "title": "Draft UK localization pending native pass. Vent Forge Process Steps",
+          "scanner": "Draft UK localization pending native pass. Vent forging should feel like using the planet against itself.",
+          "field_note": "Draft UK localization pending native pass. Make forge steps readable as heat, pressure, wait and risk.",
+          "terminal": "Draft UK localization pending native pass. FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.",
+          "audio": "Draft UK localization pending native pass. The moon is the furnace. The player is only allowed to borrow it.",
+          "in_game_wiki": "Draft UK localization pending native pass. Vent forge steps turn hard-sci-fi resource lore into future crafting beats without simulating chemistry.",
+          "external_site": "Draft UK localization pending native pass. Vent Forge Process Steps describe the industrial fantasy behind HECTON-8 crafting: heat, pressure, custody, and debt turned into usable parts."
         },
         "ar_SA": {
-          "title": "Vent Forge Process Steps",
+          "title": "Draft AR localization pending native pass. Vent Forge Process Steps",
           "scanner": "Draft AR localization pending native pass. Vent forging should feel like using the planet against itself.",
           "field_note": "Draft AR localization pending native pass. Make forge steps readable as heat, pressure, wait and risk.",
           "terminal": "Draft AR localization pending native pass. FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.",
           "audio": "Draft AR localization pending native pass. The moon is the furnace. The player is only allowed to borrow it.",
           "in_game_wiki": "Draft AR localization pending native pass. Vent forge steps turn hard-sci-fi resource lore into future crafting beats without simulating chemistry.",
-          "external_site": "Draft AR localization pending native pass. Vent Forge Process Steps defines the site/wiki and in-game crafting fantasy."
+          "external_site": "Draft AR localization pending native pass. Vent Forge Process Steps describe the industrial fantasy behind HECTON-8 crafting: heat, pressure, custody, and debt turned into usable parts."
         },
         "id_ID": {
-          "title": "Vent Forge Process Steps",
+          "title": "Draft ID localization pending native pass. Vent Forge Process Steps",
           "scanner": "Draft ID localization pending native pass. Vent forging should feel like using the planet against itself.",
           "field_note": "Draft ID localization pending native pass. Make forge steps readable as heat, pressure, wait and risk.",
           "terminal": "Draft ID localization pending native pass. FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.",
           "audio": "Draft ID localization pending native pass. The moon is the furnace. The player is only allowed to borrow it.",
           "in_game_wiki": "Draft ID localization pending native pass. Vent forge steps turn hard-sci-fi resource lore into future crafting beats without simulating chemistry.",
-          "external_site": "Draft ID localization pending native pass. Vent Forge Process Steps defines the site/wiki and in-game crafting fantasy."
+          "external_site": "Draft ID localization pending native pass. Vent Forge Process Steps describe the industrial fantasy behind HECTON-8 crafting: heat, pressure, custody, and debt turned into usable parts."
         },
         "ko_KR": {
-          "title": "Vent Forge Process Steps",
+          "title": "Draft KO localization pending native pass. Vent Forge Process Steps",
           "scanner": "Draft KO localization pending native pass. Vent forging should feel like using the planet against itself.",
           "field_note": "Draft KO localization pending native pass. Make forge steps readable as heat, pressure, wait and risk.",
           "terminal": "Draft KO localization pending native pass. FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.",
           "audio": "Draft KO localization pending native pass. The moon is the furnace. The player is only allowed to borrow it.",
           "in_game_wiki": "Draft KO localization pending native pass. Vent forge steps turn hard-sci-fi resource lore into future crafting beats without simulating chemistry.",
-          "external_site": "Draft KO localization pending native pass. Vent Forge Process Steps defines the site/wiki and in-game crafting fantasy."
+          "external_site": "Draft KO localization pending native pass. Vent Forge Process Steps describe the industrial fantasy behind HECTON-8 crafting: heat, pressure, custody, and debt turned into usable parts."
         },
         "he_IL": {
-          "title": "Vent Forge Process Steps",
+          "title": "Draft HE localization pending native pass. Vent Forge Process Steps",
           "scanner": "Draft HE localization pending native pass. Vent forging should feel like using the planet against itself.",
           "field_note": "Draft HE localization pending native pass. Make forge steps readable as heat, pressure, wait and risk.",
           "terminal": "Draft HE localization pending native pass. FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.",
           "audio": "Draft HE localization pending native pass. The moon is the furnace. The player is only allowed to borrow it.",
           "in_game_wiki": "Draft HE localization pending native pass. Vent forge steps turn hard-sci-fi resource lore into future crafting beats without simulating chemistry.",
-          "external_site": "Draft HE localization pending native pass. Vent Forge Process Steps defines the site/wiki and in-game crafting fantasy."
+          "external_site": "Draft HE localization pending native pass. Vent Forge Process Steps describe the industrial fantasy behind HECTON-8 crafting: heat, pressure, custody, and debt turned into usable parts."
         },
         "pt_BR": {
-          "title": "Vent Forge Process Steps",
+          "title": "Draft PT localization pending native pass. Vent Forge Process Steps",
           "scanner": "Draft PT localization pending native pass. Vent forging should feel like using the planet against itself.",
           "field_note": "Draft PT localization pending native pass. Make forge steps readable as heat, pressure, wait and risk.",
           "terminal": "Draft PT localization pending native pass. FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.",
           "audio": "Draft PT localization pending native pass. The moon is the furnace. The player is only allowed to borrow it.",
           "in_game_wiki": "Draft PT localization pending native pass. Vent forge steps turn hard-sci-fi resource lore into future crafting beats without simulating chemistry.",
-          "external_site": "Draft PT localization pending native pass. Vent Forge Process Steps defines the site/wiki and in-game crafting fantasy."
+          "external_site": "Draft PT localization pending native pass. Vent Forge Process Steps describe the industrial fantasy behind HECTON-8 crafting: heat, pressure, custody, and debt turned into usable parts."
         },
         "nl_NL": {
-          "title": "Vent Forge Process Steps",
+          "title": "Draft NL localization pending native pass. Vent Forge Process Steps",
           "scanner": "Draft NL localization pending native pass. Vent forging should feel like using the planet against itself.",
           "field_note": "Draft NL localization pending native pass. Make forge steps readable as heat, pressure, wait and risk.",
           "terminal": "Draft NL localization pending native pass. FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.",
           "audio": "Draft NL localization pending native pass. The moon is the furnace. The player is only allowed to borrow it.",
           "in_game_wiki": "Draft NL localization pending native pass. Vent forge steps turn hard-sci-fi resource lore into future crafting beats without simulating chemistry.",
-          "external_site": "Draft NL localization pending native pass. Vent Forge Process Steps defines the site/wiki and in-game crafting fantasy."
+          "external_site": "Draft NL localization pending native pass. Vent Forge Process Steps describe the industrial fantasy behind HECTON-8 crafting: heat, pressure, custody, and debt turned into usable parts."
         }
       }
     },

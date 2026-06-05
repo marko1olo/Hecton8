@@ -116,32 +116,6 @@ namespace Hecton8.Visor
                 return _hasReadableBuffer;
             }
 
-            public bool DrainPendingVisualSync()
-            {
-                PromoteStagedUpload();
-                if (!DynamicDecalVaultRuntime.TryDrainPendingVisualSync(out DynamicDecalFrameStats stats))
-                    return _hasReadableBuffer;
-
-                _lastFrameStats = stats;
-                _hasLastFrameStats = true;
-                if (stats.UploadCount > 0)
-                    UploadDecalBuffer(in stats);
-                else if (stats.ActiveCount <= 0)
-                {
-                    _hasReadableBuffer = false;
-                    _readCount = 0;
-                    _hasStagedBuffer = false;
-                    _stagedCount = 0;
-                }
-
-                return _hasReadableBuffer;
-            }
-
-            public void ForceCompletePendingVisualSync()
-            {
-                DynamicDecalVaultRuntime.ForceCompletePendingVisualSync(out _);
-            }
-
             public void PublishStagedUpload()
             {
                 PromoteStagedUpload();
@@ -331,8 +305,8 @@ namespace Hecton8.Visor
                 _stagedBufferIndex = 0;
                 _stagedCount = 0;
                 _hasStagedBuffer = false;
-                _decalBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<TraumaDecalDTO>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[visor trauma capacity A] - screen-space wound double-buffer upload - owner: AGENT_1335
-                _decalBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<TraumaDecalDTO>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[visor trauma capacity B] - screen-space wound double-buffer upload - owner: AGENT_1335
+                _decalBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<TraumaDecalDTO>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[visor trauma capacity A] - screen-space wound double-buffer upload - owner: DeferredDecalPass
+                _decalBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<TraumaDecalDTO>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[visor trauma capacity B] - screen-space wound double-buffer upload - owner: DeferredDecalPass
             }
 
             private void PromoteStagedUpload()
@@ -483,8 +457,6 @@ namespace Hecton8.Visor
 
         public void LateFrameTick()
         {
-            _pass?.DrainPendingVisualSync();
-
             if (!_hasPendingVisualSyncCamera || _pass == null || settings == null || settings.material == null)
                 return;
 
@@ -498,7 +470,6 @@ namespace Hecton8.Visor
 
         protected override void Dispose(bool disposing)
         {
-            _pass?.ForceCompletePendingVisualSync();
             TryUnregisterLateFrame();
             TryUnregisterHotSwapListener();
             _pass?.Dispose();

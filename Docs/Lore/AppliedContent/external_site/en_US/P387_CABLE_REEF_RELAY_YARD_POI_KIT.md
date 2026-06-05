@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ Do not strip all growth. Some of it is carrying your signal.
 
 ## Field Note
 
-Use for cable reef route, relay component, scanner stages and art brief.
+POI evidence kit: Cable Reef Relay Yard links route repair, relay components, scanner stages, and visible industrial reef damage.
 
 <!-- External Site; generated from P387_CABLE_REEF_RELAY_YARD_POI_KIT/en_US. -->

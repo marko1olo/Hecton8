@@ -10,21 +10,21 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Правила art brief release gate
+# Evidence Image Release Rules
 
-Правила art brief release gate держат wiki/site imagery привязанными к HECTON-8 evidence taste.
+Evidence Image Release Rules keep imagery tied to route, tool, ledger, pressure state, creature evidence, moon, or ship context.
 
 ## Scanner
 
-Изображение release-ready только если показывает evidence object, route, tool или pressure state.
+An image earns release only when it shows evidence object, route, tool, creature sign, or pressure state.
 
 ## Terminal
 
-ART GATE: без декоративного generic sci-fi. Image показывает route, tool, ledger, pressure state, creature evidence или public-safe moon/ship context.
+IMAGE GATE: no decorative generic sci-fi. Image must expose route, tool, ledger, pressure state, creature evidence, or public-safe moon and ship context.
 
 ## Audio
 
@@ -32,6 +32,6 @@ Pretty не proof artifact.
 
 ## Field Note
 
-Каждый art brief требует spoiler tier, primary evidence object, low/mid/high/ultra note и crop-safe text boundary.
+Every image brief needs spoiler tier, primary evidence object, scalable presentation note, and crop-safe text boundary.
 
 <!-- In-Game Wiki; generated from P219_ART_BRIEF_RELEASE_GATE_RULES/ru_RU. -->

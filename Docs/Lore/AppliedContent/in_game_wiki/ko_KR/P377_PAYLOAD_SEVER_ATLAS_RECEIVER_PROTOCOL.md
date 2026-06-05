@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ If this is mercy, it still leaves a body.
 
 ## Field Note
 
-Use for factory-temple threshold and final severance UI.
+Receiver record: severance changes Atlas, but the evidence can read as mercy, theft, murder, or liberation.
 
 <!-- In-Game Wiki; generated from P377_PAYLOAD_SEVER_ATLAS_RECEIVER_PROTOCOL/ko_KR. -->

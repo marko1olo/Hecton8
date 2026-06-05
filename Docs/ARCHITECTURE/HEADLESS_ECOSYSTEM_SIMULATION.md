@@ -2,6 +2,8 @@
 
 Date: 2026-05-07
 
+Owner domain: ecosystem/headless simulation
+
 Status: PENDING VERIFICATION
 
 ## Source Anchors

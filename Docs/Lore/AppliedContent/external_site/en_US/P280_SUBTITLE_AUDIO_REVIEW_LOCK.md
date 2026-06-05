@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
-# Subtitle Audio Gate
+# Subtitle And Audio Timing Contract
 
-Subtitle Audio Review Lock explains how HECTON-8 keeps translated audio useful without turning it into chatter.
+HECTON-8 subtitles are treated as instruments: they identify who or what speaks, stay readable during pressure, and do not turn hazards into chatter.
 
 ## Scanner
 
@@ -24,7 +24,7 @@ A caption can spoil more than a voice.
 
 ## Terminal
 
-SUBTITLE REVIEW: survival warnings first, flavor last, no source-less omniscience.
+Survival warnings take priority over flavor. No threat line appears without a sensor, voice, or visible source.
 
 ## Audio
 
@@ -32,6 +32,6 @@ If the player cannot act on it, keep it quiet.
 
 ## Field Note
 
-Review gate: speaker/source tag, max line length, alarm priority, sensor justification, censor tier and audio timing.
+Check source labels, line length, alarm priority, sensor justification, censor tier, and audio timing.
 
 <!-- External Site; generated from P280_SUBTITLE_AUDIO_REVIEW_LOCK/en_US. -->

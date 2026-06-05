@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ The ship is not fast by magic. It is fast because half the route is machinery yo
 
 ## Field Note
 
-Use for ship technology article and route UI context.
+Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year.
 
 <!-- External Site; generated from P342_BEAM_SAIL_AND_PELLET_LANE/id_ID. -->

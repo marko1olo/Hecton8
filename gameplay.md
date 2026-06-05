@@ -1,6 +1,7 @@
 # HECTON-8 Gameplay Bible
 
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
+Evidence class: STATIC_DOC
 Scope: player verbs, survival loop, salvage, pressure, oxygen, tools, construction, progression, failure, mission flow, and systemic gameplay taste.
 
 ## 0. Prime Gameplay Law
@@ -34,6 +35,10 @@ The main loop is:
 
 The player must bring back a physical consequence: opened door, drained room, repaired pump, recovered name, broken tool, changed route, new pressure scar, or black-box clue. Pure resource pickup is weak.
 
+The first product-facing loop is semi-open and visually compelling. It begins from a damaged safe anchor, opens into beautiful shallow water with unease nearby, lets the player look around when oxygen and local safety allow it, then proves oxygen/depth pressure, resource/tool use, craft/repair/build, hazard response, and save/load.
+
+Copper Wire may be one resource chain inside this loop, but Copper Wire alone is not the first-20-minutes identity.
+
 ## 2. Survival Resources
 
 Survival resources are decision pressure, not UI bars:
@@ -46,6 +51,8 @@ Survival resources are decision pressure, not UI bars:
 - Inventory mass/volume: extraction fatigue, tool choice, salvage trade.
 
 Every resource must have a visible or audible world consequence. Hidden spreadsheet drain is rejected.
+
+Oxygen uses the Subnautica-like readability model: a clear reserve, route planning, upgrades, and physical extension routes such as better tanks, hoses/tethers from a ship or base, or other credible expedition support. The player can die quickly if they ignore oxygen.
 
 ## 3. Verbs
 
@@ -96,7 +103,7 @@ Reward text without world change is rejected.
 
 ## 6. Construction And Base Systems
 
-Construction is survival infrastructure, not cozy decoration.
+Construction is survival infrastructure first, but cozy safe rooms and beautiful player bases are allowed when pressure, oxygen, power, maintenance, and industrial material logic remain visible.
 
 Good construction:
 
@@ -141,6 +148,8 @@ Failure must leave evidence:
 - audible memory.
 
 Death/retry without evidence is cheap. Failure should teach the physical system.
+
+Ordinary death may respawn the player at a base or safe anchor and drop carried resources in the world. Core tools remain with the player unless a special authored event explicitly removes them. This supports punishment without destroying baseline agency.
 
 ## 9. Continuous Quality Scaling
 

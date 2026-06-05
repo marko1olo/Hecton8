@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Окна Aegir
+# Aegir Window Bands
 
-Локальный трафик Aegir управляется узкими transfer bands вокруг radiation, eclipse и relay geometry.
+Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.
 
 ## Scanner
 
-Локальная полоса: подъем ждет окон часы-дни.
+Local band: ascent waits on hours-to-days windows, not instant rescue.
 
 ## Terminal
 
-WINDOW BAND. Заслон, затмение, реле, шторм, фаза и право должны сойтись.
+WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.
 
 ## Audio
 
-Carrier может тебя слышать и все равно быть не в том небе.
+The carrier can hear you and still be in the wrong sky.
 
 ## Field Note
 
-Для Black Keel timing UI, in-game wiki и spoiler-light страницы системы.
+Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints.
 
 <!-- External Site; generated from P422_AEGIR_LOCAL_WINDOW_BAND_TABLE/ru_RU. -->

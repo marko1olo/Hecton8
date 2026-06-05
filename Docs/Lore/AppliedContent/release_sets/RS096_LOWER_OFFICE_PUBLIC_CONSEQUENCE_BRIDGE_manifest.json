@@ -1,0 +1,28 @@
+{
+    "schema":  "H8.APPLIED_LORE_RELEASE_SET.V0",
+    "release_set_id":  "RS096_LOWER_OFFICE_PUBLIC_CONSEQUENCE_BRIDGE",
+    "status":  "canonical_source_candidate_pending_controller_review_and_downstream_wiring",
+    "packets":  [
+                    "P480_CONTRACT_CONTINUITY_DESK_RECOVERY_LANGUAGE_BRIDGE",
+                    "P481_PACKET_NOTARY_INTERFACE_WITNESS_HASH_BRIDGE",
+                    "P482_QUARANTINE_REVIEW_GATE_DELAY_BRIDGE",
+                    "P483_ASSET_SILENCE_BOARD_SUPPRESSION_BRIDGE",
+                    "P484_PUBLIC_LEDGER_RELEASE_GATE_BRIDGE",
+                    "P485_CORPORATE_QUARANTINE_HOLD_BRIDGE",
+                    "P486_MATERIAL_PAYOUT_CLAIM_CONVERSION_BRIDGE",
+                    "P487_PARTIAL_RETURN_CONTRACT_DEBRIEF_BRIDGE"
+                ],
+    "authoring_packet_sources":  [
+                                     "Docs/Lore/AppliedContent/production_packets/P480_CONTRACT_CONTINUITY_DESK_RECOVERY_LANGUAGE_BRIDGE.production.md",
+                                     "Docs/Lore/AppliedContent/production_packets/P481_PACKET_NOTARY_INTERFACE_WITNESS_HASH_BRIDGE.production.md",
+                                     "Docs/Lore/AppliedContent/production_packets/P482_QUARANTINE_REVIEW_GATE_DELAY_BRIDGE.production.md",
+                                     "Docs/Lore/AppliedContent/production_packets/P483_ASSET_SILENCE_BOARD_SUPPRESSION_BRIDGE.production.md",
+                                     "Docs/Lore/AppliedContent/production_packets/P484_PUBLIC_LEDGER_RELEASE_GATE_BRIDGE.production.md",
+                                     "Docs/Lore/AppliedContent/production_packets/P485_CORPORATE_QUARANTINE_HOLD_BRIDGE.production.md",
+                                     "Docs/Lore/AppliedContent/production_packets/P486_MATERIAL_PAYOUT_CLAIM_CONVERSION_BRIDGE.production.md",
+                                     "Docs/Lore/AppliedContent/production_packets/P487_PARTIAL_RETURN_CONTRACT_DEBRIEF_BRIDGE.production.md"
+                                 ],
+    "canonical_importer_ready":  false,
+    "runtime_ready":  false,
+    "evidence_class":  "STATIC_SOURCE"
+}

@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -28,7 +28,7 @@ TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, 
 
 ## Audio
 
-Pain is not proof until the route explains it.
+Pain is not proof until the route bears the mark.
 
 ## Field Note
 

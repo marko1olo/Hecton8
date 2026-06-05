@@ -4,6 +4,8 @@ Date: 2026-05-07
 
 Status: PENDING VERIFICATION
 
+Owner domain: drones / fleet command protocol
+
 ## 2026-05-19 SHINOBU_128 Runtime Boundary
 
 - Operational cap is 500 drones; native storage is 512 slots to keep 64-wide job batches and GPU buffers aligned.

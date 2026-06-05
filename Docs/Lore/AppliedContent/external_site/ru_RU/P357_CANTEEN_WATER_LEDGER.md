@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Canteen water ledger
+# Canteen Water Ledger
 
-Human layer HECTON-8 строится на mundane systems under pressure: ledgers, tokens and shifts.
+HECTON-8 makes catastrophe believable through ordinary systems under pressure: water ledgers, canteen tokens and shift accountability.
 
 ## Scanner
 
-Water ledger recovered. Колония считала drinkable water как labor infrastructure.
+Water ledger recovered. Drinkable water was assigned like tool custody.
 
 ## Terminal
 
-CANTEEN LEDGER: шесть missing tokens, два medical overrides, одна pump-room correction. Обычные числа - evidence.
+CANTEEN LEDGER: six missing tokens; two medical overrides; one pump-room correction; ration dispute routed to shift lead after tone 2.
 
 ## Audio
 
-Катастрофа верится лучше, когда последний спор был о water tokens.
+The last argument was about water tokens.
 
 ## Field Note
 
-Для early/mid colony props.
+Six missing tokens, two medical overrides, one pump-room correction. The argument in the margin is about cups, not the end of the world.
 
 <!-- External Site; generated from P357_CANTEEN_WATER_LEDGER/ru_RU. -->

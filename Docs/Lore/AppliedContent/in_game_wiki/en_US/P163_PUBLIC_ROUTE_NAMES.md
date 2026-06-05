@@ -10,13 +10,13 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Public Route Names
 
-Public route names give contracts, map UI, cargo records and site articles consistent names without forcing the player to study a full atlas.
+Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.
 
 ## Scanner
 

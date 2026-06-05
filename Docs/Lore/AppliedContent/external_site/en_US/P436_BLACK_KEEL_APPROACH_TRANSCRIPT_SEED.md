@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
-# Black Keel Approach Transcript Seed
+# Black Keel Approach Transcript
 
-Opening audio should make the carrier useful, cold and constrained, not heroic.
+The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.
 
 ## Scanner
 
-Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.
+Recovered carrier audio confirms paid descent, conditional return, four-second lag and required proof packet.
 
 ## Terminal
 
-TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.
+CARRIER TRANSCRIPT BK-APP-01: lag 4.0s; packet loss 18%; descent billed; return conditional on receiver window, health, mass and proof.
 
 ## Audio
 
-Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.
+Black Keel tender to claimant. Lag four seconds. Descent billed. Return not guaranteed. Send health, mass, proof.
 
 ## Field Note
 
-Use for VO script, caption article and first-hour trailer-safe excerpt.
+Claim-tender buffer, clipped by storm carrier. The speaker gives route facts and refuses to promise rescue.
 
 <!-- External Site; generated from P436_BLACK_KEEL_APPROACH_TRANSCRIPT_SEED/en_US. -->

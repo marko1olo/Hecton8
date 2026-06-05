@@ -1,0 +1,709 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS101_COUNTER_INDEX_ALIAS_HOLD_BRIDGE",
+  "status": "canonical_source_candidate_pending_controller_review_and_downstream_wiring",
+  "evidence_class": "STATIC_SOURCE",
+  "runtime_contract": {
+    "authoring_only": true,
+    "runtime_reads_markdown": false,
+    "runtime_ready": false,
+    "native_localization_ready": false,
+    "data_monolith_ready": false,
+    "h8bin_ready": false,
+    "unity_placement_ready": false,
+    "generated_page_ready": false,
+    "publication_ready": false
+  },
+  "packets": [
+    {
+      "packet_id": "P503_MARAUDER_COUNTER_INDEX_NOTE_BRIDGE",
+      "release_set_id": "RS101_COUNTER_INDEX_ALIAS_HOLD_BRIDGE",
+      "article_id": "applied_lore.marauder_counter_index_note_bridge",
+      "title_key": "LORE_EVIDENCE_MARAUDER_COUNTER_INDEX_NOTE_BRIDGE_TITLE",
+      "status": "source_candidate_pending_controller_review_and_downstream_wiring",
+      "canon_owner": [
+        "Docs/Lore/Canon_Locks.md",
+        "Docs/Lore/Lore_Bible.md",
+        "Docs/Lore/Lore_Content_System.md",
+        "Docs/Lore/Lore_Localization_Model.md",
+        "Docs/Lore/Website_Publication_Map.md"
+      ],
+      "runtime_contract": {
+        "authoring_only": true,
+        "runtime_reads_markdown": false,
+        "runtime_ready": false,
+        "native_localization_ready": false,
+        "data_monolith_ready": false,
+        "h8bin_ready": false,
+        "unity_placement_ready": false,
+        "generated_page_ready": false,
+        "publication_ready": false
+      },
+      "surfaces": [
+        "website_article",
+        "wiki_article",
+        "pda_codex",
+        "scanner_entry",
+        "terminal_note",
+        "evidence_caption",
+        "spoiler_policy",
+        "string_pool_key"
+      ],
+      "unlock": {
+        "primary": "future counter-index, alias register, and double-hold evidence bridge after packet-specific proof gate",
+        "secondary": "future scanner, terminal, PDA, evidence-caption, website, wiki, and string-pool extraction lanes",
+        "poi_tags": [
+          "marauder_counter_index",
+          "payload_alias",
+          "quarantine_hold",
+          "public_archive"
+        ],
+        "biome_tags": [
+          "not_biome_bound"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "website_article": "Marauder counter-indexes grew because public evidence indexes are never neutral once the evidence becomes searchable. A clean public category helps readers. It also helps brokers, insurers, bounty crews, and Deep Reach offices find the same fragment. The counter-index answers with physical route marks: where the object was touched, which custody stamp survived, which witness hash remained stable, and which public label looked too convenient. The counter-index is not a verdict. It is a refusal to let the public shelf become the only map. When a public index says \"ledger,\" the counter-index asks who paid for the ledger to stay clean. When the index says \"quarantine,\" it asks who benefited from the delay. When the index says \"claimant-safe,\" it asks whether the missing detail protected a person or an office.",
+          "wiki_article": "Marauder counter-index: a private or field-side index that preserves physical route marks beside public category labels. It is used to resist cleanup bids, receiver ambiguity, claimant-safe omissions, and spoiler-safe public grouping. Counter-index entries must remain qualified because Marauder suspicion is evidence pressure, not final proof.",
+          "pda_codex": "Marauder note: do not let the clean shelf decide the route. Use public index labels to find the packet family, then follow the object, custody stamp, witness hash, and damage marks. If the public label is too clean, write the counter-label beside it and keep moving.",
+          "scanner_entry": "Counter-index mark detected. Public category label and Marauder route note disagree. Confidence: partial. Required next proof: object custody, witness hash, cleanup bid, or terminal annotation.",
+          "terminal_note": "MARAUDER COUNTER-INDEX NOTE Public label found. Counter-label added. Do not erase either line. The index finds the shelf. The counter-index tests the route. Action: preserve both labels until object proof resolves the conflict.",
+          "evidence_caption": "Counter-index card. A Marauder route note disputes the public shelf label. This is evidence of contested handling, not proof of final truth.",
+          "spoiler_policy": "Counter-index language may appear early. Exact private route, final receiver, protected claimant, Atlas consequence, and legal result stay masked until later proof gates.",
+          "title": "Marauder Counter-Index Note",
+          "locale_status": "source_authority",
+          "string_pool_key": "LORE_EVIDENCE_MARAUDER_COUNTER_INDEX_NOTE_BRIDGE_en_US_PRIMARY"
+        },
+        "ar_SA": {
+          "website_article": "يحتفظ فهرس مارودر المضاد بوسم مسار مادي بجانب وسم الأرشيف العام. فائدته أن الفئات النظيفة قد ترشد القراء والمفترسين في الوقت نفسه. الفهرس المضاد هو شك مع علامة مسار، وليس حكما. اتبع ختم الحيازة وضرر الجسم وبصمة الشاهد وضغط التنظيف وتعليق الطرفية قبل اختيار الوسم الذي يحمل الدليل.",
+          "wiki_article": "يحتفظ فهرس مارودر المضاد بوسم مسار مادي بجانب وسم الأرشيف العام. فائدته أن الفئات النظيفة قد ترشد القراء والمفترسين في الوقت نفسه. الفهرس المضاد هو شك مع علامة مسار، وليس حكما. اتبع ختم الحيازة وضرر الجسم وبصمة الشاهد وضغط التنظيف وتعليق الطرفية قبل اختيار الوسم الذي يحمل الدليل.",
+          "pda_codex": "يحتفظ فهرس مارودر المضاد بوسم مسار مادي بجانب وسم الأرشيف العام. فائدته أن الفئات النظيفة قد ترشد القراء والمفترسين في الوقت نفسه. الفهرس المضاد هو شك مع علامة مسار، وليس حكما. اتبع ختم الحيازة وضرر الجسم وبصمة الشاهد وضغط التنظيف وتعليق الطرفية قبل اختيار الوسم الذي يحمل الدليل.",
+          "scanner_entry": "يحتفظ فهرس مارودر المضاد بوسم مسار مادي بجانب وسم الأرشيف العام. فائدته أن الفئات النظيفة قد ترشد القراء والمفترسين في الوقت نفسه. الفهرس المضاد هو شك مع علامة مسار، وليس حكما. اتبع ختم الحيازة وضرر الجسم وبصمة الشاهد وضغط التنظيف وتعليق الطرفية قبل اختيار الوسم الذي يحمل الدليل.",
+          "terminal_note": "يحتفظ فهرس مارودر المضاد بوسم مسار مادي بجانب وسم الأرشيف العام. فائدته أن الفئات النظيفة قد ترشد القراء والمفترسين في الوقت نفسه. الفهرس المضاد هو شك مع علامة مسار، وليس حكما. اتبع ختم الحيازة وضرر الجسم وبصمة الشاهد وضغط التنظيف وتعليق الطرفية قبل اختيار الوسم الذي يحمل الدليل.",
+          "evidence_caption": "يحتفظ فهرس مارودر المضاد بوسم مسار مادي بجانب وسم الأرشيف العام. فائدته أن الفئات النظيفة قد ترشد القراء والمفترسين في الوقت نفسه. الفهرس المضاد هو شك مع علامة مسار، وليس حكما. اتبع ختم الحيازة وضرر الجسم وبصمة الشاهد وضغط التنظيف وتعليق الطرفية قبل اختيار الوسم الذي يحمل الدليل.",
+          "spoiler_policy": "يحتفظ فهرس مارودر المضاد بوسم مسار مادي بجانب وسم الأرشيف العام. فائدته أن الفئات النظيفة قد ترشد القراء والمفترسين في الوقت نفسه. الفهرس المضاد هو شك مع علامة مسار، وليس حكما. اتبع ختم الحيازة وضرر الجسم وبصمة الشاهد وضغط التنظيف وتعليق الطرفية قبل اختيار الوسم الذي يحمل الدليل.",
+          "title": "Marauder Counter-Index Note",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_MARAUDER_COUNTER_INDEX_NOTE_BRIDGE_ar_SA_PRIMARY"
+        },
+        "de_DE": {
+          "website_article": "Ein Marauder-Gegenindex haelt ein physisches Routenlabel neben dem oeffentlichen Archivlabel. Saubere Kategorien koennen Leser und Jaeger zugleich fuehren. Der Gegenindex ist Verdacht mit Routenmarke, kein Urteil. Folge Verwahrungsstempel, Objektschaden, Zeugenhash, Cleanup-Druck und Terminalnotiz, bevor du entscheidest, welches Label den Beweis traegt.",
+          "wiki_article": "Ein Marauder-Gegenindex haelt ein physisches Routenlabel neben dem oeffentlichen Archivlabel. Saubere Kategorien koennen Leser und Jaeger zugleich fuehren. Der Gegenindex ist Verdacht mit Routenmarke, kein Urteil. Folge Verwahrungsstempel, Objektschaden, Zeugenhash, Cleanup-Druck und Terminalnotiz, bevor du entscheidest, welches Label den Beweis traegt.",
+          "pda_codex": "Ein Marauder-Gegenindex haelt ein physisches Routenlabel neben dem oeffentlichen Archivlabel. Saubere Kategorien koennen Leser und Jaeger zugleich fuehren. Der Gegenindex ist Verdacht mit Routenmarke, kein Urteil. Folge Verwahrungsstempel, Objektschaden, Zeugenhash, Cleanup-Druck und Terminalnotiz, bevor du entscheidest, welches Label den Beweis traegt.",
+          "scanner_entry": "Ein Marauder-Gegenindex haelt ein physisches Routenlabel neben dem oeffentlichen Archivlabel. Saubere Kategorien koennen Leser und Jaeger zugleich fuehren. Der Gegenindex ist Verdacht mit Routenmarke, kein Urteil. Folge Verwahrungsstempel, Objektschaden, Zeugenhash, Cleanup-Druck und Terminalnotiz, bevor du entscheidest, welches Label den Beweis traegt.",
+          "terminal_note": "Ein Marauder-Gegenindex haelt ein physisches Routenlabel neben dem oeffentlichen Archivlabel. Saubere Kategorien koennen Leser und Jaeger zugleich fuehren. Der Gegenindex ist Verdacht mit Routenmarke, kein Urteil. Folge Verwahrungsstempel, Objektschaden, Zeugenhash, Cleanup-Druck und Terminalnotiz, bevor du entscheidest, welches Label den Beweis traegt.",
+          "evidence_caption": "Ein Marauder-Gegenindex haelt ein physisches Routenlabel neben dem oeffentlichen Archivlabel. Saubere Kategorien koennen Leser und Jaeger zugleich fuehren. Der Gegenindex ist Verdacht mit Routenmarke, kein Urteil. Folge Verwahrungsstempel, Objektschaden, Zeugenhash, Cleanup-Druck und Terminalnotiz, bevor du entscheidest, welches Label den Beweis traegt.",
+          "spoiler_policy": "Ein Marauder-Gegenindex haelt ein physisches Routenlabel neben dem oeffentlichen Archivlabel. Saubere Kategorien koennen Leser und Jaeger zugleich fuehren. Der Gegenindex ist Verdacht mit Routenmarke, kein Urteil. Folge Verwahrungsstempel, Objektschaden, Zeugenhash, Cleanup-Druck und Terminalnotiz, bevor du entscheidest, welches Label den Beweis traegt.",
+          "title": "Marauder Counter-Index Note",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_MARAUDER_COUNTER_INDEX_NOTE_BRIDGE_de_DE_PRIMARY"
+        },
+        "es_ES": {
+          "website_article": "Un contraindice Marauder conserva una etiqueta de ruta fisica junto a la etiqueta del archivo publico. Es util porque las categorias limpias pueden guiar a lectores y depredadores a la vez. El contraindice es sospecha con marca de ruta, no veredicto. Sigue sello de custodia, dano del objeto, hash testigo, presion de limpieza y nota de terminal antes de elegir la etiqueta.",
+          "wiki_article": "Un contraindice Marauder conserva una etiqueta de ruta fisica junto a la etiqueta del archivo publico. Es util porque las categorias limpias pueden guiar a lectores y depredadores a la vez. El contraindice es sospecha con marca de ruta, no veredicto. Sigue sello de custodia, dano del objeto, hash testigo, presion de limpieza y nota de terminal antes de elegir la etiqueta.",
+          "pda_codex": "Un contraindice Marauder conserva una etiqueta de ruta fisica junto a la etiqueta del archivo publico. Es util porque las categorias limpias pueden guiar a lectores y depredadores a la vez. El contraindice es sospecha con marca de ruta, no veredicto. Sigue sello de custodia, dano del objeto, hash testigo, presion de limpieza y nota de terminal antes de elegir la etiqueta.",
+          "scanner_entry": "Un contraindice Marauder conserva una etiqueta de ruta fisica junto a la etiqueta del archivo publico. Es util porque las categorias limpias pueden guiar a lectores y depredadores a la vez. El contraindice es sospecha con marca de ruta, no veredicto. Sigue sello de custodia, dano del objeto, hash testigo, presion de limpieza y nota de terminal antes de elegir la etiqueta.",
+          "terminal_note": "Un contraindice Marauder conserva una etiqueta de ruta fisica junto a la etiqueta del archivo publico. Es util porque las categorias limpias pueden guiar a lectores y depredadores a la vez. El contraindice es sospecha con marca de ruta, no veredicto. Sigue sello de custodia, dano del objeto, hash testigo, presion de limpieza y nota de terminal antes de elegir la etiqueta.",
+          "evidence_caption": "Un contraindice Marauder conserva una etiqueta de ruta fisica junto a la etiqueta del archivo publico. Es util porque las categorias limpias pueden guiar a lectores y depredadores a la vez. El contraindice es sospecha con marca de ruta, no veredicto. Sigue sello de custodia, dano del objeto, hash testigo, presion de limpieza y nota de terminal antes de elegir la etiqueta.",
+          "spoiler_policy": "Un contraindice Marauder conserva una etiqueta de ruta fisica junto a la etiqueta del archivo publico. Es util porque las categorias limpias pueden guiar a lectores y depredadores a la vez. El contraindice es sospecha con marca de ruta, no veredicto. Sigue sello de custodia, dano del objeto, hash testigo, presion de limpieza y nota de terminal antes de elegir la etiqueta.",
+          "title": "Marauder Counter-Index Note",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_MARAUDER_COUNTER_INDEX_NOTE_BRIDGE_es_ES_PRIMARY"
+        },
+        "fr_FR": {
+          "website_article": "Un contre-index Marauder garde une etiquette de route physique a cote de l'etiquette d'archive publique. Les categories propres peuvent guider les lecteurs et les predateurs en meme temps. Le contre-index est un soupcon avec marque de route, pas un verdict. Suivez cachet de garde, degat de l'objet, hash temoin, pression de nettoyage et note terminale avant de choisir l'etiquette.",
+          "wiki_article": "Un contre-index Marauder garde une etiquette de route physique a cote de l'etiquette d'archive publique. Les categories propres peuvent guider les lecteurs et les predateurs en meme temps. Le contre-index est un soupcon avec marque de route, pas un verdict. Suivez cachet de garde, degat de l'objet, hash temoin, pression de nettoyage et note terminale avant de choisir l'etiquette.",
+          "pda_codex": "Un contre-index Marauder garde une etiquette de route physique a cote de l'etiquette d'archive publique. Les categories propres peuvent guider les lecteurs et les predateurs en meme temps. Le contre-index est un soupcon avec marque de route, pas un verdict. Suivez cachet de garde, degat de l'objet, hash temoin, pression de nettoyage et note terminale avant de choisir l'etiquette.",
+          "scanner_entry": "Un contre-index Marauder garde une etiquette de route physique a cote de l'etiquette d'archive publique. Les categories propres peuvent guider les lecteurs et les predateurs en meme temps. Le contre-index est un soupcon avec marque de route, pas un verdict. Suivez cachet de garde, degat de l'objet, hash temoin, pression de nettoyage et note terminale avant de choisir l'etiquette.",
+          "terminal_note": "Un contre-index Marauder garde une etiquette de route physique a cote de l'etiquette d'archive publique. Les categories propres peuvent guider les lecteurs et les predateurs en meme temps. Le contre-index est un soupcon avec marque de route, pas un verdict. Suivez cachet de garde, degat de l'objet, hash temoin, pression de nettoyage et note terminale avant de choisir l'etiquette.",
+          "evidence_caption": "Un contre-index Marauder garde une etiquette de route physique a cote de l'etiquette d'archive publique. Les categories propres peuvent guider les lecteurs et les predateurs en meme temps. Le contre-index est un soupcon avec marque de route, pas un verdict. Suivez cachet de garde, degat de l'objet, hash temoin, pression de nettoyage et note terminale avant de choisir l'etiquette.",
+          "spoiler_policy": "Un contre-index Marauder garde une etiquette de route physique a cote de l'etiquette d'archive publique. Les categories propres peuvent guider les lecteurs et les predateurs en meme temps. Le contre-index est un soupcon avec marque de route, pas un verdict. Suivez cachet de garde, degat de l'objet, hash temoin, pression de nettoyage et note terminale avant de choisir l'etiquette.",
+          "title": "Marauder Counter-Index Note",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_MARAUDER_COUNTER_INDEX_NOTE_BRIDGE_fr_FR_PRIMARY"
+        },
+        "he_IL": {
+          "website_article": "אינדקס נגדי של מארודר שומר תווית מסלול פיזית לצד תווית הארכיון הציבורי. הוא שימושי כי קטגוריות נקיות יכולות להוביל קוראים וטורפים יחד. האינדקס הנגדי הוא חשד עם סימן מסלול, לא פסק דין. עקבו אחרי חותמת משמורת, נזק החפץ, גיבוב עד, לחץ ניקוי והערת מסוף לפני בחירת התווית.",
+          "wiki_article": "אינדקס נגדי של מארודר שומר תווית מסלול פיזית לצד תווית הארכיון הציבורי. הוא שימושי כי קטגוריות נקיות יכולות להוביל קוראים וטורפים יחד. האינדקס הנגדי הוא חשד עם סימן מסלול, לא פסק דין. עקבו אחרי חותמת משמורת, נזק החפץ, גיבוב עד, לחץ ניקוי והערת מסוף לפני בחירת התווית.",
+          "pda_codex": "אינדקס נגדי של מארודר שומר תווית מסלול פיזית לצד תווית הארכיון הציבורי. הוא שימושי כי קטגוריות נקיות יכולות להוביל קוראים וטורפים יחד. האינדקס הנגדי הוא חשד עם סימן מסלול, לא פסק דין. עקבו אחרי חותמת משמורת, נזק החפץ, גיבוב עד, לחץ ניקוי והערת מסוף לפני בחירת התווית.",
+          "scanner_entry": "אינדקס נגדי של מארודר שומר תווית מסלול פיזית לצד תווית הארכיון הציבורי. הוא שימושי כי קטגוריות נקיות יכולות להוביל קוראים וטורפים יחד. האינדקס הנגדי הוא חשד עם סימן מסלול, לא פסק דין. עקבו אחרי חותמת משמורת, נזק החפץ, גיבוב עד, לחץ ניקוי והערת מסוף לפני בחירת התווית.",
+          "terminal_note": "אינדקס נגדי של מארודר שומר תווית מסלול פיזית לצד תווית הארכיון הציבורי. הוא שימושי כי קטגוריות נקיות יכולות להוביל קוראים וטורפים יחד. האינדקס הנגדי הוא חשד עם סימן מסלול, לא פסק דין. עקבו אחרי חותמת משמורת, נזק החפץ, גיבוב עד, לחץ ניקוי והערת מסוף לפני בחירת התווית.",
+          "evidence_caption": "אינדקס נגדי של מארודר שומר תווית מסלול פיזית לצד תווית הארכיון הציבורי. הוא שימושי כי קטגוריות נקיות יכולות להוביל קוראים וטורפים יחד. האינדקס הנגדי הוא חשד עם סימן מסלול, לא פסק דין. עקבו אחרי חותמת משמורת, נזק החפץ, גיבוב עד, לחץ ניקוי והערת מסוף לפני בחירת התווית.",
+          "spoiler_policy": "אינדקס נגדי של מארודר שומר תווית מסלול פיזית לצד תווית הארכיון הציבורי. הוא שימושי כי קטגוריות נקיות יכולות להוביל קוראים וטורפים יחד. האינדקס הנגדי הוא חשד עם סימן מסלול, לא פסק דין. עקבו אחרי חותמת משמורת, נזק החפץ, גיבוב עד, לחץ ניקוי והערת מסוף לפני בחירת התווית.",
+          "title": "Marauder Counter-Index Note",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_MARAUDER_COUNTER_INDEX_NOTE_BRIDGE_he_IL_PRIMARY"
+        },
+        "id_ID": {
+          "website_article": "Kontraindeks Marauder menyimpan label rute fisik di samping label arsip publik. Itu berguna karena kategori bersih dapat menuntun pembaca dan pemburu sekaligus. Kontraindeks adalah kecurigaan dengan tanda rute, bukan putusan. Ikuti cap kustodi, kerusakan objek, hash saksi, tekanan pembersihan, dan catatan terminal sebelum memilih label bukti.",
+          "wiki_article": "Kontraindeks Marauder menyimpan label rute fisik di samping label arsip publik. Itu berguna karena kategori bersih dapat menuntun pembaca dan pemburu sekaligus. Kontraindeks adalah kecurigaan dengan tanda rute, bukan putusan. Ikuti cap kustodi, kerusakan objek, hash saksi, tekanan pembersihan, dan catatan terminal sebelum memilih label bukti.",
+          "pda_codex": "Kontraindeks Marauder menyimpan label rute fisik di samping label arsip publik. Itu berguna karena kategori bersih dapat menuntun pembaca dan pemburu sekaligus. Kontraindeks adalah kecurigaan dengan tanda rute, bukan putusan. Ikuti cap kustodi, kerusakan objek, hash saksi, tekanan pembersihan, dan catatan terminal sebelum memilih label bukti.",
+          "scanner_entry": "Kontraindeks Marauder menyimpan label rute fisik di samping label arsip publik. Itu berguna karena kategori bersih dapat menuntun pembaca dan pemburu sekaligus. Kontraindeks adalah kecurigaan dengan tanda rute, bukan putusan. Ikuti cap kustodi, kerusakan objek, hash saksi, tekanan pembersihan, dan catatan terminal sebelum memilih label bukti.",
+          "terminal_note": "Kontraindeks Marauder menyimpan label rute fisik di samping label arsip publik. Itu berguna karena kategori bersih dapat menuntun pembaca dan pemburu sekaligus. Kontraindeks adalah kecurigaan dengan tanda rute, bukan putusan. Ikuti cap kustodi, kerusakan objek, hash saksi, tekanan pembersihan, dan catatan terminal sebelum memilih label bukti.",
+          "evidence_caption": "Kontraindeks Marauder menyimpan label rute fisik di samping label arsip publik. Itu berguna karena kategori bersih dapat menuntun pembaca dan pemburu sekaligus. Kontraindeks adalah kecurigaan dengan tanda rute, bukan putusan. Ikuti cap kustodi, kerusakan objek, hash saksi, tekanan pembersihan, dan catatan terminal sebelum memilih label bukti.",
+          "spoiler_policy": "Kontraindeks Marauder menyimpan label rute fisik di samping label arsip publik. Itu berguna karena kategori bersih dapat menuntun pembaca dan pemburu sekaligus. Kontraindeks adalah kecurigaan dengan tanda rute, bukan putusan. Ikuti cap kustodi, kerusakan objek, hash saksi, tekanan pembersihan, dan catatan terminal sebelum memilih label bukti.",
+          "title": "Marauder Counter-Index Note",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_MARAUDER_COUNTER_INDEX_NOTE_BRIDGE_id_ID_PRIMARY"
+        },
+        "ja_JP": {
+          "website_article": "マローダーの対抗インデックスは、公開アーカイブラベルの横に物理ルートのラベルを残す。きれいなカテゴリは読者にも捕食者にも同時に道を示すためだ。対抗インデックスはルート印を持つ疑念であり、判決ではない。保管印、物体の損傷、証人ハッシュ、清掃圧力、端末注記を追ってからラベルを判断する。",
+          "wiki_article": "マローダーの対抗インデックスは、公開アーカイブラベルの横に物理ルートのラベルを残す。きれいなカテゴリは読者にも捕食者にも同時に道を示すためだ。対抗インデックスはルート印を持つ疑念であり、判決ではない。保管印、物体の損傷、証人ハッシュ、清掃圧力、端末注記を追ってからラベルを判断する。",
+          "pda_codex": "マローダーの対抗インデックスは、公開アーカイブラベルの横に物理ルートのラベルを残す。きれいなカテゴリは読者にも捕食者にも同時に道を示すためだ。対抗インデックスはルート印を持つ疑念であり、判決ではない。保管印、物体の損傷、証人ハッシュ、清掃圧力、端末注記を追ってからラベルを判断する。",
+          "scanner_entry": "マローダーの対抗インデックスは、公開アーカイブラベルの横に物理ルートのラベルを残す。きれいなカテゴリは読者にも捕食者にも同時に道を示すためだ。対抗インデックスはルート印を持つ疑念であり、判決ではない。保管印、物体の損傷、証人ハッシュ、清掃圧力、端末注記を追ってからラベルを判断する。",
+          "terminal_note": "マローダーの対抗インデックスは、公開アーカイブラベルの横に物理ルートのラベルを残す。きれいなカテゴリは読者にも捕食者にも同時に道を示すためだ。対抗インデックスはルート印を持つ疑念であり、判決ではない。保管印、物体の損傷、証人ハッシュ、清掃圧力、端末注記を追ってからラベルを判断する。",
+          "evidence_caption": "マローダーの対抗インデックスは、公開アーカイブラベルの横に物理ルートのラベルを残す。きれいなカテゴリは読者にも捕食者にも同時に道を示すためだ。対抗インデックスはルート印を持つ疑念であり、判決ではない。保管印、物体の損傷、証人ハッシュ、清掃圧力、端末注記を追ってからラベルを判断する。",
+          "spoiler_policy": "マローダーの対抗インデックスは、公開アーカイブラベルの横に物理ルートのラベルを残す。きれいなカテゴリは読者にも捕食者にも同時に道を示すためだ。対抗インデックスはルート印を持つ疑念であり、判決ではない。保管印、物体の損傷、証人ハッシュ、清掃圧力、端末注記を追ってからラベルを判断する。",
+          "title": "Marauder Counter-Index Note",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_MARAUDER_COUNTER_INDEX_NOTE_BRIDGE_ja_JP_PRIMARY"
+        },
+        "ko_KR": {
+          "website_article": "마라우더 역색인은 공개 아카이브 라벨 옆에 물리적 경로 라벨을 남긴다. 깨끗한 분류는 독자와 약탈자를 동시에 안내할 수 있기 때문이다. 역색인은 경로 표시가 붙은 의심이지 판결이 아니다. 보관 도장, 물체 손상, 증인 해시, 정리 압박, 터미널 주석을 따라간 뒤 어느 라벨이 증거를 담는지 판단해야 한다.",
+          "wiki_article": "마라우더 역색인은 공개 아카이브 라벨 옆에 물리적 경로 라벨을 남긴다. 깨끗한 분류는 독자와 약탈자를 동시에 안내할 수 있기 때문이다. 역색인은 경로 표시가 붙은 의심이지 판결이 아니다. 보관 도장, 물체 손상, 증인 해시, 정리 압박, 터미널 주석을 따라간 뒤 어느 라벨이 증거를 담는지 판단해야 한다.",
+          "pda_codex": "마라우더 역색인은 공개 아카이브 라벨 옆에 물리적 경로 라벨을 남긴다. 깨끗한 분류는 독자와 약탈자를 동시에 안내할 수 있기 때문이다. 역색인은 경로 표시가 붙은 의심이지 판결이 아니다. 보관 도장, 물체 손상, 증인 해시, 정리 압박, 터미널 주석을 따라간 뒤 어느 라벨이 증거를 담는지 판단해야 한다.",
+          "scanner_entry": "마라우더 역색인은 공개 아카이브 라벨 옆에 물리적 경로 라벨을 남긴다. 깨끗한 분류는 독자와 약탈자를 동시에 안내할 수 있기 때문이다. 역색인은 경로 표시가 붙은 의심이지 판결이 아니다. 보관 도장, 물체 손상, 증인 해시, 정리 압박, 터미널 주석을 따라간 뒤 어느 라벨이 증거를 담는지 판단해야 한다.",
+          "terminal_note": "마라우더 역색인은 공개 아카이브 라벨 옆에 물리적 경로 라벨을 남긴다. 깨끗한 분류는 독자와 약탈자를 동시에 안내할 수 있기 때문이다. 역색인은 경로 표시가 붙은 의심이지 판결이 아니다. 보관 도장, 물체 손상, 증인 해시, 정리 압박, 터미널 주석을 따라간 뒤 어느 라벨이 증거를 담는지 판단해야 한다.",
+          "evidence_caption": "마라우더 역색인은 공개 아카이브 라벨 옆에 물리적 경로 라벨을 남긴다. 깨끗한 분류는 독자와 약탈자를 동시에 안내할 수 있기 때문이다. 역색인은 경로 표시가 붙은 의심이지 판결이 아니다. 보관 도장, 물체 손상, 증인 해시, 정리 압박, 터미널 주석을 따라간 뒤 어느 라벨이 증거를 담는지 판단해야 한다.",
+          "spoiler_policy": "마라우더 역색인은 공개 아카이브 라벨 옆에 물리적 경로 라벨을 남긴다. 깨끗한 분류는 독자와 약탈자를 동시에 안내할 수 있기 때문이다. 역색인은 경로 표시가 붙은 의심이지 판결이 아니다. 보관 도장, 물체 손상, 증인 해시, 정리 압박, 터미널 주석을 따라간 뒤 어느 라벨이 증거를 담는지 판단해야 한다.",
+          "title": "Marauder Counter-Index Note",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_MARAUDER_COUNTER_INDEX_NOTE_BRIDGE_ko_KR_PRIMARY"
+        },
+        "nl_NL": {
+          "website_article": "Een Marauder-tegenindex bewaart een fysiek routelabel naast het openbare archieflabel. Schone categorieen kunnen lezers en jagers tegelijk sturen. De tegenindex is verdenking met een routemerk, geen vonnis. Volg bewaarstempel, objectschade, getuigehash, cleanupdruk en terminalnotitie voordat je beslist welk label het bewijs draagt.",
+          "wiki_article": "Een Marauder-tegenindex bewaart een fysiek routelabel naast het openbare archieflabel. Schone categorieen kunnen lezers en jagers tegelijk sturen. De tegenindex is verdenking met een routemerk, geen vonnis. Volg bewaarstempel, objectschade, getuigehash, cleanupdruk en terminalnotitie voordat je beslist welk label het bewijs draagt.",
+          "pda_codex": "Een Marauder-tegenindex bewaart een fysiek routelabel naast het openbare archieflabel. Schone categorieen kunnen lezers en jagers tegelijk sturen. De tegenindex is verdenking met een routemerk, geen vonnis. Volg bewaarstempel, objectschade, getuigehash, cleanupdruk en terminalnotitie voordat je beslist welk label het bewijs draagt.",
+          "scanner_entry": "Een Marauder-tegenindex bewaart een fysiek routelabel naast het openbare archieflabel. Schone categorieen kunnen lezers en jagers tegelijk sturen. De tegenindex is verdenking met een routemerk, geen vonnis. Volg bewaarstempel, objectschade, getuigehash, cleanupdruk en terminalnotitie voordat je beslist welk label het bewijs draagt.",
+          "terminal_note": "Een Marauder-tegenindex bewaart een fysiek routelabel naast het openbare archieflabel. Schone categorieen kunnen lezers en jagers tegelijk sturen. De tegenindex is verdenking met een routemerk, geen vonnis. Volg bewaarstempel, objectschade, getuigehash, cleanupdruk en terminalnotitie voordat je beslist welk label het bewijs draagt.",
+          "evidence_caption": "Een Marauder-tegenindex bewaart een fysiek routelabel naast het openbare archieflabel. Schone categorieen kunnen lezers en jagers tegelijk sturen. De tegenindex is verdenking met een routemerk, geen vonnis. Volg bewaarstempel, objectschade, getuigehash, cleanupdruk en terminalnotitie voordat je beslist welk label het bewijs draagt.",
+          "spoiler_policy": "Een Marauder-tegenindex bewaart een fysiek routelabel naast het openbare archieflabel. Schone categorieen kunnen lezers en jagers tegelijk sturen. De tegenindex is verdenking met een routemerk, geen vonnis. Volg bewaarstempel, objectschade, getuigehash, cleanupdruk en terminalnotitie voordat je beslist welk label het bewijs draagt.",
+          "title": "Marauder Counter-Index Note",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_MARAUDER_COUNTER_INDEX_NOTE_BRIDGE_nl_NL_PRIMARY"
+        },
+        "pl_PL": {
+          "website_article": "Kontrindeks Marauderow trzyma fizyczna etykiete trasy obok publicznej etykiety archiwum. Czyste kategorie moga prowadzic czytelnikow i drapiezcow jednoczesnie. Kontrindeks to podejrzenie ze znakiem trasy, nie wyrok. Sprawdz pieczec depozytu, uszkodzenie obiektu, hash swiadka, presje czyszczenia i notatke terminala przed wyborem etykiety.",
+          "wiki_article": "Kontrindeks Marauderow trzyma fizyczna etykiete trasy obok publicznej etykiety archiwum. Czyste kategorie moga prowadzic czytelnikow i drapiezcow jednoczesnie. Kontrindeks to podejrzenie ze znakiem trasy, nie wyrok. Sprawdz pieczec depozytu, uszkodzenie obiektu, hash swiadka, presje czyszczenia i notatke terminala przed wyborem etykiety.",
+          "pda_codex": "Kontrindeks Marauderow trzyma fizyczna etykiete trasy obok publicznej etykiety archiwum. Czyste kategorie moga prowadzic czytelnikow i drapiezcow jednoczesnie. Kontrindeks to podejrzenie ze znakiem trasy, nie wyrok. Sprawdz pieczec depozytu, uszkodzenie obiektu, hash swiadka, presje czyszczenia i notatke terminala przed wyborem etykiety.",
+          "scanner_entry": "Kontrindeks Marauderow trzyma fizyczna etykiete trasy obok publicznej etykiety archiwum. Czyste kategorie moga prowadzic czytelnikow i drapiezcow jednoczesnie. Kontrindeks to podejrzenie ze znakiem trasy, nie wyrok. Sprawdz pieczec depozytu, uszkodzenie obiektu, hash swiadka, presje czyszczenia i notatke terminala przed wyborem etykiety.",
+          "terminal_note": "Kontrindeks Marauderow trzyma fizyczna etykiete trasy obok publicznej etykiety archiwum. Czyste kategorie moga prowadzic czytelnikow i drapiezcow jednoczesnie. Kontrindeks to podejrzenie ze znakiem trasy, nie wyrok. Sprawdz pieczec depozytu, uszkodzenie obiektu, hash swiadka, presje czyszczenia i notatke terminala przed wyborem etykiety.",
+          "evidence_caption": "Kontrindeks Marauderow trzyma fizyczna etykiete trasy obok publicznej etykiety archiwum. Czyste kategorie moga prowadzic czytelnikow i drapiezcow jednoczesnie. Kontrindeks to podejrzenie ze znakiem trasy, nie wyrok. Sprawdz pieczec depozytu, uszkodzenie obiektu, hash swiadka, presje czyszczenia i notatke terminala przed wyborem etykiety.",
+          "spoiler_policy": "Kontrindeks Marauderow trzyma fizyczna etykiete trasy obok publicznej etykiety archiwum. Czyste kategorie moga prowadzic czytelnikow i drapiezcow jednoczesnie. Kontrindeks to podejrzenie ze znakiem trasy, nie wyrok. Sprawdz pieczec depozytu, uszkodzenie obiektu, hash swiadka, presje czyszczenia i notatke terminala przed wyborem etykiety.",
+          "title": "Marauder Counter-Index Note",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_MARAUDER_COUNTER_INDEX_NOTE_BRIDGE_pl_PL_PRIMARY"
+        },
+        "pt_BR": {
+          "website_article": "Um contraindice Marauder mantem uma etiqueta de rota fisica ao lado do rotulo do arquivo publico. Categorias limpas podem guiar leitores e predadores ao mesmo tempo. O contraindice e suspeita com marca de rota, nao veredito. Siga carimbo de custodia, dano do objeto, hash de testemunha, pressao de limpeza e nota de terminal antes de escolher o rotulo.",
+          "wiki_article": "Um contraindice Marauder mantem uma etiqueta de rota fisica ao lado do rotulo do arquivo publico. Categorias limpas podem guiar leitores e predadores ao mesmo tempo. O contraindice e suspeita com marca de rota, nao veredito. Siga carimbo de custodia, dano do objeto, hash de testemunha, pressao de limpeza e nota de terminal antes de escolher o rotulo.",
+          "pda_codex": "Um contraindice Marauder mantem uma etiqueta de rota fisica ao lado do rotulo do arquivo publico. Categorias limpas podem guiar leitores e predadores ao mesmo tempo. O contraindice e suspeita com marca de rota, nao veredito. Siga carimbo de custodia, dano do objeto, hash de testemunha, pressao de limpeza e nota de terminal antes de escolher o rotulo.",
+          "scanner_entry": "Um contraindice Marauder mantem uma etiqueta de rota fisica ao lado do rotulo do arquivo publico. Categorias limpas podem guiar leitores e predadores ao mesmo tempo. O contraindice e suspeita com marca de rota, nao veredito. Siga carimbo de custodia, dano do objeto, hash de testemunha, pressao de limpeza e nota de terminal antes de escolher o rotulo.",
+          "terminal_note": "Um contraindice Marauder mantem uma etiqueta de rota fisica ao lado do rotulo do arquivo publico. Categorias limpas podem guiar leitores e predadores ao mesmo tempo. O contraindice e suspeita com marca de rota, nao veredito. Siga carimbo de custodia, dano do objeto, hash de testemunha, pressao de limpeza e nota de terminal antes de escolher o rotulo.",
+          "evidence_caption": "Um contraindice Marauder mantem uma etiqueta de rota fisica ao lado do rotulo do arquivo publico. Categorias limpas podem guiar leitores e predadores ao mesmo tempo. O contraindice e suspeita com marca de rota, nao veredito. Siga carimbo de custodia, dano do objeto, hash de testemunha, pressao de limpeza e nota de terminal antes de escolher o rotulo.",
+          "spoiler_policy": "Um contraindice Marauder mantem uma etiqueta de rota fisica ao lado do rotulo do arquivo publico. Categorias limpas podem guiar leitores e predadores ao mesmo tempo. O contraindice e suspeita com marca de rota, nao veredito. Siga carimbo de custodia, dano do objeto, hash de testemunha, pressao de limpeza e nota de terminal antes de escolher o rotulo.",
+          "title": "Marauder Counter-Index Note",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_MARAUDER_COUNTER_INDEX_NOTE_BRIDGE_pt_BR_PRIMARY"
+        },
+        "ru_RU": {
+          "website_article": "Контриндекс Marauder держит физическую метку маршрута рядом с публичной архивной меткой. Чистые категории могут вести читателей и охотников одновременно. Контриндекс - это подозрение с маршрутной отметкой, а не приговор. Проверь печать хранения, повреждение объекта, хэш свидетеля, давление очистки и терминальную пометку перед выбором метки.",
+          "wiki_article": "Контриндекс Marauder держит физическую метку маршрута рядом с публичной архивной меткой. Чистые категории могут вести читателей и охотников одновременно. Контриндекс - это подозрение с маршрутной отметкой, а не приговор. Проверь печать хранения, повреждение объекта, хэш свидетеля, давление очистки и терминальную пометку перед выбором метки.",
+          "pda_codex": "Контриндекс Marauder держит физическую метку маршрута рядом с публичной архивной меткой. Чистые категории могут вести читателей и охотников одновременно. Контриндекс - это подозрение с маршрутной отметкой, а не приговор. Проверь печать хранения, повреждение объекта, хэш свидетеля, давление очистки и терминальную пометку перед выбором метки.",
+          "scanner_entry": "Контриндекс Marauder держит физическую метку маршрута рядом с публичной архивной меткой. Чистые категории могут вести читателей и охотников одновременно. Контриндекс - это подозрение с маршрутной отметкой, а не приговор. Проверь печать хранения, повреждение объекта, хэш свидетеля, давление очистки и терминальную пометку перед выбором метки.",
+          "terminal_note": "Контриндекс Marauder держит физическую метку маршрута рядом с публичной архивной меткой. Чистые категории могут вести читателей и охотников одновременно. Контриндекс - это подозрение с маршрутной отметкой, а не приговор. Проверь печать хранения, повреждение объекта, хэш свидетеля, давление очистки и терминальную пометку перед выбором метки.",
+          "evidence_caption": "Контриндекс Marauder держит физическую метку маршрута рядом с публичной архивной меткой. Чистые категории могут вести читателей и охотников одновременно. Контриндекс - это подозрение с маршрутной отметкой, а не приговор. Проверь печать хранения, повреждение объекта, хэш свидетеля, давление очистки и терминальную пометку перед выбором метки.",
+          "spoiler_policy": "Контриндекс Marauder держит физическую метку маршрута рядом с публичной архивной меткой. Чистые категории могут вести читателей и охотников одновременно. Контриндекс - это подозрение с маршрутной отметкой, а не приговор. Проверь печать хранения, повреждение объекта, хэш свидетеля, давление очистки и терминальную пометку перед выбором метки.",
+          "title": "Marauder Counter-Index Note",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_MARAUDER_COUNTER_INDEX_NOTE_BRIDGE_ru_RU_PRIMARY"
+        },
+        "uk_UA": {
+          "website_article": "Контріндекс Marauder тримає фізичну мітку маршруту поруч із публічною архівною міткою. Чисті категорії можуть вести читачів і мисливців одночасно. Контріндекс - це підозра з маршрутною позначкою, а не вирок. Перевір печатку зберігання, пошкодження об'єкта, хеш свідка, тиск очищення і термінальну примітку перед вибором мітки.",
+          "wiki_article": "Контріндекс Marauder тримає фізичну мітку маршруту поруч із публічною архівною міткою. Чисті категорії можуть вести читачів і мисливців одночасно. Контріндекс - це підозра з маршрутною позначкою, а не вирок. Перевір печатку зберігання, пошкодження об'єкта, хеш свідка, тиск очищення і термінальну примітку перед вибором мітки.",
+          "pda_codex": "Контріндекс Marauder тримає фізичну мітку маршруту поруч із публічною архівною міткою. Чисті категорії можуть вести читачів і мисливців одночасно. Контріндекс - це підозра з маршрутною позначкою, а не вирок. Перевір печатку зберігання, пошкодження об'єкта, хеш свідка, тиск очищення і термінальну примітку перед вибором мітки.",
+          "scanner_entry": "Контріндекс Marauder тримає фізичну мітку маршруту поруч із публічною архівною міткою. Чисті категорії можуть вести читачів і мисливців одночасно. Контріндекс - це підозра з маршрутною позначкою, а не вирок. Перевір печатку зберігання, пошкодження об'єкта, хеш свідка, тиск очищення і термінальну примітку перед вибором мітки.",
+          "terminal_note": "Контріндекс Marauder тримає фізичну мітку маршруту поруч із публічною архівною міткою. Чисті категорії можуть вести читачів і мисливців одночасно. Контріндекс - це підозра з маршрутною позначкою, а не вирок. Перевір печатку зберігання, пошкодження об'єкта, хеш свідка, тиск очищення і термінальну примітку перед вибором мітки.",
+          "evidence_caption": "Контріндекс Marauder тримає фізичну мітку маршруту поруч із публічною архівною міткою. Чисті категорії можуть вести читачів і мисливців одночасно. Контріндекс - це підозра з маршрутною позначкою, а не вирок. Перевір печатку зберігання, пошкодження об'єкта, хеш свідка, тиск очищення і термінальну примітку перед вибором мітки.",
+          "spoiler_policy": "Контріндекс Marauder тримає фізичну мітку маршруту поруч із публічною архівною міткою. Чисті категорії можуть вести читачів і мисливців одночасно. Контріндекс - це підозра з маршрутною позначкою, а не вирок. Перевір печатку зберігання, пошкодження об'єкта, хеш свідка, тиск очищення і термінальну примітку перед вибором мітки.",
+          "title": "Marauder Counter-Index Note",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_MARAUDER_COUNTER_INDEX_NOTE_BRIDGE_uk_UA_PRIMARY"
+        },
+        "zh_CN": {
+          "website_article": "Marauder 反索引把实体路线标签保存在公开档案标签旁边。干净的类别可以同时引导读者和掠食者。反索引是带路线标记的怀疑，不是判决。先追踪保管印、物体损伤、见证哈希、清理压力和终端注释，再判断哪一个标签承载证据。 ## QA Notes Forbidden facts avoided: - No final receiver, exact counter-route, protected claimant, Atlas consequence, legal verdict, rescue promise, source insertion, native review, Unity placement, h8bin state, DataMonolith state, generated page state, or public deployment state. - P461-P502 were not edited by this packet. Review blockers: - Native localization review absent for non-English rows. - Source table insertion, string-pool extraction, route-card mapping, generated-page export, runtime placement, and h8bin bake are separate gated tasks.",
+          "wiki_article": "Marauder 反索引把实体路线标签保存在公开档案标签旁边。干净的类别可以同时引导读者和掠食者。反索引是带路线标记的怀疑，不是判决。先追踪保管印、物体损伤、见证哈希、清理压力和终端注释，再判断哪一个标签承载证据。 ## QA Notes Forbidden facts avoided: - No final receiver, exact counter-route, protected claimant, Atlas consequence, legal verdict, rescue promise, source insertion, native review, Unity placement, h8bin state, DataMonolith state, generated page state, or public deployment state. - P461-P502 were not edited by this packet. Review blockers: - Native localization review absent for non-English rows. - Source table insertion, string-pool extraction, route-card mapping, generated-page export, runtime placement, and h8bin bake are separate gated tasks.",
+          "pda_codex": "Marauder 反索引把实体路线标签保存在公开档案标签旁边。干净的类别可以同时引导读者和掠食者。反索引是带路线标记的怀疑，不是判决。先追踪保管印、物体损伤、见证哈希、清理压力和终端注释，再判断哪一个标签承载证据。 ## QA Notes Forbidden facts avoided: - No final receiver, exact counter-route, protected claimant, Atlas consequence, legal verdict, rescue promise, source insertion, native review, Unity placement, h8bin state, DataMonolith state, generated page state, or public deployment state. - P461-P502 were not edited by this packet. Review blockers: - Native localization review absent for non-English rows. - Source table insertion, string-pool extraction, route-card mapping, generated-page export, runtime placement, and h8bin bake are separate gated tasks.",
+          "scanner_entry": "Marauder 反索引把实体路线标签保存在公开档案标签旁边。干净的类别可以同时引导读者和掠食者。反索引是带路线标记的怀疑，不是判决。先追踪保管印、物体损伤、见证哈希、清理压力和终端注释，再判断哪一个标签承载证据。 ## QA Notes Forbidden facts avoided: - No final receiver, exact counter-route, protected claimant, Atlas consequence, legal verdict, rescue promise, source insertion, native review, Unity placement, h8bin state, DataMonolith state, generated page state, or public deployment state. - P461-P502 were not edited by this packet. Review blockers: - Native localization review absent for non-English rows. - Source table insertion, string-pool extraction, route-card mapping, generated-page export, runtime placement, and h8bin bake are separate gated tasks.",
+          "terminal_note": "Marauder 反索引把实体路线标签保存在公开档案标签旁边。干净的类别可以同时引导读者和掠食者。反索引是带路线标记的怀疑，不是判决。先追踪保管印、物体损伤、见证哈希、清理压力和终端注释，再判断哪一个标签承载证据。 ## QA Notes Forbidden facts avoided: - No final receiver, exact counter-route, protected claimant, Atlas consequence, legal verdict, rescue promise, source insertion, native review, Unity placement, h8bin state, DataMonolith state, generated page state, or public deployment state. - P461-P502 were not edited by this packet. Review blockers: - Native localization review absent for non-English rows. - Source table insertion, string-pool extraction, route-card mapping, generated-page export, runtime placement, and h8bin bake are separate gated tasks.",
+          "evidence_caption": "Marauder 反索引把实体路线标签保存在公开档案标签旁边。干净的类别可以同时引导读者和掠食者。反索引是带路线标记的怀疑，不是判决。先追踪保管印、物体损伤、见证哈希、清理压力和终端注释，再判断哪一个标签承载证据。 ## QA Notes Forbidden facts avoided: - No final receiver, exact counter-route, protected claimant, Atlas consequence, legal verdict, rescue promise, source insertion, native review, Unity placement, h8bin state, DataMonolith state, generated page state, or public deployment state. - P461-P502 were not edited by this packet. Review blockers: - Native localization review absent for non-English rows. - Source table insertion, string-pool extraction, route-card mapping, generated-page export, runtime placement, and h8bin bake are separate gated tasks.",
+          "spoiler_policy": "Marauder 反索引把实体路线标签保存在公开档案标签旁边。干净的类别可以同时引导读者和掠食者。反索引是带路线标记的怀疑，不是判决。先追踪保管印、物体损伤、见证哈希、清理压力和终端注释，再判断哪一个标签承载证据。 ## QA Notes Forbidden facts avoided: - No final receiver, exact counter-route, protected claimant, Atlas consequence, legal verdict, rescue promise, source insertion, native review, Unity placement, h8bin state, DataMonolith state, generated page state, or public deployment state. - P461-P502 were not edited by this packet. Review blockers: - Native localization review absent for non-English rows. - Source table insertion, string-pool extraction, route-card mapping, generated-page export, runtime placement, and h8bin bake are separate gated tasks.",
+          "title": "Marauder Counter-Index Note",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_MARAUDER_COUNTER_INDEX_NOTE_BRIDGE_zh_CN_PRIMARY"
+        }
+      }
+    },
+    {
+      "packet_id": "P504_PAYLOAD_ROUTE_ALIAS_REGISTER_BRIDGE",
+      "release_set_id": "RS101_COUNTER_INDEX_ALIAS_HOLD_BRIDGE",
+      "article_id": "applied_lore.payload_route_alias_register_bridge",
+      "title_key": "LORE_EVIDENCE_PAYLOAD_ROUTE_ALIAS_REGISTER_BRIDGE_TITLE",
+      "status": "source_candidate_pending_controller_review_and_downstream_wiring",
+      "canon_owner": [
+        "Docs/Lore/Canon_Locks.md",
+        "Docs/Lore/Lore_Bible.md",
+        "Docs/Lore/Lore_Content_System.md",
+        "Docs/Lore/Lore_Localization_Model.md",
+        "Docs/Lore/Website_Publication_Map.md"
+      ],
+      "runtime_contract": {
+        "authoring_only": true,
+        "runtime_reads_markdown": false,
+        "runtime_ready": false,
+        "native_localization_ready": false,
+        "data_monolith_ready": false,
+        "h8bin_ready": false,
+        "unity_placement_ready": false,
+        "generated_page_ready": false,
+        "publication_ready": false
+      },
+      "surfaces": [
+        "website_article",
+        "wiki_article",
+        "pda_codex",
+        "scanner_entry",
+        "terminal_note",
+        "evidence_caption",
+        "spoiler_policy",
+        "string_pool_key"
+      ],
+      "unlock": {
+        "primary": "future counter-index, alias register, and double-hold evidence bridge after packet-specific proof gate",
+        "secondary": "future scanner, terminal, PDA, evidence-caption, website, wiki, and string-pool extraction lanes",
+        "poi_tags": [
+          "marauder_counter_index",
+          "payload_alias",
+          "quarantine_hold",
+          "public_archive"
+        ],
+        "biome_tags": [
+          "not_biome_bound"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "website_article": "Payload route aliases appear when the public name of a route cannot carry the raw route without damage. The alias may protect coordinates, living claimants, salvage crews, or a sealed receiver. It may also protect the office that moved the payload. A useful archive keeps both names: the old route mark that touched the object and the safe route label that readers are allowed to search. Alias registers are not evidence of fiction. They are evidence that a route became dangerous to name. The next question is who benefits from the alias. If the alias hides coordinates, the protection may be legitimate. If it hides a receiver, a payment lane, or a cleanup bid, the alias becomes part of the pressure chain.",
+          "wiki_article": "Payload route alias: a safe or substitute route label used when raw route language exposes coordinates, protected parties, or liability. Alias entries should list old mark, safe label, payload class, redaction reason, and proof required for route restoration. Alias presence does not prove route falsification.",
+          "pda_codex": "Codex warning: alias register found. Do not overwrite the old route mark. Keep alias and raw mark side by side until scanner, witness hash, and terminal route note resolve which label belongs to the object.",
+          "scanner_entry": "Payload route alias detected. Old route mark and safe route label differ. Confidence: partial. Required next proof: witness hash, payload class, terminal note, quarantine stamp, or custody transfer.",
+          "terminal_note": "PAYLOAD ROUTE ALIAS REGISTER Old route mark retained. Safe route label assigned. Reason: coordinate protection / claimant protection / liability hold / office shielding. Action: preserve both names until route proof resolves alias.",
+          "evidence_caption": "Alias register strip. The payload route was renamed. The alias proves a naming conflict, not final route truth or route falsification.",
+          "spoiler_policy": "Alias language may appear early. Exact route coordinates, final receiver, payload condition, Atlas consequence, and legal result stay masked until later proof gates.",
+          "title": "Payload Route Alias Register",
+          "locale_status": "source_authority",
+          "string_pool_key": "LORE_EVIDENCE_PAYLOAD_ROUTE_ALIAS_REGISTER_BRIDGE_en_US_PRIMARY"
+        },
+        "ar_SA": {
+          "website_article": "الاسم البديل لمسار الحمولة هو وسم آمن يوضع بجانب علامة مسار أقدم. قد يحمي الإحداثيات أو المطالبين أو الطواقم أو مسارات المسؤولية. وقد يخفي أيضا المكتب الذي نقل الحمولة. الاسم البديل يثبت تعارض تسمية، لا خيال المسار. احتفظ بالعلامة القديمة والوسم الآمن وفئة الحمولة وسبب الحجب وبصمة الشاهد معا حتى يحل دليل المسار الاسم.",
+          "wiki_article": "الاسم البديل لمسار الحمولة هو وسم آمن يوضع بجانب علامة مسار أقدم. قد يحمي الإحداثيات أو المطالبين أو الطواقم أو مسارات المسؤولية. وقد يخفي أيضا المكتب الذي نقل الحمولة. الاسم البديل يثبت تعارض تسمية، لا خيال المسار. احتفظ بالعلامة القديمة والوسم الآمن وفئة الحمولة وسبب الحجب وبصمة الشاهد معا حتى يحل دليل المسار الاسم.",
+          "pda_codex": "الاسم البديل لمسار الحمولة هو وسم آمن يوضع بجانب علامة مسار أقدم. قد يحمي الإحداثيات أو المطالبين أو الطواقم أو مسارات المسؤولية. وقد يخفي أيضا المكتب الذي نقل الحمولة. الاسم البديل يثبت تعارض تسمية، لا خيال المسار. احتفظ بالعلامة القديمة والوسم الآمن وفئة الحمولة وسبب الحجب وبصمة الشاهد معا حتى يحل دليل المسار الاسم.",
+          "scanner_entry": "الاسم البديل لمسار الحمولة هو وسم آمن يوضع بجانب علامة مسار أقدم. قد يحمي الإحداثيات أو المطالبين أو الطواقم أو مسارات المسؤولية. وقد يخفي أيضا المكتب الذي نقل الحمولة. الاسم البديل يثبت تعارض تسمية، لا خيال المسار. احتفظ بالعلامة القديمة والوسم الآمن وفئة الحمولة وسبب الحجب وبصمة الشاهد معا حتى يحل دليل المسار الاسم.",
+          "terminal_note": "الاسم البديل لمسار الحمولة هو وسم آمن يوضع بجانب علامة مسار أقدم. قد يحمي الإحداثيات أو المطالبين أو الطواقم أو مسارات المسؤولية. وقد يخفي أيضا المكتب الذي نقل الحمولة. الاسم البديل يثبت تعارض تسمية، لا خيال المسار. احتفظ بالعلامة القديمة والوسم الآمن وفئة الحمولة وسبب الحجب وبصمة الشاهد معا حتى يحل دليل المسار الاسم.",
+          "evidence_caption": "الاسم البديل لمسار الحمولة هو وسم آمن يوضع بجانب علامة مسار أقدم. قد يحمي الإحداثيات أو المطالبين أو الطواقم أو مسارات المسؤولية. وقد يخفي أيضا المكتب الذي نقل الحمولة. الاسم البديل يثبت تعارض تسمية، لا خيال المسار. احتفظ بالعلامة القديمة والوسم الآمن وفئة الحمولة وسبب الحجب وبصمة الشاهد معا حتى يحل دليل المسار الاسم.",
+          "spoiler_policy": "الاسم البديل لمسار الحمولة هو وسم آمن يوضع بجانب علامة مسار أقدم. قد يحمي الإحداثيات أو المطالبين أو الطواقم أو مسارات المسؤولية. وقد يخفي أيضا المكتب الذي نقل الحمولة. الاسم البديل يثبت تعارض تسمية، لا خيال المسار. احتفظ بالعلامة القديمة والوسم الآمن وفئة الحمولة وسبب الحجب وبصمة الشاهد معا حتى يحل دليل المسار الاسم.",
+          "title": "Payload Route Alias Register",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_PAYLOAD_ROUTE_ALIAS_REGISTER_BRIDGE_ar_SA_PRIMARY"
+        },
+        "de_DE": {
+          "website_article": "Ein Payload-Routenalias ist ein sicheres Label neben einer aelteren Routenmarke. Es kann Koordinaten, Claimants, Crews oder Haftungslinien schuetzen. Es kann auch das Buero verbergen, das die Nutzlast bewegt hat. Der Alias beweist Namenskonflikt, keine Routenfiktion. Halte alte Marke, sicheres Label, Payload-Klasse, Redaktionsgrund und Zeugenhash zusammen.",
+          "wiki_article": "Ein Payload-Routenalias ist ein sicheres Label neben einer aelteren Routenmarke. Es kann Koordinaten, Claimants, Crews oder Haftungslinien schuetzen. Es kann auch das Buero verbergen, das die Nutzlast bewegt hat. Der Alias beweist Namenskonflikt, keine Routenfiktion. Halte alte Marke, sicheres Label, Payload-Klasse, Redaktionsgrund und Zeugenhash zusammen.",
+          "pda_codex": "Ein Payload-Routenalias ist ein sicheres Label neben einer aelteren Routenmarke. Es kann Koordinaten, Claimants, Crews oder Haftungslinien schuetzen. Es kann auch das Buero verbergen, das die Nutzlast bewegt hat. Der Alias beweist Namenskonflikt, keine Routenfiktion. Halte alte Marke, sicheres Label, Payload-Klasse, Redaktionsgrund und Zeugenhash zusammen.",
+          "scanner_entry": "Ein Payload-Routenalias ist ein sicheres Label neben einer aelteren Routenmarke. Es kann Koordinaten, Claimants, Crews oder Haftungslinien schuetzen. Es kann auch das Buero verbergen, das die Nutzlast bewegt hat. Der Alias beweist Namenskonflikt, keine Routenfiktion. Halte alte Marke, sicheres Label, Payload-Klasse, Redaktionsgrund und Zeugenhash zusammen.",
+          "terminal_note": "Ein Payload-Routenalias ist ein sicheres Label neben einer aelteren Routenmarke. Es kann Koordinaten, Claimants, Crews oder Haftungslinien schuetzen. Es kann auch das Buero verbergen, das die Nutzlast bewegt hat. Der Alias beweist Namenskonflikt, keine Routenfiktion. Halte alte Marke, sicheres Label, Payload-Klasse, Redaktionsgrund und Zeugenhash zusammen.",
+          "evidence_caption": "Ein Payload-Routenalias ist ein sicheres Label neben einer aelteren Routenmarke. Es kann Koordinaten, Claimants, Crews oder Haftungslinien schuetzen. Es kann auch das Buero verbergen, das die Nutzlast bewegt hat. Der Alias beweist Namenskonflikt, keine Routenfiktion. Halte alte Marke, sicheres Label, Payload-Klasse, Redaktionsgrund und Zeugenhash zusammen.",
+          "spoiler_policy": "Ein Payload-Routenalias ist ein sicheres Label neben einer aelteren Routenmarke. Es kann Koordinaten, Claimants, Crews oder Haftungslinien schuetzen. Es kann auch das Buero verbergen, das die Nutzlast bewegt hat. Der Alias beweist Namenskonflikt, keine Routenfiktion. Halte alte Marke, sicheres Label, Payload-Klasse, Redaktionsgrund und Zeugenhash zusammen.",
+          "title": "Payload Route Alias Register",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_PAYLOAD_ROUTE_ALIAS_REGISTER_BRIDGE_de_DE_PRIMARY"
+        },
+        "es_ES": {
+          "website_article": "Un alias de ruta de carga es una etiqueta segura junto a una marca de ruta anterior. Puede proteger coordenadas, reclamantes, equipos o lineas de responsabilidad. Tambien puede ocultar la oficina que movio la carga. El alias prueba un conflicto de nombre, no una ruta ficticia. Conserva marca vieja, etiqueta segura, clase de carga, razon de redaccion y hash testigo.",
+          "wiki_article": "Un alias de ruta de carga es una etiqueta segura junto a una marca de ruta anterior. Puede proteger coordenadas, reclamantes, equipos o lineas de responsabilidad. Tambien puede ocultar la oficina que movio la carga. El alias prueba un conflicto de nombre, no una ruta ficticia. Conserva marca vieja, etiqueta segura, clase de carga, razon de redaccion y hash testigo.",
+          "pda_codex": "Un alias de ruta de carga es una etiqueta segura junto a una marca de ruta anterior. Puede proteger coordenadas, reclamantes, equipos o lineas de responsabilidad. Tambien puede ocultar la oficina que movio la carga. El alias prueba un conflicto de nombre, no una ruta ficticia. Conserva marca vieja, etiqueta segura, clase de carga, razon de redaccion y hash testigo.",
+          "scanner_entry": "Un alias de ruta de carga es una etiqueta segura junto a una marca de ruta anterior. Puede proteger coordenadas, reclamantes, equipos o lineas de responsabilidad. Tambien puede ocultar la oficina que movio la carga. El alias prueba un conflicto de nombre, no una ruta ficticia. Conserva marca vieja, etiqueta segura, clase de carga, razon de redaccion y hash testigo.",
+          "terminal_note": "Un alias de ruta de carga es una etiqueta segura junto a una marca de ruta anterior. Puede proteger coordenadas, reclamantes, equipos o lineas de responsabilidad. Tambien puede ocultar la oficina que movio la carga. El alias prueba un conflicto de nombre, no una ruta ficticia. Conserva marca vieja, etiqueta segura, clase de carga, razon de redaccion y hash testigo.",
+          "evidence_caption": "Un alias de ruta de carga es una etiqueta segura junto a una marca de ruta anterior. Puede proteger coordenadas, reclamantes, equipos o lineas de responsabilidad. Tambien puede ocultar la oficina que movio la carga. El alias prueba un conflicto de nombre, no una ruta ficticia. Conserva marca vieja, etiqueta segura, clase de carga, razon de redaccion y hash testigo.",
+          "spoiler_policy": "Un alias de ruta de carga es una etiqueta segura junto a una marca de ruta anterior. Puede proteger coordenadas, reclamantes, equipos o lineas de responsabilidad. Tambien puede ocultar la oficina que movio la carga. El alias prueba un conflicto de nombre, no una ruta ficticia. Conserva marca vieja, etiqueta segura, clase de carga, razon de redaccion y hash testigo.",
+          "title": "Payload Route Alias Register",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_PAYLOAD_ROUTE_ALIAS_REGISTER_BRIDGE_es_ES_PRIMARY"
+        },
+        "fr_FR": {
+          "website_article": "Un alias de route de charge est une etiquette sure placee a cote d'une ancienne marque de route. Il peut proteger coordonnees, reclamants, equipes ou lignes de responsabilite. Il peut aussi cacher le bureau qui a deplace la charge. L'alias prouve un conflit de nom, pas une route inventee. Gardez ancienne marque, etiquette sure, classe de charge, raison de caviardage et hash temoin.",
+          "wiki_article": "Un alias de route de charge est une etiquette sure placee a cote d'une ancienne marque de route. Il peut proteger coordonnees, reclamants, equipes ou lignes de responsabilite. Il peut aussi cacher le bureau qui a deplace la charge. L'alias prouve un conflit de nom, pas une route inventee. Gardez ancienne marque, etiquette sure, classe de charge, raison de caviardage et hash temoin.",
+          "pda_codex": "Un alias de route de charge est une etiquette sure placee a cote d'une ancienne marque de route. Il peut proteger coordonnees, reclamants, equipes ou lignes de responsabilite. Il peut aussi cacher le bureau qui a deplace la charge. L'alias prouve un conflit de nom, pas une route inventee. Gardez ancienne marque, etiquette sure, classe de charge, raison de caviardage et hash temoin.",
+          "scanner_entry": "Un alias de route de charge est une etiquette sure placee a cote d'une ancienne marque de route. Il peut proteger coordonnees, reclamants, equipes ou lignes de responsabilite. Il peut aussi cacher le bureau qui a deplace la charge. L'alias prouve un conflit de nom, pas une route inventee. Gardez ancienne marque, etiquette sure, classe de charge, raison de caviardage et hash temoin.",
+          "terminal_note": "Un alias de route de charge est une etiquette sure placee a cote d'une ancienne marque de route. Il peut proteger coordonnees, reclamants, equipes ou lignes de responsabilite. Il peut aussi cacher le bureau qui a deplace la charge. L'alias prouve un conflit de nom, pas une route inventee. Gardez ancienne marque, etiquette sure, classe de charge, raison de caviardage et hash temoin.",
+          "evidence_caption": "Un alias de route de charge est une etiquette sure placee a cote d'une ancienne marque de route. Il peut proteger coordonnees, reclamants, equipes ou lignes de responsabilite. Il peut aussi cacher le bureau qui a deplace la charge. L'alias prouve un conflit de nom, pas une route inventee. Gardez ancienne marque, etiquette sure, classe de charge, raison de caviardage et hash temoin.",
+          "spoiler_policy": "Un alias de route de charge est une etiquette sure placee a cote d'une ancienne marque de route. Il peut proteger coordonnees, reclamants, equipes ou lignes de responsabilite. Il peut aussi cacher le bureau qui a deplace la charge. L'alias prouve un conflit de nom, pas une route inventee. Gardez ancienne marque, etiquette sure, classe de charge, raison de caviardage et hash temoin.",
+          "title": "Payload Route Alias Register",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_PAYLOAD_ROUTE_ALIAS_REGISTER_BRIDGE_fr_FR_PRIMARY"
+        },
+        "he_IL": {
+          "website_article": "כינוי מסלול מטען הוא תווית בטוחה שמוצבת לצד סימן מסלול ישן. הוא עשוי להגן על קואורדינטות, תובעים, צוותים או נתיבי אחריות. הוא עשוי גם להסתיר את המשרד שהזיז את המטען. הכינוי מוכיח סכסוך שם, לא מסלול בדוי. שמרו יחד את הסימן הישן, התווית הבטוחה, סוג המטען, סיבת ההסתרה וגיבוב העד.",
+          "wiki_article": "כינוי מסלול מטען הוא תווית בטוחה שמוצבת לצד סימן מסלול ישן. הוא עשוי להגן על קואורדינטות, תובעים, צוותים או נתיבי אחריות. הוא עשוי גם להסתיר את המשרד שהזיז את המטען. הכינוי מוכיח סכסוך שם, לא מסלול בדוי. שמרו יחד את הסימן הישן, התווית הבטוחה, סוג המטען, סיבת ההסתרה וגיבוב העד.",
+          "pda_codex": "כינוי מסלול מטען הוא תווית בטוחה שמוצבת לצד סימן מסלול ישן. הוא עשוי להגן על קואורדינטות, תובעים, צוותים או נתיבי אחריות. הוא עשוי גם להסתיר את המשרד שהזיז את המטען. הכינוי מוכיח סכסוך שם, לא מסלול בדוי. שמרו יחד את הסימן הישן, התווית הבטוחה, סוג המטען, סיבת ההסתרה וגיבוב העד.",
+          "scanner_entry": "כינוי מסלול מטען הוא תווית בטוחה שמוצבת לצד סימן מסלול ישן. הוא עשוי להגן על קואורדינטות, תובעים, צוותים או נתיבי אחריות. הוא עשוי גם להסתיר את המשרד שהזיז את המטען. הכינוי מוכיח סכסוך שם, לא מסלול בדוי. שמרו יחד את הסימן הישן, התווית הבטוחה, סוג המטען, סיבת ההסתרה וגיבוב העד.",
+          "terminal_note": "כינוי מסלול מטען הוא תווית בטוחה שמוצבת לצד סימן מסלול ישן. הוא עשוי להגן על קואורדינטות, תובעים, צוותים או נתיבי אחריות. הוא עשוי גם להסתיר את המשרד שהזיז את המטען. הכינוי מוכיח סכסוך שם, לא מסלול בדוי. שמרו יחד את הסימן הישן, התווית הבטוחה, סוג המטען, סיבת ההסתרה וגיבוב העד.",
+          "evidence_caption": "כינוי מסלול מטען הוא תווית בטוחה שמוצבת לצד סימן מסלול ישן. הוא עשוי להגן על קואורדינטות, תובעים, צוותים או נתיבי אחריות. הוא עשוי גם להסתיר את המשרד שהזיז את המטען. הכינוי מוכיח סכסוך שם, לא מסלול בדוי. שמרו יחד את הסימן הישן, התווית הבטוחה, סוג המטען, סיבת ההסתרה וגיבוב העד.",
+          "spoiler_policy": "כינוי מסלול מטען הוא תווית בטוחה שמוצבת לצד סימן מסלול ישן. הוא עשוי להגן על קואורדינטות, תובעים, צוותים או נתיבי אחריות. הוא עשוי גם להסתיר את המשרד שהזיז את המטען. הכינוי מוכיח סכסוך שם, לא מסלול בדוי. שמרו יחד את הסימן הישן, התווית הבטוחה, סוג המטען, סיבת ההסתרה וגיבוב העד.",
+          "title": "Payload Route Alias Register",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_PAYLOAD_ROUTE_ALIAS_REGISTER_BRIDGE_he_IL_PRIMARY"
+        },
+        "id_ID": {
+          "website_article": "Alias rute muatan adalah label aman yang ditempatkan di samping tanda rute lama. Itu dapat melindungi koordinat, penggugat, kru, atau jalur tanggung jawab. Itu juga dapat menyembunyikan kantor yang memindahkan muatan. Alias membuktikan konflik nama, bukan rute fiksi. Simpan tanda lama, label aman, kelas muatan, alasan redaksi, dan hash saksi bersama.",
+          "wiki_article": "Alias rute muatan adalah label aman yang ditempatkan di samping tanda rute lama. Itu dapat melindungi koordinat, penggugat, kru, atau jalur tanggung jawab. Itu juga dapat menyembunyikan kantor yang memindahkan muatan. Alias membuktikan konflik nama, bukan rute fiksi. Simpan tanda lama, label aman, kelas muatan, alasan redaksi, dan hash saksi bersama.",
+          "pda_codex": "Alias rute muatan adalah label aman yang ditempatkan di samping tanda rute lama. Itu dapat melindungi koordinat, penggugat, kru, atau jalur tanggung jawab. Itu juga dapat menyembunyikan kantor yang memindahkan muatan. Alias membuktikan konflik nama, bukan rute fiksi. Simpan tanda lama, label aman, kelas muatan, alasan redaksi, dan hash saksi bersama.",
+          "scanner_entry": "Alias rute muatan adalah label aman yang ditempatkan di samping tanda rute lama. Itu dapat melindungi koordinat, penggugat, kru, atau jalur tanggung jawab. Itu juga dapat menyembunyikan kantor yang memindahkan muatan. Alias membuktikan konflik nama, bukan rute fiksi. Simpan tanda lama, label aman, kelas muatan, alasan redaksi, dan hash saksi bersama.",
+          "terminal_note": "Alias rute muatan adalah label aman yang ditempatkan di samping tanda rute lama. Itu dapat melindungi koordinat, penggugat, kru, atau jalur tanggung jawab. Itu juga dapat menyembunyikan kantor yang memindahkan muatan. Alias membuktikan konflik nama, bukan rute fiksi. Simpan tanda lama, label aman, kelas muatan, alasan redaksi, dan hash saksi bersama.",
+          "evidence_caption": "Alias rute muatan adalah label aman yang ditempatkan di samping tanda rute lama. Itu dapat melindungi koordinat, penggugat, kru, atau jalur tanggung jawab. Itu juga dapat menyembunyikan kantor yang memindahkan muatan. Alias membuktikan konflik nama, bukan rute fiksi. Simpan tanda lama, label aman, kelas muatan, alasan redaksi, dan hash saksi bersama.",
+          "spoiler_policy": "Alias rute muatan adalah label aman yang ditempatkan di samping tanda rute lama. Itu dapat melindungi koordinat, penggugat, kru, atau jalur tanggung jawab. Itu juga dapat menyembunyikan kantor yang memindahkan muatan. Alias membuktikan konflik nama, bukan rute fiksi. Simpan tanda lama, label aman, kelas muatan, alasan redaksi, dan hash saksi bersama.",
+          "title": "Payload Route Alias Register",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_PAYLOAD_ROUTE_ALIAS_REGISTER_BRIDGE_id_ID_PRIMARY"
+        },
+        "ja_JP": {
+          "website_article": "ペイロード経路エイリアスは、古い経路印の横に置かれる安全なラベルである。座標、請求者、乗員、責任経路を守る場合がある。ペイロードを動かした部署を隠す場合もある。エイリアスは命名の衝突を示すもので、経路が架空だという証明ではない。古い印、安全ラベル、ペイロード種別、秘匿理由、証人ハッシュをまとめて保持する。",
+          "wiki_article": "ペイロード経路エイリアスは、古い経路印の横に置かれる安全なラベルである。座標、請求者、乗員、責任経路を守る場合がある。ペイロードを動かした部署を隠す場合もある。エイリアスは命名の衝突を示すもので、経路が架空だという証明ではない。古い印、安全ラベル、ペイロード種別、秘匿理由、証人ハッシュをまとめて保持する。",
+          "pda_codex": "ペイロード経路エイリアスは、古い経路印の横に置かれる安全なラベルである。座標、請求者、乗員、責任経路を守る場合がある。ペイロードを動かした部署を隠す場合もある。エイリアスは命名の衝突を示すもので、経路が架空だという証明ではない。古い印、安全ラベル、ペイロード種別、秘匿理由、証人ハッシュをまとめて保持する。",
+          "scanner_entry": "ペイロード経路エイリアスは、古い経路印の横に置かれる安全なラベルである。座標、請求者、乗員、責任経路を守る場合がある。ペイロードを動かした部署を隠す場合もある。エイリアスは命名の衝突を示すもので、経路が架空だという証明ではない。古い印、安全ラベル、ペイロード種別、秘匿理由、証人ハッシュをまとめて保持する。",
+          "terminal_note": "ペイロード経路エイリアスは、古い経路印の横に置かれる安全なラベルである。座標、請求者、乗員、責任経路を守る場合がある。ペイロードを動かした部署を隠す場合もある。エイリアスは命名の衝突を示すもので、経路が架空だという証明ではない。古い印、安全ラベル、ペイロード種別、秘匿理由、証人ハッシュをまとめて保持する。",
+          "evidence_caption": "ペイロード経路エイリアスは、古い経路印の横に置かれる安全なラベルである。座標、請求者、乗員、責任経路を守る場合がある。ペイロードを動かした部署を隠す場合もある。エイリアスは命名の衝突を示すもので、経路が架空だという証明ではない。古い印、安全ラベル、ペイロード種別、秘匿理由、証人ハッシュをまとめて保持する。",
+          "spoiler_policy": "ペイロード経路エイリアスは、古い経路印の横に置かれる安全なラベルである。座標、請求者、乗員、責任経路を守る場合がある。ペイロードを動かした部署を隠す場合もある。エイリアスは命名の衝突を示すもので、経路が架空だという証明ではない。古い印、安全ラベル、ペイロード種別、秘匿理由、証人ハッシュをまとめて保持する。",
+          "title": "Payload Route Alias Register",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_PAYLOAD_ROUTE_ALIAS_REGISTER_BRIDGE_ja_JP_PRIMARY"
+        },
+        "ko_KR": {
+          "website_article": "페이로드 경로 별칭은 오래된 경로 표시 옆에 붙는 안전 라벨이다. 좌표, 청구자, 승무원, 책임 경로를 보호할 수 있다. 또한 페이로드를 옮긴 사무소를 숨길 수도 있다. 별칭은 이름 충돌의 증거이지 경로가 허구라는 증거가 아니다. 오래된 표시, 안전 라벨, 페이로드 등급, 수정 이유, 증인 해시를 함께 보존해야 한다.",
+          "wiki_article": "페이로드 경로 별칭은 오래된 경로 표시 옆에 붙는 안전 라벨이다. 좌표, 청구자, 승무원, 책임 경로를 보호할 수 있다. 또한 페이로드를 옮긴 사무소를 숨길 수도 있다. 별칭은 이름 충돌의 증거이지 경로가 허구라는 증거가 아니다. 오래된 표시, 안전 라벨, 페이로드 등급, 수정 이유, 증인 해시를 함께 보존해야 한다.",
+          "pda_codex": "페이로드 경로 별칭은 오래된 경로 표시 옆에 붙는 안전 라벨이다. 좌표, 청구자, 승무원, 책임 경로를 보호할 수 있다. 또한 페이로드를 옮긴 사무소를 숨길 수도 있다. 별칭은 이름 충돌의 증거이지 경로가 허구라는 증거가 아니다. 오래된 표시, 안전 라벨, 페이로드 등급, 수정 이유, 증인 해시를 함께 보존해야 한다.",
+          "scanner_entry": "페이로드 경로 별칭은 오래된 경로 표시 옆에 붙는 안전 라벨이다. 좌표, 청구자, 승무원, 책임 경로를 보호할 수 있다. 또한 페이로드를 옮긴 사무소를 숨길 수도 있다. 별칭은 이름 충돌의 증거이지 경로가 허구라는 증거가 아니다. 오래된 표시, 안전 라벨, 페이로드 등급, 수정 이유, 증인 해시를 함께 보존해야 한다.",
+          "terminal_note": "페이로드 경로 별칭은 오래된 경로 표시 옆에 붙는 안전 라벨이다. 좌표, 청구자, 승무원, 책임 경로를 보호할 수 있다. 또한 페이로드를 옮긴 사무소를 숨길 수도 있다. 별칭은 이름 충돌의 증거이지 경로가 허구라는 증거가 아니다. 오래된 표시, 안전 라벨, 페이로드 등급, 수정 이유, 증인 해시를 함께 보존해야 한다.",
+          "evidence_caption": "페이로드 경로 별칭은 오래된 경로 표시 옆에 붙는 안전 라벨이다. 좌표, 청구자, 승무원, 책임 경로를 보호할 수 있다. 또한 페이로드를 옮긴 사무소를 숨길 수도 있다. 별칭은 이름 충돌의 증거이지 경로가 허구라는 증거가 아니다. 오래된 표시, 안전 라벨, 페이로드 등급, 수정 이유, 증인 해시를 함께 보존해야 한다.",
+          "spoiler_policy": "페이로드 경로 별칭은 오래된 경로 표시 옆에 붙는 안전 라벨이다. 좌표, 청구자, 승무원, 책임 경로를 보호할 수 있다. 또한 페이로드를 옮긴 사무소를 숨길 수도 있다. 별칭은 이름 충돌의 증거이지 경로가 허구라는 증거가 아니다. 오래된 표시, 안전 라벨, 페이로드 등급, 수정 이유, 증인 해시를 함께 보존해야 한다.",
+          "title": "Payload Route Alias Register",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_PAYLOAD_ROUTE_ALIAS_REGISTER_BRIDGE_ko_KR_PRIMARY"
+        },
+        "nl_NL": {
+          "website_article": "Een payload-routealias is een veilig label naast een oudere routemarkering. Het kan coordinaten, claimants, crews of aansprakelijkheidslijnen beschermen. Het kan ook het kantoor verbergen dat de payload verplaatste. De alias bewijst een naamconflict, geen routefictie. Bewaar oude markering, veilig label, payloadklasse, redactiereden en getuigehash samen.",
+          "wiki_article": "Een payload-routealias is een veilig label naast een oudere routemarkering. Het kan coordinaten, claimants, crews of aansprakelijkheidslijnen beschermen. Het kan ook het kantoor verbergen dat de payload verplaatste. De alias bewijst een naamconflict, geen routefictie. Bewaar oude markering, veilig label, payloadklasse, redactiereden en getuigehash samen.",
+          "pda_codex": "Een payload-routealias is een veilig label naast een oudere routemarkering. Het kan coordinaten, claimants, crews of aansprakelijkheidslijnen beschermen. Het kan ook het kantoor verbergen dat de payload verplaatste. De alias bewijst een naamconflict, geen routefictie. Bewaar oude markering, veilig label, payloadklasse, redactiereden en getuigehash samen.",
+          "scanner_entry": "Een payload-routealias is een veilig label naast een oudere routemarkering. Het kan coordinaten, claimants, crews of aansprakelijkheidslijnen beschermen. Het kan ook het kantoor verbergen dat de payload verplaatste. De alias bewijst een naamconflict, geen routefictie. Bewaar oude markering, veilig label, payloadklasse, redactiereden en getuigehash samen.",
+          "terminal_note": "Een payload-routealias is een veilig label naast een oudere routemarkering. Het kan coordinaten, claimants, crews of aansprakelijkheidslijnen beschermen. Het kan ook het kantoor verbergen dat de payload verplaatste. De alias bewijst een naamconflict, geen routefictie. Bewaar oude markering, veilig label, payloadklasse, redactiereden en getuigehash samen.",
+          "evidence_caption": "Een payload-routealias is een veilig label naast een oudere routemarkering. Het kan coordinaten, claimants, crews of aansprakelijkheidslijnen beschermen. Het kan ook het kantoor verbergen dat de payload verplaatste. De alias bewijst een naamconflict, geen routefictie. Bewaar oude markering, veilig label, payloadklasse, redactiereden en getuigehash samen.",
+          "spoiler_policy": "Een payload-routealias is een veilig label naast een oudere routemarkering. Het kan coordinaten, claimants, crews of aansprakelijkheidslijnen beschermen. Het kan ook het kantoor verbergen dat de payload verplaatste. De alias bewijst een naamconflict, geen routefictie. Bewaar oude markering, veilig label, payloadklasse, redactiereden en getuigehash samen.",
+          "title": "Payload Route Alias Register",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_PAYLOAD_ROUTE_ALIAS_REGISTER_BRIDGE_nl_NL_PRIMARY"
+        },
+        "pl_PL": {
+          "website_article": "Alias trasy ladunku to bezpieczna etykieta przy starszym znaku trasy. Moze chronic wspolrzedne, roszczacych, zalogi lub linie odpowiedzialnosci. Moze tez ukryc biuro, ktore przesunelo ladunek. Alias dowodzi konfliktu nazwy, nie fikcyjnej trasy. Trzymaj stary znak, bezpieczna etykiete, klase ladunku, powod redakcji i hash swiadka razem.",
+          "wiki_article": "Alias trasy ladunku to bezpieczna etykieta przy starszym znaku trasy. Moze chronic wspolrzedne, roszczacych, zalogi lub linie odpowiedzialnosci. Moze tez ukryc biuro, ktore przesunelo ladunek. Alias dowodzi konfliktu nazwy, nie fikcyjnej trasy. Trzymaj stary znak, bezpieczna etykiete, klase ladunku, powod redakcji i hash swiadka razem.",
+          "pda_codex": "Alias trasy ladunku to bezpieczna etykieta przy starszym znaku trasy. Moze chronic wspolrzedne, roszczacych, zalogi lub linie odpowiedzialnosci. Moze tez ukryc biuro, ktore przesunelo ladunek. Alias dowodzi konfliktu nazwy, nie fikcyjnej trasy. Trzymaj stary znak, bezpieczna etykiete, klase ladunku, powod redakcji i hash swiadka razem.",
+          "scanner_entry": "Alias trasy ladunku to bezpieczna etykieta przy starszym znaku trasy. Moze chronic wspolrzedne, roszczacych, zalogi lub linie odpowiedzialnosci. Moze tez ukryc biuro, ktore przesunelo ladunek. Alias dowodzi konfliktu nazwy, nie fikcyjnej trasy. Trzymaj stary znak, bezpieczna etykiete, klase ladunku, powod redakcji i hash swiadka razem.",
+          "terminal_note": "Alias trasy ladunku to bezpieczna etykieta przy starszym znaku trasy. Moze chronic wspolrzedne, roszczacych, zalogi lub linie odpowiedzialnosci. Moze tez ukryc biuro, ktore przesunelo ladunek. Alias dowodzi konfliktu nazwy, nie fikcyjnej trasy. Trzymaj stary znak, bezpieczna etykiete, klase ladunku, powod redakcji i hash swiadka razem.",
+          "evidence_caption": "Alias trasy ladunku to bezpieczna etykieta przy starszym znaku trasy. Moze chronic wspolrzedne, roszczacych, zalogi lub linie odpowiedzialnosci. Moze tez ukryc biuro, ktore przesunelo ladunek. Alias dowodzi konfliktu nazwy, nie fikcyjnej trasy. Trzymaj stary znak, bezpieczna etykiete, klase ladunku, powod redakcji i hash swiadka razem.",
+          "spoiler_policy": "Alias trasy ladunku to bezpieczna etykieta przy starszym znaku trasy. Moze chronic wspolrzedne, roszczacych, zalogi lub linie odpowiedzialnosci. Moze tez ukryc biuro, ktore przesunelo ladunek. Alias dowodzi konfliktu nazwy, nie fikcyjnej trasy. Trzymaj stary znak, bezpieczna etykiete, klase ladunku, powod redakcji i hash swiadka razem.",
+          "title": "Payload Route Alias Register",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_PAYLOAD_ROUTE_ALIAS_REGISTER_BRIDGE_pl_PL_PRIMARY"
+        },
+        "pt_BR": {
+          "website_article": "Um alias de rota de carga e um rotulo seguro colocado ao lado de uma marca de rota antiga. Pode proteger coordenadas, reclamantes, equipes ou linhas de responsabilidade. Tambem pode esconder o escritorio que moveu a carga. O alias prova conflito de nome, nao rota ficticia. Mantenha marca antiga, rotulo seguro, classe de carga, motivo de redacao e hash de testemunha juntos.",
+          "wiki_article": "Um alias de rota de carga e um rotulo seguro colocado ao lado de uma marca de rota antiga. Pode proteger coordenadas, reclamantes, equipes ou linhas de responsabilidade. Tambem pode esconder o escritorio que moveu a carga. O alias prova conflito de nome, nao rota ficticia. Mantenha marca antiga, rotulo seguro, classe de carga, motivo de redacao e hash de testemunha juntos.",
+          "pda_codex": "Um alias de rota de carga e um rotulo seguro colocado ao lado de uma marca de rota antiga. Pode proteger coordenadas, reclamantes, equipes ou linhas de responsabilidade. Tambem pode esconder o escritorio que moveu a carga. O alias prova conflito de nome, nao rota ficticia. Mantenha marca antiga, rotulo seguro, classe de carga, motivo de redacao e hash de testemunha juntos.",
+          "scanner_entry": "Um alias de rota de carga e um rotulo seguro colocado ao lado de uma marca de rota antiga. Pode proteger coordenadas, reclamantes, equipes ou linhas de responsabilidade. Tambem pode esconder o escritorio que moveu a carga. O alias prova conflito de nome, nao rota ficticia. Mantenha marca antiga, rotulo seguro, classe de carga, motivo de redacao e hash de testemunha juntos.",
+          "terminal_note": "Um alias de rota de carga e um rotulo seguro colocado ao lado de uma marca de rota antiga. Pode proteger coordenadas, reclamantes, equipes ou linhas de responsabilidade. Tambem pode esconder o escritorio que moveu a carga. O alias prova conflito de nome, nao rota ficticia. Mantenha marca antiga, rotulo seguro, classe de carga, motivo de redacao e hash de testemunha juntos.",
+          "evidence_caption": "Um alias de rota de carga e um rotulo seguro colocado ao lado de uma marca de rota antiga. Pode proteger coordenadas, reclamantes, equipes ou linhas de responsabilidade. Tambem pode esconder o escritorio que moveu a carga. O alias prova conflito de nome, nao rota ficticia. Mantenha marca antiga, rotulo seguro, classe de carga, motivo de redacao e hash de testemunha juntos.",
+          "spoiler_policy": "Um alias de rota de carga e um rotulo seguro colocado ao lado de uma marca de rota antiga. Pode proteger coordenadas, reclamantes, equipes ou linhas de responsabilidade. Tambem pode esconder o escritorio que moveu a carga. O alias prova conflito de nome, nao rota ficticia. Mantenha marca antiga, rotulo seguro, classe de carga, motivo de redacao e hash de testemunha juntos.",
+          "title": "Payload Route Alias Register",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_PAYLOAD_ROUTE_ALIAS_REGISTER_BRIDGE_pt_BR_PRIMARY"
+        },
+        "ru_RU": {
+          "website_article": "Алиас маршрута полезной нагрузки - это безопасная метка рядом со старой маршрутной отметкой. Он может защищать координаты, заявителей, экипажи или линии ответственности. Он также может скрывать офис, который двигал груз. Алиас доказывает конфликт имен, а не вымышленный маршрут. Храни старую отметку, безопасную метку, класс груза, причину скрытия и хэш свидетеля вместе.",
+          "wiki_article": "Алиас маршрута полезной нагрузки - это безопасная метка рядом со старой маршрутной отметкой. Он может защищать координаты, заявителей, экипажи или линии ответственности. Он также может скрывать офис, который двигал груз. Алиас доказывает конфликт имен, а не вымышленный маршрут. Храни старую отметку, безопасную метку, класс груза, причину скрытия и хэш свидетеля вместе.",
+          "pda_codex": "Алиас маршрута полезной нагрузки - это безопасная метка рядом со старой маршрутной отметкой. Он может защищать координаты, заявителей, экипажи или линии ответственности. Он также может скрывать офис, который двигал груз. Алиас доказывает конфликт имен, а не вымышленный маршрут. Храни старую отметку, безопасную метку, класс груза, причину скрытия и хэш свидетеля вместе.",
+          "scanner_entry": "Алиас маршрута полезной нагрузки - это безопасная метка рядом со старой маршрутной отметкой. Он может защищать координаты, заявителей, экипажи или линии ответственности. Он также может скрывать офис, который двигал груз. Алиас доказывает конфликт имен, а не вымышленный маршрут. Храни старую отметку, безопасную метку, класс груза, причину скрытия и хэш свидетеля вместе.",
+          "terminal_note": "Алиас маршрута полезной нагрузки - это безопасная метка рядом со старой маршрутной отметкой. Он может защищать координаты, заявителей, экипажи или линии ответственности. Он также может скрывать офис, который двигал груз. Алиас доказывает конфликт имен, а не вымышленный маршрут. Храни старую отметку, безопасную метку, класс груза, причину скрытия и хэш свидетеля вместе.",
+          "evidence_caption": "Алиас маршрута полезной нагрузки - это безопасная метка рядом со старой маршрутной отметкой. Он может защищать координаты, заявителей, экипажи или линии ответственности. Он также может скрывать офис, который двигал груз. Алиас доказывает конфликт имен, а не вымышленный маршрут. Храни старую отметку, безопасную метку, класс груза, причину скрытия и хэш свидетеля вместе.",
+          "spoiler_policy": "Алиас маршрута полезной нагрузки - это безопасная метка рядом со старой маршрутной отметкой. Он может защищать координаты, заявителей, экипажи или линии ответственности. Он также может скрывать офис, который двигал груз. Алиас доказывает конфликт имен, а не вымышленный маршрут. Храни старую отметку, безопасную метку, класс груза, причину скрытия и хэш свидетеля вместе.",
+          "title": "Payload Route Alias Register",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_PAYLOAD_ROUTE_ALIAS_REGISTER_BRIDGE_ru_RU_PRIMARY"
+        },
+        "uk_UA": {
+          "website_article": "Аліас маршруту корисного вантажу - це безпечна мітка поруч зі старою маршрутною позначкою. Він може захищати координати, заявників, екіпажі або лінії відповідальності. Він також може приховувати офіс, який рухав вантаж. Аліас доводить конфлікт назв, а не вигаданий маршрут. Зберігай стару позначку, безпечну мітку, клас вантажу, причину приховування і хеш свідка разом.",
+          "wiki_article": "Аліас маршруту корисного вантажу - це безпечна мітка поруч зі старою маршрутною позначкою. Він може захищати координати, заявників, екіпажі або лінії відповідальності. Він також може приховувати офіс, який рухав вантаж. Аліас доводить конфлікт назв, а не вигаданий маршрут. Зберігай стару позначку, безпечну мітку, клас вантажу, причину приховування і хеш свідка разом.",
+          "pda_codex": "Аліас маршруту корисного вантажу - це безпечна мітка поруч зі старою маршрутною позначкою. Він може захищати координати, заявників, екіпажі або лінії відповідальності. Він також може приховувати офіс, який рухав вантаж. Аліас доводить конфлікт назв, а не вигаданий маршрут. Зберігай стару позначку, безпечну мітку, клас вантажу, причину приховування і хеш свідка разом.",
+          "scanner_entry": "Аліас маршруту корисного вантажу - це безпечна мітка поруч зі старою маршрутною позначкою. Він може захищати координати, заявників, екіпажі або лінії відповідальності. Він також може приховувати офіс, який рухав вантаж. Аліас доводить конфлікт назв, а не вигаданий маршрут. Зберігай стару позначку, безпечну мітку, клас вантажу, причину приховування і хеш свідка разом.",
+          "terminal_note": "Аліас маршруту корисного вантажу - це безпечна мітка поруч зі старою маршрутною позначкою. Він може захищати координати, заявників, екіпажі або лінії відповідальності. Він також може приховувати офіс, який рухав вантаж. Аліас доводить конфлікт назв, а не вигаданий маршрут. Зберігай стару позначку, безпечну мітку, клас вантажу, причину приховування і хеш свідка разом.",
+          "evidence_caption": "Аліас маршруту корисного вантажу - це безпечна мітка поруч зі старою маршрутною позначкою. Він може захищати координати, заявників, екіпажі або лінії відповідальності. Він також може приховувати офіс, який рухав вантаж. Аліас доводить конфлікт назв, а не вигаданий маршрут. Зберігай стару позначку, безпечну мітку, клас вантажу, причину приховування і хеш свідка разом.",
+          "spoiler_policy": "Аліас маршруту корисного вантажу - це безпечна мітка поруч зі старою маршрутною позначкою. Він може захищати координати, заявників, екіпажі або лінії відповідальності. Він також може приховувати офіс, який рухав вантаж. Аліас доводить конфлікт назв, а не вигаданий маршрут. Зберігай стару позначку, безпечну мітку, клас вантажу, причину приховування і хеш свідка разом.",
+          "title": "Payload Route Alias Register",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_PAYLOAD_ROUTE_ALIAS_REGISTER_BRIDGE_uk_UA_PRIMARY"
+        },
+        "zh_CN": {
+          "website_article": "载荷路线别名是放在旧路线标记旁的安全标签。它可能保护坐标、申诉人、船员或责任线路，也可能隐藏移动载荷的办公室。别名证明命名冲突，不证明路线虚构。在路线证据解决名称前，应同时保留旧标记、安全标签、载荷类别、删节原因和见证哈希。 ## QA Notes Forbidden facts avoided: - No exact coordinate, final receiver, final route, Atlas consequence, payload outcome, rescue promise, source insertion, native review, Unity placement, h8bin state, DataMonolith state, generated page state, or public deployment state. - P461-P503 were not edited by this packet. Review blockers: - Native localization review absent for non-English rows. - Source table insertion, string-pool extraction, route-card mapping, generated-page export, runtime placement, and h8bin bake are separate gated tasks.",
+          "wiki_article": "载荷路线别名是放在旧路线标记旁的安全标签。它可能保护坐标、申诉人、船员或责任线路，也可能隐藏移动载荷的办公室。别名证明命名冲突，不证明路线虚构。在路线证据解决名称前，应同时保留旧标记、安全标签、载荷类别、删节原因和见证哈希。 ## QA Notes Forbidden facts avoided: - No exact coordinate, final receiver, final route, Atlas consequence, payload outcome, rescue promise, source insertion, native review, Unity placement, h8bin state, DataMonolith state, generated page state, or public deployment state. - P461-P503 were not edited by this packet. Review blockers: - Native localization review absent for non-English rows. - Source table insertion, string-pool extraction, route-card mapping, generated-page export, runtime placement, and h8bin bake are separate gated tasks.",
+          "pda_codex": "载荷路线别名是放在旧路线标记旁的安全标签。它可能保护坐标、申诉人、船员或责任线路，也可能隐藏移动载荷的办公室。别名证明命名冲突，不证明路线虚构。在路线证据解决名称前，应同时保留旧标记、安全标签、载荷类别、删节原因和见证哈希。 ## QA Notes Forbidden facts avoided: - No exact coordinate, final receiver, final route, Atlas consequence, payload outcome, rescue promise, source insertion, native review, Unity placement, h8bin state, DataMonolith state, generated page state, or public deployment state. - P461-P503 were not edited by this packet. Review blockers: - Native localization review absent for non-English rows. - Source table insertion, string-pool extraction, route-card mapping, generated-page export, runtime placement, and h8bin bake are separate gated tasks.",
+          "scanner_entry": "载荷路线别名是放在旧路线标记旁的安全标签。它可能保护坐标、申诉人、船员或责任线路，也可能隐藏移动载荷的办公室。别名证明命名冲突，不证明路线虚构。在路线证据解决名称前，应同时保留旧标记、安全标签、载荷类别、删节原因和见证哈希。 ## QA Notes Forbidden facts avoided: - No exact coordinate, final receiver, final route, Atlas consequence, payload outcome, rescue promise, source insertion, native review, Unity placement, h8bin state, DataMonolith state, generated page state, or public deployment state. - P461-P503 were not edited by this packet. Review blockers: - Native localization review absent for non-English rows. - Source table insertion, string-pool extraction, route-card mapping, generated-page export, runtime placement, and h8bin bake are separate gated tasks.",
+          "terminal_note": "载荷路线别名是放在旧路线标记旁的安全标签。它可能保护坐标、申诉人、船员或责任线路，也可能隐藏移动载荷的办公室。别名证明命名冲突，不证明路线虚构。在路线证据解决名称前，应同时保留旧标记、安全标签、载荷类别、删节原因和见证哈希。 ## QA Notes Forbidden facts avoided: - No exact coordinate, final receiver, final route, Atlas consequence, payload outcome, rescue promise, source insertion, native review, Unity placement, h8bin state, DataMonolith state, generated page state, or public deployment state. - P461-P503 were not edited by this packet. Review blockers: - Native localization review absent for non-English rows. - Source table insertion, string-pool extraction, route-card mapping, generated-page export, runtime placement, and h8bin bake are separate gated tasks.",
+          "evidence_caption": "载荷路线别名是放在旧路线标记旁的安全标签。它可能保护坐标、申诉人、船员或责任线路，也可能隐藏移动载荷的办公室。别名证明命名冲突，不证明路线虚构。在路线证据解决名称前，应同时保留旧标记、安全标签、载荷类别、删节原因和见证哈希。 ## QA Notes Forbidden facts avoided: - No exact coordinate, final receiver, final route, Atlas consequence, payload outcome, rescue promise, source insertion, native review, Unity placement, h8bin state, DataMonolith state, generated page state, or public deployment state. - P461-P503 were not edited by this packet. Review blockers: - Native localization review absent for non-English rows. - Source table insertion, string-pool extraction, route-card mapping, generated-page export, runtime placement, and h8bin bake are separate gated tasks.",
+          "spoiler_policy": "载荷路线别名是放在旧路线标记旁的安全标签。它可能保护坐标、申诉人、船员或责任线路，也可能隐藏移动载荷的办公室。别名证明命名冲突，不证明路线虚构。在路线证据解决名称前，应同时保留旧标记、安全标签、载荷类别、删节原因和见证哈希。 ## QA Notes Forbidden facts avoided: - No exact coordinate, final receiver, final route, Atlas consequence, payload outcome, rescue promise, source insertion, native review, Unity placement, h8bin state, DataMonolith state, generated page state, or public deployment state. - P461-P503 were not edited by this packet. Review blockers: - Native localization review absent for non-English rows. - Source table insertion, string-pool extraction, route-card mapping, generated-page export, runtime placement, and h8bin bake are separate gated tasks.",
+          "title": "Payload Route Alias Register",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_PAYLOAD_ROUTE_ALIAS_REGISTER_BRIDGE_zh_CN_PRIMARY"
+        }
+      }
+    },
+    {
+      "packet_id": "P505_QUARANTINE_LEGAL_HOLD_CONFLICT_BRIDGE",
+      "release_set_id": "RS101_COUNTER_INDEX_ALIAS_HOLD_BRIDGE",
+      "article_id": "applied_lore.quarantine_legal_hold_conflict_bridge",
+      "title_key": "LORE_EVIDENCE_QUARANTINE_LEGAL_HOLD_CONFLICT_BRIDGE_TITLE",
+      "status": "source_candidate_pending_controller_review_and_downstream_wiring",
+      "canon_owner": [
+        "Docs/Lore/Canon_Locks.md",
+        "Docs/Lore/Lore_Bible.md",
+        "Docs/Lore/Lore_Content_System.md",
+        "Docs/Lore/Lore_Localization_Model.md",
+        "Docs/Lore/Website_Publication_Map.md"
+      ],
+      "runtime_contract": {
+        "authoring_only": true,
+        "runtime_reads_markdown": false,
+        "runtime_ready": false,
+        "native_localization_ready": false,
+        "data_monolith_ready": false,
+        "h8bin_ready": false,
+        "unity_placement_ready": false,
+        "generated_page_ready": false,
+        "publication_ready": false
+      },
+      "surfaces": [
+        "website_article",
+        "wiki_article",
+        "pda_codex",
+        "scanner_entry",
+        "terminal_note",
+        "evidence_caption",
+        "spoiler_policy",
+        "string_pool_key"
+      ],
+      "unlock": {
+        "primary": "future counter-index, alias register, and double-hold evidence bridge after packet-specific proof gate",
+        "secondary": "future scanner, terminal, PDA, evidence-caption, website, wiki, and string-pool extraction lanes",
+        "poi_tags": [
+          "marauder_counter_index",
+          "payload_alias",
+          "quarantine_hold",
+          "public_archive"
+        ],
+        "biome_tags": [
+          "not_biome_bound"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "website_article": "A quarantine hold and a legal hold can look identical to a public reader: the packet does not move. The reasons are different. Quarantine review claims safety, contamination, biohazard, pressure, or claimant exposure. Legal hold claims liability, testimony, settlement risk, office privilege, or jurisdiction. In HECTON-8 records those holds overlap often enough that the delay itself becomes evidence. The delay is not automatically corruption. A hold can protect living people or preserve dangerous material. The same hold can also keep a bad office from answering. The public archive should name the hold conflict, preserve timestamps, and resist turning a delay into either a verdict or an excuse.",
+          "wiki_article": "Quarantine legal hold conflict: a packet state where safety review and legal release control both claim authority over evidence movement. Required fields include quarantine code, legal hold code, redaction header, claimant-safe field, release denial timestamp, and next proof target.",
+          "pda_codex": "Codex warning: double hold found. Quarantine and legal language are separate. Health risk, claimant risk, office liability, and jurisdiction can all stop the same packet. Follow which desk extended the delay and what object remained locked.",
+          "scanner_entry": "Quarantine/legal hold conflict. Safety code and legal hold code both active. Confidence: partial. Required next proof: release denial, redaction header, claimant-safe field, custody transfer, or witness hash.",
+          "terminal_note": "QUARANTINE LEGAL HOLD CONFLICT Safety desk: hold active. Legal desk: hold active. Do not merge reasons. Action: preserve both codes, timestamps, and denying office.",
+          "evidence_caption": "Double-hold notice. The packet was stopped by quarantine and legal authority. The overlap proves procedural conflict, not final guilt or final safety.",
+          "spoiler_policy": "Double-hold language may appear early. Protected claimant, final legal result, final receiver, Atlas consequence, and ending branch stay masked until later proof gates.",
+          "title": "Quarantine Legal Hold Conflict",
+          "locale_status": "source_authority",
+          "string_pool_key": "LORE_EVIDENCE_QUARANTINE_LEGAL_HOLD_CONFLICT_BRIDGE_en_US_PRIMARY"
+        },
+        "ar_SA": {
+          "website_article": "تعارض الحجر والوقف القانوني يعني أن الحزمة موقوفة من مراجعة السلامة ومن سلطة الإفراج القانوني معا. قد يحمي التداخل أشخاصا أو مادة خطرة، أو يخفي مسؤولية مكتب. إنه يثبت تعارضا إجرائيا، لا ذنبا نهائيا أو أمانا نهائيا أو إنقاذا أو نتيجة قانونية. أبق رمز الحجر والرمز القانوني والطوابع الزمنية ورأس الحجب والمكتب الرافض منفصلة.",
+          "wiki_article": "تعارض الحجر والوقف القانوني يعني أن الحزمة موقوفة من مراجعة السلامة ومن سلطة الإفراج القانوني معا. قد يحمي التداخل أشخاصا أو مادة خطرة، أو يخفي مسؤولية مكتب. إنه يثبت تعارضا إجرائيا، لا ذنبا نهائيا أو أمانا نهائيا أو إنقاذا أو نتيجة قانونية. أبق رمز الحجر والرمز القانوني والطوابع الزمنية ورأس الحجب والمكتب الرافض منفصلة.",
+          "pda_codex": "تعارض الحجر والوقف القانوني يعني أن الحزمة موقوفة من مراجعة السلامة ومن سلطة الإفراج القانوني معا. قد يحمي التداخل أشخاصا أو مادة خطرة، أو يخفي مسؤولية مكتب. إنه يثبت تعارضا إجرائيا، لا ذنبا نهائيا أو أمانا نهائيا أو إنقاذا أو نتيجة قانونية. أبق رمز الحجر والرمز القانوني والطوابع الزمنية ورأس الحجب والمكتب الرافض منفصلة.",
+          "scanner_entry": "تعارض الحجر والوقف القانوني يعني أن الحزمة موقوفة من مراجعة السلامة ومن سلطة الإفراج القانوني معا. قد يحمي التداخل أشخاصا أو مادة خطرة، أو يخفي مسؤولية مكتب. إنه يثبت تعارضا إجرائيا، لا ذنبا نهائيا أو أمانا نهائيا أو إنقاذا أو نتيجة قانونية. أبق رمز الحجر والرمز القانوني والطوابع الزمنية ورأس الحجب والمكتب الرافض منفصلة.",
+          "terminal_note": "تعارض الحجر والوقف القانوني يعني أن الحزمة موقوفة من مراجعة السلامة ومن سلطة الإفراج القانوني معا. قد يحمي التداخل أشخاصا أو مادة خطرة، أو يخفي مسؤولية مكتب. إنه يثبت تعارضا إجرائيا، لا ذنبا نهائيا أو أمانا نهائيا أو إنقاذا أو نتيجة قانونية. أبق رمز الحجر والرمز القانوني والطوابع الزمنية ورأس الحجب والمكتب الرافض منفصلة.",
+          "evidence_caption": "تعارض الحجر والوقف القانوني يعني أن الحزمة موقوفة من مراجعة السلامة ومن سلطة الإفراج القانوني معا. قد يحمي التداخل أشخاصا أو مادة خطرة، أو يخفي مسؤولية مكتب. إنه يثبت تعارضا إجرائيا، لا ذنبا نهائيا أو أمانا نهائيا أو إنقاذا أو نتيجة قانونية. أبق رمز الحجر والرمز القانوني والطوابع الزمنية ورأس الحجب والمكتب الرافض منفصلة.",
+          "spoiler_policy": "تعارض الحجر والوقف القانوني يعني أن الحزمة موقوفة من مراجعة السلامة ومن سلطة الإفراج القانوني معا. قد يحمي التداخل أشخاصا أو مادة خطرة، أو يخفي مسؤولية مكتب. إنه يثبت تعارضا إجرائيا، لا ذنبا نهائيا أو أمانا نهائيا أو إنقاذا أو نتيجة قانونية. أبق رمز الحجر والرمز القانوني والطوابع الزمنية ورأس الحجب والمكتب الرافض منفصلة.",
+          "title": "Quarantine Legal Hold Conflict",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_QUARANTINE_LEGAL_HOLD_CONFLICT_BRIDGE_ar_SA_PRIMARY"
+        },
+        "de_DE": {
+          "website_article": "Quarantaene-Rechtshold-Konflikt bedeutet, dass ein Paket von Sicherheitspruefung und rechtlicher Freigabekontrolle zugleich gestoppt wird. Die Ueberlappung kann Menschen schuetzen, gefaehrliches Material sichern oder Buerohaftung verbergen. Sie beweist Verfahrenskonflikt, nicht Schuld, Sicherheit, Rettung oder Rechtsfolge. Halte Quarantaenecode, Legalcode, Zeitstempel, Redaktionskopf und verweigerndes Buero getrennt.",
+          "wiki_article": "Quarantaene-Rechtshold-Konflikt bedeutet, dass ein Paket von Sicherheitspruefung und rechtlicher Freigabekontrolle zugleich gestoppt wird. Die Ueberlappung kann Menschen schuetzen, gefaehrliches Material sichern oder Buerohaftung verbergen. Sie beweist Verfahrenskonflikt, nicht Schuld, Sicherheit, Rettung oder Rechtsfolge. Halte Quarantaenecode, Legalcode, Zeitstempel, Redaktionskopf und verweigerndes Buero getrennt.",
+          "pda_codex": "Quarantaene-Rechtshold-Konflikt bedeutet, dass ein Paket von Sicherheitspruefung und rechtlicher Freigabekontrolle zugleich gestoppt wird. Die Ueberlappung kann Menschen schuetzen, gefaehrliches Material sichern oder Buerohaftung verbergen. Sie beweist Verfahrenskonflikt, nicht Schuld, Sicherheit, Rettung oder Rechtsfolge. Halte Quarantaenecode, Legalcode, Zeitstempel, Redaktionskopf und verweigerndes Buero getrennt.",
+          "scanner_entry": "Quarantaene-Rechtshold-Konflikt bedeutet, dass ein Paket von Sicherheitspruefung und rechtlicher Freigabekontrolle zugleich gestoppt wird. Die Ueberlappung kann Menschen schuetzen, gefaehrliches Material sichern oder Buerohaftung verbergen. Sie beweist Verfahrenskonflikt, nicht Schuld, Sicherheit, Rettung oder Rechtsfolge. Halte Quarantaenecode, Legalcode, Zeitstempel, Redaktionskopf und verweigerndes Buero getrennt.",
+          "terminal_note": "Quarantaene-Rechtshold-Konflikt bedeutet, dass ein Paket von Sicherheitspruefung und rechtlicher Freigabekontrolle zugleich gestoppt wird. Die Ueberlappung kann Menschen schuetzen, gefaehrliches Material sichern oder Buerohaftung verbergen. Sie beweist Verfahrenskonflikt, nicht Schuld, Sicherheit, Rettung oder Rechtsfolge. Halte Quarantaenecode, Legalcode, Zeitstempel, Redaktionskopf und verweigerndes Buero getrennt.",
+          "evidence_caption": "Quarantaene-Rechtshold-Konflikt bedeutet, dass ein Paket von Sicherheitspruefung und rechtlicher Freigabekontrolle zugleich gestoppt wird. Die Ueberlappung kann Menschen schuetzen, gefaehrliches Material sichern oder Buerohaftung verbergen. Sie beweist Verfahrenskonflikt, nicht Schuld, Sicherheit, Rettung oder Rechtsfolge. Halte Quarantaenecode, Legalcode, Zeitstempel, Redaktionskopf und verweigerndes Buero getrennt.",
+          "spoiler_policy": "Quarantaene-Rechtshold-Konflikt bedeutet, dass ein Paket von Sicherheitspruefung und rechtlicher Freigabekontrolle zugleich gestoppt wird. Die Ueberlappung kann Menschen schuetzen, gefaehrliches Material sichern oder Buerohaftung verbergen. Sie beweist Verfahrenskonflikt, nicht Schuld, Sicherheit, Rettung oder Rechtsfolge. Halte Quarantaenecode, Legalcode, Zeitstempel, Redaktionskopf und verweigerndes Buero getrennt.",
+          "title": "Quarantine Legal Hold Conflict",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_QUARANTINE_LEGAL_HOLD_CONFLICT_BRIDGE_de_DE_PRIMARY"
+        },
+        "es_ES": {
+          "website_article": "Conflicto de cuarentena y retencion legal significa que un paquete esta detenido por revision de seguridad y control de liberacion legal a la vez. La superposicion puede proteger personas, preservar material peligroso u ocultar responsabilidad de oficina. Prueba conflicto de procedimiento, no culpa final, seguridad final, rescate ni resultado legal. Mantén codigo de cuarentena, codigo legal, tiempos, encabezado de redaccion y oficina que niega separados.",
+          "wiki_article": "Conflicto de cuarentena y retencion legal significa que un paquete esta detenido por revision de seguridad y control de liberacion legal a la vez. La superposicion puede proteger personas, preservar material peligroso u ocultar responsabilidad de oficina. Prueba conflicto de procedimiento, no culpa final, seguridad final, rescate ni resultado legal. Mantén codigo de cuarentena, codigo legal, tiempos, encabezado de redaccion y oficina que niega separados.",
+          "pda_codex": "Conflicto de cuarentena y retencion legal significa que un paquete esta detenido por revision de seguridad y control de liberacion legal a la vez. La superposicion puede proteger personas, preservar material peligroso u ocultar responsabilidad de oficina. Prueba conflicto de procedimiento, no culpa final, seguridad final, rescate ni resultado legal. Mantén codigo de cuarentena, codigo legal, tiempos, encabezado de redaccion y oficina que niega separados.",
+          "scanner_entry": "Conflicto de cuarentena y retencion legal significa que un paquete esta detenido por revision de seguridad y control de liberacion legal a la vez. La superposicion puede proteger personas, preservar material peligroso u ocultar responsabilidad de oficina. Prueba conflicto de procedimiento, no culpa final, seguridad final, rescate ni resultado legal. Mantén codigo de cuarentena, codigo legal, tiempos, encabezado de redaccion y oficina que niega separados.",
+          "terminal_note": "Conflicto de cuarentena y retencion legal significa que un paquete esta detenido por revision de seguridad y control de liberacion legal a la vez. La superposicion puede proteger personas, preservar material peligroso u ocultar responsabilidad de oficina. Prueba conflicto de procedimiento, no culpa final, seguridad final, rescate ni resultado legal. Mantén codigo de cuarentena, codigo legal, tiempos, encabezado de redaccion y oficina que niega separados.",
+          "evidence_caption": "Conflicto de cuarentena y retencion legal significa que un paquete esta detenido por revision de seguridad y control de liberacion legal a la vez. La superposicion puede proteger personas, preservar material peligroso u ocultar responsabilidad de oficina. Prueba conflicto de procedimiento, no culpa final, seguridad final, rescate ni resultado legal. Mantén codigo de cuarentena, codigo legal, tiempos, encabezado de redaccion y oficina que niega separados.",
+          "spoiler_policy": "Conflicto de cuarentena y retencion legal significa que un paquete esta detenido por revision de seguridad y control de liberacion legal a la vez. La superposicion puede proteger personas, preservar material peligroso u ocultar responsabilidad de oficina. Prueba conflicto de procedimiento, no culpa final, seguridad final, rescate ni resultado legal. Mantén codigo de cuarentena, codigo legal, tiempos, encabezado de redaccion y oficina que niega separados.",
+          "title": "Quarantine Legal Hold Conflict",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_QUARANTINE_LEGAL_HOLD_CONFLICT_BRIDGE_es_ES_PRIMARY"
+        },
+        "fr_FR": {
+          "website_article": "Un conflit entre quarantaine et retenue legale signifie qu'un paquet est bloque par la revue de securite et le controle de liberation legale. Le chevauchement peut proteger des personnes, conserver une matiere dangereuse ou cacher une responsabilite de bureau. Il prouve un conflit de procedure, pas culpabilite, securite, sauvetage ou resultat legal. Gardez code quarantaine, code legal, horodatages, en-tete caviarde et bureau refusant separes.",
+          "wiki_article": "Un conflit entre quarantaine et retenue legale signifie qu'un paquet est bloque par la revue de securite et le controle de liberation legale. Le chevauchement peut proteger des personnes, conserver une matiere dangereuse ou cacher une responsabilite de bureau. Il prouve un conflit de procedure, pas culpabilite, securite, sauvetage ou resultat legal. Gardez code quarantaine, code legal, horodatages, en-tete caviarde et bureau refusant separes.",
+          "pda_codex": "Un conflit entre quarantaine et retenue legale signifie qu'un paquet est bloque par la revue de securite et le controle de liberation legale. Le chevauchement peut proteger des personnes, conserver une matiere dangereuse ou cacher une responsabilite de bureau. Il prouve un conflit de procedure, pas culpabilite, securite, sauvetage ou resultat legal. Gardez code quarantaine, code legal, horodatages, en-tete caviarde et bureau refusant separes.",
+          "scanner_entry": "Un conflit entre quarantaine et retenue legale signifie qu'un paquet est bloque par la revue de securite et le controle de liberation legale. Le chevauchement peut proteger des personnes, conserver une matiere dangereuse ou cacher une responsabilite de bureau. Il prouve un conflit de procedure, pas culpabilite, securite, sauvetage ou resultat legal. Gardez code quarantaine, code legal, horodatages, en-tete caviarde et bureau refusant separes.",
+          "terminal_note": "Un conflit entre quarantaine et retenue legale signifie qu'un paquet est bloque par la revue de securite et le controle de liberation legale. Le chevauchement peut proteger des personnes, conserver une matiere dangereuse ou cacher une responsabilite de bureau. Il prouve un conflit de procedure, pas culpabilite, securite, sauvetage ou resultat legal. Gardez code quarantaine, code legal, horodatages, en-tete caviarde et bureau refusant separes.",
+          "evidence_caption": "Un conflit entre quarantaine et retenue legale signifie qu'un paquet est bloque par la revue de securite et le controle de liberation legale. Le chevauchement peut proteger des personnes, conserver une matiere dangereuse ou cacher une responsabilite de bureau. Il prouve un conflit de procedure, pas culpabilite, securite, sauvetage ou resultat legal. Gardez code quarantaine, code legal, horodatages, en-tete caviarde et bureau refusant separes.",
+          "spoiler_policy": "Un conflit entre quarantaine et retenue legale signifie qu'un paquet est bloque par la revue de securite et le controle de liberation legale. Le chevauchement peut proteger des personnes, conserver une matiere dangereuse ou cacher une responsabilite de bureau. Il prouve un conflit de procedure, pas culpabilite, securite, sauvetage ou resultat legal. Gardez code quarantaine, code legal, horodatages, en-tete caviarde et bureau refusant separes.",
+          "title": "Quarantine Legal Hold Conflict",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_QUARANTINE_LEGAL_HOLD_CONFLICT_BRIDGE_fr_FR_PRIMARY"
+        },
+        "he_IL": {
+          "website_article": "סתירת הסגר והחזקה משפטית פירושה שחבילה נעצרת גם בידי בדיקת בטיחות וגם בידי בקרת שחרור משפטית. החפיפה יכולה להגן על אנשים, לשמר חומר מסוכן או להסתיר אחריות משרדית. היא מוכיחה סכסוך הליך, לא אשמה סופית, בטיחות סופית, חילוץ או תוצאה משפטית. שמרו בנפרד קוד הסגר, קוד משפטי, חותמות זמן, כותרת הסתרה והמשרד המסרב.",
+          "wiki_article": "סתירת הסגר והחזקה משפטית פירושה שחבילה נעצרת גם בידי בדיקת בטיחות וגם בידי בקרת שחרור משפטית. החפיפה יכולה להגן על אנשים, לשמר חומר מסוכן או להסתיר אחריות משרדית. היא מוכיחה סכסוך הליך, לא אשמה סופית, בטיחות סופית, חילוץ או תוצאה משפטית. שמרו בנפרד קוד הסגר, קוד משפטי, חותמות זמן, כותרת הסתרה והמשרד המסרב.",
+          "pda_codex": "סתירת הסגר והחזקה משפטית פירושה שחבילה נעצרת גם בידי בדיקת בטיחות וגם בידי בקרת שחרור משפטית. החפיפה יכולה להגן על אנשים, לשמר חומר מסוכן או להסתיר אחריות משרדית. היא מוכיחה סכסוך הליך, לא אשמה סופית, בטיחות סופית, חילוץ או תוצאה משפטית. שמרו בנפרד קוד הסגר, קוד משפטי, חותמות זמן, כותרת הסתרה והמשרד המסרב.",
+          "scanner_entry": "סתירת הסגר והחזקה משפטית פירושה שחבילה נעצרת גם בידי בדיקת בטיחות וגם בידי בקרת שחרור משפטית. החפיפה יכולה להגן על אנשים, לשמר חומר מסוכן או להסתיר אחריות משרדית. היא מוכיחה סכסוך הליך, לא אשמה סופית, בטיחות סופית, חילוץ או תוצאה משפטית. שמרו בנפרד קוד הסגר, קוד משפטי, חותמות זמן, כותרת הסתרה והמשרד המסרב.",
+          "terminal_note": "סתירת הסגר והחזקה משפטית פירושה שחבילה נעצרת גם בידי בדיקת בטיחות וגם בידי בקרת שחרור משפטית. החפיפה יכולה להגן על אנשים, לשמר חומר מסוכן או להסתיר אחריות משרדית. היא מוכיחה סכסוך הליך, לא אשמה סופית, בטיחות סופית, חילוץ או תוצאה משפטית. שמרו בנפרד קוד הסגר, קוד משפטי, חותמות זמן, כותרת הסתרה והמשרד המסרב.",
+          "evidence_caption": "סתירת הסגר והחזקה משפטית פירושה שחבילה נעצרת גם בידי בדיקת בטיחות וגם בידי בקרת שחרור משפטית. החפיפה יכולה להגן על אנשים, לשמר חומר מסוכן או להסתיר אחריות משרדית. היא מוכיחה סכסוך הליך, לא אשמה סופית, בטיחות סופית, חילוץ או תוצאה משפטית. שמרו בנפרד קוד הסגר, קוד משפטי, חותמות זמן, כותרת הסתרה והמשרד המסרב.",
+          "spoiler_policy": "סתירת הסגר והחזקה משפטית פירושה שחבילה נעצרת גם בידי בדיקת בטיחות וגם בידי בקרת שחרור משפטית. החפיפה יכולה להגן על אנשים, לשמר חומר מסוכן או להסתיר אחריות משרדית. היא מוכיחה סכסוך הליך, לא אשמה סופית, בטיחות סופית, חילוץ או תוצאה משפטית. שמרו בנפרד קוד הסגר, קוד משפטי, חותמות זמן, כותרת הסתרה והמשרד המסרב.",
+          "title": "Quarantine Legal Hold Conflict",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_QUARANTINE_LEGAL_HOLD_CONFLICT_BRIDGE_he_IL_PRIMARY"
+        },
+        "id_ID": {
+          "website_article": "Konflik karantina dan penahanan hukum berarti paket dihentikan oleh tinjauan keselamatan dan kontrol pelepasan hukum sekaligus. Tumpang tindih itu dapat melindungi orang, menjaga bahan berbahaya, atau menyembunyikan tanggung jawab kantor. Itu membuktikan konflik prosedur, bukan kesalahan akhir, keselamatan akhir, penyelamatan, atau hasil hukum. Pisahkan kode karantina, kode hukum, cap waktu, header redaksi, dan kantor penolak.",
+          "wiki_article": "Konflik karantina dan penahanan hukum berarti paket dihentikan oleh tinjauan keselamatan dan kontrol pelepasan hukum sekaligus. Tumpang tindih itu dapat melindungi orang, menjaga bahan berbahaya, atau menyembunyikan tanggung jawab kantor. Itu membuktikan konflik prosedur, bukan kesalahan akhir, keselamatan akhir, penyelamatan, atau hasil hukum. Pisahkan kode karantina, kode hukum, cap waktu, header redaksi, dan kantor penolak.",
+          "pda_codex": "Konflik karantina dan penahanan hukum berarti paket dihentikan oleh tinjauan keselamatan dan kontrol pelepasan hukum sekaligus. Tumpang tindih itu dapat melindungi orang, menjaga bahan berbahaya, atau menyembunyikan tanggung jawab kantor. Itu membuktikan konflik prosedur, bukan kesalahan akhir, keselamatan akhir, penyelamatan, atau hasil hukum. Pisahkan kode karantina, kode hukum, cap waktu, header redaksi, dan kantor penolak.",
+          "scanner_entry": "Konflik karantina dan penahanan hukum berarti paket dihentikan oleh tinjauan keselamatan dan kontrol pelepasan hukum sekaligus. Tumpang tindih itu dapat melindungi orang, menjaga bahan berbahaya, atau menyembunyikan tanggung jawab kantor. Itu membuktikan konflik prosedur, bukan kesalahan akhir, keselamatan akhir, penyelamatan, atau hasil hukum. Pisahkan kode karantina, kode hukum, cap waktu, header redaksi, dan kantor penolak.",
+          "terminal_note": "Konflik karantina dan penahanan hukum berarti paket dihentikan oleh tinjauan keselamatan dan kontrol pelepasan hukum sekaligus. Tumpang tindih itu dapat melindungi orang, menjaga bahan berbahaya, atau menyembunyikan tanggung jawab kantor. Itu membuktikan konflik prosedur, bukan kesalahan akhir, keselamatan akhir, penyelamatan, atau hasil hukum. Pisahkan kode karantina, kode hukum, cap waktu, header redaksi, dan kantor penolak.",
+          "evidence_caption": "Konflik karantina dan penahanan hukum berarti paket dihentikan oleh tinjauan keselamatan dan kontrol pelepasan hukum sekaligus. Tumpang tindih itu dapat melindungi orang, menjaga bahan berbahaya, atau menyembunyikan tanggung jawab kantor. Itu membuktikan konflik prosedur, bukan kesalahan akhir, keselamatan akhir, penyelamatan, atau hasil hukum. Pisahkan kode karantina, kode hukum, cap waktu, header redaksi, dan kantor penolak.",
+          "spoiler_policy": "Konflik karantina dan penahanan hukum berarti paket dihentikan oleh tinjauan keselamatan dan kontrol pelepasan hukum sekaligus. Tumpang tindih itu dapat melindungi orang, menjaga bahan berbahaya, atau menyembunyikan tanggung jawab kantor. Itu membuktikan konflik prosedur, bukan kesalahan akhir, keselamatan akhir, penyelamatan, atau hasil hukum. Pisahkan kode karantina, kode hukum, cap waktu, header redaksi, dan kantor penolak.",
+          "title": "Quarantine Legal Hold Conflict",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_QUARANTINE_LEGAL_HOLD_CONFLICT_BRIDGE_id_ID_PRIMARY"
+        },
+        "ja_JP": {
+          "website_article": "隔離と法的保留の衝突とは、パケットが安全審査と法的解放管理の両方で止められている状態をいう。重なりは人を守り、危険物を保持し、または部署の責任を隠すことがある。これは手続き上の衝突を示すもので、最終的な罪、安全、救助、法的結果の証明ではない。隔離コード、法的コード、時刻、秘匿見出し、拒否部署を分けて保持する。",
+          "wiki_article": "隔離と法的保留の衝突とは、パケットが安全審査と法的解放管理の両方で止められている状態をいう。重なりは人を守り、危険物を保持し、または部署の責任を隠すことがある。これは手続き上の衝突を示すもので、最終的な罪、安全、救助、法的結果の証明ではない。隔離コード、法的コード、時刻、秘匿見出し、拒否部署を分けて保持する。",
+          "pda_codex": "隔離と法的保留の衝突とは、パケットが安全審査と法的解放管理の両方で止められている状態をいう。重なりは人を守り、危険物を保持し、または部署の責任を隠すことがある。これは手続き上の衝突を示すもので、最終的な罪、安全、救助、法的結果の証明ではない。隔離コード、法的コード、時刻、秘匿見出し、拒否部署を分けて保持する。",
+          "scanner_entry": "隔離と法的保留の衝突とは、パケットが安全審査と法的解放管理の両方で止められている状態をいう。重なりは人を守り、危険物を保持し、または部署の責任を隠すことがある。これは手続き上の衝突を示すもので、最終的な罪、安全、救助、法的結果の証明ではない。隔離コード、法的コード、時刻、秘匿見出し、拒否部署を分けて保持する。",
+          "terminal_note": "隔離と法的保留の衝突とは、パケットが安全審査と法的解放管理の両方で止められている状態をいう。重なりは人を守り、危険物を保持し、または部署の責任を隠すことがある。これは手続き上の衝突を示すもので、最終的な罪、安全、救助、法的結果の証明ではない。隔離コード、法的コード、時刻、秘匿見出し、拒否部署を分けて保持する。",
+          "evidence_caption": "隔離と法的保留の衝突とは、パケットが安全審査と法的解放管理の両方で止められている状態をいう。重なりは人を守り、危険物を保持し、または部署の責任を隠すことがある。これは手続き上の衝突を示すもので、最終的な罪、安全、救助、法的結果の証明ではない。隔離コード、法的コード、時刻、秘匿見出し、拒否部署を分けて保持する。",
+          "spoiler_policy": "隔離と法的保留の衝突とは、パケットが安全審査と法的解放管理の両方で止められている状態をいう。重なりは人を守り、危険物を保持し、または部署の責任を隠すことがある。これは手続き上の衝突を示すもので、最終的な罪、安全、救助、法的結果の証明ではない。隔離コード、法的コード、時刻、秘匿見出し、拒否部署を分けて保持する。",
+          "title": "Quarantine Legal Hold Conflict",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_QUARANTINE_LEGAL_HOLD_CONFLICT_BRIDGE_ja_JP_PRIMARY"
+        },
+        "ko_KR": {
+          "website_article": "격리 법적 보류 충돌은 패킷이 안전 검토와 법적 공개 통제에 동시에 멈춘 상태를 뜻한다. 그 중첩은 사람을 보호하거나 위험 물질을 보존하거나 사무소 책임을 숨길 수 있다. 절차 충돌의 증거이지 최종 유죄, 최종 안전, 구조, 법적 결과의 증거가 아니다. 격리 코드, 법적 코드, 시간표시, 수정 헤더, 거부 사무소를 분리해 보존해야 한다.",
+          "wiki_article": "격리 법적 보류 충돌은 패킷이 안전 검토와 법적 공개 통제에 동시에 멈춘 상태를 뜻한다. 그 중첩은 사람을 보호하거나 위험 물질을 보존하거나 사무소 책임을 숨길 수 있다. 절차 충돌의 증거이지 최종 유죄, 최종 안전, 구조, 법적 결과의 증거가 아니다. 격리 코드, 법적 코드, 시간표시, 수정 헤더, 거부 사무소를 분리해 보존해야 한다.",
+          "pda_codex": "격리 법적 보류 충돌은 패킷이 안전 검토와 법적 공개 통제에 동시에 멈춘 상태를 뜻한다. 그 중첩은 사람을 보호하거나 위험 물질을 보존하거나 사무소 책임을 숨길 수 있다. 절차 충돌의 증거이지 최종 유죄, 최종 안전, 구조, 법적 결과의 증거가 아니다. 격리 코드, 법적 코드, 시간표시, 수정 헤더, 거부 사무소를 분리해 보존해야 한다.",
+          "scanner_entry": "격리 법적 보류 충돌은 패킷이 안전 검토와 법적 공개 통제에 동시에 멈춘 상태를 뜻한다. 그 중첩은 사람을 보호하거나 위험 물질을 보존하거나 사무소 책임을 숨길 수 있다. 절차 충돌의 증거이지 최종 유죄, 최종 안전, 구조, 법적 결과의 증거가 아니다. 격리 코드, 법적 코드, 시간표시, 수정 헤더, 거부 사무소를 분리해 보존해야 한다.",
+          "terminal_note": "격리 법적 보류 충돌은 패킷이 안전 검토와 법적 공개 통제에 동시에 멈춘 상태를 뜻한다. 그 중첩은 사람을 보호하거나 위험 물질을 보존하거나 사무소 책임을 숨길 수 있다. 절차 충돌의 증거이지 최종 유죄, 최종 안전, 구조, 법적 결과의 증거가 아니다. 격리 코드, 법적 코드, 시간표시, 수정 헤더, 거부 사무소를 분리해 보존해야 한다.",
+          "evidence_caption": "격리 법적 보류 충돌은 패킷이 안전 검토와 법적 공개 통제에 동시에 멈춘 상태를 뜻한다. 그 중첩은 사람을 보호하거나 위험 물질을 보존하거나 사무소 책임을 숨길 수 있다. 절차 충돌의 증거이지 최종 유죄, 최종 안전, 구조, 법적 결과의 증거가 아니다. 격리 코드, 법적 코드, 시간표시, 수정 헤더, 거부 사무소를 분리해 보존해야 한다.",
+          "spoiler_policy": "격리 법적 보류 충돌은 패킷이 안전 검토와 법적 공개 통제에 동시에 멈춘 상태를 뜻한다. 그 중첩은 사람을 보호하거나 위험 물질을 보존하거나 사무소 책임을 숨길 수 있다. 절차 충돌의 증거이지 최종 유죄, 최종 안전, 구조, 법적 결과의 증거가 아니다. 격리 코드, 법적 코드, 시간표시, 수정 헤더, 거부 사무소를 분리해 보존해야 한다.",
+          "title": "Quarantine Legal Hold Conflict",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_QUARANTINE_LEGAL_HOLD_CONFLICT_BRIDGE_ko_KR_PRIMARY"
+        },
+        "nl_NL": {
+          "website_article": "Conflict tussen quarantaine en juridische hold betekent dat een pakket tegelijk door veiligheidsreview en juridische vrijgavecontrole wordt gestopt. De overlap kan mensen beschermen, gevaarlijk materiaal bewaren of kantooraansprakelijkheid verbergen. Het bewijst procedureconflict, geen schuld, veiligheid, redding of juridische uitkomst. Houd quarantainecode, juridische code, tijdstempels, redactiekop en weigerend kantoor gescheiden.",
+          "wiki_article": "Conflict tussen quarantaine en juridische hold betekent dat een pakket tegelijk door veiligheidsreview en juridische vrijgavecontrole wordt gestopt. De overlap kan mensen beschermen, gevaarlijk materiaal bewaren of kantooraansprakelijkheid verbergen. Het bewijst procedureconflict, geen schuld, veiligheid, redding of juridische uitkomst. Houd quarantainecode, juridische code, tijdstempels, redactiekop en weigerend kantoor gescheiden.",
+          "pda_codex": "Conflict tussen quarantaine en juridische hold betekent dat een pakket tegelijk door veiligheidsreview en juridische vrijgavecontrole wordt gestopt. De overlap kan mensen beschermen, gevaarlijk materiaal bewaren of kantooraansprakelijkheid verbergen. Het bewijst procedureconflict, geen schuld, veiligheid, redding of juridische uitkomst. Houd quarantainecode, juridische code, tijdstempels, redactiekop en weigerend kantoor gescheiden.",
+          "scanner_entry": "Conflict tussen quarantaine en juridische hold betekent dat een pakket tegelijk door veiligheidsreview en juridische vrijgavecontrole wordt gestopt. De overlap kan mensen beschermen, gevaarlijk materiaal bewaren of kantooraansprakelijkheid verbergen. Het bewijst procedureconflict, geen schuld, veiligheid, redding of juridische uitkomst. Houd quarantainecode, juridische code, tijdstempels, redactiekop en weigerend kantoor gescheiden.",
+          "terminal_note": "Conflict tussen quarantaine en juridische hold betekent dat een pakket tegelijk door veiligheidsreview en juridische vrijgavecontrole wordt gestopt. De overlap kan mensen beschermen, gevaarlijk materiaal bewaren of kantooraansprakelijkheid verbergen. Het bewijst procedureconflict, geen schuld, veiligheid, redding of juridische uitkomst. Houd quarantainecode, juridische code, tijdstempels, redactiekop en weigerend kantoor gescheiden.",
+          "evidence_caption": "Conflict tussen quarantaine en juridische hold betekent dat een pakket tegelijk door veiligheidsreview en juridische vrijgavecontrole wordt gestopt. De overlap kan mensen beschermen, gevaarlijk materiaal bewaren of kantooraansprakelijkheid verbergen. Het bewijst procedureconflict, geen schuld, veiligheid, redding of juridische uitkomst. Houd quarantainecode, juridische code, tijdstempels, redactiekop en weigerend kantoor gescheiden.",
+          "spoiler_policy": "Conflict tussen quarantaine en juridische hold betekent dat een pakket tegelijk door veiligheidsreview en juridische vrijgavecontrole wordt gestopt. De overlap kan mensen beschermen, gevaarlijk materiaal bewaren of kantooraansprakelijkheid verbergen. Het bewijst procedureconflict, geen schuld, veiligheid, redding of juridische uitkomst. Houd quarantainecode, juridische code, tijdstempels, redactiekop en weigerend kantoor gescheiden.",
+          "title": "Quarantine Legal Hold Conflict",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_QUARANTINE_LEGAL_HOLD_CONFLICT_BRIDGE_nl_NL_PRIMARY"
+        },
+        "pl_PL": {
+          "website_article": "Konflikt kwarantanny i blokady prawnej oznacza, ze pakiet zatrzymuje jednoczesnie przeglad bezpieczenstwa i kontrola prawnego uwolnienia. Nakladanie moze chronic ludzi, zachowac niebezpieczny material albo ukryc odpowiedzialnosc biura. Dowodzi konfliktu procedury, nie winy, bezpieczenstwa, ratunku ani wyniku prawnego. Oddziel kod kwarantanny, kod prawny, czasy, naglowek redakcji i biuro odmowy.",
+          "wiki_article": "Konflikt kwarantanny i blokady prawnej oznacza, ze pakiet zatrzymuje jednoczesnie przeglad bezpieczenstwa i kontrola prawnego uwolnienia. Nakladanie moze chronic ludzi, zachowac niebezpieczny material albo ukryc odpowiedzialnosc biura. Dowodzi konfliktu procedury, nie winy, bezpieczenstwa, ratunku ani wyniku prawnego. Oddziel kod kwarantanny, kod prawny, czasy, naglowek redakcji i biuro odmowy.",
+          "pda_codex": "Konflikt kwarantanny i blokady prawnej oznacza, ze pakiet zatrzymuje jednoczesnie przeglad bezpieczenstwa i kontrola prawnego uwolnienia. Nakladanie moze chronic ludzi, zachowac niebezpieczny material albo ukryc odpowiedzialnosc biura. Dowodzi konfliktu procedury, nie winy, bezpieczenstwa, ratunku ani wyniku prawnego. Oddziel kod kwarantanny, kod prawny, czasy, naglowek redakcji i biuro odmowy.",
+          "scanner_entry": "Konflikt kwarantanny i blokady prawnej oznacza, ze pakiet zatrzymuje jednoczesnie przeglad bezpieczenstwa i kontrola prawnego uwolnienia. Nakladanie moze chronic ludzi, zachowac niebezpieczny material albo ukryc odpowiedzialnosc biura. Dowodzi konfliktu procedury, nie winy, bezpieczenstwa, ratunku ani wyniku prawnego. Oddziel kod kwarantanny, kod prawny, czasy, naglowek redakcji i biuro odmowy.",
+          "terminal_note": "Konflikt kwarantanny i blokady prawnej oznacza, ze pakiet zatrzymuje jednoczesnie przeglad bezpieczenstwa i kontrola prawnego uwolnienia. Nakladanie moze chronic ludzi, zachowac niebezpieczny material albo ukryc odpowiedzialnosc biura. Dowodzi konfliktu procedury, nie winy, bezpieczenstwa, ratunku ani wyniku prawnego. Oddziel kod kwarantanny, kod prawny, czasy, naglowek redakcji i biuro odmowy.",
+          "evidence_caption": "Konflikt kwarantanny i blokady prawnej oznacza, ze pakiet zatrzymuje jednoczesnie przeglad bezpieczenstwa i kontrola prawnego uwolnienia. Nakladanie moze chronic ludzi, zachowac niebezpieczny material albo ukryc odpowiedzialnosc biura. Dowodzi konfliktu procedury, nie winy, bezpieczenstwa, ratunku ani wyniku prawnego. Oddziel kod kwarantanny, kod prawny, czasy, naglowek redakcji i biuro odmowy.",
+          "spoiler_policy": "Konflikt kwarantanny i blokady prawnej oznacza, ze pakiet zatrzymuje jednoczesnie przeglad bezpieczenstwa i kontrola prawnego uwolnienia. Nakladanie moze chronic ludzi, zachowac niebezpieczny material albo ukryc odpowiedzialnosc biura. Dowodzi konfliktu procedury, nie winy, bezpieczenstwa, ratunku ani wyniku prawnego. Oddziel kod kwarantanny, kod prawny, czasy, naglowek redakcji i biuro odmowy.",
+          "title": "Quarantine Legal Hold Conflict",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_QUARANTINE_LEGAL_HOLD_CONFLICT_BRIDGE_pl_PL_PRIMARY"
+        },
+        "pt_BR": {
+          "website_article": "Conflito de quarentena e retencao legal significa que um pacote foi parado por revisao de seguranca e controle juridico de liberacao ao mesmo tempo. A sobreposicao pode proteger pessoas, preservar material perigoso ou ocultar responsabilidade de escritorio. Prova conflito procedural, nao culpa final, seguranca final, resgate ou resultado legal. Mantenha codigo de quarentena, codigo legal, tempos, cabecalho de redacao e escritorio negador separados.",
+          "wiki_article": "Conflito de quarentena e retencao legal significa que um pacote foi parado por revisao de seguranca e controle juridico de liberacao ao mesmo tempo. A sobreposicao pode proteger pessoas, preservar material perigoso ou ocultar responsabilidade de escritorio. Prova conflito procedural, nao culpa final, seguranca final, resgate ou resultado legal. Mantenha codigo de quarentena, codigo legal, tempos, cabecalho de redacao e escritorio negador separados.",
+          "pda_codex": "Conflito de quarentena e retencao legal significa que um pacote foi parado por revisao de seguranca e controle juridico de liberacao ao mesmo tempo. A sobreposicao pode proteger pessoas, preservar material perigoso ou ocultar responsabilidade de escritorio. Prova conflito procedural, nao culpa final, seguranca final, resgate ou resultado legal. Mantenha codigo de quarentena, codigo legal, tempos, cabecalho de redacao e escritorio negador separados.",
+          "scanner_entry": "Conflito de quarentena e retencao legal significa que um pacote foi parado por revisao de seguranca e controle juridico de liberacao ao mesmo tempo. A sobreposicao pode proteger pessoas, preservar material perigoso ou ocultar responsabilidade de escritorio. Prova conflito procedural, nao culpa final, seguranca final, resgate ou resultado legal. Mantenha codigo de quarentena, codigo legal, tempos, cabecalho de redacao e escritorio negador separados.",
+          "terminal_note": "Conflito de quarentena e retencao legal significa que um pacote foi parado por revisao de seguranca e controle juridico de liberacao ao mesmo tempo. A sobreposicao pode proteger pessoas, preservar material perigoso ou ocultar responsabilidade de escritorio. Prova conflito procedural, nao culpa final, seguranca final, resgate ou resultado legal. Mantenha codigo de quarentena, codigo legal, tempos, cabecalho de redacao e escritorio negador separados.",
+          "evidence_caption": "Conflito de quarentena e retencao legal significa que um pacote foi parado por revisao de seguranca e controle juridico de liberacao ao mesmo tempo. A sobreposicao pode proteger pessoas, preservar material perigoso ou ocultar responsabilidade de escritorio. Prova conflito procedural, nao culpa final, seguranca final, resgate ou resultado legal. Mantenha codigo de quarentena, codigo legal, tempos, cabecalho de redacao e escritorio negador separados.",
+          "spoiler_policy": "Conflito de quarentena e retencao legal significa que um pacote foi parado por revisao de seguranca e controle juridico de liberacao ao mesmo tempo. A sobreposicao pode proteger pessoas, preservar material perigoso ou ocultar responsabilidade de escritorio. Prova conflito procedural, nao culpa final, seguranca final, resgate ou resultado legal. Mantenha codigo de quarentena, codigo legal, tempos, cabecalho de redacao e escritorio negador separados.",
+          "title": "Quarantine Legal Hold Conflict",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_QUARANTINE_LEGAL_HOLD_CONFLICT_BRIDGE_pt_BR_PRIMARY"
+        },
+        "ru_RU": {
+          "website_article": "Конфликт карантина и юридического удержания означает, что пакет остановлен и проверкой безопасности, и правовым контролем выпуска. Пересечение может защищать людей, сохранять опасный материал или скрывать ответственность офиса. Оно доказывает процедурный конфликт, а не финальную вину, безопасность, спасение или юридический итог. Держи отдельно код карантина, юридический код, метки времени, заголовок редактуры и отказавший офис.",
+          "wiki_article": "Конфликт карантина и юридического удержания означает, что пакет остановлен и проверкой безопасности, и правовым контролем выпуска. Пересечение может защищать людей, сохранять опасный материал или скрывать ответственность офиса. Оно доказывает процедурный конфликт, а не финальную вину, безопасность, спасение или юридический итог. Держи отдельно код карантина, юридический код, метки времени, заголовок редактуры и отказавший офис.",
+          "pda_codex": "Конфликт карантина и юридического удержания означает, что пакет остановлен и проверкой безопасности, и правовым контролем выпуска. Пересечение может защищать людей, сохранять опасный материал или скрывать ответственность офиса. Оно доказывает процедурный конфликт, а не финальную вину, безопасность, спасение или юридический итог. Держи отдельно код карантина, юридический код, метки времени, заголовок редактуры и отказавший офис.",
+          "scanner_entry": "Конфликт карантина и юридического удержания означает, что пакет остановлен и проверкой безопасности, и правовым контролем выпуска. Пересечение может защищать людей, сохранять опасный материал или скрывать ответственность офиса. Оно доказывает процедурный конфликт, а не финальную вину, безопасность, спасение или юридический итог. Держи отдельно код карантина, юридический код, метки времени, заголовок редактуры и отказавший офис.",
+          "terminal_note": "Конфликт карантина и юридического удержания означает, что пакет остановлен и проверкой безопасности, и правовым контролем выпуска. Пересечение может защищать людей, сохранять опасный материал или скрывать ответственность офиса. Оно доказывает процедурный конфликт, а не финальную вину, безопасность, спасение или юридический итог. Держи отдельно код карантина, юридический код, метки времени, заголовок редактуры и отказавший офис.",
+          "evidence_caption": "Конфликт карантина и юридического удержания означает, что пакет остановлен и проверкой безопасности, и правовым контролем выпуска. Пересечение может защищать людей, сохранять опасный материал или скрывать ответственность офиса. Оно доказывает процедурный конфликт, а не финальную вину, безопасность, спасение или юридический итог. Держи отдельно код карантина, юридический код, метки времени, заголовок редактуры и отказавший офис.",
+          "spoiler_policy": "Конфликт карантина и юридического удержания означает, что пакет остановлен и проверкой безопасности, и правовым контролем выпуска. Пересечение может защищать людей, сохранять опасный материал или скрывать ответственность офиса. Оно доказывает процедурный конфликт, а не финальную вину, безопасность, спасение или юридический итог. Держи отдельно код карантина, юридический код, метки времени, заголовок редактуры и отказавший офис.",
+          "title": "Quarantine Legal Hold Conflict",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_QUARANTINE_LEGAL_HOLD_CONFLICT_BRIDGE_ru_RU_PRIMARY"
+        },
+        "uk_UA": {
+          "website_article": "Конфлікт карантину й юридичного утримання означає, що пакет зупинено і перевіркою безпеки, і правовим контролем випуску. Перетин може захищати людей, зберігати небезпечний матеріал або приховувати відповідальність офісу. Він доводить процедурний конфлікт, а не фінальну вину, безпеку, порятунок чи юридичний результат. Тримай окремо код карантину, юридичний код, часові мітки, заголовок редагування і офіс відмови.",
+          "wiki_article": "Конфлікт карантину й юридичного утримання означає, що пакет зупинено і перевіркою безпеки, і правовим контролем випуску. Перетин може захищати людей, зберігати небезпечний матеріал або приховувати відповідальність офісу. Він доводить процедурний конфлікт, а не фінальну вину, безпеку, порятунок чи юридичний результат. Тримай окремо код карантину, юридичний код, часові мітки, заголовок редагування і офіс відмови.",
+          "pda_codex": "Конфлікт карантину й юридичного утримання означає, що пакет зупинено і перевіркою безпеки, і правовим контролем випуску. Перетин може захищати людей, зберігати небезпечний матеріал або приховувати відповідальність офісу. Він доводить процедурний конфлікт, а не фінальну вину, безпеку, порятунок чи юридичний результат. Тримай окремо код карантину, юридичний код, часові мітки, заголовок редагування і офіс відмови.",
+          "scanner_entry": "Конфлікт карантину й юридичного утримання означає, що пакет зупинено і перевіркою безпеки, і правовим контролем випуску. Перетин може захищати людей, зберігати небезпечний матеріал або приховувати відповідальність офісу. Він доводить процедурний конфлікт, а не фінальну вину, безпеку, порятунок чи юридичний результат. Тримай окремо код карантину, юридичний код, часові мітки, заголовок редагування і офіс відмови.",
+          "terminal_note": "Конфлікт карантину й юридичного утримання означає, що пакет зупинено і перевіркою безпеки, і правовим контролем випуску. Перетин може захищати людей, зберігати небезпечний матеріал або приховувати відповідальність офісу. Він доводить процедурний конфлікт, а не фінальну вину, безпеку, порятунок чи юридичний результат. Тримай окремо код карантину, юридичний код, часові мітки, заголовок редагування і офіс відмови.",
+          "evidence_caption": "Конфлікт карантину й юридичного утримання означає, що пакет зупинено і перевіркою безпеки, і правовим контролем випуску. Перетин може захищати людей, зберігати небезпечний матеріал або приховувати відповідальність офісу. Він доводить процедурний конфлікт, а не фінальну вину, безпеку, порятунок чи юридичний результат. Тримай окремо код карантину, юридичний код, часові мітки, заголовок редагування і офіс відмови.",
+          "spoiler_policy": "Конфлікт карантину й юридичного утримання означає, що пакет зупинено і перевіркою безпеки, і правовим контролем випуску. Перетин може захищати людей, зберігати небезпечний матеріал або приховувати відповідальність офісу. Він доводить процедурний конфлікт, а не фінальну вину, безпеку, порятунок чи юридичний результат. Тримай окремо код карантину, юридичний код, часові мітки, заголовок редагування і офіс відмови.",
+          "title": "Quarantine Legal Hold Conflict",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_QUARANTINE_LEGAL_HOLD_CONFLICT_BRIDGE_uk_UA_PRIMARY"
+        },
+        "zh_CN": {
+          "website_article": "隔离与法律扣留冲突表示同一个数据包同时被安全审查和法律释放控制拦下。重叠可能保护人员、保存危险材料，也可能隐藏办公室责任。它证明程序冲突，不证明最终罪责、最终安全、救援或法律结果。应分开保留隔离代码、法律代码、时间戳、删节标题和拒绝办公室。 ## QA Notes Forbidden facts avoided: - No final legal result, final receiver, claimant identity, Atlas consequence, rescue promise, source insertion, native review, Unity placement, h8bin state, DataMonolith state, generated page state, or public deployment state. - P461-P504 were not edited by this packet. Review blockers: - Native localization review absent for non-English rows. - Source table insertion, string-pool extraction, route-card mapping, generated-page export, runtime placement, and h8bin bake are separate gated tasks.",
+          "wiki_article": "隔离与法律扣留冲突表示同一个数据包同时被安全审查和法律释放控制拦下。重叠可能保护人员、保存危险材料，也可能隐藏办公室责任。它证明程序冲突，不证明最终罪责、最终安全、救援或法律结果。应分开保留隔离代码、法律代码、时间戳、删节标题和拒绝办公室。 ## QA Notes Forbidden facts avoided: - No final legal result, final receiver, claimant identity, Atlas consequence, rescue promise, source insertion, native review, Unity placement, h8bin state, DataMonolith state, generated page state, or public deployment state. - P461-P504 were not edited by this packet. Review blockers: - Native localization review absent for non-English rows. - Source table insertion, string-pool extraction, route-card mapping, generated-page export, runtime placement, and h8bin bake are separate gated tasks.",
+          "pda_codex": "隔离与法律扣留冲突表示同一个数据包同时被安全审查和法律释放控制拦下。重叠可能保护人员、保存危险材料，也可能隐藏办公室责任。它证明程序冲突，不证明最终罪责、最终安全、救援或法律结果。应分开保留隔离代码、法律代码、时间戳、删节标题和拒绝办公室。 ## QA Notes Forbidden facts avoided: - No final legal result, final receiver, claimant identity, Atlas consequence, rescue promise, source insertion, native review, Unity placement, h8bin state, DataMonolith state, generated page state, or public deployment state. - P461-P504 were not edited by this packet. Review blockers: - Native localization review absent for non-English rows. - Source table insertion, string-pool extraction, route-card mapping, generated-page export, runtime placement, and h8bin bake are separate gated tasks.",
+          "scanner_entry": "隔离与法律扣留冲突表示同一个数据包同时被安全审查和法律释放控制拦下。重叠可能保护人员、保存危险材料，也可能隐藏办公室责任。它证明程序冲突，不证明最终罪责、最终安全、救援或法律结果。应分开保留隔离代码、法律代码、时间戳、删节标题和拒绝办公室。 ## QA Notes Forbidden facts avoided: - No final legal result, final receiver, claimant identity, Atlas consequence, rescue promise, source insertion, native review, Unity placement, h8bin state, DataMonolith state, generated page state, or public deployment state. - P461-P504 were not edited by this packet. Review blockers: - Native localization review absent for non-English rows. - Source table insertion, string-pool extraction, route-card mapping, generated-page export, runtime placement, and h8bin bake are separate gated tasks.",
+          "terminal_note": "隔离与法律扣留冲突表示同一个数据包同时被安全审查和法律释放控制拦下。重叠可能保护人员、保存危险材料，也可能隐藏办公室责任。它证明程序冲突，不证明最终罪责、最终安全、救援或法律结果。应分开保留隔离代码、法律代码、时间戳、删节标题和拒绝办公室。 ## QA Notes Forbidden facts avoided: - No final legal result, final receiver, claimant identity, Atlas consequence, rescue promise, source insertion, native review, Unity placement, h8bin state, DataMonolith state, generated page state, or public deployment state. - P461-P504 were not edited by this packet. Review blockers: - Native localization review absent for non-English rows. - Source table insertion, string-pool extraction, route-card mapping, generated-page export, runtime placement, and h8bin bake are separate gated tasks.",
+          "evidence_caption": "隔离与法律扣留冲突表示同一个数据包同时被安全审查和法律释放控制拦下。重叠可能保护人员、保存危险材料，也可能隐藏办公室责任。它证明程序冲突，不证明最终罪责、最终安全、救援或法律结果。应分开保留隔离代码、法律代码、时间戳、删节标题和拒绝办公室。 ## QA Notes Forbidden facts avoided: - No final legal result, final receiver, claimant identity, Atlas consequence, rescue promise, source insertion, native review, Unity placement, h8bin state, DataMonolith state, generated page state, or public deployment state. - P461-P504 were not edited by this packet. Review blockers: - Native localization review absent for non-English rows. - Source table insertion, string-pool extraction, route-card mapping, generated-page export, runtime placement, and h8bin bake are separate gated tasks.",
+          "spoiler_policy": "隔离与法律扣留冲突表示同一个数据包同时被安全审查和法律释放控制拦下。重叠可能保护人员、保存危险材料，也可能隐藏办公室责任。它证明程序冲突，不证明最终罪责、最终安全、救援或法律结果。应分开保留隔离代码、法律代码、时间戳、删节标题和拒绝办公室。 ## QA Notes Forbidden facts avoided: - No final legal result, final receiver, claimant identity, Atlas consequence, rescue promise, source insertion, native review, Unity placement, h8bin state, DataMonolith state, generated page state, or public deployment state. - P461-P504 were not edited by this packet. Review blockers: - Native localization review absent for non-English rows. - Source table insertion, string-pool extraction, route-card mapping, generated-page export, runtime placement, and h8bin bake are separate gated tasks.",
+          "title": "Quarantine Legal Hold Conflict",
+          "locale_status": "draft_machine_or_llm",
+          "string_pool_key": "LORE_EVIDENCE_QUARANTINE_LEGAL_HOLD_CONFLICT_BRIDGE_zh_CN_PRIMARY"
+        }
+      }
+    }
+  ]
+}

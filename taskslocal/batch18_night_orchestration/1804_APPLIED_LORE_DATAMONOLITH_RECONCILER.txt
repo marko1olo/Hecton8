@@ -1,0 +1,93 @@
+ID: 1804
+Role: APPLIED_LORE_DATAMONOLITH_RECONCILER
+Chat name: 1804 Applied Lore DataMonolith
+
+OBJECTIVE
+Reconcile Batch 17 lore/content outputs with the AppliedContent/DataMonolith pipeline so in-world text can actually move toward game/wiki/site integration in 15 languages without fake readiness claims.
+
+FRESH EVIDENCE LEADS TO VERIFY
+- `1778`: full audit reportedly fails because `P288_WORKER_LOCKER_NAMEPLATE_SAMPLE/ja_JP` scanner length differs between CSV and blob (`csv=88`, `blob=71`); `static_data.h8bin` is stale.
+- `1778`: placement coverage is reportedly weak: `scene_bindings=7`, `prefab_bindings=42`, `scene_placement_covered_rows=34` for 460 packets.
+- `1777`: localization is not release-clean; draft phrase hits, placeholders, TODOs, machine-localization phrase hits, native-review queue, RTL/CJK/layout proof remain.
+- `1771`: public-site output may be unstable; verify `Docs/Lore/AppliedContent/external_site/ru_RU/P456_SITE_HOME_LONGFORM_BRIEF.md` for mojibake and production-brief residue before trusting source-ready status.
+- `1776`: schema drift may exist between legacy single-packet JSON files and `.packets.json` bundles.
+
+These are leads, not accepted facts. Inspect the named files/logs before using them.
+
+AUTHORITY DOCS
+Read:
+- AGENTS.md
+- PROJECT_BIBLES.md
+- VISION_LOCKS.md
+- TASTE.md
+- quality.md
+- writing.md
+- narrative.md
+- localization.md
+- data.md
+- authoring.md
+- Docs/Lore/WriterScenarioAgentPrompt.md if it exists
+
+Before non-trivial data/source edits, identify 2-8 relevant `.agents-skills` mandates and read only those.
+
+OWNED SCOPE
+Allowed:
+- Assets/_SourceData/DataMonolith/Narrative/
+- Assets/StreamingAssets/Hecton8/DataMonolith/ only for inspection unless a safe bake is explicitly possible without Unity contention
+- Docs/Reports/Batch18/
+- Docs/Tasks/Status_1804.md
+- Docs/AgentLogs/Rationale_1804.md
+- Docs/AgentLogs/LOG_1804.md
+- recent LOG/HANDOFF/Rationale/Status for 1770-1779 when relevant
+
+Do not:
+- claim native-final translations;
+- fabricate 15-locale content;
+- break CSV schema;
+- run Unity/bake if another agent owns the editor or compiler/CPU is busy;
+- overwrite content from Batch 17 without preserving evidence and rollback.
+
+TASKS
+Phase 0 - Evidence And Schema
+01. Create Status_1804.md with all tasks and proof labels.
+02. Read authority docs and record content/localization constraints in Rationale_1804.md.
+03. Inspect source files under `Assets/_SourceData/DataMonolith/Narrative/`, especially applied lore packet/route CSVs if present. Verify schema headers and file paths.
+04. Inspect `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` presence/size/timestamp only; do not claim semantic validity unless a validator is run.
+05. Inspect recent 1770-1779 logs/handoffs only for actual outputs and unresolved content/data integration notes.
+Checkpoint A: update Status_1804 with schema and evidence.
+
+Phase 1 - Content Integration Matrix
+06. Build `Docs/Reports/Batch18/1804_APPLIED_LORE_DATAMONOLITH_RECONCILE.md`.
+07. Create a matrix of content types: external wiki, in-game PDA encyclopedia, scanner field notes, terminal/survivor/corporate notes, audio blackbox transcripts, player notes/facts, localization QA, lore reader prototype.
+08. For each type, record current source file, LocID strategy, 15-locale status, runtime layer target, evidence object/unlock context, and proof state.
+09. Identify schema mismatches, missing locale columns, stale binary risk, missing unlock context, AI-sounding text risk, and missing source/speaker.
+10. Mark every not-yet-verified content item as CANDIDATE or PENDING VERIFICATION.
+Checkpoint B: no "ready for game" claim without source and runtime proof.
+
+Phase 2 - Safe Fixes
+11. If there are obvious source-level CSV/doc errors that are small, schema-safe, and backed by evidence, fix them. Use minimal edits and preserve rollback in Rationale_1804.md.
+12. If fixes require bulk generation or editorial judgment, do not fabricate; write exact follow-up task prompts instead.
+13. Validate CSV shape with static tools if possible without Unity. Record command output in LOG_1804.md.
+14. If a DataMonolith bake/semantic validator is available and safe without Unity contention, run it only after checking CPU/compiler/editor state. Otherwise mark PENDING UNITY/DATAMONOLITH BAKE.
+15. For every proposed translated row, state status honestly: draft, machine draft, needs native review, runtime missing, or native-final if and only if proof exists.
+Checkpoint C: update Status_1804 with fixes or blocked state.
+
+Phase 3 - Handoff
+16. Write a future prompt for a writer/content agent to improve weak prose using writing.md/narrative.md/localization.md.
+17. Write a future prompt for a data/bake agent to run DataMonolith integration when Unity is free.
+18. Write a future prompt for the lore reader prototype/site agent if site display needs updates.
+19. Append LOG_1804.md with exact files inspected/edited, proof labels, and residual risks.
+20. Final scan: no fake native-review, no fake static_data semantic proof, no source-less lore claims.
+
+PROOF PACKET
+Required:
+- Status_1804.md
+- Rationale_1804.md if decisions/fixes are made
+- LOG_1804.md
+- Docs/Reports/Batch18/1804_APPLIED_LORE_DATAMONOLITH_RECONCILE.md
+
+REJECTION GATES
+- No fake translations.
+- No DataMonolith readiness without validation/bake proof.
+- No AI-sounding lore as accepted content.
+- No Unity fight.

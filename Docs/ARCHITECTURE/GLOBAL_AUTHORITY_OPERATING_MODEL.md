@@ -26,9 +26,9 @@ Parents:
 
 - `DISPATCH_PIPELINE.md`
 
-- `SYSTEMS_CONTRACTS.md`
+- `Docs/SYSTEMS_CONTRACTS.md`
 
-- `QUALITY_GATES.md`
+- `Docs/QUALITY_GATES.md`
 
 ## Senior Verdict
 

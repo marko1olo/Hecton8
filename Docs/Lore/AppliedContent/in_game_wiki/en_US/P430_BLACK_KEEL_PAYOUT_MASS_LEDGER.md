@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -20,7 +20,7 @@ The payout mass ledger is the material-ending bridge: profitable exits can prese
 
 ## Scanner
 
-Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.
+Black Keel payout ledger: mass, custody, receiver risk and evidence suppression priced separately.
 
 ## Terminal
 
@@ -32,6 +32,6 @@ The ledger can pay you and still steal the story.
 
 ## Field Note
 
-Use for contract board, false exit records and spoiler-gated ending pages.
+Carrier math is not your math. A clean witness hash can weigh more than a full crate.
 
 <!-- In-Game Wiki; generated from P430_BLACK_KEEL_PAYOUT_MASS_LEDGER/en_US. -->

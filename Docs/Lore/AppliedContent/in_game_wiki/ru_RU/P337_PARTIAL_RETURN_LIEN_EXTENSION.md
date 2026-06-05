@@ -10,13 +10,13 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Продление lien при partial return
+# Partial Return Lien Extension
 
-Partial return lien extension фиксирует replay persistence как знание, не power. Игрок может вернуться, потому что изменились debt и dossier, а не потому что мир стал легче.
+Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.
 
 ## Scanner
 
@@ -28,10 +28,10 @@ PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm w
 
 ## Audio
 
-Маршрут помнит, что ты доказал. Океан не должен вернуть тебе инструменты.
+The route remembers what you proved. The ocean does not owe you your tools.
 
 ## Field Note
 
-Для same-seed return UI и meta dossier.
+Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment.
 
 <!-- In-Game Wiki; generated from P337_PARTIAL_RETURN_LIEN_EXTENSION/ru_RU. -->

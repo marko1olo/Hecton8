@@ -1,0 +1,53 @@
+field,required,type,valid_rule,reject_if_missing_or_false,evidence_class
+packet_id,yes,string,Unique packet/run id such as 1474,Reject packet if absent,STATIC_DOC
+capture_id,yes,string,Stable per-image id matching filename stem,Reject image if absent,STATIC_DOC
+artifact_path,yes,path,Must be under Docs/Screenshots/MCP or approved Docs proof folder,Reject if under Assets or missing,STATIC_SOURCE
+artifact_sha256,yes,hex,Hash calculated after file write completes,Reject if absent or duplicate where state toggle claims visual difference,STATIC_SOURCE
+file_last_write_utc,yes,datetime,Filesystem timestamp for capture artifact,Reject if newer than available clean log tail without explanation,STATIC_SOURCE
+capture_timestamp_utc,yes,datetime,Logged immediately before and after capture,Reject if only inferred from filename,STATIC_LOG
+active_scene,yes,string,Must be 02_HECTON_WORLD for world proof unless explicitly assigned otherwise,Reject if wrong or unlogged,PLAYMODE_PENDING
+scene_loaded_mode,yes,string,Must state 00->01->02 route or explicit direct 02 route,Reject forced invalid load or stale scene state,PLAYMODE_PENDING
+editor_is_playing,yes,bool,Must be true for runtime/player-route proof or explicitly editor-only route proof,Reject ambiguous mode,STATIC_LOG
+editor_is_compiling,yes,bool,Must be false during capture,Reject if true or absent,STATIC_LOG
+editor_is_updating,yes,bool,Must be false during capture,Reject if true or absent,STATIC_LOG
+camera_name,yes,string,Must identify Main Camera/player/cockpit/capture camera,Reject unnamed camera,PLAYMODE_PENDING
+camera_instance_id,yes,int,Stable Unity instance id for the camera at capture time,Reject absent for multi-camera scenes,PLAYMODE_PENDING
+camera_source,yes,enum,Allowed: player_main,cockpit_main,game_view,scene_view_debug,editor_temp_debug,Reject if editor_temp_debug is used without DEBUG label,STATIC_LOG
+camera_position_world,yes,vector3,World-space position logged at capture,Reject if absent,PLAYMODE_PENDING
+camera_rotation_world,yes,quaternion_or_euler,World-space rotation logged at capture,Reject if absent,PLAYMODE_PENDING
+camera_depth_m,yes,float,Positive meters below water surface for underwater captures,Reject underwater label if depth <=0 or absent,PLAYMODE_PENDING
+water_surface_y,yes,float,Water surface reference used to compute depth,Reject if depth source absent,PLAYMODE_PENDING
+underwater_band,yes,enum,Allowed: surface,shoreline,underwater_0_5m,underwater_20_50m,aegir,regression,Reject if label and depth disagree,STATIC_LOG
+player_position_world,yes,vector3,Player/cockpit root position at capture,Reject detached-camera proof if absent,PLAYMODE_PENDING
+player_depth_m,yes,float,Player/cockpit depth where applicable,Reject if camera/player separation hides route truth,PLAYMODE_PENDING
+camera_player_distance_m,yes,float,Distance between camera and player/cockpit root,Reject unmarked detached proof above accepted tolerance,PLAYMODE_PENDING
+underwater_state_owner,yes,string,Named system determining underwater state,Reject if only filename/label supplies state,STATIC_LOG
+underwater_state_active,yes,bool,Must be true for underwater captures,Reject if false or absent,PLAYMODE_PENDING
+underwater_renderer_present,yes,bool,Crest/underwater renderer existence,Reject if absent for underwater proof unless route uses documented alternative,STATIC_LOG
+underwater_renderer_enabled,yes,bool,Must be true for underwater proof,Reject if false or absent,STATIC_LOG
+crest_ocean_present,yes,bool,Must state Crest ocean presence for water proof,Reject if absent for Crest route,STATIC_LOG
+crest_underwater_pass_state,yes,enum,Allowed: active,inactive,not_applicable,unknown; underwater proof requires active,Reject unknown/inactive for underwater capture,FRAME_DEBUGGER_PENDING
+crest_foam_input_state,yes,string,Must state active foam/waterline contributors for surface/shoreline proof,Reject no foam for shoreline packet,STATIC_LOG
+post_stack_enabled,yes,bool,Must be true unless explicit A/B diagnostic capture,Reject underwater final if false,PLAYMODE_PENDING
+post_profile_name,yes,string,Volume/profile name or asset id,Reject absent for post-dependent capture,PLAYMODE_PENDING
+render_settings_fog_enabled,yes,bool,Must be logged for underwater capture,Reject absent,PLAYMODE_PENDING
+render_settings_fog_color,yes,color,Must be logged for underwater capture,Reject absent,PLAYMODE_PENDING
+render_settings_fog_density,yes,float,Must be logged for underwater capture,Reject absent,PLAYMODE_PENDING
+water_fog_state,yes,string,Named underwater fog/turbidity state,Reject generic unowned fog label,PLAYMODE_PENDING
+caustic_state,yes,string,Must state active/off/not_applicable and light reason,Reject unsupported caustics claim,FRAME_DEBUGGER_PENDING
+silt_particle_state,yes,string,Must state active/off/not_applicable and owner cause,Reject decorative/no-owner silt proof,PLAYMODE_PENDING
+waterline_foam_visible,yes,bool,Required for shoreline/surface close captures,Reject shoreline close if false or absent,PLAYER_CAPTURE_PENDING
+route_cue_visible,yes,bool,Required for underwater route captures,Reject 20-50m route if false or absent,PLAYER_CAPTURE_PENDING
+visual_reject_flags,yes,string_list,Known flags: false_label,surface_duplicate,slab_plane,green_swamp,no_caustics,no_foam,post_off,detached_camera,wrong_scene,stale_log,runtime_fault,Must list none or named faults,STATIC_DOC
+exception_count_before,yes,int,Console/log exception count before capture window,Reject if nonzero unresolved,UNITY_CONSOLE_PENDING
+exception_count_after,yes,int,Console/log exception count after capture window,Reject if increased or unresolved,UNITY_CONSOLE_PENDING
+error_count_after,yes,int,Console/log error count after capture window,Reject if nonzero unresolved,UNITY_CONSOLE_PENDING
+warning_count_after,no,int,Warnings count after capture window,Flag if unknown,UNITY_CONSOLE_PENDING
+log_tail_path,yes,path,Same-session log tail after final capture,Reject if absent or older than artifact,STATIC_LOG
+log_tail_last_write_utc,yes,datetime,Must be after final PNG timestamp,Reject stale log,STATIC_LOG
+capture_tool,yes,string,Exact tool/mechanism: MCP dynamic, ScreenCapture, RenderTexture wrapper, save thumbnail, etc.,Reject if unknown,STATIC_SOURCE
+capture_allocation_class,yes,enum,Allowed: editor_only_allocating,dev_only_allocating,shipping_zero_gc,Reject if shipping path allocates or is unknown,STATIC_SOURCE
+rollback_noop_state,yes,string,Must state scene visual mutations restored or no visual mutation except camera movement,Reject if capture permanently changes scene visuals,STATIC_LOG
+tier_lane,yes,enum,Compact,Middle,High,Ultra,diagnostic,Reject public visual claim without lane,STATIC_LOG
+global_quality_weight,yes,float,Continuous 0.0-1.0 value when available,Reject binary quality label as final proof,STATIC_LOG
+proof_label,yes,enum,Allowed: STATIC_VERIFIED,PLAYER_CAPTURE_PENDING,PLAYMODE_PENDING,REJECTED_VISUAL_PROOF,Reject inflated labels,STATIC_DOC

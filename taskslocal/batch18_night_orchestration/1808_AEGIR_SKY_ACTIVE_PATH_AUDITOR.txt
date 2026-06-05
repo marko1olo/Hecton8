@@ -1,0 +1,74 @@
+AGENT ID: 1808
+ROLE: AEGIR_SKY_ACTIVE_PATH_AUDITOR
+MODE: Independent Wave 02 static path audit. Do not wait for 1803-1805.
+
+PRIMARY GOAL
+Audit the active/candidate Aegir, sky, moons, cloud, and celestial presentation paths so later agents stop guessing. Surface sky must be bright, beautiful, cinematic-realistic, and not a noir cover-up. Aegir can be huge and strange, but it must look premium.
+
+AUTHORITIES TO READ
+- C:\hades\Hecton8\AGENTS.md
+- C:\hades\Hecton8\PROJECT_BIBLES.md
+- C:\hades\Hecton8\VISION_LOCKS.md
+- C:\hades\Hecton8\TASTE.md
+- C:\hades\Hecton8\quality.md
+- C:\hades\Hecton8\celestial.md
+- C:\hades\Hecton8\lighting.md
+- C:\hades\Hecton8\presentation.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1801_WORLD_SURFACE_ROUTE_EVIDENCE.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1802_SURFACE_SHALLOW_ASSET_INVENTORY.md
+
+LIKELY PATHS TO INSPECT
+- Assets/_Project/Scripts/HectonCelestialEngine.cs
+- Assets/_Project/Scripts/ObserverRelativeCelestialBody.cs
+- Assets/_Project/Scripts/SkySystemFollowCamera.cs
+- Assets/_Project/Scripts/Editor/SceneViewSkyboxEnforcer.cs
+- Assets/_Project/Editor/HectonSkyTools.cs
+- Assets/_Project/Editor/HectonSkyAtlasGenerator.cs
+- Assets/_Project/Scenes/02_HECTON_WORLD.unity
+- Assets/_Project/Art/Materials/Celestial/MAT_AegirGasGiant_Impostor_1428.mat
+- Assets/_Project/Art/Materials/World/MAT_H8SurfaceGasGiantDisc_1428.mat
+- Assets/_Project/Art/Materials/Sky/MAT_AegirSky_Master.mat
+- Assets/_Project/Art/Shaders/H8_AegirGasGiantImpostor_1428.shader
+- Assets/_Project/Art/Shaders/Sky/Hecton_AegirSky.shader
+- Assets/_Project/Art/TEXTURES/TX_H8AegirGasGiantBakedDisc_1428.png
+- Assets/_Project/Art/TEXTURES/Aegir_storms.png
+- Assets/_Project/_PROLOGUE_CONTENT/Textures/Planets/Clouds/GASgIANT/Aegir_storms.png
+
+OWNED OUTPUTS
+- Docs/Tasks/Status_1808.md
+- Docs/AgentLogs/Rationale_1808.md for decisions only
+- Docs/AgentLogs/LOG_1808.md
+- Docs/Reports/Batch18/1808_AEGIR_SKY_ACTIVE_PATH_AUDIT.md
+- Docs/Reports/Batch18/1808_AEGIR_SKY_BINDING_MATRIX.csv
+
+HARD RULES
+- No live Unity takeover.
+- No material/shader edits in this task unless the task proves a tiny static typo and can validate safely. Prefer audit/manifest.
+- Do not treat inactive scene objects or disabled renderers as active proof.
+- Do not make surface sky dark/murky to hide weak assets.
+- Do not claim visual acceptance without current player capture.
+
+20 TASKS
+01. Create Status_1808.md with proof labels.
+02. Read docs and selected mandates.
+03. Inspect scene YAML for celestial/Aegir/sky object active flags, renderer enabled flags, material refs, and script refs.
+04. Inspect active/candidate materials and shaders by path.
+05. Inspect texture metadata for Aegir/cloud/moon key assets where statically available.
+06. Build a binding matrix CSV: object/material/shader/texture/active-state/proof-state/risk.
+07. Separate active evidence from candidate evidence and stale/inactive/noir objects.
+08. Identify the likely active Aegir route and all uncertainties.
+09. Identify shader/material risks: harsh rim, low texture max, missing secondary maps, flat sphere, wrong blend, dark/noir backdrop.
+10. Identify surface-lighting risks that conflict with 0-100 m bright lock.
+11. Define Compact/Middle/High/Ultra sky/Aegir consequences.
+12. Define proof screenshots: horizon, waterline with Aegir, cloud edge, moon phase, compact-tier comparison.
+13. Define Frame Debugger/material proof needed after Unity slot.
+14. Define "do not do": no disabled-object claims, no dark cover, no blind package edits.
+15. Write a Unity-slot implementer prompt for sky/Aegir only.
+16. Write a texture/material polish prompt if Aegir texture softness needs offline work.
+17. Append LOG_1808.md.
+18. Final scan for fake active path claims.
+19. Mark final state STATIC SKY PATH AUDIT COMPLETE or BLOCKED BY MISSING STATIC EVIDENCE.
+20. If blocked, list exact missing path or required Unity inspection.
+
+ACCEPTANCE
+Done means later agents know which Aegir/sky paths are active, candidate, stale, or unsafe, and what proof is required to accept the surface sky.

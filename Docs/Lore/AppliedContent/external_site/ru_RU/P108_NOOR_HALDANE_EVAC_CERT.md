@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
 # Noor Haldane: evac cert
 
-Noor Haldane: evac cert дает HECTON-8 один из самых ясных noir-механизмов: legal hold, который выглядит defensible, пока игрок не стоит внутри затопленной комнаты, которую он обрек.
+Noor Haldane's evacuation certificate shows a legal hold that reads defensible on paper and deadly inside a flooded room.
 
 ## Scanner
 

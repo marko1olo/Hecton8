@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Black Keel Approach Audio Packet
+# Black Keel Approach Packet
 
-Black Keel Approach Audio Packet is the first tonal surface of HECTON-8. It tells players they are entering a professional salvage trap before the ocean becomes personal.
+Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person.
 
 ## Scanner
 
-The approach buffer is short, legal and colder than a rescue call.
+Approach buffer recovered. Contract active; rescue reserve conditional.
 
 ## Terminal
 
-APPROACH PACKET: contract active, descent window billed, rescue reserve restricted.
+BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.
 
 ## Audio
 
-Black Keel tender to claimant: descent window is paid. Return window is conditional.
+Black Keel tender to claimant. Descent window billed. Return window conditional.
 
 ## Field Note
 
-Black Keel's first voice should be clipped audio plus clean terminal text: enough humanity to sting, not enough to comfort.
+Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.
 
 <!-- External Site; generated from P246_BLACK_KEEL_APPROACH_AUDIO_PACKET/nl_NL. -->

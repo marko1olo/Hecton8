@@ -4,6 +4,8 @@ Date: 2026-05-19
 
 Status: STATIC CONTRACT / RUNTIME PENDING
 
+Owner domain: AI pacing / ecosystem route architecture
+
 ## Purpose
 
 This file closes the active architecture reference expected by `HEADLESS_ECOSYSTEM_SIMULATION.md`.

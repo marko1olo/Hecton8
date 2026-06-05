@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Насосная Shallow Annex P-63
+# Shallow Annex P-63 Pump Room
 
-Насосная Shallow Annex P-63 - first-hour survival tutorial без ощущения tutorial room.
+Shallow Annex P-63 gives the first safe pocket without making HECTON-8 small: a pump, a cold seal, a gauge and a bright shelf outside.
 
 ## Scanner
 
-Первая безопасная комната - машина, которая едва выигрывает.
+P-63 pump room. Manual sump pressure is holding by less than a service margin.
 
 ## Terminal
 
-P-63 BEAT: player hand-pumps floodwater, seats a cold seal, reads a drifting gauge and earns a dry pocket. Annex is safe because a machine is still arguing with the sea.
+WORK ORDER P-63 / SHALLOW ANNEX: hand-pump sump to 0.3 m; seat cold seal on seam C; cut fused locker latch only after gauge steadies; do not trust green lamp until return pinger answers.
 
 ## Audio
 
-Комната здесь жива только пока что-то работает.
+Pump first. Seal second. Cutter only after the gauge stops drifting.
 
 ## Field Note
 
-Безопасность должна ощущаться обслуживаемой, не уютной.
+The pump handle is polished where frightened hands kept using it. Dry floor starts at the chalk line.
 
 <!-- External Site; generated from P153_SHALLOW_ANNEX_P63_PUMP_ROOM/ru_RU. -->

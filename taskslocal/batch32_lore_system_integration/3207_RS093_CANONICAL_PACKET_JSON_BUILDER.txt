@@ -1,0 +1,51 @@
+ID: 3207
+Role: RS093_CANONICAL_PACKET_JSON_BUILDER
+
+Objective:
+Create a canonical AppliedLore packet JSON candidate for RS093 without touching generated CSV, route cards, h8bin, Unity, or manifest wiring.
+
+Why this is needed:
+3202 proved the first safe insertion point is canonical packet JSON. RS093 currently has P461/P462/P463/P464 as STATIC_DOC production Markdown only. Importer/exporter cannot consume those Markdown packets.
+
+Owned scope:
+- Create exactly one new source file: `Docs/Lore/AppliedContent/packets/RS093_LORE_SYSTEM_INTEGRATION_BRIDGE.packets.json`.
+- Create/update only `Docs/Tasks/Status_3207.md`, `Docs/AgentLogs/LOG_3207.md`, and `Docs/AgentLogs/Rationale_3207.md` if needed.
+- Do not edit RS093 manifest, release-set markdown, route_cards, generated CSVs, generated hashes, h8bin, Unity assets/scenes, publication generated pages, or production Markdown packets.
+
+Authority docs:
+AGENTS.md, writing.md, narrative.md, localization.md, authoring.md, data.md, quality.md, Docs/Lore/Lore_Content_System.md, Docs/Lore/Lore_Localization_Model.md.
+
+Source inputs:
+- `Docs/Lore/AppliedContent/production_packets/P461_PACKET_CUSTODY_BRIDGE.production.md`
+- `Docs/Lore/AppliedContent/production_packets/P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE.production.md`
+- `Docs/Lore/AppliedContent/production_packets/P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE.production.md`
+- `Docs/Lore/AppliedContent/production_packets/P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE.production.md`
+- Existing packet schema samples under `Docs/Lore/AppliedContent/packets/*.json`
+- `Tools/AppliedLoreImporter.py`
+
+Tasks:
+1. Read authority docs and relevant mandates from BATCH_INDEX.
+2. Inspect existing packet JSON schema and importer requirements.
+3. Build one JSON bundle with `schema`, `release_set_id`, `runtime_contract`, and `packets`.
+4. Include exactly four packet objects: P461, P462, P463, P464.
+5. Each packet must include `packet_id`, `article_id`, `title_key`, `status`, `canon_owner`, `runtime_contract`, `surfaces`, `unlock`, and `localized`.
+6. Every packet must contain all 15 locales: en_US, ru_RU, ja_JP, zh_CN, fr_FR, es_ES, de_DE, pl_PL, uk_UA, ar_SA, id_ID, ko_KR, he_IL, pt_BR, nl_NL.
+7. Every locale must include importer-required fields: `title`, `scanner`, `terminal`, `audio`, `in_game_wiki`, `external_site`, and `field_note`.
+8. Non-English fields must use actual draft localized text, not English clones. To preserve importer draft flags, prefix non-English field values with `Draft XX localization pending native pass. ` where `XX` is the locale language code accepted by `AppliedLoreImporter.py`; keep the localized content after the prefix. The importer strips the prefix for output and sets draft flags.
+9. Keep en_US as source authority and do not prefix en_US fields.
+10. Validate JSON parse.
+11. Run a no-write `collect_packets()` check only if you can do it without editing manifest. If manifest wiring is required, report command as pending instead of mutating manifest.
+12. Run static locale/field completeness check over the new JSON.
+
+Proof packet:
+- JSON parse output.
+- Locale/field completeness output.
+- Exact fields missing, if any.
+- Evidence class STATIC_SOURCE.
+
+Rejection gates:
+- No manifest edit.
+- No importer execution that writes CSV/hash files.
+- No route_cards/h8bin edits.
+- No English clone rows.
+- No runtime/native-ready claim.

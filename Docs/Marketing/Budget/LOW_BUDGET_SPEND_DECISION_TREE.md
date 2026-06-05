@@ -5,6 +5,12 @@ Assumption: "several thousand USD" total marketing cash
 Public stance: single-player-first scope / proof-first public copy
 Runtime impact: none
 
+## Authority Boundary
+
+Static marketing plan only. Public voice routes to root `textes.md`.
+Claims about quality, release, platform support, Steam, wishlist, demo/playtest state, performance, spend, audience size, campaign readiness, or publication-readiness route through `quality.md`, `release.md`, `platform.md`, current proof artifacts, and the local permission gates named in this file.
+Rows, budgets, spend ceilings, scenarios, draft CTAs, or gate names in this file do not approve public send, paid spend, Steam page/demo/wishlist claims, platform claims, or release claims.
+
 ## Core Rule
 
 Do not buy reach before the page and assets convert.

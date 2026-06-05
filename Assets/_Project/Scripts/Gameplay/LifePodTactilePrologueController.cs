@@ -587,7 +587,14 @@
                 CameraJuiceSignals.TryPublishImpact(
                     severity01 * _resolvedPcImpactShakeScale,
                     transform.position,
-                    -transform.forward);
+                    -transform.forward,
+                    CameraJuiceSignals.SharpKineticImpactProfileHash,
+                    1.2f,
+                    CameraJuiceSignals.CriticalPriority,
+                    0f,
+                    1.1f,
+                    1.2f,
+                    impactSeed != 0u ? impactSeed : DefaultImpactSeed);
             }
 
             ToolHapticsRuntime.TryEnqueueSinusoidalCommand(

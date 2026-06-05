@@ -1,0 +1,40 @@
+ID: 2402
+ROLE: UNDERWATER_PRESENTATION_MATERIAL_RECEIVER_AUDITOR
+CHAT NAME: 2402 underwater material receiver
+
+MISSION
+Audit current underwater/caustic/haze/particle materials and shaders that affect the 1474 underwater diagnostic. Determine why caustics/haze/particulate still read absent or sheet-like, and which material/receiver route can be safely tested next. Static/read-only only.
+
+AUTHORITIES
+- `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `TASTE.md`
+- `VISION_LOCKS.md`
+- `water.md`
+- `vfx.md`
+- `lighting.md`
+- `.agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`
+- `.agents-skills/REND_VFX_Fluid_Aesthetics_Compute_Particles.txt`
+- `Docs/Reports/Batch23/BATCH23_SYNTHESIS_FOR_CONTROLLER.md`
+
+EVIDENCE
+- `Docs/Screenshots/MCP/h8_1474_diag_underwater_route_from_mcp.png`
+- `Docs/Reports/Batch23/2303_FOAM_CAUSTIC_PATCH_PLAN.md`
+- current materials/shaders under `Assets/_Project/Art/Materials/World/Photic*`
+- current ocean/underwater materials.
+
+TASKS
+01. Record concise status in `Docs/Tasks/Status_2402.md`.
+02. Inspect current git diffs and files for `MAT_H8_FloorCausticSoft_1443`, `MAT_H8_PhoticSoftWaterHaze_1430`, `MAT_H8_CrestFoamInput_1464`, `Ocean.mat`, `Ocean-Underwater.mat`, and relevant Photic1469 foam materials.
+03. Identify material properties that can cause broad opaque sheet vs subtle caustic lace.
+04. Identify missing or too-weak haze/particle presentation routes.
+05. Identify safe next material test sequence for Unity owner, including exact property names when available.
+06. Include rollback values if visible in current diff/YAML/material.
+07. Write `Docs/Reports/Batch24/2402_UNDERWATER_MATERIAL_RECEIVER_AUDIT.md`.
+08. Append concise `Docs/AgentLogs/LOG_2402.md`.
+09. Final answer: top 3 material/receiver issues and next tests.
+
+REJECT
+- Running Unity.
+- Editing materials/shaders/code.
+- Claiming visual acceptance.

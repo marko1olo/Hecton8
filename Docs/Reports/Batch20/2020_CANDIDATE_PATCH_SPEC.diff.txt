@@ -1,0 +1,171 @@
+*** CANDIDATE PATCH SPEC ONLY - DO NOT APPLY AS-IS ***
+Evidence class: STATIC VERIFIED. No implementation edits performed by Agent 2020.
+
+Goal:
+  Replace split first-hour resource authority with one first-20 route:
+  Exit safe anchor -> shallow scenic titanium/copper salvage -> copper wire -> scanner -> recoverable death/save proof.
+
+--- a/Assets/_Project/Scripts/Gameplay/FirstHourDirector.cs
++++ b/Assets/_Project/Scripts/Gameplay/FirstHourDirector.cs
+@@
+- [SerializeField] private string firstResourceQuestId = "quest_copper_sample";
+- [SerializeField] private string firstResourceItemId = "Data_Copper";
++ [SerializeField] private string firstResourceQuestId = "quest_first_hour_collect_titanium";
++ [SerializeField] private string firstResourceItemId = "Data_TitaniumScrap";
+@@
+- [SerializeField] private string firstCraftResultItemId0 = "Comp_CopperWire";
++ [SerializeField] private string firstCraftResultItemId0 = "Comp_CopperWire";
+  [SerializeField] private string firstCraftResultItemId1 = "Data_EmergencyO2Canister";
+  [SerializeField] private string firstCraftResultItemId2 = "Item_Tool_BeaconDeployer";
+  [SerializeField] private string firstCraftResultItemId3 = "Item_Tool_Repair";
+  [SerializeField] private string firstCraftResultItemId4 = "Comp_PressureSeal";
++ // CANDIDATE: add scanner as the primary route-changing first craft check.
++ // Must be implemented without string hot-path polling; IDs are serialized authoring inputs only.
++ [SerializeField] private string firstCraftResultItemId5 = "Item_Tool_Scanner";
+
+Implementation note:
+  FirstHourDirector must not continue to imply copper sample is the mandatory first route after quest graph is switched.
+  If the director needs multiple first-craft milestones, scanner is the route-changing milestone and copper wire is the material subgate.
+
+--- a/Data/Narrative/Quest_Graph.json
++++ b/Data/Narrative/Quest_Graph.json
+@@ quest_copper_sample
+- "triggerId": "first_hour_exit_lifepod",
+- "respawnEventId": "",
++ "triggerId": "quest_first_hour_collect_titanium",
++ "respawnEventId": "respawn_first_hour_copper",
++ "phaseGate": "Optional",
++ "criticalItemId": "Data_Copper",
+@@ quest_first_hour_collect_titanium
+  "completionId": "Data_TitaniumScrap",
+  "criticalItemId": "Data_TitaniumScrap",
+  "respawnEventId": "respawn_first_hour_titanium",
+  "triggerId": "first_hour_exit_lifepod",
+@@ quest_first_hour_craft_scanner
+  "completionId": "Item_Tool_Scanner",
+  "completionType": "CraftCompleted",
+  "criticalItemId": "Item_Tool_Scanner",
+  "respawnEventId": "respawn_first_hour_scanner",
+- "triggerId": "Data_TitaniumScrap",
++ "triggerId": "Comp_CopperWire",
+  "prerequisiteQuestIds": [
+-   "quest_first_hour_collect_titanium"
++   "quest_first_hour_collect_titanium",
++   "quest_copper_sample",
++   "quest_first_hour_craft_copperwire"
+  ]
++
++ Add candidate node:
++ {
++   "questId": "quest_first_hour_craft_copperwire",
++   "triggerType": "ItemCollected",
++   "triggerId": "Data_Copper",
++   "completionType": "CraftCompleted",
++   "completionId": "Comp_CopperWire",
++   "criticalItemId": "Comp_CopperWire",
++   "respawnEventId": "respawn_first_hour_copperwire",
++   "prerequisiteQuestIds": ["quest_copper_sample"]
++ }
+
+Implementation note:
+  Exact graph schema must be preserved. If "Optional" is not valid for phaseGate, use the existing optional/secondary quest mechanism.
+  Runtime graph IDs must be baked to numeric flags per quest mandate.
+
+--- a/Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_CopperVein.asset
++++ b/Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_CopperVein.asset
+@@
+  requiredToolClass: 2
+  minimumDepthMeters: 40
+  maximumDepthMeters: 420
+
+No change recommended.
+CopperVein remains Drill-gated. First-20 copper must come from an authored shallow outcrop/cache/debris source.
+
+--- NEW AUTHORING ASSET CANDIDATE
++++ Assets/_Project/Data/World/RouteAnchors/First20_ScaffoldReef_SalvageLoop.asset
+Fields:
+  stableId: route.first20.scaffold_reef_salvage_loop
+  depthBandMeters: 0..35 mandatory, 45..65 optional temptation
+  safeAnchorId: first20_safe_anchor
+  landmarkIds:
+    - landmark.broken_scaffold_mast
+    - landmark.return_cable_run
+    - landmark.safe_pocket_bubbles
+  resourceAnchors:
+    - source.first20.titanium_outcrop_primary -> yields Data_TitaniumScrap deterministically
+    - source.first20.copper_cache_primary -> yields Data_Copper deterministically
+    - source.first20.sensor_package_safe_anchor -> yields or unlocks Comp_SensorPackage if scanner recipe keeps it
+  oxygenSupport:
+    - optional emergency O2 canister or safe pocket if route path exceeds starter O2 margin
+  evidence:
+    - depleted outcrop scar
+    - opened salvage cache
+    - scanner craft quest transition
+    - death cache marker if player dies
+
+--- a/Assets/_Project/Data/World/HarvestableTemplate_TitaniumOutcrop.asset
++++ b/Assets/_Project/Data/World/HarvestableTemplate_TitaniumOutcrop.asset
+@@
+  lootTable includes Data_TitaniumScrap, Data_SilverOre, Data_Copper.
+
+Candidate implementation requirement:
+  Add a first-route placement/override that guarantees Data_TitaniumScrap yield for the first authored outcrop.
+  Do not depend on random weighted yield for the mandatory first route.
+
+--- a/Assets/_Project/Data/Crafting/Recipes/Recipe_CopperWire.asset
++++ b/Assets/_Project/Data/Crafting/Recipes/Recipe_CopperWire.asset
+@@
+- amount: 1
++ amount: 2
+
+Candidate condition:
+  Apply only if Crafting/Data declares Unity RecipeData assets as active runtime owner or regenerates them from Data/Economy.
+  If Data/Economy h8bin is runtime owner, update the asset mirror from the h8bin source instead.
+
+--- a/Assets/_Project/Data/Crafting/Recipes/Recipe_Scanner.asset
++++ b/Assets/_Project/Data/Crafting/Recipes/Recipe_Scanner.asset
+@@
+  ingredients:
+    - Comp_SensorPackage x1
+    - Comp_CopperWire x1
+
+No direct count change recommended until `Comp_SensorPackage` source is declared.
+Candidate route must provide/author `Comp_SensorPackage` before scanner craft, or scanner recipe must be reauthored by Crafting owner.
+
+--- a/Assets/_Project/Prefabs/Player.prefab
++++ b/Assets/_Project/Prefabs/Player.prefab
+
+Candidate condition:
+  If first-route titanium/copper source requires SalvageSampler, assign or unlock SalvageSampler before `quest_first_hour_collect_titanium`.
+  If route uses starter-compatible outcrop/cache verbs, do not add a new starter drill.
+  Do not assume knownToolPrefabs means assigned/usable at start.
+
+--- a/Docs/ARCHITECTURE/SHINOBU_329_PLAYER_RESPAWN_RECONCILIATION_ROUTE_CARD.md
++++ b/Docs/ARCHITECTURE/SHINOBU_329_PLAYER_RESPAWN_RECONCILIATION_ROUTE_CARD.md
+
+Candidate append under Inventory loot route:
+  First-20 penalty rules:
+    - Retain core starter tools.
+    - Retain Item_Tool_Scanner after craft, or create deterministic death cache marker and quest-safe recovery.
+    - Data_TitaniumScrap, Data_Copper, and Comp_CopperWire may drop only if recoverable through `InventoryDeathLootCacheSignal`.
+    - Do not drop critical item when no valid death AUP/cache slot exists; publish result and preserve progression truth.
+    - Quest state must not complete if the critical item is removed with no recovery marker.
+
+--- REQUIRED TEST/PERF ARTIFACTS FROM IMPLEMENTING OWNER
+  See `Docs/Reports/Batch20/2020_FIRST20_ACCEPTANCE_TESTS.csv`.
+*** Add File: C:\hades\Hecton8\Docs\Reports\Batch20\2020_FIRST20_ACCEPTANCE_TESTS.csv
+"test_id","claim","evidence_type","steps","pass_condition","owner","status"
+"FH20_SINGLE_SPINE","First 20 minutes has one mandatory material/tool spine.","Static + PlayMode","Inspect FirstHourDirector and Quest_Graph; start fresh game; exit safe anchor; advance route.","Only titanium/copperwire/scanner candidate spine gates first-20 progression; copper-only sample is optional or subgate.","Gameplay/Narrative","PENDING VERIFICATION"
+"FH20_STARTER_TOOL_MATCH","Starter tool availability matches mandatory resource source.","Static + PlayMode","Inspect Player prefab/loadout/unlock source; attempt first titanium and copper collection without debug grants.","Required tool is assigned/unlocked before objective, or source uses valid starter interaction; no hidden debug route.","Tools/Player/Scavenging","PENDING VERIFICATION"
+"FH20_TITANIUM_REACH","Player can collect deterministic titanium from authored shallow route.","PlayMode","From safe anchor, exit, reach first titanium source, harvest, return.","Inventory contains Data_TitaniumScrap; source scar/depletion visible; peak depth and O2 logged.","World/Scavenging/Survival","PENDING VERIFICATION"
+"FH20_COPPER_REACH","Player can collect deterministic copper without violating CopperVein drill gate.","PlayMode","From same route, collect first copper source; do not use CopperVein unless drill route exists.","Inventory contains Data_Copper; CopperVein remains Drill-gated; source is placed authored outcrop/cache/debris.","World/Scavenging/Tools","PENDING VERIFICATION"
+"FH20_CRAFT_COPPERWIRE","Copper wire recipe consumes declared runtime ingredients.","Static + PlayMode","Declare recipe owner; craft copper wire in fabricator after route collection.","Runtime inventory delta matches owner recipe; Data/Economy and RecipeData mirrors agree or non-owner mirror is regenerated.","Crafting/Data","PENDING VERIFICATION"
+"FH20_SENSORPACKAGE_SOURCE","Scanner prerequisite sensor package has explicit source.","Static + PlayMode","Inspect scanner recipe; collect/unlock sensor package through route or safe-anchor reward.","Comp_SensorPackage is available before scanner craft by authored non-random route.","Crafting/World","PENDING VERIFICATION"
+"FH20_CRAFT_SCANNER","Scanner craft completes actual route-changing first craft.","PlayMode","Craft scanner using real recipe owner after titanium/copperwire/sensor package gates.","Item_Tool_Scanner enters inventory; quest_first_hour_craft_scanner completes; scanner can scan a route/evidence target.","Crafting/Quest/Tools","PENDING VERIFICATION"
+"FH20_OXYGEN_RETURN","Mandatory loop is survivable but oxygen-pressured.","PlayMode + telemetry","Start full O2; complete mandatory loop; record peak depth, minimum O2, route time, refill source.","Player returns alive with nonzero O2; overextension path can trigger warning/death; route does not require ugly sprinting.","Survival/World","PENDING VERIFICATION"
+"FH20_SCENIC_CAPTURE_COMPACT","Compact lane keeps bright scenic photic route readable.","Player capture + profiler","Capture start, midpoint, resource source, return landmark at compact/low render settings.","Surface/photic route is bright, readable, premium, with landmark and unease; no darkness/fog concealment.","World/Rendering/Presentation","PENDING VERIFICATION"
+"FH20_SCENIC_CAPTURE_NORMAL","Normal lane sells product identity above resource proof.","Player capture","Capture same route at normal tier.","Route shows beautiful shallows, industrial trace, resource affordance, and uneasy threat cue.","World/Rendering/Presentation","PENDING VERIFICATION"
+"FH20_DEATH_RESOURCE_RECOVERY","Death after collection/craft cannot softlock first 20 minutes.","PlayMode + SignalBus telemetry","Die carrying starter tools, titanium, copper, copper wire, scanner, and O2 support item.","Core tools retained; scanner retained or recoverable; loose resources dropped only to recoverable cache; quest state valid.","Respawn/Inventory/Quest","PENDING VERIFICATION"
+"FH20_SAVE_LOAD_ROUTE","Save/load preserves first-route decisions and scars.","PlayMode save/load","After collect/craft/death-cache scenario, save, reload, inspect state.","Inventory, quest flags, depleted source, route marker, and death cache persist with checksum-valid save.","Persistence/Quest/World/Inventory","PENDING VERIFICATION"
+"FH20_BLACK_BOX","Survival/respawn failure is explainable from last 300 frames.","Runtime fault/death test","Trigger O2 death or respawn penalty; inspect telemetry ring/dump fields.","Telemetry includes frame, AUP/depth, O2, route/source id, inventory drop count, respawn sequence, flags.","Telemetry/Survival/Respawn","PENDING VERIFICATION"
+"FH20_ZERO_GC_ROUTE","First-route quest/resource/tool interactions do not allocate in hot paths.","Profiler + static scan","Run first-route loop with GC/profiler; scan for string/runtime lookup in hot paths.","0 B/frame GC in route hot paths; no scene search/string lookup in interaction, quest, inventory, or survival ticks.","Performance/All Owners","PENDING VERIFICATION"

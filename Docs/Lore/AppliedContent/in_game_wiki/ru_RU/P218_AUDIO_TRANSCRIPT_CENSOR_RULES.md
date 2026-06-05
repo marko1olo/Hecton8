@@ -10,8 +10,8 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
 # Правила audio transcript censor
@@ -32,6 +32,6 @@ Static может скрыть имя. Он не может скрыть тре�
 
 ## Field Note
 
-Diegetic censor marks скрывают missing route facts; critical accessibility text нельзя прятать за стилем.
+Diegetic censor marks can hide missing route facts; critical accessibility text stays readable.
 
 <!-- In-Game Wiki; generated from P218_AUDIO_TRANSCRIPT_CENSOR_RULES/ru_RU. -->

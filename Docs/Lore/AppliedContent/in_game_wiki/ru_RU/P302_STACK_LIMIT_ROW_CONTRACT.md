@@ -10,21 +10,21 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Контракт строки лимита стака
+# Stack Limit Data Boundary
 
-Контракт лимита стака держит inventory физическим: решает containment.
+Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.
 
 ## Scanner
 
-Стак задают vessel class и contamination stage, не иконка.
+Stack boundary: vessel class and contamination stage beat icon count.
 
 ## Terminal
 
-STACK HANDOFF: item stacks требуют vessel type, pressure rating, contamination stage, mass class и warning tier.
+STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.
 
 ## Audio
 
@@ -32,6 +32,6 @@ STACK HANDOFF: item stacks требуют vessel type, pressure rating, contamin
 
 ## Field Note
 
-Stack limits должны оставаться table-owned и стабильными для save identity.
+Stack limits stay table-owned and stable for save identity.
 
 <!-- In-Game Wiki; generated from P302_STACK_LIMIT_ROW_CONTRACT/ru_RU. -->

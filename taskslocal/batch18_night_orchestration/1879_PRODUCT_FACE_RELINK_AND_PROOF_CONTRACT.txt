@@ -1,0 +1,73 @@
+<AGENT_PROMPT id="1879">
+ROLE: Product-face relink and proof contract architect.
+
+READ FIRST:
+- C:\hades\Hecton8\AGENTS.md
+- C:\hades\Hecton8\PROJECT_BIBLES.md
+- C:\hades\Hecton8\VISION_LOCKS.md
+- C:\hades\Hecton8\TASTE.md
+- C:\hades\Hecton8\quality.md
+- C:\hades\Hecton8\player.md
+- C:\hades\Hecton8\tools.md
+- C:\hades\Hecton8\inventory.md
+- C:\hades\Hecton8\world.md
+- C:\hades\Hecton8\3dmodel.md
+- C:\hades\Hecton8\3DMODEL_TEXTURES_MATERIALS.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1867_PRODUCT_FACE_PREFAB_AUDIT_GATE.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1868_PRODUCT_FACE_UNITY_VALIDATOR_GATE.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1869_TOOL_VISUAL_SOURCE_PACKAGE.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1870_RESOURCE_PICKUP_VISUAL_SOURCE_PACKAGE.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1871_TRANSPORT_VISUAL_SOURCE_PACKAGE.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1872_PLAYER_BODY_VISUAL_SOURCE_PACKAGE.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1873_SKY_OCEAN_SOURCE_CLEANUP_AND_PROOF_SLOT_PACKET.md
+
+OWNED WRITE SCOPE:
+- Docs/Tasks/Status_1879.md
+- Docs/AgentLogs/Rationale_1879.md
+- Docs/AgentLogs/LOG_1879.md
+- Docs/Reports/Batch18/1879_PRODUCT_FACE_RELINK_AND_PROOF_CONTRACT.md
+- Docs/Reports/Batch18/1879_PRODUCT_FACE_RELINK_SEQUENCE.csv
+
+NO SOURCE/PREFAB/ASSET/SCENE/META/BINARY EDITS.
+NO UNITY MENU, IMPORT, BAKE, PLAYMODE, PROFILER, DOTNET BUILD, OR DATA MONOLITH RUN.
+
+PARALLEL LAW:
+- You may run alongside 1874, 1875, 1876, 1877, and 1878.
+- Do not depend on sibling output. If 1874-1878 are unfinished, base the contract on current packet evidence and mark generator-output rows as pending.
+
+TASK:
+Build the concrete future relink/proof contract for removing product-face primitives after source mesh generators exist. This is a no-mutation architect packet, not an implementation.
+
+Requirements:
+1. Produce a human- and agent-readable relink sequence for tools, resource pickups, transport, player suit/body/visor, and sky/ocean source cleanup.
+2. Do not say "just replace prefabs". For each category, name:
+   - exact blocked prefab roots;
+   - expected future mesh asset folder;
+   - material/source requirements;
+   - collider proxy split;
+   - anchor/presentation references to preserve;
+   - LOD/HLOD expectations;
+   - validation/proof steps;
+   - rollback/backup expectations.
+3. Define one Unity-owner sequence that avoids multi-agent prefab conflicts.
+4. Define what can still run in parallel before Unity ownership: mesh-source authoring, material/source inventory, static validator work, report prep.
+5. Define what must be serialized inside Unity: mesh asset generation, prefab relink, import refresh, validator menu, screenshot/profiler capture, audit reruns.
+6. Include exact red gates:
+   - `Tools/GeneratedAssetProductionAudit.py --root . --fail-on-error`
+   - `Hecton8/Validation/Product-Face Prefab Quality Gate`
+   - sky/ocean validator from 1878 once present;
+   - route-specific screenshot/profiler proof.
+7. Do not accept hidden/fog/darkness as product-face resolution.
+8. Include continuous `GlobalQualityWeight` consequences by category. Low/compact must still preserve beautiful readable silhouettes/material identity.
+9. Keep the CSV sequence practical enough for direct assignment into future agent tasks.
+10. Do not claim runtime or visual acceptance.
+
+VERIFY:
+- `git diff --check` on owned report/log/status files.
+- Static cross-check that every category from 1867 product-face errors is represented.
+- Do not run Unity or dotnet.
+
+REPORT:
+- Report the serialized future Unity slot order and the independent parallel work that can keep running while Unity is busy.
+</AGENT_PROMPT>
+

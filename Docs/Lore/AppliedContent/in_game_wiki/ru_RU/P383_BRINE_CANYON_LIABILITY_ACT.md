@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Акт: brine canyon и ответственность
+# Brine Canyon Liability Act
 
-Акт brine canyon превращает HECTON-8 из тайны в case file. Игрок начинает доказывать, как реальная физика стала корпоративным языком потерь.
+The brine canyon act turns HECTON-8 from mystery to case file. The player starts proving how real physics became corporate loss language.
 
 ## Scanner
 
-Гейт акта: brine canyon. Плотность, поврежденные часы и принятые margins становятся доказательством.
+Act gate: brine canyon. Density, damaged clocks and accepted margins become evidence.
 
 ## Terminal
 
-АКТ ОТВЕТСТВЕННОСТИ: сопоставь margin logs, evacuation delay и route damage. Потоп был реален; priority weighting был преступным.
+LIABILITY ACT: match margin logs, evacuation delay and route damage. The flood was real; the priority weighting was criminal.
 
 ## Audio
 
-Океан не лгал. Расписание лгало.
+The ocean did not lie. The timetable did.
 
 ## Field Note
 
-Для midgame evidence ordering и размещения brine POI.
+Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
 
 <!-- In-Game Wiki; generated from P383_BRINE_CANYON_LIABILITY_ACT/ru_RU. -->

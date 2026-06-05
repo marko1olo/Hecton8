@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ A scanner should get scared slowly and for reasons.
 
 ## Field Note
 
-Use for scanner UI copy decks and scan-stage binding tests.
+Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition.
 
 <!-- In-Game Wiki; generated from P432_SCANNER_STAGE_COPY_ESCALATION_RULE/en_US. -->

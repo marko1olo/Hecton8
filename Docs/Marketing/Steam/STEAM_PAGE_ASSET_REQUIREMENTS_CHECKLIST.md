@@ -49,7 +49,7 @@ These are planning targets from Steamworks documentation. Reverify before final 
 |---|---:|---|---|
 | Header capsule | 920 x 430 | PNG/JPG per Steamworks guidance | One floodlight, pressure silhouette, readable logo. |
 | Small capsule | 462 x 174 | Must read at tiny size | Logo + one hard shape, no tiny detail. |
-| Main capsule | 1232 x 706 | Feature/front-page style | Strong hero frame: vehicle/base/floodlight in black water. |
+| Main capsule | 1232 x 706 | Feature/front-page style | Strong hero frame: bright photic/ocean/Aegir route spectacle or vehicle/base/floodlight in black-water depth. |
 | Vertical capsule | Recheck official page before export | Steam may require current spec by surface | Build layout from layered 4K source. |
 | Library capsule | 600 x 900 | Library portrait | Vertical pressure shaft / sub silhouette / strong logo. |
 | Library hero | 3840 x 1240 | Wide background | No logo baked unless spec requires; leave room for overlay. |
@@ -62,7 +62,7 @@ These are planning targets from Steamworks documentation. Reverify before final 
 
 ### Short Description Candidate A
 
-Single-player underwater survival below the light: pressure, salvage, machinery, black-water exploration, and a Seed Ship anomaly that makes the ocean stop feeling neutral.
+Single-player underwater survival in a beautiful alien ocean that turns dangerous below the light: pressure, salvage, machinery, black-water exploration, and a Seed Ship anomaly that makes the ocean stop feeling neutral.
 
 ### Short Description Candidate B
 
@@ -70,7 +70,7 @@ Build, repair, and survive in a NASA-punk deep-sea noir world where pressure, ox
 
 ### Short Description Candidate C
 
-A single-player-first deep-sea survival game about pressure, machinery, hostile depth, and the cost of staying alive in black water.
+A single-player-first underwater survival game about beautiful shallows, pressure, machinery, hostile depth, and the cost of staying alive when the route enters black water.
 
 ## About This Game Structure
 
@@ -85,7 +85,7 @@ Use this order:
 
 Draft:
 
-HECTON-8 is a single-player-first NASA-punk / deep-sea noir survival game about surviving under hostile depth. You scavenge, build, repair, and operate pressure-rated machinery while exploring black-water routes around a Seed Ship anomaly.
+HECTON-8 is a single-player-first NASA-punk / deep-sea noir survival game about a beautiful alien ocean becoming hostile depth. You scavenge, build, repair, and operate pressure-rated machinery while moving from photic routes into black-water routes around a Seed Ship anomaly.
 
 Depth is survival pressure. Oxygen, power, visibility, salvage risk, and base integrity shape every route. A habitat is a pressure machine keeping the ocean outside.
 
@@ -145,13 +145,14 @@ This ticket converts the first `PLAN-*` metadata rows into a Steam page capture 
 
 | Order | Asset ID | Steam use | Required proof in frame/clip | Pass threshold | Reject code |
 |---:|---|---|---|---|---|
-| 1 | `PLAN-SHOT-001` | First screenshot / identity hero | Player-scale relation, black-water machinery silhouette, floodlight or pressure cue, no clean blue-ocean read. | 10/12 Steam QA and 4/5 cold readers can name genre plus mood. | `REJECT_EMPTY_DARK_WATER` or `REJECT_CLONE_FRAME` |
+| 1 | `PLAN-SHOT-000` | First screenshot / bright photic route | Beautiful surface-adjacent/photic water, terrain/material detail, sky/Aegir/coastline context if visible, technogenic trace, and route cue. | 10/12 Steam QA and 4/5 cold readers can name genre plus route cost. | `REJECT_SURFACE_TOO_DARK`, `REJECT_GENERIC_AQUARIUM`, or `REJECT_NO_ROUTE_CUE` |
 | 2 | `PLAN-SHOT-003` | Second screenshot / player verb | Salvage target, tool/interact path, hazard, reward, or visible consequence. | 10/12 Steam QA and 4/5 cold readers can name the verb without caption. | `REJECT_NO_PLAYER_VERB` |
 | 3 | `PLAN-SHOT-002` | Third screenshot / pressure room | Gauges, seals, hatch/door, dirty glass, maintenance surfaces, pressure language visible. | 9/12 Steam QA; must not read as a clean sci-fi lounge. | `REJECT_CLEAN_SCI_FI` |
-| 4 | `PLAN-SHOT-006` | Fourth screenshot / threat read | Threat, scale, or anomaly read through instrument/floodlight relation plus one visible player choice: avoid, reroute, seal, scan, or retreat. | 9/12 Steam QA, 3/5 cold readers can identify danger source and decision pressure, and the AB-009/KPI row stores the named decision. | `REJECT_RANDOM_MONSTER_POSE` |
-| 5 | `PLAN-SHOT-005` | Fifth screenshot / base under stress | Leak/flood/warning plus player response path; no purely decorative red UI. | 10/12 Steam QA only if the failure is honest in the current build. | `REJECT_FAKE_FAILURE` |
-| 6 | `PLAN-SHOT-004` | Sixth screenshot / heavy machine | Vehicle/tool/pump/ballast mass and readable scale. | 9/12 Steam QA and no toy/plastic read. | `REJECT_TOY_MACHINE` |
-| 7 | `PLAN-SHOT-007` | Seventh screenshot / Seed Ship signal | Instrument corruption, route pull, or anomaly effect visible in-world. | 8/12 Steam QA; promote earlier only if cold readers call it unique. | `REJECT_ABSTRACT_LORE_GLOW` |
+| 4 | `PLAN-SHOT-001` | Fourth screenshot / depth pressure identity | Player-scale relation, structured black-water machinery silhouette, floodlight or pressure cue; must be real depth/below-light, not darkened surface. | 9/12 Steam QA and 4/5 cold readers can name genre plus mood. | `REJECT_EMPTY_DARK_WATER`, `REJECT_CLONE_FRAME`, or `REJECT_SURFACE_MISGRADED_AS_ABYSS` |
+| 5 | `PLAN-SHOT-006` | Fifth screenshot / threat read | Threat, scale, or anomaly read through instrument/floodlight relation plus one visible player choice: avoid, reroute, seal, scan, or retreat. | 9/12 Steam QA, 3/5 cold readers can identify danger source and decision pressure, and the AB-009/KPI row stores the named decision. | `REJECT_RANDOM_MONSTER_POSE` |
+| 6 | `PLAN-SHOT-005` | Sixth screenshot / base under stress | Leak/flood/warning plus player response path; no purely decorative red UI. | 10/12 Steam QA only if the failure is honest in the current build. | `REJECT_FAKE_FAILURE` |
+| 7 | `PLAN-SHOT-004` | Seventh screenshot / heavy machine | Vehicle/tool/pump/ballast mass and readable scale. | 9/12 Steam QA and no toy/plastic read. | `REJECT_TOY_MACHINE` |
+| 8 | `PLAN-SHOT-007` | Eighth screenshot / Seed Ship signal | Instrument corruption, route pull, or anomaly effect visible in-world. | 8/12 Steam QA; promote earlier only if cold readers call it unique after route/agency proof exists. | `REJECT_ABSTRACT_LORE_GLOW` |
 | 8 | `PLAN-SHOT-008` | Internal low-spec/readability check | Same identity/verb clarity at lower settings; no public FPS implication. | Internal only until hardware/settings/profiler proof exists. | `REJECT_UNPROVED_PERF_SIGNAL` |
 | 9 | `PLAN-CLIP-001` | Trailer beat / pressure leak | System problem, readable warning, player action, consequence. | First 3 seconds must work muted. | `REJECT_SLOW_START` |
 | 10 | `PLAN-CLIP-002` | Trailer beat / sonar threat | Sonar/contact/instrument first, threat second, no generic monster reveal. | Viewer understands danger before title card. | `REJECT_GENERIC_THREAT` |

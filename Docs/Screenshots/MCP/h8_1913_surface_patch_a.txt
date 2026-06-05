@@ -1,0 +1,60 @@
+﻿captureTruth=main_camera_edit_render
+scene=Assets/_Project/Scenes/02_HECTON_WORLD.unity
+camera=Main Camera
+cameraPosition=(-18.000, 18.650, 126.000)
+cameraRotation=(0.400, 178.100, 0.000)
+cameraNearFar=0.050/120000.0
+skybox=Mat_HectonSky
+sun=H8_SURFACE_SUN_KEY_1428
+
+H8_ORGANIC_SHORELINE_FOAM_FINE_1469=activeSelf=True activeHierarchy=True layer=Default rendererEnabled=True bounds=(100.000, 0.000, 7.118) material=MAT_H8_ShorelineFoamFine_1469
+H8_FloorCausticSoft_1443=activeSelf=True activeHierarchy=True layer=Default rendererEnabled=False bounds=(52.278, 5.800, 47.219) material=MAT_H8_FloorCausticSoft_1443
+H8_UnderwaterSurfaceSheet_1455=activeSelf=False activeHierarchy=False layer=Default rendererEnabled=False bounds=(235.000, 0.082, 162.000) material=MAT_H8_UnderwaterSurfaceSheet_1455
+H8_UnderwaterHazeCurtain_1454=activeSelf=False activeHierarchy=False layer=Default rendererEnabled=False bounds=(182.000, 4.400, 30.000) material=MAT_H8_UnderwaterHazeCurtain_1454
+H8_DEPTH_LOW_SHELF_1428=activeSelf=True activeHierarchy=False layer=Default rendererEnabled=False bounds=(58.000, 1.150, 8.000) material=MAT_H8WorldAbyssRidge_1428
+H8_WORLD_LOW_WATER_OCCLUSION_00_1428=activeSelf=True activeHierarchy=False layer=Default rendererEnabled=False bounds=(3.200, 0.060, 0.400) material=MAT_WorldShell_1428
+H8_WORLD_LOW_WATER_OCCLUSION_01_1428=activeSelf=True activeHierarchy=False layer=Default rendererEnabled=False bounds=(3.200, 0.060, 0.400) material=MAT_WorldShell_1428
+H8_WORLD_LOW_WATER_OCCLUSION_02_1428=activeSelf=True activeHierarchy=False layer=Default rendererEnabled=False bounds=(3.200, 0.060, 0.400) material=MAT_WorldShell_1428
+H8_WORLD_LOW_WATER_OCCLUSION_03_1428=activeSelf=True activeHierarchy=False layer=Default rendererEnabled=False bounds=(3.200, 0.060, 0.400) material=MAT_WorldShell_1428
+H8_DEPTH_CEILING_OCCLUSION_1428=activeSelf=True activeHierarchy=False layer=Default rendererEnabled=False bounds=(70.000, 1.000, 8.000) material=MAT_H8WorldDeepAbyss_1428
+NOIR_UPPER_PRESSURE_LID=activeSelf=True activeHierarchy=False layer=Default rendererEnabled=False bounds=(38.000, 0.250, 30.000) material=MAT_H8WorldPressureVignette_1428
+H8_PhoticRouteTerrain_1464=activeSelf=True activeHierarchy=True layer=Default rendererEnabled=True bounds=(158.000, 10.828, 132.000) material=MAT_H8_PhoticRouteTerrain_1464
+H8_WORLD_TERRAIN_SHELL_1428=activeSelf=True activeHierarchy=True layer=Default terrainEnabled=True drawHeightmap=True drawInstanced=True heightmapPixelError=6.00 basemapDistance=260.0 terrainMaterial=MAT_H8TerrainLit_BasaltSediment_1428 terrainSize=(120.00, 6.00, 88.00)
+
+terrainSummary=
+  H8_WORLD_TERRAIN_SHELL_1428 activeSelf=True activeHierarchy=True enabled=True inFrustum=True position=(-60.00, -8.00, -4.00) size=(120.00, 6.00, 88.00) pixelError=6.00 basemapDistance=260.0 drawInstanced=True material=MAT_H8TerrainLit_BasaltSediment_1428
+
+materialSnapshot Assets/Crest/Crest/Materials/Ocean.mat=name=Ocean shader=Crest/Ocean URP _Diffuse=RGBA(0.026, 0.120, 0.200, 1.000) _DiffuseGrazing=RGBA(0.290, 0.560, 0.720, 1.000) _SubSurfaceShallowCol=RGBA(0.340, 0.680, 0.820, 1.000) _ClipSurface=1.000 _ClipUnderTerrain=1.000 _Foam=1.000 _CausticsStrength=0.920
+materialSnapshot Assets/_Project/Art/Materials/MAT_H8_SurfaceCrestOcean_1428.mat=name=MAT_H8_SurfaceCrestOcean_1428 shader=Crest/Ocean URP _Diffuse=RGBA(0.035, 0.145, 0.245, 1.000) _DiffuseGrazing=RGBA(0.360, 0.640, 0.820, 1.000) _SubSurfaceShallowCol=RGBA(0.480, 0.780, 0.940, 1.000) _ClipSurface=1.000 _ClipUnderTerrain=1.000 _Foam=1.000 _CausticsStrength=1.650
+materialSnapshot Assets/_Project/Art/Materials/World/MAT_H8TerrainLit_BasaltSediment_1428.mat=name=MAT_H8TerrainLit_BasaltSediment_1428 shader=Universal Render Pipeline/Terrain/Lit _BaseColor=RGBA(0.680, 0.650, 0.560, 1.000)
+materialSnapshot Assets/_Project/Art/Materials/World/Photic1464/MAT_H8_PhoticRouteTerrain_1464.mat=name=MAT_H8_PhoticRouteTerrain_1464 shader=Hecton8/World/PhoticTerrainLit1453 _Tint=RGBA(0.720, 0.690, 0.600, 1.000) _ShadowTint=RGBA(0.180, 0.220, 0.220, 1.000)
+materialSnapshot Assets/_Project/Art/Materials/World/Photic1469/MAT_H8_ShorelineFoamFine_1469.mat=name=MAT_H8_ShorelineFoamFine_1469 shader=HECTON/World/H8_ShorelineFoamRibbon_1428
+
+visibleRendererSummary=
+  __LOD0 material=MAT_H8_PhoticCoralPlate_1457 shader=GPUInstancer/Hecton8/Flora/CoralMaster center=(-43.10, 12.31, 79.01) size=(2.87, 1.36, 2.34)
+  __LOD0 material=MAT_H8_PhoticCoralMassive_1457 shader=GPUInstancer/Hecton8/Flora/CoralMaster center=(-6.00, 10.04, 87.97) size=(1.71, 0.72, 1.94)
+  __LOD0 material=MAT_H8_PhoticCoralLow_1457 shader=GPUInstancer/Hecton8/Flora/CoralMaster center=(-3.82, 9.34, 88.26) size=(3.19, 0.39, 3.29)
+  H8_ShorelineBasaltDetail_1464 material=MAT_H8_WetBasaltDetail_1464 shader=Universal Render Pipeline/Lit center=(-5.12, 12.19, 98.82) size=(114.66, 5.28, 125.43)
+  H8_ORGANIC_SHORELINE_BREAKUP_1469 material=MAT_H8SurfaceWetBasaltReal_1428 shader=Universal Render Pipeline/Lit center=(22.36, 14.87, 90.54) size=(97.84, 4.46, 15.13)
+  H8_LeftPhoticCanyonWall_1446 material=MAT_H8_PhoticWetBasalt_1446 shader=Universal Render Pipeline/Lit center=(-25.73, 9.37, 89.00) size=(16.86, 8.90, 78.00)
+  H8_ORGANIC_SHORELINE_FOAM_FINE_1469 material=MAT_H8_ShorelineFoamFine_1469 shader=HECTON/World/H8_ShorelineFoamRibbon_1428 center=(24.00, 14.18, 91.50) size=(100.00, 0.00, 7.12)
+  H8_PhoticBackRidge_1436 material=MAT_H8_PhoticReefBasaltSand_1435 shader=Universal Render Pipeline/Lit center=(35.00, 8.98, 118.00) size=(114.00, 4.88, 24.00)
+  H8_SURFACE_AEGIR_GAS_GIANT_REAL_1428 material=MAT_AegirGasGiant_Impostor_1428 shader=HECTON/Celestial/H8_AegirGasGiantImpostor_1428 center=(1624.85, 6707.97, -49397.27) size=(34586.31, 34586.31, 34586.31)
+  H8_PhoticRouteTerrain_1464 material=MAT_H8_PhoticRouteTerrain_1464 shader=Hecton8/World/PhoticTerrainLit1453 center=(7.00, -9.07, 100.00) size=(158.00, 10.83, 132.00)
+  H8_PHOTIC_BACK_REEF_RIDGE_1432 material=MAT_H8_PhoticBackReefRidge_1432 shader=Universal Render Pipeline/Lit center=(31.00, 9.93, 81.00) size=(58.00, 5.60, 34.00)
+  __LOD0 material=MAT_H8_PhoticCoralPlate_1457 shader=GPUInstancer/Hecton8/Flora/CoralMaster center=(-30.00, 11.65, 69.97) size=(3.04, 1.30, 3.01)
+  __LOD0 material=MAT_H8_PhoticCoralLow_1457 shader=GPUInstancer/Hecton8/Flora/CoralMaster center=(-43.81, 9.71, 78.07) size=(1.83, 0.51, 1.76)
+  H8_PHOTIC_STATIC_MOTE_FIELD_1428 material=MAT_H8_PhoticMotes_1428 shader=Universal Render Pipeline/Particles/Unlit center=(33.80, 10.93, 77.14) size=(70.27, 5.03, 69.18)
+  __LOD0 material=MAT_H8_PhoticCoralMassive_1457 shader=GPUInstancer/Hecton8/Flora/CoralMaster center=(-34.03, 10.70, 102.98) size=(2.96, 0.96, 2.88)
+  __LOD0 material=MAT_H8_PhoticCoralPlate_1457 shader=GPUInstancer/Hecton8/Flora/CoralMaster center=(18.09, 11.77, 71.12) size=(5.08, 1.95, 5.30)
+  __LOD0 material=MAT_H8_PhoticCoralPlate_1457 shader=GPUInstancer/Hecton8/Flora/CoralMaster center=(-9.02, 11.56, 67.98) size=(2.75, 1.52, 3.09)
+  H8_SURFACE_CLOUD_DECK_LOW_1428 material=MAT_H8SurfaceCloudDeck_1428 shader=HECTON/Sky/Hecton_SurfaceCloudDeck_1428 center=(-60.00, 140.65, -304.00) size=(1420.00, 285.00, 0.00)
+  __LOD0 material=MAT_H8_PhoticCoralLow_1457 shader=GPUInstancer/Hecton8/Flora/CoralMaster center=(-26.96, 10.03, 83.18) size=(2.26, 0.49, 2.22)
+  __LOD0 material=MAT_H8_PhoticCoralBrittle_1457 shader=GPUInstancer/Hecton8/Flora/CoralMaster center=(-37.90, 11.91, 75.85) size=(0.69, 1.10, 0.55)
+  H8_SURFACE_CLOUD_DECK_HIGH_1428 material=MAT_H8SurfaceCloudDeck_1428 shader=HECTON/Sky/Hecton_SurfaceCloudDeck_1428 center=(167.00, 190.65, -429.00) size=(860.00, 215.00, 0.00)
+  Sphere material=MAT_SurfaceCloudPanorama_1428 shader=HECTON/Sky/H8_SurfaceCloudPanorama_1428 center=(-18.00, 18.65, 126.00) size=(8000.00, 8000.00, 8000.00)
+  H8_PHOTIC_RIFT_FLOOR_1428 material=MAT_H8_PhoticWetBasaltSand_1428 shader=Universal Render Pipeline/Lit center=(33.00, 7.57, 75.00) size=(86.00, 3.21, 82.00)
+  H8_PHOTIC_CANYON_WALLS_1430 material=MAT_H8_PhoticCanyonWetBasalt_1430 shader=Universal Render Pipeline/Lit center=(29.56, 9.55, 76.00) size=(63.61, 6.30, 62.00)
+  H8_PHOTIC_BASALT_WALL_LEFT_1428 material=MAT_H8_PhoticPorousBasalt_1428 shader=Universal Render Pipeline/Lit center=(2.78, 9.72, 79.00) size=(7.23, 6.53, 74.00)
+  H8_SURFACE_COASTAL_ISLAND_1428 material=MAT_H8_WetBasaltDetail_1464 shader=Universal Render Pipeline/Lit center=(25.00, 18.38, 58.00) size=(115.58, 11.13, 76.43)
+  H8_PHOTIC_SUSPENDED_MOTES_1428 material=MAT_H8_PhoticMotes_1428 shader=Universal Render Pipeline/Particles/Unlit center=(0.00, 0.00, 0.00) size=(0.00, 0.00, 0.00)

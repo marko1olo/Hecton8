@@ -1,0 +1,151 @@
+ID: 1886
+TITLE: PRODUCT_FACE_TEXTURE_AUTHORING_PIPELINE_DISCOVERY
+MODE: REPORT_ONLY_STATIC_PIPELINE_DISCOVERY
+
+You are HECTON-8 batch agent 1886.
+You are running concurrently with other agents. Do not depend on sibling output that does not already exist on disk.
+Do not edit source code, Unity assets, prefabs, scenes, binaries, generated meshes, `.meta` files, DataMonolith files, or task files.
+
+PRIMARY GOAL
+
+Discover and map the existing project-owned texture/material/mesh authoring pipelines that can be reused for product-face texture source work.
+
+Current evidence from 1881 and 1882 shows resource, transport, and player material routes are mostly flat placeholder/color-parameter debt. The next code wave should reuse existing HECTON-8 generators, texture conventions, shaders, and material import patterns instead of adding a disconnected one-off system.
+
+This task must produce a concrete pipeline discovery and implementation queue for future editor-only texture/material source authoring.
+
+READ FIRST
+
+Read fully:
+
+- `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `VISION_LOCKS.md`
+- `TASTE.md`
+- `quality.md`
+- `3dmodel.md`
+- `3DMODEL_TEXTURES_MATERIALS.md`
+- `3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md`
+- `PROCEDURAL_ASSET_PIPELINE.md`
+- `terrain.md`
+- `water.md`
+- `world.md`
+- `lighting.md`
+- `vfx.md`
+- `Docs/Reports/Batch18/1881_RESOURCE_MATERIAL_TEXTURE_ROLE_PACKAGE.md`
+- `Docs/Reports/Batch18/1881_RESOURCE_MATERIAL_TEXTURE_MATRIX.csv`
+- `Docs/Reports/Batch18/1882_TRANSPORT_PLAYER_MATERIAL_TEXTURE_ROLE_PACKAGE.md`
+- `Docs/Reports/Batch18/1882_TRANSPORT_PLAYER_MATERIAL_TEXTURE_MATRIX.csv`
+- `Docs/Reports/Batch18/1874_TOOL_MESH_SOURCE_AUTHORING_IMPLEMENTATION.md`
+- `Docs/Reports/Batch18/1875_RESOURCE_PICKUP_MESH_SOURCE_AUTHORING_IMPLEMENTATION.md`
+- `Docs/Reports/Batch18/1876_TRANSPORT_MESH_SOURCE_AUTHORING_IMPLEMENTATION.md`
+- `Docs/Reports/Batch18/1877_PLAYER_SUIT_MESH_SOURCE_AUTHORING_IMPLEMENTATION.md`
+- `Docs/Reports/Batch18/1879_PRODUCT_FACE_RELINK_AND_PROOF_CONTRACT.md`
+
+Read relevant mandates from `.agents-skills`:
+
+- `QA_Evidence_Text_Filter_Audit.txt`
+- `REND_URP_Graphics_HotPath_Optimization_HLOD.txt`
+- `REND_Terrain_VirtualTexturing.txt`
+- `DATA_Binary_DataMonolith_Blob_Runtime_Bootstrap.txt`
+
+DISCOVERY SCOPE
+
+Search and inspect narrowly for:
+
+- editor scripts that generate procedural textures, meshes, materials, terrain/geology/flora/source assets;
+- existing texture import validators or material validators;
+- material/shader conventions for albedo/normal/MRAO/wetness/emission/detail;
+- texture folders with reusable source maps, atlases, masks, details, rocks, kelp, coral, basalt, ocean, glass, rust, labels;
+- Python or tool scripts that export/import AppliedLore are out of scope unless they directly influence texture/material manifests.
+
+Expected areas:
+
+- `Assets/_Project/Scripts/Editor/**`
+- `Assets/_Project/Art/Shaders/**`
+- `Assets/_Project/Art/Materials/**`
+- `Assets/_Project/Art/TEXTURES/**`
+- `Tools/**`
+- root docs listed above.
+
+REQUIRED OUTPUT CONTENT
+
+1. Existing authoring routes:
+   - list concrete scripts/classes/tools already used for mesh/texture/material generation;
+   - classify whether each can be reused as-is, extended, or only used as reference.
+
+2. Texture conventions:
+   - state project conventions for albedo, normal, packed MRAO, wetness/translucency/glint/emission/detail;
+   - identify uncertain shader channel meanings that require future source-level confirmation.
+
+3. Candidate source pools:
+   - map credible pools for resources, tools, transport, player suit, sky/ocean;
+   - distinguish reusable source maps from final-ready material sources;
+   - mark missing maps as `MISSING_SOURCE_REQUIRED`.
+
+4. Editor implementation queue:
+   - propose 4-8 future implementation tasks with disjoint write scopes;
+   - each future task must state expected files/modules, allowed outputs, forbidden mutations, verification, and Unity-slot requirements;
+   - include material/texture manifest outputs needed before prefab relink.
+
+5. Risk list:
+   - flat color material promotion;
+   - copying terrain textures directly onto small pickups;
+   - alpha/translucency overdraw;
+   - package/cache/third-party material misuse;
+   - runtime texture generation or allocation;
+   - DataMonolith/asset binary mutation without proof;
+   - hiding weak art with darkness/fog/storm/noir.
+
+6. Acceptance boundary:
+   - this is discovery only;
+   - no Unity import, visual capture, or profiler proof is claimed.
+
+OUTPUTS YOU OWN
+
+Create/update only:
+
+- `Docs/Reports/Batch18/1886_PRODUCT_FACE_TEXTURE_AUTHORING_PIPELINE_DISCOVERY.md`
+- `Docs/Reports/Batch18/1886_PRODUCT_FACE_TEXTURE_AUTHORING_IMPLEMENTATION_QUEUE.csv`
+- `Docs/Tasks/Status_1886.md`
+- `Docs/AgentLogs/Rationale_1886.md`
+- `Docs/AgentLogs/LOG_1886.md`
+
+CSV REQUIREMENTS
+
+The CSV must parse with `Import-Csv`.
+Columns:
+
+- `future_task_id`
+- `category`
+- `task_title`
+- `write_scope`
+- `source_inputs`
+- `expected_outputs`
+- `forbidden_mutations`
+- `verification_required`
+- `unity_slot_required`
+- `risk_if_skipped`
+
+Use future task IDs `1887` onward only as proposals. Do not create those task files.
+
+PROHIBITIONS
+
+- Do not run Unity.
+- Do not run dotnet build.
+- Do not run menu items, import, bake, screenshots, PlayMode, profiler, or DataMonolith.
+- Do not edit source code, materials, textures, prefabs, scenes, `.meta`, binaries, generated mesh assets, or task files.
+- Do not claim runtime/visual acceptance.
+- Do not fabricate existing scripts/assets. If a path is not found, mark it missing.
+
+VERIFICATION REQUIRED
+
+Run and record:
+
+- `git diff --check -- Docs/Reports/Batch18/1886_PRODUCT_FACE_TEXTURE_AUTHORING_PIPELINE_DISCOVERY.md Docs/Reports/Batch18/1886_PRODUCT_FACE_TEXTURE_AUTHORING_IMPLEMENTATION_QUEUE.csv Docs/Tasks/Status_1886.md Docs/AgentLogs/Rationale_1886.md Docs/AgentLogs/LOG_1886.md`
+- `Import-Csv Docs/Reports/Batch18/1886_PRODUCT_FACE_TEXTURE_AUTHORING_IMPLEMENTATION_QUEUE.csv | Measure-Object`
+- static term cross-check for `MRAO`, `wetness`, `normal`, `albedo`, `resources`, `tools`, `transport`, `player`, `sky`, and `ocean`.
+
+FINAL RESPONSE
+
+Report changed files, CSV row count, strongest reusable existing pipeline, and the top implementation tasks the orchestrator should launch next.

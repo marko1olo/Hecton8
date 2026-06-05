@@ -1,5 +1,11 @@
 ﻿# Creator Contract Terms And Rate Card
 
+## Authority Boundary
+
+Static partnership negotiation prep only. Rate ranges, deal types, term checklists, talking points, briefs, and stop rules do not prove quality, release, platform, Steam, wishlist, demo, performance, legal/compliance, localization, monitoring, launch, paid placement, contract, or public-response readiness.
+Public voice routes to root `textes.md`. Quality, release, platform, Steam, wishlist, demo, performance, feedback, review/forum response, legal/compliance, localization, monitoring, operations, partnership, contract, and launch claims route through root `quality.md`, `release.md`, and `platform.md` with current proof artifacts plus local permission gates where present.
+No launch/release readiness, localized public use, public response, creator contract send, paid creator approval, platform claim, Steam approval, wishlist claim, demo approval, or public send approval exists from this static rate card, negotiation prep, or contract checklist.
+
 Status: negotiation prep / not legal advice
 Public stance: single-player-first scope / proof-first creator copy
 Runtime impact: none

@@ -1,0 +1,31 @@
+ID: 2803_SHORELINE_FOAM_PHOTIC_TERRAIN_STATIC_ART_ROUTE_AUDIT
+Role: shoreline/foam/photic terrain static art auditor
+
+Read:
+- `C:\hades\Hecton8\AGENTS.md`
+- `C:\hades\Hecton8\PROJECT_BIBLES.md`
+- `C:\hades\Hecton8\TASTE.md`
+- `C:\hades\Hecton8\water.md`
+- relevant `.agents-skills`: `REND_GPU_Sovereignty.txt`, `REND_Shader_Noir_Aesthetics_Dithering_Fog.txt`, `QA_Evidence_Text_Filter_Audit.txt`
+- `Docs/Reports/Batch26/2602_FOAM_CAUSTIC_CREST_MATERIAL_AUDIT.md`
+- `Docs/Reports/Batch26/2603_SHORELINE_TERRAIN_ART_ROUTE_AUDIT.md`
+- `Docs/Reports/Batch27/2704_SHORELINE_TEXTURE_GENERATION_QA_ROUTE.md`
+
+Mission:
+Static-audit why shoreline remains black shell/weak and foam/caustics remain unproven. Produce an owner-correct art route that does not write generated junk into `Assets/**`.
+
+Do:
+1. Inspect current shoreline/foam/photic material, shader, scene object, and texture paths named in Batch26/27.
+2. Identify suspicious material flags, missing textures, disabled objects, primitive mesh risks, and overdriven green/flat water values.
+3. Define a no-Unity generated texture intake route under `Docs/GeneratedAssets/...`.
+4. Define exactly which existing assets are candidates for promotion and which are rejected.
+5. Define proof requirements for 1 m shoreline foam/wet-contact/material-scale view.
+
+Do not:
+- Run Unity.
+- Edit materials/assets.
+- Import generated assets into `Assets/**`.
+
+Deliver:
+- `Docs/Reports/Batch28/2803_SHORELINE_FOAM_PHOTIC_TERRAIN_STATIC_ART_ROUTE_AUDIT.md`
+with candidate asset paths, rejection notes, and next implementation targets.

@@ -144,10 +144,21 @@ namespace Hecton8.Audio
         public static long CurrentResidentBytes => s_residentBytes;
         public static int ResidentClipCount => s_residentCount;
 
+        public static void EnsureReady()
+        {
+            EnsureInitialized();
+        }
+
         public static void TouchClip(AudioClip clip, AudioResidencyDomain domain, bool decodeNow)
         {
             if (clip == null || !AudioResidencyDomainUtility.IsValid(domain))
                 return;
+
+            if (!decodeNow)
+            {
+                TouchClipMetadata(clip, domain);
+                return;
+            }
 
             EnsureInitialized();
             int slot = FindOrAllocateSlot(clip, domain);
@@ -158,7 +169,7 @@ namespace Hecton8.Audio
             entry.LastUseFrame = SystemDispatcher.CurrentFrameIndex;
             entry.Domain = domain;
 
-            if (decodeNow && ShouldLoadClip(clip))
+            if (ShouldLoadClip(clip))
             {
                 long bytes = EstimateDecodedBytes(clip);
                 EnsureBudgetFor(bytes, slot);
@@ -180,6 +191,48 @@ namespace Hecton8.Audio
             }
 
             s_entries[slot] = entry;
+        }
+
+        private static void TouchClipMetadata(AudioClip clip, AudioResidencyDomain domain)
+        {
+            EnsureInitialized();
+            int slot = FindSlot(clip);
+            if (slot < 0)
+            {
+                slot = FindFreeSlot();
+                if (slot < 0)
+                    return;
+
+                s_entries[slot] = new Entry
+                {
+                    Clip = clip,
+                    ClipId = clip.GetEntityId().GetHashCode(),
+                    Domain = domain,
+                    LastUseFrame = SystemDispatcher.CurrentFrameIndex,
+                    EstimatedBytes = 0L,
+                    Resident = false
+                };
+                return;
+            }
+
+            Entry entry = s_entries[slot];
+            entry.LastUseFrame = SystemDispatcher.CurrentFrameIndex;
+            entry.Domain = domain;
+            s_entries[slot] = entry;
+        }
+
+        private static int FindFreeSlot()
+        {
+            if (s_entries == null)
+                return -1;
+
+            for (int i = 0; i < s_entries.Length; i++)
+            {
+                if (s_entries[i].Clip == null)
+                    return i;
+            }
+
+            return -1;
         }
 
         public static void PrewarmAudioSource(AudioSource source, AudioResidencyDomain domain)
@@ -436,7 +489,7 @@ namespace Hecton8.Audio
         private const int AcousticRadarNearestEmitterLimit = 12;
         private const byte WorldSourceBusFlagThreat = 1 << 0;
         private const byte WorldSourceBusFlagBed = 1 << 1;
-        private const int AudioClipRouteCacheCapacity = 128;
+        private const int AudioClipRouteCacheCapacity = 512;
         private const byte AudioClipRouteFlagThreat = 1 << 0;
         private const byte AudioClipRouteFlagBed = 1 << 1;
         private const byte AudioClipRouteFlagLeviathanRoar = 1 << 2;
@@ -446,6 +499,13 @@ namespace Hecton8.Audio
         private const byte AudioVoiceCategoryBubble = 2;
         private const int MaxLeviathanRoarVoices = 3;
         private const int MaxBubbleVoices = 10;
+        private const int UnityAudioPriorityCritical = 0;
+        private const int UnityAudioPriorityThreat = 24;
+        private const int UnityAudioPriorityDefaultWorld = 128;
+        private const int UnityAudioPriorityAmbientBed = 224;
+        private const int UnityAudioPriorityLowAudibilityPenalty = 24;
+        private const int UnityAudioPriorityProxyTierPenalty = 24;
+        private const int UnityAudioPriorityHighAudibilityBonus = 16;
         private const int MaxListenerContainingCaveVolumes = 8;
         private const int MaxActiveCaveVolumesForAudio = 32;
         private const int MaxCachedBaseInteriorMuffleZones = 32;
@@ -1136,6 +1196,19 @@ namespace Hecton8.Audio
         [Tooltip("Optional mixer override for threat-driven bed ducking. If null, the bed or ambient mixer is used.")]
         [SerializeField] private AudioMixer _routingMixer;
 
+        [Header("Clip Route Overrides")]
+        [Tooltip("Optional clips that must resolve through the Threat route even when called through a generic SFX path.")]
+        [SerializeField] private AudioClip[] _threatRouteClips;
+
+        [Tooltip("Optional clips that must resolve through the Ambient Bed route even when called through a generic SFX path.")]
+        [SerializeField] private AudioClip[] _bedRouteClips;
+
+        [Tooltip("Optional clips that are capped as leviathan roars regardless of caller path.")]
+        [SerializeField] private AudioClip[] _leviathanRoarRouteClips;
+
+        [Tooltip("Optional clips that are capped as bubble-boil events regardless of caller path.")]
+        [SerializeField] private AudioClip[] _bubbleRouteClips;
+
         [Tooltip("Optional authored looping world-drone source used during menu-to-world transition. Runtime source creation is forbidden.")]
         [SerializeField] private AudioSource _worldDroneSource;
 
@@ -1173,6 +1246,12 @@ namespace Hecton8.Audio
 
         [Tooltip("Exposed mixer parameter for narrative radio low-pass cutoff while deep or irradiated.")]
         [SerializeField] private string _narrativeRadioLowPassCutoffParameter = "NarrativeRadioLowPassCutoffHz";
+
+        [Tooltip("Exposed mixer parameter for narrative black-box bitcrusher mix. 0 means clean, 1 means fully degraded.")]
+        [SerializeField] private string _narrativeRadioBitCrushMixParameter = "NarrativeRadioBitCrushMix";
+
+        [Tooltip("Exposed mixer parameter for narrative black-box pitch shift in cents.")]
+        [SerializeField] private string _narrativeRadioPitchShiftCentsParameter = "NarrativeRadioPitchShiftCents";
 
         [Tooltip("Exposed mixer parameter for brownout-driven global pitch multiplier.")]
         [SerializeField] private string _brownoutPitchMultiplierParameter = "BrownoutPitchMultiplier";
@@ -1327,6 +1406,8 @@ namespace Hecton8.Audio
         private float _lastParasiteRoomLowPassCutoffHz = -1f;
         private float _lastParasiteOrganicLayerGainDb = float.PositiveInfinity;
         private float _lastNarrativeRadioLowPassCutoffHz = -1f;
+        private float _lastNarrativeRadioBitCrushMix01 = float.PositiveInfinity;
+        private float _lastNarrativeRadioPitchShiftCents = float.PositiveInfinity;
         private float _lastThreatBusDuckDb = float.PositiveInfinity;
         private float _masterDepthPressureLowPassCutoffHz = MasterDepthPressureCutoffOpenHertz;
         private float _lastMasterDepthPressureLowPassCutoffHz = -1f;
@@ -1340,6 +1421,8 @@ namespace Hecton8.Audio
         private bool _hasParasiteRoomLowPassCutoffParameter;
         private bool _hasParasiteOrganicLayerGainParameter;
         private bool _hasNarrativeRadioLowPassCutoffParameter;
+        private bool _hasNarrativeRadioBitCrushMixParameter;
+        private bool _hasNarrativeRadioPitchShiftCentsParameter;
         private bool _hasBrownoutPitchMultiplierParameter;
         private bool _hasMasterDepthPressureLowPassCutoffParameter;
         private float _nextWorldPoolFullEditorLogTime;
@@ -1375,6 +1458,7 @@ namespace Hecton8.Audio
         private CoreAudioEvent[] _audioEventQueue;
         private uint[] _audioClipHashKeys;
         private int[] _audioClipHashTableIndices;
+        private int _audioClipHashMask;
         private int _audioClipHashCount;
         private VaultGenerationHandle<VirtualVoice> _virtualVoiceWritePoolHandle;
         private VaultGenerationHandle<VirtualVoice> _virtualVoiceSortPoolHandle;
@@ -2455,6 +2539,8 @@ namespace Hecton8.Audio
         /// </summary>
         private void InitializePool()
         {
+            AudioResidencyCache.EnsureReady();
+
             int effectivePoolSize = math.min(_poolSize, CountAuthoredWorldPoolNodes(ResolveWorldPoolRoot()));
             if (effectivePoolSize < _poolSize)
             {
@@ -2483,8 +2569,8 @@ namespace Hecton8.Audio
             _worldSourceRoots = new Transform[_poolSize]; // COLD ALLOC: Transform[_poolSize] - authored world-source root cache for occlusion owner filtering - owner: SpatialAudioManager
             _worldSourceBusFlags = new byte[_poolSize]; // COLD ALLOC: byte[_poolSize] - per-source mixer role flags for hot-loop threat/bed decisions - owner: SpatialAudioManager
             _worldSourceVoiceCategories = new byte[_poolSize]; // COLD ALLOC: byte[_poolSize] - hard-capped SFX category occupancy - owner: SpatialAudioManager
-            _clipRouteCacheIds = new int[AudioClipRouteCacheCapacity]; // COLD ALLOC: int[128] - AudioClip instance-id route cache keys - owner: SpatialAudioManager
-            _clipRouteCacheFlags = new byte[AudioClipRouteCacheCapacity]; // COLD ALLOC: byte[128] - AudioClip route flags keyed by stable clip entity id - owner: SpatialAudioManager
+            _clipRouteCacheIds = new int[AudioClipRouteCacheCapacity]; // COLD ALLOC: int[512] - AudioClip instance-id route cache keys - owner: SpatialAudioManager
+            _clipRouteCacheFlags = new byte[AudioClipRouteCacheCapacity]; // COLD ALLOC: byte[512] - AudioClip route flags keyed by stable clip entity id - owner: SpatialAudioManager
             _activeWorldRuntimePositions = new Vector3[_poolSize]; // COLD ALLOC: Vector3[_poolSize] - per-frame active world-source runtime position cache - owner: SpatialAudioManager
             _activeWorldRuntimePositionFrames = new int[_poolSize]; // COLD ALLOC: int[_poolSize] - validity frame for active world-source runtime position cache - owner: SpatialAudioManager
             _activeWorldAups = new AbsoluteUniversePosition[_poolSize]; // COLD ALLOC: AbsoluteUniversePosition[_poolSize] - per-source AUP cache shared by radar and binaural telemetry - owner: SpatialAudioManager
@@ -2493,6 +2579,8 @@ namespace Hecton8.Audio
             _activeWorldSlots = new int[_poolSize]; // COLD ALLOC: int[_poolSize] - sparse world-source slot lookup - owner: SpatialAudioManager
             for (int i = 0; i < AudioClipRouteCacheCapacity; i++)
                 _clipRouteCacheIds[i] = int.MinValue;
+
+            CacheAuthoredClipRouteOverridesCold();
 
             _activeWorldCount = 0;
             for (int i = 0; i < _poolSize; i++)
@@ -2801,7 +2889,7 @@ namespace Hecton8.Audio
 
             // â”€â”€ ÐŸÐ¾Ð·Ð¸Ñ†Ð¸Ð¾Ð½Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð¸Ðµ â”€â”€
             source.transform.position = audiblePosition;
-            AudioResidencyCache.TouchClip(clip, ResolveWorldResidencyDomain(clip, mixerGroup), true);
+            TouchPlaybackClip(clip, ResolveWorldResidencyDomain(clip, mixerGroup));
 
             // â”€â”€ ÐÐ°ÑÑ‚Ñ€Ð¾Ð¹ÐºÐ° â”€â”€
             source.clip = clip;
@@ -2814,8 +2902,9 @@ namespace Hecton8.Audio
             _basePitches[index] = clampedPitch;
             source.outputAudioMixerGroup = ResolveWorldMixerGroup(clip, mixerGroup);
             CacheWorldSourceBusFlags(index, source.outputAudioMixerGroup);
+            source.priority = ResolveUnityAudioPriority(clip, source.outputAudioMixerGroup, clampedVolume, lodTier);
             float clampedDopplerRatio = math.clamp(
-                1f,
+                dopplerRatio,
                 VirtualVoiceUtility.MinimumDopplerRatio,
                 VirtualVoiceUtility.MaximumDopplerRatio);
             if (_smoothedDopplerRatios != null && index < _smoothedDopplerRatios.Length)
@@ -2854,7 +2943,7 @@ namespace Hecton8.Audio
         {
             if (_audioEventQueue == null ||
                 _audioEventQueueCount >= MaxQueuedAudioEvents ||
-                !TryResolveAudioEventClip(audioEvent.EventID, out _))
+                !TryResolveAudioEventClip(audioEvent.EventID, audioEvent.ClipHash, out _))
             {
                 if (_audioEventQueue != null && _audioEventQueueCount >= MaxQueuedAudioEvents)
                     _audioEventQueueDroppedCount++;
@@ -3036,7 +3125,14 @@ namespace Hecton8.Audio
         private bool TryResolveAudioEventClip(uint eventID, uint clipHash, out AudioClip clip)
         {
             if (TryResolveAudioEventClip(eventID, out clip))
-                return true;
+            {
+                if (clipHash == 0u)
+                    return true;
+
+                uint resolvedHash = unchecked((uint)EntityId.ToULong(clip.GetEntityId()));
+                if (resolvedHash == clipHash)
+                    return true;
+            }
 
             return TryResolveAudioClipHash(clipHash, out clip);
         }
@@ -3051,25 +3147,36 @@ namespace Hecton8.Audio
                 return false;
             }
 
-            int tableIndex = -1;
-            for (int i = 0; i < _audioClipHashCount; i++)
+            if (_audioClipHashMask <= 0)
+                return false;
+
+            int slot = (int)(clipHash & (uint)_audioClipHashMask);
+            int probeLimit = _audioClipHashKeys.Length;
+            for (int probe = 0; probe < probeLimit; probe++)
             {
-                if (_audioClipHashKeys[i] == clipHash)
+                uint candidateHash = _audioClipHashKeys[slot];
+                if (candidateHash == 0u)
+                    return false;
+
+                if (candidateHash == clipHash)
                 {
-                    tableIndex = _audioClipHashTableIndices[i];
-                    break;
+                    int encodedIndex = _audioClipHashTableIndices[slot];
+                    if (encodedIndex <= 0)
+                        return false;
+
+                    int tableIndex = encodedIndex - 1;
+                    AudioClip[] table = _audioEventClipTable;
+                    if (table == null || tableIndex < 0 || tableIndex >= table.Length)
+                        return false;
+
+                    clip = table[tableIndex];
+                    return clip != null;
                 }
+
+                slot = (slot + 1) & _audioClipHashMask;
             }
 
-            if (tableIndex < 0)
-                return false;
-
-            AudioClip[] table = _audioEventClipTable;
-            if (table == null || tableIndex < 0 || tableIndex >= table.Length)
-                return false;
-
-            clip = table[tableIndex];
-            return clip != null;
+            return false;
         }
 
         private void DrainAudioEventQueue()
@@ -3824,7 +3931,18 @@ namespace Hecton8.Audio
             if (!_acousticOcclusionScheduled)
                 return true;
 
-            if (!DispatcherJobFence.TryComplete(ref _acousticOcclusionHandle, forceComplete: true))
+            bool completed;
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                completed = DispatcherJobFence.TryComplete(ref _acousticOcclusionHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
+
+            if (!completed)
                 return false;
 
             FinishAcousticOcclusionCompletion();
@@ -3893,7 +4011,18 @@ namespace Hecton8.Audio
                 return true;
 
             long sortWaitStartTicks = System.Diagnostics.Stopwatch.GetTimestamp();
-            if (!DispatcherJobFence.TryComplete(ref _virtualVoiceSortHandle, forceComplete: true))
+            bool completed;
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                completed = DispatcherJobFence.TryComplete(ref _virtualVoiceSortHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
+
+            if (!completed)
                 return false;
 
             FinishVirtualVoiceSortCompletion(sortWaitStartTicks);
@@ -4152,7 +4281,7 @@ namespace Hecton8.Audio
             AssignAudioVoiceCategory(sourceIndex, voiceCategory);
             source.enabled = true;
             source.transform.position = audiblePosition;
-            AudioResidencyCache.TouchClip(clip, ResolveWorldResidencyDomain(clip, ResolvedDefaultWorldMixerGroup), true);
+            TouchPlaybackClip(clip, ResolveWorldResidencyDomain(clip, ResolvedDefaultWorldMixerGroup));
             source.clip = clip;
             float clampedVolume = ResolveVirtualSelectionVolume(in selection);
             if (hasAcousticPortalPath)
@@ -4163,6 +4292,7 @@ namespace Hecton8.Audio
             _basePitches[sourceIndex] = clampedPitch;
             source.outputAudioMixerGroup = ResolveWorldMixerGroup(clip, ResolvedDefaultWorldMixerGroup);
             CacheWorldSourceBusFlags(sourceIndex, source.outputAudioMixerGroup);
+            source.priority = ResolveUnityAudioPriority(clip, source.outputAudioMixerGroup, clampedVolume, lodTier);
             float dopplerRatio = math.clamp(
                 selection.DopplerRatio,
                 VirtualVoiceUtility.MinimumDopplerRatio,
@@ -5410,7 +5540,7 @@ namespace Hecton8.Audio
 
         private void DispatchQueuedAudioEvent(in CoreAudioEvent audioEvent)
         {
-            if (!TryResolveAudioEventClip(audioEvent.EventID, out AudioClip clip))
+            if (!TryResolveAudioEventClip(audioEvent.EventID, audioEvent.ClipHash, out AudioClip clip))
                 return;
 
             PlayAtPoint(
@@ -5500,7 +5630,7 @@ namespace Hecton8.Audio
             AssignAudioVoiceCategory(index, voiceCategory);
             source.enabled = true;
             source.transform.position = audiblePosition;
-            AudioResidencyCache.TouchClip(clip, ResolveWorldResidencyDomain(clip, mixerGroup), true);
+            TouchPlaybackClip(clip, ResolveWorldResidencyDomain(clip, mixerGroup));
             source.clip = clip;
             float clampedVolume = math.saturate(volume);
             if (hasAcousticPortalPath)
@@ -5511,6 +5641,7 @@ namespace Hecton8.Audio
             _basePitches[index] = clampedPitch;
             source.outputAudioMixerGroup = ResolveWorldMixerGroup(clip, mixerGroup);
             CacheWorldSourceBusFlags(index, source.outputAudioMixerGroup);
+            source.priority = ResolveUnityAudioPriority(clip, source.outputAudioMixerGroup, clampedVolume, lodTier);
             float clampedDopplerRatio = math.clamp(
                 1f,
                 VirtualVoiceUtility.MinimumDopplerRatio,
@@ -5620,7 +5751,7 @@ namespace Hecton8.Audio
 
             AudioSource source = _pool2D[index];
 
-            AudioResidencyCache.TouchClip(clip, AudioResidencyDomain.Interface, true);
+            TouchPlaybackClip(clip, AudioResidencyDomain.Interface);
             source.clip = clip;
             source.volume = math.saturate(volume);
             source.pitch = _brownoutAudioPitchRatio;
@@ -5637,6 +5768,11 @@ namespace Hecton8.Audio
                 return;
 
             AudioResidencyCache.TouchClip(clip, domain, decodeNow);
+        }
+
+        private static void TouchPlaybackClip(AudioClip clip, AudioResidencyDomain domain)
+        {
+            AudioResidencyCache.TouchClip(clip, domain, false);
         }
 
         public void PrewarmAudioSource(AudioSource source, byte residencyDomain)
@@ -5693,6 +5829,49 @@ namespace Hecton8.Audio
 
             mixer.SetFloat(_narrativeRadioLowPassCutoffParameter, cutoffHz);
             _lastNarrativeRadioLowPassCutoffHz = cutoffHz;
+        }
+
+        public void SetNarrativeRadioGlitch(float corruption01, float bitCrushMix01, float pitchShiftCents, float qualityWeight01)
+        {
+            if (!_hasNarrativeRadioBitCrushMixParameter && !_hasNarrativeRadioPitchShiftCentsParameter)
+                return;
+
+            AudioMixer mixer = ResolveNarrativeRadioMixer();
+            if (mixer == null)
+                return;
+
+            float quality = SmoothQuality01(SanitizeQuality01(qualityWeight01));
+            float corruption = math.saturate(SanitizeFinite(corruption01, 0f));
+            float presentationWeight = math.saturate(quality * math.smoothstep(0.18f, 1f, quality));
+            float bitCrushMix = math.saturate(SanitizeFinite(bitCrushMix01, 0f)) * presentationWeight;
+            float pitchCents = math.clamp(
+                SanitizeFinite(pitchShiftCents, 0f) * presentationWeight,
+                -1200f,
+                1200f);
+
+            if (corruption <= 0.0001f || quality <= 0.0001f)
+            {
+                bitCrushMix = 0f;
+                pitchCents = 0f;
+            }
+
+            if (_hasNarrativeRadioBitCrushMixParameter &&
+                math.abs(bitCrushMix - _lastNarrativeRadioBitCrushMix01) > 0.005f)
+            {
+                if (!mixer.SetFloat(_narrativeRadioBitCrushMixParameter, bitCrushMix))
+                    _hasNarrativeRadioBitCrushMixParameter = false;
+                else
+                    _lastNarrativeRadioBitCrushMix01 = bitCrushMix;
+            }
+
+            if (_hasNarrativeRadioPitchShiftCentsParameter &&
+                math.abs(pitchCents - _lastNarrativeRadioPitchShiftCents) > 0.5f)
+            {
+                if (!mixer.SetFloat(_narrativeRadioPitchShiftCentsParameter, pitchCents))
+                    _hasNarrativeRadioPitchShiftCentsParameter = false;
+                else
+                    _lastNarrativeRadioPitchShiftCents = pitchCents;
+            }
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -6068,30 +6247,36 @@ namespace Hecton8.Audio
             }
 
             int quietestIndex = 0;
+            int lowestImportancePriority = int.MinValue;
             float quietestVolume = float.MaxValue;
             float oldestTime = float.MaxValue;
             for (int activeSlot = 0; activeSlot < _activeWorldCount; activeSlot++)
             {
                 int sourceIndex = _activeWorldIndices[activeSlot];
                 AudioSource source = _pool[sourceIndex];
+                int candidatePriority = source != null ? source.priority : 256;
                 float candidateVolume = source != null ? math.max(0f, source.volume) : 0f;
                 float candidateStartTime = _startTimes[sourceIndex];
-                if (candidateVolume < quietestVolume ||
-                    (candidateVolume <= quietestVolume && candidateStartTime < oldestTime))
+                if (candidatePriority > lowestImportancePriority ||
+                    (candidatePriority == lowestImportancePriority && candidateVolume < quietestVolume) ||
+                    (candidatePriority == lowestImportancePriority && candidateVolume <= quietestVolume && candidateStartTime < oldestTime))
                 {
+                    lowestImportancePriority = candidatePriority;
                     quietestVolume = candidateVolume;
                     oldestTime = candidateStartTime;
                     quietestIndex = sourceIndex;
                 }
             }
 
-            _pool[quietestIndex].Stop();
+            AudioSource evictedSource = _pool[quietestIndex];
+            if (evictedSource != null)
+                evictedSource.Stop();
             ResetWorldSourceState(quietestIndex, true);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (ShouldEmitEditorThrottledLog(ref _nextWorldPoolFullEditorLogTime, PoolFullEditorLogIntervalSeconds))
             {
-                Hecton8.Core.H8Debug.Log("[SpatialAudioManager] World pool full. Evicting quietest source.", this);
+                Hecton8.Core.H8Debug.Log("[SpatialAudioManager] World pool full. Evicting lowest-priority source.", this);
             }
 #endif
 
@@ -6198,7 +6383,7 @@ namespace Hecton8.Audio
             AssignAudioVoiceCategory(index, voiceCategory);
             source.enabled = true;
             source.transform.position = position;
-            AudioResidencyCache.TouchClip(clip, ResolveWorldResidencyDomain(clip, mixerGroup), true);
+            TouchPlaybackClip(clip, ResolveWorldResidencyDomain(clip, mixerGroup));
             source.clip = clip;
             float clampedVolume = math.saturate(volume);
             source.volume = clampedVolume;
@@ -9816,18 +10001,19 @@ namespace Hecton8.Audio
         private void EnsureAudioClipHashMapCold()
         {
             AudioClip[] table = _audioEventClipTable;
-            int requiredCapacity = math.max(1, table != null ? table.Length : 0);
+            int requiredCapacity = ResolveAudioClipHashCapacity(table != null ? table.Length : 0);
             if (_audioClipHashKeys == null ||
                 _audioClipHashTableIndices == null ||
-                _audioClipHashKeys.Length < requiredCapacity ||
-                _audioClipHashTableIndices.Length < requiredCapacity)
+                _audioClipHashKeys.Length != requiredCapacity ||
+                _audioClipHashTableIndices.Length != requiredCapacity)
             {
-                _audioClipHashKeys = new uint[requiredCapacity]; // COLD ALLOC: uint[audioEventClipTable] - clip hash lookup keys - owner: SpatialAudioManager
-                _audioClipHashTableIndices = new int[requiredCapacity]; // COLD ALLOC: int[audioEventClipTable] - clip hash lookup table indices - owner: SpatialAudioManager
+                _audioClipHashKeys = new uint[requiredCapacity]; // COLD ALLOC: uint[clipHashCapacity] - open-addressed clip hash keys - owner: SpatialAudioManager
+                _audioClipHashTableIndices = new int[requiredCapacity]; // COLD ALLOC: int[clipHashCapacity] - one-based clip table indices - owner: SpatialAudioManager
             }
 
             Array.Clear(_audioClipHashKeys, 0, _audioClipHashKeys.Length);
             Array.Clear(_audioClipHashTableIndices, 0, _audioClipHashTableIndices.Length);
+            _audioClipHashMask = requiredCapacity - 1;
             _audioClipHashCount = 0;
             if (table == null)
                 return;
@@ -9839,19 +10025,58 @@ namespace Hecton8.Audio
                     continue;
 
                 uint clipHash = unchecked((uint)EntityId.ToULong(clip.GetEntityId()));
-                if (clipHash != 0u && _audioClipHashCount < _audioClipHashKeys.Length)
+                if (clipHash != 0u && TryInsertAudioClipHashCold(clipHash, i))
                 {
-                    _audioClipHashKeys[_audioClipHashCount] = clipHash;
-                    _audioClipHashTableIndices[_audioClipHashCount] = i;
                     _audioClipHashCount++;
                 }
             }
+        }
+
+        private static int ResolveAudioClipHashCapacity(int tableLength)
+        {
+            int target = tableLength > 0x3FFFFFFF ? int.MaxValue : math.max(2, tableLength * 2);
+            int capacity = 2;
+            while (capacity > 0 && capacity < target)
+                capacity <<= 1;
+
+            return capacity > 0 ? capacity : 1 << 30;
+        }
+
+        private bool TryInsertAudioClipHashCold(uint clipHash, int tableIndex)
+        {
+            if (_audioClipHashKeys == null ||
+                _audioClipHashTableIndices == null ||
+                _audioClipHashMask <= 0)
+            {
+                return false;
+            }
+
+            int slot = (int)(clipHash & (uint)_audioClipHashMask);
+            int probeLimit = _audioClipHashKeys.Length;
+            for (int probe = 0; probe < probeLimit; probe++)
+            {
+                uint candidateHash = _audioClipHashKeys[slot];
+                if (candidateHash == 0u)
+                {
+                    _audioClipHashKeys[slot] = clipHash;
+                    _audioClipHashTableIndices[slot] = tableIndex + 1;
+                    return true;
+                }
+
+                if (candidateHash == clipHash)
+                    return false;
+
+                slot = (slot + 1) & _audioClipHashMask;
+            }
+
+            return false;
         }
 
         private void ReleaseAudioClipHashMap()
         {
             _audioClipHashKeys = null;
             _audioClipHashTableIndices = null;
+            _audioClipHashMask = 0;
             _audioClipHashCount = 0;
         }
 
@@ -10042,6 +10267,42 @@ namespace Hecton8.Audio
                 return ResolvedBedBusGroup;
 
             return requestedGroup != null ? requestedGroup : ResolvedDefaultWorldMixerGroup;
+        }
+
+        private int ResolveUnityAudioPriority(
+            AudioClip clip,
+            AudioMixerGroup resolvedGroup,
+            float volume01,
+            AudioLodTier lodTier)
+        {
+            byte routeFlags = ResolveClipRouteFlags(clip);
+            int priority = UnityAudioPriorityDefaultWorld;
+
+            if ((routeFlags & AudioClipRouteFlagLeviathanRoar) != 0)
+            {
+                priority = UnityAudioPriorityCritical;
+            }
+            else if ((routeFlags & AudioClipRouteFlagThreat) != 0 ||
+                     (_threatGroup != null && resolvedGroup == _threatGroup))
+            {
+                priority = UnityAudioPriorityThreat;
+            }
+            else if ((routeFlags & AudioClipRouteFlagBed) != 0 ||
+                     resolvedGroup == _bedGroup ||
+                     resolvedGroup == _ambientGroup)
+            {
+                priority = UnityAudioPriorityAmbientBed;
+            }
+
+            if (lodTier >= AudioLodTier.Tier1Reduced)
+                priority += UnityAudioPriorityProxyTierPenalty;
+
+            if (volume01 <= 0.08f)
+                priority += UnityAudioPriorityLowAudibilityPenalty;
+            else if (volume01 >= 0.75f)
+                priority -= UnityAudioPriorityHighAudibilityBonus;
+
+            return math.clamp(priority, 0, 256);
         }
 
         private AudioResidencyDomain ResolveWorldResidencyDomain(AudioClip clip, AudioMixerGroup requestedGroup)
@@ -10572,6 +10833,8 @@ namespace Hecton8.Audio
             _hasParasiteRoomLowPassCutoffParameter = !string.IsNullOrWhiteSpace(_parasiteRoomLowPassCutoffParameter);
             _hasParasiteOrganicLayerGainParameter = !string.IsNullOrWhiteSpace(_parasiteOrganicLayerGainParameter);
             _hasNarrativeRadioLowPassCutoffParameter = !string.IsNullOrWhiteSpace(_narrativeRadioLowPassCutoffParameter);
+            _hasNarrativeRadioBitCrushMixParameter = !string.IsNullOrWhiteSpace(_narrativeRadioBitCrushMixParameter);
+            _hasNarrativeRadioPitchShiftCentsParameter = !string.IsNullOrWhiteSpace(_narrativeRadioPitchShiftCentsParameter);
             _hasBrownoutPitchMultiplierParameter = !string.IsNullOrWhiteSpace(_brownoutPitchMultiplierParameter);
             _hasMasterDepthPressureLowPassCutoffParameter = !string.IsNullOrWhiteSpace(_masterDepthPressureLowPassCutoffParameter);
         }
@@ -10585,9 +10848,68 @@ namespace Hecton8.Audio
             if (TryGetCachedClipRouteFlags(clipId, out byte routeFlags))
                 return routeFlags;
 
-            routeFlags = 0;
-            CacheClipRouteFlags(clipId, routeFlags);
+            return ResolveAuthoredClipRouteFlags(clip);
+        }
+
+        private byte ResolveAuthoredClipRouteFlags(AudioClip clip)
+        {
+            byte routeFlags = 0;
+            if (ContainsAuthoredClip(_threatRouteClips, clip))
+                routeFlags |= AudioClipRouteFlagThreat;
+
+            if (ContainsAuthoredClip(_bedRouteClips, clip))
+                routeFlags |= AudioClipRouteFlagBed;
+
+            if (ContainsAuthoredClip(_leviathanRoarRouteClips, clip))
+                routeFlags |= AudioClipRouteFlagThreat | AudioClipRouteFlagLeviathanRoar;
+
+            if (ContainsAuthoredClip(_bubbleRouteClips, clip))
+                routeFlags |= AudioClipRouteFlagBubble;
+
             return routeFlags;
+        }
+
+        private void CacheAuthoredClipRouteOverridesCold()
+        {
+            CacheAuthoredClipRouteArrayCold(_threatRouteClips, AudioClipRouteFlagThreat);
+            CacheAuthoredClipRouteArrayCold(_bedRouteClips, AudioClipRouteFlagBed);
+            CacheAuthoredClipRouteArrayCold(_leviathanRoarRouteClips, AudioClipRouteFlagThreat | AudioClipRouteFlagLeviathanRoar);
+            CacheAuthoredClipRouteArrayCold(_bubbleRouteClips, AudioClipRouteFlagBubble);
+        }
+
+        private void CacheAuthoredClipRouteArrayCold(AudioClip[] clips, byte routeFlags)
+        {
+            if (clips == null || routeFlags == 0)
+                return;
+
+            for (int i = 0; i < clips.Length; i++)
+                CacheAuthoredClipRouteCold(clips[i], routeFlags);
+        }
+
+        private void CacheAuthoredClipRouteCold(AudioClip clip, byte routeFlags)
+        {
+            if (clip == null || routeFlags == 0)
+                return;
+
+            int clipId = unchecked((int)EntityId.ToULong(clip.GetEntityId()));
+            if (TryGetCachedClipRouteFlags(clipId, out byte existingFlags))
+                routeFlags |= existingFlags;
+
+            CacheClipRouteFlags(clipId, routeFlags);
+        }
+
+        private static bool ContainsAuthoredClip(AudioClip[] clips, AudioClip clip)
+        {
+            if (clips == null || clip == null)
+                return false;
+
+            for (int i = 0; i < clips.Length; i++)
+            {
+                if (clips[i] == clip)
+                    return true;
+            }
+
+            return false;
         }
 
         private bool TryGetCachedClipRouteFlags(int clipId, out byte routeFlags)

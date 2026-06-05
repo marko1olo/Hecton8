@@ -10,13 +10,13 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Record quarantine hold interrogation
+# Quarantine Hold Interrogation Record
 
-Record quarantine hold interrogation делает rescue неприятным. Survival настоящий, но custody, contamination и evidence control все еще могут наказать игрока.
+Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.
 
 ## Scanner
 
@@ -28,10 +28,10 @@ QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload i
 
 ## Audio
 
-Они спасли тело первым, потому что тело знало маршрут.
+They saved the body first because the body knew the route.
 
 ## Field Note
 
-Для bitter partial ending и post-exit dossier item.
+Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom.
 
 <!-- In-Game Wiki; generated from P338_QUARANTINE_HOLD_INTERROGATION_RECORD/ru_RU. -->

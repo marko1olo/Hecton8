@@ -198,9 +198,7 @@ namespace Hecton.UI.MainMenu
             if (_saveManager == null)
             {
                 Hecton8.Core.H8Debug.LogWarning(
-                    "[MainMenuController] Hecton8.Core.GlobalRegistry.Save is null. " +
-                    "Save/Load features will be unavailable. " +
-                    "Ensure SaveManager exists in scene or is DontDestroyOnLoad.");
+                    "[MainMenuController] Hecton8.Core.GlobalRegistry.Save is null. Save/Load features will be unavailable. Ensure SaveManager exists in scene or is DontDestroyOnLoad.");
             }
 #endif
         }
@@ -247,22 +245,6 @@ namespace Hecton.UI.MainMenu
             CacheSaveManagerCold(null);
             CacheSettingsManagerCold(null);
             _lastUnscaledTickTime = 0f;
-        }
-
-        private void Update()
-        {
-            if (!Application.isPlaying || _registeredToTickManager)
-                return;
-
-            Tick(Time.unscaledDeltaTime);
-        }
-
-        private void LateUpdate()
-        {
-            if (!Application.isPlaying || _registeredLateFrameTickManager)
-                return;
-
-            LateFrameTick();
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -517,11 +499,7 @@ namespace Hecton.UI.MainMenu
         private void ConfigureReadableOverlayCold()
         {
             if (_readableOverlay == null && !TryGetComponent(out _readableOverlay))
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                _readableOverlay = gameObject.AddComponent<ReadableMainMenuOverlay1428>(); // COLD ALLOC: screen-space readability mirror for menu panels.
-#endif
-            }
+                TryFindReadableOverlayInSceneCold(out _readableOverlay);
 
             if (_readableOverlay == null)
                 return;
@@ -533,6 +511,56 @@ namespace Hecton.UI.MainMenu
                 saveLoadGroup,
                 loadingGroup,
                 settingsPanel);
+        }
+
+        private bool TryFindReadableOverlayInSceneCold(out ReadableMainMenuOverlay1428 overlay)
+        {
+            overlay = null;
+            UnityEngine.SceneManagement.Scene scene = gameObject.scene;
+            if (!scene.IsValid() || !scene.isLoaded)
+                return false;
+
+            _cameraRootSearchBuffer.Clear();
+            scene.GetRootGameObjects(_cameraRootSearchBuffer);
+            for (int i = 0; i < _cameraRootSearchBuffer.Count; i++)
+            {
+                GameObject root = _cameraRootSearchBuffer[i];
+                if (root == null)
+                    continue;
+
+                if (TryFindReadableOverlayInHierarchyCold(root.transform, out overlay))
+                {
+                    _cameraRootSearchBuffer.Clear();
+                    return true;
+                }
+            }
+
+            _cameraRootSearchBuffer.Clear();
+            return false;
+        }
+
+        private static bool TryFindReadableOverlayInHierarchyCold(Transform root, out ReadableMainMenuOverlay1428 overlay)
+        {
+            overlay = null;
+            if (root == null)
+                return false;
+
+            if (root.TryGetComponent(out overlay))
+                return true;
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                if (TryFindReadableOverlayInHierarchyCold(root.GetChild(i), out overlay))
+                    return true;
+            }
+
+            return false;
+        }
+
+        internal bool TryGetReadableOverlayCamera(out Camera camera)
+        {
+            camera = mainMenuCamera;
+            return camera != null;
         }
 
         private Camera ResolveMainMenuCameraCold(Camera preferred)
@@ -646,6 +674,21 @@ namespace Hecton.UI.MainMenu
             button.onClick.AddListener(callback);
         }
 
+        private void PublishPrimaryMenuActionFeedback(Selectable control)
+        {
+            _diegeticRaycastReceiver?.PublishProgrammaticPrimaryClick(control);
+        }
+
+        private void PublishSecondaryMenuActionFeedback(Selectable control)
+        {
+            _diegeticRaycastReceiver?.PublishProgrammaticSecondaryClick(control);
+        }
+
+        private void PublishDestructiveMenuActionFeedback(Selectable control)
+        {
+            _diegeticRaycastReceiver?.PublishProgrammaticDestructiveClick(control);
+        }
+
         private void InitializePanelStates()
         {
             ClearPanelTransitionState();
@@ -660,6 +703,8 @@ namespace Hecton.UI.MainMenu
 
         private void OnNewGameClicked()
         {
+            PublishPrimaryMenuActionFeedback(btnNewGame);
+
             int messageLength = CopyLocalizedModalMessage(LocalizationKeys.MODAL_NEW_GAME_MESSAGE, "Start a new game?");
             ModalWindow.Show(
                 "New Game",
@@ -670,6 +715,7 @@ namespace Hecton.UI.MainMenu
 
         private void OnLoadGameClicked()
         {
+            PublishSecondaryMenuActionFeedback(btnLoadGame);
             OpenSaveLoadMenu();
         }
 
@@ -678,11 +724,14 @@ namespace Hecton.UI.MainMenu
             if (!_settingsAvailable)
                 return;
 
+            PublishSecondaryMenuActionFeedback(btnSettings);
             SwitchPanel(ResolvePanelSwitchSource(), settingsGroup);
         }
 
         private void OnQuitClicked()
         {
+            PublishDestructiveMenuActionFeedback(btnQuit);
+
             int messageLength = CopyLocalizedModalMessage(LocalizationKeys.MODAL_QUIT_MESSAGE, "Quit the game?");
             ModalWindow.Show(
                 "Quit",
@@ -693,11 +742,13 @@ namespace Hecton.UI.MainMenu
 
         private void OnBackFromSaveLoadClicked()
         {
+            PublishSecondaryMenuActionFeedback(btnBackFromSaveLoad);
             SwitchPanel(saveLoadGroup, mainMenuGroup);
         }
 
         private void OnBackFromSettingsClicked()
         {
+            PublishSecondaryMenuActionFeedback(btnBackFromSettings);
             settingsPanel?.CancelPendingChanges();
             SwitchPanel(settingsGroup, mainMenuGroup);
         }
@@ -953,7 +1004,6 @@ namespace Hecton.UI.MainMenu
                 SetExclusivePanelImmediate(saveLoadGroup);
                 BeginCameraRouteForPanel(saveLoadGroup);
                 RequestSelectionRefresh();
-                _readableOverlay?.ForceRefresh();
                 return;
             }
 
@@ -984,8 +1034,7 @@ namespace Hecton.UI.MainMenu
             {
 #if UNITY_EDITOR
                 Hecton8.Core.H8Debug.LogWarning(
-                    "[MainMenuController] Save shell is missing or incomplete. " +
-                    "Opening save/load in fallback state so the player can still back out.");
+                    "[MainMenuController] Save shell is missing or incomplete. Opening save/load in fallback state so the player can still back out.");
 #endif
             }
 
@@ -1055,6 +1104,8 @@ namespace Hecton.UI.MainMenu
                 return;
             }
 
+            PublishPrimaryMenuActionFeedback(ResolveSlotButtonByName(slotName));
+
             int messageLength = BuildSlotModalMessage(
                 LocalizationKeys.MODAL_LOAD_MESSAGE,
                 "Load selected save?",
@@ -1062,6 +1113,30 @@ namespace Hecton.UI.MainMenu
                 ReadOnlySpan<char>.Empty);
 
             ModalWindow.Show("Load Game", _modalMessageBuffer, messageLength, CacheStartGameAction(slotName));
+        }
+
+        private Button ResolveSlotButtonByName(string slotName)
+        {
+            if (string.IsNullOrEmpty(slotName))
+                return null;
+
+            for (int i = 0; i < SlotNames.Length; i++)
+            {
+                if (string.Equals(SlotNames[i], slotName, StringComparison.Ordinal))
+                    return ResolveSlotButtonByIndex(i);
+            }
+
+            return null;
+        }
+
+        private Button ResolveSlotButtonByIndex(int slotIndex)
+        {
+            SaveSlotUI[] slotUis = _slotUIs;
+            if (slotUis == null || (uint)slotIndex >= (uint)slotUis.Length)
+                return null;
+
+            SaveSlotUI slotUi = slotUis[slotIndex];
+            return slotUi != null ? slotUi.ButtonComponent : null;
         }
 
         /// <summary>
@@ -1084,18 +1159,19 @@ namespace Hecton.UI.MainMenu
 
         public void ReadableStartNewGame()
         {
+            PublishPrimaryMenuActionFeedback(btnNewGame);
             StartGame(string.Empty);
         }
 
         public void ReadableOpenLoadPanel()
         {
+            PublishSecondaryMenuActionFeedback(btnLoadGame);
             OpenSaveLoadMenu();
             if (!_isSceneLoadInFlight && !_isSaveLoadBusy)
             {
                 SetExclusivePanelImmediate(saveLoadGroup);
                 BeginCameraRouteForPanel(saveLoadGroup);
                 RequestSelectionRefresh();
-                _readableOverlay?.ForceRefresh();
             }
         }
 
@@ -1104,15 +1180,16 @@ namespace Hecton.UI.MainMenu
             if (!_settingsAvailable)
                 return;
 
+            PublishSecondaryMenuActionFeedback(btnSettings);
             SetExclusivePanelImmediate(settingsGroup);
             BlockCancelInputBriefly();
             BeginCameraRouteForPanel(settingsGroup);
             RequestSelectionRefresh();
-            _readableOverlay?.ForceRefresh();
         }
 
         public void ReadableStartOrbitPrologue()
         {
+            PublishPrimaryMenuActionFeedback(btnNewGame);
             StartOrbitPrologue();
         }
 
@@ -1123,6 +1200,8 @@ namespace Hecton.UI.MainMenu
 
         public void ReadableBackToMainMenu()
         {
+            PublishSecondaryMenuActionFeedback(_currentPanel == settingsGroup ? btnBackFromSettings : btnBackFromSaveLoad);
+
             if (_currentPanel == settingsGroup)
                 settingsPanel?.ReadableCancel();
             else
@@ -1132,7 +1211,6 @@ namespace Hecton.UI.MainMenu
             BlockCancelInputBriefly();
             BeginCameraRouteForPanel(mainMenuGroup);
             RequestSelectionRefresh();
-            _readableOverlay?.ForceRefresh();
         }
 
         public void ReadableLoadSlot(int slotIndex)
@@ -1140,9 +1218,10 @@ namespace Hecton.UI.MainMenu
             if ((uint)slotIndex >= SlotNames.Length)
                 return;
 
-            if (!TryGetReadableSaveSlotState(slotIndex, out _, out _, out bool canLoad) || !canLoad)
+            if (!TryGetReadableSaveSlotCanLoad(slotIndex, out bool canLoad) || !canLoad)
                 return;
 
+            PublishPrimaryMenuActionFeedback(ResolveSlotButtonByIndex(slotIndex));
             StartGame(SlotNames[slotIndex]);
         }
 
@@ -1315,9 +1394,7 @@ namespace Hecton.UI.MainMenu
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Hecton8.Core.H8Debug.Log(
-                "[MainMenuController] Routing start through 00_BOOTSTRAP with pending target scene '" +
-                sceneName +
-                "'.");
+                "[MainMenuController] Routing start through 00_BOOTSTRAP with pending target scene.");
 #endif
 
             UnityEngine.AsyncOperation operation =
@@ -1328,8 +1405,7 @@ namespace Hecton.UI.MainMenu
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Hecton8.Core.H8Debug.LogError(
-                    "[MainMenuController] Failed to schedule async bootstrap recovery load. scenePath=" +
-                    BootstrapScenePath);
+                    "[MainMenuController] Failed to schedule async bootstrap recovery load.");
 #endif
                 return false;
             }
@@ -1398,7 +1474,7 @@ namespace Hecton.UI.MainMenu
 
         public void Tick(float dt)
         {
-            float unscaledDeltaTime = GetUnscaledDeltaTime();
+            float unscaledDeltaTime = GetUnscaledDeltaTime(dt);
             if (unscaledDeltaTime <= 0f)
                 return;
 
@@ -1732,6 +1808,7 @@ namespace Hecton.UI.MainMenu
         private void RequestSelectionRefresh()
         {
             _refreshSelectionRequested = true;
+            _readableOverlay?.InvalidateContent();
         }
 
         private Button ResolveDefaultSelectionButton()
@@ -1804,51 +1881,113 @@ namespace Hecton.UI.MainMenu
 
         public bool TryGetReadableSaveSlotState(
             int slotIndex,
-            out string title,
-            out string detail,
+            Span<char> titleDestination,
+            out int titleLength,
+            Span<char> detailDestination,
+            out int detailLength,
             out bool canLoad)
         {
-            title = (uint)slotIndex < (uint)SlotDisplayNames.Length
-                ? SlotDisplayNames[slotIndex]
-                : "SLOT ?";
-            detail = "EMPTY";
+            titleLength = 0;
+            detailLength = 0;
             canLoad = false;
+            AppendReadableSlotText(
+                (uint)slotIndex < (uint)SlotDisplayNames.Length
+                    ? SlotDisplayNames[slotIndex].AsSpan()
+                    : "SLOT ?".AsSpan(),
+                titleDestination,
+                ref titleLength);
+            AppendReadableSlotText("EMPTY".AsSpan(), detailDestination, ref detailLength);
+
+            if (!TryResolveReadableSaveSlotInfo(
+                    slotIndex,
+                    out SaveSlotInfo slotInfo,
+                    out canLoad,
+                    out bool saveSystemReady))
+            {
+                return false;
+            }
+
+            if (!saveSystemReady)
+            {
+                detailLength = 0;
+                AppendReadableSlotText("SAVE SYSTEM OFFLINE".AsSpan(), detailDestination, ref detailLength);
+                return true;
+            }
+
+            if (!canLoad || slotInfo == null)
+                return true;
+
+            SaveMetadata metadata = slotInfo.metadata;
+            string status = slotInfo.GetStatusLabel();
+            detailLength = 0;
+            if (metadata == null)
+            {
+                AppendReadableSlotText(
+                    string.IsNullOrEmpty(status) ? "SAVE DATA PRESENT".AsSpan() : status.AsSpan(),
+                    detailDestination,
+                    ref detailLength);
+                return true;
+            }
+
+            ReadOnlySpan<char> sceneName = string.IsNullOrEmpty(metadata.sceneName)
+                ? "UNKNOWN SCENE".AsSpan()
+                : metadata.sceneName.AsSpan();
+            int minutes = Mathf.Max(0, Mathf.RoundToInt(metadata.totalPlayTime / 60f));
+            AppendReadableSlotText(sceneName, detailDestination, ref detailLength);
+            AppendReadableSlotText(" / ".AsSpan(), detailDestination, ref detailLength);
+            ZeroGCFormatter.AppendInt(minutes, detailDestination, ref detailLength);
+            AppendReadableSlotText(" MIN".AsSpan(), detailDestination, ref detailLength);
+            if (!string.IsNullOrEmpty(status))
+            {
+                AppendReadableSlotText(" / ".AsSpan(), detailDestination, ref detailLength);
+                AppendReadableSlotText(status.AsSpan(), detailDestination, ref detailLength);
+            }
+
+            return true;
+        }
+
+        private bool TryGetReadableSaveSlotCanLoad(int slotIndex, out bool canLoad)
+        {
+            return TryResolveReadableSaveSlotInfo(slotIndex, out _, out canLoad, out _);
+        }
+
+        private bool TryResolveReadableSaveSlotInfo(
+            int slotIndex,
+            out SaveSlotInfo slotInfo,
+            out bool canLoad,
+            out bool saveSystemReady)
+        {
+            slotInfo = null;
+            canLoad = false;
+            saveSystemReady = false;
 
             if ((uint)slotIndex >= SlotNames.Length)
                 return false;
 
             SaveManager saveManager = _saveManager;
             if (saveManager == null)
-            {
-                detail = "SAVE SYSTEM OFFLINE";
                 return true;
-            }
 
+            saveSystemReady = true;
             string slotName = SlotNames[slotIndex];
-            if (!saveManager.TryGetSaveSlotInfo(slotName, out SaveSlotInfo slotInfo) ||
+            if (!saveManager.TryGetSaveSlotInfo(slotName, out slotInfo) ||
                 slotInfo == null ||
                 !slotInfo.HasAnySaveData)
             {
+                slotInfo = null;
                 return true;
             }
 
             canLoad = true;
-            SaveMetadata metadata = slotInfo.metadata;
-            string status = slotInfo.GetStatusLabel();
-            if (metadata == null)
-            {
-                detail = string.IsNullOrEmpty(status) ? "SAVE DATA PRESENT" : status;
-                return true;
-            }
-
-            string sceneName = string.IsNullOrEmpty(metadata.sceneName) ? "UNKNOWN SCENE" : metadata.sceneName;
-            int minutes = Mathf.Max(0, Mathf.RoundToInt(metadata.totalPlayTime / 60f));
-            if (string.IsNullOrEmpty(status))
-                detail = sceneName + " / " + minutes + " MIN";
-            else
-                detail = sceneName + " / " + minutes + " MIN / " + status;
-
             return true;
+        }
+
+        private static void AppendReadableSlotText(
+            ReadOnlySpan<char> value,
+            Span<char> destination,
+            ref int cursor)
+        {
+            ZeroGCFormatter.AppendToSpanTruncated(value, destination, ref cursor, out _);
         }
 
         private static bool IsCorruptNoBackupError(string error)
@@ -1986,13 +2125,7 @@ namespace Hecton.UI.MainMenu
             loadingPercentText.SetCharArray(_loadingPercentBuffer, 0, math.clamp(cursor, 0, _loadingPercentBuffer.Length));
         }
 
-        // ══════════════════════════════════════════════════════════
         // SAVE/LOAD EVENT HANDLERS
-        // ══════════════════════════════════════════════════════════
-
-        // ══════════════════════════════════════════════════════════
-        // SAVE/LOAD EVENT HANDLERS
-        // ══════════════════════════════════════════════════════════
 
         /// <summary>
         /// Called when save operation starts. Sets busy flag and disables save/load buttons.
@@ -2190,8 +2323,21 @@ namespace Hecton.UI.MainMenu
             }
         }
 
-        private float GetUnscaledDeltaTime()
+        private float GetUnscaledDeltaTime(float fallbackDeltaTime)
         {
+            float dispatcherDelta = _registeredToTickManager ? SystemDispatcher.CurrentFrameUnscaledDeltaTime : 0f;
+            if (math.isfinite(dispatcherDelta) && dispatcherDelta > 0f)
+            {
+                _lastUnscaledTickTime = ResolveCurrentUnscaledTimeSeconds(_lastUnscaledTickTime);
+                return math.min(MaxMenuPresentationDeltaSeconds, dispatcherDelta);
+            }
+
+            if (math.isfinite(fallbackDeltaTime) && fallbackDeltaTime > 0f)
+            {
+                _lastUnscaledTickTime = ResolveCurrentUnscaledTimeSeconds(_lastUnscaledTickTime);
+                return math.min(MaxMenuPresentationDeltaSeconds, fallbackDeltaTime);
+            }
+
             float currentTime = ResolveCurrentUnscaledTimeSeconds(_lastUnscaledTickTime);
             if (!math.isfinite(_lastUnscaledTickTime) || _lastUnscaledTickTime <= 0f)
             {

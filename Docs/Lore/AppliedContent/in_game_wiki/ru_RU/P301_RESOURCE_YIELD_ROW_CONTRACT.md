@@ -10,21 +10,21 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Контракт строки добычи ресурса
+# Resource Yield Data Boundary
 
-Контракт строки добычи отделяет физический смысл ресурса от будущих чисел баланса.
+Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.
 
 ## Scanner
 
-Строка добычи: класс ресурса, давление, custody grade, depletion rule.
+Yield boundary: resource class, pressure band, custody grade, depletion rule.
 
 ## Terminal
 
-TABLE HANDOFF: resource_yield rows должны связывать packet hash, класс ресурса, depth band, rarity curve и depletion behavior.
+RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.
 
 ## Audio
 
@@ -32,6 +32,6 @@ TABLE HANDOFF: resource_yield rows должны связывать packet hash, 
 
 ## Field Note
 
-Для gameplay-table pass; финальные yields не писать в логе или public copy.
+Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree.
 
 <!-- In-Game Wiki; generated from P301_RESOURCE_YIELD_ROW_CONTRACT/ru_RU. -->

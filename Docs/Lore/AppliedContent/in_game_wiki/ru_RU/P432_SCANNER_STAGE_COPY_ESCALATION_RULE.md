@@ -10,17 +10,17 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Правило escalation-copy для scanner stage
+# Scanner Stage Copy Escalation Rule
 
-Scanner writing делает horror заслуженным: тот же объект становится страннее только по мере улучшения tool chain игрока.
+Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.
 
 ## Scanner
 
-Scanner copy эскалируется от safe classification к route risk и Atlas contamination только при наличии evidence.
+Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.
 
 ## Terminal
 
@@ -28,10 +28,10 @@ SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custo
 
 ## Audio
 
-Scanner должен пугаться медленно и по причинам.
+A scanner should get scared slowly and for reasons.
 
 ## Field Note
 
-Для scanner UI copy decks и scan-stage binding tests.
+Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition.
 
 <!-- In-Game Wiki; generated from P432_SCANNER_STAGE_COPY_ESCALATION_RULE/ru_RU. -->

@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ The shallow water is not safe. It is only readable.
 
 ## Field Note
 
-Use for first-hour route, shallow ecology pacing and early scanner/wiki unlocks.
+Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
 
 <!-- External Site; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/ja_JP. -->

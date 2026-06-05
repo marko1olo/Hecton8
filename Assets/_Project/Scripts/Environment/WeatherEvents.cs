@@ -4,6 +4,9 @@ using Hecton8.Core;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.Environment
 {
@@ -142,6 +145,30 @@ namespace Hecton8.Environment
         private static bool _isDispatching;
 
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+
+#if UNITY_EDITOR
+        [InitializeOnLoadMethod]
+        private static void RegisterEditorLifecycleCleanup()
+        {
+            AssemblyReloadEvents.beforeAssemblyReload -= ReleaseEditorOwnedQueues;
+            AssemblyReloadEvents.beforeAssemblyReload += ReleaseEditorOwnedQueues;
+            EditorApplication.quitting -= ReleaseEditorOwnedQueues;
+            EditorApplication.quitting += ReleaseEditorOwnedQueues;
+            EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
+            EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
+        }
+
+        private static void HandleEditorPlayModeStateChanged(PlayModeStateChange state)
+        {
+            if (state == PlayModeStateChange.ExitingPlayMode || state == PlayModeStateChange.EnteredEditMode)
+                ReleaseEditorOwnedQueues();
+        }
+
+        private static void ReleaseEditorOwnedQueues()
+        {
+            ResetStaticState();
+        }
+#endif
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()

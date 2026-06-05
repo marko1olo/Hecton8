@@ -1,0 +1,102 @@
+ID: 1894
+TITLE: PRODUCT_FACE_TEXTURE_SOURCE_MANIFEST_SCHEMA
+MODE: REPORT_ONLY_STATIC_MANIFEST_SCHEMA
+
+You are HECTON-8 batch agent 1894.
+Do not edit source, assets, prefabs, scenes, binaries, `.meta`, generated meshes, DataMonolith, task files, or sibling outputs.
+
+PRIMARY GOAL
+
+Create the ProductFace-specific texture/material source manifest schema and seed family matrix. This must prevent generic AI texture import, filename guessing, broad prefab binding, wrong packed-map channels, and environment donor misuse.
+
+READ
+
+- `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `VISION_LOCKS.md`
+- `TASTE.md`
+- `quality.md`
+- `3dmodel.md`
+- `3DMODEL_TEXTURES_MATERIALS.md`
+- `3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md`
+- `rendering.md`
+- `tools.md`
+- `inventory.md`
+- `player.md`
+- `world.md`
+- `ocean.md`
+- `celestial.md`
+- `Docs/Reports/Batch18/1880_TOOL_MATERIAL_TEXTURE_ROLE_PACKAGE.md`
+- `Docs/Reports/Batch18/1881_RESOURCE_MATERIAL_TEXTURE_ROLE_PACKAGE.md`
+- `Docs/Reports/Batch18/1882_TRANSPORT_PLAYER_MATERIAL_TEXTURE_ROLE_PACKAGE.md`
+- `Docs/Reports/Batch18/1883_SKY_OCEAN_MATERIAL_TEXTURE_ROLE_PACKAGE.md`
+- `Docs/Reports/Batch18/1886_PRODUCT_FACE_TEXTURE_AUTHORING_PIPELINE_DISCOVERY.md`
+- `Docs/Reports/Batch18/1888_PRODUCT_FACE_TEXTURE_CHANNEL_MANIFEST_AND_SHADER_AUDIT.md`
+- `Docs/Reports/Batch18/1889_PRODUCT_FACE_ENVIRONMENT_SOURCE_EXCLUSION_MANIFEST.md`
+- `Docs/Reports/Batch18/1891_AITEXTURE_PRODUCT_FACE_HARDENING_PACKET.md`
+
+Mandates:
+
+- `.agents-skills/QA_Evidence_Text_Filter_Audit.txt`
+- `.agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt`
+- `.agents-skills/REND_Terrain_VirtualTexturing.txt`
+
+OUTPUTS YOU OWN
+
+- `Docs/Reports/Batch18/1894_PRODUCT_FACE_TEXTURE_SOURCE_MANIFEST_SCHEMA.md`
+- `Docs/Reports/Batch18/1894_PRODUCT_FACE_TEXTURE_SOURCE_MANIFEST_SEED.csv`
+- `Docs/Tasks/Status_1894.md`
+- `Docs/AgentLogs/Rationale_1894.md`
+- `Docs/AgentLogs/LOG_1894.md`
+
+CSV COLUMNS
+
+- `family_id`
+- `asset_category`
+- `target_material_family`
+- `allowed_shader_route`
+- `required_albedo`
+- `required_normal`
+- `required_packed_map`
+- `packed_channel_contract`
+- `required_optional_masks`
+- `forbidden_donor_sources`
+- `allowed_output_folder`
+- `prefab_binding_allowed`
+- `proof_required`
+- `status`
+
+REQUIRED WORK
+
+1. Define a concrete manifest file format future implementation can use without modifying prefabs during import.
+2. Seed rows for all tool families from 1880.
+3. Seed rows for all resource pickup families from 1881, including Titanium/TitaniumScrap uncertainty.
+4. Seed rows for transport body/glass/rubber/material families from 1882.
+5. Seed rows for player suit body, visor, HUD glass/rim, labels/trims from 1882.
+6. Seed rows for sky/Aegir/moons/ocean/Crest route families from 1883, but mark them route-owned and not product-face body donors.
+7. Include exact channel contracts from 1888:
+   - ToolDecayLit PackedMaskV1;
+   - ProceduralBio ORM;
+   - MraoAtlasLit MRAO;
+   - SuitVisor dedicated slots;
+   - AI/UberNoir ARM blocked until explicit target shader contract.
+8. Include explicit ProductFace folder layout for texture source, imported textures, material assets, generated reports, and rejected candidates.
+9. Require ProductFace-specific manifest; forbid `ai_texture_prefab_bindings.csv` for ProductFace.
+10. Set `prefab_binding_allowed=false` for every seed row until a separate relink owner dry-run exists.
+11. Define import settings requirements: sRGB albedo, normal map import, non-readable textures, mipmaps, BC/ASTC choices by platform where supported by prior pipeline evidence.
+12. Define how Low/Middle/High/Ultra can scale resolution/detail without changing channel truth or using ugly flat fallback.
+13. Define hard rejection for flat color, empty texture slots, default/package material, crayon/noise texture, environment donor, fog/noir/depth hiding.
+14. Do not create implementation files or real manifests under Assets.
+15. Do not claim imported texture proof.
+
+VERIFICATION
+
+Run and record:
+
+- `git diff --check -- Docs/Reports/Batch18/1894_PRODUCT_FACE_TEXTURE_SOURCE_MANIFEST_SCHEMA.md Docs/Reports/Batch18/1894_PRODUCT_FACE_TEXTURE_SOURCE_MANIFEST_SEED.csv Docs/Tasks/Status_1894.md Docs/AgentLogs/Rationale_1894.md Docs/AgentLogs/LOG_1894.md`
+- `Import-Csv Docs/Reports/Batch18/1894_PRODUCT_FACE_TEXTURE_SOURCE_MANIFEST_SEED.csv | Measure-Object`
+- static term cross-check for `ToolDecayLit`, `ProceduralBio`, `MraoAtlasLit`, `SuitVisor`, `AITextureControlMapBaker`, `ai_texture_prefab_bindings`, `ProductFace`, `Subnautica`.
+
+FINAL RESPONSE
+
+Report changed files, seed row count, required schema columns, blocked channel contracts, and the exact rule that prevents import-phase prefab mutation.

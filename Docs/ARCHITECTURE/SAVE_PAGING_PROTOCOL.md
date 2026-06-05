@@ -10,6 +10,7 @@ Evidence: STATIC_SOURCE / FILESYSTEM.
 Scope: cited local paths exist at capture time. No compile/import/Play/profiler/GC/player/save/platform/visual proof.
 - `Assets/_Project/Scripts/SaveBinaryStorage.cs`
 - `Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs`
+- `Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs`
 - `Assets/_Project/Scripts/World/PersistentWorldRegistry.cs`
 - `Assets/_Project/Scripts/SaveSystem/SaveMasterHashV10.cs`
 
@@ -42,10 +43,60 @@ Current source facts:
 
 Boundary: this is `STATIC_SOURCE`. It does not prove save/load roundtrip, corruption recovery, frame cost, GC, or platform persistence behavior.
 
+## 2026-06-05 H8BinaryWorldPager Anchor
+
+Evidence class: STATIC_SOURCE. Runtime status: PENDING VERIFICATION.
+
+Source: `Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs`.
+
+Owner:
+
+- Class: `Hecton8.Core.Persistence.Paging.H8BinaryWorldPager`.
+- Service boundary: `IDisposable`, `IGlobalRegistryHotSwapListener`.
+- DataVault owner id: `SystemID.SavePersistence`.
+
+Static route:
+
+- Files: `world_data.h8bin` plus write-ahead log `h8_delta.wal`.
+- Format constants visible in source: page magic `H8PG`, WAL magic `H8WL`, `PageVersion = 1`, `WalVersion = 1`.
+- Page geometry: `SectorSizeBytes = 256 KB`, `SectorHeaderBytes = 64`, `MaxSectors = 8192`.
+- Queue geometry: `WriteSlotCount = 8`, `ReadSlotCount = 4`, `QueueCapacity = 64`.
+- Worker route: `StartWorker()` creates background thread `H8 Binary World Pager`; `RunWorkerLoop()` drains write requests, read requests, dump requests, and flush requests.
+- Dispatcher phase is not declared in this file. Caller-side use of `TryEnqueueWrite`, `TryRequestRead`, `TryCopyCompletedPage`, `TryRetireCompletedPage`, and direct read staging must be assigned by the owning save/streaming phase before acceptance.
+
+DataVault boundary:
+
+- Vault handles: `BufferID.SaveWorldPagerReadStaging` and `BufferID.SaveWorldPagerTelemetryRing`.
+- Telemetry capacity: `300` entries of private `H8BinaryWorldPagerTelemetryEntry`.
+- `TryAcquireDirectReadStagingWrite` and `TryAcquirePagerVaultWrite` acquire DataVault write locks and release them in `finally`.
+- Current source also owns local `PagerNativeState` persistent `NativeArray` staging (`WriteCommands`, `ReadCommands`, `ReadResults`, write/read arenas, read-slot states, compression scratch, hot-state arena) registered through `NativeMemorySentinel`. That source fact is not general approval for private persistent native ownership outside this pager.
+
+Hot-path prohibitions:
+
+- Do not use synchronous direct page reads/writes as an unbounded frame-lane query.
+- Do not call pager APIs from UI, presentation, or gameplay hot paths without an owner phase, bounded cadence, and GC/profiler proof.
+- Do not treat `GlobalRegistry.DataVault` lookup in allocation as a runtime polling pattern; it is initialization/hot-swap context only.
+
+Fault and black-box boundary:
+
+- Telemetry fields include sector hash, offset, frame, request id, payload type, pending reads/writes, page faults, payload bytes, operation, status, flags, directory slot, and metrics.
+- Declared dump file names: `Dump_1312_VoxelPaging.bin`, `Dump_CRASH.bin`, `Dump_SAVE_SURGEON.h8dump`, and `Dump_CRASH.h8dump`.
+- Static source currently shows `WriteBlackBoxDumps()` and `WriteBlackBoxDump(...)` bodies empty. Therefore black-box dump output is PENDING VERIFICATION and must not be claimed.
+
+Missing proof artifacts:
+
+- Unity compile/import for the pager assembly.
+- save page write/read roundtrip against `world_data.h8bin`.
+- WAL append/replay/truncation/corruption recovery artifact.
+- DataVault handle ownership and relocation/stale-handle stress artifact.
+- dump artifact proving the 300-entry telemetry ring writes to disk.
+- GC/profiler capture for enqueue, worker drain, direct read staging, and shutdown.
+- player save/load and platform file-system proof.
+
 ## 2026-05-11 Historical Override + 2026-05-17 Actuality Pointer
 
-- Historical manifest: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`.
-- Historical actuality manifest: `Docs/Reports/2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json` (historical snapshot only; do not use for current counts or proof).
+- Missing historical manifest path: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`; not current proof.
+- Missing historical actuality manifest path: `Docs/Reports/2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json`; historical snapshot name only, not current counts or proof.
 - Current actuality ledger: `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
 - Existing May 4 boundary sections in this file are historical unless they describe local system intent not contradicted by newer reports.
 - Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality remain `PENDING VERIFICATION`.

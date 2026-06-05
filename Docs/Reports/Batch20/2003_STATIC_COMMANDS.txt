@@ -1,0 +1,61 @@
+Static commands used by worker 2003. No Unity, MCP, import, prefab edit, scene edit, or dotnet build was run.
+
+Working directory:
+
+```powershell
+Set-Location C:\hades\Hecton8
+```
+
+Authority and task reads:
+
+```powershell
+Get-Content -Raw AGENTS.md
+Get-Content -Raw taskslocal\batch20_unity_slot_visual_proof_and_scene_repair\2003_KELP_ROCK_DRY_LAND_PLACEMENT_REPAIR_SPEC.txt
+Get-Content -Raw VISION_LOCKS.md
+Get-Content -Raw PROJECT_BIBLES.md
+Get-Content -Raw world.md
+Get-Content -Raw terrain.md
+Get-Content -Raw water.md
+Get-Content -Raw PROCEDURAL_ASSET_PIPELINE.md
+Get-Content -Raw 3DMODEL_FLORA_CORAL.md
+Get-Content -Raw 3DMODEL_GEOLOGY_ROCKS.md
+Get-Content -Raw performance.md
+Get-Content -Raw TASTE.md
+Get-Content -Raw .agents-skills\REND_Instanced_Flora_Physics.txt
+Get-Content -Raw .agents-skills\REND_Terrain_VirtualTexturing.txt
+Get-Content -Raw .agents-skills\OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt
+Get-Content -Raw .agents-skills\OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+Get-Content -Raw Docs\Reports\Batch20\WORLD_PROCEDURAL_SCATTER_DRY_LAND_RISK_AUDIT_20260604.md
+```
+
+Targeted source inspection:
+
+```powershell
+rg -n "DepthMeters|depthMeters|WaterSurface|SeafloorHeight" Assets/_Project/Scripts/WorldProceduralFieldSampler.cs
+rg -n "StrictEnvelopeMapping|PreferredBiomeFamilies|PreferredZoneKinds|PreferredSocketKinds|MatchesScatter" Assets/_Project/Scripts/WorldProceduralScatterDirector.cs
+rg -n "PassesStrictSubstrateEnvelope|RequiredSubstrate|TrySampleFloraSubstrate" Assets/_Project/Scripts/WorldProceduralScatterDirectorEnvironmentalEnvelope.cs Assets/_Project/Scripts/World/ScatterCandidateEvaluator.cs
+rg -n "ResolveRuntimeVariant|VariantFilterMode|ProxyOnly|FinalReady|allowProxyPrimitives" Assets/_Project/Scripts/WorldProceduralScatterDirector.cs Assets/_Project/Scripts/WorldPrefabFamilyProfile.cs
+rg -n "enum ProceduralDomain|enum PlacementMode|enum ScatterLayer|class VariantEntry|allowProxyPrimitives|proxyOnly|finalReady" Assets/_Project/Scripts/WorldPrefabFamilyProfile.cs
+rg -n "enum FloraSubstrateMask|requiredSubstrate|preferSeafloor|minDepthMeters|maxDepthMeters|strictEnvelopeMapping" Assets/_Project/Scripts/WorldProceduralPlacementRule.cs
+rg -n "class BioRuleData|BioRuleData|Generate|AssetDatabase|Refresh|Placement|Depth|Substrate" Assets/_Project/Scripts/Editor/ProceduralGen/BioRuleData.cs Assets/_Project/Scripts/Editor/ProceduralGen/BioForgeGenerator.cs Assets/_Project/Scripts/Editor/ProceduralGen/BioForgeJobs.cs Assets/_Project/Scripts/Editor/ProceduralGen/ShallowsBioForgeBatchBaker.cs
+rg -n "holdfast|root|pivot|anchor|LOD|collider|proxy" Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs Assets/_Project/Scripts/Editor/WorldProceduralFloraFinalVariantValidator.cs Assets/_Project/Scripts/Editor/WorldProceduralFamilyContractValidator.cs
+```
+
+Exact line evidence extracted:
+
+```powershell
+$path='Assets/_Project/Scripts/WorldProceduralScatterDirector.cs'; $i=0; Get-Content $path | ForEach-Object { $i++; if ($i -ge 2418 -and $i -le 2485) { '{0}:{1}' -f $i,$_ } }
+$path='Assets/_Project/Scripts/WorldProceduralScatterDirector.cs'; $i=0; Get-Content $path | ForEach-Object { $i++; if ($i -ge 8096 -and $i -le 8170) { '{0}:{1}' -f $i,$_ } }
+$path='Assets/_Project/Scripts/WorldProceduralFieldSampler.cs'; $i=0; Get-Content $path | ForEach-Object { $i++; if (($i -ge 896 -and $i -le 908) -or ($i -ge 3166 -and $i -le 3174)) { '{0}:{1}' -f $i,$_ } }
+$path='Assets/_Project/Scripts/WorldProceduralScatterDirectorEnvironmentalEnvelope.cs'; $i=0; Get-Content $path | ForEach-Object { $i++; if (($i -ge 43 -and $i -le 90) -or ($i -ge 96 -and $i -le 118)) { '{0}:{1}' -f $i,$_ } }
+$path='Assets/_Project/Scripts/WorldProceduralScatterDirector.cs'; $i=0; Get-Content $path | ForEach-Object { $i++; if ($i -ge 11905 -and $i -le 12032) { '{0}:{1}' -f $i,$_ } }
+```
+
+Target asset static extraction:
+
+```powershell
+rg --files Assets/_Project/Data/World/ProceduralPlacementRules | rg "rule_(kelp|rocks|coral|pocket_safe)|rule\.pocket\.safe"
+rg --files Assets/_Project/Data/World/ProceduralFamilies | rg "family_(kelp|rock|coral|pocket_safe)"
+```
+
+The rule matrix was produced by static YAML/text extraction from the above asset files and family assets, then normalized into `2003_RULE_MATRIX.csv`.

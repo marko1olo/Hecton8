@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Блок review для CJK
+# CJK Font And Width Contract
 
-Эта статья объясняет font/layout proof перед CJK-публикацией HECTON-8.
+CJK publication must survive actual panels and subtitles, including dense characters beside Latin names, route numbers, and pressure units.
 
 ## Scanner
 
-Один missing glyph может стереть alarm.
+A missing glyph can erase an alarm.
 
 ## Terminal
 
-CJK REVIEW: доказать font, wrap, unit, name и terminal-width behavior до публикации.
+CJK copy must fit PDA, scanner, terminal, subtitle, and web surfaces without hiding numbers or names.
 
 ## Audio
 
-Короткий текст все равно может overflow, если grid неверный.
+Short text can still fail when the grid is wrong.
 
 ## Field Note
 
-Review gate: glyph subset, overflow proof, mixed Latin names, meters/tonne-window labels и spoiler-tier article lengths.
+Check glyph coverage, line wrapping, mixed Latin names, meter and tonne-window labels, terminal monospace alternatives, and article length.
 
 <!-- External Site; generated from P277_CJK_REVIEW_LOCK/ru_RU. -->

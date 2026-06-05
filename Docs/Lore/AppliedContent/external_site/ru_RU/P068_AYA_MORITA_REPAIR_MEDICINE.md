@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
 # Ремонтная медицина Аи Мориты
 
-Ремонтная медицина Аи Мориты дает HECTON-8 body horror без магии: медик фиксирует момент, когда индустриальный repair и human triage схлопываются в одну категорию Atlas.
+Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category.
 
 ## Scanner
 

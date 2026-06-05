@@ -14,7 +14,20 @@ namespace Hecton8.Core.Contracts.Signals
             SignalBus<AtmosphericReentrySignal>.EnsureInitialized();
             SignalBus<ReentryAcousticStressSignal>.EnsureInitialized();
             SignalBus<PrologueCompleteSignal>.EnsureInitialized();
+            SignalBus<ReentryVfxStateSignal>.EnsureInitialized();
+            SignalBus<AcousticPingSignal>.EnsureInitialized();
+            SignalBus<DebrisSpawnSignal>.EnsureInitialized();
+            SignalBus<VisorDropletSignal>.EnsureInitialized();
+            SignalBus<StreamingTurbulenceSignal>.EnsureInitialized();
+            SignalBus<TelemetryAnomalySignal>.EnsureInitialized();
+            SignalBus<SystemPauseSignal>.EnsureInitialized();
+            SignalBus<MixerStateSignal>.EnsureInitialized();
+            SignalBus<VocalWarningSignal>.EnsureInitialized();
+            SignalBus<DiegeticHudSignal>.EnsureInitialized();
+            SignalBus<HUDNotificationSignal>.EnsureInitialized();
+            SignalBus<SectorResidencyHydratedSignal>.EnsureInitialized();
             SignalBus<HapticRequest>.EnsureInitialized();
+            Hecton8.Core.CameraJuiceSignals.EnsurePrewarmed();
         }
     }
 }

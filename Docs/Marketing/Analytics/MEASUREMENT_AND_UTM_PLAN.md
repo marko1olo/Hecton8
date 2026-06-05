@@ -4,6 +4,10 @@ Status: instrumentation plan / pre public
 Public stance: single player first scope / proof first public copy
 Runtime impact: none
 
+## Authority Boundary
+
+Public voice routes through root `textes.md`. Quality, release, platform, Steam, wishlist, demo, performance, telemetry-result, and conversion claims require `quality.md`, `release.md`, `platform.md`, and current proof artifacts. This file defines measurement names only; UTM fields, KPIs, examples, or directional targets do not grant public page, demo, ad, Steam, demand, or readiness claims.
+
 ## Objective
 
 Measure which hooks create Steam interest before spending serious money. The project has limited cash, so every public push must answer one question: did this asset or audience move wishlists, demo plays, or useful feedback?
@@ -133,7 +137,7 @@ Create these IDs before posting any public URL. If there is no official Steam or
 
 | Beat | ID | Notes |
 |---|---|---|
-| First identity post | `screenshot_drop_01_identity_post` | Usually `PLAN-SHOT-001`. |
+| First identity post | `screenshot_drop_01_identity_post` | Usually `PLAN-SHOT-000` for the first beauty/route proof; `PLAN-SHOT-001` is depth identity. |
 | First base/machinery critique | `screenshot_drop_01_base_critique` | Usually `PLAN-SHOT-002` or `PLAN-SHOT-005`. |
 | First salvage/action post | `screenshot_drop_01_salvage_post` | Usually `PLAN-SHOT-003` or `PLAN-CLIP-003`. |
 | First capsule critique | `screenshot_drop_01_capsule_critique` | `PLAN-CAPSULE-001`, no Steam CTA unless `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED` and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` pass. |

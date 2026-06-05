@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Акт: abyssal machine field и ремонт
+# Abyssal Machine Field Repair Act
 
-Поздний midgame HECTON-8 не просто глубже. Это инфраструктура, которая научилась использовать жизнь как поверхность ремонта.
+HECTON-8's late midgame is not just deeper water. It is infrastructure that has learned to use life as repair surface.
 
 ## Scanner
 
-Гейт акта: abyssal machine field. Ремонтная экология Atlas становится маршрутом, не только угрозой.
+Act gate: abyssal machine field. Atlas repair ecology becomes the route, not only the threat.
 
 ## Terminal
 
-АКТ РЕМОНТА: conductive film, acoustic organs и service basins могут восстановить route hardware, но портят категории собственности.
+REPAIR ACT: conductive film, acoustic organs and service basins can restore route hardware while corrupting ownership categories.
 
 ## Audio
 
-Он починил стену раньше, чем решил, что такое стена.
+It fixed the wall before it decided what the wall was.
 
 ## Field Note
 
-Для late-midgame scan cards, gating route components и обучения Atlas repair-network.
+Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure.
 
 <!-- External Site; generated from P384_ABYSSAL_MACHINE_FIELD_REPAIR_ACT/ru_RU. -->

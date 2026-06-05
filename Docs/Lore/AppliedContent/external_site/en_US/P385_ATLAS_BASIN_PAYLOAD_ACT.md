@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ The last question is not what happened. It is who you send it to.
 
 ## Field Note
 
-Use for final route UI, ending dossier and spoiler-gated publication branches.
+Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged.
 
 <!-- External Site; generated from P385_ATLAS_BASIN_PAYLOAD_ACT/en_US. -->

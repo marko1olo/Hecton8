@@ -10,13 +10,13 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
 # След языка отозванного доступа
 
-Revoked access работает как инструмент сюжета: игрок не открывает Deep Reach системы бесплатно, но узнает язык отказа.
+Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.
 
 ## Scanner
 
@@ -32,6 +32,6 @@ LOCKOUT: requester no longer certified for evacuation continuity materials. Rout
 
 ## Field Note
 
-Ставить на locks, которые намекают на liability без free access.
+Lockout language hints at hidden liability without granting free access.
 
 <!-- In-Game Wiki; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/ru_RU. -->

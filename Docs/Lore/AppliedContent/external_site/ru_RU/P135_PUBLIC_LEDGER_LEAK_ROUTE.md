@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
 # Маршрут утечки в public ledger
 
-Маршрут утечки в public ledger дает HECTON-8 truth-forward ending, сохраняющий задержку, custody и непредвиденные последствия.
+The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood.
 
 ## Scanner
 

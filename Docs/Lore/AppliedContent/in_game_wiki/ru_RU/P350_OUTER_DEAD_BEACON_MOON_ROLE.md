@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Роль outer dead beacon moon
+# Outer Dead Beacon Moon Role
 
-Outer dead beacon moon делает comms и rescue windows техническими: старые relays ненадёжны, но всё ещё часть математики.
+The outer dead beacon moon lets comms and rescue windows feel technical: old relays are unreliable but still part of the math.
 
 ## Scanner
 
-Dead beacon ping. Outer moon traffic records всё ещё всплывают в rescue math.
+Dead beacon ping. Outer moon traffic records keep resurfacing in rescue math.
 
 ## Terminal
 
-BEACON NOTE: мёртвый outer relay всё ещё входит в old route solvers. Иногда плохие данные - единственная причина предсказать окно.
+BEACON NOTE: a dead outer moon relay still appears in old route solvers. Sometimes the bad data is the only reason a window can be predicted at all.
 
 ## Audio
 
-Мёртвая инфраструктура не уходит. Она просто становится ещё одним error term.
+Dead infrastructure does not leave. It just becomes another error term.
 
 ## Field Note
 
-Для comm-window lore и orbital pages.
+Comms-window record: old outer relays make messages rare, delayed, and calculable instead of arbitrary.
 
 <!-- In-Game Wiki; generated from P350_OUTER_DEAD_BEACON_MOON_ROLE/ru_RU. -->

@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Пакет Сато-Рен
+# Sato-Ren Return Packet
 
-Пакет Сато-Рен доказывает, что Deep Reach активна в 2190. Их настоящее давление - не военный корабль, а compliance language в редких окнах сигнала.
+The Sato-Ren packet proves Deep Reach is active in 2190 through compliance traffic, not a warship: coordinates, custody, access and silence first.
 
 ## Scanner
 
-Артефакт Deep Reach: пакет действия возврата. Координаты требуют раньше языка спасения.
+Recovery Compliance packet. Coordinates requested before rescue language.
 
 ## Terminal
 
-ПАКЕТ САТО-РЕН. Координаты, доступ Atlas и образец - до эвакуации.
+RECOVERY COMPLIANCE / SATO-REN / RETURN ACTION: transmit coordinates, Atlas access state, XO sample custody and contractor silence acknowledgement before extraction language is issued.
 
 ## Audio
 
-Пакет знает, где актив. Он менее уверен, где ты.
+The packet knows where the asset is. It is less certain where you are.
 
 ## Field Note
 
-Использовать как мост между present comms, финальными payload choices и public spoiler gates.
+Sato-Ren asks for position, access state and custody before she uses the word extraction. That order is the threat.
 
 <!-- In-Game Wiki; generated from P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT/ru_RU. -->

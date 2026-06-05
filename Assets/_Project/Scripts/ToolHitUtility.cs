@@ -94,9 +94,13 @@ namespace Hecton8.Gameplay
             int sourceId,
             uint damageType,
             uint statusBits = 0u,
-            float statusDurationSeconds = 0f)
+            float statusDurationSeconds = 0f,
+            uint toolCapabilityMask = 0u)
         {
             if (hitCollider == null || !math.isfinite(damage) || damage <= 0f)
+                return false;
+
+            if (!CanApplyToolCapability(hitCollider, toolCapabilityMask))
                 return false;
 
             bool applied = false;
@@ -119,7 +123,7 @@ namespace Hecton8.Gameplay
             {
                 applied = true;
             }
-            else if (TryApplyCuttableDamage(hitCollider, damage, hitPoint))
+            else if (TryApplyCuttableDamage(hitCollider, damage, hitPoint, toolCapabilityMask))
             {
                 applied = true;
             }
@@ -134,13 +138,27 @@ namespace Hecton8.Gameplay
             return applied;
         }
 
-        private static bool TryApplyCuttableDamage(Collider hitCollider, float damage, Vector3 hitPoint)
+        private static bool TryApplyCuttableDamage(Collider hitCollider, float damage, Vector3 hitPoint, uint toolCapabilityMask)
         {
+            if (!CanApplyToolCapability(hitCollider, toolCapabilityMask))
+                return false;
+
             if (!TryFindCuttableTarget(hitCollider, out ICuttable cuttable))
                 return false;
 
             cuttable.ApplyCutDamage(damage, hitPoint);
             return true;
+        }
+
+        private static bool CanApplyToolCapability(Collider hitCollider, uint toolCapabilityMask)
+        {
+            if (toolCapabilityMask == 0u)
+                return true;
+
+            if (!TryResolveVulnerabilitySource(hitCollider, out IInteractionVulnerabilitySource vulnerabilitySource))
+                return true;
+
+            return (vulnerabilitySource.VulnerabilityMask & toolCapabilityMask) != 0u;
         }
 
         private static bool TryFindCuttableTarget(Collider hitCollider, out ICuttable cuttable)
@@ -180,6 +198,22 @@ namespace Hecton8.Gameplay
             }
 
             return false;
+        }
+
+        private static bool TryResolveVulnerabilitySource(
+            Collider hitCollider,
+            out IInteractionVulnerabilitySource vulnerabilitySource)
+        {
+            vulnerabilitySource = null;
+            if (hitCollider == null ||
+                !InteractableRegistry.TryResolve(hitCollider, out InteractableRegistry.TargetInfo targetInfo) ||
+                targetInfo.InteractionVulnerabilitySource == null)
+            {
+                return false;
+            }
+
+            vulnerabilitySource = targetInfo.InteractionVulnerabilitySource;
+            return true;
         }
 
         private static bool TryFindDamageReceiverTarget(

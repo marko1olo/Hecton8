@@ -1,0 +1,78 @@
+{
+  "agent_id": "1741",
+  "updated": "2026-06-03",
+  "scope": "01_ORBIT scene lighting, prologue world handoff, Aegir sky phase, drop-pod camera interpolation",
+  "files_changed": [
+    {
+      "path": "Assets/_Project/Scripts/Prologue/Space/PrologueWorldHandoffSceneLoader.cs",
+      "sha256": "2064D6A7FA153B77A213C7574F485EE9417E94F5EC3B874D76EFF03022635156",
+      "summary": "Owns additive world preload, holds allowSceneActivation false, releases on verified ocean handoff, unloads orbit scene asynchronously."
+    },
+    {
+      "path": "Assets/_Project/Scripts/Prologue/Space/PrologueOrbitSceneBootstrap.cs",
+      "sha256": "98D4BB6CC6B21852FD3FD029A2385B8AC2055595B4493664AA6DDCBAE4A1C8A6",
+      "summary": "Forces hard orbit key light, sun assignment, static reflection configuration, and cold baked reflection probe setup."
+    },
+    {
+      "path": "Assets/_Project/Scripts/Prologue/Space/OrbitalRelativityDirector.cs",
+      "sha256": "048CE54069881C6228B2A90376B6E5918424CF517AD9D0E345778B498AD07ACC",
+      "summary": "Uploads prologue-owned Aegir flow phase and valid flag; phase cadence scales continuously with GlobalQualityWeight."
+    },
+    {
+      "path": "Assets/_Project/Art/Shaders/Sky/Hecton_AegirSky.shader",
+      "sha256": "7141E70668749536C080643F5C8650B9C057065D2AFB94D40E0E16E9A1E6A747",
+      "summary": "Consumes _H8AegirFlowPhase when valid; falls back to _Time for non-prologue contexts."
+    },
+    {
+      "path": "Assets/_Project/Scripts/Vehicles/DropPod/DropPodSplineMath.cs",
+      "sha256": "B2B3ADF54EDA28371A5F5326E5AFDE91F8C9C648E237433F429D366874D941D7",
+      "summary": "Adds finite-checked ResolveSlerp using math.slerp; preserves ResolveNlerp compatibility."
+    },
+    {
+      "path": "Assets/_Project/Scripts/Vehicles/DropPod/DropPodSeatController.cs",
+      "sha256": "B1AE49FABD46BE9B442C1E25CF90223E5EE9D8C65E45B4D9DA8DCC19FCE86D83",
+      "summary": "Uses ResolveSlerp for transit and roll blend camera rotations."
+    },
+    {
+      "path": "Assets/_Project/Scenes/01_ORBIT.unity",
+      "sha256": "AA6A6A2E861C827E555C4882D50A0150541757115001AB2A7E695FE07D923D40",
+      "summary": "Sets RenderSettings sun to Directional Light and serializes hard shadow settings."
+    }
+  ],
+  "static_proof": {
+    "no_coroutine_timing_in_scanned_route": true,
+    "no_globalregistry_get_hot_poll_in_scanned_route": true,
+    "no_blocking_scene_load_in_scanned_route": true,
+    "async_load_additive": true,
+    "allow_scene_activation_initial_false": true,
+    "allow_scene_activation_release_gate": "PrologueCompleteSignal.PhaseOceanHandoff or standalone orbital whiteout impact fallback plus AsyncOperation.progress >= 0.9",
+    "hard_shadow_bootstrap": true,
+    "scene_sun_reference": "fileID 988970104",
+    "aegir_hierarchy_motion": "Renderer route remains disabled by OrbitalRelativityDirector; active sky shader uses prologue-owned phase global.",
+    "camera_slerp": "DropPodSeatController calls DropPodSplineMath.ResolveSlerp; ResolveSlerp normalizes endpoints, flips shortest arc, and calls math.slerp."
+  },
+  "verification": {
+    "build_command": "dotnet build Assembly-CSharp.csproj --no-restore",
+    "build_result": "PASS",
+    "build_errors": 0,
+    "build_warnings": "Existing project warnings observed; primarily third-party Candice type conflicts and framework reference conflicts.",
+    "cpu_gate_before_build": "14.48 percent, no dotnet/csc process output",
+    "screenshot": "PENDING VERIFICATION",
+    "profiler": "PENDING VERIFICATION",
+    "frame_debugger": "PENDING VERIFICATION",
+    "memory_profiler": "PENDING VERIFICATION"
+  },
+  "quality_scaling": {
+    "low": "Static reflection, hard key light, slower Aegir flow phase, existing VFX screen-space/quality fallbacks retained.",
+    "middle": "Same gameplay truth; Aegir flow cadence increases through continuous GlobalQualityWeight.",
+    "high": "Higher Aegir motion cadence and existing high-quality prologue VFX scaling; no extra scene-load route.",
+    "ultra": "Maximum continuous Aegir cadence and existing visual-overkill VFX paths; no DTO/layout/gameplay truth change."
+  },
+  "pending_verification": [
+    "Orbit visual screenshot quality.",
+    "Runtime profiler allocation/frame-time proof.",
+    "Frame Debugger pass count proof.",
+    "Memory profiler orbit scene unload proof.",
+    "Audio mixer impact snapshot proof; candidate snapshot names were stale."
+  ]
+}

@@ -645,6 +645,9 @@ namespace Hecton8.UI
         private float _targetPower01 = 1f;
         private float _reticleSpreadPixels;
         private float _appliedReticleSpreadPixels = float.NaN;
+        private float _appliedReticleLineLength = float.NaN;
+        private float _appliedReticleLineThickness = float.NaN;
+        private float _appliedReticleBracketLength = float.NaN;
         private float _lastDepth;
         private float _depthMeters;
         private float _lastStreamedOxygen01 = float.NaN;
@@ -6940,15 +6943,30 @@ namespace Hecton8.UI
             float blendT = ApproximateOneMinusExpNeg(math.max(0.01f, reticleSpreadBlendSpeed) * math.max(dt, 0.016f));
             _reticleSpreadPixels = math.lerp(_reticleSpreadPixels, targetSpread, blendT);
 
-            if (math.abs(_appliedReticleSpreadPixels - _reticleSpreadPixels) <= 0.05f)
+            float safeLineLength = math.clamp(reticleLineLength, 8f, 36f);
+            float safeLineThickness = math.clamp(reticleLineThickness, 1f, 6f);
+            float safeBracketLength = math.clamp(reticleBracketLength, 4f, 24f);
+            bool dimensionsDirty =
+                math.abs(_appliedReticleLineLength - safeLineLength) > 0.01f ||
+                math.abs(_appliedReticleLineThickness - safeLineThickness) > 0.01f ||
+                math.abs(_appliedReticleBracketLength - safeBracketLength) > 0.01f;
+
+            if (!dimensionsDirty && math.abs(_appliedReticleSpreadPixels - _reticleSpreadPixels) <= 0.05f)
                 return;
 
             float horizontalHalfSpan = math.max(0f, _reticleSpreadPixels);
             _reticleRoot.sizeDelta = new Vector2(64f + horizontalHalfSpan * 2f, 64f + horizontalHalfSpan * 2f);
-            _reticleH.rectTransform.sizeDelta = new Vector2(reticleLineLength, reticleLineThickness);
-            _reticleV.rectTransform.sizeDelta = new Vector2(reticleLineThickness, reticleLineLength);
-            _reticleBracketLeft.rectTransform.sizeDelta = new Vector2(reticleBracketLength, reticleLineThickness);
-            _reticleBracketRight.rectTransform.sizeDelta = new Vector2(reticleBracketLength, reticleLineThickness);
+            if (dimensionsDirty)
+            {
+                _reticleH.rectTransform.sizeDelta = new Vector2(safeLineLength, safeLineThickness);
+                _reticleV.rectTransform.sizeDelta = new Vector2(safeLineThickness, safeLineLength);
+                _reticleBracketLeft.rectTransform.sizeDelta = new Vector2(safeBracketLength, safeLineThickness);
+                _reticleBracketRight.rectTransform.sizeDelta = new Vector2(safeBracketLength, safeLineThickness);
+                _appliedReticleLineLength = safeLineLength;
+                _appliedReticleLineThickness = safeLineThickness;
+                _appliedReticleBracketLength = safeBracketLength;
+            }
+
             _reticleBracketLeft.rectTransform.anchoredPosition = new Vector2(-horizontalHalfSpan, 0f);
             _reticleBracketRight.rectTransform.anchoredPosition = new Vector2(horizontalHalfSpan, 0f);
             _appliedReticleSpreadPixels = _reticleSpreadPixels;
@@ -7003,6 +7021,9 @@ namespace Hecton8.UI
             _appliedPressureColor = default;
             _reticleSpreadPixels = reticleBaseSpread;
             _appliedReticleSpreadPixels = float.NaN;
+            _appliedReticleLineLength = float.NaN;
+            _appliedReticleLineThickness = float.NaN;
+            _appliedReticleBracketLength = float.NaN;
             _appliedStressPulseStrength = -1f;
             _appliedAnalogUiJitterStrength = -1f;
             _appliedAnalogUiJitterBucket = int.MinValue;

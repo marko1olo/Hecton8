@@ -10,21 +10,21 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Контракт строки выплаты концовки
+# Ending Payout Data Boundary
 
-Концовка HECTON-8 фиксирует, кто получил proof и что теперь может сделать receiver.
+HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.
 
 ## Scanner
 
-Ending row: receiver, custody, evidence state, payout, consequence.
+Ending boundary: receiver, custody, evidence state, payout, consequence.
 
 ## Terminal
 
-ENDING HANDOFF: payout rows требуют payload route, receiver, evidence state, material payout, legal consequence и unresolved cost.
+ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.
 
 ## Audio
 
@@ -32,6 +32,6 @@ ENDING HANDOFF: payout rows требуют payload route, receiver, evidence sta
 
 ## Field Note
 
-Использовать до tuning credits, quarantine delay или dossier flags.
+Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear.
 
 <!-- External Site; generated from P305_ENDING_PAYOUT_ROW_CONTRACT/ru_RU. -->

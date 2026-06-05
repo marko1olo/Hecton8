@@ -27,139 +27,139 @@
       },
       "localized": {
         "en_US": {
-          "title": "PDA Codex State Proof Card",
-          "scanner": "PDA proof: hint, fragment, proof, synthesis, ending record.",
-          "terminal": "UI PROOF: PDA codex entries must show unlock tier, packet hash, evidence source and route warning state.",
-          "audio": "The PDA is a receipt, not a teacher.",
-          "in_game_wiki": "PDA Codex State Proof Card defines what the in-game wiki must expose after the player earns evidence.",
-          "external_site": "The in-game encyclopedia should lag behind discovery. It records proof, not spoilers.",
-          "field_note": "Runtime implementation still needs Unity device proof and baked string-pool binding."
+          "title": "PDA Evidence State",
+          "scanner": "Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
+          "terminal": "PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
+          "audio": "The PDA does not explain the world first. It waits for a receipt.",
+          "in_game_wiki": "The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
+          "external_site": "HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
+          "field_note": "Bind codex rows to baked packet hashes and device-tested layout before release."
         },
         "ru_RU": {
-          "title": "Proof card состояния PDA codex",
-          "scanner": "PDA proof: hint, fragment, proof, synthesis, ending record.",
-          "terminal": "UI PROOF: PDA codex entries должны показывать unlock tier, packet hash, evidence source и route warning state.",
-          "audio": "PDA - чек, а не учитель.",
-          "in_game_wiki": "PDA proof card задает, что in-game wiki показывает после earned evidence.",
-          "external_site": "Энциклопедия в игре должна идти за открытием, не впереди него.",
-          "field_note": "Runtime still needs Unity device proof and string-pool binding."
+          "title": "Draft RU localization pending native pass. PDA Evidence State",
+          "scanner": "Draft RU localization pending native pass. Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
+          "terminal": "Draft RU localization pending native pass. PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
+          "audio": "Draft RU localization pending native pass. The PDA does not explain the world first. It waits for a receipt.",
+          "in_game_wiki": "Draft RU localization pending native pass. The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
+          "external_site": "Draft RU localization pending native pass. HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
+          "field_note": "Draft RU localization pending native pass. Bind codex rows to baked packet hashes and device-tested layout before release."
         },
         "ja_JP": {
-          "title": "Draft JA localization pending native pass. PDA Codex State Proof Card",
-          "scanner": "Draft JA localization pending native pass. PDA proof: hint, fragment, proof, synthesis, ending record.",
-          "terminal": "Draft JA localization pending native pass. UI PROOF: PDA codex entries must show unlock tier, packet hash, evidence source and route warning state.",
-          "audio": "Draft JA localization pending native pass. The PDA is a receipt, not a teacher.",
-          "in_game_wiki": "Draft JA localization pending native pass. PDA Codex State Proof Card defines what the in-game wiki must expose after the player earns evidence.",
-          "external_site": "Draft JA localization pending native pass. The in-game encyclopedia should lag behind discovery. It records proof, not spoilers.",
-          "field_note": "Draft JA localization pending native pass. Runtime implementation still needs Unity device proof and baked string-pool binding."
+          "title": "Draft JA localization pending native pass. PDA Evidence State",
+          "scanner": "Draft JA localization pending native pass. Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
+          "terminal": "Draft JA localization pending native pass. PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
+          "audio": "Draft JA localization pending native pass. The PDA does not explain the world first. It waits for a receipt.",
+          "in_game_wiki": "Draft JA localization pending native pass. The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
+          "external_site": "Draft JA localization pending native pass. HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
+          "field_note": "Draft JA localization pending native pass. Bind codex rows to baked packet hashes and device-tested layout before release."
         },
         "zh_CN": {
-          "title": "Draft ZH localization pending native pass. PDA Codex State Proof Card",
-          "scanner": "Draft ZH localization pending native pass. PDA proof: hint, fragment, proof, synthesis, ending record.",
-          "terminal": "Draft ZH localization pending native pass. UI PROOF: PDA codex entries must show unlock tier, packet hash, evidence source and route warning state.",
-          "audio": "Draft ZH localization pending native pass. The PDA is a receipt, not a teacher.",
-          "in_game_wiki": "Draft ZH localization pending native pass. PDA Codex State Proof Card defines what the in-game wiki must expose after the player earns evidence.",
-          "external_site": "Draft ZH localization pending native pass. The in-game encyclopedia should lag behind discovery. It records proof, not spoilers.",
-          "field_note": "Draft ZH localization pending native pass. Runtime implementation still needs Unity device proof and baked string-pool binding."
+          "title": "Draft ZH localization pending native pass. PDA Evidence State",
+          "scanner": "Draft ZH localization pending native pass. Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
+          "terminal": "Draft ZH localization pending native pass. PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
+          "audio": "Draft ZH localization pending native pass. The PDA does not explain the world first. It waits for a receipt.",
+          "in_game_wiki": "Draft ZH localization pending native pass. The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
+          "external_site": "Draft ZH localization pending native pass. HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
+          "field_note": "Draft ZH localization pending native pass. Bind codex rows to baked packet hashes and device-tested layout before release."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. PDA Codex State Proof Card",
-          "scanner": "Draft FR localization pending native pass. PDA proof: hint, fragment, proof, synthesis, ending record.",
-          "terminal": "Draft FR localization pending native pass. UI PROOF: PDA codex entries must show unlock tier, packet hash, evidence source and route warning state.",
-          "audio": "Draft FR localization pending native pass. The PDA is a receipt, not a teacher.",
-          "in_game_wiki": "Draft FR localization pending native pass. PDA Codex State Proof Card defines what the in-game wiki must expose after the player earns evidence.",
-          "external_site": "Draft FR localization pending native pass. The in-game encyclopedia should lag behind discovery. It records proof, not spoilers.",
-          "field_note": "Draft FR localization pending native pass. Runtime implementation still needs Unity device proof and baked string-pool binding."
+          "title": "Draft FR localization pending native pass. PDA Evidence State",
+          "scanner": "Draft FR localization pending native pass. Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
+          "terminal": "Draft FR localization pending native pass. PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
+          "audio": "Draft FR localization pending native pass. The PDA does not explain the world first. It waits for a receipt.",
+          "in_game_wiki": "Draft FR localization pending native pass. The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
+          "external_site": "Draft FR localization pending native pass. HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
+          "field_note": "Draft FR localization pending native pass. Bind codex rows to baked packet hashes and device-tested layout before release."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. PDA Codex State Proof Card",
-          "scanner": "Draft ES localization pending native pass. PDA proof: hint, fragment, proof, synthesis, ending record.",
-          "terminal": "Draft ES localization pending native pass. UI PROOF: PDA codex entries must show unlock tier, packet hash, evidence source and route warning state.",
-          "audio": "Draft ES localization pending native pass. The PDA is a receipt, not a teacher.",
-          "in_game_wiki": "Draft ES localization pending native pass. PDA Codex State Proof Card defines what the in-game wiki must expose after the player earns evidence.",
-          "external_site": "Draft ES localization pending native pass. The in-game encyclopedia should lag behind discovery. It records proof, not spoilers.",
-          "field_note": "Draft ES localization pending native pass. Runtime implementation still needs Unity device proof and baked string-pool binding."
+          "title": "Draft ES localization pending native pass. PDA Evidence State",
+          "scanner": "Draft ES localization pending native pass. Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
+          "terminal": "Draft ES localization pending native pass. PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
+          "audio": "Draft ES localization pending native pass. The PDA does not explain the world first. It waits for a receipt.",
+          "in_game_wiki": "Draft ES localization pending native pass. The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
+          "external_site": "Draft ES localization pending native pass. HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
+          "field_note": "Draft ES localization pending native pass. Bind codex rows to baked packet hashes and device-tested layout before release."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. PDA Codex State Proof Card",
-          "scanner": "Draft DE localization pending native pass. PDA proof: hint, fragment, proof, synthesis, ending record.",
-          "terminal": "Draft DE localization pending native pass. UI PROOF: PDA codex entries must show unlock tier, packet hash, evidence source and route warning state.",
-          "audio": "Draft DE localization pending native pass. The PDA is a receipt, not a teacher.",
-          "in_game_wiki": "Draft DE localization pending native pass. PDA Codex State Proof Card defines what the in-game wiki must expose after the player earns evidence.",
-          "external_site": "Draft DE localization pending native pass. The in-game encyclopedia should lag behind discovery. It records proof, not spoilers.",
-          "field_note": "Draft DE localization pending native pass. Runtime implementation still needs Unity device proof and baked string-pool binding."
+          "title": "Draft DE localization pending native pass. PDA Evidence State",
+          "scanner": "Draft DE localization pending native pass. Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
+          "terminal": "Draft DE localization pending native pass. PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
+          "audio": "Draft DE localization pending native pass. The PDA does not explain the world first. It waits for a receipt.",
+          "in_game_wiki": "Draft DE localization pending native pass. The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
+          "external_site": "Draft DE localization pending native pass. HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
+          "field_note": "Draft DE localization pending native pass. Bind codex rows to baked packet hashes and device-tested layout before release."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. PDA Codex State Proof Card",
-          "scanner": "Draft PL localization pending native pass. PDA proof: hint, fragment, proof, synthesis, ending record.",
-          "terminal": "Draft PL localization pending native pass. UI PROOF: PDA codex entries must show unlock tier, packet hash, evidence source and route warning state.",
-          "audio": "Draft PL localization pending native pass. The PDA is a receipt, not a teacher.",
-          "in_game_wiki": "Draft PL localization pending native pass. PDA Codex State Proof Card defines what the in-game wiki must expose after the player earns evidence.",
-          "external_site": "Draft PL localization pending native pass. The in-game encyclopedia should lag behind discovery. It records proof, not spoilers.",
-          "field_note": "Draft PL localization pending native pass. Runtime implementation still needs Unity device proof and baked string-pool binding."
+          "title": "Draft PL localization pending native pass. PDA Evidence State",
+          "scanner": "Draft PL localization pending native pass. Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
+          "terminal": "Draft PL localization pending native pass. PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
+          "audio": "Draft PL localization pending native pass. The PDA does not explain the world first. It waits for a receipt.",
+          "in_game_wiki": "Draft PL localization pending native pass. The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
+          "external_site": "Draft PL localization pending native pass. HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
+          "field_note": "Draft PL localization pending native pass. Bind codex rows to baked packet hashes and device-tested layout before release."
         },
         "uk_UA": {
-          "title": "Draft UK localization pending native pass. PDA Codex State Proof Card",
-          "scanner": "Draft UK localization pending native pass. PDA proof: hint, fragment, proof, synthesis, ending record.",
-          "terminal": "Draft UK localization pending native pass. UI PROOF: PDA codex entries must show unlock tier, packet hash, evidence source and route warning state.",
-          "audio": "Draft UK localization pending native pass. The PDA is a receipt, not a teacher.",
-          "in_game_wiki": "Draft UK localization pending native pass. PDA Codex State Proof Card defines what the in-game wiki must expose after the player earns evidence.",
-          "external_site": "Draft UK localization pending native pass. The in-game encyclopedia should lag behind discovery. It records proof, not spoilers.",
-          "field_note": "Draft UK localization pending native pass. Runtime implementation still needs Unity device proof and baked string-pool binding."
+          "title": "Draft UK localization pending native pass. PDA Evidence State",
+          "scanner": "Draft UK localization pending native pass. Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
+          "terminal": "Draft UK localization pending native pass. PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
+          "audio": "Draft UK localization pending native pass. The PDA does not explain the world first. It waits for a receipt.",
+          "in_game_wiki": "Draft UK localization pending native pass. The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
+          "external_site": "Draft UK localization pending native pass. HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
+          "field_note": "Draft UK localization pending native pass. Bind codex rows to baked packet hashes and device-tested layout before release."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. PDA Codex State Proof Card",
-          "scanner": "Draft AR localization pending native pass. PDA proof: hint, fragment, proof, synthesis, ending record.",
-          "terminal": "Draft AR localization pending native pass. UI PROOF: PDA codex entries must show unlock tier, packet hash, evidence source and route warning state.",
-          "audio": "Draft AR localization pending native pass. The PDA is a receipt, not a teacher.",
-          "in_game_wiki": "Draft AR localization pending native pass. PDA Codex State Proof Card defines what the in-game wiki must expose after the player earns evidence.",
-          "external_site": "Draft AR localization pending native pass. The in-game encyclopedia should lag behind discovery. It records proof, not spoilers.",
-          "field_note": "Draft AR localization pending native pass. Runtime implementation still needs Unity device proof and baked string-pool binding."
+          "title": "Draft AR localization pending native pass. PDA Evidence State",
+          "scanner": "Draft AR localization pending native pass. Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
+          "terminal": "Draft AR localization pending native pass. PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
+          "audio": "Draft AR localization pending native pass. The PDA does not explain the world first. It waits for a receipt.",
+          "in_game_wiki": "Draft AR localization pending native pass. The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
+          "external_site": "Draft AR localization pending native pass. HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
+          "field_note": "Draft AR localization pending native pass. Bind codex rows to baked packet hashes and device-tested layout before release."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. PDA Codex State Proof Card",
-          "scanner": "Draft ID localization pending native pass. PDA proof: hint, fragment, proof, synthesis, ending record.",
-          "terminal": "Draft ID localization pending native pass. UI PROOF: PDA codex entries must show unlock tier, packet hash, evidence source and route warning state.",
-          "audio": "Draft ID localization pending native pass. The PDA is a receipt, not a teacher.",
-          "in_game_wiki": "Draft ID localization pending native pass. PDA Codex State Proof Card defines what the in-game wiki must expose after the player earns evidence.",
-          "external_site": "Draft ID localization pending native pass. The in-game encyclopedia should lag behind discovery. It records proof, not spoilers.",
-          "field_note": "Draft ID localization pending native pass. Runtime implementation still needs Unity device proof and baked string-pool binding."
+          "title": "Draft ID localization pending native pass. PDA Evidence State",
+          "scanner": "Draft ID localization pending native pass. Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
+          "terminal": "Draft ID localization pending native pass. PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
+          "audio": "Draft ID localization pending native pass. The PDA does not explain the world first. It waits for a receipt.",
+          "in_game_wiki": "Draft ID localization pending native pass. The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
+          "external_site": "Draft ID localization pending native pass. HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
+          "field_note": "Draft ID localization pending native pass. Bind codex rows to baked packet hashes and device-tested layout before release."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. PDA Codex State Proof Card",
-          "scanner": "Draft KO localization pending native pass. PDA proof: hint, fragment, proof, synthesis, ending record.",
-          "terminal": "Draft KO localization pending native pass. UI PROOF: PDA codex entries must show unlock tier, packet hash, evidence source and route warning state.",
-          "audio": "Draft KO localization pending native pass. The PDA is a receipt, not a teacher.",
-          "in_game_wiki": "Draft KO localization pending native pass. PDA Codex State Proof Card defines what the in-game wiki must expose after the player earns evidence.",
-          "external_site": "Draft KO localization pending native pass. The in-game encyclopedia should lag behind discovery. It records proof, not spoilers.",
-          "field_note": "Draft KO localization pending native pass. Runtime implementation still needs Unity device proof and baked string-pool binding."
+          "title": "Draft KO localization pending native pass. PDA Evidence State",
+          "scanner": "Draft KO localization pending native pass. Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
+          "terminal": "Draft KO localization pending native pass. PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
+          "audio": "Draft KO localization pending native pass. The PDA does not explain the world first. It waits for a receipt.",
+          "in_game_wiki": "Draft KO localization pending native pass. The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
+          "external_site": "Draft KO localization pending native pass. HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
+          "field_note": "Draft KO localization pending native pass. Bind codex rows to baked packet hashes and device-tested layout before release."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. PDA Codex State Proof Card",
-          "scanner": "Draft HE localization pending native pass. PDA proof: hint, fragment, proof, synthesis, ending record.",
-          "terminal": "Draft HE localization pending native pass. UI PROOF: PDA codex entries must show unlock tier, packet hash, evidence source and route warning state.",
-          "audio": "Draft HE localization pending native pass. The PDA is a receipt, not a teacher.",
-          "in_game_wiki": "Draft HE localization pending native pass. PDA Codex State Proof Card defines what the in-game wiki must expose after the player earns evidence.",
-          "external_site": "Draft HE localization pending native pass. The in-game encyclopedia should lag behind discovery. It records proof, not spoilers.",
-          "field_note": "Draft HE localization pending native pass. Runtime implementation still needs Unity device proof and baked string-pool binding."
+          "title": "Draft HE localization pending native pass. PDA Evidence State",
+          "scanner": "Draft HE localization pending native pass. Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
+          "terminal": "Draft HE localization pending native pass. PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
+          "audio": "Draft HE localization pending native pass. The PDA does not explain the world first. It waits for a receipt.",
+          "in_game_wiki": "Draft HE localization pending native pass. The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
+          "external_site": "Draft HE localization pending native pass. HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
+          "field_note": "Draft HE localization pending native pass. Bind codex rows to baked packet hashes and device-tested layout before release."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. PDA Codex State Proof Card",
-          "scanner": "Draft PT localization pending native pass. PDA proof: hint, fragment, proof, synthesis, ending record.",
-          "terminal": "Draft PT localization pending native pass. UI PROOF: PDA codex entries must show unlock tier, packet hash, evidence source and route warning state.",
-          "audio": "Draft PT localization pending native pass. The PDA is a receipt, not a teacher.",
-          "in_game_wiki": "Draft PT localization pending native pass. PDA Codex State Proof Card defines what the in-game wiki must expose after the player earns evidence.",
-          "external_site": "Draft PT localization pending native pass. The in-game encyclopedia should lag behind discovery. It records proof, not spoilers.",
-          "field_note": "Draft PT localization pending native pass. Runtime implementation still needs Unity device proof and baked string-pool binding."
+          "title": "Draft PT localization pending native pass. PDA Evidence State",
+          "scanner": "Draft PT localization pending native pass. Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
+          "terminal": "Draft PT localization pending native pass. PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
+          "audio": "Draft PT localization pending native pass. The PDA does not explain the world first. It waits for a receipt.",
+          "in_game_wiki": "Draft PT localization pending native pass. The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
+          "external_site": "Draft PT localization pending native pass. HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
+          "field_note": "Draft PT localization pending native pass. Bind codex rows to baked packet hashes and device-tested layout before release."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. PDA Codex State Proof Card",
-          "scanner": "Draft NL localization pending native pass. PDA proof: hint, fragment, proof, synthesis, ending record.",
-          "terminal": "Draft NL localization pending native pass. UI PROOF: PDA codex entries must show unlock tier, packet hash, evidence source and route warning state.",
-          "audio": "Draft NL localization pending native pass. The PDA is a receipt, not a teacher.",
-          "in_game_wiki": "Draft NL localization pending native pass. PDA Codex State Proof Card defines what the in-game wiki must expose after the player earns evidence.",
-          "external_site": "Draft NL localization pending native pass. The in-game encyclopedia should lag behind discovery. It records proof, not spoilers.",
-          "field_note": "Draft NL localization pending native pass. Runtime implementation still needs Unity device proof and baked string-pool binding."
+          "title": "Draft NL localization pending native pass. PDA Evidence State",
+          "scanner": "Draft NL localization pending native pass. Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
+          "terminal": "Draft NL localization pending native pass. PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
+          "audio": "Draft NL localization pending native pass. The PDA does not explain the world first. It waits for a receipt.",
+          "in_game_wiki": "Draft NL localization pending native pass. The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
+          "external_site": "Draft NL localization pending native pass. HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
+          "field_note": "Draft NL localization pending native pass. Bind codex rows to baked packet hashes and device-tested layout before release."
         }
       }
     },
@@ -182,139 +182,139 @@
       },
       "localized": {
         "en_US": {
-          "title": "Scanner Stage Binding Proof Card",
-          "scanner": "Scanner proof: 25, 50, 100 percent packet stages must map to physical evidence.",
-          "terminal": "SCANNER PROOF: scan stages must bind to authored packet hashes and only escalate text after physical evidence is found.",
-          "audio": "The scan is not a narrator.",
-          "in_game_wiki": "Scanner Stage Binding Proof Card keeps scan text tied to physical discovery.",
-          "external_site": "Scanner language in HECTON-8 should behave like instrument evidence: partial, staged and suspicious.",
-          "field_note": "Use for ScannableFragment stage binding pass."
+          "title": "Scanner Stage Binding",
+          "scanner": "Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
+          "terminal": "Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
+          "audio": "A scan should sound like a diver found something, not like a lecturer arrived.",
+          "in_game_wiki": "Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
+          "external_site": "Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
+          "field_note": "Keep scanner strings bound to scan percent, biome context, and evidence markers."
         },
         "ru_RU": {
-          "title": "Proof card стадий scanner",
-          "scanner": "Scanner proof: 25, 50, 100 percent packet stages map to physical evidence.",
-          "terminal": "SCANNER PROOF: scan stages bind to packet hashes and escalate only after physical evidence.",
-          "audio": "Сканер не рассказчик.",
-          "in_game_wiki": "Scanner proof card держит scan text привязанным к physical discovery.",
-          "external_site": "Scanner language должен быть partial, staged and suspicious.",
-          "field_note": "Для pass ScannableFragment stage binding."
+          "title": "Draft RU localization pending native pass. Scanner Stage Binding",
+          "scanner": "Draft RU localization pending native pass. Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
+          "terminal": "Draft RU localization pending native pass. Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
+          "audio": "Draft RU localization pending native pass. A scan should sound like a diver found something, not like a lecturer arrived.",
+          "in_game_wiki": "Draft RU localization pending native pass. Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
+          "external_site": "Draft RU localization pending native pass. Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
+          "field_note": "Draft RU localization pending native pass. Keep scanner strings bound to scan percent, biome context, and evidence markers."
         },
         "ja_JP": {
-          "title": "Draft JA localization pending native pass. Scanner Stage Binding Proof Card",
-          "scanner": "Draft JA localization pending native pass. Scanner proof: 25, 50, 100 percent packet stages must map to physical evidence.",
-          "terminal": "Draft JA localization pending native pass. SCANNER PROOF: scan stages must bind to authored packet hashes and only escalate text after physical evidence is found.",
-          "audio": "Draft JA localization pending native pass. The scan is not a narrator.",
-          "in_game_wiki": "Draft JA localization pending native pass. Scanner Stage Binding Proof Card keeps scan text tied to physical discovery.",
-          "external_site": "Draft JA localization pending native pass. Scanner language in HECTON-8 should behave like instrument evidence: partial, staged and suspicious.",
-          "field_note": "Draft JA localization pending native pass. Use for ScannableFragment stage binding pass."
+          "title": "Draft JA localization pending native pass. Scanner Stage Binding",
+          "scanner": "Draft JA localization pending native pass. Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
+          "terminal": "Draft JA localization pending native pass. Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
+          "audio": "Draft JA localization pending native pass. A scan should sound like a diver found something, not like a lecturer arrived.",
+          "in_game_wiki": "Draft JA localization pending native pass. Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
+          "external_site": "Draft JA localization pending native pass. Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
+          "field_note": "Draft JA localization pending native pass. Keep scanner strings bound to scan percent, biome context, and evidence markers."
         },
         "zh_CN": {
-          "title": "Draft ZH localization pending native pass. Scanner Stage Binding Proof Card",
-          "scanner": "Draft ZH localization pending native pass. Scanner proof: 25, 50, 100 percent packet stages must map to physical evidence.",
-          "terminal": "Draft ZH localization pending native pass. SCANNER PROOF: scan stages must bind to authored packet hashes and only escalate text after physical evidence is found.",
-          "audio": "Draft ZH localization pending native pass. The scan is not a narrator.",
-          "in_game_wiki": "Draft ZH localization pending native pass. Scanner Stage Binding Proof Card keeps scan text tied to physical discovery.",
-          "external_site": "Draft ZH localization pending native pass. Scanner language in HECTON-8 should behave like instrument evidence: partial, staged and suspicious.",
-          "field_note": "Draft ZH localization pending native pass. Use for ScannableFragment stage binding pass."
+          "title": "Draft ZH localization pending native pass. Scanner Stage Binding",
+          "scanner": "Draft ZH localization pending native pass. Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
+          "terminal": "Draft ZH localization pending native pass. Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
+          "audio": "Draft ZH localization pending native pass. A scan should sound like a diver found something, not like a lecturer arrived.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
+          "external_site": "Draft ZH localization pending native pass. Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
+          "field_note": "Draft ZH localization pending native pass. Keep scanner strings bound to scan percent, biome context, and evidence markers."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Scanner Stage Binding Proof Card",
-          "scanner": "Draft FR localization pending native pass. Scanner proof: 25, 50, 100 percent packet stages must map to physical evidence.",
-          "terminal": "Draft FR localization pending native pass. SCANNER PROOF: scan stages must bind to authored packet hashes and only escalate text after physical evidence is found.",
-          "audio": "Draft FR localization pending native pass. The scan is not a narrator.",
-          "in_game_wiki": "Draft FR localization pending native pass. Scanner Stage Binding Proof Card keeps scan text tied to physical discovery.",
-          "external_site": "Draft FR localization pending native pass. Scanner language in HECTON-8 should behave like instrument evidence: partial, staged and suspicious.",
-          "field_note": "Draft FR localization pending native pass. Use for ScannableFragment stage binding pass."
+          "title": "Draft FR localization pending native pass. Scanner Stage Binding",
+          "scanner": "Draft FR localization pending native pass. Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
+          "terminal": "Draft FR localization pending native pass. Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
+          "audio": "Draft FR localization pending native pass. A scan should sound like a diver found something, not like a lecturer arrived.",
+          "in_game_wiki": "Draft FR localization pending native pass. Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
+          "external_site": "Draft FR localization pending native pass. Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
+          "field_note": "Draft FR localization pending native pass. Keep scanner strings bound to scan percent, biome context, and evidence markers."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Scanner Stage Binding Proof Card",
-          "scanner": "Draft ES localization pending native pass. Scanner proof: 25, 50, 100 percent packet stages must map to physical evidence.",
-          "terminal": "Draft ES localization pending native pass. SCANNER PROOF: scan stages must bind to authored packet hashes and only escalate text after physical evidence is found.",
-          "audio": "Draft ES localization pending native pass. The scan is not a narrator.",
-          "in_game_wiki": "Draft ES localization pending native pass. Scanner Stage Binding Proof Card keeps scan text tied to physical discovery.",
-          "external_site": "Draft ES localization pending native pass. Scanner language in HECTON-8 should behave like instrument evidence: partial, staged and suspicious.",
-          "field_note": "Draft ES localization pending native pass. Use for ScannableFragment stage binding pass."
+          "title": "Draft ES localization pending native pass. Scanner Stage Binding",
+          "scanner": "Draft ES localization pending native pass. Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
+          "terminal": "Draft ES localization pending native pass. Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
+          "audio": "Draft ES localization pending native pass. A scan should sound like a diver found something, not like a lecturer arrived.",
+          "in_game_wiki": "Draft ES localization pending native pass. Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
+          "external_site": "Draft ES localization pending native pass. Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
+          "field_note": "Draft ES localization pending native pass. Keep scanner strings bound to scan percent, biome context, and evidence markers."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Scanner Stage Binding Proof Card",
-          "scanner": "Draft DE localization pending native pass. Scanner proof: 25, 50, 100 percent packet stages must map to physical evidence.",
-          "terminal": "Draft DE localization pending native pass. SCANNER PROOF: scan stages must bind to authored packet hashes and only escalate text after physical evidence is found.",
-          "audio": "Draft DE localization pending native pass. The scan is not a narrator.",
-          "in_game_wiki": "Draft DE localization pending native pass. Scanner Stage Binding Proof Card keeps scan text tied to physical discovery.",
-          "external_site": "Draft DE localization pending native pass. Scanner language in HECTON-8 should behave like instrument evidence: partial, staged and suspicious.",
-          "field_note": "Draft DE localization pending native pass. Use for ScannableFragment stage binding pass."
+          "title": "Draft DE localization pending native pass. Scanner Stage Binding",
+          "scanner": "Draft DE localization pending native pass. Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
+          "terminal": "Draft DE localization pending native pass. Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
+          "audio": "Draft DE localization pending native pass. A scan should sound like a diver found something, not like a lecturer arrived.",
+          "in_game_wiki": "Draft DE localization pending native pass. Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
+          "external_site": "Draft DE localization pending native pass. Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
+          "field_note": "Draft DE localization pending native pass. Keep scanner strings bound to scan percent, biome context, and evidence markers."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Scanner Stage Binding Proof Card",
-          "scanner": "Draft PL localization pending native pass. Scanner proof: 25, 50, 100 percent packet stages must map to physical evidence.",
-          "terminal": "Draft PL localization pending native pass. SCANNER PROOF: scan stages must bind to authored packet hashes and only escalate text after physical evidence is found.",
-          "audio": "Draft PL localization pending native pass. The scan is not a narrator.",
-          "in_game_wiki": "Draft PL localization pending native pass. Scanner Stage Binding Proof Card keeps scan text tied to physical discovery.",
-          "external_site": "Draft PL localization pending native pass. Scanner language in HECTON-8 should behave like instrument evidence: partial, staged and suspicious.",
-          "field_note": "Draft PL localization pending native pass. Use for ScannableFragment stage binding pass."
+          "title": "Draft PL localization pending native pass. Scanner Stage Binding",
+          "scanner": "Draft PL localization pending native pass. Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
+          "terminal": "Draft PL localization pending native pass. Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
+          "audio": "Draft PL localization pending native pass. A scan should sound like a diver found something, not like a lecturer arrived.",
+          "in_game_wiki": "Draft PL localization pending native pass. Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
+          "external_site": "Draft PL localization pending native pass. Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
+          "field_note": "Draft PL localization pending native pass. Keep scanner strings bound to scan percent, biome context, and evidence markers."
         },
         "uk_UA": {
-          "title": "Draft UK localization pending native pass. Scanner Stage Binding Proof Card",
-          "scanner": "Draft UK localization pending native pass. Scanner proof: 25, 50, 100 percent packet stages must map to physical evidence.",
-          "terminal": "Draft UK localization pending native pass. SCANNER PROOF: scan stages must bind to authored packet hashes and only escalate text after physical evidence is found.",
-          "audio": "Draft UK localization pending native pass. The scan is not a narrator.",
-          "in_game_wiki": "Draft UK localization pending native pass. Scanner Stage Binding Proof Card keeps scan text tied to physical discovery.",
-          "external_site": "Draft UK localization pending native pass. Scanner language in HECTON-8 should behave like instrument evidence: partial, staged and suspicious.",
-          "field_note": "Draft UK localization pending native pass. Use for ScannableFragment stage binding pass."
+          "title": "Draft UK localization pending native pass. Scanner Stage Binding",
+          "scanner": "Draft UK localization pending native pass. Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
+          "terminal": "Draft UK localization pending native pass. Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
+          "audio": "Draft UK localization pending native pass. A scan should sound like a diver found something, not like a lecturer arrived.",
+          "in_game_wiki": "Draft UK localization pending native pass. Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
+          "external_site": "Draft UK localization pending native pass. Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
+          "field_note": "Draft UK localization pending native pass. Keep scanner strings bound to scan percent, biome context, and evidence markers."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Scanner Stage Binding Proof Card",
-          "scanner": "Draft AR localization pending native pass. Scanner proof: 25, 50, 100 percent packet stages must map to physical evidence.",
-          "terminal": "Draft AR localization pending native pass. SCANNER PROOF: scan stages must bind to authored packet hashes and only escalate text after physical evidence is found.",
-          "audio": "Draft AR localization pending native pass. The scan is not a narrator.",
-          "in_game_wiki": "Draft AR localization pending native pass. Scanner Stage Binding Proof Card keeps scan text tied to physical discovery.",
-          "external_site": "Draft AR localization pending native pass. Scanner language in HECTON-8 should behave like instrument evidence: partial, staged and suspicious.",
-          "field_note": "Draft AR localization pending native pass. Use for ScannableFragment stage binding pass."
+          "title": "Draft AR localization pending native pass. Scanner Stage Binding",
+          "scanner": "Draft AR localization pending native pass. Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
+          "terminal": "Draft AR localization pending native pass. Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
+          "audio": "Draft AR localization pending native pass. A scan should sound like a diver found something, not like a lecturer arrived.",
+          "in_game_wiki": "Draft AR localization pending native pass. Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
+          "external_site": "Draft AR localization pending native pass. Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
+          "field_note": "Draft AR localization pending native pass. Keep scanner strings bound to scan percent, biome context, and evidence markers."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Scanner Stage Binding Proof Card",
-          "scanner": "Draft ID localization pending native pass. Scanner proof: 25, 50, 100 percent packet stages must map to physical evidence.",
-          "terminal": "Draft ID localization pending native pass. SCANNER PROOF: scan stages must bind to authored packet hashes and only escalate text after physical evidence is found.",
-          "audio": "Draft ID localization pending native pass. The scan is not a narrator.",
-          "in_game_wiki": "Draft ID localization pending native pass. Scanner Stage Binding Proof Card keeps scan text tied to physical discovery.",
-          "external_site": "Draft ID localization pending native pass. Scanner language in HECTON-8 should behave like instrument evidence: partial, staged and suspicious.",
-          "field_note": "Draft ID localization pending native pass. Use for ScannableFragment stage binding pass."
+          "title": "Draft ID localization pending native pass. Scanner Stage Binding",
+          "scanner": "Draft ID localization pending native pass. Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
+          "terminal": "Draft ID localization pending native pass. Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
+          "audio": "Draft ID localization pending native pass. A scan should sound like a diver found something, not like a lecturer arrived.",
+          "in_game_wiki": "Draft ID localization pending native pass. Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
+          "external_site": "Draft ID localization pending native pass. Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
+          "field_note": "Draft ID localization pending native pass. Keep scanner strings bound to scan percent, biome context, and evidence markers."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Scanner Stage Binding Proof Card",
-          "scanner": "Draft KO localization pending native pass. Scanner proof: 25, 50, 100 percent packet stages must map to physical evidence.",
-          "terminal": "Draft KO localization pending native pass. SCANNER PROOF: scan stages must bind to authored packet hashes and only escalate text after physical evidence is found.",
-          "audio": "Draft KO localization pending native pass. The scan is not a narrator.",
-          "in_game_wiki": "Draft KO localization pending native pass. Scanner Stage Binding Proof Card keeps scan text tied to physical discovery.",
-          "external_site": "Draft KO localization pending native pass. Scanner language in HECTON-8 should behave like instrument evidence: partial, staged and suspicious.",
-          "field_note": "Draft KO localization pending native pass. Use for ScannableFragment stage binding pass."
+          "title": "Draft KO localization pending native pass. Scanner Stage Binding",
+          "scanner": "Draft KO localization pending native pass. Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
+          "terminal": "Draft KO localization pending native pass. Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
+          "audio": "Draft KO localization pending native pass. A scan should sound like a diver found something, not like a lecturer arrived.",
+          "in_game_wiki": "Draft KO localization pending native pass. Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
+          "external_site": "Draft KO localization pending native pass. Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
+          "field_note": "Draft KO localization pending native pass. Keep scanner strings bound to scan percent, biome context, and evidence markers."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Scanner Stage Binding Proof Card",
-          "scanner": "Draft HE localization pending native pass. Scanner proof: 25, 50, 100 percent packet stages must map to physical evidence.",
-          "terminal": "Draft HE localization pending native pass. SCANNER PROOF: scan stages must bind to authored packet hashes and only escalate text after physical evidence is found.",
-          "audio": "Draft HE localization pending native pass. The scan is not a narrator.",
-          "in_game_wiki": "Draft HE localization pending native pass. Scanner Stage Binding Proof Card keeps scan text tied to physical discovery.",
-          "external_site": "Draft HE localization pending native pass. Scanner language in HECTON-8 should behave like instrument evidence: partial, staged and suspicious.",
-          "field_note": "Draft HE localization pending native pass. Use for ScannableFragment stage binding pass."
+          "title": "Draft HE localization pending native pass. Scanner Stage Binding",
+          "scanner": "Draft HE localization pending native pass. Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
+          "terminal": "Draft HE localization pending native pass. Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
+          "audio": "Draft HE localization pending native pass. A scan should sound like a diver found something, not like a lecturer arrived.",
+          "in_game_wiki": "Draft HE localization pending native pass. Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
+          "external_site": "Draft HE localization pending native pass. Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
+          "field_note": "Draft HE localization pending native pass. Keep scanner strings bound to scan percent, biome context, and evidence markers."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Scanner Stage Binding Proof Card",
-          "scanner": "Draft PT localization pending native pass. Scanner proof: 25, 50, 100 percent packet stages must map to physical evidence.",
-          "terminal": "Draft PT localization pending native pass. SCANNER PROOF: scan stages must bind to authored packet hashes and only escalate text after physical evidence is found.",
-          "audio": "Draft PT localization pending native pass. The scan is not a narrator.",
-          "in_game_wiki": "Draft PT localization pending native pass. Scanner Stage Binding Proof Card keeps scan text tied to physical discovery.",
-          "external_site": "Draft PT localization pending native pass. Scanner language in HECTON-8 should behave like instrument evidence: partial, staged and suspicious.",
-          "field_note": "Draft PT localization pending native pass. Use for ScannableFragment stage binding pass."
+          "title": "Draft PT localization pending native pass. Scanner Stage Binding",
+          "scanner": "Draft PT localization pending native pass. Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
+          "terminal": "Draft PT localization pending native pass. Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
+          "audio": "Draft PT localization pending native pass. A scan should sound like a diver found something, not like a lecturer arrived.",
+          "in_game_wiki": "Draft PT localization pending native pass. Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
+          "external_site": "Draft PT localization pending native pass. Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
+          "field_note": "Draft PT localization pending native pass. Keep scanner strings bound to scan percent, biome context, and evidence markers."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Scanner Stage Binding Proof Card",
-          "scanner": "Draft NL localization pending native pass. Scanner proof: 25, 50, 100 percent packet stages must map to physical evidence.",
-          "terminal": "Draft NL localization pending native pass. SCANNER PROOF: scan stages must bind to authored packet hashes and only escalate text after physical evidence is found.",
-          "audio": "Draft NL localization pending native pass. The scan is not a narrator.",
-          "in_game_wiki": "Draft NL localization pending native pass. Scanner Stage Binding Proof Card keeps scan text tied to physical discovery.",
-          "external_site": "Draft NL localization pending native pass. Scanner language in HECTON-8 should behave like instrument evidence: partial, staged and suspicious.",
-          "field_note": "Draft NL localization pending native pass. Use for ScannableFragment stage binding pass."
+          "title": "Draft NL localization pending native pass. Scanner Stage Binding",
+          "scanner": "Draft NL localization pending native pass. Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
+          "terminal": "Draft NL localization pending native pass. Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
+          "audio": "Draft NL localization pending native pass. A scan should sound like a diver found something, not like a lecturer arrived.",
+          "in_game_wiki": "Draft NL localization pending native pass. Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
+          "external_site": "Draft NL localization pending native pass. Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
+          "field_note": "Draft NL localization pending native pass. Keep scanner strings bound to scan percent, biome context, and evidence markers."
         }
       }
     },
@@ -337,139 +337,139 @@
       },
       "localized": {
         "en_US": {
-          "title": "Terminal Slot Proof Card",
-          "scanner": "Terminal proof: limited slots, packet hash, operator surface, no live markdown.",
-          "terminal": "TERMINAL PROOF: terminal entries consume baked packet hashes and string-pool rows; runtime must not parse markdown or JSON.",
-          "audio": "A terminal slot is not a filing cabinet.",
-          "in_game_wiki": "Terminal Slot Proof Card constrains terminal text to authored slots and baked strings.",
-          "external_site": "HECTON-8 terminals should feel like damaged instruments, not pages of floating lore.",
-          "field_note": "TerminalOS expansion remains a Unity placement task, not this source pass."
+          "title": "Terminal Slot Chain",
+          "scanner": "Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
+          "terminal": "Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
+          "audio": "A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
+          "in_game_wiki": "Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
+          "external_site": "Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
+          "field_note": "Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
         },
         "ru_RU": {
-          "title": "Proof card terminal slot",
-          "scanner": "Terminal proof: limited slots, packet hash, operator surface, no live markdown.",
-          "terminal": "TERMINAL PROOF: terminal entries consume baked packet hashes and string-pool rows; no runtime markdown or JSON.",
-          "audio": "Terminal slot - не архивный шкаф.",
-          "in_game_wiki": "Terminal proof card ограничивает terminal text authored slots and baked strings.",
-          "external_site": "Терминалы HECTON-8 должны быть damaged instruments, не floating lore pages.",
-          "field_note": "TerminalOS expansion остается Unity placement task."
+          "title": "Draft RU localization pending native pass. Terminal Slot Chain",
+          "scanner": "Draft RU localization pending native pass. Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
+          "terminal": "Draft RU localization pending native pass. Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
+          "audio": "Draft RU localization pending native pass. A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
+          "in_game_wiki": "Draft RU localization pending native pass. Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
+          "external_site": "Draft RU localization pending native pass. Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
+          "field_note": "Draft RU localization pending native pass. Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
         },
         "ja_JP": {
-          "title": "Draft JA localization pending native pass. Terminal Slot Proof Card",
-          "scanner": "Draft JA localization pending native pass. Terminal proof: limited slots, packet hash, operator surface, no live markdown.",
-          "terminal": "Draft JA localization pending native pass. TERMINAL PROOF: terminal entries consume baked packet hashes and string-pool rows; runtime must not parse markdown or JSON.",
-          "audio": "Draft JA localization pending native pass. A terminal slot is not a filing cabinet.",
-          "in_game_wiki": "Draft JA localization pending native pass. Terminal Slot Proof Card constrains terminal text to authored slots and baked strings.",
-          "external_site": "Draft JA localization pending native pass. HECTON-8 terminals should feel like damaged instruments, not pages of floating lore.",
-          "field_note": "Draft JA localization pending native pass. TerminalOS expansion remains a Unity placement task, not this source pass."
+          "title": "Draft JP localization pending native pass. Terminal Slot Chain",
+          "scanner": "Draft JA localization pending native pass. Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
+          "terminal": "Draft JA localization pending native pass. Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
+          "audio": "Draft JA localization pending native pass. A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
+          "in_game_wiki": "Draft JP localization pending native pass. Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
+          "external_site": "Draft JA localization pending native pass. Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
+          "field_note": "Draft JP localization pending native pass. Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
         },
         "zh_CN": {
-          "title": "Draft ZH localization pending native pass. Terminal Slot Proof Card",
-          "scanner": "Draft ZH localization pending native pass. Terminal proof: limited slots, packet hash, operator surface, no live markdown.",
-          "terminal": "Draft ZH localization pending native pass. TERMINAL PROOF: terminal entries consume baked packet hashes and string-pool rows; runtime must not parse markdown or JSON.",
-          "audio": "Draft ZH localization pending native pass. A terminal slot is not a filing cabinet.",
-          "in_game_wiki": "Draft ZH localization pending native pass. Terminal Slot Proof Card constrains terminal text to authored slots and baked strings.",
-          "external_site": "Draft ZH localization pending native pass. HECTON-8 terminals should feel like damaged instruments, not pages of floating lore.",
-          "field_note": "Draft ZH localization pending native pass. TerminalOS expansion remains a Unity placement task, not this source pass."
+          "title": "Draft CN localization pending native pass. Terminal Slot Chain",
+          "scanner": "Draft ZH localization pending native pass. Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
+          "terminal": "Draft ZH localization pending native pass. Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
+          "audio": "Draft ZH localization pending native pass. A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
+          "in_game_wiki": "Draft CN localization pending native pass. Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
+          "external_site": "Draft ZH localization pending native pass. Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
+          "field_note": "Draft CN localization pending native pass. Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Terminal Slot Proof Card",
-          "scanner": "Draft FR localization pending native pass. Terminal proof: limited slots, packet hash, operator surface, no live markdown.",
-          "terminal": "Draft FR localization pending native pass. TERMINAL PROOF: terminal entries consume baked packet hashes and string-pool rows; runtime must not parse markdown or JSON.",
-          "audio": "Draft FR localization pending native pass. A terminal slot is not a filing cabinet.",
-          "in_game_wiki": "Draft FR localization pending native pass. Terminal Slot Proof Card constrains terminal text to authored slots and baked strings.",
-          "external_site": "Draft FR localization pending native pass. HECTON-8 terminals should feel like damaged instruments, not pages of floating lore.",
-          "field_note": "Draft FR localization pending native pass. TerminalOS expansion remains a Unity placement task, not this source pass."
+          "title": "Draft FR localization pending native pass. Terminal Slot Chain",
+          "scanner": "Draft FR localization pending native pass. Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
+          "terminal": "Draft FR localization pending native pass. Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
+          "audio": "Draft FR localization pending native pass. A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
+          "in_game_wiki": "Draft FR localization pending native pass. Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
+          "external_site": "Draft FR localization pending native pass. Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
+          "field_note": "Draft FR localization pending native pass. Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Terminal Slot Proof Card",
-          "scanner": "Draft ES localization pending native pass. Terminal proof: limited slots, packet hash, operator surface, no live markdown.",
-          "terminal": "Draft ES localization pending native pass. TERMINAL PROOF: terminal entries consume baked packet hashes and string-pool rows; runtime must not parse markdown or JSON.",
-          "audio": "Draft ES localization pending native pass. A terminal slot is not a filing cabinet.",
-          "in_game_wiki": "Draft ES localization pending native pass. Terminal Slot Proof Card constrains terminal text to authored slots and baked strings.",
-          "external_site": "Draft ES localization pending native pass. HECTON-8 terminals should feel like damaged instruments, not pages of floating lore.",
-          "field_note": "Draft ES localization pending native pass. TerminalOS expansion remains a Unity placement task, not this source pass."
+          "title": "Draft ES localization pending native pass. Terminal Slot Chain",
+          "scanner": "Draft ES localization pending native pass. Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
+          "terminal": "Draft ES localization pending native pass. Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
+          "audio": "Draft ES localization pending native pass. A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
+          "in_game_wiki": "Draft ES localization pending native pass. Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
+          "external_site": "Draft ES localization pending native pass. Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
+          "field_note": "Draft ES localization pending native pass. Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Terminal Slot Proof Card",
-          "scanner": "Draft DE localization pending native pass. Terminal proof: limited slots, packet hash, operator surface, no live markdown.",
-          "terminal": "Draft DE localization pending native pass. TERMINAL PROOF: terminal entries consume baked packet hashes and string-pool rows; runtime must not parse markdown or JSON.",
-          "audio": "Draft DE localization pending native pass. A terminal slot is not a filing cabinet.",
-          "in_game_wiki": "Draft DE localization pending native pass. Terminal Slot Proof Card constrains terminal text to authored slots and baked strings.",
-          "external_site": "Draft DE localization pending native pass. HECTON-8 terminals should feel like damaged instruments, not pages of floating lore.",
-          "field_note": "Draft DE localization pending native pass. TerminalOS expansion remains a Unity placement task, not this source pass."
+          "title": "Draft DE localization pending native pass. Terminal Slot Chain",
+          "scanner": "Draft DE localization pending native pass. Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
+          "terminal": "Draft DE localization pending native pass. Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
+          "audio": "Draft DE localization pending native pass. A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
+          "in_game_wiki": "Draft DE localization pending native pass. Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
+          "external_site": "Draft DE localization pending native pass. Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
+          "field_note": "Draft DE localization pending native pass. Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Terminal Slot Proof Card",
-          "scanner": "Draft PL localization pending native pass. Terminal proof: limited slots, packet hash, operator surface, no live markdown.",
-          "terminal": "Draft PL localization pending native pass. TERMINAL PROOF: terminal entries consume baked packet hashes and string-pool rows; runtime must not parse markdown or JSON.",
-          "audio": "Draft PL localization pending native pass. A terminal slot is not a filing cabinet.",
-          "in_game_wiki": "Draft PL localization pending native pass. Terminal Slot Proof Card constrains terminal text to authored slots and baked strings.",
-          "external_site": "Draft PL localization pending native pass. HECTON-8 terminals should feel like damaged instruments, not pages of floating lore.",
-          "field_note": "Draft PL localization pending native pass. TerminalOS expansion remains a Unity placement task, not this source pass."
+          "title": "Draft PL localization pending native pass. Terminal Slot Chain",
+          "scanner": "Draft PL localization pending native pass. Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
+          "terminal": "Draft PL localization pending native pass. Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
+          "audio": "Draft PL localization pending native pass. A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
+          "in_game_wiki": "Draft PL localization pending native pass. Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
+          "external_site": "Draft PL localization pending native pass. Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
+          "field_note": "Draft PL localization pending native pass. Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
         },
         "uk_UA": {
-          "title": "Draft UK localization pending native pass. Terminal Slot Proof Card",
-          "scanner": "Draft UK localization pending native pass. Terminal proof: limited slots, packet hash, operator surface, no live markdown.",
-          "terminal": "Draft UK localization pending native pass. TERMINAL PROOF: terminal entries consume baked packet hashes and string-pool rows; runtime must not parse markdown or JSON.",
-          "audio": "Draft UK localization pending native pass. A terminal slot is not a filing cabinet.",
-          "in_game_wiki": "Draft UK localization pending native pass. Terminal Slot Proof Card constrains terminal text to authored slots and baked strings.",
-          "external_site": "Draft UK localization pending native pass. HECTON-8 terminals should feel like damaged instruments, not pages of floating lore.",
-          "field_note": "Draft UK localization pending native pass. TerminalOS expansion remains a Unity placement task, not this source pass."
+          "title": "Draft UA localization pending native pass. Terminal Slot Chain",
+          "scanner": "Draft UK localization pending native pass. Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
+          "terminal": "Draft UK localization pending native pass. Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
+          "audio": "Draft UK localization pending native pass. A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
+          "in_game_wiki": "Draft UA localization pending native pass. Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
+          "external_site": "Draft UK localization pending native pass. Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
+          "field_note": "Draft UA localization pending native pass. Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Terminal Slot Proof Card",
-          "scanner": "Draft AR localization pending native pass. Terminal proof: limited slots, packet hash, operator surface, no live markdown.",
-          "terminal": "Draft AR localization pending native pass. TERMINAL PROOF: terminal entries consume baked packet hashes and string-pool rows; runtime must not parse markdown or JSON.",
-          "audio": "Draft AR localization pending native pass. A terminal slot is not a filing cabinet.",
-          "in_game_wiki": "Draft AR localization pending native pass. Terminal Slot Proof Card constrains terminal text to authored slots and baked strings.",
-          "external_site": "Draft AR localization pending native pass. HECTON-8 terminals should feel like damaged instruments, not pages of floating lore.",
-          "field_note": "Draft AR localization pending native pass. TerminalOS expansion remains a Unity placement task, not this source pass."
+          "title": "Draft AR localization pending native pass. Terminal Slot Chain",
+          "scanner": "Draft AR localization pending native pass. Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
+          "terminal": "Draft AR localization pending native pass. Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
+          "audio": "Draft AR localization pending native pass. A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
+          "in_game_wiki": "Draft AR localization pending native pass. Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
+          "external_site": "Draft AR localization pending native pass. Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
+          "field_note": "Draft AR localization pending native pass. Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Terminal Slot Proof Card",
-          "scanner": "Draft ID localization pending native pass. Terminal proof: limited slots, packet hash, operator surface, no live markdown.",
-          "terminal": "Draft ID localization pending native pass. TERMINAL PROOF: terminal entries consume baked packet hashes and string-pool rows; runtime must not parse markdown or JSON.",
-          "audio": "Draft ID localization pending native pass. A terminal slot is not a filing cabinet.",
-          "in_game_wiki": "Draft ID localization pending native pass. Terminal Slot Proof Card constrains terminal text to authored slots and baked strings.",
-          "external_site": "Draft ID localization pending native pass. HECTON-8 terminals should feel like damaged instruments, not pages of floating lore.",
-          "field_note": "Draft ID localization pending native pass. TerminalOS expansion remains a Unity placement task, not this source pass."
+          "title": "Draft ID localization pending native pass. Terminal Slot Chain",
+          "scanner": "Draft ID localization pending native pass. Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
+          "terminal": "Draft ID localization pending native pass. Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
+          "audio": "Draft ID localization pending native pass. A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
+          "in_game_wiki": "Draft ID localization pending native pass. Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
+          "external_site": "Draft ID localization pending native pass. Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
+          "field_note": "Draft ID localization pending native pass. Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Terminal Slot Proof Card",
-          "scanner": "Draft KO localization pending native pass. Terminal proof: limited slots, packet hash, operator surface, no live markdown.",
-          "terminal": "Draft KO localization pending native pass. TERMINAL PROOF: terminal entries consume baked packet hashes and string-pool rows; runtime must not parse markdown or JSON.",
-          "audio": "Draft KO localization pending native pass. A terminal slot is not a filing cabinet.",
-          "in_game_wiki": "Draft KO localization pending native pass. Terminal Slot Proof Card constrains terminal text to authored slots and baked strings.",
-          "external_site": "Draft KO localization pending native pass. HECTON-8 terminals should feel like damaged instruments, not pages of floating lore.",
-          "field_note": "Draft KO localization pending native pass. TerminalOS expansion remains a Unity placement task, not this source pass."
+          "title": "Draft KO localization pending native pass. Terminal Slot Chain",
+          "scanner": "Draft KO localization pending native pass. Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
+          "terminal": "Draft KO localization pending native pass. Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
+          "audio": "Draft KO localization pending native pass. A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
+          "in_game_wiki": "Draft KO localization pending native pass. Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
+          "external_site": "Draft KO localization pending native pass. Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
+          "field_note": "Draft KO localization pending native pass. Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Terminal Slot Proof Card",
-          "scanner": "Draft HE localization pending native pass. Terminal proof: limited slots, packet hash, operator surface, no live markdown.",
-          "terminal": "Draft HE localization pending native pass. TERMINAL PROOF: terminal entries consume baked packet hashes and string-pool rows; runtime must not parse markdown or JSON.",
-          "audio": "Draft HE localization pending native pass. A terminal slot is not a filing cabinet.",
-          "in_game_wiki": "Draft HE localization pending native pass. Terminal Slot Proof Card constrains terminal text to authored slots and baked strings.",
-          "external_site": "Draft HE localization pending native pass. HECTON-8 terminals should feel like damaged instruments, not pages of floating lore.",
-          "field_note": "Draft HE localization pending native pass. TerminalOS expansion remains a Unity placement task, not this source pass."
+          "title": "Draft HE localization pending native pass. Terminal Slot Chain",
+          "scanner": "Draft HE localization pending native pass. Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
+          "terminal": "Draft HE localization pending native pass. Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
+          "audio": "Draft HE localization pending native pass. A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
+          "in_game_wiki": "Draft HE localization pending native pass. Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
+          "external_site": "Draft HE localization pending native pass. Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
+          "field_note": "Draft HE localization pending native pass. Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Terminal Slot Proof Card",
-          "scanner": "Draft PT localization pending native pass. Terminal proof: limited slots, packet hash, operator surface, no live markdown.",
-          "terminal": "Draft PT localization pending native pass. TERMINAL PROOF: terminal entries consume baked packet hashes and string-pool rows; runtime must not parse markdown or JSON.",
-          "audio": "Draft PT localization pending native pass. A terminal slot is not a filing cabinet.",
-          "in_game_wiki": "Draft PT localization pending native pass. Terminal Slot Proof Card constrains terminal text to authored slots and baked strings.",
-          "external_site": "Draft PT localization pending native pass. HECTON-8 terminals should feel like damaged instruments, not pages of floating lore.",
-          "field_note": "Draft PT localization pending native pass. TerminalOS expansion remains a Unity placement task, not this source pass."
+          "title": "Draft PT localization pending native pass. Terminal Slot Chain",
+          "scanner": "Draft PT localization pending native pass. Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
+          "terminal": "Draft PT localization pending native pass. Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
+          "audio": "Draft PT localization pending native pass. A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
+          "in_game_wiki": "Draft PT localization pending native pass. Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
+          "external_site": "Draft PT localization pending native pass. Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
+          "field_note": "Draft PT localization pending native pass. Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Terminal Slot Proof Card",
-          "scanner": "Draft NL localization pending native pass. Terminal proof: limited slots, packet hash, operator surface, no live markdown.",
-          "terminal": "Draft NL localization pending native pass. TERMINAL PROOF: terminal entries consume baked packet hashes and string-pool rows; runtime must not parse markdown or JSON.",
-          "audio": "Draft NL localization pending native pass. A terminal slot is not a filing cabinet.",
-          "in_game_wiki": "Draft NL localization pending native pass. Terminal Slot Proof Card constrains terminal text to authored slots and baked strings.",
-          "external_site": "Draft NL localization pending native pass. HECTON-8 terminals should feel like damaged instruments, not pages of floating lore.",
-          "field_note": "Draft NL localization pending native pass. TerminalOS expansion remains a Unity placement task, not this source pass."
+          "title": "Draft NL localization pending native pass. Terminal Slot Chain",
+          "scanner": "Draft NL localization pending native pass. Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
+          "terminal": "Draft NL localization pending native pass. Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
+          "audio": "Draft NL localization pending native pass. A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
+          "in_game_wiki": "Draft NL localization pending native pass. Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
+          "external_site": "Draft NL localization pending native pass. Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
+          "field_note": "Draft NL localization pending native pass. Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
         }
       }
     },
@@ -492,139 +492,139 @@
       },
       "localized": {
         "en_US": {
-          "title": "Dossier Ending Record Proof Card",
-          "scanner": "Dossier proof: ending family, receiver, evidence state, route warning, unresolved cost.",
-          "terminal": "DOSSIER PROOF: ending records must show payload route, receiver authority, evidence state, material result and unresolved cost.",
-          "audio": "The dossier remembers the trade.",
-          "in_game_wiki": "Dossier Ending Record Proof Card defines what persists between runs as knowledge, not equipment power.",
-          "external_site": "A HECTON-8 ending is an entry in a ledger. It should show what the player sold, saved, exposed or left sealed.",
-          "field_note": "Use for ending record UI implementation and save-profile knowledge flags."
+          "title": "Dossier Ending Record",
+          "scanner": "Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
+          "terminal": "The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
+          "audio": "Knowledge survives the route. Equipment does not.",
+          "in_game_wiki": "Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
+          "external_site": "The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
+          "field_note": "Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
         },
         "ru_RU": {
-          "title": "Proof card ending record dossier",
-          "scanner": "Dossier proof: ending family, receiver, evidence state, route warning, unresolved cost.",
-          "terminal": "DOSSIER PROOF: ending records show payload route, receiver authority, evidence state, material result and unresolved cost.",
-          "audio": "Dossier помнит сделку.",
-          "in_game_wiki": "Dossier proof card задает, что persists as knowledge, not equipment power.",
-          "external_site": "Концовка HECTON-8 - запись в ledger: что продано, спасено, раскрыто или оставлено sealed.",
-          "field_note": "Для ending record UI and save-profile knowledge flags."
+          "title": "Draft RU localization pending native pass. Dossier Ending Record",
+          "scanner": "Draft RU localization pending native pass. Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
+          "terminal": "Draft RU localization pending native pass. The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
+          "audio": "Draft RU localization pending native pass. Knowledge survives the route. Equipment does not.",
+          "in_game_wiki": "Draft RU localization pending native pass. Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
+          "external_site": "Draft RU localization pending native pass. The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
+          "field_note": "Draft RU localization pending native pass. Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
         },
         "ja_JP": {
-          "title": "Draft JA localization pending native pass. Dossier Ending Record Proof Card",
-          "scanner": "Draft JA localization pending native pass. Dossier proof: ending family, receiver, evidence state, route warning, unresolved cost.",
-          "terminal": "Draft JA localization pending native pass. DOSSIER PROOF: ending records must show payload route, receiver authority, evidence state, material result and unresolved cost.",
-          "audio": "Draft JA localization pending native pass. The dossier remembers the trade.",
-          "in_game_wiki": "Draft JA localization pending native pass. Dossier Ending Record Proof Card defines what persists between runs as knowledge, not equipment power.",
-          "external_site": "Draft JA localization pending native pass. A HECTON-8 ending is an entry in a ledger. It should show what the player sold, saved, exposed or left sealed.",
-          "field_note": "Draft JA localization pending native pass. Use for ending record UI implementation and save-profile knowledge flags."
+          "title": "Draft JA localization pending native pass. Dossier Ending Record",
+          "scanner": "Draft JA localization pending native pass. Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
+          "terminal": "Draft JA localization pending native pass. The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
+          "audio": "Draft JA localization pending native pass. Knowledge survives the route. Equipment does not.",
+          "in_game_wiki": "Draft JA localization pending native pass. Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
+          "external_site": "Draft JA localization pending native pass. The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
+          "field_note": "Draft JA localization pending native pass. Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
         },
         "zh_CN": {
-          "title": "Draft ZH localization pending native pass. Dossier Ending Record Proof Card",
-          "scanner": "Draft ZH localization pending native pass. Dossier proof: ending family, receiver, evidence state, route warning, unresolved cost.",
-          "terminal": "Draft ZH localization pending native pass. DOSSIER PROOF: ending records must show payload route, receiver authority, evidence state, material result and unresolved cost.",
-          "audio": "Draft ZH localization pending native pass. The dossier remembers the trade.",
-          "in_game_wiki": "Draft ZH localization pending native pass. Dossier Ending Record Proof Card defines what persists between runs as knowledge, not equipment power.",
-          "external_site": "Draft ZH localization pending native pass. A HECTON-8 ending is an entry in a ledger. It should show what the player sold, saved, exposed or left sealed.",
-          "field_note": "Draft ZH localization pending native pass. Use for ending record UI implementation and save-profile knowledge flags."
+          "title": "Draft ZH localization pending native pass. Dossier Ending Record",
+          "scanner": "Draft ZH localization pending native pass. Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
+          "terminal": "Draft ZH localization pending native pass. The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
+          "audio": "Draft ZH localization pending native pass. Knowledge survives the route. Equipment does not.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
+          "external_site": "Draft ZH localization pending native pass. The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
+          "field_note": "Draft ZH localization pending native pass. Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Dossier Ending Record Proof Card",
-          "scanner": "Draft FR localization pending native pass. Dossier proof: ending family, receiver, evidence state, route warning, unresolved cost.",
-          "terminal": "Draft FR localization pending native pass. DOSSIER PROOF: ending records must show payload route, receiver authority, evidence state, material result and unresolved cost.",
-          "audio": "Draft FR localization pending native pass. The dossier remembers the trade.",
-          "in_game_wiki": "Draft FR localization pending native pass. Dossier Ending Record Proof Card defines what persists between runs as knowledge, not equipment power.",
-          "external_site": "Draft FR localization pending native pass. A HECTON-8 ending is an entry in a ledger. It should show what the player sold, saved, exposed or left sealed.",
-          "field_note": "Draft FR localization pending native pass. Use for ending record UI implementation and save-profile knowledge flags."
+          "title": "Draft FR localization pending native pass. Dossier Ending Record",
+          "scanner": "Draft FR localization pending native pass. Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
+          "terminal": "Draft FR localization pending native pass. The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
+          "audio": "Draft FR localization pending native pass. Knowledge survives the route. Equipment does not.",
+          "in_game_wiki": "Draft FR localization pending native pass. Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
+          "external_site": "Draft FR localization pending native pass. The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
+          "field_note": "Draft FR localization pending native pass. Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Dossier Ending Record Proof Card",
-          "scanner": "Draft ES localization pending native pass. Dossier proof: ending family, receiver, evidence state, route warning, unresolved cost.",
-          "terminal": "Draft ES localization pending native pass. DOSSIER PROOF: ending records must show payload route, receiver authority, evidence state, material result and unresolved cost.",
-          "audio": "Draft ES localization pending native pass. The dossier remembers the trade.",
-          "in_game_wiki": "Draft ES localization pending native pass. Dossier Ending Record Proof Card defines what persists between runs as knowledge, not equipment power.",
-          "external_site": "Draft ES localization pending native pass. A HECTON-8 ending is an entry in a ledger. It should show what the player sold, saved, exposed or left sealed.",
-          "field_note": "Draft ES localization pending native pass. Use for ending record UI implementation and save-profile knowledge flags."
+          "title": "Draft ES localization pending native pass. Dossier Ending Record",
+          "scanner": "Draft ES localization pending native pass. Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
+          "terminal": "Draft ES localization pending native pass. The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
+          "audio": "Draft ES localization pending native pass. Knowledge survives the route. Equipment does not.",
+          "in_game_wiki": "Draft ES localization pending native pass. Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
+          "external_site": "Draft ES localization pending native pass. The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
+          "field_note": "Draft ES localization pending native pass. Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Dossier Ending Record Proof Card",
-          "scanner": "Draft DE localization pending native pass. Dossier proof: ending family, receiver, evidence state, route warning, unresolved cost.",
-          "terminal": "Draft DE localization pending native pass. DOSSIER PROOF: ending records must show payload route, receiver authority, evidence state, material result and unresolved cost.",
-          "audio": "Draft DE localization pending native pass. The dossier remembers the trade.",
-          "in_game_wiki": "Draft DE localization pending native pass. Dossier Ending Record Proof Card defines what persists between runs as knowledge, not equipment power.",
-          "external_site": "Draft DE localization pending native pass. A HECTON-8 ending is an entry in a ledger. It should show what the player sold, saved, exposed or left sealed.",
-          "field_note": "Draft DE localization pending native pass. Use for ending record UI implementation and save-profile knowledge flags."
+          "title": "Draft DE localization pending native pass. Dossier Ending Record",
+          "scanner": "Draft DE localization pending native pass. Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
+          "terminal": "Draft DE localization pending native pass. The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
+          "audio": "Draft DE localization pending native pass. Knowledge survives the route. Equipment does not.",
+          "in_game_wiki": "Draft DE localization pending native pass. Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
+          "external_site": "Draft DE localization pending native pass. The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
+          "field_note": "Draft DE localization pending native pass. Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Dossier Ending Record Proof Card",
-          "scanner": "Draft PL localization pending native pass. Dossier proof: ending family, receiver, evidence state, route warning, unresolved cost.",
-          "terminal": "Draft PL localization pending native pass. DOSSIER PROOF: ending records must show payload route, receiver authority, evidence state, material result and unresolved cost.",
-          "audio": "Draft PL localization pending native pass. The dossier remembers the trade.",
-          "in_game_wiki": "Draft PL localization pending native pass. Dossier Ending Record Proof Card defines what persists between runs as knowledge, not equipment power.",
-          "external_site": "Draft PL localization pending native pass. A HECTON-8 ending is an entry in a ledger. It should show what the player sold, saved, exposed or left sealed.",
-          "field_note": "Draft PL localization pending native pass. Use for ending record UI implementation and save-profile knowledge flags."
+          "title": "Draft PL localization pending native pass. Dossier Ending Record",
+          "scanner": "Draft PL localization pending native pass. Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
+          "terminal": "Draft PL localization pending native pass. The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
+          "audio": "Draft PL localization pending native pass. Knowledge survives the route. Equipment does not.",
+          "in_game_wiki": "Draft PL localization pending native pass. Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
+          "external_site": "Draft PL localization pending native pass. The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
+          "field_note": "Draft PL localization pending native pass. Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
         },
         "uk_UA": {
-          "title": "Draft UK localization pending native pass. Dossier Ending Record Proof Card",
-          "scanner": "Draft UK localization pending native pass. Dossier proof: ending family, receiver, evidence state, route warning, unresolved cost.",
-          "terminal": "Draft UK localization pending native pass. DOSSIER PROOF: ending records must show payload route, receiver authority, evidence state, material result and unresolved cost.",
-          "audio": "Draft UK localization pending native pass. The dossier remembers the trade.",
-          "in_game_wiki": "Draft UK localization pending native pass. Dossier Ending Record Proof Card defines what persists between runs as knowledge, not equipment power.",
-          "external_site": "Draft UK localization pending native pass. A HECTON-8 ending is an entry in a ledger. It should show what the player sold, saved, exposed or left sealed.",
-          "field_note": "Draft UK localization pending native pass. Use for ending record UI implementation and save-profile knowledge flags."
+          "title": "Draft UK localization pending native pass. Dossier Ending Record",
+          "scanner": "Draft UK localization pending native pass. Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
+          "terminal": "Draft UK localization pending native pass. The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
+          "audio": "Draft UK localization pending native pass. Knowledge survives the route. Equipment does not.",
+          "in_game_wiki": "Draft UK localization pending native pass. Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
+          "external_site": "Draft UK localization pending native pass. The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
+          "field_note": "Draft UK localization pending native pass. Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Dossier Ending Record Proof Card",
-          "scanner": "Draft AR localization pending native pass. Dossier proof: ending family, receiver, evidence state, route warning, unresolved cost.",
-          "terminal": "Draft AR localization pending native pass. DOSSIER PROOF: ending records must show payload route, receiver authority, evidence state, material result and unresolved cost.",
-          "audio": "Draft AR localization pending native pass. The dossier remembers the trade.",
-          "in_game_wiki": "Draft AR localization pending native pass. Dossier Ending Record Proof Card defines what persists between runs as knowledge, not equipment power.",
-          "external_site": "Draft AR localization pending native pass. A HECTON-8 ending is an entry in a ledger. It should show what the player sold, saved, exposed or left sealed.",
-          "field_note": "Draft AR localization pending native pass. Use for ending record UI implementation and save-profile knowledge flags."
+          "title": "Draft AR localization pending native pass. Dossier Ending Record",
+          "scanner": "Draft AR localization pending native pass. Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
+          "terminal": "Draft AR localization pending native pass. The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
+          "audio": "Draft AR localization pending native pass. Knowledge survives the route. Equipment does not.",
+          "in_game_wiki": "Draft AR localization pending native pass. Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
+          "external_site": "Draft AR localization pending native pass. The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
+          "field_note": "Draft AR localization pending native pass. Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Dossier Ending Record Proof Card",
-          "scanner": "Draft ID localization pending native pass. Dossier proof: ending family, receiver, evidence state, route warning, unresolved cost.",
-          "terminal": "Draft ID localization pending native pass. DOSSIER PROOF: ending records must show payload route, receiver authority, evidence state, material result and unresolved cost.",
-          "audio": "Draft ID localization pending native pass. The dossier remembers the trade.",
-          "in_game_wiki": "Draft ID localization pending native pass. Dossier Ending Record Proof Card defines what persists between runs as knowledge, not equipment power.",
-          "external_site": "Draft ID localization pending native pass. A HECTON-8 ending is an entry in a ledger. It should show what the player sold, saved, exposed or left sealed.",
-          "field_note": "Draft ID localization pending native pass. Use for ending record UI implementation and save-profile knowledge flags."
+          "title": "Draft ID localization pending native pass. Dossier Ending Record",
+          "scanner": "Draft ID localization pending native pass. Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
+          "terminal": "Draft ID localization pending native pass. The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
+          "audio": "Draft ID localization pending native pass. Knowledge survives the route. Equipment does not.",
+          "in_game_wiki": "Draft ID localization pending native pass. Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
+          "external_site": "Draft ID localization pending native pass. The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
+          "field_note": "Draft ID localization pending native pass. Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Dossier Ending Record Proof Card",
-          "scanner": "Draft KO localization pending native pass. Dossier proof: ending family, receiver, evidence state, route warning, unresolved cost.",
-          "terminal": "Draft KO localization pending native pass. DOSSIER PROOF: ending records must show payload route, receiver authority, evidence state, material result and unresolved cost.",
-          "audio": "Draft KO localization pending native pass. The dossier remembers the trade.",
-          "in_game_wiki": "Draft KO localization pending native pass. Dossier Ending Record Proof Card defines what persists between runs as knowledge, not equipment power.",
-          "external_site": "Draft KO localization pending native pass. A HECTON-8 ending is an entry in a ledger. It should show what the player sold, saved, exposed or left sealed.",
-          "field_note": "Draft KO localization pending native pass. Use for ending record UI implementation and save-profile knowledge flags."
+          "title": "Draft KO localization pending native pass. Dossier Ending Record",
+          "scanner": "Draft KO localization pending native pass. Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
+          "terminal": "Draft KO localization pending native pass. The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
+          "audio": "Draft KO localization pending native pass. Knowledge survives the route. Equipment does not.",
+          "in_game_wiki": "Draft KO localization pending native pass. Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
+          "external_site": "Draft KO localization pending native pass. The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
+          "field_note": "Draft KO localization pending native pass. Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Dossier Ending Record Proof Card",
-          "scanner": "Draft HE localization pending native pass. Dossier proof: ending family, receiver, evidence state, route warning, unresolved cost.",
-          "terminal": "Draft HE localization pending native pass. DOSSIER PROOF: ending records must show payload route, receiver authority, evidence state, material result and unresolved cost.",
-          "audio": "Draft HE localization pending native pass. The dossier remembers the trade.",
-          "in_game_wiki": "Draft HE localization pending native pass. Dossier Ending Record Proof Card defines what persists between runs as knowledge, not equipment power.",
-          "external_site": "Draft HE localization pending native pass. A HECTON-8 ending is an entry in a ledger. It should show what the player sold, saved, exposed or left sealed.",
-          "field_note": "Draft HE localization pending native pass. Use for ending record UI implementation and save-profile knowledge flags."
+          "title": "Draft HE localization pending native pass. Dossier Ending Record",
+          "scanner": "Draft HE localization pending native pass. Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
+          "terminal": "Draft HE localization pending native pass. The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
+          "audio": "Draft HE localization pending native pass. Knowledge survives the route. Equipment does not.",
+          "in_game_wiki": "Draft HE localization pending native pass. Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
+          "external_site": "Draft HE localization pending native pass. The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
+          "field_note": "Draft HE localization pending native pass. Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Dossier Ending Record Proof Card",
-          "scanner": "Draft PT localization pending native pass. Dossier proof: ending family, receiver, evidence state, route warning, unresolved cost.",
-          "terminal": "Draft PT localization pending native pass. DOSSIER PROOF: ending records must show payload route, receiver authority, evidence state, material result and unresolved cost.",
-          "audio": "Draft PT localization pending native pass. The dossier remembers the trade.",
-          "in_game_wiki": "Draft PT localization pending native pass. Dossier Ending Record Proof Card defines what persists between runs as knowledge, not equipment power.",
-          "external_site": "Draft PT localization pending native pass. A HECTON-8 ending is an entry in a ledger. It should show what the player sold, saved, exposed or left sealed.",
-          "field_note": "Draft PT localization pending native pass. Use for ending record UI implementation and save-profile knowledge flags."
+          "title": "Draft PT localization pending native pass. Dossier Ending Record",
+          "scanner": "Draft PT localization pending native pass. Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
+          "terminal": "Draft PT localization pending native pass. The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
+          "audio": "Draft PT localization pending native pass. Knowledge survives the route. Equipment does not.",
+          "in_game_wiki": "Draft PT localization pending native pass. Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
+          "external_site": "Draft PT localization pending native pass. The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
+          "field_note": "Draft PT localization pending native pass. Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Dossier Ending Record Proof Card",
-          "scanner": "Draft NL localization pending native pass. Dossier proof: ending family, receiver, evidence state, route warning, unresolved cost.",
-          "terminal": "Draft NL localization pending native pass. DOSSIER PROOF: ending records must show payload route, receiver authority, evidence state, material result and unresolved cost.",
-          "audio": "Draft NL localization pending native pass. The dossier remembers the trade.",
-          "in_game_wiki": "Draft NL localization pending native pass. Dossier Ending Record Proof Card defines what persists between runs as knowledge, not equipment power.",
-          "external_site": "Draft NL localization pending native pass. A HECTON-8 ending is an entry in a ledger. It should show what the player sold, saved, exposed or left sealed.",
-          "field_note": "Draft NL localization pending native pass. Use for ending record UI implementation and save-profile knowledge flags."
+          "title": "Draft NL localization pending native pass. Dossier Ending Record",
+          "scanner": "Draft NL localization pending native pass. Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
+          "terminal": "Draft NL localization pending native pass. The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
+          "audio": "Draft NL localization pending native pass. Knowledge survives the route. Equipment does not.",
+          "in_game_wiki": "Draft NL localization pending native pass. Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
+          "external_site": "Draft NL localization pending native pass. The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
+          "field_note": "Draft NL localization pending native pass. Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
         }
       }
     },
@@ -647,139 +647,139 @@
       },
       "localized": {
         "en_US": {
-          "title": "Localized Overflow Proof Card",
-          "scanner": "Localization proof: long labels, CJK, RTL and subtitle timing need layout evidence.",
-          "terminal": "LOC PROOF: every final UI surface needs string-pool key, font set, overflow policy, RTL/CJK check and subtitle/audio timing proof.",
-          "audio": "If it does not fit, it is not localized yet.",
-          "in_game_wiki": "Localized Overflow Proof Card separates draft multilingual coverage from release localization.",
-          "external_site": "Localized HECTON-8 text must fit the instrument. Translation quality is not enough if the panel breaks.",
-          "field_note": "This is a proof gate, not a claim that native localization is complete."
+          "title": "Localization Fit Record",
+          "scanner": "Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
+          "terminal": "A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
+          "audio": "A line is not localized because it exists in a table. It is localized when it can be read in motion.",
+          "in_game_wiki": "Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
+          "external_site": "HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
+          "field_note": "Track locale status separately from packet identity; language review must not alter saves or route authority."
         },
         "ru_RU": {
-          "title": "Proof card локализованного overflow",
-          "scanner": "Localization proof: long labels, CJK, RTL and subtitle timing need layout evidence.",
-          "terminal": "LOC PROOF: every final UI surface needs string-pool key, font set, overflow policy, RTL/CJK check and subtitle/audio timing proof.",
-          "audio": "Если не помещается, это еще не локализовано.",
-          "in_game_wiki": "Localized overflow proof отделяет draft multilingual coverage from release localization.",
-          "external_site": "Локализованный текст HECTON-8 должен помещаться в instrument.",
-          "field_note": "Proof gate, not a claim native localization is complete."
+          "title": "Draft RU localization pending native pass. Localization Fit Record",
+          "scanner": "Draft RU localization pending native pass. Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
+          "terminal": "Draft RU localization pending native pass. A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
+          "audio": "Draft RU localization pending native pass. A line is not localized because it exists in a table. It is localized when it can be read in motion.",
+          "in_game_wiki": "Draft RU localization pending native pass. Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
+          "external_site": "Draft RU localization pending native pass. HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
+          "field_note": "Draft RU localization pending native pass. Track locale status separately from packet identity; language review must not alter saves or route authority."
         },
         "ja_JP": {
-          "title": "Draft JA localization pending native pass. Localized Overflow Proof Card",
-          "scanner": "Draft JA localization pending native pass. Localization proof: long labels, CJK, RTL and subtitle timing need layout evidence.",
-          "terminal": "Draft JA localization pending native pass. LOC PROOF: every final UI surface needs string-pool key, font set, overflow policy, RTL/CJK check and subtitle/audio timing proof.",
-          "audio": "Draft JA localization pending native pass. If it does not fit, it is not localized yet.",
-          "in_game_wiki": "Draft JA localization pending native pass. Localized Overflow Proof Card separates draft multilingual coverage from release localization.",
-          "external_site": "Draft JA localization pending native pass. Localized HECTON-8 text must fit the instrument. Translation quality is not enough if the panel breaks.",
-          "field_note": "Draft JA localization pending native pass. This is a proof gate, not a claim that native localization is complete."
+          "title": "Draft JA localization pending native pass. Localization Fit Record",
+          "scanner": "Draft JA localization pending native pass. Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
+          "terminal": "Draft JA localization pending native pass. A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
+          "audio": "Draft JA localization pending native pass. A line is not localized because it exists in a table. It is localized when it can be read in motion.",
+          "in_game_wiki": "Draft JA localization pending native pass. Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
+          "external_site": "Draft JA localization pending native pass. HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
+          "field_note": "Draft JA localization pending native pass. Track locale status separately from packet identity; language review must not alter saves or route authority."
         },
         "zh_CN": {
-          "title": "Draft ZH localization pending native pass. Localized Overflow Proof Card",
-          "scanner": "Draft ZH localization pending native pass. Localization proof: long labels, CJK, RTL and subtitle timing need layout evidence.",
-          "terminal": "Draft ZH localization pending native pass. LOC PROOF: every final UI surface needs string-pool key, font set, overflow policy, RTL/CJK check and subtitle/audio timing proof.",
-          "audio": "Draft ZH localization pending native pass. If it does not fit, it is not localized yet.",
-          "in_game_wiki": "Draft ZH localization pending native pass. Localized Overflow Proof Card separates draft multilingual coverage from release localization.",
-          "external_site": "Draft ZH localization pending native pass. Localized HECTON-8 text must fit the instrument. Translation quality is not enough if the panel breaks.",
-          "field_note": "Draft ZH localization pending native pass. This is a proof gate, not a claim that native localization is complete."
+          "title": "Draft ZH localization pending native pass. Localization Fit Record",
+          "scanner": "Draft ZH localization pending native pass. Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
+          "terminal": "Draft ZH localization pending native pass. A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
+          "audio": "Draft ZH localization pending native pass. A line is not localized because it exists in a table. It is localized when it can be read in motion.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
+          "external_site": "Draft ZH localization pending native pass. HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
+          "field_note": "Draft ZH localization pending native pass. Track locale status separately from packet identity; language review must not alter saves or route authority."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Localized Overflow Proof Card",
-          "scanner": "Draft FR localization pending native pass. Localization proof: long labels, CJK, RTL and subtitle timing need layout evidence.",
-          "terminal": "Draft FR localization pending native pass. LOC PROOF: every final UI surface needs string-pool key, font set, overflow policy, RTL/CJK check and subtitle/audio timing proof.",
-          "audio": "Draft FR localization pending native pass. If it does not fit, it is not localized yet.",
-          "in_game_wiki": "Draft FR localization pending native pass. Localized Overflow Proof Card separates draft multilingual coverage from release localization.",
-          "external_site": "Draft FR localization pending native pass. Localized HECTON-8 text must fit the instrument. Translation quality is not enough if the panel breaks.",
-          "field_note": "Draft FR localization pending native pass. This is a proof gate, not a claim that native localization is complete."
+          "title": "Draft FR localization pending native pass. Localization Fit Record",
+          "scanner": "Draft FR localization pending native pass. Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
+          "terminal": "Draft FR localization pending native pass. A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
+          "audio": "Draft FR localization pending native pass. A line is not localized because it exists in a table. It is localized when it can be read in motion.",
+          "in_game_wiki": "Draft FR localization pending native pass. Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
+          "external_site": "Draft FR localization pending native pass. HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
+          "field_note": "Draft FR localization pending native pass. Track locale status separately from packet identity; language review must not alter saves or route authority."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Localized Overflow Proof Card",
-          "scanner": "Draft ES localization pending native pass. Localization proof: long labels, CJK, RTL and subtitle timing need layout evidence.",
-          "terminal": "Draft ES localization pending native pass. LOC PROOF: every final UI surface needs string-pool key, font set, overflow policy, RTL/CJK check and subtitle/audio timing proof.",
-          "audio": "Draft ES localization pending native pass. If it does not fit, it is not localized yet.",
-          "in_game_wiki": "Draft ES localization pending native pass. Localized Overflow Proof Card separates draft multilingual coverage from release localization.",
-          "external_site": "Draft ES localization pending native pass. Localized HECTON-8 text must fit the instrument. Translation quality is not enough if the panel breaks.",
-          "field_note": "Draft ES localization pending native pass. This is a proof gate, not a claim that native localization is complete."
+          "title": "Draft ES localization pending native pass. Localization Fit Record",
+          "scanner": "Draft ES localization pending native pass. Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
+          "terminal": "Draft ES localization pending native pass. A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
+          "audio": "Draft ES localization pending native pass. A line is not localized because it exists in a table. It is localized when it can be read in motion.",
+          "in_game_wiki": "Draft ES localization pending native pass. Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
+          "external_site": "Draft ES localization pending native pass. HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
+          "field_note": "Draft ES localization pending native pass. Track locale status separately from packet identity; language review must not alter saves or route authority."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Localized Overflow Proof Card",
-          "scanner": "Draft DE localization pending native pass. Localization proof: long labels, CJK, RTL and subtitle timing need layout evidence.",
-          "terminal": "Draft DE localization pending native pass. LOC PROOF: every final UI surface needs string-pool key, font set, overflow policy, RTL/CJK check and subtitle/audio timing proof.",
-          "audio": "Draft DE localization pending native pass. If it does not fit, it is not localized yet.",
-          "in_game_wiki": "Draft DE localization pending native pass. Localized Overflow Proof Card separates draft multilingual coverage from release localization.",
-          "external_site": "Draft DE localization pending native pass. Localized HECTON-8 text must fit the instrument. Translation quality is not enough if the panel breaks.",
-          "field_note": "Draft DE localization pending native pass. This is a proof gate, not a claim that native localization is complete."
+          "title": "Draft DE localization pending native pass. Localization Fit Record",
+          "scanner": "Draft DE localization pending native pass. Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
+          "terminal": "Draft DE localization pending native pass. A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
+          "audio": "Draft DE localization pending native pass. A line is not localized because it exists in a table. It is localized when it can be read in motion.",
+          "in_game_wiki": "Draft DE localization pending native pass. Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
+          "external_site": "Draft DE localization pending native pass. HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
+          "field_note": "Draft DE localization pending native pass. Track locale status separately from packet identity; language review must not alter saves or route authority."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Localized Overflow Proof Card",
-          "scanner": "Draft PL localization pending native pass. Localization proof: long labels, CJK, RTL and subtitle timing need layout evidence.",
-          "terminal": "Draft PL localization pending native pass. LOC PROOF: every final UI surface needs string-pool key, font set, overflow policy, RTL/CJK check and subtitle/audio timing proof.",
-          "audio": "Draft PL localization pending native pass. If it does not fit, it is not localized yet.",
-          "in_game_wiki": "Draft PL localization pending native pass. Localized Overflow Proof Card separates draft multilingual coverage from release localization.",
-          "external_site": "Draft PL localization pending native pass. Localized HECTON-8 text must fit the instrument. Translation quality is not enough if the panel breaks.",
-          "field_note": "Draft PL localization pending native pass. This is a proof gate, not a claim that native localization is complete."
+          "title": "Draft PL localization pending native pass. Localization Fit Record",
+          "scanner": "Draft PL localization pending native pass. Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
+          "terminal": "Draft PL localization pending native pass. A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
+          "audio": "Draft PL localization pending native pass. A line is not localized because it exists in a table. It is localized when it can be read in motion.",
+          "in_game_wiki": "Draft PL localization pending native pass. Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
+          "external_site": "Draft PL localization pending native pass. HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
+          "field_note": "Draft PL localization pending native pass. Track locale status separately from packet identity; language review must not alter saves or route authority."
         },
         "uk_UA": {
-          "title": "Draft UK localization pending native pass. Localized Overflow Proof Card",
-          "scanner": "Draft UK localization pending native pass. Localization proof: long labels, CJK, RTL and subtitle timing need layout evidence.",
-          "terminal": "Draft UK localization pending native pass. LOC PROOF: every final UI surface needs string-pool key, font set, overflow policy, RTL/CJK check and subtitle/audio timing proof.",
-          "audio": "Draft UK localization pending native pass. If it does not fit, it is not localized yet.",
-          "in_game_wiki": "Draft UK localization pending native pass. Localized Overflow Proof Card separates draft multilingual coverage from release localization.",
-          "external_site": "Draft UK localization pending native pass. Localized HECTON-8 text must fit the instrument. Translation quality is not enough if the panel breaks.",
-          "field_note": "Draft UK localization pending native pass. This is a proof gate, not a claim that native localization is complete."
+          "title": "Draft UK localization pending native pass. Localization Fit Record",
+          "scanner": "Draft UK localization pending native pass. Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
+          "terminal": "Draft UK localization pending native pass. A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
+          "audio": "Draft UK localization pending native pass. A line is not localized because it exists in a table. It is localized when it can be read in motion.",
+          "in_game_wiki": "Draft UK localization pending native pass. Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
+          "external_site": "Draft UK localization pending native pass. HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
+          "field_note": "Draft UK localization pending native pass. Track locale status separately from packet identity; language review must not alter saves or route authority."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Localized Overflow Proof Card",
-          "scanner": "Draft AR localization pending native pass. Localization proof: long labels, CJK, RTL and subtitle timing need layout evidence.",
-          "terminal": "Draft AR localization pending native pass. LOC PROOF: every final UI surface needs string-pool key, font set, overflow policy, RTL/CJK check and subtitle/audio timing proof.",
-          "audio": "Draft AR localization pending native pass. If it does not fit, it is not localized yet.",
-          "in_game_wiki": "Draft AR localization pending native pass. Localized Overflow Proof Card separates draft multilingual coverage from release localization.",
-          "external_site": "Draft AR localization pending native pass. Localized HECTON-8 text must fit the instrument. Translation quality is not enough if the panel breaks.",
-          "field_note": "Draft AR localization pending native pass. This is a proof gate, not a claim that native localization is complete."
+          "title": "Draft AR localization pending native pass. Localization Fit Record",
+          "scanner": "Draft AR localization pending native pass. Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
+          "terminal": "Draft AR localization pending native pass. A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
+          "audio": "Draft AR localization pending native pass. A line is not localized because it exists in a table. It is localized when it can be read in motion.",
+          "in_game_wiki": "Draft AR localization pending native pass. Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
+          "external_site": "Draft AR localization pending native pass. HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
+          "field_note": "Draft AR localization pending native pass. Track locale status separately from packet identity; language review must not alter saves or route authority."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Localized Overflow Proof Card",
-          "scanner": "Draft ID localization pending native pass. Localization proof: long labels, CJK, RTL and subtitle timing need layout evidence.",
-          "terminal": "Draft ID localization pending native pass. LOC PROOF: every final UI surface needs string-pool key, font set, overflow policy, RTL/CJK check and subtitle/audio timing proof.",
-          "audio": "Draft ID localization pending native pass. If it does not fit, it is not localized yet.",
-          "in_game_wiki": "Draft ID localization pending native pass. Localized Overflow Proof Card separates draft multilingual coverage from release localization.",
-          "external_site": "Draft ID localization pending native pass. Localized HECTON-8 text must fit the instrument. Translation quality is not enough if the panel breaks.",
-          "field_note": "Draft ID localization pending native pass. This is a proof gate, not a claim that native localization is complete."
+          "title": "Draft ID localization pending native pass. Localization Fit Record",
+          "scanner": "Draft ID localization pending native pass. Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
+          "terminal": "Draft ID localization pending native pass. A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
+          "audio": "Draft ID localization pending native pass. A line is not localized because it exists in a table. It is localized when it can be read in motion.",
+          "in_game_wiki": "Draft ID localization pending native pass. Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
+          "external_site": "Draft ID localization pending native pass. HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
+          "field_note": "Draft ID localization pending native pass. Track locale status separately from packet identity; language review must not alter saves or route authority."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Localized Overflow Proof Card",
-          "scanner": "Draft KO localization pending native pass. Localization proof: long labels, CJK, RTL and subtitle timing need layout evidence.",
-          "terminal": "Draft KO localization pending native pass. LOC PROOF: every final UI surface needs string-pool key, font set, overflow policy, RTL/CJK check and subtitle/audio timing proof.",
-          "audio": "Draft KO localization pending native pass. If it does not fit, it is not localized yet.",
-          "in_game_wiki": "Draft KO localization pending native pass. Localized Overflow Proof Card separates draft multilingual coverage from release localization.",
-          "external_site": "Draft KO localization pending native pass. Localized HECTON-8 text must fit the instrument. Translation quality is not enough if the panel breaks.",
-          "field_note": "Draft KO localization pending native pass. This is a proof gate, not a claim that native localization is complete."
+          "title": "Draft KO localization pending native pass. Localization Fit Record",
+          "scanner": "Draft KO localization pending native pass. Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
+          "terminal": "Draft KO localization pending native pass. A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
+          "audio": "Draft KO localization pending native pass. A line is not localized because it exists in a table. It is localized when it can be read in motion.",
+          "in_game_wiki": "Draft KO localization pending native pass. Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
+          "external_site": "Draft KO localization pending native pass. HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
+          "field_note": "Draft KO localization pending native pass. Track locale status separately from packet identity; language review must not alter saves or route authority."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Localized Overflow Proof Card",
-          "scanner": "Draft HE localization pending native pass. Localization proof: long labels, CJK, RTL and subtitle timing need layout evidence.",
-          "terminal": "Draft HE localization pending native pass. LOC PROOF: every final UI surface needs string-pool key, font set, overflow policy, RTL/CJK check and subtitle/audio timing proof.",
-          "audio": "Draft HE localization pending native pass. If it does not fit, it is not localized yet.",
-          "in_game_wiki": "Draft HE localization pending native pass. Localized Overflow Proof Card separates draft multilingual coverage from release localization.",
-          "external_site": "Draft HE localization pending native pass. Localized HECTON-8 text must fit the instrument. Translation quality is not enough if the panel breaks.",
-          "field_note": "Draft HE localization pending native pass. This is a proof gate, not a claim that native localization is complete."
+          "title": "Draft HE localization pending native pass. Localization Fit Record",
+          "scanner": "Draft HE localization pending native pass. Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
+          "terminal": "Draft HE localization pending native pass. A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
+          "audio": "Draft HE localization pending native pass. A line is not localized because it exists in a table. It is localized when it can be read in motion.",
+          "in_game_wiki": "Draft HE localization pending native pass. Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
+          "external_site": "Draft HE localization pending native pass. HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
+          "field_note": "Draft HE localization pending native pass. Track locale status separately from packet identity; language review must not alter saves or route authority."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Localized Overflow Proof Card",
-          "scanner": "Draft PT localization pending native pass. Localization proof: long labels, CJK, RTL and subtitle timing need layout evidence.",
-          "terminal": "Draft PT localization pending native pass. LOC PROOF: every final UI surface needs string-pool key, font set, overflow policy, RTL/CJK check and subtitle/audio timing proof.",
-          "audio": "Draft PT localization pending native pass. If it does not fit, it is not localized yet.",
-          "in_game_wiki": "Draft PT localization pending native pass. Localized Overflow Proof Card separates draft multilingual coverage from release localization.",
-          "external_site": "Draft PT localization pending native pass. Localized HECTON-8 text must fit the instrument. Translation quality is not enough if the panel breaks.",
-          "field_note": "Draft PT localization pending native pass. This is a proof gate, not a claim that native localization is complete."
+          "title": "Draft PT localization pending native pass. Localization Fit Record",
+          "scanner": "Draft PT localization pending native pass. Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
+          "terminal": "Draft PT localization pending native pass. A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
+          "audio": "Draft PT localization pending native pass. A line is not localized because it exists in a table. It is localized when it can be read in motion.",
+          "in_game_wiki": "Draft PT localization pending native pass. Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
+          "external_site": "Draft PT localization pending native pass. HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
+          "field_note": "Draft PT localization pending native pass. Track locale status separately from packet identity; language review must not alter saves or route authority."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Localized Overflow Proof Card",
-          "scanner": "Draft NL localization pending native pass. Localization proof: long labels, CJK, RTL and subtitle timing need layout evidence.",
-          "terminal": "Draft NL localization pending native pass. LOC PROOF: every final UI surface needs string-pool key, font set, overflow policy, RTL/CJK check and subtitle/audio timing proof.",
-          "audio": "Draft NL localization pending native pass. If it does not fit, it is not localized yet.",
-          "in_game_wiki": "Draft NL localization pending native pass. Localized Overflow Proof Card separates draft multilingual coverage from release localization.",
-          "external_site": "Draft NL localization pending native pass. Localized HECTON-8 text must fit the instrument. Translation quality is not enough if the panel breaks.",
-          "field_note": "Draft NL localization pending native pass. This is a proof gate, not a claim that native localization is complete."
+          "title": "Draft NL localization pending native pass. Localization Fit Record",
+          "scanner": "Draft NL localization pending native pass. Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
+          "terminal": "Draft NL localization pending native pass. A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
+          "audio": "Draft NL localization pending native pass. A line is not localized because it exists in a table. It is localized when it can be read in motion.",
+          "in_game_wiki": "Draft NL localization pending native pass. Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
+          "external_site": "Draft NL localization pending native pass. HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
+          "field_note": "Draft NL localization pending native pass. Track locale status separately from packet identity; language review must not alter saves or route authority."
         }
       }
     }

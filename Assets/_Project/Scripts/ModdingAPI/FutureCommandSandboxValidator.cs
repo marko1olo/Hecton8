@@ -787,7 +787,18 @@ namespace Hecton8.Modding
             if (!_scheduledValidationActive)
                 return true;
 
-            if (!DispatcherJobFence.TryComplete(ref _scheduledValidationHandle, forceComplete: true))
+            bool completed;
+            DispatcherJobFence.BeginPreSimulationSwapWindow();
+            try
+            {
+                completed = DispatcherJobFence.TryComplete(ref _scheduledValidationHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPreSimulationSwapWindow();
+            }
+
+            if (!completed)
                 return false;
 
             return CommitScheduledValidation();

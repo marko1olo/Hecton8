@@ -12,8 +12,8 @@ namespace Hecton8.EditorTools
         private const string PlaceholderPrefabRoot = "Assets/_Project/Prefabs/WorldRuntime/ProceduralPlaceholders";
         private const string PlaceholderMaterialRoot = "Assets/_Project/Materials/WorldRuntime/ProceduralPlaceholders";
 
-        [MenuItem("Hecton/Authoring/Rebuild Procedural Placeholder Final Variants", priority = 179)]
-        public static void RebuildPlaceholderFinalVariants()
+        [MenuItem("Hecton/Authoring/Rebuild Procedural Placeholder Proxy Variants", priority = 179)]
+        public static void RebuildPlaceholderProxyVariants()
         {
             EnsureFolder("Assets/_Project/Prefabs");
             EnsureFolder("Assets/_Project/Prefabs/WorldRuntime");
@@ -35,17 +35,15 @@ namespace Hecton8.EditorTools
                     continue;
 
                 int placeholderIndex = FindPlaceholderFinalVariantIndex(family);
-                if (FamilyHasRealFinalVariant(family))
+                if (placeholderIndex >= 0)
                 {
-                    if (placeholderIndex >= 0)
-                    {
-                        RemoveVariantAt(family, placeholderIndex);
-                        EditorUtility.SetDirty(family);
-                        cleanedFamilies++;
-                    }
-
-                    continue;
+                    RemoveVariantAt(family, placeholderIndex);
+                    EditorUtility.SetDirty(family);
+                    cleanedFamilies++;
                 }
+
+                if (FamilyHasRealFinalVariant(family))
+                    continue;
 
                 GameObject prefab = CreateOrUpdatePlaceholderPrefab(family);
                 if (prefab == null)
@@ -54,7 +52,7 @@ namespace Hecton8.EditorTools
                     continue;
                 }
 
-                if (EnsurePlaceholderFinalVariant(family, prefab))
+                if (EnsurePlaceholderProxyVariant(family, prefab))
                     updatedFamilies++;
 
                 placeholderFamilies++;
@@ -63,7 +61,7 @@ namespace Hecton8.EditorTools
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log($"[WorldPlaceholderAuthoring] Placeholder final variants rebuilt. PlaceholderFamilies={placeholderFamilies}, UpdatedFamilies={updatedFamilies}, CleanedFamilies={cleanedFamilies}.");
+            Debug.Log($"[WorldPlaceholderAuthoring] Placeholder proxy variants rebuilt. PlaceholderFamilies={placeholderFamilies}, UpdatedFamilies={updatedFamilies}, CleanedFinalFamilies={cleanedFamilies}.");
         }
 
         public static bool IsPlaceholderFinalVariant(WorldPrefabFamilyProfile.VariantEntry variant)
@@ -71,20 +69,20 @@ namespace Hecton8.EditorTools
             return variant != null && variant.prefab != null && variant.prefab.TryGetComponent(out WorldProceduralPlaceholderMarker _);
         }
 
-        private static bool EnsurePlaceholderFinalVariant(WorldPrefabFamilyProfile family, GameObject prefab)
+        private static bool EnsurePlaceholderProxyVariant(WorldPrefabFamilyProfile family, GameObject prefab)
         {
-            string variantId = $"{family.familyId}.final.placeholder";
+            string variantId = $"{family.familyId}.proxy.placeholder";
             Vector2 scaleRange = ResolvePlaceholderScaleRange(family);
             WorldPrefabFamilyProfile.VariantEntry[] variants = family.variants ?? Array.Empty<WorldPrefabFamilyProfile.VariantEntry>();
-            int index = FindPlaceholderFinalVariantIndex(family);
+            int index = FindPlaceholderProxyVariantIndex(family);
             WorldPrefabFamilyProfile.VariantEntry entry = index >= 0 ? variants[index] : new WorldPrefabFamilyProfile.VariantEntry();
 
             bool changed = false;
             changed |= SetIfDifferent(ref entry.variantId, variantId);
             changed |= SetIfDifferent(ref entry.prefab, prefab);
             changed |= SetIfDifferent(ref entry.weight, ResolvePlaceholderWeight(family));
-            changed |= SetIfDifferent(ref entry.proxyOnly, false);
-            changed |= SetIfDifferent(ref entry.finalReady, true);
+            changed |= SetIfDifferent(ref entry.proxyOnly, true);
+            changed |= SetIfDifferent(ref entry.finalReady, false);
             changed |= SetIfDifferent(ref entry.uniformScaleRange, scaleRange);
 
             if (index >= 0)
@@ -126,7 +124,7 @@ namespace Hecton8.EditorTools
             {
                 root.AddComponent<WorldFidelityRoot>().RefreshTrackedComponents();
                 root.AddComponent<WorldProceduralPlaceholderMarker>()
-                    .Configure(family, $"{family.familyId}.final.placeholder", recipe);
+                    .Configure(family, $"{family.familyId}.proxy.placeholder", recipe);
 
                 BuildRecipe(root.transform, family, recipe, material);
                 WorldFidelityRoot fidelityRoot = root.GetComponent<WorldFidelityRoot>();
@@ -664,6 +662,21 @@ namespace Hecton8.EditorTools
             {
                 WorldPrefabFamilyProfile.VariantEntry variant = family.variants[i];
                 if (variant != null && variant.finalReady && !variant.proxyOnly && IsPlaceholderFinalVariant(variant))
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static int FindPlaceholderProxyVariantIndex(WorldPrefabFamilyProfile family)
+        {
+            if (family == null || family.variants == null)
+                return -1;
+
+            for (int i = 0; i < family.variants.Length; i++)
+            {
+                WorldPrefabFamilyProfile.VariantEntry variant = family.variants[i];
+                if (variant != null && variant.proxyOnly && !variant.finalReady && IsPlaceholderFinalVariant(variant))
                     return i;
             }
 

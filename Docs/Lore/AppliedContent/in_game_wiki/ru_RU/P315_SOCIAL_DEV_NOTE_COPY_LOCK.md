@@ -10,13 +10,13 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Lock social dev note copy
+# Public Note Copy Rule
 
-Social dev note lock keeps public fragments grounded.
+Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.
 
 ## Scanner
 
@@ -24,7 +24,7 @@ Public note lock: one concrete build fact, no fake hype.
 
 ## Terminal
 
-PUBLIC COPY: social/dev notes name one physical problem, one visible detail and no unsupported demo/platform/release claim.
+PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.
 
 ## Audio
 
@@ -32,6 +32,6 @@ PUBLIC COPY: social/dev notes name one physical problem, one visible detail and 
 
 ## Field Note
 
-For captions only after matching visual asset exists.
+Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out.
 
 <!-- In-Game Wiki; generated from P315_SOCIAL_DEV_NOTE_COPY_LOCK/ru_RU. -->

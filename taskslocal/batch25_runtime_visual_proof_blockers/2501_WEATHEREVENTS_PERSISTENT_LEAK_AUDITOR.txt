@@ -1,0 +1,45 @@
+<AGENT_PROMPT id="2501">
+You are Batch25 agent 2501 for HECTON-8.
+
+Mission:
+Audit the current Persistent leak warning around `WeatherEvents` and `HectonCelestialEngine.OnEnable` without touching Unity.
+
+Context:
+The Unity-owner Codex thread reported after route retry:
+`old Persistent leak from WeatherEvents at HectonCelestialEngine.OnEnable`.
+This blocks clean runtime proof. Visual acceptance cannot proceed while Play/Domain reload leaks remain.
+
+Read:
+- `AGENTS.md`
+- `.agents-skills/OPT_Native_Memory_Collections_JobSystem_Protocol.txt`
+- `.agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
+- `.agents-skills/ARCH_Global_Registry_ServiceLocator_DI_Init.txt`
+- relevant source only:
+  - `Assets/_Project/Scripts/HectonCelestialEngine.cs`
+  - files defining `WeatherEvents`
+  - files defining NativeQueue/NativeArray ownership for weather/celestial events
+  - latest Unity visual-audit logs if needed
+
+Do:
+1. Find exact `WeatherEvents` type/file/allocator owner.
+2. Find where `HectonCelestialEngine.OnEnable` creates/opens/registers WeatherEvents.
+3. Determine whether leak is:
+   - missing Dispose on OnDisable/OnDestroy/domain reload;
+   - duplicate OnEnable allocation;
+   - static lane not cleared on play mode exit;
+   - old leak from previous run only;
+   - false positive from log staleness.
+4. Produce a minimal safe fix plan with exact files/methods, but do not edit code unless the issue is entirely isolated and cannot conflict with Unity owner changes. Prefer report-only.
+5. Include rollback risk and compile risk.
+
+Output:
+- `Docs/Reports/Batch25/2501_WEATHEREVENTS_PERSISTENT_LEAK_AUDIT.md`
+- `Docs/Tasks/Status_2501.md`
+- `Docs/AgentLogs/LOG_2501.md`
+
+Forbidden:
+- No Unity.
+- No build.
+- No broad refactor.
+- No deletion of event lanes without owner proof.
+</AGENT_PROMPT>

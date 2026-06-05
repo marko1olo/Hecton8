@@ -1,0 +1,57 @@
+AGENT ID: 1826
+ROLE: COPPER_ROUTE_DATA_OWNER_PATCH_PACKET
+MODE: No-mutation data-owner implementation packet. Do not edit `.asset`, `.meta`, source, scenes, or binaries.
+
+PRIMARY GOAL
+Turn the copper stableId collision and first-route craft/tool findings into an exact future patch packet. The output must specify the safe mutation order, owner asset, quarantine/rename/delete choices, reference checks, validation gates, and Unity/DataMonolith proof needed before anyone touches assets.
+
+READ
+- AGENTS.md, PROJECT_BIBLES.md, VISION_LOCKS.md, TASTE.md, quality.md
+- data.md, items.md, crafting.md, tools.md, gameplay.md, persistence.md if present
+- Docs/Reports/Batch18/1803_FIRST20_ROUTE_BLOCKER_MATRIX.md
+- Docs/Reports/Batch18/1814_COPPER_CATALOG_COLLISION_AUDIT.md
+- Docs/Reports/Batch18/1815_STARTER_TOOL_AND_ROUTE_CRAFT_AUTHORITY.md
+- Docs/Reports/Batch18/1816_SURFACE_ROUTE_UNITY_SLOT_PACKET.md
+
+KNOWN EVIDENCE FROM 1814
+- Valid raw owner: `Assets/_Project/Data/Items/Resources/Raw/Data_Copper.asset`
+- Legacy colliding asset: `Assets/_Project/Data/Items/Data_Copper.asset`
+- Both share `stableId: Data_Copper`.
+- 1814 did not edit assets and recommended a future data-owner patch slot.
+
+OWNED OUTPUTS
+- Docs/Tasks/Status_1826.md
+- Docs/AgentLogs/Rationale_1826.md for non-trivial decisions only
+- Docs/AgentLogs/LOG_1826.md
+- Docs/Reports/Batch18/1826_COPPER_ROUTE_DATA_OWNER_PATCH_PACKET.md
+- Optional: Docs/Reports/Batch18/1826_COPPER_REFERENCE_CHECKLIST.csv
+
+HARD RULES
+- Do not edit or move assets, `.meta` files, source files, scenes, prefabs, source data, generated CSV, binaries, or task files.
+- Do not run Unity, PlayMode, builds, DataMonolith bake, or importers.
+- Do not invent GUIDs beyond what reports prove; if you need a GUID, read it from disk and label it static.
+- Do not propose deleting legacy assets without reference proof and rollback path.
+- Do not make route/craft truth depend on UI text or logs.
+
+20 TASKS
+01. Create tracking files.
+02. Read authorities and 2-8 relevant mandates.
+03. Reconfirm static existence of both copper asset paths and their `.meta` files.
+04. Reconfirm stableId collision from file contents.
+05. Reconfirm raw-owner fields relevant to route truth: raw resource flag, stack, world prefab, catalog classification if present.
+06. Reconfirm legacy asset fields relevant to collision risk.
+07. Search static references to both copper asset GUIDs and paths.
+08. Search source/data references to `Data_Copper` and copper route/craft recipes.
+09. Build reference checklist CSV: reference, file, target asset, risk, required future action.
+10. Define safe mutation options: quarantine legacy, rename legacy stableId, delete legacy, or migrate references.
+11. Choose recommended option with rationale and rollback.
+12. Define how this affects first-route copper sample, tool class, craft gate, save/load identity, and DataMonolith.
+13. Define how to avoid duplicate stableId in future validation.
+14. Define exact future patch-owner sequence with preflight, edit, import, validation, rollback.
+15. Define validation commands/static checks that do not require Unity if possible.
+16. Define Unity-slot checks: catalog load, inventory pickup, craft route, save/load, no duplicate ID warnings.
+17. Define failure modes and BLOCKED labels.
+18. Append concise log.
+19. Final scan for fake runtime/import/profiler proof and destructive instructions.
+20. Mark PATCH_PACKET_COMPLETE or BLOCKED with exact missing evidence.
+

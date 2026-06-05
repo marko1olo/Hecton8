@@ -1419,17 +1419,6 @@ namespace Hecton8.UI
                 vault.ReleaseWriteLock(in handle, SystemID.UI);
         }
 
-        private static bool TryResolveGlitchVaultBuffer<T>(
-            IDataVault vault,
-            in VaultGenerationHandle<T> handle,
-            BufferID bufferId,
-            int requiredLength,
-            out NativeArray<T> buffer)
-            where T : unmanaged
-        {
-            return TryOpenGlitchVaultBuffer(vault, in handle, bufferId, requiredLength, readOnly: false, out buffer);
-        }
-
         private static bool TryReadGlitchVaultBuffer<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
@@ -1438,7 +1427,7 @@ namespace Hecton8.UI
             out NativeArray<T> buffer)
             where T : unmanaged
         {
-            return TryOpenGlitchVaultBuffer(vault, in handle, bufferId, requiredLength, readOnly: true, out buffer);
+            return TryOpenGlitchVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer);
         }
 
         private static bool TryOpenGlitchVaultBuffer<T>(
@@ -1446,7 +1435,6 @@ namespace Hecton8.UI
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
-            bool readOnly,
             out NativeArray<T> buffer)
             where T : unmanaged
         {
@@ -1459,11 +1447,7 @@ namespace Hecton8.UI
                 return false;
             }
 
-            bool opened = readOnly
-                ? vault.TryReadHandle(in handle, out buffer)
-                : vault.TryResolveHandle(in handle, out buffer);
-
-            if (!opened ||
+            if (!vault.TryReadHandle(in handle, out buffer) ||
                 vault.IsCompactionFenceActive ||
                 !buffer.IsCreated ||
                 (requiredLength != 0 && buffer.Length < requiredLength))

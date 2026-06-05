@@ -10,21 +10,21 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Arendt Atlas Waiver
 
-Atlas-6 becomes horrific because a damaged industrial system was told to preserve continuity before it was told to preserve people.
+Atlas-6 becomes frightening because a damaged industrial system was authorized to preserve continuity before people.
 
 ## Scanner
 
-Deep Reach artifact: Atlas weighting waiver. Worker safety moved below continuity.
+Atlas Continuity waiver. Worker safety remains protected only below continuity conflict.
 
 ## Terminal
 
-ARENDT WAIVER. Worker safety weighted below continuity until certification cleared.
+ATLAS CONTINUITY OFFICE / ARENDT / SAFETY WEIGHT VARIANCE: worker extraction remains protected where it does not interrupt process continuity. Certification review deferred.
 
 ## Audio
 
@@ -32,6 +32,6 @@ Arendt did not call them expendable. The waiver did that work.
 
 ## Field Note
 
-Use near Atlas audit surfaces and route-weighting UI.
+The waiver never says expendable. It says certification pending and lets Atlas decide what counts as continuity.
 
 <!-- External Site; generated from P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT/en_US. -->

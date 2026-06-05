@@ -1,0 +1,51 @@
+AGENT ID: 1860
+ROLE: PRIMITIVE_FACTORY_RISK_CLASSIFICATION_PACKET
+MODE: No-mutation static classification packet. Do not edit prefabs, assets, source, scenes, binaries, or `.meta`.
+
+PRIMARY GOAL
+Classify editor factory scripts that generate prefabs or meshes using `GameObject.CreatePrimitive`, `PrimitiveType`, or analytic primitive helpers. The already-covered production `Final` blockers are not enough: some factory scripts may still be able to recreate visible primitive art in other production folders. This task must separate production-visible generator risk from collider-only/dev/test acceptable cases.
+
+READ
+- AGENTS.md, PROJECT_BIBLES.md, VISION_LOCKS.md, TASTE.md, quality.md
+- PROCEDURAL_ASSET_PIPELINE.md, 3dmodel.md, 3DMODEL_TEXTURES_MATERIALS.md if present
+- Docs/Reports/Batch18/1851_GENERATED_ASSET_PRODUCTION_AUDIT.md
+- Docs/Reports/Batch18/1852_PROCEDURAL_PLACEHOLDER_FINAL_GATE.md
+- Docs/Reports/Batch18/1853_PRIMITIVE_FINAL_REPLACEMENT_PLAN.md
+- Relevant files found by:
+  - `rg -n "CreatePrimitive|PrimitiveType|AddAnalyticPrimitive|SaveAsPrefabAsset" Assets/_Project/Scripts/Editor Assets/_Project/Editor -g "*.cs"`
+
+OWNED OUTPUTS
+- Docs/Tasks/Status_1860.md
+- Docs/AgentLogs/Rationale_1860.md for non-trivial decisions only
+- Docs/AgentLogs/LOG_1860.md
+- Docs/Reports/Batch18/1860_PRIMITIVE_FACTORY_RISK_CLASSIFICATION_PACKET.md
+- Optional: Docs/Reports/Batch18/1860_PRIMITIVE_FACTORY_MATRIX.csv
+
+HARD RULES
+- Do not run Unity, PlayMode, builds, importers, bakes, screenshots, or DataMonolith tools.
+- Do not edit source or generated assets.
+- Do not classify collider-only primitive creation as visual failure unless the primitive renderer is visible or saved as visible art.
+- Do not ignore factory scripts just because they are editor-only; editor-only can still write production assets.
+- Do not duplicate 1854-1859 content. This is factory/source-route classification.
+
+20 TASKS
+01. Create tracking files and mark evidence class STATIC_SOURCE.
+02. Read authorities and 2-8 relevant mandates from `.agents-skills`.
+03. Run the targeted primitive/factory search and list candidate scripts.
+04. Group candidates by domain: construction, support, organic, power, equipment, inventory, logistics, hazard, collider optimization, dev/test, runtime bootstrap, other.
+05. Identify scripts already fail-closed or covered by 1852.
+06. Identify scripts that create primitive colliders only and do not save visible renderers.
+07. Identify scripts that create visible primitive renderers and save prefabs.
+08. Identify output folders for each risky script.
+09. Identify whether output folders are production, dev/test, proxy, diagnostics, or unknown.
+10. Classify each script as BLOCKER, HIGH, MEDIUM, LOW, DEV_ONLY, COLLIDER_ONLY_ACCEPTABLE, or UNKNOWN.
+11. For PowerGridPrefabFactory, inspect whether analytic primitive visuals are production-visible and where they output.
+12. For Construction/Support/Organic final authoring, reference existing fail-closed guards rather than redoing findings.
+13. For ObjectSpawner/dev tools, classify dev/test only if evidence supports it.
+14. For collider optimizers, verify primitive creation is collider-only and not visible renderer output.
+15. Define next source patches needed: fail-closed guard, output-folder quarantine, non-primitive generator route, or validator expansion.
+16. Define what should become hard audit error later.
+17. Define safe false-positive rules so collision/dev tools are not blocked unnecessarily.
+18. Build CSV matrix with script, method, primitive use, saves prefab, output folder, visibility, risk, next action.
+19. Append concise LOG/Rationale.
+20. Mark CLASSIFICATION_COMPLETE or BLOCKED with exact missing evidence.

@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Реестр подофисов Deep Reach
+# Deep Reach Suboffice Registry
 
-Реестр подофисов дает авторам гранулярные корпоративные поверхности без изобретения новых mastermind.
+The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.
 
 ## Scanner
 
-Цепочке shell нужны малые офисы для миссий и штампов терминалов.
+Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.
 
 ## Terminal
 
-SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Review Gate, Asset Silence Board и Return Action Queue - допустимые нижние поверхности Deep Reach.
+SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.
 
 ## Audio
 
-Маленький desk может убить тише, чем директор.
+A small desk can kill more quietly than a director.
 
 ## Field Note
 
-Использовать скучные имена. В скучных именах прячется liability.
+Use dull names. Dull names are where liability hides.
 
 <!-- In-Game Wiki; generated from P165_DEEP_REACH_SUBOFFICE_REGISTRY/ru_RU. -->

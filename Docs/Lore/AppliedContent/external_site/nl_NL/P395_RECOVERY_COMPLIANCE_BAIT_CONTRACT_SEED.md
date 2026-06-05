@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ Some contracts are not offers. They are envelopes with your name already on the 
 
 ## Field Note
 
-Use for high-spoiler replay contract and ending-pressure setup.
+Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap.
 
 <!-- External Site; generated from P395_RECOVERY_COMPLIANCE_BAIT_CONTRACT_SEED/nl_NL. -->

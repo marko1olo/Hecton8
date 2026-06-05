@@ -1,0 +1,109 @@
+ID: 1888
+TITLE: PRODUCT_FACE_TEXTURE_CHANNEL_MANIFEST_AND_SHADER_AUDIT
+MODE: REPORT_ONLY_STATIC_SHADER_CHANNEL_AUDIT
+
+You are HECTON-8 batch agent 1888.
+Do not depend on sibling output that is not already on disk.
+Do not edit source code, Unity assets, prefabs, scenes, binaries, generated meshes, `.meta`, DataMonolith, or task files.
+
+PRIMARY GOAL
+
+Create the product-face texture channel manifest that future material/texture agents must obey before authoring or relinking anything.
+
+The current project has multiple packed-map dialects: ToolDecayLit uses R metallic / G AO / B smoothness / A emission; ProceduralBio uses ORM; AITexture/UberNoir uses ARM-like layout; SuitVisor has dedicated droplet/runoff textures. Future agents must not guess channel meaning.
+
+READ
+
+- `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `VISION_LOCKS.md`
+- `TASTE.md`
+- `quality.md`
+- `3dmodel.md`
+- `3DMODEL_TEXTURES_MATERIALS.md`
+- `3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md`
+- `Docs/Reports/Batch18/1880_TOOL_MATERIAL_TEXTURE_ROLE_PACKAGE.md`
+- `Docs/Reports/Batch18/1881_RESOURCE_MATERIAL_TEXTURE_ROLE_PACKAGE.md`
+- `Docs/Reports/Batch18/1882_TRANSPORT_PLAYER_MATERIAL_TEXTURE_ROLE_PACKAGE.md`
+- `Docs/Reports/Batch18/1883_SKY_OCEAN_MATERIAL_TEXTURE_ROLE_PACKAGE.md`
+- `Docs/Reports/Batch18/1886_PRODUCT_FACE_TEXTURE_AUTHORING_PIPELINE_DISCOVERY.md`
+- Relevant shaders and source files only:
+  - `Assets/_Project/Art/Shaders/Hecton_ToolDecayLit.shader`
+  - `Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl`
+  - `Assets/_Project/Art/Shaders/Hecton_ProceduralBio.shader`
+  - `Assets/_Project/Art/Shaders/Bakers/Hecton_MraoAtlasLit.shader`
+  - `Assets/_Project/Art/Shaders/SuitVisor.shader`
+  - `Assets/_Project/Scripts/Editor/AITextureControlMapBaker/Shinobu269/AITextureImportAndMaterialPipeline.cs`
+  - `Assets/_Project/Scripts/Editor/AITextureControlMapBaker/Shinobu269/Material_Setup_Scanner.cs`
+
+Mandates:
+
+- `.agents-skills/QA_Evidence_Text_Filter_Audit.txt`
+- `.agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt`
+- `.agents-skills/REND_Terrain_VirtualTexturing.txt`
+
+OUTPUTS YOU OWN
+
+- `Docs/Reports/Batch18/1888_PRODUCT_FACE_TEXTURE_CHANNEL_MANIFEST_AND_SHADER_AUDIT.md`
+- `Docs/Reports/Batch18/1888_PRODUCT_FACE_TEXTURE_CHANNEL_MANIFEST.csv`
+- `Docs/Tasks/Status_1888.md`
+- `Docs/AgentLogs/Rationale_1888.md`
+- `Docs/AgentLogs/LOG_1888.md`
+
+CSV COLUMNS
+
+- `material_family`
+- `domain`
+- `shader_or_route`
+- `albedo_slot`
+- `normal_slot`
+- `packed_slot`
+- `packed_r`
+- `packed_g`
+- `packed_b`
+- `packed_a`
+- `extra_slots`
+- `import_policy`
+- `status`
+- `blocked_until`
+
+REQUIRED ROWS
+
+At minimum include rows for:
+
+- tools using `Hecton_ToolDecayLit`
+- tool screens using `Hecton_ToolScreenDiegetic` if enough static evidence exists
+- resource minerals
+- resource organics
+- resource scrap
+- transport hull metal
+- transport glass
+- transport rubber
+- player suit body
+- player visor glass
+- player labels/trims
+- sky/clouds
+- Aegir/moons
+- ocean/foam
+- Sargassum hidden inputs
+- Sargassum micro-fauna
+- rejected default/package/material-placeholder route
+
+RULES
+
+- Mark uncertain channel layouts as `BLOCKED_CHANNEL_CONTRACT_REQUIRED`, not accepted.
+- Do not promote material names with empty texture slots to final sources.
+- Do not let environment shaders become product-face donor sources without owner approval.
+- Do not claim visual acceptance.
+
+VERIFICATION
+
+Run and record:
+
+- `git diff --check -- Docs/Reports/Batch18/1888_PRODUCT_FACE_TEXTURE_CHANNEL_MANIFEST_AND_SHADER_AUDIT.md Docs/Reports/Batch18/1888_PRODUCT_FACE_TEXTURE_CHANNEL_MANIFEST.csv Docs/Tasks/Status_1888.md Docs/AgentLogs/Rationale_1888.md Docs/AgentLogs/LOG_1888.md`
+- `Import-Csv Docs/Reports/Batch18/1888_PRODUCT_FACE_TEXTURE_CHANNEL_MANIFEST.csv | Measure-Object`
+- static term cross-check for `ToolDecayLit`, `ProceduralBio`, `SuitVisor`, `MRAO`, `ORM`, `ARM`, `wetness`, `emission`, `normal`, `albedo`.
+
+FINAL RESPONSE
+
+List changed files, CSV row count, blocked channel contracts, and the exact shader/channel rule future agents must obey.

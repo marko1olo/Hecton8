@@ -1,0 +1,54 @@
+<AGENT_PROMPT id="1866">
+ROLE: Real source mesh requirements packet for blocked power/resource factories.
+
+READ FIRST:
+- C:\hades\Hecton8\AGENTS.md
+- C:\hades\Hecton8\PROJECT_BIBLES.md
+- C:\hades\Hecton8\VISION_LOCKS.md
+- C:\hades\Hecton8\TASTE.md
+- C:\hades\Hecton8\quality.md
+- C:\hades\Hecton8\3dmodel.md
+- C:\hades\Hecton8\3DMODEL_TEXTURES_MATERIALS.md
+- C:\hades\Hecton8\resources.md
+- C:\hades\Hecton8\construction.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1860_PRIMITIVE_FACTORY_RISK_CLASSIFICATION_PACKET.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1861_PRIMITIVE_FACTORY_SOURCE_GATES.md
+- Relevant .agents-skills only: QA_Evidence_Text_Filter_Audit, TOOL_Procedural_Wreckage_Generator, DATA_Inventory_Resources_Items_SOA_Layout, REND_URP_Graphics_HotPath_Optimization_HLOD, STRM_Asset_Lifecycle_Addressables_Loading_Memory.
+
+OWNED WRITE SCOPE:
+- Docs/Tasks/Status_1866.md
+- Docs/AgentLogs/Rationale_1866.md
+- Docs/AgentLogs/LOG_1866.md
+- Docs/Reports/Batch18/1866_POWER_RESOURCE_REAL_SOURCE_MESH_REQUIREMENTS.md
+- Docs/Reports/Batch18/1866_POWER_RESOURCE_SOURCE_MATRIX.csv
+
+NO SOURCE/PREFAB/ASSET/SCENE EDITS.
+
+TASK:
+Build concrete source mesh/material requirements for restoring the factories now blocked by 1861:
+- `PowerGridPrefabFactory` baseline node types: Reactor, RTG, Battery, Relay, Breaker, Junction.
+- `ResourceWorldBootstrapAuthoring` pickup resources: TitaniumScrap, CopperOre, SilicaShards, FiberKelp, MembraneTissue, SilverOre, SulfurClumps, HydrocarbonResin.
+- `ResourceDistributionBootstrapAuthoring` runtime nodes: Ore_Generic, Ore_MagmaVentMarker.
+- `WorldProceduralInteriorColonyFinalAuthoring` interior/colony finals: PanelTrim, ConduitRun, ServiceClutter, HabitatLimb, DockingBay, HabitatShell.
+
+For each required source:
+1. Required asset path convention.
+2. Mesh silhouette and scale expectations.
+3. Texture/material identity, including channel-packed PBR where relevant.
+4. Collider/proxy split.
+5. LOD/HLOD minimum.
+6. Manifest/proof artifacts required.
+7. Whether an existing generator/source folder already has plausible source assets; verify concrete paths if claimed.
+8. Why a cube/cylinder/sphere fallback is prohibited.
+9. Low/Middle/High/Ultra quality consequences.
+
+Do not propose "just unblock the menu". The menu stays blocked until real sources exist and proof exists.
+Do not claim generated assets are good without reading their manifests/proof.
+
+VERIFY:
+- Static reads/searches only.
+- `git diff --check -- Docs/Reports/Batch18/1866_POWER_RESOURCE_REAL_SOURCE_MESH_REQUIREMENTS.md Docs/Reports/Batch18/1866_POWER_RESOURCE_SOURCE_MATRIX.csv Docs/Tasks/Status_1866.md Docs/AgentLogs/Rationale_1866.md Docs/AgentLogs/LOG_1866.md`
+
+REPORT:
+- Final answer must list outputs and no-edit guarantee.
+</AGENT_PROMPT>

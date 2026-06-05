@@ -1,0 +1,34 @@
+HECTON-8 Documentation Completeness Local Task Index - 2026-06-05
+
+Status: TASK_PACKET_INDEX_REFRESHED / PENDING VERIFICATION
+Evidence class: STATIC_DOC / STATIC_SOURCE / FILESYSTEM
+
+Authority basis:
+- AGENTS.md
+- HECTON8_ORCHESTRATOR.md
+- Docs/Reports/DocumentationCompleteness_20260605/DOC_COMPLETENESS_SYNTHESIS_AND_PATCH_QUEUE_20260605.md
+- Docs/Reports/DocumentationCompleteness_20260605/SOURCE_COVERAGE_REALITY_AUDIT_3223_20260605.md
+- Docs/Reports/DocumentationCompleteness_20260605/ROOT_BIBLE_COMPLETENESS_MATRIX_3224_20260605.md
+- Docs/Reports/DocumentationCompleteness_20260605/DOC_INDEX_GOVERNANCE_CONSISTENCY_3225_20260605.md
+
+Integrated earlier workers:
+- Huygens 019e9536-8b0e-7682-9f9f-bdb9ff70c787: governance conflict patch.
+- Popper 019e9536-ed18-7262-b39e-eba76a3ae829: source routing precision patch.
+- Raman 019e9537-53bd-7e81-9968-6368e236174e: reference hygiene patch.
+
+Active controller-managed workers are tracked in `Docs/Reports/DocumentationCompleteness_20260605/DOC_COMPLETENESS_WORKER_BOARD_20260605.md`.
+
+Ready next-wave packets:
+- DOC_WAVE1_PROCEDURAL_ASSET_PIPELINE_IDENTITY.txt
+- DOC_WAVE3_PRODUCT_CORE_FIRST20_HOOKS.txt
+- DOC_WAVE3_PRESENTATION_BOUNDARY_HOTPATH_GQW.txt
+- DOC_COMBINED_ROOT_BIBLES_REGENERATION_PACKET.txt
+
+Global forbidden actions:
+- Do not edit AGENTS.md.
+- Do not run Unity, dotnet build, importers, tests, Play Mode, Addressables build, scene save, prefab mutation, or asset import.
+- Do not create Status/Rationale/LOG files unless a future user explicitly requests persistent agent logs.
+- Do not claim runtime, compile, Unity import, profiler, GC, visual, save/load, or platform readiness from static docs.
+
+Current blocker:
+- Unity/build/readback work remains gated by CPU/process rules and is unrelated to these static doc packets.

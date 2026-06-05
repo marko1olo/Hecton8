@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Blue Debt Resource Longform Brief
+# Blue Debt Custody
 
-Longform spine: Marauders call Xenon-Omega-bearing pressure substrate blue debt because payout, containment and liability travel together. The article should explain brine chemistry, pressure glass, vent-forge process, Atlas-compatible contamination and Black Keel mass accounting. It must avoid magic ore language and avoid final payout numbers until gameplay tables own them.
+Marauders call the material blue debt because payout, containment and liability travel with the same sample. The valuable substrate is not a magic ore. It forms where pressure history, brine chemistry, noble gas capture, vent heat and damaged industrial process leave a readable structure behind. A clean-looking piece can still carry a bad record: wrong extraction angle, heat exposure outside tolerance, Atlas-compatible contamination, or custody tags that make the owner harder to name than the mineral. Black Keel weighs blue debt by mass, grade and paperwork because each piece can be cargo and accusation at the same time. Deep Reach wanted processable material. Atlas learned to grow through damaged surfaces. The ocean kept the evidence in the lattice. A player who brings blue debt home is not only selling shine. They are moving a pressure receipt through a legal system built to decide whether proof becomes money, silence or leverage.
 
 ## Scanner
 
-Public brief: blue debt article explains Xenon-Omega as pressure-history substrate, not magic ore.
+Resource archive. Blue debt records pressure history, brine chemistry, noble gas lattice, contamination, custody grade and payout mass.
 
 ## Terminal
 
-RESOURCE ARTICLE: pressure history, brine chemistry, noble gas lattice, Deep Reach process, Atlas contamination, custody receipt and payout mass.
+PUBLIC ARCHIVE NODE // BLUE DEBT MATERIAL. Sample value depends on pressure record, extraction scar, brine exposure, Atlas-compatible contamination and verified Black Keel custody receipt.
 
 ## Audio
 
-Resource note: the sample is a receipt for the pressure it survived.
+The sample is valuable because it remembers the pressure that made it.
 
 ## Field Note
 
-Use with resource receipts, pressure-glass certificates, contamination tags and payout ledger art.
+Marauder note: grade the sample, then ask what touched it. Price without custody is bait.
 
 <!-- External Site; generated from P460_BLUE_DEBT_RESOURCE_LONGFORM_BRIEF/nl_NL. -->

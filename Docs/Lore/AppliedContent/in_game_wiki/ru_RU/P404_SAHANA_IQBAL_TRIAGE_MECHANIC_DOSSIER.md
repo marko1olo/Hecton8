@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Сахана Икбал/триаж
+# Sahana Iqbal/Triage
 
-Досье Саханы Икбал связывает очередь эвакуации с ремонтной сортировкой. Ее объекты показывают, как люди и машины попали в одну логику ожидания.
+Sahana Iqbal's dossier binds the evacuation queue to repair triage. Her objects show that people and machines entered the same waiting logic under quarantine language.
 
 ## Scanner
 
-Досье: Сахана Икбал. Доска моментов и теги триажа совпадают.
+Dossier: Sahana Iqbal. Torque board and triage tags match.
 
 ## Terminal
 
-САХАНА ИКБАЛ/ТРИАЖ. Лимиты момента и койки держали одну доску; ждали все.
+SAHANA IQBAL/TRIAGE. Torque limits and cots shared one board; people and machines waited.
 
 ## Audio
 
-Икбал чинила то, до чего могла дотянуться. Система все время двигала границу доступа.
+Iqbal fixed what she could reach. The system kept moving the reach line.
 
 ## Field Note
 
-Использовать в терминале эвакуационной очереди и карантинных ремонтных петлях.
+Use in evacuation queue terminal and quarantine repair loops.
 
 <!-- In-Game Wiki; generated from P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER/ru_RU. -->

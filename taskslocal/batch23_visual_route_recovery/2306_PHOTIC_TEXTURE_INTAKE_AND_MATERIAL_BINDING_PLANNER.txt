@@ -1,0 +1,56 @@
+ID: 2306
+ROLE: PHOTIC_TEXTURE_INTAKE_AND_MATERIAL_BINDING_PLANNER
+CHAT NAME: 2306 photic texture binding
+
+MISSION
+The project now has Gemini/source texture candidates but they are source-only unless audited, named, manifested, and bound through correct material routes. Prepare a texture intake and binding plan for photic sand/shell, wet basalt shoreline, foam/salt masks, caustic masks, and algae/biofilm breakup. Do not run Unity and do not generate new images unless explicitly assigned.
+
+AUTHORITIES TO READ
+1. `AGENTS.md`
+2. `PROJECT_BIBLES.md`
+3. `TASTE.md`
+4. `VISION_LOCKS.md`
+5. `3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md`
+6. `3DMODEL_TEXTURES_MATERIALS.md`
+7. `terrain.md`
+8. `water.md`
+9. `vfx.md`
+10. `.agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`
+
+EVIDENCE BASIS
+- `Docs/Reports/Batch22/2203_PHOTIC_TEXTURE_PROMPT_PACK.md`
+- `Docs/Reports/Batch22/2203_TEXTURE_INTAKE_CHECKLIST.md`
+- `Docs/GeneratedAssets/Gemini/Outputs/Batch21/**`
+- `Tools/GeminiTextureIntakeAudit.py`
+- `Tools/TextureSeamPeriodicRefiner.py`
+
+OWNED SCOPE
+Read-only by default:
+- generated asset docs/outputs
+- texture audit tools
+- material assets for photic shoreline/terrain/ocean only.
+
+TASKS
+01. Record relevant mandates in `Docs/Tasks/Status_2306.md`.
+02. Inventory current Gemini/source texture candidates and manifests.
+03. Identify which candidates are accepted, rejected, source-only, duplicate, or pending.
+04. Verify the user-downloaded sand/shell texture path and status.
+05. Define what additional maps are needed before Unity material binding: albedo, normal, height/displacement, roughness/AO, masks.
+06. Define exact Gemini prompt queue priority; do not spend generation budget blindly.
+07. Define seam-check requirements and reject thresholds.
+08. Define import naming convention and target folders under `Assets/_Project/Art/TEXTURES/World/Photic/` or existing project-consistent route.
+09. Define material binding targets for sand/shell, wet basalt, foam/salt, caustics, algae/biofilm.
+10. Identify existing materials that are safe to improve and materials that are too risky because Unity owner is actively editing them.
+11. Define rollback: source PNG preserved, material slots restore, no deletion without manifest.
+12. Define tier behavior: texture resolution/compression/mip/streaming by GlobalQualityWeight without lowering visual floor.
+13. Define generated texture audit report format for controller and Unity owner.
+14. Write `Docs/Reports/Batch23/2306_PHOTIC_TEXTURE_BINDING_PLAN.md`.
+15. Write `Docs/Reports/Batch23/2306_TEXTURE_CANDIDATE_MATRIX.csv`.
+16. Append concise facts to `Docs/AgentLogs/LOG_2306.md`.
+17. Final answer: exact next 3 texture generations/imports and why.
+
+REJECT
+- Importing source-only image as final texture without audit.
+- Spending Gemini generations without clear target material.
+- Binding textures to wrong materials during Unity-owner active edits.
+- Running Unity.

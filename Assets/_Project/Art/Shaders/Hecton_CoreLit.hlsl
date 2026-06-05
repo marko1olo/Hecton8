@@ -68,6 +68,19 @@ float _BrineHeightY;
 float4 _FinalGiantAbyssLight;
 float4 _SunDirection;
 float4 _AegirDirection;
+float4 _H8AbyssAbsorptionColor;     // rgb=readability floor/tint, w=depth mask
+float4 _H8AbyssAtmosphereParams;    // x=fog boost, y=detail weight, z=quality, w=depth meters
+float4 _CausticOffset;              // xy=wrapped scroll, z=shallow mask, w=phase
+
+#ifndef HECTON_CORE_LIT_VISUAL_CLOCK_SECONDS
+#define HECTON_CORE_LIT_VISUAL_CLOCK_SECONDS 32.0
+#endif
+
+float HectonCoreLitResolveWrappedVisualTime()
+{
+    return frac(_CausticOffset.w) * HECTON_CORE_LIT_VISUAL_CLOCK_SECONDS;
+}
+
 float4 _HectonEclipseWaterShadowParams;    // xy=center xz, z=radius, w=darkening
 float4 _HectonEclipseWaterShadowDirection; // xy=travel direction, z=softness, w=penumbra
 float4 _HectonRingCausticsParams;          // x=strength, y=stripe scale, z=phase, w=softness
@@ -1079,7 +1092,7 @@ float3 HectonCoreLitApplyStormRainDripVertexRipple(
 
     float wallTiling = max((float)tiling, 0.01);
     float2 wallUv = float2(dot(positionWS.xz, float2(0.73, 0.41)), positionWS.y) * wallTiling;
-    wallUv += float2(0.017, -0.083) * (_Time.y * max((float)speed, 0.01));
+    wallUv += float2(0.017, -0.083) * (HectonCoreLitResolveWrappedVisualTime() * max((float)speed, 0.01));
     half3 rippleNormalTS = UnpackNormalScale(SAMPLE_TEXTURE2D_LOD(_HectonMicroNormalTex, sampler_HectonMicroNormalTex, wallUv, 0), 1.0h);
     half ripple = (rippleNormalTS.x * 0.62h + rippleNormalTS.y * 0.38h) * verticalMask * (half)stormMask;
     return HectonCoreLitSanitizePositionWS(positionWS + normal * (ripple * amplitude));
@@ -1269,7 +1282,7 @@ half3 HectonCoreLitSampleUnderwaterCausticsTexture(
     float2 scrollVelocity,
     half depthMeters)
 {
-    float2 uv = positionWS.xz * max((float)worldScale, 0.0001) + scrollVelocity * _Time.y;
+    float2 uv = positionWS.xz * max((float)worldScale, 0.0001) + scrollVelocity * HectonCoreLitResolveWrappedVisualTime() + _CausticOffset.xy;
     half stripeA = (half)(1.0 - abs(frac(dot(uv, float2(0.73, 0.41))) * 2.0 - 1.0));
     half stripeB = (half)(1.0 - abs(frac(dot(uv, float2(-0.31, 0.91)) + 0.37) * 2.0 - 1.0));
     half caustic = saturate(stripeA * stripeB * 2.0h - 0.28h);
@@ -1436,27 +1449,33 @@ half3 HectonCoreLitApplyNoirFog(half3 color, half fogRaw, float3 positionWS)
 {
     half fogFactor = HectonCoreLitEvaluateNoirFog(fogRaw);
     float densityMultiplier = HectonCoreLitEvaluateThermoclineFogMultiplier(positionWS);
-    float lutSample = saturate(fogFactor * densityMultiplier);
+    float abyssDepthMask = saturate(_H8AbyssAbsorptionColor.w);
+    float abyssFogBoost = max(0.0, _H8AbyssAtmosphereParams.x);
+    float abyssDetailWeight = saturate(_H8AbyssAtmosphereParams.y);
+    float lutSample = saturate(fogFactor * densityMultiplier * (1.0 + abyssFogBoost));
     if (lutSample <= 0.0001)
         return color;
 
     float3 fogColor = HectonCoreLitSampleNoirFogLut(lutSample);
+    float3 abyssFloor = max(_H8AbyssAbsorptionColor.rgb, 0.0) * abyssDepthMask;
+    fogColor = max(fogColor, abyssFloor);
     float weatherStress = saturate((1.0 - _HectonWeatherIntensity) + _HectonNoirFogLutBlend * 0.25);
+    float wrappedVisualTime = HectonCoreLitResolveWrappedVisualTime();
     float fogPhase =
-        _Time.y * (0.8 + weatherStress * 1.7) +
+        wrappedVisualTime * (0.8 + weatherStress * 1.7) +
         positionWS.y * 0.015 +
         dot(positionWS.xz, float2(0.007, -0.009));
     float fogPulse = HectonCoreLitTrianglePulse01(fogPhase);
-    float fogShimmer = HectonCoreLitValueNoise2(positionWS.xz * 0.043 + _Time.y * float2(0.031, -0.024));
-    float pressureSpark = saturate((fogShimmer - 0.58) * 3.3) * weatherStress * saturate(lutSample);
+    float fogShimmer = HectonCoreLitValueNoise2(positionWS.xz * 0.043 + wrappedVisualTime * float2(0.031, -0.024));
+    float pressureSpark = saturate((fogShimmer - 0.58) * 3.3) * weatherStress * saturate(lutSample) * lerp(0.55, 1.0, abyssDetailWeight);
     fogColor *= 1.0 + fogPulse * weatherStress * 0.055;
     fogColor += _FinalGiantAbyssLight.rgb * (fogPulse * weatherStress * 0.06);
-    fogColor += (fogColor + _FinalGiantAbyssLight.rgb * 0.5) * pressureSpark * 0.045;
+    fogColor += (fogColor + _FinalGiantAbyssLight.rgb * 0.5 + abyssFloor * 0.65) * pressureSpark * 0.045;
     float chromaDrift = (fogShimmer - 0.5) * weatherStress * saturate(lutSample) * 0.028;
     fogColor = max(fogColor + float3(-chromaDrift, chromaDrift * 0.45, chromaDrift * 0.8), 0.0);
-    float blackoutBand = HectonCoreLitLinearRamp(0.87, 1.0, HectonCoreLitTrianglePulse01(positionWS.y * 0.026 + _Time.y * 0.41 + fogShimmer * 3.1));
+    float blackoutBand = HectonCoreLitLinearRamp(0.87, 1.0, HectonCoreLitTrianglePulse01(positionWS.y * 0.026 + wrappedVisualTime * 0.41 + fogShimmer * 3.1));
     fogColor *= 1.0 - blackoutBand * weatherStress * saturate(lutSample) * 0.032;
-    float3 absorption = max(fogColor * float3(0.72, 0.52, 0.36), float3(0.0, 0.0, 0.0));
+    float3 absorption = max(fogColor * float3(0.72, 0.52, 0.36), abyssFloor * float3(0.34, 0.28, 0.22));
     float3 ambientTint = fogColor * 0.42;
     float3 absorptionX = absorption * lutSample;
     float3 attenuatedColor = color * rcp(1.0 + absorptionX + absorptionX * absorptionX * 0.5);
@@ -1757,7 +1776,7 @@ float3 HectonCoreLitSampleBiolumVolumeRadiance(float3 positionWS)
         return glowPointRadiance;
 
     float sonarReactiveBoost = HectonCoreLitEvaluateSonarReactiveBiolumBoost(positionWS);
-    float breathPhase = _Time.y * 1.2566371 + (positionWS.x + _TotalUniverseOffset.x) * 0.013 + positionWS.z * -0.017;
+    float breathPhase = HectonCoreLitResolveWrappedVisualTime() * 1.2566371 + (positionWS.x + _TotalUniverseOffset.x) * 0.013 + positionWS.z * -0.017;
     float biolumBreath = 0.92 + 0.08 * (HectonCoreLitTrianglePulse01(breathPhase) * 2.0 - 1.0);
     return glowPointRadiance + volumeSample.rgb * intensity * biolumBreath * (1.0 + sonarReactiveBoost * 2.5);
 }

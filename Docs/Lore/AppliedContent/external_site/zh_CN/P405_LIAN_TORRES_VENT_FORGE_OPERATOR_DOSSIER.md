@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# ZH LOC: Lian Torres/Vent Forge
+# Lian Torres/Vent Forge
 
-ZH LOC HOLD: Lian Torres anchors blue-debt-adjacent industry in craft, pressure and risk rather than magic material lore.
+Lian Torres anchors blue-debt-adjacent industry in craft, pressure and risk rather than magic material lore.
 
 ## Scanner
 
-ZH LOC: Dossier: Lian Torres. Glove, timer and reject tray match.
+Dossier: Lian Torres. Glove, timer and reject tray match.
 
 ## Terminal
 
-ZH LOC: LIAN TORRES/VENT FORGE. Reject trays logged pressure history and the price of each seal.
+LIAN TORRES/VENT FORGE. Reject trays logged pressure history and the price of each seal.
 
 ## Audio
 
-ZH LOC HOLD: Torres knew which failures could still teach the next seal to hold.
+Torres knew which failures could still teach the next seal to hold.
 
 ## Field Note
 
-ZH LOC HOLD: Place in vent forge or pressure-glass salvage chains.
+Place in vent forge or pressure-glass salvage chains.
 
 <!-- External Site; generated from P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER/zh_CN. -->

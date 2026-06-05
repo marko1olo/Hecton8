@@ -1,5 +1,10 @@
 ﻿# SHINOBU_352 Vocal Warning Queue
 
+Status: `STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING`
+Evidence class: `STATIC_DOC / STATIC_SOURCE`
+Owner domain: audio/vocal warning queue
+Review disposition: `YELLOW / STATIC_DOC_ONLY` until compile/import/runtime/profiler/player proof exists.
+
 Owner: `Assets/_Project/Scripts/Audio/VocalWarningSystem.cs`
 
 Runtime route:

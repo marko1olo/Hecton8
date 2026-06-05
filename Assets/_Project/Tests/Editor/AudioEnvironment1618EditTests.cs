@@ -221,6 +221,8 @@ namespace Hecton8.Tests.Editor
             string prologueAudio = Read(PrologueAudioPath);
             string lateFrame = ExtractMethodBody(prologueAudio, "public void LateFrameTick()");
             string publish = ExtractMethodBody(prologueAudio, "private void PublishAudioTransition(");
+            string stress = ExtractMethodBody(prologueAudio, "private void ConsumeReentryAcousticStressSignals()");
+            string arm = ExtractMethodBody(prologueAudio, "private void ArmOceanHandoffAudio()");
             string sweep = ExtractMethodBody(prologueAudio, "private void AdvanceFilterSweep(");
             string haptics = ExtractMethodBody(prologueAudio, "private void PublishSynchronizedHaptics(");
 
@@ -231,6 +233,17 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("_currentLowPassCutoffHertz = ClampCutoff(SplashdownLowPassCutoffHertz)", prologueAudio);
             StringAssert.Contains("_sweepStartLowPassCutoffHertz = _currentLowPassCutoffHertz", prologueAudio);
             StringAssert.Contains("_sweepSnapHeldForPublish = true", prologueAudio);
+            StringAssert.Contains("signal.Phase == ReentryAcousticStressSignal.PhaseSplashdown", stress);
+            StringAssert.Contains("ArmOceanHandoffAudio();", stress);
+            int splashdownArmIndex = stress.IndexOf("ArmOceanHandoffAudio();", StringComparison.Ordinal);
+            int splashdownReturnIndex = stress.IndexOf("return;", splashdownArmIndex, StringComparison.Ordinal);
+            int whiteoutFallbackIndex = stress.IndexOf("if (signal.Phase == ReentryAcousticStressSignal.PhaseWhiteout)", splashdownArmIndex, StringComparison.Ordinal);
+            Assert.That(whiteoutFallbackIndex, Is.GreaterThan(splashdownArmIndex));
+            Assert.That(splashdownReturnIndex, Is.GreaterThan(splashdownArmIndex));
+            Assert.That(splashdownReturnIndex, Is.LessThan(whiteoutFallbackIndex));
+            StringAssert.Contains("_splashdownPending = true", arm);
+            StringAssert.Contains("_sweepActive = true", arm);
+            StringAssert.Contains("_stage = AudioTransitionState.StageOceanHandoff", arm);
             StringAssert.Contains("if (_sweepSnapHeldForPublish)", sweep);
             StringAssert.Contains("ClampCutoff(_sweepStartLowPassCutoffHertz)", sweep);
             Assert.That(sweep.IndexOf("_sweepSnapHeldForPublish = false", StringComparison.Ordinal), Is.LessThan(0));
@@ -242,6 +255,10 @@ namespace Hecton8.Tests.Editor
                 "if (_sweepSnapHeldForPublish &&");
             AssertTextBefore(publish, "_sweepSnapHeldForPublish = false;", "PublishSynchronizedHaptics(in state);");
             Assert.That(CountOccurrences(prologueAudio, "PublishSynchronizedHaptics("), Is.EqualTo(2));
+            AssertNoHotDependencyLookups(stress);
+            AssertNoForbiddenHotTokens(stress);
+            AssertNoHotDependencyLookups(arm);
+            AssertNoForbiddenHotTokens(arm);
             AssertNoHotDependencyLookups(haptics);
             AssertNoForbiddenHotTokens(haptics);
         }

@@ -3,6 +3,8 @@
 Date: 2026-05-24
 Status: PENDING VERIFICATION
 Evidence class: STATIC_DOC / STATIC_SOURCE
+Owner domain: architecture/system interconnect documentation
+Review disposition: YELLOW / STATIC_DOC_ONLY until compile/import/runtime/profiler/player proof exists.
 
 Full historical matrix snapshot: `../_Archive/Architecture_X_012_APEX_2026-05-24_FILE_CAP/ARCHITECTURE_APEX_PRE_FILE_CAP_SYSTEM_INTERCONNECT_MATRIX.md`.
 

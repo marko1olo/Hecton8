@@ -1,0 +1,55 @@
+ID: 3104
+Role: SHORELINE_TERRAIN_ASSET_OWNER
+Objective: build the controlled recovery route for wet shoreline geology, terrain materials, and generated texture/PBR sources.
+
+Why this exists:
+- Current shoreline is black primitive mass plus weak/no wet-contact material truth.
+- Existing generated basalt/shell/sand candidates are review candidates, not automatic trash; static intake scripts are advisory only.
+- Mandatory references require transparent shallows, wet rock, sediment, relief, and waterline contact.
+
+Authority docs:
+- AGENTS.md
+- TASTE.md
+- VISION_LOCKS.md
+- quality.md
+- terrain.md
+- world.md
+- 3dmodel.md
+- 3DMODEL_GEOLOGY_ROCKS.md
+- 3DMODEL_TEXTURES_MATERIALS.md
+- 3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md
+- PROCEDURAL_ASSET_PIPELINE.md
+- Docs/Reports/Batch30/3005_SHORELINE_TERRAIN_ASSET_RECOVERY_AUDIT.md
+- Docs/Reports/Batch31/GEMINI_TEXTURE_VISUAL_REVIEW_AND_LOCAL_PBR_20260605.md
+- Docs/Reports/Batch31/MATERIAL_TEXTURE_CRITICALS_20260605.md
+- Docs/Reports/Batch31/CREST_TERRAIN_GUID_RESOLUTION_20260605.md
+- .agents-skills/REND_Terrain_VirtualTexturing.txt
+- .agents-skills/STRM_Async_Asset_Upload_Texture_Settings.txt
+
+Owned scope:
+- Docs/GeneratedAssets/
+- terrain/shoreline texture/material candidate inspection
+- no production import unless explicitly safe and approved
+- Report output: Docs/Reports/Batch31/3104_SHORELINE_TERRAIN_ASSET_OWNER.md
+
+Tasks:
+1. Read authority and Batch30 3005.
+2. Inventory existing wet basalt, shell/sand, foam/contact, caustic receiver candidates.
+3. Review candidates manually against the reference images. Do not trust the intake script as final art judgment.
+4. Preserve full useful sources before any crop/cleanup. Do not blindly remove the Gemini mark or throw away source information; the mark is a final-cleanup blocker, not a prototype blocker.
+5. Identify missing PBR families: albedo, normal, MRAO/wetness/salt/contact masks.
+6. Prepare generation prompts and QA route under Docs/GeneratedAssets, not Assets.
+7. Run or specify GeminiTextureIntakeAudit for candidates, but treat it as seam/clipping warning, not an acceptance oracle.
+8. Identify current black primitive shoreline objects from metadata/diff reports.
+9. Classify broken terrain/triplanar rock material slots and identify a valid geology shader/material route. Current static candidates include `Mat_Terrain.mat`, `TerrainMaster.shader`, `H8_PhoticTerrainLit_1453.shader`, `MAT_H8_HeroWetBasaltRock_1453.mat`, and `MAT_H8_AuthoredWetBasaltBreakup_1465.mat`.
+10. Build replacement requirements for geology meshes: silhouette, LOD, collider/proxy, material, scale witnesses.
+11. Write compact/middle/high/ultra consequences.
+12. Write Status_3104.md, Rationale_3104.md, LOG_3104.md, and Batch31 report.
+
+Proof packet:
+- STATIC VERIFIED / STATIC_IMAGE_QA only unless Unity import/capture occurs.
+
+Reject if:
+- Candidate is used as final production texture while it still has baked lighting, obvious seams, repeated hero shapes, false PBR, watermark/signature, or material mush.
+- You import random downloads into Assets.
+- You treat texture fix as enough while geometry stays primitive.

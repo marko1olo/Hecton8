@@ -23,7 +23,7 @@ Inputs and outputs:
 
 Optional generated output:
 
-- `PROJECT_ATLAS_HPHI.md` is produced only when `Tools/HectonPhiStaticAudit.py` completes.
+- `Docs/Generated/PROJECT_ATLAS_HPHI.md` is produced only when `Tools/HectonPhiStaticAudit.py` completes.
 - It is currently absent in this workspace and must not be cited as current proof.
 
 Regenerate:

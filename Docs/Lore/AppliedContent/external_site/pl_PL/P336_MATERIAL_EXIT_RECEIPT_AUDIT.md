@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ You got paid. That is not the same as getting out clean.
 
 ## Field Note
 
-Use for material ending record and replay dossier.
+After-action record: payout and recovery can close while evidence custody and worker names remain unresolved.
 
 <!-- External Site; generated from P336_MATERIAL_EXIT_RECEIPT_AUDIT/pl_PL. -->

@@ -12,6 +12,7 @@ Rule: every asset must sell identity without a paragraph
 Every public screenshot must answer at least two:
 
 - What can kill or ruin the player?
+- If this is surface/photic water, is it beautiful and readable without becoming a generic aquarium?
 - What machine keeps the player alive?
 - What does pressure look like?
 - What makes this HECTON-8, not generic underwater survival?
@@ -29,6 +30,24 @@ Reject screenshots that:
 - imply co-op.
 
 ## First Screenshot Pack
+
+### Shot 00 - Bright Photic Route Beauty
+
+Purpose: prove HECTON-8 is not hiding weak surface/shallow art behind darkness.
+
+Composition:
+
+- bright surface-adjacent or photic water;
+- readable terrain, waterline, sky/Aegir/moon context where visible;
+- alien biota or coral-like forms if biome supports them;
+- technogenic trace: cable, module remnant, route hardware, salvage cut, station mark, or instrument cue;
+- one route cue or player decision, not only scenery.
+
+Caption options:
+
+- The shallow water is beautiful. The route still has a cost.
+- The first lie is that clear water means safe water.
+- Above the dark, HECTON-8 still wants to be crossed.
 
 ### Shot 01 - One Floodlight Against Black Water
 
@@ -240,7 +259,8 @@ Use this table the moment a playable scene can produce images. It maps planned a
 
 | Asset ID | Capture intent | Camera/readability requirement | Must include | Reject code if failed | First use |
 |---|---|---|---|---|---|
-| `PLAN-SHOT-001` | Identity hero | 16:9, player light or machine silhouette in lower third, black-water scale visible. | industrial silhouette, silt, one route/danger cue. | `GENERIC_VISUAL` or `NO_PLAYER_VERB` | `POST-001`, Steam screenshot 1 candidate. |
+| `PLAN-SHOT-000` | Bright photic route beauty | 16:9 and Steam crop both read as beautiful surface-adjacent/photic water, not muddy darkness. | water/sky/Aegir or coastline context, terrain/material detail, biota or coral if present, technogenic trace, one route cue. | `SURFACE_TOO_DARK`, `GENERIC_AQUARIUM`, or `NO_ROUTE_CUE` | `POST-000`, Steam screenshot 1 candidate when build proves it. |
+| `PLAN-SHOT-001` | Depth pressure identity | 16:9, player light or machine silhouette in lower third, structured black-water scale visible only if the shot is genuinely below-light/depth. | industrial silhouette, silt, one route/danger cue. | `GENERIC_VISUAL`, `NO_PLAYER_VERB`, or `SURFACE_MISGRADED_AS_ABYSS` | `POST-001`, Steam screenshot 2/depth candidate. |
 | `PLAN-SHOT-002` | Pressure room | 16:9 and 4:3 crop both readable; no clean sci-fi corridor read. | gauge/seal/pipe/dirty glass/warning light. | `DERIVATIVE_COMPETITOR_READ` or `BAD_COMPOSITION` | `POST-002`, capsule `CAP-001`. |
 | `PLAN-SHOT-003` | Salvage contact | Tool/target relationship must be readable at thumbnail size. | tool, salvage object, hazard/route cost, reward reason. | `NO_PLAYER_VERB` | `POST-003`, capsule `CAP-002`. |
 | `PLAN-SHOT-004` | Heavy machine | Must imply mass; avoid toy-like scale. | vehicle/exosuit/pump/ballast or real heavy mechanism. | `FEATURE_NOT_PUBLIC` or `GENERIC_VISUAL` | `POST-011`, capsule `CAP-004`. |
@@ -259,7 +279,8 @@ Use this mapping before any 4chan/Dvach route request. The board question must t
 
 | Asset ID | Imageboard route | Best critique question | Danger read | Kill cue |
 |---|---|---|---|---|
-| `PLAN-SHOT-001` | Optional identity stress test. | "Does this read as industrial deep-sea survival or generic diver ocean?" | Generic Subnautica-adjacent exterior. | Empty water, hero diver pose, blue/purple aquarium, no machine/route cue. |
+| `PLAN-SHOT-000` | Optional beauty stress test. | "Does this look like a beautiful alien route with pressure cost, or just generic pretty water?" | Generic aquarium or weak Subnautica-adjacent exterior. | No route cue, no material detail, no technogenic trace, or surface reads dark/muddy. |
+| `PLAN-SHOT-001` | Optional depth identity stress test. | "Does this read as industrial deep-sea survival or generic diver ocean?" | Generic diver exterior or depth mood with no system. | Empty water, hero diver pose, blue/purple aquarium, no machine/route cue, or surface art crushed into fake abyss. |
 | `PLAN-SHOT-002` | Optional Dvach `/gd` or technical critique if interior proof is strong. | "Does this room read as a pressure machine or clean sci-fi corridor?" | Decorative base shot with no affordance. | No gauge/seal/pipe/wet glass; red light doing all the work. |
 | `PLAN-SHOT-003` | Strong first imageboard still candidate. | "Can you tell what the player is doing and what could go wrong?" | Salvage loop looks thin or loot-sparkle generic. | Tool/target/reward/hazard relationship not readable at thumbnail size. |
 | `PLAN-SHOT-004` | Optional only if the machine is real in build. | "Does this read as heavy underwater machinery or a static prop?" | Feature promise without gameplay proof. | Vehicle/exosuit/pump is not usable yet or lacks underwater context. |
@@ -300,21 +321,23 @@ Performance claim planned? no unless measured:
 
 Use this for the first real capture session. The goal is not a full campaign pack. The goal is to learn whether the current build can produce proof assets without lying.
 
-V7 priority note: the 2026-05-26 Steam API/appdetails/screenshot refresh kept SN2 `Very Positive` while the API summary rose to 98,345 all-language reviews, 59,676 English reviews, and 90,944 appdetails recommendations. Official screenshots confirm competitor strength in bright/cozy alien-ocean readability, clean bases, and co-op presence, not in industrial pressure-vessel dread. After identity and player verb, do not spend the first session on mood-only anomaly footage if base/machinery, black-water severity, and agency/decision proof are still missing. If the session time collapses, prioritize `PLAN-SHOT-002` or `PLAN-SHOT-005`, then `PLAN-SHOT-006` or a decision clip (`PLAN-CLIP-001` / `PLAN-CLIP-003`) before `PLAN-SHOT-007`.
+V7 priority note: the 2026-05-26 Steam API/appdetails/screenshot refresh kept SN2 `Very Positive` while the API summary rose to 98,345 all-language reviews, 59,676 English reviews, and 90,944 appdetails recommendations. Official screenshots confirm competitor strength in bright/cozy alien-ocean readability, clean bases, and co-op presence, not in industrial pressure-vessel dread. HECTON must still prove its own bright surface/photic route beauty before using black-water depth as contrast. After photic beauty, identity, and player verb, do not spend the first session on mood-only anomaly footage if base/machinery, black-water severity, and agency/decision proof are still missing. If the session time collapses, prioritize `PLAN-SHOT-000`, `PLAN-SHOT-002` or `PLAN-SHOT-005`, then `PLAN-SHOT-006` or a decision clip (`PLAN-CLIP-001` / `PLAN-CLIP-003`) before `PLAN-SHOT-007`.
 
 | Timebox | Attempt | Asset IDs | Required result | Stop if |
 |---:|---|---|---|---|
 | 0-10m | Setup log | all | Fill build ID, scene, quality preset, resolution, known visible build issues. | Build/source cannot be identified. |
-| 10-25m | Identity exterior | `PLAN-SHOT-001` | 3 takes with industrial silhouette, route cue, player/machine light. | All takes are empty water or generic diver frames. |
-| 25-40m | Player verb | `PLAN-SHOT-003` | 3 takes where tool/target/hazard/reward read at thumbnail size. | Player action needs a caption. |
-| 40-55m | Machinery/base | `PLAN-SHOT-002`, then `PLAN-SHOT-005` | 2-4 takes showing gauge/seal/pipe/failure/response path. | Base reads as clean room, red UI, or decorative sci-fi. |
-| 55-70m | Threat/anomaly | `PLAN-SHOT-006`, then `PLAN-SHOT-007` | 2-4 takes with sonar/floodlight/route or instrument corruption. | Threat reads as terrain or anomaly reads as concept art. |
-| 70-85m | Motion proof | `PLAN-CLIP-001` or `PLAN-CLIP-003` | One 10-20s clip where first 3 seconds show action/consequence. | Clip only works after explanation. |
-| 85-90m | Triage | all attempted | Assign reject code, provisional QA score, creator utility, pain proof, and next action. | Any field would be guessed. |
+| 10-22m | Bright route proof | `PLAN-SHOT-000` | 2-3 takes where surface/photic water, sky/Aegir/coastline or terrain, and route cost read without darkness. | All takes are muddy, generic aquarium, or scenery-only with no route cue. |
+| 22-35m | Depth identity exterior | `PLAN-SHOT-001` | 2-3 takes with industrial silhouette, route cue, player/machine light, and structured depth water if used. | All takes are empty water, generic diver frames, or surface misgraded as abyss. |
+| 35-50m | Player verb | `PLAN-SHOT-003` | 3 takes where tool/target/hazard/reward read at thumbnail size. | Player action needs a caption. |
+| 50-65m | Machinery/base | `PLAN-SHOT-002`, then `PLAN-SHOT-005` | 2-4 takes showing gauge/seal/pipe/failure/response path. | Base reads as clean room, red UI, or decorative sci-fi. |
+| 65-78m | Threat/anomaly | `PLAN-SHOT-006`, then `PLAN-SHOT-007` | 2-4 takes with sonar/floodlight/route or instrument corruption. | Threat reads as terrain or anomaly reads as concept art. |
+| 78-87m | Motion proof | `PLAN-CLIP-001` or `PLAN-CLIP-003` | One 10-20s clip where first 3 seconds show action/consequence. | Clip only works after explanation. |
+| 87-90m | Triage | all attempted | Assign reject code, provisional QA score, creator utility, pain proof, and next action. | Any field would be guessed. |
 
 Minimum useful output from the first session:
 
 - one identity candidate;
+- one bright surface/photic beauty candidate when the build can honestly show it;
 - one player-verb candidate;
 - one machinery/base candidate;
 - one agency/decision candidate from `PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003`, or an explicit `AGENCY_MISSING_HOLD` note;
@@ -397,7 +420,8 @@ Freshness rule: recheck `Monitoring/COMPETITOR_AND_SENTIMENT_MONITORING_QUERIES.
 
 | Asset ID | Private pain bucket answered | Capture adjustment |
 |---|---|---|
-| `PLAN-SHOT-001` | SN2 owns bright wonder and franchise scale; HECTON clone risk is high. | Add industrial silhouette, pressure hardware, corrosion, and black-water route cue. Reject if it could be a generic diver-in-ocean frame. |
+| `PLAN-SHOT-000` | SN2 owns bright wonder and franchise scale; HECTON clone risk is high if beauty is generic. | Show beautiful alien surface/photic water with material detail, route cost, and technogenic trace. Reject if it is generic reef/aquarium beauty or if it hides weak surface art with darkness. |
+| `PLAN-SHOT-001` | SN2 owns bright wonder and franchise scale; HECTON clone risk is high if depth identity is generic. | Add industrial silhouette, pressure hardware, corrosion, and structured black-water route cue. Reject if it could be a generic diver-in-ocean frame or if surface content was darkened to fake abyssal identity. |
 | `PLAN-SHOT-002` | Base-building praise/friction means base visuals must be readable, not only decorative. | Show gauge/seal/pipe affordances and a maintenance surface. Reject clean corridor beauty. |
 | `PLAN-SHOT-003` | Negative reviews mention thin loops and missing player agency. | Tool, salvage target, hazard, and reward reason must be visible in one frame. |
 | `PLAN-SHOT-005` | Save/death-loop frustration makes unfair failure risky. | Failure state must show a response path: repair, seal, reroute, or escape. |
@@ -408,7 +432,7 @@ Freshness rule: recheck `Monitoring/COMPETITOR_AND_SENTIMENT_MONITORING_QUERIES.
 | `PLAN-CLIP-003` | Short-content complaints require route depth. | Salvage success must create a second decision, not end the clip. |
 | `PLAN-CLIP-004` | Vehicle/machine fantasy is a gap opportunity. | Show weight and consequence; reject if the machine reads as a static prop or toy. |
 
-Use the matching pain bucket in asset metadata as internal context only. Captions must remain HECTON-positive: pressure, salvage, machinery, route risk, black water, Seed Ship signal.
+Use the matching pain bucket in asset metadata as internal context only. Captions must remain HECTON-positive: beautiful alien water when the asset shows surface/photic routes, pressure, salvage, machinery, route risk, black-water depth, Seed Ship signal.
 
 ## Capture Naming
 

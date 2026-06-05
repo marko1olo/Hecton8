@@ -1,0 +1,20 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS098_ARCHIVE_INDEX_STRING_POOL_BRIDGE",
+  "status": "canonical_source_candidate_pending_controller_review_and_downstream_wiring",
+  "packets": [
+    "P492_PUBLIC_ARCHIVE_CAPTION_CHAIN_BRIDGE",
+    "P493_SCANNER_SPOILER_GATE_QUEUE_BRIDGE",
+    "P494_WEBSITE_WIKI_EVIDENCE_INDEX_BRIDGE",
+    "P495_STRING_POOL_CUSTODY_STAMP_BRIDGE"
+  ],
+  "authoring_packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P492_PUBLIC_ARCHIVE_CAPTION_CHAIN_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P493_SCANNER_SPOILER_GATE_QUEUE_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P494_WEBSITE_WIKI_EVIDENCE_INDEX_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P495_STRING_POOL_CUSTODY_STAMP_BRIDGE.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "evidence_class": "STATIC_SOURCE"
+}

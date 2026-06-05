@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
-# Deep Reach Sanitized Packet Transcript Seed
+# Deep Reach Sanitized Packet Transcript
 
-Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.
+The sanitized packet stays plausible because it keeps true disaster nouns and removes the decisions that made them fatal.
 
 ## Scanner
 
-Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.
+Recovered Deep Reach packet repeats the accident summary, then gates rescue behind coordinates and quarantine pricing.
 
 ## Terminal
 
-TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.
+PACKET DR-RCO-2190: safety priority asserted; coordinates required; quarantine cost pending; worker-cause fields omitted.
 
 ## Audio
 
-Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.
+Recovery Compliance packet. Safety priority acknowledged. Coordinates first. Quarantine cost pending. Rescue cannot be priced blind.
 
 ## Field Note
 
-Use for terminal packet body, VO captions and public article sidebars.
+Present-tense corporate packet. Legal phrasing must sound useful while withholding rescue until custody is priced.
 
 <!-- In-Game Wiki; generated from P437_DEEP_REACH_SANITIZED_PACKET_TRANSCRIPT_SEED/en_US. -->

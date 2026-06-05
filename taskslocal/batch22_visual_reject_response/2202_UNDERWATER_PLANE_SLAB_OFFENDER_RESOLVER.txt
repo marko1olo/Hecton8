@@ -1,0 +1,81 @@
+ID: 2202
+ROLE: UNDERWATER_PLANE_SLAB_OFFENDER_RESOLVER
+CHAT NAME: 2202 underwater slab offenders
+
+MISSION
+The 1472 underwater captures show a massive pale/yellow horizontal sheet and sliced/intersecting geometry. Build a static offender list and safe Unity-owner fix plan for every active plane/slab/curtain/shell that can produce the broken underwater composition.
+
+DO NOT TAKE THE UNITY SLOT BY DEFAULT.
+No Play Mode, no scene saves, no deletions unless a later controller prompt explicitly gives the slot and permission.
+
+AUTHORITIES TO READ
+1. `AGENTS.md`
+2. `PROJECT_BIBLES.md`
+3. `TASTE.md`
+4. `VISION_LOCKS.md`
+5. `quality.md`
+6. `terrain.md`
+7. `water.md`
+8. `world.md`
+9. `.agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`
+10. `.agents-skills/REND_Terrain_VirtualTexturing.txt`
+11. `.agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
+
+EVIDENCE BASIS
+- `Docs/Screenshots/MCP/h8_1472_underwater_0_5m.png`: pale/yellow plane fills lower half.
+- `Docs/Screenshots/MCP/h8_1472_underwater_20_50m_route.png`: huge pale sheet cuts across route, rocks intersect, seabed flat.
+- Prior static validator `Docs/Reports/Batch21/2104_PRIMITIVE_NULL_DEFAULT_STATIC_VALIDATOR.*` found many primitive/default/proxy candidates.
+
+OWNED SCOPE
+Read-only unless later permitted:
+- `Assets/_Project/Scenes/02_HECTON_WORLD.unity`
+- `Assets/_Project/Prefabs/**`
+- `Assets/_Project/Art/Materials/**`
+- `Assets/_Project/Art/Shaders/**`
+- `Docs/Reports/Batch21/2104_PRIMITIVE_NULL_DEFAULT_STATIC_VALIDATOR.*`
+- `Docs/Reports/Batch22/**`
+
+MANDATES
+- Primitive planes/slabs/proxies are not production visuals.
+- Disabling/removing requires reference proof and rollback.
+- Do not delete `.meta`/assets blindly.
+- Static source proof does not equal active renderer proof.
+- Surface/shallow visuals cannot be made dark to hide bad geometry.
+
+TASKS
+01. Read the authorities and record governing mandates in `Docs/Tasks/Status_2202.md`.
+02. Inspect the 1472 underwater screenshots and describe the visible offender classes: pale sheet, horizontal plane, sliced waterline, flat seabed, intersecting rocks.
+03. Parse or grep `02_HECTON_WORLD.unity` for GameObject names containing `PLANE`, `SLAB`, `SHEET`, `CURTAIN`, `CEILING`, `RIB`, `RIBBON`, `MASS`, `OCCLUSION`, `NOIR`, `FOAM`, `WATER`, `UNDERWATER`, `SHELL`, `PROXY`.
+04. For each candidate, capture from YAML: GameObject name, active state, mesh reference if human-readable, material reference, transform position/scale if present nearby, component enabled states.
+05. Cross-check candidates against `2104` static validator CSV/JSON.
+06. Build a suspect table sorted by likelihood of causing the 1472 pale sheet.
+07. Explicitly include these candidates if they exist: `H8_UnderwaterSurfaceSheet_1455`, `BLACK_WATER_PLANE`, `BASALT_SEABED`, `ABYSS_SURFACE_CEILING`, `ABYSS_BLACKWATER_CEILING_1428`, `Water_Mass_Far_1428`, `Water_Mass_Mid_1428`, `H8_WORLD_LOW_WATER_OCCLUSION_*`, `NOIR_*_CURTAIN`, `NOIR_*_VIGNETTE_SLAB`, `DOCK_MAIN_DECK`, `H8_DEPTH_LOW_SHELF_1428`.
+08. Gate after task 07: if none of these names exist, state that and continue discovery by material/mesh signatures. Do not fabricate.
+09. Inspect materials used by high-likelihood offenders for pale/yellow/white albedo, high smoothness, high alpha, wrong render queue, wrong shader, or debug color.
+10. Inspect whether offending objects are dev/debug/proxy names or legitimate route geometry.
+11. Identify objects that should be disabled in underwater camera only versus disabled entirely versus material-retuned.
+12. Identify objects that might be needed for occlusion/culling but should be invisible or layer-filtered.
+13. Produce a no-deletion first-pass plan: disable renderer, move to debug layer, fix layer mask, or correct material alpha/render queue.
+14. For every disable candidate, state reference/rollback rule and exact proof required after change.
+15. For every material retune candidate, state which property class is suspect and what screenshot proof must improve.
+16. For every terrain/seabed shell candidate, state whether the problem is geometry scale, texture/material, capture position, or placeholder asset.
+17. Check for repeated "fixed" screenshots whose planes persist; tie candidates to persistence across 1469-1472.
+18. Do not propose broad scene cleanup. Create an ordered 3-step Unity-owner dobivka plan.
+19. Include low/mid/high/ultra consequences: visibility/culling layer behavior cannot change gameplay truth.
+20. Write `Docs/Reports/Batch22/2202_UNDERWATER_PLANE_SLAB_OFFENDER_MATRIX.md`.
+21. Write `Docs/Reports/Batch22/2202_UNDERWATER_PLANE_SLAB_OFFENDER_MATRIX.csv`.
+22. Write `Docs/Orchestration/UNITY_OWNER_HANDOFF_2202_UNDERWATER_SLABS.md` with only the top 5 actionable suspects and proof steps.
+23. Append concise result to `Docs/AgentLogs/LOG_2202.md`.
+24. Final chat report: top suspects, proof boundary, and no false acceptance.
+
+PROOF PACKET
+- `Status_2202.md`
+- `LOG_2202.md`
+- `2202_UNDERWATER_PLANE_SLAB_OFFENDER_MATRIX.md/.csv`
+- `UNITY_OWNER_HANDOFF_2202_UNDERWATER_SLABS.md`
+
+REJECT
+- Immediate deletion without reference proof.
+- Invented paths/names.
+- "Looks like X" without YAML/material evidence.
+- Taking the Unity slot.

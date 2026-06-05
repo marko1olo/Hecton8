@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Программа игольчатых зондов
+# Needleprobe Precursor Program
 
-Игольчатые зонды держат сеттинг в hard sci-fi: Aegir вошёл в человеческие реестры через медленную разведку, а не через FTL.
+Needleprobes make the setting hard-sci-fi: Aegir was not reached by FTL or heroic jumps. It entered human ledgers through slow survey payloads, delayed telemetry and risk models.
 
 ## Scanner
 
-Архив дальних зондов. Люди узнали об Aegir до пилотируемых грузовых рейсов.
+Long-baseline probe archive. Human survey reached Aegir before crewed freight did.
 
 ## Terminal
 
-АРХИВ RAN: Aegir картировали игольчатые зонды, телеметрия pellet-lane и запоздалые relay-пинги. Deep Reach купила уверенность до того, как экипаж увидел HECTON-8.
+RAN ARCHIVE: Aegir was mapped by needleprobes, pellet-lane telemetry and delayed relay pings. Deep Reach bought confidence before any crew saw HECTON-8 with human eyes.
 
 ## Audio
 
-Первыми туда добрались не люди. Железо пришло, подождало и продало нам маршрут обратно.
+Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.
 
 ## Field Note
 
-Для энциклопедии маршрута и публичного hard-sci-fi вступления.
+Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived.
 
 <!-- In-Game Wiki; generated from P341_NEEDLEPROBE_PRECURSOR_PROGRAM/ru_RU. -->

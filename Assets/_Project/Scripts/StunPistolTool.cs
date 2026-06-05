@@ -1,5 +1,6 @@
 using Hecton8.Core;
 using Hecton.Localization;
+using Hecton8.Interaction;
 using System;
 using Unity.Mathematics;
 using UnityEngine;
@@ -211,7 +212,8 @@ namespace Hecton8.Gameplay
                     DamageSourceIds.StunPistol,
                     CombatDamageTypes.Emp,
                     CombatStatusBits.Stunned,
-                    ResolveStunDuration());
+                    ResolveStunDuration(),
+                    ToolCapabilityMasks.Stun);
 
                 if (TryBuildDescriptorAssessment(hit.collider, hit.distance, out StunAssessment descriptorAssessment))
                 {

@@ -1,0 +1,239 @@
+# Draft And Status Leakage Audit - 1777
+
+Evidence class: STATIC_SOURCE. This file documents exact blockers; it does not claim native review.
+
+## Summary
+- draft native pass phrase: 34029 hits across 140 files
+- placeholder: 169 hits across 61 files
+- machine localization phrase: 30 hits across 16 files
+- TODO: 24 hits across 17 files
+
+## Disposition
+- `draft native pass phrase`: authoring status/frontmatter/index language is valid for workflow, but must not appear inside release player/public copy except internal QA/proof cards.
+- `placeholder`: many hits are packet IDs/titles for placeholder-contract proof cards, especially `P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT`; publication routing must exclude or rename before public/player release if not meant as an in-world artifact.
+- `TODO`: exact packet/page blockers; leave as source QA backlog unless owner supplies replacement text. Do not invent creative localization.
+- `machine localization phrase`: concentrated in localization QA brief packets; acceptable as internal QA copy, not release copy.
+
+## Exact Files
+### TODO
+- `Docs\Lore\AppliedContent\packets\P010_PAYLOAD_WINDOW.json` count=2
+- `Docs\Lore\AppliedContent\packets\RS004_AEGIR_SYSTEM_HECTON8_ECOLOGY.packets.json` count=2
+- `Docs\Lore\AppliedContent\packets\RS005_CARRIER_ESCAPE_DEEP_REACH_PRESSURE.packets.json` count=2
+- `Docs\Lore\AppliedContent\packets\RS006_HUMANITY_TRANSIT_SEED_LOGISTICS.packets.json` count=4
+- `Docs\Lore\AppliedContent\in_game_wiki\es_ES\P010_PAYLOAD_WINDOW.md` count=2
+- `Docs\Lore\AppliedContent\in_game_wiki\es_ES\P020_HECTON8_ECOLOGY_REGISTRY.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\es_ES\P021_BLACK_KEEL_CUSTODY.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\es_ES\P026_SIX_DOMAIN_LEDGER.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\es_ES\P029_SEED_SHIP_DOCTRINE.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\pt_BR\P021_BLACK_KEEL_CUSTODY.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\pt_BR\P026_SIX_DOMAIN_LEDGER.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\pt_BR\P029_SEED_SHIP_DOCTRINE.md` count=1
+- `Docs\Lore\AppliedContent\external_site\es_ES\P010_PAYLOAD_WINDOW.md` count=1
+- `Docs\Lore\AppliedContent\external_site\es_ES\P019_HECTON8_RESOURCE_STACK.md` count=1
+- `Docs\Lore\AppliedContent\external_site\es_ES\P020_HECTON8_ECOLOGY_REGISTRY.md` count=1
+- `Docs\Lore\AppliedContent\external_site\es_ES\P021_BLACK_KEEL_CUSTODY.md` count=1
+- `Docs\Lore\AppliedContent\external_site\pt_BR\P021_BLACK_KEEL_CUSTODY.md` count=1
+
+### draft native pass phrase
+- `Docs\Lore\AppliedContent\packets\RS010_PRESSURE_MACHINERY_RETURN_ROUTE.packets.json` count=60
+- `Docs\Lore\AppliedContent\packets\RS011_COMM_TARIFF_GRAFFITI_MASKS.packets.json` count=420
+- `Docs\Lore\AppliedContent\packets\RS012_PLAYER_LIABILITY_ESCAPE.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS013_COLONY_ATLAS_MAINTENANCE.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS014_COLONY_RETURN_WINDOWS.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS015_HUMAN_DOMAINS_ROUTE_ECONOMY.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS016_AEGIR_SYSTEM_MOON_LADDER.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS017_HECTON8_GEOLOGY_RESOURCE_ECOLOGY.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS018_CARRIER_DEBT_CLAIM_AUTHORITY.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS019_HECTON8_PHYSICAL_ATLAS_DEPTH_BANDS.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS020_ATLAS_ENDING_AGENCY_DOSSIER.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS021_INTERSTELLAR_TRANSIT_ROUTE_HISTORY.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS022_DEEP_REACH_SIGNOFF_CHAIN.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS023_FIRST_TOOL_CHAIN_SURVIVAL_GATE.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS024_RESOURCE_RECIPE_TAXONOMY.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS025_HUMAN_LAW_PUBLIC_MEMORY.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS026_ATLAS_PUBLIC_AUTHORITY_CLASSIFICATION.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS027_FALSE_EXIT_RETURN_PRESSURE.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS028_REPLAY_CONTRACT_DOSSIER_RULES.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS029_ROUTE_TIME_DISTANCE_MODEL.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS030_DEEP_REACH_SHELL_ORG_CHART.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS031_FIRST_HOUR_PLAYABLE_SPINE.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS032_COLONY_HUMAN_EVIDENCE_LAYER.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS033_DOMAIN_EPHEMERIS_ROUTE_TABLE.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS034_WORKER_NAME_JOB_EVIDENCE_TABLE.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS035_RESOURCE_RECIPE_PRESSURE_RULES.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS036_DOSSIER_SAVE_PRESENTATION_RULES.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS037_AEGIR_MOON_PUBLIC_ATLAS.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS038_DEEP_REACH_TRUE_CAUSE_KNOWLEDGE.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS039_FINAL_DECISION_EMOTIONAL_AXIS.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS040_NUMERIC_TUNING_SOURCE_RULES.packets.json` count=392
+- `Docs\Lore\AppliedContent\packets\RS041_DEEP_REACH_LOWER_SIGNATURES.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS042_COLONY_ROSTER_AUTHORING_POOL.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS043_WORKER_PROP_EVIDENCE_KIT.packets.json` count=390
+- `Docs\Lore\AppliedContent\packets\RS044_PUBLICATION_SPOILER_LOCALIZATION_PROTOCOL.packets.json` count=392
+- `Docs\Lore\AppliedContent\packets\RS045_PHOTIC_SHELF_NATIVE_ECOLOGY.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS046_BRINE_CANYON_ABYSS_ECOLOGY.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS047_ATLAS_MAINTENANCE_BIOMECH_LAYER.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS048_HARDWARE_AND_VEHICLE_EVIDENCE_STACK.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS049_CONTRACT_SEED_RISK_REWARD_SURFACES.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS050_FIRST_HOUR_MICRO_SCRIPT_SURFACES.packets.json` count=490
+- `Docs\Lore\AppliedContent\packets\RS051_PUBLIC_SITE_PILLAR_ARTICLES.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS052_LOCALIZATION_GLOSSARY_AUDIO_STYLE.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS053_NUMERIC_AUTHORING_BRIDGE_SURFACES.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS054_DOSSIER_CONTRACT_UI_COPY_DECK.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS055_ENDING_PAYLOAD_RECORD_SURFACES.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS057_PUBLIC_SITE_READY_ARTICLE_SECTIONS.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS058_IN_GAME_ARTIFACT_AUDIO_SURFACES.packets.json` count=490
+- `Docs\Lore\AppliedContent\packets\RS059_ECOLOGY_CODEX_SPECIMEN_CARDS.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS060_FINAL_DESCENT_ROUTE_FRAGMENTS.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS061_TABLE_VALUE_HANDOFF_CONTRACTS.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS062_RUNTIME_UI_PROOF_BACKLOG.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS063_PUBLICATION_COMPOSITION_PROOF_PACK.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS064_UNITY_PLACEMENT_PRIORITY_BACKLOG.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS065_CARRIER_CONTRACT_OWNERSHIP_SURFACES.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS066_DEEP_REACH_PRESENT_COMMS_CHAIN.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS067_ATLAS_REPAIR_NETWORK_MECHANICS.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS068_FALSE_EXIT_AFTER_ACTION_RECORDS.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS069_SHIP_TECH_TRANSIT_ENCYCLOPEDIA.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS070_AEGIR_MOON_SYSTEM_ATLAS.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS071_HECTON8_GEOLOGY_RESOURCE_FIELDGUIDE.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS072_COLONY_DAILY_LIFE_EVIDENCE_ATLAS.packets.json` count=490
+- `Docs\Lore\AppliedContent\packets\RS073_ESCAPE_ASCENT_ENGINEERING_COMPONENTS.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS074_PLAYER_EX_DEEP_REACH_PROFESSIONAL_DOSSIER.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS075_DEEP_REACH_LIE_PHYSICAL_PROOF_CHAIN.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS076_ATLAS_FINAL_PAYLOAD_RECEIVER_PROTOCOLS.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS077_LONG_CAMPAIGN_ACT_SPINE.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS078_MAJOR_POI_EVIDENCE_KITS.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS079_REPLAY_CONTRACT_SEED_FAMILIES.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS080_PUBLIC_WIKI_ARTICLE_MODULES.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json` count=490
+- `Docs\Lore\AppliedContent\packets\RS083_FAUNA_ENCOUNTER_GRAMMAR.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS084_SITE_WIKI_NAVIGATION_CLUSTERS.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS086_RESOURCE_ECONOMY_ARTIFACTS.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS087_PDA_CODEX_PRESENTATION_RULES.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS088_AUDIO_TRANSCRIPT_ARTICLE_SEEDS.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS089_NUMERIC_GAMEPLAY_TABLE_VALUE_DRAFTS.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS090_UNITY_PLACEMENT_SCENE_BRIEFS.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS091_NATIVE_LOCALIZATION_AND_ACCESSIBILITY_QA_BRIEFS.packets.json` count=455
+- `Docs\Lore\AppliedContent\packets\RS092_PUBLIC_SITE_LONGFORM_ARTICLE_BRIEFS.packets.json` count=455
+- `Docs\Lore\AppliedContent\in_game_wiki\ar_SA\P200_NATIVE_LOCALIZATION_PASS_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\ar_SA\P220_NATIVE_LANGUAGE_BACKLOG_RULES.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\de_DE\P200_NATIVE_LOCALIZATION_PASS_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\de_DE\P220_NATIVE_LANGUAGE_BACKLOG_RULES.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\en_US\P200_NATIVE_LOCALIZATION_PASS_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\en_US\P220_NATIVE_LANGUAGE_BACKLOG_RULES.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\es_ES\P200_NATIVE_LOCALIZATION_PASS_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\es_ES\P220_NATIVE_LANGUAGE_BACKLOG_RULES.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\fr_FR\P200_NATIVE_LOCALIZATION_PASS_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\fr_FR\P220_NATIVE_LANGUAGE_BACKLOG_RULES.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\he_IL\P200_NATIVE_LOCALIZATION_PASS_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\he_IL\P220_NATIVE_LANGUAGE_BACKLOG_RULES.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\id_ID\P200_NATIVE_LOCALIZATION_PASS_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\id_ID\P220_NATIVE_LANGUAGE_BACKLOG_RULES.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\ja_JP\P200_NATIVE_LOCALIZATION_PASS_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\ja_JP\P220_NATIVE_LANGUAGE_BACKLOG_RULES.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\ko_KR\P200_NATIVE_LOCALIZATION_PASS_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\ko_KR\P220_NATIVE_LANGUAGE_BACKLOG_RULES.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\nl_NL\P200_NATIVE_LOCALIZATION_PASS_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\nl_NL\P220_NATIVE_LANGUAGE_BACKLOG_RULES.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\pl_PL\P200_NATIVE_LOCALIZATION_PASS_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\pl_PL\P220_NATIVE_LANGUAGE_BACKLOG_RULES.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\pt_BR\P200_NATIVE_LOCALIZATION_PASS_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\pt_BR\P220_NATIVE_LANGUAGE_BACKLOG_RULES.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\ru_RU\P200_NATIVE_LOCALIZATION_PASS_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\ru_RU\P220_NATIVE_LANGUAGE_BACKLOG_RULES.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\uk_UA\P200_NATIVE_LOCALIZATION_PASS_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\uk_UA\P220_NATIVE_LANGUAGE_BACKLOG_RULES.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\zh_CN\P200_NATIVE_LOCALIZATION_PASS_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\zh_CN\P220_NATIVE_LANGUAGE_BACKLOG_RULES.md` count=1
+- `Docs\Lore\AppliedContent\external_site\ar_SA\P200_NATIVE_LOCALIZATION_PASS_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\external_site\ar_SA\P220_NATIVE_LANGUAGE_BACKLOG_RULES.md` count=1
+- `Docs\Lore\AppliedContent\external_site\de_DE\P200_NATIVE_LOCALIZATION_PASS_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\external_site\de_DE\P220_NATIVE_LANGUAGE_BACKLOG_RULES.md` count=1
+- `Docs\Lore\AppliedContent\external_site\en_US\P200_NATIVE_LOCALIZATION_PASS_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\external_site\en_US\P220_NATIVE_LANGUAGE_BACKLOG_RULES.md` count=1
+- `Docs\Lore\AppliedContent\external_site\es_ES\P200_NATIVE_LOCALIZATION_PASS_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\external_site\es_ES\P220_NATIVE_LANGUAGE_BACKLOG_RULES.md` count=1
+- `Docs\Lore\AppliedContent\external_site\fr_FR\P200_NATIVE_LOCALIZATION_PASS_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\external_site\fr_FR\P220_NATIVE_LANGUAGE_BACKLOG_RULES.md` count=1
+- Additional 20 files omitted; see `literal_marker_audit.csv`.
+
+### machine localization phrase
+- `Docs\Lore\AppliedContent\packets\RS091_NATIVE_LOCALIZATION_AND_ACCESSIBILITY_QA_BRIEFS.packets.json` count=15
+- `Docs\Lore\AppliedContent\external_site\ar_SA\P451_RU_NATIVE_ENCODING_QA_BRIEF.md` count=1
+- `Docs\Lore\AppliedContent\external_site\de_DE\P451_RU_NATIVE_ENCODING_QA_BRIEF.md` count=1
+- `Docs\Lore\AppliedContent\external_site\en_US\P451_RU_NATIVE_ENCODING_QA_BRIEF.md` count=1
+- `Docs\Lore\AppliedContent\external_site\es_ES\P451_RU_NATIVE_ENCODING_QA_BRIEF.md` count=1
+- `Docs\Lore\AppliedContent\external_site\fr_FR\P451_RU_NATIVE_ENCODING_QA_BRIEF.md` count=1
+- `Docs\Lore\AppliedContent\external_site\he_IL\P451_RU_NATIVE_ENCODING_QA_BRIEF.md` count=1
+- `Docs\Lore\AppliedContent\external_site\id_ID\P451_RU_NATIVE_ENCODING_QA_BRIEF.md` count=1
+- `Docs\Lore\AppliedContent\external_site\ja_JP\P451_RU_NATIVE_ENCODING_QA_BRIEF.md` count=1
+- `Docs\Lore\AppliedContent\external_site\ko_KR\P451_RU_NATIVE_ENCODING_QA_BRIEF.md` count=1
+- `Docs\Lore\AppliedContent\external_site\nl_NL\P451_RU_NATIVE_ENCODING_QA_BRIEF.md` count=1
+- `Docs\Lore\AppliedContent\external_site\pl_PL\P451_RU_NATIVE_ENCODING_QA_BRIEF.md` count=1
+- `Docs\Lore\AppliedContent\external_site\pt_BR\P451_RU_NATIVE_ENCODING_QA_BRIEF.md` count=1
+- `Docs\Lore\AppliedContent\external_site\ru_RU\P451_RU_NATIVE_ENCODING_QA_BRIEF.md` count=1
+- `Docs\Lore\AppliedContent\external_site\uk_UA\P451_RU_NATIVE_ENCODING_QA_BRIEF.md` count=1
+- `Docs\Lore\AppliedContent\external_site\zh_CN\P451_RU_NATIVE_ENCODING_QA_BRIEF.md` count=1
+
+### placeholder
+- `Docs\Lore\AppliedContent\packets\RS040_NUMERIC_TUNING_SOURCE_RULES.packets.json` count=34
+- `Docs\Lore\AppliedContent\in_game_wiki\ar_SA\INDEX.md` count=3
+- `Docs\Lore\AppliedContent\in_game_wiki\ar_SA\P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\de_DE\INDEX.md` count=3
+- `Docs\Lore\AppliedContent\in_game_wiki\de_DE\P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\en_US\INDEX.md` count=3
+- `Docs\Lore\AppliedContent\in_game_wiki\en_US\P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\es_ES\INDEX.md` count=3
+- `Docs\Lore\AppliedContent\in_game_wiki\es_ES\P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\fr_FR\INDEX.md` count=3
+- `Docs\Lore\AppliedContent\in_game_wiki\fr_FR\P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\he_IL\INDEX.md` count=3
+- `Docs\Lore\AppliedContent\in_game_wiki\he_IL\P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\id_ID\INDEX.md` count=3
+- `Docs\Lore\AppliedContent\in_game_wiki\id_ID\P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\ja_JP\INDEX.md` count=3
+- `Docs\Lore\AppliedContent\in_game_wiki\ja_JP\P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\ko_KR\INDEX.md` count=3
+- `Docs\Lore\AppliedContent\in_game_wiki\ko_KR\P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\nl_NL\INDEX.md` count=3
+- `Docs\Lore\AppliedContent\in_game_wiki\nl_NL\P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\pl_PL\INDEX.md` count=3
+- `Docs\Lore\AppliedContent\in_game_wiki\pl_PL\P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\pt_BR\INDEX.md` count=3
+- `Docs\Lore\AppliedContent\in_game_wiki\pt_BR\P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\ru_RU\INDEX.md` count=3
+- `Docs\Lore\AppliedContent\in_game_wiki\ru_RU\P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\uk_UA\INDEX.md` count=3
+- `Docs\Lore\AppliedContent\in_game_wiki\uk_UA\P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\in_game_wiki\zh_CN\INDEX.md` count=3
+- `Docs\Lore\AppliedContent\in_game_wiki\zh_CN\P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT.md` count=1
+- `Docs\Lore\AppliedContent\external_site\ar_SA\INDEX.md` count=3
+- `Docs\Lore\AppliedContent\external_site\ar_SA\P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT.md` count=2
+- `Docs\Lore\AppliedContent\external_site\de_DE\INDEX.md` count=3
+- `Docs\Lore\AppliedContent\external_site\de_DE\P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT.md` count=2
+- `Docs\Lore\AppliedContent\external_site\en_US\INDEX.md` count=3
+- `Docs\Lore\AppliedContent\external_site\en_US\P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT.md` count=2
+- `Docs\Lore\AppliedContent\external_site\es_ES\INDEX.md` count=3
+- `Docs\Lore\AppliedContent\external_site\es_ES\P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT.md` count=2
+- `Docs\Lore\AppliedContent\external_site\fr_FR\INDEX.md` count=3
+- `Docs\Lore\AppliedContent\external_site\fr_FR\P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT.md` count=2
+- `Docs\Lore\AppliedContent\external_site\he_IL\INDEX.md` count=3
+- `Docs\Lore\AppliedContent\external_site\he_IL\P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT.md` count=2
+- `Docs\Lore\AppliedContent\external_site\id_ID\INDEX.md` count=3
+- `Docs\Lore\AppliedContent\external_site\id_ID\P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT.md` count=2
+- `Docs\Lore\AppliedContent\external_site\ja_JP\INDEX.md` count=3
+- `Docs\Lore\AppliedContent\external_site\ja_JP\P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT.md` count=2
+- `Docs\Lore\AppliedContent\external_site\ko_KR\INDEX.md` count=3
+- `Docs\Lore\AppliedContent\external_site\ko_KR\P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT.md` count=2
+- `Docs\Lore\AppliedContent\external_site\nl_NL\INDEX.md` count=3
+- `Docs\Lore\AppliedContent\external_site\nl_NL\P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT.md` count=2
+- `Docs\Lore\AppliedContent\external_site\pl_PL\INDEX.md` count=3
+- `Docs\Lore\AppliedContent\external_site\pl_PL\P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT.md` count=2
+- `Docs\Lore\AppliedContent\external_site\pt_BR\INDEX.md` count=3
+- `Docs\Lore\AppliedContent\external_site\pt_BR\P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT.md` count=2
+- `Docs\Lore\AppliedContent\external_site\ru_RU\INDEX.md` count=3
+- `Docs\Lore\AppliedContent\external_site\ru_RU\P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT.md` count=2
+- `Docs\Lore\AppliedContent\external_site\uk_UA\INDEX.md` count=3
+- `Docs\Lore\AppliedContent\external_site\uk_UA\P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT.md` count=2
+- `Docs\Lore\AppliedContent\external_site\zh_CN\INDEX.md` count=3
+- `Docs\Lore\AppliedContent\external_site\zh_CN\P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT.md` count=2

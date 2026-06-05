@@ -123,7 +123,7 @@ namespace Hecton8.Optimization.Editor
         /// Exports at 1920×1080 resolution for visual regression testing.
         /// </summary>
         /// <param name="rt">RenderTexture to capture.</param>
-        /// <param name="outputPath">Output file path (relative to Assets/_Project/Optimization/Screenshots/).</param>
+        /// <param name="outputPath">Output file path (relative to Docs/Screenshots/Optimization/).</param>
         /// <returns>Full path to saved screenshot.</returns>
         public static string CaptureScreenshot(RenderTexture rt, string outputPath)
         {
@@ -134,7 +134,7 @@ namespace Hecton8.Optimization.Editor
             }
             
             // Ensure output directory exists
-            string baseDir = "Assets/_Project/Optimization/Screenshots";
+            string baseDir = System.IO.Path.Combine("Docs", "Screenshots", "Optimization");
             if (!System.IO.Directory.Exists(baseDir))
             {
                 System.IO.Directory.CreateDirectory(baseDir);
@@ -190,7 +190,7 @@ namespace Hecton8.Optimization.Editor
         
         /// <summary>
         /// Captures BEFORE and AFTER screenshots for visual regression testing.
-        /// Saves both to Assets/_Project/Optimization/Screenshots/.
+        /// Saves both to Docs/Screenshots/Optimization/.
         /// </summary>
         /// <param name="rt">RenderTexture to capture.</param>
         /// <param name="baseName">Base name for screenshot files (without extension).</param>

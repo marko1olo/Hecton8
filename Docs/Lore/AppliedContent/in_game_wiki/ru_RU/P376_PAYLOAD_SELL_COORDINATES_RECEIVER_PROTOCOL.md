@@ -10,13 +10,13 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Протокол приемника: продать координаты
+# Payload Sell Coordinates Receiver Protocol
 
-Маршрут продажи не fake bad ending. Он платит и возвращает игрока, но отдает Deep Reach путь обратно на HECTON-8.
+The sale route is not a fake bad ending. It pays and recovers the player while giving Deep Reach the route back into HECTON-8.
 
 ## Scanner
 
@@ -28,10 +28,10 @@ PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access m
 
 ## Audio
 
-Это самый чистый выход, если читать только сумму.
+This is the cleanest way out if you stop reading after the amount.
 
 ## Field Note
 
-Для material ending UI и spoiler-gated site pages.
+Receiver record: material recovery pays out by handing Deep Reach the basin vector and leaving worker truth contested.
 
 <!-- In-Game Wiki; generated from P376_PAYLOAD_SELL_COORDINATES_RECEIVER_PROTOCOL/ru_RU. -->

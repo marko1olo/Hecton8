@@ -653,7 +653,7 @@
           "audio": "When the sky closes, the paperwork keeps breathing.",
           "in_game_wiki": "Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.",
           "external_site": "HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.",
-          "field_note": "Use as the comms cadence rule."
+          "field_note": "Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both."
         },
         "ru_RU": {
           "title": "Распад сигнала в blackout window",
@@ -662,7 +662,7 @@
           "audio": "Когда небо закрывается, бумажная очередь продолжает дышать.",
           "in_game_wiki": "Распад сигнала держит связь редкой по физическим причинам. Игрок получает окна, broken packets и acoustic relays, не постоянное radio guidance.",
           "external_site": "HECTON-8 использует орбитальную и магнитную среду Aegir, чтобы тишина стала частью навигации и структуры истории.",
-          "field_note": "Использовать как comms cadence rule."
+          "field_note": "Draft RU localization pending native pass. Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Blackout Window Signal Decay",
@@ -671,7 +671,7 @@
           "audio": "Draft JA localization pending native pass. When the sky closes, the paperwork keeps breathing.",
           "in_game_wiki": "Draft JA localization pending native pass. Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.",
           "external_site": "Draft JA localization pending native pass. HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.",
-          "field_note": "Draft JA localization pending native pass. Use as the comms cadence rule."
+          "field_note": "Draft JP localization pending native pass. Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Blackout Window Signal Decay",
@@ -680,7 +680,7 @@
           "audio": "Draft ZH localization pending native pass. When the sky closes, the paperwork keeps breathing.",
           "in_game_wiki": "Draft ZH localization pending native pass. Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.",
           "external_site": "Draft ZH localization pending native pass. HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.",
-          "field_note": "Draft ZH localization pending native pass. Use as the comms cadence rule."
+          "field_note": "Draft CN localization pending native pass. Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Blackout Window Signal Decay",
@@ -689,7 +689,7 @@
           "audio": "Draft FR localization pending native pass. When the sky closes, the paperwork keeps breathing.",
           "in_game_wiki": "Draft FR localization pending native pass. Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.",
           "external_site": "Draft FR localization pending native pass. HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.",
-          "field_note": "Draft FR localization pending native pass. Use as the comms cadence rule."
+          "field_note": "Draft FR localization pending native pass. Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Blackout Window Signal Decay",
@@ -698,7 +698,7 @@
           "audio": "Draft ES localization pending native pass. When the sky closes, the paperwork keeps breathing.",
           "in_game_wiki": "Draft ES localization pending native pass. Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.",
           "external_site": "Draft ES localization pending native pass. HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.",
-          "field_note": "Draft ES localization pending native pass. Use as the comms cadence rule."
+          "field_note": "Draft ES localization pending native pass. Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Blackout Window Signal Decay",
@@ -707,7 +707,7 @@
           "audio": "Draft DE localization pending native pass. When the sky closes, the paperwork keeps breathing.",
           "in_game_wiki": "Draft DE localization pending native pass. Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.",
           "external_site": "Draft DE localization pending native pass. HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.",
-          "field_note": "Draft DE localization pending native pass. Use as the comms cadence rule."
+          "field_note": "Draft DE localization pending native pass. Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Blackout Window Signal Decay",
@@ -716,7 +716,7 @@
           "audio": "Draft PL localization pending native pass. When the sky closes, the paperwork keeps breathing.",
           "in_game_wiki": "Draft PL localization pending native pass. Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.",
           "external_site": "Draft PL localization pending native pass. HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.",
-          "field_note": "Draft PL localization pending native pass. Use as the comms cadence rule."
+          "field_note": "Draft PL localization pending native pass. Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Blackout Window Signal Decay",
@@ -725,7 +725,7 @@
           "audio": "Draft UK localization pending native pass. When the sky closes, the paperwork keeps breathing.",
           "in_game_wiki": "Draft UK localization pending native pass. Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.",
           "external_site": "Draft UK localization pending native pass. HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.",
-          "field_note": "Draft UK localization pending native pass. Use as the comms cadence rule."
+          "field_note": "Draft UA localization pending native pass. Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Blackout Window Signal Decay",
@@ -734,7 +734,7 @@
           "audio": "Draft AR localization pending native pass. When the sky closes, the paperwork keeps breathing.",
           "in_game_wiki": "Draft AR localization pending native pass. Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.",
           "external_site": "Draft AR localization pending native pass. HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.",
-          "field_note": "Draft AR localization pending native pass. Use as the comms cadence rule."
+          "field_note": "Draft AR localization pending native pass. Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Blackout Window Signal Decay",
@@ -743,7 +743,7 @@
           "audio": "Draft ID localization pending native pass. When the sky closes, the paperwork keeps breathing.",
           "in_game_wiki": "Draft ID localization pending native pass. Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.",
           "external_site": "Draft ID localization pending native pass. HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.",
-          "field_note": "Draft ID localization pending native pass. Use as the comms cadence rule."
+          "field_note": "Draft ID localization pending native pass. Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Blackout Window Signal Decay",
@@ -752,7 +752,7 @@
           "audio": "Draft KO localization pending native pass. When the sky closes, the paperwork keeps breathing.",
           "in_game_wiki": "Draft KO localization pending native pass. Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.",
           "external_site": "Draft KO localization pending native pass. HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.",
-          "field_note": "Draft KO localization pending native pass. Use as the comms cadence rule."
+          "field_note": "Draft KO localization pending native pass. Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Blackout Window Signal Decay",
@@ -761,7 +761,7 @@
           "audio": "Draft HE localization pending native pass. When the sky closes, the paperwork keeps breathing.",
           "in_game_wiki": "Draft HE localization pending native pass. Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.",
           "external_site": "Draft HE localization pending native pass. HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.",
-          "field_note": "Draft HE localization pending native pass. Use as the comms cadence rule."
+          "field_note": "Draft HE localization pending native pass. Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Blackout Window Signal Decay",
@@ -770,7 +770,7 @@
           "audio": "Draft PT localization pending native pass. When the sky closes, the paperwork keeps breathing.",
           "in_game_wiki": "Draft PT localization pending native pass. Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.",
           "external_site": "Draft PT localization pending native pass. HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.",
-          "field_note": "Draft PT localization pending native pass. Use as the comms cadence rule."
+          "field_note": "Draft PT localization pending native pass. Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Blackout Window Signal Decay",
@@ -779,7 +779,7 @@
           "audio": "Draft NL localization pending native pass. When the sky closes, the paperwork keeps breathing.",
           "in_game_wiki": "Draft NL localization pending native pass. Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.",
           "external_site": "Draft NL localization pending native pass. HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.",
-          "field_note": "Draft NL localization pending native pass. Use as the comms cadence rule."
+          "field_note": "Draft NL localization pending native pass. Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both."
         }
       }
     }

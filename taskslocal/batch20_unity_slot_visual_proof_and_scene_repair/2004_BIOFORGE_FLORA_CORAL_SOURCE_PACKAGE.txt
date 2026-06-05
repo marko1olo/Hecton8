@@ -1,0 +1,123 @@
+TASK 2004: BIOFORGE FLORA CORAL SOURCE PACKAGE
+
+Role:
+BioForge and Flora source package author for premium photic-shallow kelp, coral, and aquatic flora.
+
+Unity status:
+NO UNITY. Offline/static authoring only. Do not open Unity or mutate active Assets.
+
+Primary objective:
+Create a production-ready source package and generation handoff for replacing weak/primitive shallow flora and coral with BioForge/Flora-generated assets. The output must be concrete enough for later Unity/editor agents to bake, validate, and capture without inventing art direction.
+
+Authority files to read first:
+1. AGENTS.md
+2. TASTE.md
+3. VISION_LOCKS.md
+4. PROJECT_BIBLES.md
+5. PROCEDURAL_ASSET_PIPELINE.md
+6. 3dmodel.md
+7. 3DMODEL_FLORA_CORAL.md
+8. 3DMODEL_TEXTURES_MATERIALS.md
+9. 3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md
+10. world.md
+11. water.md
+12. performance.md
+
+Relevant mandates to load:
+1. .agents-skills/REND_Instanced_Flora_Physics.txt
+2. .agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt
+3. .agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt
+4. .agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+
+Exact project files and tools to inspect:
+1. Assets/_Project/Scripts/Editor/ProceduralGen/BioForgeWindow.cs
+2. Assets/_Project/Scripts/Editor/ProceduralGen/BioForgeGenerator.cs
+3. Assets/_Project/Scripts/Editor/ProceduralGen/BioForgeJobs.cs
+4. Assets/_Project/Scripts/Editor/ProceduralGen/BioRuleData.cs
+5. Assets/_Project/Scripts/Editor/ProceduralGen/ShallowsBioForgeBatchBaker.cs
+6. Assets/_Project/Editor/Generators/Flora/FloraTopologyStudio1604.cs
+7. Assets/_Project/Editor/Generators/Flora/FloraTopologyStudio1711.cs
+8. Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs
+9. Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs
+10. Assets/_Project/Scripts/Editor/WorldProceduralFloraTextureAuthoring.cs
+11. Assets/_Project/Scripts/Editor/WorldProceduralFloraMaterialAuthoring.cs
+12. Assets/_Project/Scripts/Editor/WorldProceduralFloraFinalVariantAuthoring.cs
+13. Assets/_Project/Scripts/Editor/WorldProceduralFloraFinalVariantValidator.cs
+14. Assets/_Project/Scripts/Editor/WorldProceduralFamilyContractValidator.cs
+15. Assets/_Project/Scripts/Editor/WorldProceduralFinalPrefabQualityGate.cs
+16. Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_kelp_*.asset
+17. Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_coral_*.asset
+18. rg --files Assets/_Project | rg "Flora|Coral|Kelp|Seaweed|BioForge"
+
+Forbidden actions:
+1. Do not run Unity.
+2. Do not generate final candidate images through Gemini unless a GUI/browser/orchestrator with access is explicitly available.
+3. Do not create primitive seaweed, flat green ribbons, random land scatter, or low-effort coral.
+4. Do not propose alpha-blended card forests as the compact/mobile route.
+5. Do not use runtime procedural generation as the normal asset route.
+6. Do not edit active Assets.
+7. Do not leave texture channel contracts ambiguous.
+
+Ownership boundaries:
+1. You own the source package and generation handoff.
+2. You may create prompt packs, CSV manifests, validation checklists, and target folder plans.
+3. You do not own actual Unity baking, prefab placement, or capture proof.
+4. You do not own geology rocks, sky, ocean, or ProductFace relink except where flora/coral touches them.
+
+Deliverables:
+1. Docs/Reports/Batch20/2004_BIOFORGE_FLORA_CORAL_SOURCE_PACKAGE.md
+2. Docs/Reports/Batch20/2004_FLORA_CORAL_VARIANT_MATRIX.csv
+3. Docs/Reports/Batch20/2004_TEXTURE_CHANNEL_CONTRACTS.csv
+4. Docs/Reports/Batch20/2004_GENERATION_HANDOFF_CHECKLIST.md
+5. Docs/Reports/Batch20/2004_PROMPT_PACKS.md
+6. Docs/Tasks/Status_2004.md
+7. Docs/AgentLogs/Rationale_2004.md
+8. Docs/AgentLogs/LOG_2004.md
+
+Required source package contents:
+1. Kelp tall hero variant.
+2. Kelp patch filler variant.
+3. Kelp canopy silhouette variant.
+4. Intertidal seaweed/shoreline flora variant that is not underwater kelp on land.
+5. Branching coral variant.
+6. Massive coral variant.
+7. Plate coral variant.
+8. Low coral/sponge floor detail variant.
+9. Reef fan/soft coral motion accent variant.
+10. Anchor/debris blend variant for shoreline transition.
+
+Work plan:
+1. Read authority and mandates.
+2. Inspect BioForge and Flora tool capabilities. Record exact entry points and limitations.
+3. Inspect existing kelp/coral placement rules to understand required families and scale ranges.
+4. Inventory existing generated flora/coral assets if present. Record only exact paths.
+5. Define variant families with silhouettes, material needs, LODs, pivot/anchor rules, and collision/proxy needs.
+6. Define vertex color semantics following project bible expectations. Do not invent contradictory channel meanings.
+7. Define texture sets per family: albedo/base, normal, roughness/smoothness, AO, translucency/subsurface if supported, masks, emission only if justified.
+8. Create explicit channel contracts. State every packed texture channel role.
+9. Define material import settings and compression expectations for low/middle/high/ultra.
+10. Define movement route: shader sway/phase/vertex colors first, not per-object runtime scripts.
+11. Define batching/instancing requirements.
+12. Define low-cost impostor/LOD route that still looks premium.
+13. Define hero-route overkill behavior for high/ultra near player and camera-facing proof shots.
+14. Define gameplay readability rules: do not hide pickups, doors, hazards, shoreline entry, or traversal affordances.
+15. Define placement compatibility with dry-land repair: intertidal flora is separate from underwater kelp.
+16. Create Gemini prompt packs for source textures only. Mark candidate image generation as manual/orchestrator-only.
+17. Create acceptance checklist for later Unity bake: import, validator, material channels, prefab LODs, scene shots, profiler.
+18. Add exact proof shots required: shoreline closeup, underwater 0-5m, underwater 20-50m, Game/Scene matching.
+19. Mark every output as PENDING EDITOR/PLAYMODE verification until baked and captured.
+20. Write concise rationale for rejecting primitive seaweed/coral and alpha-card cheapness.
+
+Three-pillar acceptance:
+1. Graphics: generated flora/coral families have premium silhouette, texture, material, and motion intent.
+2. Optimization: assets are pre-baked, instanced, LOD-ready, and allocation-free at runtime.
+3. Gameplay: ecology improves route readability and player immersion without obscuring gameplay truth.
+
+GlobalQualityWeight consequences:
+1. Low: reduced density, simpler shader sway, smaller LOD range, premium silhouettes preserved.
+2. Middle: default density and texture size.
+3. High: richer shader variation, denser hero pockets, higher texture resolution where visible.
+4. Ultra: visual overkill hero patches and extra detail maps, with no authority or save identity change.
+
+Closeout standard:
+The source package must be enough for a later editor agent to bake and validate the family without asking for art direction.

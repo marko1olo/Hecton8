@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Localized Overflow Proof Card
+# Localization Fit Record
 
-Localized Overflow Proof Card separates draft multilingual coverage from release localization.
+Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.
 
 ## Scanner
 
-Localization proof: long labels, CJK, RTL and subtitle timing need layout evidence.
+Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.
 
 ## Terminal
 
-LOC PROOF: every final UI surface needs string-pool key, font set, overflow policy, RTL/CJK check and subtitle/audio timing proof.
+A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.
 
 ## Audio
 
-If it does not fit, it is not localized yet.
+A line is not localized because it exists in a table. It is localized when it can be read in motion.
 
 ## Field Note
 
-This is a proof gate, not a claim that native localization is complete.
+Track locale status separately from packet identity; language review must not alter saves or route authority.
 
 <!-- In-Game Wiki; generated from P310_LOCALIZED_OVERFLOW_PROOF_CARD/uk_UA. -->

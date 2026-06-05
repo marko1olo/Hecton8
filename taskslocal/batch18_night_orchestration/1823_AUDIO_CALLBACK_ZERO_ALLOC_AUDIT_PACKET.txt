@@ -1,0 +1,55 @@
+AGENT ID: 1823
+ROLE: AUDIO_CALLBACK_ZERO_ALLOC_AUDIT_PACKET
+MODE: No-edit static source audit and patch packet. Do not modify C# while Unity/import/compiler work is active.
+
+PRIMARY GOAL
+Produce a controller-grade zero-allocation audit and minimal patch packet for managed audio callback blockers reported in Batch18. The target is not silence, feature deletion, or cheap audio. The target is preserving intended music/vocal behavior while moving all allocation/string/lookup/dynamic work out of `OnAudioFilterRead(float[]...)`.
+
+READ
+- AGENTS.md, PROJECT_BIBLES.md, VISION_LOCKS.md, TASTE.md, quality.md
+- audio.md, performance.md, architecture.md, memory.md if present
+- Docs/Reports/Batch18/1805_AGENT_OUTPUT_TRIAGE_DASHBOARD.md
+- Docs/Reports/Batch18/1813_STALE_BLOCKER_ERRATA_PACKET.md
+
+LIKELY TARGETS
+- Assets/_Project/Scripts/Audio/DynamicMusicGranularSynthesizer.cs
+- Assets/_Project/Scripts/Audio/VocalBankPlaybackRuntime.cs
+- Any direct helper called from their `OnAudioFilterRead(float[]...)` bodies.
+
+OWNED OUTPUTS
+- Docs/Tasks/Status_1823.md
+- Docs/AgentLogs/Rationale_1823.md for non-trivial decisions only
+- Docs/AgentLogs/LOG_1823.md
+- Docs/Reports/Batch18/1823_AUDIO_CALLBACK_ZERO_ALLOC_AUDIT_PACKET.md
+- Optional: Docs/Reports/Batch18/1823_AUDIO_CALLBACK_PATTERN_SCAN.csv
+
+HARD RULES
+- Do not edit source files in this run.
+- Do not run Unity, dotnet build, PlayMode, profiler, or broad validation.
+- Do not trigger imports or compilation.
+- Do not claim runtime allocation proof, audio continuity proof, or profiler proof.
+- Do not degrade audio design into silence, one-shot placeholder loops, or flat beeps.
+- Mark exact patch targets and safe sequence for a later code owner.
+
+20 TASKS
+01. Create tracking files for explicit ID 1823.
+02. Read authorities and 2-8 relevant mandates for audio hot paths, zero-GC, black-box evidence, and performance.
+03. Locate all `OnAudioFilterRead` implementations under `Assets/_Project/Scripts/Audio`.
+04. For each callback, map direct methods called inside the callback.
+05. For callback bodies and direct callees, scan for `new`, LINQ, `foreach` over managed collections, string formatting, `.ToString()`, interpolation, `Debug.Log`, locks, dictionary/list mutation, array resize/copy allocation, scene search, `GetComponent`, registry polling, and job `.Complete()`.
+06. Separate confirmed blockers from stale report claims.
+07. Identify state that can be prepared on owner/update thread before audio callback.
+08. Identify fixed-size buffers/ring buffers/native containers already present or candidate first-party helpers.
+09. Identify telemetry/black-box needs that must not write from the callback.
+10. Build a table: file, callback, offending pattern, call chain, risk, no-edit proof.
+11. Define the minimal patch plan for `DynamicMusicGranularSynthesizer`.
+12. Define the minimal patch plan for `VocalBankPlaybackRuntime`.
+13. Define forbidden quick fixes: silence, feature removal, runtime string logging, dynamic callback fallback, broad rewrite.
+14. Define Low/Middle/High/Ultra audio consequences without changing gameplay truth or callback allocation rules.
+15. Define validation plan for later patch owner: static scan, script validation if safe, Unity audio continuity, profiler allocation, CPU budget.
+16. Define exact conditions when source patching becomes safe: Unity idle, compiler idle, CPU safe, rollback known.
+17. List any dependencies that require a separate audio buffer/helper task.
+18. Append concise log.
+19. Final scan for fake runtime/profiler/Unity proof and fake line numbers/hashes.
+20. Mark AUDIT_PACKET_COMPLETE or BLOCKED with exact missing source access.
+

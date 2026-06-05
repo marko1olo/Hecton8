@@ -610,7 +610,7 @@ namespace Hecton8.Construction
             try
             {
                 if (vault.IsCompactionFenceActive ||
-                    !vault.TryResolveHandle(in handle, out buffer) ||
+                    !vault.TryReadHandle(in handle, out buffer) ||
                     vault.IsCompactionFenceActive ||
                     !buffer.IsCreated ||
                     buffer.Length < requiredLength)
@@ -2529,8 +2529,8 @@ namespace Hecton8.Construction
             try
             {
                 if (vault.IsCompactionFenceActive ||
-                    !vault.TryResolveHandle(in s_DroneServiceCommandsHandle, out commands) ||
-                    !vault.TryResolveHandle(in s_DroneServiceCommandCursorHandle, out cursor) ||
+                    !vault.TryReadHandle(in s_DroneServiceCommandsHandle, out commands) ||
+                    !vault.TryReadHandle(in s_DroneServiceCommandCursorHandle, out cursor) ||
                     vault.IsCompactionFenceActive ||
                     !commands.IsCreated ||
                     commands.Length < DroneServiceCommandCapacity ||
@@ -2712,16 +2712,6 @@ namespace Hecton8.Construction
             }
         }
 
-        private static void ReleaseDroneVaultWrite<T>(
-            IDataVault vault,
-            in VaultGenerationHandle<T> handle,
-            BufferID bufferId)
-            where T : struct
-        {
-            if (vault != null && IsDroneVaultHandle(in handle, bufferId))
-                vault.ReleaseWriteLock(in handle, SystemID.Construction);
-        }
-
         private static void ReleaseDroneMutationGuard(IDataVault vault, ulong mutationGuardMask)
         {
             if (vault != null && mutationGuardMask != 0UL)
@@ -2810,7 +2800,7 @@ namespace Hecton8.Construction
             if (vault == null ||
                 requiredLength <= 0 ||
                 !IsDroneVaultHandle(in handle, bufferId) ||
-                !vault.TryResolveHandle(in handle, out buffer) ||
+                !vault.TryReadHandle(in handle, out buffer) ||
                 !buffer.IsCreated ||
                 buffer.Length < requiredLength)
             {
@@ -8783,8 +8773,8 @@ namespace Hecton8.Construction
             try
             {
                 if (vault.IsCompactionFenceActive ||
-                    !vault.TryResolveHandle(in s_TaskClaimCountsHandle, out taskClaimCounts) ||
-                    !vault.TryResolveHandle(in s_DroneTaskPriorityHeapHandle, out taskPriorityHeap) ||
+                    !vault.TryReadHandle(in s_TaskClaimCountsHandle, out taskClaimCounts) ||
+                    !vault.TryReadHandle(in s_DroneTaskPriorityHeapHandle, out taskPriorityHeap) ||
                     vault.IsCompactionFenceActive ||
                     !taskClaimCounts.IsCreated ||
                     taskClaimCounts.Length < requiredCount ||

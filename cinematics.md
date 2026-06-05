@@ -1,7 +1,14 @@
 # HECTON-8 Cinematics, Cutscenes, And Directed Moments Bible
 
 Status: AUTHORING LAW / STATIC DOC / RUNTIME PROOF NOT IMPLIED
+Evidence class: STATIC_DOC
 Scope: cutscenes, directed gameplay moments, camera blocking, trailer-like in-game shots, black-box replay, scripted sequences, capture truth, and cinematic proof gates.
+
+## First-20 Route Hook
+
+- First-20 moment: boot-to-world handoff, first exit, first hazard, death/faint, and first repaired route change may use directed moments only to reveal real playable truth.
+- Route blocker removed: prevents opening-route scenes and captures from implying unbuilt mechanics, hiding missing assets, or removing control without creating a new survival decision.
+- Proof class: STATIC_DOC only; route acceptance still requires truth labels, owner state proof, compact capture, control-loss timing, and public-claim review for external footage.
 
 ## Prime Law
 

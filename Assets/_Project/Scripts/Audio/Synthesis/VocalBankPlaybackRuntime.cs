@@ -66,18 +66,52 @@ namespace Hecton8.Audio.Synthesis
 #if UNITY_EDITOR
         private const int LockCsvMetadata = 1 << 7;
 #endif
-        private static readonly ulong VocalMutationGuardMask =
-            VocalMutationGuardBit(BufferID.AudioVocalSynthesisState) |
-            VocalMutationGuardBit(BufferID.AudioVocalSynthesisCodecState) |
-            VocalMutationGuardBit(BufferID.AudioVocalSynthesisTelemetry) |
-            VocalMutationGuardBit(BufferID.AudioVocalSynthesisTelemetryCursor) |
-            VocalMutationGuardBit(BufferID.AudioVocalSynthesisWaveform) |
-            VocalMutationGuardBit(BufferID.AudioVocalSynthesisMockBankBytes) |
-            VocalMutationGuardBit(BufferID.AudioVocalSynthesisMockBankRecords)
+        private const ulong GuardBitState = 1UL << ((int)BufferID.AudioVocalSynthesisState & 31);
+        private const ulong GuardBitCodec = 1UL << ((int)BufferID.AudioVocalSynthesisCodecState & 31);
+        private const ulong GuardBitTelemetry = 1UL << ((int)BufferID.AudioVocalSynthesisTelemetry & 31);
+        private const ulong GuardBitCounters = 1UL << ((int)BufferID.AudioVocalSynthesisTelemetryCursor & 31);
+        private const ulong GuardBitWaveform = 1UL << ((int)BufferID.AudioVocalSynthesisWaveform & 31);
+        private const ulong GuardBitMockBankBytes = 1UL << ((int)BufferID.AudioVocalSynthesisMockBankBytes & 31);
+        private const ulong GuardBitMockRecords = 1UL << ((int)BufferID.AudioVocalSynthesisMockBankRecords & 31);
 #if UNITY_EDITOR
-            | VocalMutationGuardBit(BufferID.AudioVocalSynthesisCsvMetadata)
+        private const ulong GuardBitCsvMetadata = 1UL << ((int)BufferID.AudioVocalSynthesisCsvMetadata & 31);
+#endif
+        private static readonly ulong VocalAudioCallbackMutationGuardMask =
+            GuardBitState |
+            GuardBitCodec |
+            GuardBitTelemetry |
+            GuardBitCounters |
+            GuardBitWaveform |
+            GuardBitMockBankBytes;
+        private static readonly ulong VocalControlMutationGuardMask =
+            GuardBitState |
+            GuardBitCodec |
+            GuardBitCounters |
+            GuardBitMockBankBytes
+#if UNITY_EDITOR
+            | GuardBitCsvMetadata
 #endif
             ;
+        private static readonly ulong VocalBankBytesMutationGuardMask =
+            GuardBitMockBankBytes;
+        private static readonly ulong VocalBankBuildMutationGuardMask =
+            GuardBitMockBankBytes |
+            GuardBitMockRecords;
+        private static readonly ulong VocalInitializeMutationGuardMask =
+            GuardBitState |
+            GuardBitCodec |
+            GuardBitTelemetry |
+            GuardBitCounters |
+            GuardBitWaveform |
+            GuardBitMockRecords
+#if UNITY_EDITOR
+            | GuardBitCsvMetadata
+#endif
+            ;
+#if UNITY_EDITOR
+        private static readonly ulong VocalCsvMutationGuardMask =
+            GuardBitCsvMetadata;
+#endif
 
         private static VocalBankPlaybackRuntime _activeInstance;
         private static int _decodePointerReady;
@@ -384,6 +418,15 @@ namespace Hecton8.Audio.Synthesis
             _ = previousService;
         }
 
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
+        private void OnAudioFilterRead(float[] data, int channels)
+        {
+            if (data != null && data.Length > 0)
+                ZeroManagedAudioBuffer(data, 0, data.Length);
+
+            _ = channels;
+        }
+#else
         private void OnAudioFilterRead(float[] data, int channels)
         {
             if (Volatile.Read(ref _bankReleaseInProgress) != 0 ||
@@ -477,6 +520,7 @@ namespace Hecton8.Audio.Synthesis
                 Interlocked.Decrement(ref _audioCallbackInFlight);
             }
         }
+#endif
 
         private bool TryAcquireAudioCallbackViews(out VocalVaultViews views, out int lockMask, out IDataVault lockedVault)
         {
@@ -489,12 +533,12 @@ namespace Hecton8.Audio.Synthesis
             bool ownershipTransferred = false;
             try
             {
-                if (!TryAcquireLockedView(lockedVault, in _stateHandle, BufferID.AudioVocalSynthesisState, LockState, ref lockMask, out views.State) ||
-                    !TryAcquireLockedView(lockedVault, in _codecHandle, BufferID.AudioVocalSynthesisCodecState, LockCodec, ref lockMask, out views.Codec) ||
-                    !TryAcquireLockedView(lockedVault, in _telemetryHandle, BufferID.AudioVocalSynthesisTelemetry, LockTelemetry, ref lockMask, out views.Telemetry) ||
-                    !TryAcquireLockedView(lockedVault, in _countersHandle, BufferID.AudioVocalSynthesisTelemetryCursor, LockCounters, ref lockMask, out views.Counters) ||
-                    !TryAcquireLockedView(lockedVault, in _waveformHandle, BufferID.AudioVocalSynthesisWaveform, LockWaveform, ref lockMask, out views.Waveform) ||
-                    !TryAcquireLockedView(lockedVault, in _mockBankBytesHandle, BufferID.AudioVocalSynthesisMockBankBytes, LockMockBankBytes, ref lockMask, out views.MockBankBytes) ||
+                if (!TryAcquireLockedView(lockedVault, in _stateHandle, BufferID.AudioVocalSynthesisState, LockState, VocalAudioCallbackMutationGuardMask, ref lockMask, out views.State) ||
+                    !TryAcquireLockedView(lockedVault, in _codecHandle, BufferID.AudioVocalSynthesisCodecState, LockCodec, VocalAudioCallbackMutationGuardMask, ref lockMask, out views.Codec) ||
+                    !TryAcquireLockedView(lockedVault, in _telemetryHandle, BufferID.AudioVocalSynthesisTelemetry, LockTelemetry, VocalAudioCallbackMutationGuardMask, ref lockMask, out views.Telemetry) ||
+                    !TryAcquireLockedView(lockedVault, in _countersHandle, BufferID.AudioVocalSynthesisTelemetryCursor, LockCounters, VocalAudioCallbackMutationGuardMask, ref lockMask, out views.Counters) ||
+                    !TryAcquireLockedView(lockedVault, in _waveformHandle, BufferID.AudioVocalSynthesisWaveform, LockWaveform, VocalAudioCallbackMutationGuardMask, ref lockMask, out views.Waveform) ||
+                    !TryAcquireLockedView(lockedVault, in _mockBankBytesHandle, BufferID.AudioVocalSynthesisMockBankBytes, LockMockBankBytes, VocalAudioCallbackMutationGuardMask, ref lockMask, out views.MockBankBytes) ||
                     views.State.Length <= 0 ||
                     views.Codec.Length <= 0 ||
                     views.Telemetry.Length < TelemetryCapacity ||
@@ -531,10 +575,10 @@ namespace Hecton8.Audio.Synthesis
             bool ownershipTransferred = false;
             try
             {
-                if (!TryAcquireLockedView(lockedVault, in _stateHandle, BufferID.AudioVocalSynthesisState, LockState, ref lockMask, out views.State) ||
-                    !TryAcquireLockedView(lockedVault, in _codecHandle, BufferID.AudioVocalSynthesisCodecState, LockCodec, ref lockMask, out views.Codec) ||
-                    !TryAcquireLockedView(lockedVault, in _countersHandle, BufferID.AudioVocalSynthesisTelemetryCursor, LockCounters, ref lockMask, out views.Counters) ||
-                    !TryAcquireLockedView(lockedVault, in _mockBankBytesHandle, BufferID.AudioVocalSynthesisMockBankBytes, LockMockBankBytes, ref lockMask, out views.MockBankBytes) ||
+                if (!TryAcquireLockedView(lockedVault, in _stateHandle, BufferID.AudioVocalSynthesisState, LockState, VocalControlMutationGuardMask, ref lockMask, out views.State) ||
+                    !TryAcquireLockedView(lockedVault, in _codecHandle, BufferID.AudioVocalSynthesisCodecState, LockCodec, VocalControlMutationGuardMask, ref lockMask, out views.Codec) ||
+                    !TryAcquireLockedView(lockedVault, in _countersHandle, BufferID.AudioVocalSynthesisTelemetryCursor, LockCounters, VocalControlMutationGuardMask, ref lockMask, out views.Counters) ||
+                    !TryAcquireLockedView(lockedVault, in _mockBankBytesHandle, BufferID.AudioVocalSynthesisMockBankBytes, LockMockBankBytes, VocalControlMutationGuardMask, ref lockMask, out views.MockBankBytes) ||
                     views.State.Length <= 0 ||
                     views.Codec.Length <= 0 ||
                     views.Counters.Length <= 0 ||
@@ -544,7 +588,7 @@ namespace Hecton8.Audio.Synthesis
                 }
 
 #if UNITY_EDITOR
-                if (!TryAcquireLockedView(lockedVault, in _csvMetadataHandle, BufferID.AudioVocalSynthesisCsvMetadata, LockCsvMetadata, ref lockMask, out views.CsvMetadata) ||
+                if (!TryAcquireLockedView(lockedVault, in _csvMetadataHandle, BufferID.AudioVocalSynthesisCsvMetadata, LockCsvMetadata, VocalControlMutationGuardMask, ref lockMask, out views.CsvMetadata) ||
                     views.CsvMetadata.Length <= 0)
                 {
                     return false;
@@ -577,8 +621,8 @@ namespace Hecton8.Audio.Synthesis
             bool ownershipTransferred = false;
             try
             {
-                if (!TryAcquireLockedView(lockedVault, in _mockBankBytesHandle, BufferID.AudioVocalSynthesisMockBankBytes, LockMockBankBytes, ref lockMask, out views.MockBankBytes) ||
-                    !TryAcquireLockedView(lockedVault, in _mockRecordsHandle, BufferID.AudioVocalSynthesisMockBankRecords, LockMockRecords, ref lockMask, out views.MockRecords) ||
+                if (!TryAcquireLockedView(lockedVault, in _mockBankBytesHandle, BufferID.AudioVocalSynthesisMockBankBytes, LockMockBankBytes, VocalBankBuildMutationGuardMask, ref lockMask, out views.MockBankBytes) ||
+                    !TryAcquireLockedView(lockedVault, in _mockRecordsHandle, BufferID.AudioVocalSynthesisMockBankRecords, LockMockRecords, VocalBankBuildMutationGuardMask, ref lockMask, out views.MockRecords) ||
                     views.MockBankBytes.Length <= 0 ||
                     views.MockRecords.Length <= 0)
                 {
@@ -611,14 +655,14 @@ namespace Hecton8.Audio.Synthesis
             bool ownershipTransferred = false;
             try
             {
-                if (!TryAcquireLockedView(lockedVault, in _stateHandle, BufferID.AudioVocalSynthesisState, LockState, ref lockMask, out views.State) ||
-                    !TryAcquireLockedView(lockedVault, in _codecHandle, BufferID.AudioVocalSynthesisCodecState, LockCodec, ref lockMask, out views.Codec) ||
-                    !TryAcquireLockedView(lockedVault, in _telemetryHandle, BufferID.AudioVocalSynthesisTelemetry, LockTelemetry, ref lockMask, out views.Telemetry) ||
-                    !TryAcquireLockedView(lockedVault, in _countersHandle, BufferID.AudioVocalSynthesisTelemetryCursor, LockCounters, ref lockMask, out views.Counters) ||
-                    !TryAcquireLockedView(lockedVault, in _waveformHandle, BufferID.AudioVocalSynthesisWaveform, LockWaveform, ref lockMask, out views.Waveform) ||
-                    !TryAcquireLockedView(lockedVault, in _mockRecordsHandle, BufferID.AudioVocalSynthesisMockBankRecords, LockMockRecords, ref lockMask, out views.MockRecords) ||
+                if (!TryAcquireLockedView(lockedVault, in _stateHandle, BufferID.AudioVocalSynthesisState, LockState, VocalInitializeMutationGuardMask, ref lockMask, out views.State) ||
+                    !TryAcquireLockedView(lockedVault, in _codecHandle, BufferID.AudioVocalSynthesisCodecState, LockCodec, VocalInitializeMutationGuardMask, ref lockMask, out views.Codec) ||
+                    !TryAcquireLockedView(lockedVault, in _telemetryHandle, BufferID.AudioVocalSynthesisTelemetry, LockTelemetry, VocalInitializeMutationGuardMask, ref lockMask, out views.Telemetry) ||
+                    !TryAcquireLockedView(lockedVault, in _countersHandle, BufferID.AudioVocalSynthesisTelemetryCursor, LockCounters, VocalInitializeMutationGuardMask, ref lockMask, out views.Counters) ||
+                    !TryAcquireLockedView(lockedVault, in _waveformHandle, BufferID.AudioVocalSynthesisWaveform, LockWaveform, VocalInitializeMutationGuardMask, ref lockMask, out views.Waveform) ||
+                    !TryAcquireLockedView(lockedVault, in _mockRecordsHandle, BufferID.AudioVocalSynthesisMockBankRecords, LockMockRecords, VocalInitializeMutationGuardMask, ref lockMask, out views.MockRecords) ||
 #if UNITY_EDITOR
-                    !TryAcquireLockedView(lockedVault, in _csvMetadataHandle, BufferID.AudioVocalSynthesisCsvMetadata, LockCsvMetadata, ref lockMask, out views.CsvMetadata) ||
+                    !TryAcquireLockedView(lockedVault, in _csvMetadataHandle, BufferID.AudioVocalSynthesisCsvMetadata, LockCsvMetadata, VocalInitializeMutationGuardMask, ref lockMask, out views.CsvMetadata) ||
 #endif
                     views.State.Length <= 0 ||
                     views.Codec.Length <= 0 ||
@@ -661,7 +705,7 @@ namespace Hecton8.Audio.Synthesis
             bool ownershipTransferred = false;
             try
             {
-                if (!TryAcquireLockedView(lockedVault, in _csvMetadataHandle, BufferID.AudioVocalSynthesisCsvMetadata, LockCsvMetadata, ref lockMask, out views.CsvMetadata) ||
+                if (!TryAcquireLockedView(lockedVault, in _csvMetadataHandle, BufferID.AudioVocalSynthesisCsvMetadata, LockCsvMetadata, VocalCsvMutationGuardMask, ref lockMask, out views.CsvMetadata) ||
                     views.CsvMetadata.Length <= 0)
                 {
                     return false;
@@ -683,20 +727,42 @@ namespace Hecton8.Audio.Synthesis
         }
 #endif
 
-        private static ulong VocalMutationGuardBit(BufferID bufferId)
+        private static ulong ResolveVocalMutationGuardBit(BufferID bufferId)
         {
-            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
+            switch (bufferId)
+            {
+                case BufferID.AudioVocalSynthesisState:
+                    return GuardBitState;
+                case BufferID.AudioVocalSynthesisCodecState:
+                    return GuardBitCodec;
+                case BufferID.AudioVocalSynthesisTelemetry:
+                    return GuardBitTelemetry;
+                case BufferID.AudioVocalSynthesisTelemetryCursor:
+                    return GuardBitCounters;
+                case BufferID.AudioVocalSynthesisWaveform:
+                    return GuardBitWaveform;
+                case BufferID.AudioVocalSynthesisMockBankBytes:
+                    return GuardBitMockBankBytes;
+                case BufferID.AudioVocalSynthesisMockBankRecords:
+                    return GuardBitMockRecords;
+#if UNITY_EDITOR
+                case BufferID.AudioVocalSynthesisCsvMetadata:
+                    return GuardBitCsvMetadata;
+#endif
+                default:
+                    return 0UL;
+            }
         }
 
-        private bool TryAcquireVocalMutationGuard(IDataVault vault)
+        private bool TryAcquireVocalMutationGuard(IDataVault vault, ulong mutationGuardMask)
         {
-            if (vault == null || VocalMutationGuardMask == 0UL)
+            if (vault == null || mutationGuardMask == 0UL)
                 return false;
 
             if (_vocalMutationGuardDepth > 0)
             {
                 if (!ReferenceEquals(_vocalMutationGuardVault, vault) ||
-                    _vocalMutationGuardMask != VocalMutationGuardMask)
+                    _vocalMutationGuardMask != mutationGuardMask)
                 {
                     return false;
                 }
@@ -705,11 +771,11 @@ namespace Hecton8.Audio.Synthesis
                 return true;
             }
 
-            if (!vault.TryAcquireMutationGuard(VocalMutationGuardMask))
+            if (!vault.TryAcquireMutationGuard(mutationGuardMask))
                 return false;
 
             _vocalMutationGuardVault = vault;
-            _vocalMutationGuardMask = VocalMutationGuardMask;
+            _vocalMutationGuardMask = mutationGuardMask;
             _vocalMutationGuardDepth = 1;
             return true;
         }
@@ -755,15 +821,19 @@ namespace Hecton8.Audio.Synthesis
             in VaultGenerationHandle<T> handle,
             BufferID expectedBufferId,
             int lockBit,
+            ulong mutationGuardMask,
             ref int lockMask,
             out NativeArray<T> buffer)
             where T : struct
         {
             buffer = default;
             bool acquiredGuard = false;
+            if ((mutationGuardMask & ResolveVocalMutationGuardBit(expectedBufferId)) == 0UL)
+                return false;
+
             if (lockMask == 0)
             {
-                if (!TryAcquireVocalMutationGuard(vault))
+                if (!TryAcquireVocalMutationGuard(vault, mutationGuardMask))
                     return false;
 
                 acquiredGuard = true;
@@ -1283,7 +1353,7 @@ namespace Hecton8.Audio.Synthesis
                         NativeArrayOptions.UninitializedMemory);
 
                     int lockMask = 0;
-                    if (!TryAcquireLockedView(vault, in _mockBankBytesHandle, BufferID.AudioVocalSynthesisMockBankBytes, LockMockBankBytes, ref lockMask, out NativeArray<byte> bankBytes))
+                    if (!TryAcquireLockedView(vault, in _mockBankBytesHandle, BufferID.AudioVocalSynthesisMockBankBytes, LockMockBankBytes, VocalBankBytesMutationGuardMask, ref lockMask, out NativeArray<byte> bankBytes))
                         return false;
 
                     try

@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# CN LOC HOLD: Subtitle Audio Gate
+# Subtitle And Audio Timing Contract
 
-CN LOC HOLD: Subtitle Audio Review Lock defines production gates for localized voice, subtitles and warning captions.
+Localized subtitles and audio must preserve source, timing, warning priority, and readable line length while avoiding omniscient threat spoilers.
 
 ## Scanner
 
-CN LOC HOLD: A caption can spoil more than a voice.
+A caption can spoil more than a voice.
 
 ## Terminal
 
-CN LOC HOLD: SUBTITLE REVIEW: survival warnings first, flavor last, no source-less omniscience.
+Survival warnings take priority over flavor. No threat line appears without a sensor, voice, or visible source.
 
 ## Audio
 
-CN LOC HOLD: If the player cannot act on it, keep it quiet.
+If the player cannot act on it, keep it quiet.
 
 ## Field Note
 
-CN LOC HOLD: Review gate: speaker/source tag, max line length, alarm priority, sensor justification, censor tier and audio timing.
+Check source labels, line length, alarm priority, sensor justification, censor tier, and audio timing.
 
 <!-- In-Game Wiki; generated from P280_SUBTITLE_AUDIO_REVIEW_LOCK/zh_CN. -->

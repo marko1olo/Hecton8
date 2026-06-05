@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ Nothing here is just loot.
 
 ## Field Note
 
-Use as resource hub, ecology index and art brief grouping.
+Navigation cluster record: resources and ecology belong together when materials, biota, and evidence pressure share the same route.
 
 <!-- In-Game Wiki; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/en_US. -->

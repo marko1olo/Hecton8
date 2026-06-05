@@ -4,6 +4,12 @@ Status: future / platform rules and `SHOW-001` submission gate must be rechecked
 Public stance: single player first scope / proof first campaign copy
 Runtime impact: none
 
+## Authority Boundary
+
+Static marketing plan only. Public voice routes to root `textes.md`.
+Claims about quality, release, platform support, Steam, wishlist, demo/playtest state, performance, spend, audience size, campaign readiness, event eligibility, or publication-readiness route through `quality.md`, `release.md`, `platform.md`, current proof artifacts, current platform rules, and the local permission gates named in this file.
+Rows, event timelines, pitch drafts, Steamworks links, eligibility notes, or gate names in this file do not approve public send, paid spend, Steam page/demo/wishlist claims, platform claims, event registration, or release claims.
+
 ## Objective
 
 Use a Steam demo event only when the demo can convert traffic and withstand public comparison. Next Fest should not be the first proof test. It should amplify an already working demo.
@@ -56,7 +62,7 @@ Submission separation: Next Fest registration/commitment uses the showcase track
 
 | Beat | Content |
 |---|---|
-| Day 1 | Future demo live beat: pressure decision, salvage, machinery, black water. |
+| Day 1 | Future demo live beat: beautiful water under pressure, salvage, machinery, black-water depth. |
 | Day 2 | Base as machine systems post. |
 | Day 3 | Seed Ship/anomaly teaser. |
 | Day 4 | Community feedback fixes, if real. |
@@ -75,7 +81,7 @@ Hi [Name],
 
 The HECTON-8 demo is live on Steam for [event name].
 
-Your audience fits because [verified content pattern]. The demo is a single player first underwater survival slice focused on pressure, machinery, salvage, and black water exploration. Proof first scope, no competitor war pitch.
+Your audience fits because [verified content pattern]. The demo is a single player first underwater survival slice focused on beautiful alien water under pressure, machinery, salvage, and black-water depth exploration. Proof first scope, no competitor war pitch.
 
 Steam/demo: [gated public Steam/demo URL after `steam_page_publish_permission_gate`, `demo_public_access_permission_gate` where demo is linked, and `public_cta_permission_gate` pass]
 Suggested angle: [segment angle]

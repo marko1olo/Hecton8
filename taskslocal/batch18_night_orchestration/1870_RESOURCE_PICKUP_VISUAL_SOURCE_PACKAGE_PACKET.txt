@@ -1,0 +1,81 @@
+<AGENT_PROMPT id="1870">
+ROLE: Resource pickup visual source package architect.
+
+READ FIRST:
+- C:\hades\Hecton8\AGENTS.md
+- C:\hades\Hecton8\PROJECT_BIBLES.md
+- C:\hades\Hecton8\VISION_LOCKS.md
+- C:\hades\Hecton8\TASTE.md
+- C:\hades\Hecton8\quality.md
+- C:\hades\Hecton8\resources.md
+- C:\hades\Hecton8\inventory.md
+- C:\hades\Hecton8\3dmodel.md
+- C:\hades\Hecton8\3DMODEL_TEXTURES_MATERIALS.md
+- C:\hades\Hecton8\world.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1864_PRODUCT_FACE_PRIMITIVE_REPLACEMENT_QUEUE.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1864_PRODUCT_FACE_REPLACEMENT_MATRIX.csv
+- C:\hades\Hecton8\Docs\Reports\Batch18\1866_POWER_RESOURCE_REAL_SOURCE_MESH_REQUIREMENTS.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1867_PRODUCT_FACE_PREFAB_AUDIT_GATE.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1868_PRODUCT_FACE_UNITY_VALIDATOR_GATE.md
+- Relevant .agents-skills only: QA_Evidence_Text_Filter_Audit, DATA_Inventory_Resources_Items_SOA_Layout, REND_Terrain_VirtualTexturing, REND_URP_Graphics_HotPath_Optimization_HLOD.
+
+OWNED WRITE SCOPE:
+- Docs/Tasks/Status_1870.md
+- Docs/AgentLogs/Rationale_1870.md
+- Docs/AgentLogs/LOG_1870.md
+- Docs/Reports/Batch18/1870_RESOURCE_PICKUP_VISUAL_SOURCE_PACKAGE.md
+- Docs/Reports/Batch18/1870_RESOURCE_PICKUP_VISUAL_SOURCE_MATRIX.csv
+
+NO SOURCE/PREFAB/ASSET/SCENE/META/BINARY EDITS.
+NO UNITY MENU, IMPORT, BAKE, PLAYMODE, PROFILER, DOTNET BUILD, OR DATA MONOLITH RUN.
+
+PARALLEL LAW:
+- You are running simultaneously with 1869, 1871, 1872, and 1873.
+- Do not wait for sibling output.
+- Do not modify files outside your owned write scope.
+
+TASK:
+Build a concrete source package for replacing primitive product-face resource pickups:
+- `PFB_Resource_CopperOre`
+- `PFB_Resource_FiberKelp`
+- `PFB_Resource_HydrocarbonResin`
+- `PFB_Resource_MembraneTissue`
+- `PFB_Resource_SilicaShards`
+- `PFB_Resource_SilverOre`
+- `PFB_Resource_SulfurClumps`
+- `PFB_Resource_TitaniumScrap`
+- `Item_Titanium.prefab`
+
+Required work:
+1. Verify current primitive mesh refs in each prefab.
+2. Resolve material GUIDs to material paths when possible.
+3. Resolve item/resource data owner paths. Note: CopperOre visual route currently maps to canonical `Data_Copper.asset`; do not invent `Data_CopperOre.asset` unless it exists.
+4. Search for existing non-primitive geology/flora/resource meshes and generated asset routes that could seed replacements.
+5. Distinguish real candidates from WorldProceduralProxy, placeholders, primitives, diagnostics, or unrelated rocks.
+6. Define required mesh silhouette for each resource: ore chunk, kelp bundle, resin clump, membrane tissue, silica shards, sulfur nodules, titanium scrap.
+7. Define material/texture identity for each: host rock, mineral streaks, wet kelp, translucency, veins, fracture, vent residue, cut metal.
+8. Define collider/proxy split and pickup trigger expectations.
+9. Define LOD/HLOD expectations for single pickups and resource fields.
+10. Define Low/Middle/High/Ultra consequences using continuous `GlobalQualityWeight`; no ugly low mode.
+11. Define proof artifacts: prefab YAML, mesh path, material path, screenshot/player capture, compact readability, profiler if render path changes.
+12. Identify first-20-minute priority resources and why.
+13. Identify where current resource authoring/factory routes are blocked by 1861/1866 and what source assets unblock them.
+14. Identify unresolved material GUIDs or missing texture roles.
+15. Identify if any pickup should be quarantined as legacy rather than replaced.
+16. Do not make resource pickups all the same rock with recolor. Each needs physical identity.
+17. Do not relink to procedural proxy prefabs.
+18. Do not claim visual acceptance without screenshots.
+19. Do not claim Unity/runtime proof.
+20. Do not edit YAML/assets/source.
+
+OUTPUTS:
+- Markdown packet with exact findings, owner route, material/mesh requirements, priority, and proof ladder.
+- CSV with one row per resource and columns:
+  `resource_id,prefab_path,current_primitive_evidence,current_material_paths,data_owner_paths,reusable_source_candidates,required_mesh_silhouette,required_texture_identity,collider_proxy_split,lod_hlod_expectation,quality_scaling,proof_needed,status,next_owner`
+
+VERIFY:
+- Use static file reads/searches only.
+- Run `git diff --check` only on your owned outputs.
+- Final answer must list outputs and the no-edit/no-Unity guarantee.
+</AGENT_PROMPT>
+

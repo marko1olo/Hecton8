@@ -720,7 +720,7 @@ If someone says "Subnautica clone":
 
 Good response:
 
-> Fair. That is exactly the risk we are trying to avoid. The intended difference is pressure, machinery, industrial survival, and deep-sea noir instead of bright alien wonder. Which part of the image still reads too close?
+> Fair. That is exactly the risk we are trying to avoid. The intended difference is beautiful alien water plus pressure, machinery, industrial survival, and deep-sea noir when the route drops below the light. Which part of the image still reads too close?
 
 Bad response:
 

@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -20,7 +20,7 @@ HECTON-8 treats depth as engineering geography. Brine canyons are route ladders,
 
 ## Scanner
 
-Brine canyon ladder detected. Density layers turn depth into route planning.
+Brine ladder detected: layered density, false floors, sonar bend. Follow edges; avoid blind drops.
 
 ## Terminal
 
@@ -32,6 +32,6 @@ A canyon is a staircase if your hull can pay for each step.
 
 ## Field Note
 
-Use for scanner tutorials and resource route articles.
+Use the vane shadows like steps. Open water here is not empty; it is a bad reading waiting to happen.
 
 <!-- External Site; generated from P352_BRINE_CANYON_DENSITY_LADDER_GUIDE/en_US. -->

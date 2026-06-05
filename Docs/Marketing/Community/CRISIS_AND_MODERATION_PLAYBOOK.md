@@ -4,6 +4,11 @@ Status: future community safety / pre-public
 Public stance: single-player-first scope / proof-first public copy
 Runtime impact: none
 
+## Authority Boundary
+
+Static documentation only. Public crisis, moderation, community, creator, demo, performance, platform, release, publication, and trailer/capture claims require root `textes.md` for voice plus `quality.md`, `release.md`, and `platform.md` with current proof artifacts and the local permission gates.
+No public post, Steam news, trailer/capsule approval, creator send, community launch, platform/release claim, demo claim, or moderation action is authorized by drafts, examples, holding statements, signal rows, or plan rows in this file.
+
 ## Purpose
 
 Prepare for predictable public failure modes before they happen. Most small projects lose trust through overpromising, defensive replies, creator-key chaos, and inconsistent moderation.

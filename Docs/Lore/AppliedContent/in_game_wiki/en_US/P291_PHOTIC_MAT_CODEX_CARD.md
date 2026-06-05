@@ -10,13 +10,13 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Photic Mat Codex Card
 
-Photic Mat Codex Card defines the first living system as beauty, oxygen and route risk.
+A photic mat is a living oxygen surface, not decoration. It brightens shallow routes, feeds glass grazers, and flags places where mineral film, pressure chemistry, and life are meeting too quickly. Small samples are useful. Tearing a sheet near a sealed seam can release trapped gas, wake grazers, or turn a safe-looking patch into a route hazard.
 
 ## Scanner
 
@@ -24,7 +24,7 @@ Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when
 
 ## Terminal
 
-SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.
+SPECIMEN: photic mat. Oxygen-positive, pressure-fragile. Do not harvest large sheets near sealed seams.
 
 ## Audio
 
@@ -32,6 +32,6 @@ Light here is work, not comfort.
 
 ## Field Note
 
-Codex card should be bright, useful and slightly unstable; not horror-only.
+Cut samples only from loose edges. If the mat is sealing a crack, it is already doing a job you may need later.
 
 <!-- In-Game Wiki; generated from P291_PHOTIC_MAT_CODEX_CARD/en_US. -->

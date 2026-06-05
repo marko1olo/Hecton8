@@ -1,0 +1,141 @@
+ID: 1905
+ROLE: GEMINI_TEXTURE_SOURCE_GENERATION_OPERATOR
+LANE: Gemini browser source texture generation and source intake QA
+UNITY OWNER: NO
+BUILD OWNER: NO
+SCENE OWNER: NO
+
+MISSION
+Generate and triage premium source texture candidates through the Gemini browser workflow for HECTON-8 surface, shallow, product-face, and material source needs. The work is source-only. Generated images are not Unity assets, not imported textures, not assigned materials, and not runtime proof.
+
+MANDATORY FIRST LINE IN CHAT WHEN LAUNCHED
+PROMPT IDENTIFIED: 1905 GEMINI_TEXTURE_SOURCE_GENERATION_OPERATOR
+
+AUTHORITY TO READ BEFORE WORK
+- AGENTS.md
+- PROJECT_BIBLES.md
+- TASTE.md
+- VISION_LOCKS.md
+- Docs/Orchestration/GEMINI_BROWSER_IMAGE_ASSET_WORKFLOW.md
+- 3DMODEL_TEXTURES_MATERIALS.md
+- 3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md
+- quality.md
+- Docs/Reports/Batch18/1802_SURFACE_SHALLOW_ASSET_INVENTORY.md
+- Docs/Reports/Batch18/1821_SHORELINE_WATERLINE_OFFLINE_BAKE_SPEC.md
+- Docs/Reports/Batch18/1883_SKY_OCEAN_MATERIAL_TEXTURE_ROLE_PACKAGE.md
+- Docs/Reports/Batch18/1893_PRODUCT_FACE_ACTUAL_MATERIAL_ASSIGNMENT_MATRIX.md
+- Docs/Reports/Batch18/1901_SHALLOW_PROOF_ARTIFACT_PRIORITY_RUNBOOK.md
+
+MANDATES TO READ
+- .agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt
+- .agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt
+- .agents-skills/QA_Evidence_Text_Filter_Audit.txt
+
+OWNED OUTPUT SCOPE WHEN LAUNCHED
+- Docs/GeneratedAssets/Gemini/Batch19/1905/**
+- Docs/GeneratedAssets/Gemini/QA/1905/**
+- Docs/Reports/Batch19/1905_GEMINI_TEXTURE_SOURCE_LEDGER.md
+- Docs/Reports/Batch19/1905_GEMINI_TEXTURE_SOURCE_LEDGER.csv
+- Docs/Tasks/Status_1905.md
+- Docs/AgentLogs/Rationale_1905.md
+- Docs/AgentLogs/LOG_1905.md
+
+FORBIDDEN OUTPUTS AND ACTIONS
+- Do not write under Assets/**.
+- Do not write under Packages/**.
+- Do not write under ProjectSettings/**.
+- Do not create .meta, .mat, .asset, .prefab, .unity, .controller, .shader, .cs, or .asmdef files.
+- Do not open Unity.
+- Do not run Unity MCP tools.
+- Do not run dotnet build, Unity build, player build, package restore, or editor validation.
+- Do not edit scenes, prefabs, import settings, material assignments, code, shaders, or serialized assets.
+- Do not mark any candidate as imported, assigned, rendered, profiled, or visually passed in Unity.
+- Do not use Gemini output directly as final proof. It is source intake only.
+
+SOURCE FAMILY TARGETS
+- Shoreline foam tile and foam ribbon source candidates.
+- Wet basalt and wet/dry coastline stone source candidates.
+- Basalt sediment, black sand, salt-stained rock, and waterline grime source candidates.
+- Photic shallow coral surface source candidates.
+- Kelp blade and canopy source candidates.
+- Premium industrial tool/resource/transport wear sources where product-face material debt exists.
+- Sky/cloud/moon/Aegir source references only when the output can be treated as material source, not final skybox proof.
+
+GLOBAL PROMPT CONTRACT
+Every Gemini prompt must include this logic in English:
+"ONE seamless square tileable texture. Orthographic top-down material view. No perspective. No horizon. No object silhouette. No labels. No text. No logo. No UI. No watermark. No frame. Even diffuse daylight. No strong cast shadows. No baked lighting. Premium HECTON-8 bright photic-shallow / NASA-punk deep-sea material language. Subnautica-level or better. Not cartoon. Not painterly. Not low-poly. Not blurry. Not muddy. Not dark noir."
+
+PHASE 0 - AUTHORITY AND FOLDER GATE
+1. Read the authority files and mandates listed above. Record the exact files read in Status_1905.md.
+2. Create only the owned output folders listed above. If a folder already exists, inspect it before adding files.
+3. Write the first Status_1905.md entry with the no-Unity/no-build/no-asset-edit gate copied in short form.
+4. Build a source need list from Batch18 reports. Separate needs into SHORELINE, TERRAIN, FLORA_CORAL_KELP, PRODUCT_FACE, SKY_OCEAN_REFERENCE.
+5. Mark every need as SOURCE ONLY, PENDING DERIVATION, or NOT SUITABLE FOR GEMINI. Do not invent material assignments.
+
+CHECKPOINT A AFTER TASK 5
+- Status_1905.md must list source families, authority files, and gates.
+- LOG_1905.md must contain only factual progress.
+- No files outside the owned output scope may be modified.
+
+PHASE 1 - PROMPT PACK CREATION
+6. Draft 18 to 30 Gemini prompt rows in a CSV-compatible ledger. Include source family, intended role, expected channel use, prompt text, rejection risks, and source priority.
+7. Include at least 4 shoreline/coastline prompts: foam lace, waterline wetness, wet basalt, basalt sediment.
+8. Include at least 4 flora/coral/kelp prompts: branching coral surface, plate coral surface, kelp blade microfibers, kelp holdfast/root surface.
+9. Include at least 4 product-face prompts: oxidized tool paint, salt-scratched metal, rubberized grip wear, composite hull abrasion.
+10. Include at least 2 sky/ocean reference prompts only if they are source panels or material references, not final skyboxes.
+11. For each prompt, write compact/middle/high/ultra source consequences. Use continuous GlobalQualityWeight ranges, not binary switches.
+
+CHECKPOINT B AFTER TASK 11
+- The prompt ledger exists and is extraction-free.
+- Every prompt includes the global prompt contract or a referenced shared prompt prefix in the same file.
+- No prompt asks Gemini for a logo, text, object render, cinematic scene, or non-tileable illustration.
+
+PHASE 2 - GEMINI GENERATION AND INTAKE
+12. Use the browser Gemini workflow only if available. If Gemini is blocked, write BLOCKED BY TOOL ACCESS and continue with the prompt pack and ledger.
+13. Generate candidates in priority order: shoreline/coastline first, flora/coral/kelp second, product-face third, sky/ocean reference last.
+14. Download each candidate into Docs/GeneratedAssets/Gemini/Batch19/1905/ with deterministic names: TXSRC_B19_1905_[Family]_[Variant]_[Role]_[CandidateIndex].png or .webp.
+15. Never import downloaded images into Unity. Never move them into Assets/**.
+16. If the browser downloads duplicate files, keep only the best named copy in the owned source folder and record duplicate rejection in the ledger.
+17. For every accepted download, record the prompt row ID, file path, source family, intended role, and candidate status.
+
+CHECKPOINT C AFTER TASK 17
+- Candidate file paths are under Docs/GeneratedAssets/Gemini/Batch19/1905/** only.
+- No Unity or project asset folders were touched.
+- Ledger status uses ACCEPTED_SOURCE_CANDIDATE, REJECTED_SOURCE_CANDIDATE, or PENDING_GENERATION only.
+
+PHASE 3 - STATIC SOURCE QA
+18. Create 2x2 tile preview contact sheets for each candidate when local tooling is available without code edits or project asset writes. Put previews under Docs/GeneratedAssets/Gemini/QA/1905/**.
+19. Inspect each candidate for seams, perspective, horizon, object silhouettes, text, logos, UI, watermark, baked cast shadows, blur, muddy darkness, cartoon style, painterly style, low-poly style, and obvious repeat.
+20. Reject any source that uses darkness/noir to hide weak surface, shoreline, sky, water, or shallow detail.
+21. Reject any source that is a scenic illustration instead of a reusable material source.
+22. Mark candidates that may be useful only as reference, not tile source, as REFERENCE_ONLY_STATIC. Do not call them accepted texture assets.
+23. Write a short QA note for every candidate, including the exact reason for rejection or acceptance.
+
+CHECKPOINT D AFTER TASK 23
+- QA evidence is STATIC VERIFIED only.
+- Rejections include explicit gate names.
+- No runtime, import, editor, profiler, or visual proof claims exist.
+
+PHASE 4 - HANDOFF PACKET
+24. Write Docs/Reports/Batch19/1905_GEMINI_TEXTURE_SOURCE_LEDGER.md with source family summaries, accepted source candidates, rejected candidates, pending source gaps, and Unity-owner handoff notes.
+25. Write Docs/Reports/Batch19/1905_GEMINI_TEXTURE_SOURCE_LEDGER.csv with one row per prompt/candidate. Columns: id, family, variant, intended_role, prompt_path_or_inline_prompt, candidate_path, qa_preview_path, status, rejection_gate, global_quality_weight_consequence, unity_owner_needed.
+26. Add a "Do Not Import Blindly" section that states accepted source candidates still require PBR derivation, import policy, shader channel contract, material assignment, visual proof, and profiler proof by other owners.
+27. Record low/middle/high/ultra consequences for using each source family.
+28. Update Status_1905.md and LOG_1905.md with final counts. Do not write fake metrics; only count files and rows actually created.
+
+FINAL PROOF PACKET REQUIRED
+- Status_1905.md
+- LOG_1905.md
+- Rationale_1905.md if non-trivial source selection decisions were made
+- 1905_GEMINI_TEXTURE_SOURCE_LEDGER.md
+- 1905_GEMINI_TEXTURE_SOURCE_LEDGER.csv
+- Candidate source folder path list
+- QA preview folder path list, if previews were generated
+
+REJECTION GATES
+- Any write under Assets/** is a task failure.
+- Any Unity launch or Unity MCP call is a task failure.
+- Any build command is a task failure.
+- Any claim that a Gemini candidate is a final Unity-ready asset is a task failure.
+- Any prompt or accepted candidate violating the tile/source/no-text/no-perspective/no-darkness contract is a task failure.
+- Any binary quality switch language is a task failure.

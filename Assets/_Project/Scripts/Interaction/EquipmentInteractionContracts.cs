@@ -90,6 +90,7 @@ namespace Hecton8.Interaction
         public const uint Burn = 1u << 4;
         public const uint Laser = 1u << 5;
         public const uint Bash = 1u << 6;
+        public const uint Salvage = 1u << 7;
         public const uint PlasmaCut = Cut | Burn | Laser;
 
         public static uint ResolveCapabilityMask(InteractionEffectType effectType)

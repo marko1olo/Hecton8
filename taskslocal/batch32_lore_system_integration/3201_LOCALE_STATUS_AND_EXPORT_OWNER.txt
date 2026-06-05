@@ -1,0 +1,39 @@
+ID: 3201
+Role: LOCALE_STATUS_AND_EXPORT_OWNER
+
+Objective:
+Fix the AppliedContent localization status/export truth model so future 15-locale writing is honest, searchable, and not confused with native-reviewed publication.
+
+Why this is needed:
+The 15-locale scout found all required locale directories and P456-P460 page coverage, but non-English latest pages are English clones with `draft_native_pass_pending`. Root bibles use `source_authority` and `draft_machine_or_llm`; current exports use older status names. This is a schema/truth mismatch.
+
+Owned scope:
+- Docs/Lore/AppliedContent/* indexes and generated publication/source status files.
+- Docs/Lore/AppliedContent/packets/*.packets.json for inspection and narrow status metadata proposals.
+- Tools/AppliedLore*.py only if inspection proves the status mapping owner lives there.
+- Do not edit Unity assets, runtime C# types, DataMonolith binary, or route_cards CSV unless source rows already exist and validation route is understood.
+
+Authority docs:
+AGENTS.md, writing.md, localization.md, authoring.md, data.md, quality.md, Docs/Lore/Lore_Localization_Model.md, Docs/Lore/Lore_Multilingual_Content_Architecture.md.
+
+Tasks:
+1. Read the shared authority docs and the mandates listed in BATCH_INDEX.
+2. Inspect `Docs/Lore/AppliedContent/Localization_Status_Index.md`, `Publication_Surface_Index.csv`, `Publication_Cluster_Index.csv`, and RS092 packet/page samples.
+3. Verify the locale roster and page counts with CLI. Label evidence STATIC_SOURCE.
+4. Locate the generator/exporter responsible for `source_ready` and `draft_native_pass_pending`.
+5. Decide whether the fix is source JSON metadata, exporter mapping, index wording, or a new audit report. Do not mutate generated files blindly.
+6. If the generator is safe and scoped, add root-authorized status mapping: en_US -> `source_authority`; non-English generated rows -> `draft_machine_or_llm`; reviewed states only when proof exists.
+7. If source JSON cannot carry per-locale status yet, write a narrow controller report that names the exact owner and blocked fields.
+8. Audit P446-P455 and P196-P200 missing surface/index issue. Do not fill missing pages by guess; either prove intended exclusion or mark export gap.
+9. Run the cheapest static validation available. If `AppliedLoreRuntimeAudit.py --source-only` times out, record timeout and command, not pass.
+10. Update Status/Rationale/LOG with exact files touched and proof class.
+
+Proof packet:
+- CLI commands and outputs for locale counts and status samples.
+- Exact files changed or exact blocker if no safe edit.
+- Evidence label: STATIC_SOURCE only unless a generator validation command completes.
+
+Rejection gates:
+- No native/final/runtime localization claims.
+- No fake translation quality claim.
+- No route_cards/DataMonolith edits without source ownership proof.

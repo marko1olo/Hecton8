@@ -1,0 +1,22 @@
+{
+  "contaminationGate": {},
+  "evidenceClass": "STATIC_FILESYSTEM",
+  "freshnessGate": {},
+  "logGate": {},
+  "manifestGate": {},
+  "mayClaimPlayerCaptureVerified": false,
+  "maySubmitForHumanVisualReview": false,
+  "packetId": "h8_1474",
+  "packetRoot": "Docs/Screenshots/MCP",
+  "rejectCodes": [
+    "RAW_PNG_SET"
+  ],
+  "requiredViews": {},
+  "schema": "hecton8.proof_packet_gate.v1",
+  "screenshotGate": {},
+  "sessionId": "mcp",
+  "status": "REJECTED_STATIC_GATE",
+  "warnings": [
+    "RAW_PNG_SET: manifest.json missing"
+  ]
+}

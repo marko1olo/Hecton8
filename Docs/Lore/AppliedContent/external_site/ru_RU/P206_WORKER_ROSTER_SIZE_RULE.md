@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
 # Правило размера worker roster
 
-Правило размера worker roster задает пул имен колонии HECTON-8 для wiki, игры и props.
+Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise.
 
 ## Scanner
 
@@ -24,7 +24,7 @@ localization_flags: 0
 
 ## Terminal
 
-ROSTER RULE: 72 authored worker identities. Anchor names могут повторяться в lockers, ledgers и audio. Seed-role identities меняют связку объектов по run.
+ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.
 
 ## Audio
 
@@ -32,6 +32,6 @@ ROSTER RULE: 72 authored worker identities. Anchor names могут повтор
 
 ## Field Note
 
-Фикс: 72 worker identities. 24 anchor names для повторяющихся evidence, 48 seed-role names для replay variation.
+The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.
 
 <!-- External Site; generated from P206_WORKER_ROSTER_SIZE_RULE/ru_RU. -->

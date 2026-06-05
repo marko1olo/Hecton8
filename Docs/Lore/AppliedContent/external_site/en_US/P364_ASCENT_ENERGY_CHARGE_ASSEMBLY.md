@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ Every gram here is either escape, evidence, or money. You do not get all three.
 
 ## Field Note
 
-Use for vent forge / blue debt route where escape and payout decisions overlap.
+The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout.
 
 <!-- External Site; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/en_US. -->

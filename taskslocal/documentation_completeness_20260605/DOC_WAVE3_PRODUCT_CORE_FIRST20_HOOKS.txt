@@ -1,0 +1,49 @@
+HECTON-8 Local Task - Documentation Wave 3A
+
+Mission: add first-20-minutes hooks to product-core route bibles with minimal stable-doc edits.
+
+Prerequisite:
+- Start only after Huygens governance patch is integrated.
+- Do not run concurrently with another worker editing the same root bibles.
+
+Read:
+- AGENTS.md, especially first-20 route rule and proof boundaries.
+- PROJECT_BIBLES.md
+- Docs/ARCHITECTURE/FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md
+- Docs/Reports/DocumentationCompleteness_20260605/ROOT_BIBLE_COMPLETENESS_MATRIX_3224_20260605.md
+- Docs/Reports/DocumentationCompleteness_20260605/DOC_COMPLETENESS_SYNTHESIS_AND_PATCH_QUEUE_20260605.md
+- Target route bibles listed below.
+
+Write scope:
+- water.md
+- terrain.md
+- world.md
+- rendering.md
+- lighting.md
+- tools.md
+- vehicles.md
+- sonar.md
+- UI_DIEGETIC_HUD_STANDARDS.md
+- ui.md
+- input.md
+- player.md
+- audio.md
+- streaming.md
+- persistence.md
+- testing.md
+
+Task:
+- Add concise first-20 route hook packets only where missing.
+- Each packet must state which first-20 route moment the bible protects or which route blocker it removes.
+- Each packet must name proof class: screenshot, Frame Debugger, Profiler/GCMonitor, Play Mode/player capture, import log, save/load artifact, or static-only where appropriate.
+- Keep edits short. No mood prose. No AGENTS.md duplication.
+
+Verification:
+- git diff --check for touched files.
+- rg scan for a consistent packet heading or phrase across touched files.
+- Final report in chat only: files changed, hooks added, checks run, residual risk.
+
+Reject:
+- No Unity/build/import/runtime proof claims.
+- No change to gameplay/source code.
+- No broad rewrite of route bibles.

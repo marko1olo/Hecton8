@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
 # Sanitized Accident Packet Body
 
-Sanitized Accident Packet Body defines Deep Reach's first deception as omission and priority laundering.
+The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.
 
 ## Scanner
 
-The packet is too clean for a drowned room.
+Recovered public packet. Terms match real physics; missing fields match liability.
 
 ## Terminal
 
-PUBLIC SUMMARY: geotechnical cascade, storm damage, evacuation failure, Atlas log corruption, quarantine loss.
+PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.
 
 ## Audio
 
-A lie with correct nouns is still a lie.
+Correct nouns. Missing decisions.
 
 ## Field Note
 
-The first lie must not be stupid. It should be plausible until a physical object makes it indecent.
+Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.
 
 <!-- In-Game Wiki; generated from P249_SANITIZED_ACCIDENT_PACKET_BODY/ja_JP. -->

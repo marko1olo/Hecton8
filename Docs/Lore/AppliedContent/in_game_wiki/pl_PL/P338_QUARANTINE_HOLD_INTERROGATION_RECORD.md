@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ They saved the body first because the body knew the route.
 
 ## Field Note
 
-Use as bitter partial ending and post-exit dossier item.
+Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom.
 
 <!-- In-Game Wiki; generated from P338_QUARANTINE_HOLD_INTERROGATION_RECORD/pl_PL. -->

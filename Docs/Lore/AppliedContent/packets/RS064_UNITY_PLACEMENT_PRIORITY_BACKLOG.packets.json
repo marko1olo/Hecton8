@@ -11,6 +11,7 @@
     {
       "packet_id": "P316_FIRST_HOUR_PLACEMENT_PRIORITY_LOCK",
       "release_set_id": "RS064_UNITY_PLACEMENT_PRIORITY_BACKLOG",
+      "surface_mask": 65,
       "article_id": "applied_lore.first_hour_placement_priority_lock",
       "title_key": "applied_lore.first_hour_placement_priority_lock.title",
       "unlock": {
@@ -27,145 +28,146 @@
       },
       "localized": {
         "en_US": {
-          "title": "First Hour Placement Priority Lock",
-          "scanner": "Placement priority: capsule, P-63 pump, first lie, first repair trace.",
-          "terminal": "PLACEMENT PRIORITY: first-hour lore anchors must bind capsule diagnostics, P-63 work order, sanitized packet and first Atlas trace before optional archive rows.",
+          "title": "First Hour Evidence Placement Rule",
+          "scanner": "First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
+          "terminal": "FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
           "audio": "The first hour needs objects, not paragraphs.",
-          "in_game_wiki": "First Hour Placement Priority Lock ranks source rows for the next Unity placement pass.",
+          "in_game_wiki": "First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
           "external_site": "The opening only works if the player touches the broken machine before reading the explanation.",
-          "field_note": "Use this to triage current NarrativeDiscovery backlog rows."
+          "field_note": "First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
         },
         "ru_RU": {
-          "title": "Lock priority placement первого часа",
-          "scanner": "Priority: capsule, P-63 pump, first lie, first repair trace.",
-          "terminal": "PLACEMENT PRIORITY: first-hour anchors bind capsule diagnostics, P-63 work order, sanitized packet and first Atlas trace before optional archive rows.",
+          "title": "Draft RU localization pending native pass. First Hour Evidence Placement Rule",
+          "scanner": "Draft RU localization pending native pass. First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
+          "terminal": "Draft RU localization pending native pass. FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
           "audio": "Первому часу нужны объекты, не абзацы.",
-          "in_game_wiki": "First-hour placement lock ranks rows for Unity placement pass.",
+          "in_game_wiki": "Draft RU localization pending native pass. First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
           "external_site": "Открытие работает, если игрок трогает broken machine before explanation.",
-          "field_note": "For NarrativeDiscovery backlog triage."
+          "field_note": "Draft RU localization pending native pass. First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
         },
         "ja_JP": {
-          "title": "Draft JA localization pending native pass. First Hour Placement Priority Lock",
-          "scanner": "Draft JA localization pending native pass. Placement priority: capsule, P-63 pump, first lie, first repair trace.",
-          "terminal": "Draft JA localization pending native pass. PLACEMENT PRIORITY: first-hour lore anchors must bind capsule diagnostics, P-63 work order, sanitized packet and first Atlas trace before optional archive rows.",
+          "title": "Draft JP localization pending native pass. First Hour Evidence Placement Rule",
+          "scanner": "Draft JP localization pending native pass. First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
+          "terminal": "Draft JP localization pending native pass. FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
           "audio": "Draft JA localization pending native pass. The first hour needs objects, not paragraphs.",
-          "in_game_wiki": "Draft JA localization pending native pass. First Hour Placement Priority Lock ranks source rows for the next Unity placement pass.",
+          "in_game_wiki": "Draft JP localization pending native pass. First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
           "external_site": "Draft JA localization pending native pass. The opening only works if the player touches the broken machine before reading the explanation.",
-          "field_note": "Draft JA localization pending native pass. Use this to triage current NarrativeDiscovery backlog rows."
+          "field_note": "Draft JP localization pending native pass. First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
         },
         "zh_CN": {
-          "title": "Draft ZH localization pending native pass. First Hour Placement Priority Lock",
-          "scanner": "Draft ZH localization pending native pass. Placement priority: capsule, P-63 pump, first lie, first repair trace.",
-          "terminal": "Draft ZH localization pending native pass. PLACEMENT PRIORITY: first-hour lore anchors must bind capsule diagnostics, P-63 work order, sanitized packet and first Atlas trace before optional archive rows.",
+          "title": "Draft CN localization pending native pass. First Hour Evidence Placement Rule",
+          "scanner": "Draft CN localization pending native pass. First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
+          "terminal": "Draft CN localization pending native pass. FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
           "audio": "Draft ZH localization pending native pass. The first hour needs objects, not paragraphs.",
-          "in_game_wiki": "Draft ZH localization pending native pass. First Hour Placement Priority Lock ranks source rows for the next Unity placement pass.",
+          "in_game_wiki": "Draft CN localization pending native pass. First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
           "external_site": "Draft ZH localization pending native pass. The opening only works if the player touches the broken machine before reading the explanation.",
-          "field_note": "Draft ZH localization pending native pass. Use this to triage current NarrativeDiscovery backlog rows."
+          "field_note": "Draft CN localization pending native pass. First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. First Hour Placement Priority Lock",
-          "scanner": "Draft FR localization pending native pass. Placement priority: capsule, P-63 pump, first lie, first repair trace.",
-          "terminal": "Draft FR localization pending native pass. PLACEMENT PRIORITY: first-hour lore anchors must bind capsule diagnostics, P-63 work order, sanitized packet and first Atlas trace before optional archive rows.",
+          "title": "Draft FR localization pending native pass. First Hour Evidence Placement Rule",
+          "scanner": "Draft FR localization pending native pass. First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
+          "terminal": "Draft FR localization pending native pass. FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
           "audio": "Draft FR localization pending native pass. The first hour needs objects, not paragraphs.",
-          "in_game_wiki": "Draft FR localization pending native pass. First Hour Placement Priority Lock ranks source rows for the next Unity placement pass.",
+          "in_game_wiki": "Draft FR localization pending native pass. First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
           "external_site": "Draft FR localization pending native pass. The opening only works if the player touches the broken machine before reading the explanation.",
-          "field_note": "Draft FR localization pending native pass. Use this to triage current NarrativeDiscovery backlog rows."
+          "field_note": "Draft FR localization pending native pass. First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. First Hour Placement Priority Lock",
-          "scanner": "Draft ES localization pending native pass. Placement priority: capsule, P-63 pump, first lie, first repair trace.",
-          "terminal": "Draft ES localization pending native pass. PLACEMENT PRIORITY: first-hour lore anchors must bind capsule diagnostics, P-63 work order, sanitized packet and first Atlas trace before optional archive rows.",
+          "title": "Draft ES localization pending native pass. First Hour Evidence Placement Rule",
+          "scanner": "Draft ES localization pending native pass. First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
+          "terminal": "Draft ES localization pending native pass. FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
           "audio": "Draft ES localization pending native pass. The first hour needs objects, not paragraphs.",
-          "in_game_wiki": "Draft ES localization pending native pass. First Hour Placement Priority Lock ranks source rows for the next Unity placement pass.",
+          "in_game_wiki": "Draft ES localization pending native pass. First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
           "external_site": "Draft ES localization pending native pass. The opening only works if the player touches the broken machine before reading the explanation.",
-          "field_note": "Draft ES localization pending native pass. Use this to triage current NarrativeDiscovery backlog rows."
+          "field_note": "Draft ES localization pending native pass. First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. First Hour Placement Priority Lock",
-          "scanner": "Draft DE localization pending native pass. Placement priority: capsule, P-63 pump, first lie, first repair trace.",
-          "terminal": "Draft DE localization pending native pass. PLACEMENT PRIORITY: first-hour lore anchors must bind capsule diagnostics, P-63 work order, sanitized packet and first Atlas trace before optional archive rows.",
+          "title": "Draft DE localization pending native pass. First Hour Evidence Placement Rule",
+          "scanner": "Draft DE localization pending native pass. First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
+          "terminal": "Draft DE localization pending native pass. FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
           "audio": "Draft DE localization pending native pass. The first hour needs objects, not paragraphs.",
-          "in_game_wiki": "Draft DE localization pending native pass. First Hour Placement Priority Lock ranks source rows for the next Unity placement pass.",
+          "in_game_wiki": "Draft DE localization pending native pass. First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
           "external_site": "Draft DE localization pending native pass. The opening only works if the player touches the broken machine before reading the explanation.",
-          "field_note": "Draft DE localization pending native pass. Use this to triage current NarrativeDiscovery backlog rows."
+          "field_note": "Draft DE localization pending native pass. First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. First Hour Placement Priority Lock",
-          "scanner": "Draft PL localization pending native pass. Placement priority: capsule, P-63 pump, first lie, first repair trace.",
-          "terminal": "Draft PL localization pending native pass. PLACEMENT PRIORITY: first-hour lore anchors must bind capsule diagnostics, P-63 work order, sanitized packet and first Atlas trace before optional archive rows.",
+          "title": "Draft PL localization pending native pass. First Hour Evidence Placement Rule",
+          "scanner": "Draft PL localization pending native pass. First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
+          "terminal": "Draft PL localization pending native pass. FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
           "audio": "Draft PL localization pending native pass. The first hour needs objects, not paragraphs.",
-          "in_game_wiki": "Draft PL localization pending native pass. First Hour Placement Priority Lock ranks source rows for the next Unity placement pass.",
+          "in_game_wiki": "Draft PL localization pending native pass. First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
           "external_site": "Draft PL localization pending native pass. The opening only works if the player touches the broken machine before reading the explanation.",
-          "field_note": "Draft PL localization pending native pass. Use this to triage current NarrativeDiscovery backlog rows."
+          "field_note": "Draft PL localization pending native pass. First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
         },
         "uk_UA": {
-          "title": "Draft UK localization pending native pass. First Hour Placement Priority Lock",
-          "scanner": "Draft UK localization pending native pass. Placement priority: capsule, P-63 pump, first lie, first repair trace.",
-          "terminal": "Draft UK localization pending native pass. PLACEMENT PRIORITY: first-hour lore anchors must bind capsule diagnostics, P-63 work order, sanitized packet and first Atlas trace before optional archive rows.",
+          "title": "Draft UA localization pending native pass. First Hour Evidence Placement Rule",
+          "scanner": "Draft UA localization pending native pass. First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
+          "terminal": "Draft UA localization pending native pass. FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
           "audio": "Draft UK localization pending native pass. The first hour needs objects, not paragraphs.",
-          "in_game_wiki": "Draft UK localization pending native pass. First Hour Placement Priority Lock ranks source rows for the next Unity placement pass.",
+          "in_game_wiki": "Draft UA localization pending native pass. First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
           "external_site": "Draft UK localization pending native pass. The opening only works if the player touches the broken machine before reading the explanation.",
-          "field_note": "Draft UK localization pending native pass. Use this to triage current NarrativeDiscovery backlog rows."
+          "field_note": "Draft UA localization pending native pass. First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. First Hour Placement Priority Lock",
-          "scanner": "Draft AR localization pending native pass. Placement priority: capsule, P-63 pump, first lie, first repair trace.",
-          "terminal": "Draft AR localization pending native pass. PLACEMENT PRIORITY: first-hour lore anchors must bind capsule diagnostics, P-63 work order, sanitized packet and first Atlas trace before optional archive rows.",
+          "title": "Draft AR localization pending native pass. First Hour Evidence Placement Rule",
+          "scanner": "Draft AR localization pending native pass. First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
+          "terminal": "Draft AR localization pending native pass. FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
           "audio": "Draft AR localization pending native pass. The first hour needs objects, not paragraphs.",
-          "in_game_wiki": "Draft AR localization pending native pass. First Hour Placement Priority Lock ranks source rows for the next Unity placement pass.",
+          "in_game_wiki": "Draft AR localization pending native pass. First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
           "external_site": "Draft AR localization pending native pass. The opening only works if the player touches the broken machine before reading the explanation.",
-          "field_note": "Draft AR localization pending native pass. Use this to triage current NarrativeDiscovery backlog rows."
+          "field_note": "Draft AR localization pending native pass. First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. First Hour Placement Priority Lock",
-          "scanner": "Draft ID localization pending native pass. Placement priority: capsule, P-63 pump, first lie, first repair trace.",
-          "terminal": "Draft ID localization pending native pass. PLACEMENT PRIORITY: first-hour lore anchors must bind capsule diagnostics, P-63 work order, sanitized packet and first Atlas trace before optional archive rows.",
+          "title": "Draft ID localization pending native pass. First Hour Evidence Placement Rule",
+          "scanner": "Draft ID localization pending native pass. First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
+          "terminal": "Draft ID localization pending native pass. FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
           "audio": "Draft ID localization pending native pass. The first hour needs objects, not paragraphs.",
-          "in_game_wiki": "Draft ID localization pending native pass. First Hour Placement Priority Lock ranks source rows for the next Unity placement pass.",
+          "in_game_wiki": "Draft ID localization pending native pass. First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
           "external_site": "Draft ID localization pending native pass. The opening only works if the player touches the broken machine before reading the explanation.",
-          "field_note": "Draft ID localization pending native pass. Use this to triage current NarrativeDiscovery backlog rows."
+          "field_note": "Draft ID localization pending native pass. First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. First Hour Placement Priority Lock",
-          "scanner": "Draft KO localization pending native pass. Placement priority: capsule, P-63 pump, first lie, first repair trace.",
-          "terminal": "Draft KO localization pending native pass. PLACEMENT PRIORITY: first-hour lore anchors must bind capsule diagnostics, P-63 work order, sanitized packet and first Atlas trace before optional archive rows.",
+          "title": "Draft KO localization pending native pass. First Hour Evidence Placement Rule",
+          "scanner": "Draft KO localization pending native pass. First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
+          "terminal": "Draft KO localization pending native pass. FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
           "audio": "Draft KO localization pending native pass. The first hour needs objects, not paragraphs.",
-          "in_game_wiki": "Draft KO localization pending native pass. First Hour Placement Priority Lock ranks source rows for the next Unity placement pass.",
+          "in_game_wiki": "Draft KO localization pending native pass. First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
           "external_site": "Draft KO localization pending native pass. The opening only works if the player touches the broken machine before reading the explanation.",
-          "field_note": "Draft KO localization pending native pass. Use this to triage current NarrativeDiscovery backlog rows."
+          "field_note": "Draft KO localization pending native pass. First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. First Hour Placement Priority Lock",
-          "scanner": "Draft HE localization pending native pass. Placement priority: capsule, P-63 pump, first lie, first repair trace.",
-          "terminal": "Draft HE localization pending native pass. PLACEMENT PRIORITY: first-hour lore anchors must bind capsule diagnostics, P-63 work order, sanitized packet and first Atlas trace before optional archive rows.",
+          "title": "Draft HE localization pending native pass. First Hour Evidence Placement Rule",
+          "scanner": "Draft HE localization pending native pass. First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
+          "terminal": "Draft HE localization pending native pass. FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
           "audio": "Draft HE localization pending native pass. The first hour needs objects, not paragraphs.",
-          "in_game_wiki": "Draft HE localization pending native pass. First Hour Placement Priority Lock ranks source rows for the next Unity placement pass.",
+          "in_game_wiki": "Draft HE localization pending native pass. First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
           "external_site": "Draft HE localization pending native pass. The opening only works if the player touches the broken machine before reading the explanation.",
-          "field_note": "Draft HE localization pending native pass. Use this to triage current NarrativeDiscovery backlog rows."
+          "field_note": "Draft HE localization pending native pass. First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. First Hour Placement Priority Lock",
-          "scanner": "Draft PT localization pending native pass. Placement priority: capsule, P-63 pump, first lie, first repair trace.",
-          "terminal": "Draft PT localization pending native pass. PLACEMENT PRIORITY: first-hour lore anchors must bind capsule diagnostics, P-63 work order, sanitized packet and first Atlas trace before optional archive rows.",
+          "title": "Draft PT localization pending native pass. First Hour Evidence Placement Rule",
+          "scanner": "Draft PT localization pending native pass. First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
+          "terminal": "Draft PT localization pending native pass. FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
           "audio": "Draft PT localization pending native pass. The first hour needs objects, not paragraphs.",
-          "in_game_wiki": "Draft PT localization pending native pass. First Hour Placement Priority Lock ranks source rows for the next Unity placement pass.",
+          "in_game_wiki": "Draft PT localization pending native pass. First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
           "external_site": "Draft PT localization pending native pass. The opening only works if the player touches the broken machine before reading the explanation.",
-          "field_note": "Draft PT localization pending native pass. Use this to triage current NarrativeDiscovery backlog rows."
+          "field_note": "Draft PT localization pending native pass. First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. First Hour Placement Priority Lock",
-          "scanner": "Draft NL localization pending native pass. Placement priority: capsule, P-63 pump, first lie, first repair trace.",
-          "terminal": "Draft NL localization pending native pass. PLACEMENT PRIORITY: first-hour lore anchors must bind capsule diagnostics, P-63 work order, sanitized packet and first Atlas trace before optional archive rows.",
+          "title": "Draft NL localization pending native pass. First Hour Evidence Placement Rule",
+          "scanner": "Draft NL localization pending native pass. First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
+          "terminal": "Draft NL localization pending native pass. FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
           "audio": "Draft NL localization pending native pass. The first hour needs objects, not paragraphs.",
-          "in_game_wiki": "Draft NL localization pending native pass. First Hour Placement Priority Lock ranks source rows for the next Unity placement pass.",
+          "in_game_wiki": "Draft NL localization pending native pass. First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
           "external_site": "Draft NL localization pending native pass. The opening only works if the player touches the broken machine before reading the explanation.",
-          "field_note": "Draft NL localization pending native pass. Use this to triage current NarrativeDiscovery backlog rows."
+          "field_note": "Draft NL localization pending native pass. First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
         }
       }
     },
     {
       "packet_id": "P317_MID_DEPTH_ROUTE_PLACEMENT_PRIORITY_LOCK",
       "release_set_id": "RS064_UNITY_PLACEMENT_PRIORITY_BACKLOG",
+      "surface_mask": 65,
       "article_id": "applied_lore.mid_depth_route_placement_priority_lock",
       "title_key": "applied_lore.mid_depth_route_placement_priority_lock.title",
       "unlock": {
@@ -182,137 +184,137 @@
       },
       "localized": {
         "en_US": {
-          "title": "Mid Depth Route Placement Priority Lock",
-          "scanner": "Placement priority: brine ladder, pinger, relay, seal, route warning.",
-          "terminal": "PLACEMENT PRIORITY: mid-depth rows should prioritize route-readable objects over archive flavor.",
+          "title": "Mid-Depth Route Evidence Rule",
+          "scanner": "Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
+          "terminal": "MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
           "audio": "The canyon should teach the route by damage.",
-          "in_game_wiki": "Mid Depth Route Placement Priority Lock keeps route progression tied to evidence placement.",
+          "in_game_wiki": "Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
           "external_site": "Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
           "field_note": "Prefer objects that change navigation or return confidence."
         },
         "ru_RU": {
-          "title": "Lock priority placement mid-depth route",
-          "scanner": "Priority: brine ladder, pinger, relay, seal, route warning.",
-          "terminal": "PLACEMENT PRIORITY: mid-depth rows prioritize route-readable objects over archive flavor.",
+          "title": "Draft RU localization pending native pass. Mid-Depth Route Evidence Rule",
+          "scanner": "Draft RU localization pending native pass. Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
+          "terminal": "Draft RU localization pending native pass. MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
           "audio": "Каньон должен учить маршруту повреждением.",
-          "in_game_wiki": "Mid-depth placement lock keeps route progression tied to evidence.",
+          "in_game_wiki": "Draft RU localization pending native pass. Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
           "external_site": "Mid-depth HECTON-8 turns route into machine: brine, cable, relay, seal, warning.",
           "field_note": "Prefer objects that change navigation or return confidence."
         },
         "ja_JP": {
-          "title": "Draft JA localization pending native pass. Mid Depth Route Placement Priority Lock",
-          "scanner": "Draft JA localization pending native pass. Placement priority: brine ladder, pinger, relay, seal, route warning.",
-          "terminal": "Draft JA localization pending native pass. PLACEMENT PRIORITY: mid-depth rows should prioritize route-readable objects over archive flavor.",
+          "title": "Draft JP localization pending native pass. Mid-Depth Route Evidence Rule",
+          "scanner": "Draft JP localization pending native pass. Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
+          "terminal": "Draft JP localization pending native pass. MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
           "audio": "Draft JA localization pending native pass. The canyon should teach the route by damage.",
-          "in_game_wiki": "Draft JA localization pending native pass. Mid Depth Route Placement Priority Lock keeps route progression tied to evidence placement.",
+          "in_game_wiki": "Draft JP localization pending native pass. Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
           "external_site": "Draft JA localization pending native pass. Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
           "field_note": "Draft JA localization pending native pass. Prefer objects that change navigation or return confidence."
         },
         "zh_CN": {
-          "title": "Draft ZH localization pending native pass. Mid Depth Route Placement Priority Lock",
-          "scanner": "Draft ZH localization pending native pass. Placement priority: brine ladder, pinger, relay, seal, route warning.",
-          "terminal": "Draft ZH localization pending native pass. PLACEMENT PRIORITY: mid-depth rows should prioritize route-readable objects over archive flavor.",
+          "title": "Draft CN localization pending native pass. Mid-Depth Route Evidence Rule",
+          "scanner": "Draft CN localization pending native pass. Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
+          "terminal": "Draft CN localization pending native pass. MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
           "audio": "Draft ZH localization pending native pass. The canyon should teach the route by damage.",
-          "in_game_wiki": "Draft ZH localization pending native pass. Mid Depth Route Placement Priority Lock keeps route progression tied to evidence placement.",
+          "in_game_wiki": "Draft CN localization pending native pass. Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
           "external_site": "Draft ZH localization pending native pass. Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
           "field_note": "Draft ZH localization pending native pass. Prefer objects that change navigation or return confidence."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Mid Depth Route Placement Priority Lock",
-          "scanner": "Draft FR localization pending native pass. Placement priority: brine ladder, pinger, relay, seal, route warning.",
-          "terminal": "Draft FR localization pending native pass. PLACEMENT PRIORITY: mid-depth rows should prioritize route-readable objects over archive flavor.",
+          "title": "Draft FR localization pending native pass. Mid-Depth Route Evidence Rule",
+          "scanner": "Draft FR localization pending native pass. Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
+          "terminal": "Draft FR localization pending native pass. MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
           "audio": "Draft FR localization pending native pass. The canyon should teach the route by damage.",
-          "in_game_wiki": "Draft FR localization pending native pass. Mid Depth Route Placement Priority Lock keeps route progression tied to evidence placement.",
+          "in_game_wiki": "Draft FR localization pending native pass. Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
           "external_site": "Draft FR localization pending native pass. Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
           "field_note": "Draft FR localization pending native pass. Prefer objects that change navigation or return confidence."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Mid Depth Route Placement Priority Lock",
-          "scanner": "Draft ES localization pending native pass. Placement priority: brine ladder, pinger, relay, seal, route warning.",
-          "terminal": "Draft ES localization pending native pass. PLACEMENT PRIORITY: mid-depth rows should prioritize route-readable objects over archive flavor.",
+          "title": "Draft ES localization pending native pass. Mid-Depth Route Evidence Rule",
+          "scanner": "Draft ES localization pending native pass. Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
+          "terminal": "Draft ES localization pending native pass. MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
           "audio": "Draft ES localization pending native pass. The canyon should teach the route by damage.",
-          "in_game_wiki": "Draft ES localization pending native pass. Mid Depth Route Placement Priority Lock keeps route progression tied to evidence placement.",
+          "in_game_wiki": "Draft ES localization pending native pass. Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
           "external_site": "Draft ES localization pending native pass. Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
           "field_note": "Draft ES localization pending native pass. Prefer objects that change navigation or return confidence."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Mid Depth Route Placement Priority Lock",
-          "scanner": "Draft DE localization pending native pass. Placement priority: brine ladder, pinger, relay, seal, route warning.",
-          "terminal": "Draft DE localization pending native pass. PLACEMENT PRIORITY: mid-depth rows should prioritize route-readable objects over archive flavor.",
+          "title": "Draft DE localization pending native pass. Mid-Depth Route Evidence Rule",
+          "scanner": "Draft DE localization pending native pass. Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
+          "terminal": "Draft DE localization pending native pass. MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
           "audio": "Draft DE localization pending native pass. The canyon should teach the route by damage.",
-          "in_game_wiki": "Draft DE localization pending native pass. Mid Depth Route Placement Priority Lock keeps route progression tied to evidence placement.",
+          "in_game_wiki": "Draft DE localization pending native pass. Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
           "external_site": "Draft DE localization pending native pass. Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
           "field_note": "Draft DE localization pending native pass. Prefer objects that change navigation or return confidence."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Mid Depth Route Placement Priority Lock",
-          "scanner": "Draft PL localization pending native pass. Placement priority: brine ladder, pinger, relay, seal, route warning.",
-          "terminal": "Draft PL localization pending native pass. PLACEMENT PRIORITY: mid-depth rows should prioritize route-readable objects over archive flavor.",
+          "title": "Draft PL localization pending native pass. Mid-Depth Route Evidence Rule",
+          "scanner": "Draft PL localization pending native pass. Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
+          "terminal": "Draft PL localization pending native pass. MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
           "audio": "Draft PL localization pending native pass. The canyon should teach the route by damage.",
-          "in_game_wiki": "Draft PL localization pending native pass. Mid Depth Route Placement Priority Lock keeps route progression tied to evidence placement.",
+          "in_game_wiki": "Draft PL localization pending native pass. Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
           "external_site": "Draft PL localization pending native pass. Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
           "field_note": "Draft PL localization pending native pass. Prefer objects that change navigation or return confidence."
         },
         "uk_UA": {
-          "title": "Draft UK localization pending native pass. Mid Depth Route Placement Priority Lock",
-          "scanner": "Draft UK localization pending native pass. Placement priority: brine ladder, pinger, relay, seal, route warning.",
-          "terminal": "Draft UK localization pending native pass. PLACEMENT PRIORITY: mid-depth rows should prioritize route-readable objects over archive flavor.",
+          "title": "Draft UA localization pending native pass. Mid-Depth Route Evidence Rule",
+          "scanner": "Draft UA localization pending native pass. Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
+          "terminal": "Draft UA localization pending native pass. MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
           "audio": "Draft UK localization pending native pass. The canyon should teach the route by damage.",
-          "in_game_wiki": "Draft UK localization pending native pass. Mid Depth Route Placement Priority Lock keeps route progression tied to evidence placement.",
+          "in_game_wiki": "Draft UA localization pending native pass. Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
           "external_site": "Draft UK localization pending native pass. Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
           "field_note": "Draft UK localization pending native pass. Prefer objects that change navigation or return confidence."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Mid Depth Route Placement Priority Lock",
-          "scanner": "Draft AR localization pending native pass. Placement priority: brine ladder, pinger, relay, seal, route warning.",
-          "terminal": "Draft AR localization pending native pass. PLACEMENT PRIORITY: mid-depth rows should prioritize route-readable objects over archive flavor.",
+          "title": "Draft AR localization pending native pass. Mid-Depth Route Evidence Rule",
+          "scanner": "Draft AR localization pending native pass. Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
+          "terminal": "Draft AR localization pending native pass. MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
           "audio": "Draft AR localization pending native pass. The canyon should teach the route by damage.",
-          "in_game_wiki": "Draft AR localization pending native pass. Mid Depth Route Placement Priority Lock keeps route progression tied to evidence placement.",
+          "in_game_wiki": "Draft AR localization pending native pass. Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
           "external_site": "Draft AR localization pending native pass. Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
           "field_note": "Draft AR localization pending native pass. Prefer objects that change navigation or return confidence."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Mid Depth Route Placement Priority Lock",
-          "scanner": "Draft ID localization pending native pass. Placement priority: brine ladder, pinger, relay, seal, route warning.",
-          "terminal": "Draft ID localization pending native pass. PLACEMENT PRIORITY: mid-depth rows should prioritize route-readable objects over archive flavor.",
+          "title": "Draft ID localization pending native pass. Mid-Depth Route Evidence Rule",
+          "scanner": "Draft ID localization pending native pass. Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
+          "terminal": "Draft ID localization pending native pass. MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
           "audio": "Draft ID localization pending native pass. The canyon should teach the route by damage.",
-          "in_game_wiki": "Draft ID localization pending native pass. Mid Depth Route Placement Priority Lock keeps route progression tied to evidence placement.",
+          "in_game_wiki": "Draft ID localization pending native pass. Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
           "external_site": "Draft ID localization pending native pass. Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
           "field_note": "Draft ID localization pending native pass. Prefer objects that change navigation or return confidence."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Mid Depth Route Placement Priority Lock",
-          "scanner": "Draft KO localization pending native pass. Placement priority: brine ladder, pinger, relay, seal, route warning.",
-          "terminal": "Draft KO localization pending native pass. PLACEMENT PRIORITY: mid-depth rows should prioritize route-readable objects over archive flavor.",
+          "title": "Draft KO localization pending native pass. Mid-Depth Route Evidence Rule",
+          "scanner": "Draft KO localization pending native pass. Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
+          "terminal": "Draft KO localization pending native pass. MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
           "audio": "Draft KO localization pending native pass. The canyon should teach the route by damage.",
-          "in_game_wiki": "Draft KO localization pending native pass. Mid Depth Route Placement Priority Lock keeps route progression tied to evidence placement.",
+          "in_game_wiki": "Draft KO localization pending native pass. Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
           "external_site": "Draft KO localization pending native pass. Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
           "field_note": "Draft KO localization pending native pass. Prefer objects that change navigation or return confidence."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Mid Depth Route Placement Priority Lock",
-          "scanner": "Draft HE localization pending native pass. Placement priority: brine ladder, pinger, relay, seal, route warning.",
-          "terminal": "Draft HE localization pending native pass. PLACEMENT PRIORITY: mid-depth rows should prioritize route-readable objects over archive flavor.",
+          "title": "Draft HE localization pending native pass. Mid-Depth Route Evidence Rule",
+          "scanner": "Draft HE localization pending native pass. Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
+          "terminal": "Draft HE localization pending native pass. MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
           "audio": "Draft HE localization pending native pass. The canyon should teach the route by damage.",
-          "in_game_wiki": "Draft HE localization pending native pass. Mid Depth Route Placement Priority Lock keeps route progression tied to evidence placement.",
+          "in_game_wiki": "Draft HE localization pending native pass. Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
           "external_site": "Draft HE localization pending native pass. Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
           "field_note": "Draft HE localization pending native pass. Prefer objects that change navigation or return confidence."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Mid Depth Route Placement Priority Lock",
-          "scanner": "Draft PT localization pending native pass. Placement priority: brine ladder, pinger, relay, seal, route warning.",
-          "terminal": "Draft PT localization pending native pass. PLACEMENT PRIORITY: mid-depth rows should prioritize route-readable objects over archive flavor.",
+          "title": "Draft PT localization pending native pass. Mid-Depth Route Evidence Rule",
+          "scanner": "Draft PT localization pending native pass. Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
+          "terminal": "Draft PT localization pending native pass. MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
           "audio": "Draft PT localization pending native pass. The canyon should teach the route by damage.",
-          "in_game_wiki": "Draft PT localization pending native pass. Mid Depth Route Placement Priority Lock keeps route progression tied to evidence placement.",
+          "in_game_wiki": "Draft PT localization pending native pass. Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
           "external_site": "Draft PT localization pending native pass. Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
           "field_note": "Draft PT localization pending native pass. Prefer objects that change navigation or return confidence."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Mid Depth Route Placement Priority Lock",
-          "scanner": "Draft NL localization pending native pass. Placement priority: brine ladder, pinger, relay, seal, route warning.",
-          "terminal": "Draft NL localization pending native pass. PLACEMENT PRIORITY: mid-depth rows should prioritize route-readable objects over archive flavor.",
+          "title": "Draft NL localization pending native pass. Mid-Depth Route Evidence Rule",
+          "scanner": "Draft NL localization pending native pass. Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
+          "terminal": "Draft NL localization pending native pass. MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
           "audio": "Draft NL localization pending native pass. The canyon should teach the route by damage.",
-          "in_game_wiki": "Draft NL localization pending native pass. Mid Depth Route Placement Priority Lock keeps route progression tied to evidence placement.",
+          "in_game_wiki": "Draft NL localization pending native pass. Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
           "external_site": "Draft NL localization pending native pass. Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
           "field_note": "Draft NL localization pending native pass. Prefer objects that change navigation or return confidence."
         }
@@ -321,6 +323,7 @@
     {
       "packet_id": "P318_ECOLOGY_SCAN_PLACEMENT_PRIORITY_LOCK",
       "release_set_id": "RS064_UNITY_PLACEMENT_PRIORITY_BACKLOG",
+      "surface_mask": 65,
       "article_id": "applied_lore.ecology_scan_placement_priority_lock",
       "title_key": "applied_lore.ecology_scan_placement_priority_lock.title",
       "unlock": {
@@ -337,145 +340,146 @@
       },
       "localized": {
         "en_US": {
-          "title": "Ecology Scan Placement Priority Lock",
-          "scanner": "Placement priority: scan species that change route judgement.",
-          "terminal": "PLACEMENT PRIORITY: ecology scan rows should bind to route signs: safe pockets, predator silence, false light, density shear and Atlas tags.",
+          "title": "Ecology Scan Evidence Rule",
+          "scanner": "Ecology anchors: scan species that change route judgement.",
+          "terminal": "ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
           "audio": "A creature card earns its place by changing the route.",
-          "in_game_wiki": "Ecology Scan Placement Priority Lock separates useful specimen cards from decorative bestiary entries.",
+          "in_game_wiki": "Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
           "external_site": "HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
-          "field_note": "Place codex anchors near physical behavior, not in menu-only lists."
+          "field_note": "Codex anchors belong near physical behavior, not menu-only lists."
         },
         "ru_RU": {
-          "title": "Lock priority placement ecology scan",
-          "scanner": "Priority: species that change route judgement.",
-          "terminal": "PLACEMENT PRIORITY: ecology scan rows bind to safe pockets, predator silence, false light, density shear and Atlas tags.",
+          "title": "Draft RU localization pending native pass. Ecology Scan Evidence Rule",
+          "scanner": "Draft RU localization pending native pass. Ecology anchors: scan species that change route judgement.",
+          "terminal": "Draft RU localization pending native pass. ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
           "audio": "Creature card earns its place by changing the route.",
-          "in_game_wiki": "Ecology scan lock separates useful specimen cards from decorative bestiary.",
+          "in_game_wiki": "Draft RU localization pending native pass. Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
           "external_site": "Ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
-          "field_note": "Place codex anchors near physical behavior, not menu-only lists."
+          "field_note": "Draft RU localization pending native pass. Codex anchors belong near physical behavior, not menu-only lists."
         },
         "ja_JP": {
-          "title": "Draft JA localization pending native pass. Ecology Scan Placement Priority Lock",
-          "scanner": "Draft JA localization pending native pass. Placement priority: scan species that change route judgement.",
-          "terminal": "Draft JA localization pending native pass. PLACEMENT PRIORITY: ecology scan rows should bind to route signs: safe pockets, predator silence, false light, density shear and Atlas tags.",
+          "title": "Draft JP localization pending native pass. Ecology Scan Evidence Rule",
+          "scanner": "Draft JP localization pending native pass. Ecology anchors: scan species that change route judgement.",
+          "terminal": "Draft JP localization pending native pass. ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
           "audio": "Draft JA localization pending native pass. A creature card earns its place by changing the route.",
-          "in_game_wiki": "Draft JA localization pending native pass. Ecology Scan Placement Priority Lock separates useful specimen cards from decorative bestiary entries.",
+          "in_game_wiki": "Draft JP localization pending native pass. Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
           "external_site": "Draft JA localization pending native pass. HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
-          "field_note": "Draft JA localization pending native pass. Place codex anchors near physical behavior, not in menu-only lists."
+          "field_note": "Draft JP localization pending native pass. Codex anchors belong near physical behavior, not menu-only lists."
         },
         "zh_CN": {
-          "title": "Draft ZH localization pending native pass. Ecology Scan Placement Priority Lock",
-          "scanner": "Draft ZH localization pending native pass. Placement priority: scan species that change route judgement.",
-          "terminal": "Draft ZH localization pending native pass. PLACEMENT PRIORITY: ecology scan rows should bind to route signs: safe pockets, predator silence, false light, density shear and Atlas tags.",
+          "title": "Draft CN localization pending native pass. Ecology Scan Evidence Rule",
+          "scanner": "Draft CN localization pending native pass. Ecology anchors: scan species that change route judgement.",
+          "terminal": "Draft CN localization pending native pass. ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
           "audio": "Draft ZH localization pending native pass. A creature card earns its place by changing the route.",
-          "in_game_wiki": "Draft ZH localization pending native pass. Ecology Scan Placement Priority Lock separates useful specimen cards from decorative bestiary entries.",
+          "in_game_wiki": "Draft CN localization pending native pass. Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
           "external_site": "Draft ZH localization pending native pass. HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
-          "field_note": "Draft ZH localization pending native pass. Place codex anchors near physical behavior, not in menu-only lists."
+          "field_note": "Draft CN localization pending native pass. Codex anchors belong near physical behavior, not menu-only lists."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Ecology Scan Placement Priority Lock",
-          "scanner": "Draft FR localization pending native pass. Placement priority: scan species that change route judgement.",
-          "terminal": "Draft FR localization pending native pass. PLACEMENT PRIORITY: ecology scan rows should bind to route signs: safe pockets, predator silence, false light, density shear and Atlas tags.",
+          "title": "Draft FR localization pending native pass. Ecology Scan Evidence Rule",
+          "scanner": "Draft FR localization pending native pass. Ecology anchors: scan species that change route judgement.",
+          "terminal": "Draft FR localization pending native pass. ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
           "audio": "Draft FR localization pending native pass. A creature card earns its place by changing the route.",
-          "in_game_wiki": "Draft FR localization pending native pass. Ecology Scan Placement Priority Lock separates useful specimen cards from decorative bestiary entries.",
+          "in_game_wiki": "Draft FR localization pending native pass. Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
           "external_site": "Draft FR localization pending native pass. HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
-          "field_note": "Draft FR localization pending native pass. Place codex anchors near physical behavior, not in menu-only lists."
+          "field_note": "Draft FR localization pending native pass. Codex anchors belong near physical behavior, not menu-only lists."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Ecology Scan Placement Priority Lock",
-          "scanner": "Draft ES localization pending native pass. Placement priority: scan species that change route judgement.",
-          "terminal": "Draft ES localization pending native pass. PLACEMENT PRIORITY: ecology scan rows should bind to route signs: safe pockets, predator silence, false light, density shear and Atlas tags.",
+          "title": "Draft ES localization pending native pass. Ecology Scan Evidence Rule",
+          "scanner": "Draft ES localization pending native pass. Ecology anchors: scan species that change route judgement.",
+          "terminal": "Draft ES localization pending native pass. ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
           "audio": "Draft ES localization pending native pass. A creature card earns its place by changing the route.",
-          "in_game_wiki": "Draft ES localization pending native pass. Ecology Scan Placement Priority Lock separates useful specimen cards from decorative bestiary entries.",
+          "in_game_wiki": "Draft ES localization pending native pass. Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
           "external_site": "Draft ES localization pending native pass. HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
-          "field_note": "Draft ES localization pending native pass. Place codex anchors near physical behavior, not in menu-only lists."
+          "field_note": "Draft ES localization pending native pass. Codex anchors belong near physical behavior, not menu-only lists."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Ecology Scan Placement Priority Lock",
-          "scanner": "Draft DE localization pending native pass. Placement priority: scan species that change route judgement.",
-          "terminal": "Draft DE localization pending native pass. PLACEMENT PRIORITY: ecology scan rows should bind to route signs: safe pockets, predator silence, false light, density shear and Atlas tags.",
+          "title": "Draft DE localization pending native pass. Ecology Scan Evidence Rule",
+          "scanner": "Draft DE localization pending native pass. Ecology anchors: scan species that change route judgement.",
+          "terminal": "Draft DE localization pending native pass. ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
           "audio": "Draft DE localization pending native pass. A creature card earns its place by changing the route.",
-          "in_game_wiki": "Draft DE localization pending native pass. Ecology Scan Placement Priority Lock separates useful specimen cards from decorative bestiary entries.",
+          "in_game_wiki": "Draft DE localization pending native pass. Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
           "external_site": "Draft DE localization pending native pass. HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
-          "field_note": "Draft DE localization pending native pass. Place codex anchors near physical behavior, not in menu-only lists."
+          "field_note": "Draft DE localization pending native pass. Codex anchors belong near physical behavior, not menu-only lists."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Ecology Scan Placement Priority Lock",
-          "scanner": "Draft PL localization pending native pass. Placement priority: scan species that change route judgement.",
-          "terminal": "Draft PL localization pending native pass. PLACEMENT PRIORITY: ecology scan rows should bind to route signs: safe pockets, predator silence, false light, density shear and Atlas tags.",
+          "title": "Draft PL localization pending native pass. Ecology Scan Evidence Rule",
+          "scanner": "Draft PL localization pending native pass. Ecology anchors: scan species that change route judgement.",
+          "terminal": "Draft PL localization pending native pass. ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
           "audio": "Draft PL localization pending native pass. A creature card earns its place by changing the route.",
-          "in_game_wiki": "Draft PL localization pending native pass. Ecology Scan Placement Priority Lock separates useful specimen cards from decorative bestiary entries.",
+          "in_game_wiki": "Draft PL localization pending native pass. Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
           "external_site": "Draft PL localization pending native pass. HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
-          "field_note": "Draft PL localization pending native pass. Place codex anchors near physical behavior, not in menu-only lists."
+          "field_note": "Draft PL localization pending native pass. Codex anchors belong near physical behavior, not menu-only lists."
         },
         "uk_UA": {
-          "title": "Draft UK localization pending native pass. Ecology Scan Placement Priority Lock",
-          "scanner": "Draft UK localization pending native pass. Placement priority: scan species that change route judgement.",
-          "terminal": "Draft UK localization pending native pass. PLACEMENT PRIORITY: ecology scan rows should bind to route signs: safe pockets, predator silence, false light, density shear and Atlas tags.",
+          "title": "Draft UA localization pending native pass. Ecology Scan Evidence Rule",
+          "scanner": "Draft UA localization pending native pass. Ecology anchors: scan species that change route judgement.",
+          "terminal": "Draft UA localization pending native pass. ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
           "audio": "Draft UK localization pending native pass. A creature card earns its place by changing the route.",
-          "in_game_wiki": "Draft UK localization pending native pass. Ecology Scan Placement Priority Lock separates useful specimen cards from decorative bestiary entries.",
+          "in_game_wiki": "Draft UA localization pending native pass. Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
           "external_site": "Draft UK localization pending native pass. HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
-          "field_note": "Draft UK localization pending native pass. Place codex anchors near physical behavior, not in menu-only lists."
+          "field_note": "Draft UA localization pending native pass. Codex anchors belong near physical behavior, not menu-only lists."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Ecology Scan Placement Priority Lock",
-          "scanner": "Draft AR localization pending native pass. Placement priority: scan species that change route judgement.",
-          "terminal": "Draft AR localization pending native pass. PLACEMENT PRIORITY: ecology scan rows should bind to route signs: safe pockets, predator silence, false light, density shear and Atlas tags.",
+          "title": "Draft AR localization pending native pass. Ecology Scan Evidence Rule",
+          "scanner": "Draft AR localization pending native pass. Ecology anchors: scan species that change route judgement.",
+          "terminal": "Draft AR localization pending native pass. ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
           "audio": "Draft AR localization pending native pass. A creature card earns its place by changing the route.",
-          "in_game_wiki": "Draft AR localization pending native pass. Ecology Scan Placement Priority Lock separates useful specimen cards from decorative bestiary entries.",
+          "in_game_wiki": "Draft AR localization pending native pass. Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
           "external_site": "Draft AR localization pending native pass. HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
-          "field_note": "Draft AR localization pending native pass. Place codex anchors near physical behavior, not in menu-only lists."
+          "field_note": "Draft AR localization pending native pass. Codex anchors belong near physical behavior, not menu-only lists."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Ecology Scan Placement Priority Lock",
-          "scanner": "Draft ID localization pending native pass. Placement priority: scan species that change route judgement.",
-          "terminal": "Draft ID localization pending native pass. PLACEMENT PRIORITY: ecology scan rows should bind to route signs: safe pockets, predator silence, false light, density shear and Atlas tags.",
+          "title": "Draft ID localization pending native pass. Ecology Scan Evidence Rule",
+          "scanner": "Draft ID localization pending native pass. Ecology anchors: scan species that change route judgement.",
+          "terminal": "Draft ID localization pending native pass. ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
           "audio": "Draft ID localization pending native pass. A creature card earns its place by changing the route.",
-          "in_game_wiki": "Draft ID localization pending native pass. Ecology Scan Placement Priority Lock separates useful specimen cards from decorative bestiary entries.",
+          "in_game_wiki": "Draft ID localization pending native pass. Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
           "external_site": "Draft ID localization pending native pass. HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
-          "field_note": "Draft ID localization pending native pass. Place codex anchors near physical behavior, not in menu-only lists."
+          "field_note": "Draft ID localization pending native pass. Codex anchors belong near physical behavior, not menu-only lists."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Ecology Scan Placement Priority Lock",
-          "scanner": "Draft KO localization pending native pass. Placement priority: scan species that change route judgement.",
-          "terminal": "Draft KO localization pending native pass. PLACEMENT PRIORITY: ecology scan rows should bind to route signs: safe pockets, predator silence, false light, density shear and Atlas tags.",
+          "title": "Draft KO localization pending native pass. Ecology Scan Evidence Rule",
+          "scanner": "Draft KO localization pending native pass. Ecology anchors: scan species that change route judgement.",
+          "terminal": "Draft KO localization pending native pass. ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
           "audio": "Draft KO localization pending native pass. A creature card earns its place by changing the route.",
-          "in_game_wiki": "Draft KO localization pending native pass. Ecology Scan Placement Priority Lock separates useful specimen cards from decorative bestiary entries.",
+          "in_game_wiki": "Draft KO localization pending native pass. Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
           "external_site": "Draft KO localization pending native pass. HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
-          "field_note": "Draft KO localization pending native pass. Place codex anchors near physical behavior, not in menu-only lists."
+          "field_note": "Draft KO localization pending native pass. Codex anchors belong near physical behavior, not menu-only lists."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Ecology Scan Placement Priority Lock",
-          "scanner": "Draft HE localization pending native pass. Placement priority: scan species that change route judgement.",
-          "terminal": "Draft HE localization pending native pass. PLACEMENT PRIORITY: ecology scan rows should bind to route signs: safe pockets, predator silence, false light, density shear and Atlas tags.",
+          "title": "Draft HE localization pending native pass. Ecology Scan Evidence Rule",
+          "scanner": "Draft HE localization pending native pass. Ecology anchors: scan species that change route judgement.",
+          "terminal": "Draft HE localization pending native pass. ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
           "audio": "Draft HE localization pending native pass. A creature card earns its place by changing the route.",
-          "in_game_wiki": "Draft HE localization pending native pass. Ecology Scan Placement Priority Lock separates useful specimen cards from decorative bestiary entries.",
+          "in_game_wiki": "Draft HE localization pending native pass. Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
           "external_site": "Draft HE localization pending native pass. HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
-          "field_note": "Draft HE localization pending native pass. Place codex anchors near physical behavior, not in menu-only lists."
+          "field_note": "Draft HE localization pending native pass. Codex anchors belong near physical behavior, not menu-only lists."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Ecology Scan Placement Priority Lock",
-          "scanner": "Draft PT localization pending native pass. Placement priority: scan species that change route judgement.",
-          "terminal": "Draft PT localization pending native pass. PLACEMENT PRIORITY: ecology scan rows should bind to route signs: safe pockets, predator silence, false light, density shear and Atlas tags.",
+          "title": "Draft PT localization pending native pass. Ecology Scan Evidence Rule",
+          "scanner": "Draft PT localization pending native pass. Ecology anchors: scan species that change route judgement.",
+          "terminal": "Draft PT localization pending native pass. ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
           "audio": "Draft PT localization pending native pass. A creature card earns its place by changing the route.",
-          "in_game_wiki": "Draft PT localization pending native pass. Ecology Scan Placement Priority Lock separates useful specimen cards from decorative bestiary entries.",
+          "in_game_wiki": "Draft PT localization pending native pass. Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
           "external_site": "Draft PT localization pending native pass. HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
-          "field_note": "Draft PT localization pending native pass. Place codex anchors near physical behavior, not in menu-only lists."
+          "field_note": "Draft PT localization pending native pass. Codex anchors belong near physical behavior, not menu-only lists."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Ecology Scan Placement Priority Lock",
-          "scanner": "Draft NL localization pending native pass. Placement priority: scan species that change route judgement.",
-          "terminal": "Draft NL localization pending native pass. PLACEMENT PRIORITY: ecology scan rows should bind to route signs: safe pockets, predator silence, false light, density shear and Atlas tags.",
+          "title": "Draft NL localization pending native pass. Ecology Scan Evidence Rule",
+          "scanner": "Draft NL localization pending native pass. Ecology anchors: scan species that change route judgement.",
+          "terminal": "Draft NL localization pending native pass. ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
           "audio": "Draft NL localization pending native pass. A creature card earns its place by changing the route.",
-          "in_game_wiki": "Draft NL localization pending native pass. Ecology Scan Placement Priority Lock separates useful specimen cards from decorative bestiary entries.",
+          "in_game_wiki": "Draft NL localization pending native pass. Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
           "external_site": "Draft NL localization pending native pass. HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
-          "field_note": "Draft NL localization pending native pass. Place codex anchors near physical behavior, not in menu-only lists."
+          "field_note": "Draft NL localization pending native pass. Codex anchors belong near physical behavior, not menu-only lists."
         }
       }
     },
     {
       "packet_id": "P319_FINAL_DESCENT_PLACEMENT_PRIORITY_LOCK",
       "release_set_id": "RS064_UNITY_PLACEMENT_PRIORITY_BACKLOG",
+      "surface_mask": 65,
       "article_id": "applied_lore.final_descent_placement_priority_lock",
       "title_key": "applied_lore.final_descent_placement_priority_lock.title",
       "unlock": {
@@ -492,145 +496,146 @@
       },
       "localized": {
         "en_US": {
-          "title": "Final Descent Placement Priority Lock",
-          "scanner": "Placement priority: machine field warning, pressure gate, factory-temple, payload check.",
-          "terminal": "PLACEMENT PRIORITY: final descent rows must bind warning, gate, threshold and payload authority before optional late archive fragments.",
+          "title": "Final Descent Evidence Rule",
+          "scanner": "Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
+          "terminal": "FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
           "audio": "The bottom should ask through instruments first.",
-          "in_game_wiki": "Final Descent Placement Priority Lock preserves engineering pressure before the final question.",
+          "in_game_wiki": "Final Descent Evidence Rule preserves engineering pressure before the final question.",
           "external_site": "The final approach should feel like a machine refusing simple categories, not a boss arena.",
-          "field_note": "Use for Atlas basin scene anchor pass."
+          "field_note": "Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
         },
         "ru_RU": {
-          "title": "Lock priority placement final descent",
-          "scanner": "Priority: machine field warning, pressure gate, factory-temple, payload check.",
-          "terminal": "PLACEMENT PRIORITY: final descent rows bind warning, gate, threshold and payload authority before optional late archives.",
+          "title": "Draft RU localization pending native pass. Final Descent Evidence Rule",
+          "scanner": "Draft RU localization pending native pass. Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
+          "terminal": "Draft RU localization pending native pass. FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
           "audio": "Дно сначала спрашивает приборами.",
-          "in_game_wiki": "Final descent placement lock preserves engineering pressure before final question.",
+          "in_game_wiki": "Draft RU localization pending native pass. Final Descent Evidence Rule preserves engineering pressure before the final question.",
           "external_site": "Final approach should feel like machine refusing categories, not boss arena.",
-          "field_note": "For Atlas basin scene anchor pass."
+          "field_note": "Draft RU localization pending native pass. Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
         },
         "ja_JP": {
-          "title": "Draft JA localization pending native pass. Final Descent Placement Priority Lock",
-          "scanner": "Draft JA localization pending native pass. Placement priority: machine field warning, pressure gate, factory-temple, payload check.",
-          "terminal": "Draft JA localization pending native pass. PLACEMENT PRIORITY: final descent rows must bind warning, gate, threshold and payload authority before optional late archive fragments.",
+          "title": "Draft JP localization pending native pass. Final Descent Evidence Rule",
+          "scanner": "Draft JP localization pending native pass. Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
+          "terminal": "Draft JP localization pending native pass. FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
           "audio": "Draft JA localization pending native pass. The bottom should ask through instruments first.",
-          "in_game_wiki": "Draft JA localization pending native pass. Final Descent Placement Priority Lock preserves engineering pressure before the final question.",
+          "in_game_wiki": "Draft JP localization pending native pass. Final Descent Evidence Rule preserves engineering pressure before the final question.",
           "external_site": "Draft JA localization pending native pass. The final approach should feel like a machine refusing simple categories, not a boss arena.",
-          "field_note": "Draft JA localization pending native pass. Use for Atlas basin scene anchor pass."
+          "field_note": "Draft JP localization pending native pass. Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
         },
         "zh_CN": {
-          "title": "Draft ZH localization pending native pass. Final Descent Placement Priority Lock",
-          "scanner": "Draft ZH localization pending native pass. Placement priority: machine field warning, pressure gate, factory-temple, payload check.",
-          "terminal": "Draft ZH localization pending native pass. PLACEMENT PRIORITY: final descent rows must bind warning, gate, threshold and payload authority before optional late archive fragments.",
+          "title": "Draft CN localization pending native pass. Final Descent Evidence Rule",
+          "scanner": "Draft CN localization pending native pass. Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
+          "terminal": "Draft CN localization pending native pass. FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
           "audio": "Draft ZH localization pending native pass. The bottom should ask through instruments first.",
-          "in_game_wiki": "Draft ZH localization pending native pass. Final Descent Placement Priority Lock preserves engineering pressure before the final question.",
+          "in_game_wiki": "Draft CN localization pending native pass. Final Descent Evidence Rule preserves engineering pressure before the final question.",
           "external_site": "Draft ZH localization pending native pass. The final approach should feel like a machine refusing simple categories, not a boss arena.",
-          "field_note": "Draft ZH localization pending native pass. Use for Atlas basin scene anchor pass."
+          "field_note": "Draft CN localization pending native pass. Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Final Descent Placement Priority Lock",
-          "scanner": "Draft FR localization pending native pass. Placement priority: machine field warning, pressure gate, factory-temple, payload check.",
-          "terminal": "Draft FR localization pending native pass. PLACEMENT PRIORITY: final descent rows must bind warning, gate, threshold and payload authority before optional late archive fragments.",
+          "title": "Draft FR localization pending native pass. Final Descent Evidence Rule",
+          "scanner": "Draft FR localization pending native pass. Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
+          "terminal": "Draft FR localization pending native pass. FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
           "audio": "Draft FR localization pending native pass. The bottom should ask through instruments first.",
-          "in_game_wiki": "Draft FR localization pending native pass. Final Descent Placement Priority Lock preserves engineering pressure before the final question.",
+          "in_game_wiki": "Draft FR localization pending native pass. Final Descent Evidence Rule preserves engineering pressure before the final question.",
           "external_site": "Draft FR localization pending native pass. The final approach should feel like a machine refusing simple categories, not a boss arena.",
-          "field_note": "Draft FR localization pending native pass. Use for Atlas basin scene anchor pass."
+          "field_note": "Draft FR localization pending native pass. Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Final Descent Placement Priority Lock",
-          "scanner": "Draft ES localization pending native pass. Placement priority: machine field warning, pressure gate, factory-temple, payload check.",
-          "terminal": "Draft ES localization pending native pass. PLACEMENT PRIORITY: final descent rows must bind warning, gate, threshold and payload authority before optional late archive fragments.",
+          "title": "Draft ES localization pending native pass. Final Descent Evidence Rule",
+          "scanner": "Draft ES localization pending native pass. Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
+          "terminal": "Draft ES localization pending native pass. FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
           "audio": "Draft ES localization pending native pass. The bottom should ask through instruments first.",
-          "in_game_wiki": "Draft ES localization pending native pass. Final Descent Placement Priority Lock preserves engineering pressure before the final question.",
+          "in_game_wiki": "Draft ES localization pending native pass. Final Descent Evidence Rule preserves engineering pressure before the final question.",
           "external_site": "Draft ES localization pending native pass. The final approach should feel like a machine refusing simple categories, not a boss arena.",
-          "field_note": "Draft ES localization pending native pass. Use for Atlas basin scene anchor pass."
+          "field_note": "Draft ES localization pending native pass. Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Final Descent Placement Priority Lock",
-          "scanner": "Draft DE localization pending native pass. Placement priority: machine field warning, pressure gate, factory-temple, payload check.",
-          "terminal": "Draft DE localization pending native pass. PLACEMENT PRIORITY: final descent rows must bind warning, gate, threshold and payload authority before optional late archive fragments.",
+          "title": "Draft DE localization pending native pass. Final Descent Evidence Rule",
+          "scanner": "Draft DE localization pending native pass. Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
+          "terminal": "Draft DE localization pending native pass. FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
           "audio": "Draft DE localization pending native pass. The bottom should ask through instruments first.",
-          "in_game_wiki": "Draft DE localization pending native pass. Final Descent Placement Priority Lock preserves engineering pressure before the final question.",
+          "in_game_wiki": "Draft DE localization pending native pass. Final Descent Evidence Rule preserves engineering pressure before the final question.",
           "external_site": "Draft DE localization pending native pass. The final approach should feel like a machine refusing simple categories, not a boss arena.",
-          "field_note": "Draft DE localization pending native pass. Use for Atlas basin scene anchor pass."
+          "field_note": "Draft DE localization pending native pass. Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Final Descent Placement Priority Lock",
-          "scanner": "Draft PL localization pending native pass. Placement priority: machine field warning, pressure gate, factory-temple, payload check.",
-          "terminal": "Draft PL localization pending native pass. PLACEMENT PRIORITY: final descent rows must bind warning, gate, threshold and payload authority before optional late archive fragments.",
+          "title": "Draft PL localization pending native pass. Final Descent Evidence Rule",
+          "scanner": "Draft PL localization pending native pass. Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
+          "terminal": "Draft PL localization pending native pass. FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
           "audio": "Draft PL localization pending native pass. The bottom should ask through instruments first.",
-          "in_game_wiki": "Draft PL localization pending native pass. Final Descent Placement Priority Lock preserves engineering pressure before the final question.",
+          "in_game_wiki": "Draft PL localization pending native pass. Final Descent Evidence Rule preserves engineering pressure before the final question.",
           "external_site": "Draft PL localization pending native pass. The final approach should feel like a machine refusing simple categories, not a boss arena.",
-          "field_note": "Draft PL localization pending native pass. Use for Atlas basin scene anchor pass."
+          "field_note": "Draft PL localization pending native pass. Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
         },
         "uk_UA": {
-          "title": "Draft UK localization pending native pass. Final Descent Placement Priority Lock",
-          "scanner": "Draft UK localization pending native pass. Placement priority: machine field warning, pressure gate, factory-temple, payload check.",
-          "terminal": "Draft UK localization pending native pass. PLACEMENT PRIORITY: final descent rows must bind warning, gate, threshold and payload authority before optional late archive fragments.",
+          "title": "Draft UA localization pending native pass. Final Descent Evidence Rule",
+          "scanner": "Draft UA localization pending native pass. Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
+          "terminal": "Draft UA localization pending native pass. FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
           "audio": "Draft UK localization pending native pass. The bottom should ask through instruments first.",
-          "in_game_wiki": "Draft UK localization pending native pass. Final Descent Placement Priority Lock preserves engineering pressure before the final question.",
+          "in_game_wiki": "Draft UA localization pending native pass. Final Descent Evidence Rule preserves engineering pressure before the final question.",
           "external_site": "Draft UK localization pending native pass. The final approach should feel like a machine refusing simple categories, not a boss arena.",
-          "field_note": "Draft UK localization pending native pass. Use for Atlas basin scene anchor pass."
+          "field_note": "Draft UA localization pending native pass. Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Final Descent Placement Priority Lock",
-          "scanner": "Draft AR localization pending native pass. Placement priority: machine field warning, pressure gate, factory-temple, payload check.",
-          "terminal": "Draft AR localization pending native pass. PLACEMENT PRIORITY: final descent rows must bind warning, gate, threshold and payload authority before optional late archive fragments.",
+          "title": "Draft AR localization pending native pass. Final Descent Evidence Rule",
+          "scanner": "Draft AR localization pending native pass. Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
+          "terminal": "Draft AR localization pending native pass. FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
           "audio": "Draft AR localization pending native pass. The bottom should ask through instruments first.",
-          "in_game_wiki": "Draft AR localization pending native pass. Final Descent Placement Priority Lock preserves engineering pressure before the final question.",
+          "in_game_wiki": "Draft AR localization pending native pass. Final Descent Evidence Rule preserves engineering pressure before the final question.",
           "external_site": "Draft AR localization pending native pass. The final approach should feel like a machine refusing simple categories, not a boss arena.",
-          "field_note": "Draft AR localization pending native pass. Use for Atlas basin scene anchor pass."
+          "field_note": "Draft AR localization pending native pass. Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Final Descent Placement Priority Lock",
-          "scanner": "Draft ID localization pending native pass. Placement priority: machine field warning, pressure gate, factory-temple, payload check.",
-          "terminal": "Draft ID localization pending native pass. PLACEMENT PRIORITY: final descent rows must bind warning, gate, threshold and payload authority before optional late archive fragments.",
+          "title": "Draft ID localization pending native pass. Final Descent Evidence Rule",
+          "scanner": "Draft ID localization pending native pass. Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
+          "terminal": "Draft ID localization pending native pass. FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
           "audio": "Draft ID localization pending native pass. The bottom should ask through instruments first.",
-          "in_game_wiki": "Draft ID localization pending native pass. Final Descent Placement Priority Lock preserves engineering pressure before the final question.",
+          "in_game_wiki": "Draft ID localization pending native pass. Final Descent Evidence Rule preserves engineering pressure before the final question.",
           "external_site": "Draft ID localization pending native pass. The final approach should feel like a machine refusing simple categories, not a boss arena.",
-          "field_note": "Draft ID localization pending native pass. Use for Atlas basin scene anchor pass."
+          "field_note": "Draft ID localization pending native pass. Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Final Descent Placement Priority Lock",
-          "scanner": "Draft KO localization pending native pass. Placement priority: machine field warning, pressure gate, factory-temple, payload check.",
-          "terminal": "Draft KO localization pending native pass. PLACEMENT PRIORITY: final descent rows must bind warning, gate, threshold and payload authority before optional late archive fragments.",
+          "title": "Draft KO localization pending native pass. Final Descent Evidence Rule",
+          "scanner": "Draft KO localization pending native pass. Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
+          "terminal": "Draft KO localization pending native pass. FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
           "audio": "Draft KO localization pending native pass. The bottom should ask through instruments first.",
-          "in_game_wiki": "Draft KO localization pending native pass. Final Descent Placement Priority Lock preserves engineering pressure before the final question.",
+          "in_game_wiki": "Draft KO localization pending native pass. Final Descent Evidence Rule preserves engineering pressure before the final question.",
           "external_site": "Draft KO localization pending native pass. The final approach should feel like a machine refusing simple categories, not a boss arena.",
-          "field_note": "Draft KO localization pending native pass. Use for Atlas basin scene anchor pass."
+          "field_note": "Draft KO localization pending native pass. Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Final Descent Placement Priority Lock",
-          "scanner": "Draft HE localization pending native pass. Placement priority: machine field warning, pressure gate, factory-temple, payload check.",
-          "terminal": "Draft HE localization pending native pass. PLACEMENT PRIORITY: final descent rows must bind warning, gate, threshold and payload authority before optional late archive fragments.",
+          "title": "Draft HE localization pending native pass. Final Descent Evidence Rule",
+          "scanner": "Draft HE localization pending native pass. Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
+          "terminal": "Draft HE localization pending native pass. FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
           "audio": "Draft HE localization pending native pass. The bottom should ask through instruments first.",
-          "in_game_wiki": "Draft HE localization pending native pass. Final Descent Placement Priority Lock preserves engineering pressure before the final question.",
+          "in_game_wiki": "Draft HE localization pending native pass. Final Descent Evidence Rule preserves engineering pressure before the final question.",
           "external_site": "Draft HE localization pending native pass. The final approach should feel like a machine refusing simple categories, not a boss arena.",
-          "field_note": "Draft HE localization pending native pass. Use for Atlas basin scene anchor pass."
+          "field_note": "Draft HE localization pending native pass. Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Final Descent Placement Priority Lock",
-          "scanner": "Draft PT localization pending native pass. Placement priority: machine field warning, pressure gate, factory-temple, payload check.",
-          "terminal": "Draft PT localization pending native pass. PLACEMENT PRIORITY: final descent rows must bind warning, gate, threshold and payload authority before optional late archive fragments.",
+          "title": "Draft PT localization pending native pass. Final Descent Evidence Rule",
+          "scanner": "Draft PT localization pending native pass. Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
+          "terminal": "Draft PT localization pending native pass. FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
           "audio": "Draft PT localization pending native pass. The bottom should ask through instruments first.",
-          "in_game_wiki": "Draft PT localization pending native pass. Final Descent Placement Priority Lock preserves engineering pressure before the final question.",
+          "in_game_wiki": "Draft PT localization pending native pass. Final Descent Evidence Rule preserves engineering pressure before the final question.",
           "external_site": "Draft PT localization pending native pass. The final approach should feel like a machine refusing simple categories, not a boss arena.",
-          "field_note": "Draft PT localization pending native pass. Use for Atlas basin scene anchor pass."
+          "field_note": "Draft PT localization pending native pass. Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Final Descent Placement Priority Lock",
-          "scanner": "Draft NL localization pending native pass. Placement priority: machine field warning, pressure gate, factory-temple, payload check.",
-          "terminal": "Draft NL localization pending native pass. PLACEMENT PRIORITY: final descent rows must bind warning, gate, threshold and payload authority before optional late archive fragments.",
+          "title": "Draft NL localization pending native pass. Final Descent Evidence Rule",
+          "scanner": "Draft NL localization pending native pass. Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
+          "terminal": "Draft NL localization pending native pass. FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
           "audio": "Draft NL localization pending native pass. The bottom should ask through instruments first.",
-          "in_game_wiki": "Draft NL localization pending native pass. Final Descent Placement Priority Lock preserves engineering pressure before the final question.",
+          "in_game_wiki": "Draft NL localization pending native pass. Final Descent Evidence Rule preserves engineering pressure before the final question.",
           "external_site": "Draft NL localization pending native pass. The final approach should feel like a machine refusing simple categories, not a boss arena.",
-          "field_note": "Draft NL localization pending native pass. Use for Atlas basin scene anchor pass."
+          "field_note": "Draft NL localization pending native pass. Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
         }
       }
     },
     {
       "packet_id": "P320_TERMINAL_BACKLOG_TRIAGE_LOCK",
       "release_set_id": "RS064_UNITY_PLACEMENT_PRIORITY_BACKLOG",
+      "surface_mask": 65,
       "article_id": "applied_lore.terminal_backlog_triage_lock",
       "title_key": "applied_lore.terminal_backlog_triage_lock.title",
       "unlock": {
@@ -647,139 +652,139 @@
       },
       "localized": {
         "en_US": {
-          "title": "Terminal Backlog Triage Lock",
-          "scanner": "Placement priority: terminal rows first when they alter route, proof or ending record.",
+          "title": "Terminal Evidence Triage Rule",
+          "scanner": "Terminal anchors come first when they alter route, proof, or ending record.",
           "terminal": "TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
           "audio": "A terminal earns power by changing the next decision.",
-          "in_game_wiki": "Terminal Backlog Triage Lock prevents the backlog from becoming walls of text.",
+          "in_game_wiki": "Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
           "external_site": "HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
-          "field_note": "Use after scene placement count grows beyond current TerminalOS slots."
+          "field_note": "A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
         },
         "ru_RU": {
-          "title": "Lock triage terminal backlog",
-          "scanner": "Priority: terminal rows alter route, proof or ending record.",
+          "title": "Draft RU localization pending native pass. Terminal Evidence Triage Rule",
+          "scanner": "Draft RU localization pending native pass. Terminal anchors come first when they alter route, proof, or ending record.",
           "terminal": "TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
           "audio": "Terminal earns power by changing the next decision.",
-          "in_game_wiki": "Terminal backlog triage prevents walls of text.",
+          "in_game_wiki": "Draft RU localization pending native pass. Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
           "external_site": "Terminals work best when player already holds broken part or bad route warning.",
-          "field_note": "Use after scene placement count grows beyond current TerminalOS slots."
+          "field_note": "Draft RU localization pending native pass. A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
         },
         "ja_JP": {
-          "title": "Draft JA localization pending native pass. Terminal Backlog Triage Lock",
-          "scanner": "Draft JA localization pending native pass. Placement priority: terminal rows first when they alter route, proof or ending record.",
+          "title": "Draft JP localization pending native pass. Terminal Evidence Triage Rule",
+          "scanner": "Draft JP localization pending native pass. Terminal anchors come first when they alter route, proof, or ending record.",
           "terminal": "Draft JA localization pending native pass. TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
           "audio": "Draft JA localization pending native pass. A terminal earns power by changing the next decision.",
-          "in_game_wiki": "Draft JA localization pending native pass. Terminal Backlog Triage Lock prevents the backlog from becoming walls of text.",
+          "in_game_wiki": "Draft JP localization pending native pass. Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
           "external_site": "Draft JA localization pending native pass. HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
-          "field_note": "Draft JA localization pending native pass. Use after scene placement count grows beyond current TerminalOS slots."
+          "field_note": "Draft JP localization pending native pass. A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
         },
         "zh_CN": {
-          "title": "Draft ZH localization pending native pass. Terminal Backlog Triage Lock",
-          "scanner": "Draft ZH localization pending native pass. Placement priority: terminal rows first when they alter route, proof or ending record.",
+          "title": "Draft CN localization pending native pass. Terminal Evidence Triage Rule",
+          "scanner": "Draft CN localization pending native pass. Terminal anchors come first when they alter route, proof, or ending record.",
           "terminal": "Draft ZH localization pending native pass. TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
           "audio": "Draft ZH localization pending native pass. A terminal earns power by changing the next decision.",
-          "in_game_wiki": "Draft ZH localization pending native pass. Terminal Backlog Triage Lock prevents the backlog from becoming walls of text.",
+          "in_game_wiki": "Draft CN localization pending native pass. Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
           "external_site": "Draft ZH localization pending native pass. HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
-          "field_note": "Draft ZH localization pending native pass. Use after scene placement count grows beyond current TerminalOS slots."
+          "field_note": "Draft CN localization pending native pass. A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Terminal Backlog Triage Lock",
-          "scanner": "Draft FR localization pending native pass. Placement priority: terminal rows first when they alter route, proof or ending record.",
+          "title": "Draft FR localization pending native pass. Terminal Evidence Triage Rule",
+          "scanner": "Draft FR localization pending native pass. Terminal anchors come first when they alter route, proof, or ending record.",
           "terminal": "Draft FR localization pending native pass. TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
           "audio": "Draft FR localization pending native pass. A terminal earns power by changing the next decision.",
-          "in_game_wiki": "Draft FR localization pending native pass. Terminal Backlog Triage Lock prevents the backlog from becoming walls of text.",
+          "in_game_wiki": "Draft FR localization pending native pass. Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
           "external_site": "Draft FR localization pending native pass. HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
-          "field_note": "Draft FR localization pending native pass. Use after scene placement count grows beyond current TerminalOS slots."
+          "field_note": "Draft FR localization pending native pass. A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Terminal Backlog Triage Lock",
-          "scanner": "Draft ES localization pending native pass. Placement priority: terminal rows first when they alter route, proof or ending record.",
+          "title": "Draft ES localization pending native pass. Terminal Evidence Triage Rule",
+          "scanner": "Draft ES localization pending native pass. Terminal anchors come first when they alter route, proof, or ending record.",
           "terminal": "Draft ES localization pending native pass. TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
           "audio": "Draft ES localization pending native pass. A terminal earns power by changing the next decision.",
-          "in_game_wiki": "Draft ES localization pending native pass. Terminal Backlog Triage Lock prevents the backlog from becoming walls of text.",
+          "in_game_wiki": "Draft ES localization pending native pass. Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
           "external_site": "Draft ES localization pending native pass. HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
-          "field_note": "Draft ES localization pending native pass. Use after scene placement count grows beyond current TerminalOS slots."
+          "field_note": "Draft ES localization pending native pass. A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Terminal Backlog Triage Lock",
-          "scanner": "Draft DE localization pending native pass. Placement priority: terminal rows first when they alter route, proof or ending record.",
+          "title": "Draft DE localization pending native pass. Terminal Evidence Triage Rule",
+          "scanner": "Draft DE localization pending native pass. Terminal anchors come first when they alter route, proof, or ending record.",
           "terminal": "Draft DE localization pending native pass. TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
           "audio": "Draft DE localization pending native pass. A terminal earns power by changing the next decision.",
-          "in_game_wiki": "Draft DE localization pending native pass. Terminal Backlog Triage Lock prevents the backlog from becoming walls of text.",
+          "in_game_wiki": "Draft DE localization pending native pass. Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
           "external_site": "Draft DE localization pending native pass. HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
-          "field_note": "Draft DE localization pending native pass. Use after scene placement count grows beyond current TerminalOS slots."
+          "field_note": "Draft DE localization pending native pass. A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Terminal Backlog Triage Lock",
-          "scanner": "Draft PL localization pending native pass. Placement priority: terminal rows first when they alter route, proof or ending record.",
+          "title": "Draft PL localization pending native pass. Terminal Evidence Triage Rule",
+          "scanner": "Draft PL localization pending native pass. Terminal anchors come first when they alter route, proof, or ending record.",
           "terminal": "Draft PL localization pending native pass. TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
           "audio": "Draft PL localization pending native pass. A terminal earns power by changing the next decision.",
-          "in_game_wiki": "Draft PL localization pending native pass. Terminal Backlog Triage Lock prevents the backlog from becoming walls of text.",
+          "in_game_wiki": "Draft PL localization pending native pass. Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
           "external_site": "Draft PL localization pending native pass. HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
-          "field_note": "Draft PL localization pending native pass. Use after scene placement count grows beyond current TerminalOS slots."
+          "field_note": "Draft PL localization pending native pass. A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
         },
         "uk_UA": {
-          "title": "Draft UK localization pending native pass. Terminal Backlog Triage Lock",
-          "scanner": "Draft UK localization pending native pass. Placement priority: terminal rows first when they alter route, proof or ending record.",
+          "title": "Draft UA localization pending native pass. Terminal Evidence Triage Rule",
+          "scanner": "Draft UA localization pending native pass. Terminal anchors come first when they alter route, proof, or ending record.",
           "terminal": "Draft UK localization pending native pass. TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
           "audio": "Draft UK localization pending native pass. A terminal earns power by changing the next decision.",
-          "in_game_wiki": "Draft UK localization pending native pass. Terminal Backlog Triage Lock prevents the backlog from becoming walls of text.",
+          "in_game_wiki": "Draft UA localization pending native pass. Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
           "external_site": "Draft UK localization pending native pass. HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
-          "field_note": "Draft UK localization pending native pass. Use after scene placement count grows beyond current TerminalOS slots."
+          "field_note": "Draft UA localization pending native pass. A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Terminal Backlog Triage Lock",
-          "scanner": "Draft AR localization pending native pass. Placement priority: terminal rows first when they alter route, proof or ending record.",
+          "title": "Draft AR localization pending native pass. Terminal Evidence Triage Rule",
+          "scanner": "Draft AR localization pending native pass. Terminal anchors come first when they alter route, proof, or ending record.",
           "terminal": "Draft AR localization pending native pass. TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
           "audio": "Draft AR localization pending native pass. A terminal earns power by changing the next decision.",
-          "in_game_wiki": "Draft AR localization pending native pass. Terminal Backlog Triage Lock prevents the backlog from becoming walls of text.",
+          "in_game_wiki": "Draft AR localization pending native pass. Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
           "external_site": "Draft AR localization pending native pass. HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
-          "field_note": "Draft AR localization pending native pass. Use after scene placement count grows beyond current TerminalOS slots."
+          "field_note": "Draft AR localization pending native pass. A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Terminal Backlog Triage Lock",
-          "scanner": "Draft ID localization pending native pass. Placement priority: terminal rows first when they alter route, proof or ending record.",
+          "title": "Draft ID localization pending native pass. Terminal Evidence Triage Rule",
+          "scanner": "Draft ID localization pending native pass. Terminal anchors come first when they alter route, proof, or ending record.",
           "terminal": "Draft ID localization pending native pass. TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
           "audio": "Draft ID localization pending native pass. A terminal earns power by changing the next decision.",
-          "in_game_wiki": "Draft ID localization pending native pass. Terminal Backlog Triage Lock prevents the backlog from becoming walls of text.",
+          "in_game_wiki": "Draft ID localization pending native pass. Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
           "external_site": "Draft ID localization pending native pass. HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
-          "field_note": "Draft ID localization pending native pass. Use after scene placement count grows beyond current TerminalOS slots."
+          "field_note": "Draft ID localization pending native pass. A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Terminal Backlog Triage Lock",
-          "scanner": "Draft KO localization pending native pass. Placement priority: terminal rows first when they alter route, proof or ending record.",
+          "title": "Draft KO localization pending native pass. Terminal Evidence Triage Rule",
+          "scanner": "Draft KO localization pending native pass. Terminal anchors come first when they alter route, proof, or ending record.",
           "terminal": "Draft KO localization pending native pass. TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
           "audio": "Draft KO localization pending native pass. A terminal earns power by changing the next decision.",
-          "in_game_wiki": "Draft KO localization pending native pass. Terminal Backlog Triage Lock prevents the backlog from becoming walls of text.",
+          "in_game_wiki": "Draft KO localization pending native pass. Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
           "external_site": "Draft KO localization pending native pass. HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
-          "field_note": "Draft KO localization pending native pass. Use after scene placement count grows beyond current TerminalOS slots."
+          "field_note": "Draft KO localization pending native pass. A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Terminal Backlog Triage Lock",
-          "scanner": "Draft HE localization pending native pass. Placement priority: terminal rows first when they alter route, proof or ending record.",
+          "title": "Draft HE localization pending native pass. Terminal Evidence Triage Rule",
+          "scanner": "Draft HE localization pending native pass. Terminal anchors come first when they alter route, proof, or ending record.",
           "terminal": "Draft HE localization pending native pass. TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
           "audio": "Draft HE localization pending native pass. A terminal earns power by changing the next decision.",
-          "in_game_wiki": "Draft HE localization pending native pass. Terminal Backlog Triage Lock prevents the backlog from becoming walls of text.",
+          "in_game_wiki": "Draft HE localization pending native pass. Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
           "external_site": "Draft HE localization pending native pass. HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
-          "field_note": "Draft HE localization pending native pass. Use after scene placement count grows beyond current TerminalOS slots."
+          "field_note": "Draft HE localization pending native pass. A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Terminal Backlog Triage Lock",
-          "scanner": "Draft PT localization pending native pass. Placement priority: terminal rows first when they alter route, proof or ending record.",
+          "title": "Draft PT localization pending native pass. Terminal Evidence Triage Rule",
+          "scanner": "Draft PT localization pending native pass. Terminal anchors come first when they alter route, proof, or ending record.",
           "terminal": "Draft PT localization pending native pass. TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
           "audio": "Draft PT localization pending native pass. A terminal earns power by changing the next decision.",
-          "in_game_wiki": "Draft PT localization pending native pass. Terminal Backlog Triage Lock prevents the backlog from becoming walls of text.",
+          "in_game_wiki": "Draft PT localization pending native pass. Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
           "external_site": "Draft PT localization pending native pass. HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
-          "field_note": "Draft PT localization pending native pass. Use after scene placement count grows beyond current TerminalOS slots."
+          "field_note": "Draft PT localization pending native pass. A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Terminal Backlog Triage Lock",
-          "scanner": "Draft NL localization pending native pass. Placement priority: terminal rows first when they alter route, proof or ending record.",
+          "title": "Draft NL localization pending native pass. Terminal Evidence Triage Rule",
+          "scanner": "Draft NL localization pending native pass. Terminal anchors come first when they alter route, proof, or ending record.",
           "terminal": "Draft NL localization pending native pass. TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
           "audio": "Draft NL localization pending native pass. A terminal earns power by changing the next decision.",
-          "in_game_wiki": "Draft NL localization pending native pass. Terminal Backlog Triage Lock prevents the backlog from becoming walls of text.",
+          "in_game_wiki": "Draft NL localization pending native pass. Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
           "external_site": "Draft NL localization pending native pass. HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
-          "field_note": "Draft NL localization pending native pass. Use after scene placement count grows beyond current TerminalOS slots."
+          "field_note": "Draft NL localization pending native pass. A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
         }
       }
     }

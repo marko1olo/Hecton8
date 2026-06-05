@@ -1,0 +1,37 @@
+Batch: batch29_no_unity_slot_route_recovery
+Date: 2026-06-04
+Controller: local portfolio orchestrator
+Unity slot: DO NOT USE
+
+Purpose:
+Prepare implementation-grade patch plans, asset source prompts, and proof-route scaffolding while the separate Unity-owner thread controls Unity.
+
+Global rules:
+- No Unity Editor automation.
+- No Play Mode.
+- No dotnet build.
+- No edits under Assets unless the task explicitly says source patch is allowed and Unity is idle. This batch is report/task/source-prep only.
+- Evidence class must be labeled. Static source is not runtime proof.
+- Do not claim visual acceptance.
+- Do not save generated textures into Assets.
+- All generated/AI texture candidates must remain under Docs/GeneratedAssets until accepted by source QA.
+- Do not activate SURFACE_LOW_SUN_DISC_1428 as a quick fix.
+- Do not use darkness, haze, over-fog, or cheap caustic overdrive to hide weak terrain/water.
+
+Tasks:
+2901_ROUTE_AWARE_SUN_WARNING_PATCH_PLAN
+2902_OWNED_PROOF_HARNESS_IMPLEMENTATION_PATCH_PLAN
+2903_SHORELINE_FOAM_CAUSTIC_TEXTURE_PROMPT_AND_QA_PACK
+2904_PROOF_GATE_SCHEMA_AND_HARNESS_MANIFEST_CONTRACT
+2905_UNITY_PROCESS_PROOF_WATCHDOG_STATIC_TOOL_PLAN
+
+Expected outputs:
+- Docs/Reports/Batch29/2901_ROUTE_AWARE_SUN_WARNING_PATCH_PLAN.md
+- Docs/Reports/Batch29/2902_OWNED_PROOF_HARNESS_IMPLEMENTATION_PATCH_PLAN.md
+- Docs/GeneratedAssets/Gemini/Prompts/Batch29/2903_SHORELINE_FOAM_CAUSTIC_TEXTURE_PROMPT_AND_QA_PACK.md
+- Docs/Reports/Batch29/2904_PROOF_GATE_SCHEMA_AND_HARNESS_MANIFEST_CONTRACT.md
+- Docs/Reports/Batch29/2905_UNITY_PROCESS_PROOF_WATCHDOG_STATIC_TOOL_PLAN.md
+
+Controller integration:
+- Synthesize into Docs/Reports/Batch29/BATCH29_SYNTHESIS_FOR_CONTROLLER.md after reports complete.
+- Do not send GUI steer without screenshot proof of the correct Unity-owner thread.

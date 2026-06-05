@@ -1,14 +1,23 @@
 # HECTON-8 3D Model Generation Bible
 
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
+Evidence class: STATIC_DOC
 Owner: 3D_MODEL_GENERATION_STANDARDS_DIRECTOR
 Scope: offline Editor-time mesh, UV, material, texture, LOD, prefab, and collision generation.
+
+## First-20 Route Hook
+
+- First-20 moment: bright shallow exit, first readable resource object, tool target, route landmark, shallow biota, and technogenic trace assets.
+- Route blocker removed: primitive or noisy generated meshes cannot enter the opening route without authored-looking silhouette, material identity, LOD chain, collision proxy, and validation manifest.
+- Proof class: STATIC_DOC until asset manifests, validation reports, render captures, Unity import evidence, and route screenshots exist.
 
 ## 0. Prime 3D Product Law
 
 Generated assets must look authored. HECTON-8 rejects procedural-looking props, rocks, fauna, flora, terrain pieces, and modules that merely satisfy a mesh count or socket contract.
 
 The product bar is: believable silhouette, material identity, UV discipline, LOD chain, collision proxy, texture response, scale witnesses, and proof renders. Offline generation is allowed because it can be controlled, inspected, rejected, and improved. It is not permission to ship cheap noise, primitive shapes, flat materials, or placeholder prefabs.
+
+User vision lock: procedural/offline generation is acceptable only when the result looks authored and premium. Surface, coastline, shallow, medium-depth route assets, fauna, flora, rocks, capsules, structures, and interactable objects must respect the `TASTE.md` floor: Subnautica-level or better as the minimum, with HECTON-8 targeting more detail and stronger material identity. If generator output reads as primitive, blurry, noisy, crayon-like, PS1-like, flat, or placeholder, it is editor diagnostic only. Improve the generator, use existing project textures/assets, author a better source texture, ask the user for source art, or cut the asset from production.
 
 ## 0. Foundational Law: Offline Permanence
 
@@ -53,6 +62,8 @@ The visible risk is clear:
 - Geology builders can produce LOD chains and proxy colliders, but rocks still need believable stratification, chipped edges, occluded cracks, scale-calibrated tri budgets, and material projection rules.
 - Texture bakers can output albedo/normal/MRAO, but generated meshes must consume those maps through correct UVs, material IDs, channel packing, compression, and mip padding.
 - Any runtime mesh path must be treated as legacy, diagnostic, or a source for future offline baking, not a production route.
+
+Existing generators are not evidence that the final look is solved. Each generated family still needs visual judgment against screenshots, scene captures, material proof, LOD proof, and route context. A technically valid mesh that makes the game look cheap is a failed asset.
 
 ## 3. Universal Mesh Data Contract
 

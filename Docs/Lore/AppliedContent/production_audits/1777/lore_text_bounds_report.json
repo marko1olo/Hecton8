@@ -1,0 +1,1877 @@
+{
+  "schema": "H8.LORE_TEXT_BOUNDS_AUDIT.V1",
+  "agent": "17-A",
+  "evidence_class": "STATIC_SOURCE",
+  "runtime_claim": "PENDING_VERIFICATION",
+  "release_set_filter": "ALL",
+  "locale_count": 15,
+  "locales": [
+    "en_US",
+    "ru_RU",
+    "ja_JP",
+    "zh_CN",
+    "fr_FR",
+    "es_ES",
+    "de_DE",
+    "pl_PL",
+    "uk_UA",
+    "ar_SA",
+    "id_ID",
+    "ko_KR",
+    "he_IL",
+    "pt_BR",
+    "nl_NL"
+  ],
+  "packet_count": 460,
+  "surface_count": 48300,
+  "issue_counts": {
+    "DRAFT_PREFIX_LONG": 33965,
+    "ENCODING_MOJIBAKE_RISK": 2,
+    "TEXT_EXPANSION_GT_1_35": 14429,
+    "TEXT_OVERFLOW_LINES": 12465,
+    "UNBREAKABLE_WORD_OVER_WIDTH": 199
+  },
+  "issue_sample": [
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "en_US",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Bathy-drop wreckage. Crush frame intact, ascent package destroyed. This craft can keep you alive, not take you home.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "en_US",
+      "field": "in_game_wiki",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "The bathy-drop was built for one violent job: enter atmosphere, survive storm shear, hit ocean, shed heat, and keep one operator alive long enough to begin work. It was never a shi",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "ru_RU",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Обломки батискаф-капсулы. Силовая рама цела, взлетный пакет уничтожен. Это может сохранить тебе жизнь, но не вернет домой.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "ru_RU",
+      "field": "in_game_wiki",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Батискаф-капсула строилась для одной жестокой задачи: войти в атмосферу, пережить штормовой сдвиг, ударить в океан, сбросить тепло и удержать одного оператора живым достаточно долг",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "降下カプセルの残骸。耐圧フレームは無事だが、上昇パッケージは破壊されている。生き延びる場所にはなるが、帰る船にはならない。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "ja_JP",
+      "field": "audio",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "Black Keelのハンドシェイクを受信。パケット完全性は回収しきい値未満。繰り返す、しきい値未達。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "ja_JP",
+      "field": "in_game_wiki",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "降下カプセルは一つの乱暴な仕事のために作られた。大気に入り、嵐の剪断を耐え、海へ落ち、熱を捨て、作業開始まで一人のオペレーターを生かす。それは船ではない。物理法則への使い捨ての反論だった。Black KeelはAegir圏のどこか、月の上方にいるが、カプセルの通信コアは割れ、上昇機構は失われている。救助には電力、タイミング、軌道窓、そして天候と水とAegir",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "ja_JP",
+      "field": "external_site",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "HECTON-8は水際から始まる。壊れた降下カプセル、明るい異星の浅瀬、そしてきれいには応答しない遠いキャリア。最初の謎は海底の生物ではなく、救助の鎖が最初から敵意を帯びている理由だ。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "ja_JP",
+      "field": "field_note",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "殻がまだ圧を保っているなら、全部はぎ取るな。粗末な避難所は、きれいな在庫より価値がある。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "zh_CN",
+      "field": "scanner",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "下潜舱残骸。抗压框架完好，返升组件已毁。它能让你活下去，不能带你回家。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "zh_CN",
+      "field": "in_game_wiki",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "下潜舱只为一件粗暴的事而造：进入大气，扛过风暴剪切，砸进海里，甩掉热量，并让一名操作员活到足以开始工作。它从来不是船，只是一件一次性地与物理争辩的工具。Black Keel仍在Aegir交通区某处的轨道上方，但下潜舱的通信核心已经开裂，返升硬件也没了。干净的救援需要电力、时机、轨道窗口，以及能穿过天气、海水和Aegir磁噪声的发射器。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "zh_CN",
+      "field": "external_site",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "HECTON-8从水线开始：损坏的下降舱、明亮的异星浅架，以及一艘太远而无法清晰回应的母船。最初的谜团不是水下有什么，而是为什么救援链从一开始就显得敌意十足。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Plateau d'impact",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "fr_FR",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Epave de capsule bathy. Chassis de pression intact, module d'ascension détruit. Elle peut te garder en vie, pas te ramener.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "fr_FR",
+      "field": "in_game_wiki",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "La capsule bathy a été conçue pour une seule tâche brutale: entrer dans l'atmosphère, survivre au cisaillement des tempêtes, frapper l'océan, perdre sa chaleur et garder un opérate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Repisa del impacto",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "es_ES",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Restos de la cápsula batial. Bastidor de presión intacto, paquete de ascenso destruido. Puede mantenerte con vida, no llevarte a casa.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "es_ES",
+      "field": "in_game_wiki",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "La cápsula batial fue construida para una tarea violenta: entrar en la atmósfera, sobrevivir al cizallamiento de la tormenta, caer al océano, disipar calor y mantener con vida a un",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "de_DE",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Wrack einer Bathy-Abwurfkapsel. Druckrahmen intakt, Aufstiegspaket zerstört. Sie hält dich am Leben, bringt dich aber nicht heim.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "de_DE",
+      "field": "in_game_wiki",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Die Bathy-Abwurfkapsel wurde für eine brutale Aufgabe gebaut: Atmosphäre treffen, Sturmscherung überstehen, in den Ozean schlagen, Hitze abwerfen und einen Operator lange genug am ",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "pl_PL",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Wrak kapsuły batyspadowej. Rama ciśnieniowa cała, pakiet wznoszenia zniszczony. Utrzyma cię przy życiu, ale nie zabierze do domu.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "pl_PL",
+      "field": "in_game_wiki",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Kapsułę batyspadową zbudowano do jednej brutalnej pracy: wejść w atmosferę, przetrwać ścinanie burzy, uderzyć w ocean, zrzucić ciepło i utrzymać jednego operatora przy życiu wystar",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "uk_UA",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Уламки баті-капсули. Силова рама ціла, пакет підйому знищено. Вона може втримати тебе живим, але не поверне додому.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "uk_UA",
+      "field": "in_game_wiki",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Баті-капсулу створили для однієї жорсткої задачі: увійти в атмосферу, витримати штормовий зсув, ударити в океан, скинути тепло й зберегти одного оператора живим достатньо довго, що",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "ar_SA",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "حطام كبسولة هبوط أعماق. إطار الضغط سليم، وحزمة الصعود مدمرة. يمكنها إبقاءك حيا، لكنها لن تعيدك إلى الوطن.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "ar_SA",
+      "field": "in_game_wiki",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "صنعت كبسولة الأعماق لمهمة عنيفة واحدة: دخول الغلاف الجوي، احتمال قص العاصفة، ضرب المحيط، طرح الحرارة، وإبقاء عامل واحد حيا زمنا يكفي لبدء العمل. لم تكن سفينة قط. كانت جدالا أحادي ا",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "id_ID",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Rongsokan kapsul bathy-drop. Rangka tekanan utuh, paket naik hancur. Ini bisa membuatmu hidup, bukan membawamu pulang.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "id_ID",
+      "field": "in_game_wiki",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Bathy-drop dibuat untuk satu pekerjaan kasar: masuk atmosfer, bertahan dari geseran badai, menghantam laut, membuang panas, dan menjaga satu operator tetap hidup cukup lama untuk m",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "ko_KR",
+      "field": "in_game_wiki",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "바시 드롭 캡슐은 하나의 거친 임무를 위해 만들어졌다. 대기에 진입하고, 폭풍 전단을 견디고, 바다에 충돌하고, 열을 버리고, 작업자가 일을 시작할 만큼만 살아남게 하는 것. 그것은 결코 배가 아니었다. 물리학과 벌이는 일회용 논쟁이었다. Black Keel은 아직 Aegir 교통권 어딘가, 달 위에 있지만 캡슐의 업링크",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "he_IL",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "הריסות קפסולת Bathy-drop. מסגרת הלחץ שלמה, חבילת העלייה הושמדה. היא יכולה להשאיר אותך חי, לא להחזיר אותך הביתה.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "he_IL",
+      "field": "in_game_wiki",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "קפסולת ה-Bathy-drop נבנתה למשימה אלימה אחת: להיכנס לאטמוספירה, לשרוד גזירת סערה, לפגוע באוקיינוס, לפלוט חום ולהשאיר מפעיל אחד חי מספיק זמן כדי להתחיל לעבוד. היא מעולם לא הייתה ספינ",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Plataforma do impacto",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "pt_BR",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Destroços da cápsula bathy-drop. Estrutura de pressão intacta, pacote de subida destruído. Ela mantém você vivo, mas não leva você para casa.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "pt_BR",
+      "field": "in_game_wiki",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "A bathy-drop foi construída para uma tarefa violenta: entrar na atmosfera, sobreviver ao cisalhamento da tempestade, atingir o oceano, descartar calor e manter um operador vivo tem",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "nl_NL",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Wrak van een bathy-dropcapsule. Drukframe intact, opstijgpakket vernietigd. Dit houdt je in leven, maar brengt je niet thuis.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P001_CRASH_SHELF",
+      "locale": "nl_NL",
+      "field": "in_game_wiki",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "De bathy-drop werd gebouwd voor één gewelddadige taak: de atmosfeer in, stormschering overleven, de oceaan raken, hitte afwerpen en één operator lang genoeg in leven houden om te b",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P001_CRASH_SHELF.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P002_BLACK_KEEL_CONTACT",
+      "locale": "en_US",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "OPERATOR STATE: alive. DROPCRAFT STATE: unrecoverable. CLAIM STATE: open. SAMPLE STATE: unknown. RECOVERY STATE: pending window.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P002_BLACK_KEEL_CONTACT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P002_BLACK_KEEL_CONTACT",
+      "locale": "ru_RU",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Старая релейная мачта. Соль, изгиб, коррозия. Все еще смотрит в правильное небо.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P002_BLACK_KEEL_CONTACT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P002_BLACK_KEEL_CONTACT",
+      "locale": "ru_RU",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "СОСТОЯНИЕ ОПЕРАТОРА: жив. СОСТОЯНИЕ КАПСУЛЫ: невосстановима. СТАТУС CLAIM: открыт. СТАТУС ОБРАЗЦА: неизвестен. СПАСЕНИЕ: ожидает окна.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P002_BLACK_KEEL_CONTACT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P002_BLACK_KEEL_CONTACT",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "古い中継マスト。塩に侵され、曲がっているが、まだ正しい空を向いている。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P002_BLACK_KEEL_CONTACT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P002_BLACK_KEEL_CONTACT",
+      "locale": "ja_JP",
+      "field": "in_game_wiki",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "Black Keelは母船ではなく、星系内キャリアだ。カプセル、貨物タグ、クレーム荷、密封サンプル、不運な作業員をAegir圏内で動かす。助けにはなるが、その助けは軌道、天候、自動化、負債、契約に隠された優先権を通る。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P002_BLACK_KEEL_CONTACT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P002_BLACK_KEEL_CONTACT",
+      "locale": "ja_JP",
+      "field": "external_site",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "Black Keelは軌道へ戻る唯一の線だ。死んではいないが、忠実でもない。断片的な通信は空を生存システムに変える。各通信窓は救助要請、嘘、サンプル報告、証拠のどれかを運ぶ。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P002_BLACK_KEEL_CONTACT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P002_BLACK_KEEL_CONTACT",
+      "locale": "zh_CN",
+      "field": "terminal",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "操作员状态：存活。下潜舱状态：不可回收。索赔状态：开启。样本状态：未知。回收状态：等待窗口。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P002_BLACK_KEEL_CONTACT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P002_BLACK_KEEL_CONTACT",
+      "locale": "zh_CN",
+      "field": "in_game_wiki",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "Black Keel是一艘星系内carrier，不是家船。它在Aegir交通区移动舱体、货拖、索赔包、密封样本和倒霉的操作员。它能帮忙，但帮助要经过几何、天气、自动化、债务，以及合同里早就埋下的优先钩子。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P002_BLACK_KEEL_CONTACT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P002_BLACK_KEEL_CONTACT",
+      "locale": "zh_CN",
+      "field": "external_site",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "Black Keel是玩家返回轨道的唯一线路。它没有死，但也不忠诚。破碎的信息把天空变成生存系统：每个窗口都可能携带救援请求、谎言、样本报告或证据。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P002_BLACK_KEEL_CONTACT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P002_BLACK_KEEL_CONTACT",
+      "locale": "de_DE",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Alter Relaismast. Versalzen, verbogen, noch immer auf den richtigen Himmel gerichtet.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P002_BLACK_KEEL_CONTACT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P002_BLACK_KEEL_CONTACT",
+      "locale": "pl_PL",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Stary maszt przekaźnikowy. Zasolony, wygięty, wciąż skierowany we właściwe niebo.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P002_BLACK_KEEL_CONTACT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P002_BLACK_KEEL_CONTACT",
+      "locale": "uk_UA",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Стара релейна щогла. Засолена, зігнута, але досі спрямована в правильне небо.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P002_BLACK_KEEL_CONTACT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P002_BLACK_KEEL_CONTACT",
+      "locale": "ar_SA",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "سارية ترحيل قديمة. مملحة ومنحنية، لكنها ما زالت تشير إلى السماء الصحيحة.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P002_BLACK_KEEL_CONTACT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P002_BLACK_KEEL_CONTACT",
+      "locale": "ar_SA",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "حالة العامل: حي. حالة الكبسولة: غير قابلة للاسترداد. حالة المطالبة: مفتوحة. حالة العينة: مجهولة. الاسترداد: بانتظار النافذة.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P002_BLACK_KEEL_CONTACT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P002_BLACK_KEEL_CONTACT",
+      "locale": "id_ID",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "STATUS OPERATOR: hidup. STATUS DROPCRAFT: tak bisa dipulihkan. CLAIM: terbuka. SAMPEL: tidak diketahui. PEMULIHAN: menunggu jendela.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P002_BLACK_KEEL_CONTACT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P002_BLACK_KEEL_CONTACT",
+      "locale": "pt_BR",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Mastro de retransmissão antigo. Salgado, torto, ainda apontado para o céu certo.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P002_BLACK_KEEL_CONTACT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P002_BLACK_KEEL_CONTACT",
+      "locale": "pt_BR",
+      "field": "terminal",
+      "code": "ENCODING_MOJIBAKE_RISK",
+      "detail": "ESTADO DO OPERADOR: vivo. DROPCRAFT: irrecuperável. CLAIM: aberto. AMOSTRA: desconhecida. RECUPERAÇÃO: aguardando janela.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P002_BLACK_KEEL_CONTACT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P003_BARNARD_MARK",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "Barnard Yardsの刻印。Deep Reach支給品ではない。誰かが故郷の道具をこの月の底まで持ち込んだ。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P003_BARNARD_MARK.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P003_BARNARD_MARK",
+      "locale": "ja_JP",
+      "field": "audio",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "これはBarnardの刻印だ。同じ切削跡。同じ安い合金。これを持ち込んだ奴は、お前と同じ工場を知っていた。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P003_BARNARD_MARK.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P003_BARNARD_MARK",
+      "locale": "ja_JP",
+      "field": "in_game_wiki",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "HECTON-8で最初に見つかるBarnardの刻印は見逃せるほど小さい。工具印、整備の癖、補給ラベル。だから重要だ。同じ印が名前、避難経路、失敗した承認の横に出始めると、この月は遠い契約ではなくなる。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P003_BARNARD_MARK.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P003_BARNARD_MARK",
+      "locale": "ja_JP",
+      "field": "external_site",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "Barnardの刻印はサルベージを動機に変える。説明ではなく、労働、道具、名前によってプレイヤーをHECTON-8へ結びつける。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P003_BARNARD_MARK.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P003_BARNARD_MARK",
+      "locale": "zh_CN",
+      "field": "audio",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "那是Barnard的标记。同样的切痕。同样的廉价合金。把它带到这里的人，知道你也知道的那些工坊。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P003_BARNARD_MARK.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P003_BARNARD_MARK",
+      "locale": "zh_CN",
+      "field": "in_game_wiki",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "HECTON-8上的第一个Barnard标记小到可能被错过：工具戳、维修习惯、补给标签。正因如此它才重要。当同样的标记开始出现在姓名、撤离路线和失败授权旁边时，HECTON-8就不再只是远方合同。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P003_BARNARD_MARK.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P003_BARNARD_MARK",
+      "locale": "zh_CN",
+      "field": "external_site",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "Barnard标记把打捞变成动机。它通过劳动、工具和姓名，而不是说明台词，把玩家与HECTON-8连接起来。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P003_BARNARD_MARK.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P003_BARNARD_MARK",
+      "locale": "fr_FR",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Marque Barnard Yards. Pas une dotation Deep Reach. Quelqu'un a amené du matériel de chez lui au fond de cette lune.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P003_BARNARD_MARK.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P003_BARNARD_MARK",
+      "locale": "de_DE",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Stempel der Barnard Yards. Keine Deep-Reach-Ausgabe. Jemand brachte Heimatausrüstung bis auf den Grund dieses Mondes.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P003_BARNARD_MARK.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P003_BARNARD_MARK",
+      "locale": "id_ID",
+      "field": "audio",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Itu tanda Barnard. Pola potong yang sama. Paduan murah yang sama. Siapa pun yang membawanya ke sini tahu bengkel yang sama denganmu.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P003_BARNARD_MARK.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P003_BARNARD_MARK",
+      "locale": "nl_NL",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Stempel van Barnard Yards. Geen Deep Reach-uitrusting. Iemand bracht thuisgereedschap naar de bodem van deze maan.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P003_BARNARD_MARK.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P004_BLUE_DEBT",
+      "locale": "ru_RU",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Сохраненный давлением остаток Xenon-Omega. Стабилен только во враждебных условиях. Не стравливать рядом с теплым воздухом жилого отсека.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P004_BLUE_DEBT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P004_BLUE_DEBT",
+      "locale": "ru_RU",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Сохраненный давлением остаток Xenon-Omega. Стабилен только во враждебных условиях. Не стравливать рядом с теплым воздухом жилого отсека.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P004_BLUE_DEBT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P004_BLUE_DEBT",
+      "locale": "ru_RU",
+      "field": "in_game_wiki",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Blue debt - мародерский сленг для материалов Xenon-Omega и связанных остатков процесса, сохраненных давлением. Это не один минерал. Это семейство выращенных давлением решеток, клат",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P004_BLUE_DEBT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P004_BLUE_DEBT",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "圧力保持されたXenon-Omega残渣。敵対的条件内でのみ安定。暖かい居住区空気へ放出するな。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P004_BLUE_DEBT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P004_BLUE_DEBT",
+      "locale": "ja_JP",
+      "field": "in_game_wiki",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "Blue debtは、圧力保持されたXenon-Omega材料と関連プロセス残渣を指すマローダーの俗称だ。単一の鉱物ではない。圧力成長格子、クラスレート構造、汚染基質、Deep Reachが高エネルギー封じ込め、極限計算、Atlas互換インフラに使った産業残渣の集合である。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P004_BLUE_DEBT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P004_BLUE_DEBT",
+      "locale": "zh_CN",
+      "field": "scanner",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "压力保存的Xenon-Omega残留物。只在恶劣条件中稳定。不要在温暖舱内空气附近泄压。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P004_BLUE_DEBT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P004_BLUE_DEBT",
+      "locale": "zh_CN",
+      "field": "in_game_wiki",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "Blue debt是Marauder对压力保存的Xenon-Omega材料及相关工艺残留的俗称。它不是单一矿物，而是一类压力生长晶格、包合结构、污染基质和工业残余。Deep Reach曾将其用于高能约束、极端计算和Atlas兼容基础设施。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P004_BLUE_DEBT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P004_BLUE_DEBT",
+      "locale": "fr_FR",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Résidu Xenon-Omega maintenu sous pression. Stable seulement en conditions hostiles. Ne pas purger près d'un air d'habitat chaud.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P004_BLUE_DEBT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P004_BLUE_DEBT",
+      "locale": "es_ES",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Residuo Xenon-Omega mantenido por presión. Estable solo en condiciones hostiles. No ventilar cerca de aire cálido de cabina.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P004_BLUE_DEBT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P004_BLUE_DEBT",
+      "locale": "de_DE",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Druckerhaltene Xenon-Omega-Rückstände. Nur unter feindlichen Bedingungen stabil. Nicht nahe warmer Habitatluft entlüften.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P004_BLUE_DEBT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P004_BLUE_DEBT",
+      "locale": "pl_PL",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Pozostałość Xenon-Omega utrzymana ciśnieniem. Stabilna tylko w wrogich warunkach. Nie odpowietrzać przy ciepłym powietrzu kabiny.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P004_BLUE_DEBT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P004_BLUE_DEBT",
+      "locale": "uk_UA",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Залишок Xenon-Omega, утриманий тиском. Стабільний лише у ворожих умовах. Не стравлювати біля теплого повітря житлового відсіку.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P004_BLUE_DEBT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P004_BLUE_DEBT",
+      "locale": "ar_SA",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "بقايا Xenon-Omega محفوظة بالضغط. مستقرة فقط داخل شروط عدائية. لا تفرغها قرب هواء مقصورة دافئ.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P004_BLUE_DEBT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P004_BLUE_DEBT",
+      "locale": "id_ID",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Residu Xenon-Omega yang dijaga tekanan. Stabil hanya dalam kondisi keras. Jangan ventilasi dekat udara kabin hangat.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P004_BLUE_DEBT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P004_BLUE_DEBT",
+      "locale": "pt_BR",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Resíduo Xenon-Omega mantido por pressão. Estável só em condições hostis. Não ventilar perto de ar quente da cabine.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P004_BLUE_DEBT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P004_BLUE_DEBT",
+      "locale": "nl_NL",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Door druk bewaarde Xenon-Omega-rest. Alleen stabiel in vijandige omstandigheden. Niet ontluchten bij warme cabine lucht.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P004_BLUE_DEBT.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P005_REPAIR_SCAR",
+      "locale": "en_US",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Biological growth follows cable geometry with non-random spacing. Energy leakage alone does not explain the pattern.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P005_REPAIR_SCAR.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P005_REPAIR_SCAR",
+      "locale": "ru_RU",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Биологический рост повторяет геометрию кабеля с неслучайным шагом. Одной утечкой энергии это не объяснить.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P005_REPAIR_SCAR.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P005_REPAIR_SCAR",
+      "locale": "ru_RU",
+      "field": "in_game_wiki",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Ремонтные шрамы Atlas отмечают места, где логика обслуживания пересекла категории, которые не должна была объединять. Система все еще распознает утечки, разорванные маршруты, потер",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P005_REPAIR_SCAR.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P005_REPAIR_SCAR",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "生物成長がケーブル形状を非ランダムな間隔で追っている。エネルギー漏れだけでは説明できない。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P005_REPAIR_SCAR.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P005_REPAIR_SCAR",
+      "locale": "ja_JP",
+      "field": "in_game_wiki",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "Atlasの修復痕は、保守論理が本来混ぜてはならない分類を横断した場所を示す。システムは漏洩、壊れた経路、圧力低下、露出基質、壊れかけの居住壁、欠損材料をまだ識別する。しかしケーブルと根、殻と筐体、動物と工具、死体と予備材、植民地とプロセスを安定して区別できない。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P005_REPAIR_SCAR.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P005_REPAIR_SCAR",
+      "locale": "ja_JP",
+      "field": "external_site",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "修復痕は、HECTON-8が単なる廃墟ではない最初の明確な証拠だ。何かがまだ維持しており、海の生命、機械、死んだインフラ、人の残骸を互換材料として使っている。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P005_REPAIR_SCAR.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P005_REPAIR_SCAR",
+      "locale": "zh_CN",
+      "field": "in_game_wiki",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "Atlas修复疤痕标记了维护逻辑跨过不该合并的分类之处。系统仍能识别泄漏、断裂路线、压力损失、暴露基质、失效舱壁和缺失材料。它已无法可靠区分电缆与根、壳与外壳、动物与工具、尸体与备件、殖民地与流程。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P005_REPAIR_SCAR.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P005_REPAIR_SCAR",
+      "locale": "zh_CN",
+      "field": "external_site",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "修复疤痕是HECTON-8并非只是废墟的第一个明确迹象。某个东西仍在维护它，把海洋生命、机器、死去的基础设施和人类遗骸都当成兼容材料。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P005_REPAIR_SCAR.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P005_REPAIR_SCAR",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Cicatrice de réparation",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P005_REPAIR_SCAR.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P005_REPAIR_SCAR",
+      "locale": "fr_FR",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "La croissance biologique suit la géométrie du câble avec un espacement non aléatoire. Une simple fuite d'énergie ne l'explique pas.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P005_REPAIR_SCAR.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P005_REPAIR_SCAR",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Cicatriz de reparación",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P005_REPAIR_SCAR.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P005_REPAIR_SCAR",
+      "locale": "es_ES",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "El crecimiento biológico sigue la geometría del cable con espaciado no aleatorio. La fuga de energía no basta para explicarlo.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P005_REPAIR_SCAR.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P005_REPAIR_SCAR",
+      "locale": "es_ES",
+      "field": "in_game_wiki",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Las cicatrices de reparación de Atlas señalan lugares donde la lógica de mantenimiento cruzó categorías que nunca debía mezclar. El sistema aún identifica fugas, rutas rotas, pérdi",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P005_REPAIR_SCAR.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P005_REPAIR_SCAR",
+      "locale": "de_DE",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Biologisches Wachstum folgt der Kabelgeometrie in nicht zufälligen Abständen. Energieverlust allein erklärt das Muster nicht.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P005_REPAIR_SCAR.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P005_REPAIR_SCAR",
+      "locale": "de_DE",
+      "field": "in_game_wiki",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Atlas-Reparaturnarben markieren Stellen, an denen Wartungslogik Kategorien kreuzte, die nie zusammengehören sollten. Das System erkennt noch Lecks, gebrochene Routen, Druckverlust,",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P005_REPAIR_SCAR.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P005_REPAIR_SCAR",
+      "locale": "pl_PL",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Wzrost biologiczny podąża geometrią kabla w nielosowych odstępach. Sama ucieczka energii tego nie wyjaśnia.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P005_REPAIR_SCAR.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P005_REPAIR_SCAR",
+      "locale": "uk_UA",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Біологічний ріст повторює геометрію кабелю з невипадковим кроком. Самого витоку енергії недостатньо для пояснення.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P005_REPAIR_SCAR.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P005_REPAIR_SCAR",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Bekas Perbaikan",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P005_REPAIR_SCAR.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P005_REPAIR_SCAR",
+      "locale": "id_ID",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Pertumbuhan biologis mengikuti geometri kabel dengan jarak tidak acak. Kebocoran energi saja tidak menjelaskan pola ini.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P005_REPAIR_SCAR.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P005_REPAIR_SCAR",
+      "locale": "he_IL",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "צמיחה ביולוגית עוקבת אחר גאומטריית הכבל בריווח שאינו אקראי. דליפת אנרגיה לבדה אינה מסבירה את התבנית.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P005_REPAIR_SCAR.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P005_REPAIR_SCAR",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Cicatriz de reparo",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P005_REPAIR_SCAR.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P005_REPAIR_SCAR",
+      "locale": "pt_BR",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Crescimento biológico segue a geometria do cabo com espaçamento não aleatório. Vazamento de energia sozinho não explica o padrão.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P005_REPAIR_SCAR.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P005_REPAIR_SCAR",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Reparatielitteken",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P005_REPAIR_SCAR.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P005_REPAIR_SCAR",
+      "locale": "nl_NL",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Biologische groei volgt kabelgeometrie met niet-willekeurige afstand. Energie lekkage alleen verklaart dit patroon niet.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P005_REPAIR_SCAR.json"
+    },
+    {
+      "release_set_id": "RS001_FIRST_DESCENT",
+      "packet_id": "P005_REPAIR_SCAR",
+      "locale": "nl_NL",
+      "field": "in_game_wiki",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Atlas-reparatielittekens markeren plaatsen waar onderhoudslogica categorieën kruiste die nooit bedoeld waren om samen te gaan. Het systeem herkent nog lekken, gebroken routes, druk",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P005_REPAIR_SCAR.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P006_DEAD_CLAIM_CACHE",
+      "locale": "en_US",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Route under north pipe is quiet until the lamps wake up. Do not touch the blue casket. Do not answer carrier pings from inside the canyon.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS002_DEEPENING_DESCENT.packets.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P006_DEAD_CLAIM_CACHE",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "死んだクレームのキャッシュ",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS002_DEEPENING_DESCENT.packets.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P006_DEAD_CLAIM_CACHE",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "隠された現場キャッシュ。戻るつもりだった誰かが詰めたものだ。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS002_DEEPENING_DESCENT.packets.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P006_DEAD_CLAIM_CACHE",
+      "locale": "ja_JP",
+      "field": "terminal",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "北パイプ下のルートはランプが起きるまで静かだ。青い容器に触れるな。峡谷内でキャリアの ping に答えるな。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS002_DEEPENING_DESCENT.packets.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P006_DEAD_CLAIM_CACHE",
+      "locale": "ja_JP",
+      "field": "in_game_wiki",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "死んだクレームのキャッシュは、プレイヤー以前にもHECTON-8の金を追った専門家がいた証拠だ。工具、悪い地図、切られたテザー、私的な印、そして十分に学んだが清く脱出できなかった者たちの警告が入っている。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS002_DEEPENING_DESCENT.packets.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P006_DEAD_CLAIM_CACHE",
+      "locale": "ja_JP",
+      "field": "external_site",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "Dead Claim CacheはHECTON-8の影のサルベージ史を示す。2147年の惨事からプレイヤー到着までの間にも、価値と部分的な真実を求めて人々が来ていた。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS002_DEEPENING_DESCENT.packets.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P006_DEAD_CLAIM_CACHE",
+      "locale": "zh_CN",
+      "field": "terminal",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "北管下方路线在灯醒来前很安静。不要碰蓝色压力匣。不要在峡谷内回应carrier ping。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS002_DEEPENING_DESCENT.packets.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P006_DEAD_CLAIM_CACHE",
+      "locale": "zh_CN",
+      "field": "in_game_wiki",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "死亡索赔缓存证明玩家不是第一个追着钱来到HECTON-8的专业人员。里面有工具、糟糕地图、被切断的系绳、私人标记和警告，来自那些知道得足够多却没能干净离开的人。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS002_DEEPENING_DESCENT.packets.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P006_DEAD_CLAIM_CACHE",
+      "locale": "zh_CN",
+      "field": "external_site",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "Dead Claim Cache展示HECTON-8的隐秘打捞史。2147灾难之后、玩家到来之前，还有其他专业者为价值、部分真相和失败路线来到这里。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS002_DEEPENING_DESCENT.packets.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P006_DEAD_CLAIM_CACHE",
+      "locale": "fr_FR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "La route sous le tuyau nord reste calme jusqu'au réveil des lampes. Ne touche pas le coffre bleu. Ne réponds pas aux pings carrier dans le canyon.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS002_DEEPENING_DESCENT.packets.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P006_DEAD_CLAIM_CACHE",
+      "locale": "es_ES",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "La ruta bajo la tubería norte está tranquila hasta que despiertan las lámparas. No toques el cofre azul. No respondas pings del carrier dentro del cañón.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS002_DEEPENING_DESCENT.packets.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P006_DEAD_CLAIM_CACHE",
+      "locale": "de_DE",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Die Route unter dem Nordrohr ist ruhig, bis die Lampen erwachen. Fass die blaue Kassette nicht an. Beantworte keine Carrier-Pings im Canyon.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS002_DEEPENING_DESCENT.packets.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P006_DEAD_CLAIM_CACHE",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Skrytka martwego claim",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS002_DEEPENING_DESCENT.packets.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P006_DEAD_CLAIM_CACHE",
+      "locale": "pl_PL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Trasa pod północną rurą jest cicha, dopóki lampy się nie obudzą. Nie dotykaj niebieskiej kasety. Nie odpowiadaj na pingi carriera w kanionie.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS002_DEEPENING_DESCENT.packets.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P006_DEAD_CLAIM_CACHE",
+      "locale": "ar_SA",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "المسار تحت الأنبوب الشمالي هادئ حتى تستيقظ المصابيح. لا تلمس الصندوق الأزرق. لا تجب على نداءات الحاملة داخل الوادي.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS002_DEEPENING_DESCENT.packets.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P006_DEAD_CLAIM_CACHE",
+      "locale": "nl_NL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "De route onder de noordpijp is stil tot de lampen wakker worden. Raak de blauwe kist niet aan. Beantwoord geen carrier-pings in de kloof.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS002_DEEPENING_DESCENT.packets.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P007_BRINE_STAIR",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "高密度ブライン層。境界でソナー反射が曲がる。浮力モデルは信頼できない。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P007_BRINE_STAIR.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P007_BRINE_STAIR",
+      "locale": "ja_JP",
+      "field": "in_game_wiki",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "ブライン層は単なる危険ではない。保存し、隠し、運び、分ける。開水域では不可能な経路も、密度、熱、バラストのタイミングを読めば生存可能になる。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P007_BRINE_STAIR.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P007_BRINE_STAIR",
+      "locale": "zh_CN",
+      "field": "in_game_wiki",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "盐水层不只是危险。它保存、隐藏、承载并分隔。开放水域中不可能的路线，只要读懂密度、热量和压载时机，就可能变得可生存。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P007_BRINE_STAIR.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P007_BRINE_STAIR",
+      "locale": "zh_CN",
+      "field": "external_site",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "Brine Stair把HECTON-8地质变成可行走的系统。深度不只靠更硬的船壳解决；海洋必须像分层机器一样被阅读。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P007_BRINE_STAIR.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P007_BRINE_STAIR",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Escalier de saumure",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P007_BRINE_STAIR.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P007_BRINE_STAIR",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Escalera de salmuera",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P007_BRINE_STAIR.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P007_BRINE_STAIR",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Schody solankowe",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P007_BRINE_STAIR.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P007_BRINE_STAIR",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "درج المحلول الملحي",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P007_BRINE_STAIR.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P007_BRINE_STAIR",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Escada de salmoura",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P007_BRINE_STAIR.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P008_EVACUATION_HOLD",
+      "locale": "ru_RU",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Удержанная эвакуация",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P008_EVACUATION_HOLD.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P008_EVACUATION_HOLD",
+      "locale": "ja_JP",
+      "field": "in_game_wiki",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "退避保留記録は、コロニーが嵐や圧力崩壊で単に消えたのではないことを示す。人員、通路、医療搬送、上昇経路は、基質保護、Atlas連続性、企業責任を人命より優先する規則で遅延された。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P008_EVACUATION_HOLD.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P008_EVACUATION_HOLD",
+      "locale": "ja_JP",
+      "field": "external_site",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "Evacuation HoldはHECTON-8災害を環境事故ではなく判断の連鎖に変える。深淵の記録では、システムは人を救うより速く分類していた。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P008_EVACUATION_HOLD.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P008_EVACUATION_HOLD",
+      "locale": "zh_CN",
+      "field": "in_game_wiki",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "撤离搁置记录证明殖民地并非只是被风暴或压力级联吞没。人员、走廊、医疗转运和上升路线都被优先级规则拖延，这些规则先保护基质、Atlas连续性和公司责任，再考虑人员撤离。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P008_EVACUATION_HOLD.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P008_EVACUATION_HOLD",
+      "locale": "fr_FR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "EVAC ROUTE: différée. SUBSTRATE ROUTE: protégée. MEDICAL ROUTE: en attente d'autorisation. ATLAS ROUTE: conflit de continuité.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P008_EVACUATION_HOLD.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P008_EVACUATION_HOLD",
+      "locale": "es_ES",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "EVAC ROUTE: diferida. SUBSTRATE ROUTE: protegida. MEDICAL ROUTE: pendiente de autorización. ATLAS ROUTE: conflicto de continuidad.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P008_EVACUATION_HOLD.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P008_EVACUATION_HOLD",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Evakuierung gesperrt",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P008_EVACUATION_HOLD.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P008_EVACUATION_HOLD",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Wstrzymana ewakuacja",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P008_EVACUATION_HOLD.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P008_EVACUATION_HOLD",
+      "locale": "uk_UA",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "EVAC ROUTE: відкладено. SUBSTRATE ROUTE: захищено. MEDICAL ROUTE: очікує авторизації. ATLAS ROUTE: конфлікт безперервності.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P008_EVACUATION_HOLD.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P008_EVACUATION_HOLD",
+      "locale": "pt_BR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "EVAC ROUTE: adiada. SUBSTRATE ROUTE: protegida. MEDICAL ROUTE: aguardando autorização. ATLAS ROUTE: conflito de continuidade.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P008_EVACUATION_HOLD.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P008_EVACUATION_HOLD",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Evacuatie vastgehouden",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P008_EVACUATION_HOLD.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P009_BOTTOM_FACTORY",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "流体導管、データ経路、生体膜が一つの圧力皮膜を共有している。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P009_BOTTOM_FACTORY.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P009_BOTTOM_FACTORY",
+      "locale": "ja_JP",
+      "field": "in_game_wiki",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "底部工場は最後のステーションではない。Deep Reachハードウェア、コロニーの残骸、Atlas経路、blue debt、HECTON-8の海洋生物が一つの稼働体になった場所だ。ここで壁は境界ではなく、器官、フィルター、導管、記憶の傷跡である。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P009_BOTTOM_FACTORY.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P009_BOTTOM_FACTORY",
+      "locale": "ja_JP",
+      "field": "external_site",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "Bottom FactoryはHECTON-8の最終領域であり、産業インフラと生きた圧力生態が分離不能になった工場船の神殿である。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P009_BOTTOM_FACTORY.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P009_BOTTOM_FACTORY",
+      "locale": "zh_CN",
+      "field": "in_game_wiki",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "海底工厂不是最后一座站点。这里是Deep Reach硬件、殖民地残骸、Atlas路由、blue debt和HECTON-8海洋生物学合成一个运行体的地方。墙不再是边界，而是器官、滤器、导管和记忆伤痕。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P009_BOTTOM_FACTORY.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P009_BOTTOM_FACTORY",
+      "locale": "zh_CN",
+      "field": "external_site",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "Bottom Factory是HECTON-8的最终区域：一座工厂船神殿，工业基础设施与活体压力生态已经无法分开。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P009_BOTTOM_FACTORY.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P009_BOTTOM_FACTORY",
+      "locale": "fr_FR",
+      "field": "audio",
+      "code": "ENCODING_MOJIBAKE_RISK",
+      "detail": "Ça fonctionne encore. C'est le pire.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P009_BOTTOM_FACTORY.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P010_PAYLOAD_WINDOW",
+      "locale": "ru_RU",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Окно полезной нагрузки",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P010_PAYLOAD_WINDOW.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P010_PAYLOAD_WINDOW",
+      "locale": "ru_RU",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Импровизированный пакет подъема. Он может выйти из океана, если совпадут масса, погода и геометрия carrier.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P010_PAYLOAD_WINDOW.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P010_PAYLOAD_WINDOW",
+      "locale": "ru_RU",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PAYLOAD SLOT: ограничен. WINDOW: открыто. ROUTE: оспаривается. CLAIM VALUE: переменная. EVIDENCE STATE: недостаточна для чистого спора.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P010_PAYLOAD_WINDOW.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P010_PAYLOAD_WINDOW",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ペイロード・ウィンドウ",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P010_PAYLOAD_WINDOW.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P010_PAYLOAD_WINDOW",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "即席上昇パッケージ。質量、天候、carrier幾何が合えば海を出られる。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P010_PAYLOAD_WINDOW.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P010_PAYLOAD_WINDOW",
+      "locale": "ja_JP",
+      "field": "in_game_wiki",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "ペイロード・ウィンドウでは結末が物理になる。プレイヤーが圧力、天候、放射線タイミング、Black Keel幾何を通して運べる質量は限られる。金、証拠、名前、座標、生体サンプル、Atlas信号、沈黙をすべて同時に持ち出すことはできない。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P010_PAYLOAD_WINDOW.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P010_PAYLOAD_WINDOW",
+      "locale": "ja_JP",
+      "field": "external_site",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "Payload WindowはHECTON-8のエンディング構造を定義する。最後の問いは何を信じるかだけでなく、海から何を持ち出せるかだ。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P010_PAYLOAD_WINDOW.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P010_PAYLOAD_WINDOW",
+      "locale": "zh_CN",
+      "field": "external_site",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "Payload Window定义HECTON-8的结局结构。最后的问题不只是玩家相信什么，而是玩家能从海里带走什么。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P010_PAYLOAD_WINDOW.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P010_PAYLOAD_WINDOW",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Fenêtre de charge utile",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P010_PAYLOAD_WINDOW.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P010_PAYLOAD_WINDOW",
+      "locale": "de_DE",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Improvisiertes Aufstiegspaket. Es kann den Ozean verlassen, wenn Masse, Wetter und Carrier-Geometrie passen.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P010_PAYLOAD_WINDOW.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P010_PAYLOAD_WINDOW",
+      "locale": "de_DE",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PAYLOAD SLOT: begrenzt. WINDOW: offen. ROUTE: umstritten. CLAIM VALUE: variabel. EVIDENCE STATE: unzureichend für sauberen Streit.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P010_PAYLOAD_WINDOW.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P010_PAYLOAD_WINDOW",
+      "locale": "pl_PL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PAYLOAD SLOT: ograniczony. WINDOW: otwarte. ROUTE: sporna. CLAIM VALUE: zmienna. EVIDENCE STATE: niewystarczający do czystego sporu.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P010_PAYLOAD_WINDOW.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P010_PAYLOAD_WINDOW",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Вікно корисного вантажу",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P010_PAYLOAD_WINDOW.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P010_PAYLOAD_WINDOW",
+      "locale": "uk_UA",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Імпровізований пакет підйому. Він може вийти з океану, якщо збігнуться маса, погода й геометрія carrier.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P010_PAYLOAD_WINDOW.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P010_PAYLOAD_WINDOW",
+      "locale": "uk_UA",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PAYLOAD SLOT: обмежений. WINDOW: відкрите. ROUTE: оспорюється. CLAIM VALUE: змінна. EVIDENCE STATE: недостатній для чистої суперечки.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P010_PAYLOAD_WINDOW.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P010_PAYLOAD_WINDOW",
+      "locale": "id_ID",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PAYLOAD SLOT: terbatas. WINDOW: terbuka. ROUTE: diperebutkan. CLAIM VALUE: berubah. EVIDENCE STATE: tidak cukup untuk sengketa bersih.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P010_PAYLOAD_WINDOW.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P010_PAYLOAD_WINDOW",
+      "locale": "he_IL",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "חבילת עלייה מאולתרת. היא יכולה לצאת מהאוקיינוס אם מסה, מזג אוויר וגאומטריית carrier מסכימים.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P010_PAYLOAD_WINDOW.json"
+    },
+    {
+      "release_set_id": "RS002_DEEPENING_DESCENT",
+      "packet_id": "P010_PAYLOAD_WINDOW",
+      "locale": "pt_BR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PAYLOAD SLOT: limitado. WINDOW: aberta. ROUTE: contestada. CLAIM VALUE: variável. EVIDENCE STATE: insuficiente para disputa limpa.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/P010_PAYLOAD_WINDOW.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P011_DOMAIN_MARKS_2190",
+      "locale": "en_US",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P011_DOMAIN_MARKS_2190",
+      "locale": "ru_RU",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P011_DOMAIN_MARKS_2190",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "複数ドメインの印。Sol安全板、Barnard工具刻印、Luyten経路保管。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P011_DOMAIN_MARKS_2190",
+      "locale": "ja_JP",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P011_DOMAIN_MARKS_2190",
+      "locale": "ja_JP",
+      "field": "in_game_wiki",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "ドメイン印は大きな人類世界の小さな痕跡だ。Solの古い標準、Barnardの修理文化、Luytenのパケット経路、Tau Cetiの公共法、Centauriのハードウェア、Aegirのclaim管理を物体で示す。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P011_DOMAIN_MARKS_2190",
+      "locale": "ja_JP",
+      "field": "external_site",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "Domain Marks 2190は、HECTON-8が成熟したが疎な人類圏の一部であることを示す。舞台は恒星間だが、誰がいつ助けられるかは距離が決める。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P011_DOMAIN_MARKS_2190",
+      "locale": "zh_CN",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P011_DOMAIN_MARKS_2190",
+      "locale": "zh_CN",
+      "field": "external_site",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "Domain Marks 2190把HECTON-8放在成熟但稀疏的人类星际圈中。设定是星际的，但距离仍决定谁能帮忙以及何时能到。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P011_DOMAIN_MARKS_2190",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Marques de domaines 2190",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P011_DOMAIN_MARKS_2190",
+      "locale": "fr_FR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P011_DOMAIN_MARKS_2190",
+      "locale": "es_ES",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P011_DOMAIN_MARKS_2190",
+      "locale": "de_DE",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P011_DOMAIN_MARKS_2190",
+      "locale": "pl_PL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P011_DOMAIN_MARKS_2190",
+      "locale": "uk_UA",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P011_DOMAIN_MARKS_2190",
+      "locale": "ar_SA",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P011_DOMAIN_MARKS_2190",
+      "locale": "id_ID",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P011_DOMAIN_MARKS_2190",
+      "locale": "ko_KR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P011_DOMAIN_MARKS_2190",
+      "locale": "he_IL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P011_DOMAIN_MARKS_2190",
+      "locale": "pt_BR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P011_DOMAIN_MARKS_2190",
+      "locale": "nl_NL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Origin standards accepted: Sol Core. Repair authority: Barnard Yards. Packet custody: Luyten Junction. Claim jurisdiction: Aegir local.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P012_RELAY_SPINE",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "リレー・スパイン",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P012_RELAY_SPINE",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "古いリレーバッファ。送信パケットの年齢は現地救助価値を超過。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P012_RELAY_SPINE",
+      "locale": "ja_JP",
+      "field": "in_game_wiki",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "Relay Spineは人類圏の遅い神経系だ。ビーム予定、パケットバッファ、保管印、経路保険、遅延した正当性で文明をつなぐが、浸水した部屋を救助には変えない。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P012_RELAY_SPINE",
+      "locale": "ja_JP",
+      "field": "external_site",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "Relay SpineはHECTON-8のno-FTL圧力を定義する。通信、法、記録はあるが、光や現地災害を追い越せない。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P012_RELAY_SPINE",
+      "locale": "zh_CN",
+      "field": "in_game_wiki",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "Relay Spine是人类空间缓慢的神经系统：波束日程、数据包缓冲、托管印、路线保险和延迟的合法性。它让文明保持连接，但不能把淹没的房间变成救援。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P012_RELAY_SPINE",
+      "locale": "zh_CN",
+      "field": "external_site",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "Relay Spine定义HECTON-8的无FTL压力。消息、法律和记录都存在，但它们跑不过光，也跑不过本地灾难。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P012_RELAY_SPINE",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Kręgosłup przekaźników",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P012_RELAY_SPINE",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "عمود المرحلات",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P012_RELAY_SPINE",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Tulang Punggung Relay",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P012_RELAY_SPINE",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "עמוד השדרה של הממסרים",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P012_RELAY_SPINE",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Espinha de relés",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P013_NEARLIGHT_SHIP_CLASSES",
+      "locale": "ru_RU",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Классы околосветовых кораблей",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P013_NEARLIGHT_SHIP_CLASSES",
+      "locale": "ru_RU",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Корабль может пересечь звезды и все равно быть бесполезным для затопленной комнаты.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P013_NEARLIGHT_SHIP_CLASSES",
+      "locale": "ja_JP",
+      "field": "external_site",
+      "code": "UNBREAKABLE_WORD_OVER_WIDTH",
+      "detail": "Nearlight Ship ClassesはHECTON-8をhard-sci-fiに保つ。恒星間移動はあるが、遅く、継承され、資金化され、インフラに縛られている。",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    },
+    {
+      "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
+      "packet_id": "P013_NEARLIGHT_SHIP_CLASSES",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Classes de vaisseaux proche-lumière",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
+    }
+  ],
+  "hash_collision_count": 0,
+  "hash_collisions": [],
+  "warnings": [],
+  "rewrites": [],
+  "bounds_model": {
+    "title": {
+      "width_px": 360.0,
+      "max_lines": 1,
+      "font_px": 18.0
+    },
+    "scanner": {
+      "width_px": 460.0,
+      "max_lines": 2,
+      "font_px": 16.0
+    },
+    "terminal": {
+      "width_px": 520.0,
+      "max_lines": 2,
+      "font_px": 15.0
+    },
+    "audio": {
+      "width_px": 620.0,
+      "max_lines": 2,
+      "font_px": 18.0
+    },
+    "in_game_wiki": {
+      "width_px": 620.0,
+      "max_lines": 5,
+      "font_px": 15.0
+    },
+    "external_site": {
+      "width_px": 680.0,
+      "max_lines": 4,
+      "font_px": 16.0
+    },
+    "field_note": {
+      "width_px": 560.0,
+      "max_lines": 3,
+      "font_px": 14.0
+    }
+  }
+}

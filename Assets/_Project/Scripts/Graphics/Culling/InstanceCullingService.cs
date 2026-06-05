@@ -407,7 +407,15 @@ namespace Hecton8.Graphics.Culling
                     Matrices = matrices,
                     ShiftMeters = shift
                 }.Schedule(safeCount, _threadGroupSize);
-                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+                DispatcherJobFence.BeginPostSimulationSwapWindow();
+                try
+                {
+                    DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+                }
+                finally
+                {
+                    DispatcherJobFence.EndPostSimulationSwapWindow();
+                }
             }
             finally
             {

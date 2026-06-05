@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
-# Black Keel Approach Audio Packet
+# Black Keel Approach Packet
 
-Black Keel Approach Audio Packet defines the campaign's opening voice: procedural, debt-bound and practical.
+Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.
 
 ## Scanner
 
-The approach buffer is short, legal and colder than a rescue call.
+Approach buffer recovered. Contract active; rescue reserve conditional.
 
 ## Terminal
 
-APPROACH PACKET: contract active, descent window billed, rescue reserve restricted.
+BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN 4.8 TONNE-WINDOW.
 
 ## Audio
 
-Black Keel tender to claimant: descent window is paid. Return window is conditional.
+Black Keel tender to claimant. Descent window billed. Return conditional. Four-point-eight tonne-window lien open.
 
 ## Field Note
 
-Black Keel's first voice should be clipped audio plus clean terminal text: enough humanity to sting, not enough to comfort.
+Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.
 
 <!-- In-Game Wiki; generated from P246_BLACK_KEEL_APPROACH_AUDIO_PACKET/en_US. -->

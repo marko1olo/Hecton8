@@ -28,6 +28,16 @@ Vehicle truth owns:
 
 UI, camera, audio, and VFX consume vehicle truth. They do not invent vehicle state.
 
+## Current Static Source Anchors - Submarine Dynamics And Damage
+
+Evidence class: STATIC_SOURCE only.
+
+- `Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs` anchors submarine AUP/local pose, velocity, force accumulator, hydrodynamics telemetry, gyro telemetry, cavitation acoustic signal, and 300-frame black-box constants.
+- Force boundary: submarine movement truth is a simulation-lane accumulator route. Cross-domain systems may provide typed signals or DTO scalars; they do not call Rigidbody force APIs or mutate the force lane directly.
+- `Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageJobs.cs` anchors component damage jobs for grid initialization, impact mapping, damage reduction, system scalar evaluation, hazard signal publish, and read-state publication.
+- Damage boundary: `VehicleDamageStateDTO` exposes thrust, buoyancy, sensor, drag, flood, fire, and structure scalars to downstream dynamics. The damage grid remains internal to the damage owner.
+- Proof gap: these anchors prove source/documentation presence only. Vehicle feel, docking safety, force correctness, black-box dump readability, profiler/GC, and player-build behavior remain `PENDING VERIFICATION`.
+
 ## Platform-Relative Motion
 
 Moving interiors need platform-relative math. Player and props inside a moving vessel must inherit platform translation and rotation through cached platform transforms, not parenting hacks.
@@ -74,6 +84,8 @@ A submarine must feel heavy and constrained:
 - docking precision.
 
 Compact tier can simplify hydrodynamics, but it must keep heavy feel through input response, audio, camera, and cockpit readouts.
+
+Safety gradient lock: submarines and vehicles may feel comparatively safe near the surface and early depths. The deeper they go, the more unsafe, costly, noisy, fragile, pressure-exposed, and maintenance-dependent they become. A vehicle is not a permanent safe bubble at depth.
 
 ## Cockpit And Instruments
 
@@ -125,6 +137,12 @@ Forbidden:
 `GlobalQualityWeight` scales vehicle presentation density: cockpit material response, sonar polish, exterior detail, secondary hull motion, camera/audio layers, damage decals, and water interaction effects. It never changes vehicle authority, docking truth, EVA handoff, collision proxy identity, save identity, or platform-relative motion math.
 
 Compact uses scalar buoyancy/pressure, simple vehicle proxies, strong audio, cockpit alarms, and authored camera response. Middle adds richer thruster/contact feedback. High adds better flood/damage presentation and cockpit material response. Ultra adds secondary hull motion, richer sonar/cockpit effects, and denser exterior detail without changing vehicle truth.
+
+## First-20 Route Hook
+
+- First-20 moment: first exit and swim are the baseline; any suit, pod, docking, cockpit, or vehicle presence in that route must prove readable mass, pressure, EVA/transfer, and instrument state.
+- Route blocker removed: vehicle or suit work cannot claim opening-route readiness from static source, camera shake, or cockpit art without movement, docking/EVA, pressure, and failure evidence.
+- Proof class: screenshot, Play Mode/player capture for movement and EVA/docking when present, Profiler/GCMonitor for runtime vehicle paths, and save/load artifact for vehicle or occupant state.
 
 ## Proof Artifacts
 

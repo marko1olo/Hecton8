@@ -1,7 +1,14 @@
 # HECTON-8 GPU Compute And Kernel Bible
 
 Status: AUTHORING LAW / STATIC DOC / RUNTIME PROOF NOT IMPLIED
+Evidence class: STATIC_DOC
 Scope: compute shaders, GPU simulation, buffer ownership, dispatch sizing, async readback, barriers, current/silt/swarm kernels, GPU-driven presentation, and MX350-first kernel proof.
+
+## First-20 Route Hook
+
+- First-20 moment: shallow water density, silt, bioluminescence, marine snow, indirect draw support, and optional route diagnostics may use compute only when gameplay truth stays owner-routed.
+- Route blocker removed: same-frame GPU readback, unowned buffers, missing barriers, MX350-overrun kernels, and compute output treated as immediate survival/tool truth.
+- Proof class: `STATIC_DOC` until Frame Debugger, RenderDoc or Unity Profiler GPU capture, RenderGraph/barrier proof, and async readback evidence exist.
 
 ## Prime Law
 

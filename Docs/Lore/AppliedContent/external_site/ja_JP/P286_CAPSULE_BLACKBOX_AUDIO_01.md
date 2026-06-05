@@ -10,21 +10,21 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
 # Capsule Blackbox Audio 01
 
-The opening capsule audio gives HECTON-8 its hard-sci-fi lock: survival was purchased with the part that would have taken the player home.
+The first recovered blackbox makes survival a debt: the capsule bought one landing by burning the part meant to take it back.
 
 ## Scanner
 
-Blackbox fragment confirms ascent sleeve spent during survival burn.
+Blackbox fragment: survival burn spent the ascent sleeve.
 
 ## Terminal
 
-BLACKBOX: survival burn complete. Ascent sleeve unavailable. Recovery ring no-lock.
+BLACKBOX EXTRACT 01 / SURVIVAL BURN: COMPLETE / ASCENT SLEEVE: SPENT / RECOVERY RING: NO-LOCK / BUOY: UNRELIABLE.
 
 ## Audio
 
@@ -32,6 +32,6 @@ Burn spent. Ring no-lock. Do not request ascent.
 
 ## Field Note
 
-Short audio: crush-frame, avionics flood, recovery ring shear, buoy unreliable, no narrator explanation.
+Crush-frame cracked at lower ring. Avionics bay smells of warm salt. Recovery ring reports no-lock; buoy repeats a dead ascent request.
 
 <!-- External Site; generated from P286_CAPSULE_BLACKBOX_AUDIO_01/ja_JP. -->

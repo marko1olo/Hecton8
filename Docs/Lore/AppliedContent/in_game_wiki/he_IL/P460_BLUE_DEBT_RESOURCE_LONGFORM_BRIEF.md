@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Blue Debt Resource Longform Brief
+# Blue Debt Custody
 
-Blue debt should be useful, expensive and suspect. It is both resource and evidence.
+Blue debt is useful, expensive and suspect. It can be a crafting resource, a custody object and evidence of the process that formed it.
 
 ## Scanner
 
-Public brief: blue debt article explains Xenon-Omega as pressure-history substrate, not magic ore.
+Resource archive. Blue debt records pressure history, brine chemistry, noble gas lattice, contamination, custody grade and payout mass.
 
 ## Terminal
 
-RESOURCE ARTICLE: pressure history, brine chemistry, noble gas lattice, Deep Reach process, Atlas contamination, custody receipt and payout mass.
+PUBLIC ARCHIVE NODE // BLUE DEBT MATERIAL. Sample value depends on pressure record, extraction scar, brine exposure, Atlas-compatible contamination and verified Black Keel custody receipt.
 
 ## Audio
 
-Resource note: the sample is a receipt for the pressure it survived.
+The sample is valuable because it remembers the pressure that made it.
 
 ## Field Note
 
-Use with resource receipts, pressure-glass certificates, contamination tags and payout ledger art.
+Marauder note: grade the sample, then ask what touched it. Price without custody is bait.
 
 <!-- In-Game Wiki; generated from P460_BLUE_DEBT_RESOURCE_LONGFORM_BRIEF/he_IL. -->

@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Блок review для RTL
+# Right-to-Left Reading Contract
 
-Эта статья описывает bidirectional layout proof перед RTL-публикацией HECTON-8.
+HECTON-8 treats RTL support as a real interface contract: the language must survive PDA panels, terminals, scanner labels, subtitles, and web pages before release.
 
 ## Scanner
 
-Направление - система, а не декор.
+Direction is part of the warning chain, not decoration.
 
 ## Terminal
 
-RTL REVIEW: logical string, visual order by TMP, no manual reversal, no broken numbers.
+RTL text stays logical in storage and visual in rendering: TMP handles shaping and order; no manual reversal; numbers remain readable.
 
 ## Audio
 
-Неверное направление превращает warning в шум.
+Wrong direction can bury a warning in noise.
 
 ## Field Note
 
-Review gate: bidi numerics, HECTON-8/Aegir/Atlas names, pressure units, carrier clauses и subtitle source tags.
+Check bidirectional numerals, HECTON-8/Aegir/Atlas names, pressure units, carrier clauses, and subtitle source tags before release.
 
 <!-- External Site; generated from P278_RTL_REVIEW_LOCK/ru_RU. -->

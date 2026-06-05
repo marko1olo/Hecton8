@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -20,15 +20,15 @@ Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal m
 
 ## Scanner
 
-Deep names should arrive with damage the player already understands.
+Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.
 
 ## Terminal
 
-ANCHOR SET B: brine and abyssal recurrence. Use for witness hashes, route holds, triage exceptions and Atlas repair contradictions.
+ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.
 
 ## Audio
 
-The deeper name should cost more than the shallow one.
+A deep name costs more because the water has already proved what happened.
 
 ## Field Note
 

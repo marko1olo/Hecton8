@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -20,7 +20,7 @@ Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The ter
 
 ## Scanner
 
-Blue debt sample tagged. Pressure history matters more than surface color.
+Blue debt sample tagged. Verify pressure history, containment stage and signal drift before export.
 
 ## Terminal
 
@@ -32,6 +32,6 @@ Blue debt is what people call it after the invoice arrives.
 
 ## Field Note
 
-Use for resource glossary and Deep Reach motive articles.
+Color is not grade. A quiet container with clean custody pays; a singing one buys you a drone wake.
 
 <!-- In-Game Wiki; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/en_US. -->

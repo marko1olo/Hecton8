@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Продление lien при partial return
+# Partial Return Lien Extension
 
-Replayability HECTON-8 держит длинную campaign значимой и позволяет partial exits стать горькими, полезными records.
+HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.
 
 ## Scanner
 
@@ -28,10 +28,10 @@ PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm w
 
 ## Audio
 
-Маршрут помнит, что ты доказал. Океан не должен вернуть тебе инструменты.
+The route remembers what you proved. The ocean does not owe you your tools.
 
 ## Field Note
 
-Для same-seed return UI и meta dossier.
+Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment.
 
 <!-- External Site; generated from P337_PARTIAL_RETURN_LIEN_EXTENSION/ru_RU. -->

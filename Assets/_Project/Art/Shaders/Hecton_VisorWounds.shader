@@ -237,10 +237,13 @@ Shader "Hidden/Hecton8/VisorTraumaLegacy"
                 if (_GlobalVisorTraumaCount <= 0)
                     return sourceColor;
 
-                if (!TryResolveScenePosition(input.screenUV, out float3 scenePositionWS))
+                float3 scenePositionWS;
+                if (!TryResolveScenePosition(input.screenUV, scenePositionWS))
                     return sourceColor;
 
-                ProjectVisorTrauma(scenePositionWS, out half3 traumaColor, out float2 refractOffset);
+                half3 traumaColor;
+                float2 refractOffset;
+                ProjectVisorTrauma(scenePositionWS, traumaColor, refractOffset);
                 float refractWeight = saturate(ApproximateMagnitude2D(refractOffset) * 180.0);
                 if (refractWeight > 0.001)
                 {

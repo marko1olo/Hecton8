@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -20,7 +20,7 @@ Pressure glass connects geology to Atlas. The repair network uses existing fract
 
 ## Scanner
 
-Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.
+Pressure glass fracture sealed by Atlas chemistry. Safe lens stock only if the seal map stays intact.
 
 ## Terminal
 
@@ -32,6 +32,6 @@ The repair network reads fractures the way you read a map.
 
 ## Field Note
 
-Use for Atlas repair-network explanation and geology crosslink.
+Do not grind the pretty edge. Follow the fracture map and cut from the dead side of the seal.
 
 <!-- In-Game Wiki; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/en_US. -->

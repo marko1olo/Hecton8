@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Seed транскрипта sanitized packet Deep Reach
+# Транскрипт очищенного пакета Deep Reach
 
-Sanitized packets сохраняют Deep Reach правдоподобными: они используют legal language, а не cartoon confessions.
+Очищенный пакет остается правдоподобным, потому что сохраняет настоящие слова катастрофы и удаляет решения, сделавшие их смертельными.
 
 ## Scanner
 
-Audio/article seed: present contact Deep Reach повторяет sanitized accident language под legal delay.
+Восстановленный пакет Deep Reach повторяет сводку аварии, затем ставит спасение после координат и расчета карантина.
 
 ## Terminal
 
-TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data и request for coordinates. Ложь - omission.
+PACKET DR-RCO-2190: приоритет безопасности заявлен; координаты требуются; стоимость карантина ожидает расчета; поля причины работников опущены.
 
 ## Audio
 
-Deep Reach packet: ваша safety - our priority. Coordinate clarity required before safety can be priced.
+Пакет регламента восстановления. Приоритет безопасности подтвержден. Сначала координаты. Стоимость карантина ожидает расчета. Спасение нельзя оценить вслепую.
 
 ## Field Note
 
-Для terminal packet body, VO captions и public article sidebars.
+Корпоративный пакет в настоящем времени. Юридическая фраза должна звучать полезно, пока спасение удерживают до расчета цепочки хранения.
 
 <!-- In-Game Wiki; generated from P437_DEEP_REACH_SANITIZED_PACKET_TRANSCRIPT_SEED/ru_RU. -->

@@ -1,7 +1,14 @@
 # HECTON-8 Encyclopedia
 
 Status: writer-facing draft layer.
+Evidence class: STATIC_DOC / CONTENT_CORPUS.
 Purpose: article bank for future PDA, terminal, dossier, wiki, codex, and marketing-support text.
+
+## Authority And Proof Boundary
+
+Use `narrative.md` before writing or moving article truth into missions, evidence order, unlocks, or text placement. Use `writing.md` for article prose, source voice, knowledge boundary, artifact shape, and multilingual package rules. Use `localization.md` and `../Lore_Localization_Model.md` for LocID, locale status, RTL/CJK/fallback, and runtime text proof gates. Use `textes.md` before any real-world marketing, store, social, creator, community, caption, or publication-facing use.
+
+This directory is STATIC_DOC / CONTENT_CORPUS evidence only. Encyclopedia markdown does not prove Unity placement, PDA/terminal/scanner runtime visibility, h8bin/Data Monolith bake readiness, public website publication, native localization review, profiler/GC status, or platform readiness.
 
 Articles here are not automatically player-visible. Each entry can later be split into:
 
@@ -10,7 +17,7 @@ Articles here are not automatically player-visible. Each entry can later be spli
 - Marauder field-note version;
 - spoiler/full writer version.
 
-Every mature entry should follow `ARTICLE_TEMPLATE.md` and define Article ID, Loc Namespace, runtime layer, content targets, localization status, first unlock, and related articles. The localization contract lives in `../Lore_Localization_Model.md`.
+Every mature entry should follow `ARTICLE_TEMPLATE.md` and define Article ID, Loc Namespace, runtime layer, content targets, localization status, first unlock, and related articles. Marketing-support text is a source candidate only until routed through `textes.md` and the relevant proof gates. The localization contract lives in `../Lore_Localization_Model.md`.
 
 ## Tone Rules
 

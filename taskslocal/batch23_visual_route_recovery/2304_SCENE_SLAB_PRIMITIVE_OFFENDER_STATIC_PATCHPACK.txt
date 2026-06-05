@@ -1,0 +1,57 @@
+ID: 2304
+ROLE: SCENE_SLAB_PRIMITIVE_OFFENDER_STATIC_PATCHPACK
+CHAT NAME: 2304 slab primitive patchpack
+
+MISSION
+1472-1473 underwater and shoreline captures show large pale/yellow/white planes, false ceilings, occlusion strips, and primitive/slab geometry. Build a static offender patchpack for Unity owner: exact objects, why they are bad, disable/delete/material-replace decision, rollback, and proof capture needed. Do not run Unity.
+
+AUTHORITIES TO READ
+1. `AGENTS.md`
+2. `PROJECT_BIBLES.md`
+3. `TASTE.md`
+4. `VISION_LOCKS.md`
+5. `terrain.md`
+6. `world.md`
+7. `water.md`
+8. `vfx.md`
+9. `.agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`
+10. `.agents-skills/QA_Evidence_Text_Filter_Audit.txt`
+
+EVIDENCE BASIS
+- `Docs/Reports/Batch22/2202_UNDERWATER_PLANE_SLAB_OFFENDER_MATRIX.md`
+- `Docs/Reports/Batch22/_2202_scene_candidates_raw.csv`
+- `Docs/Screenshots/MCP/h8_1472_underwater_0_5m.png`
+- `Docs/Screenshots/MCP/h8_1472_underwater_20_50m_route.png`
+- `Docs/Screenshots/MCP/h8_1473_mainrt_underwater_0_5m.png`
+
+OWNED SCOPE
+Read-only:
+- `Assets/_Project/Scenes/02_HECTON_WORLD.unity`
+- material assets referenced by suspect objects
+- world procedural proxy reports/assets
+- prefab/mesh references for suspect objects.
+
+TASKS
+01. Record relevant mandates in `Docs/Tasks/Status_2304.md`.
+02. Load Batch22 2202 matrix and raw CSV.
+03. For each top suspect object, locate exact YAML block, active state, renderer state, mesh type, material reference, transform scale/position.
+04. Classify object as: debug helper, occlusion cheat, false ceiling, waterline service mesh, shoreline art candidate, unknown.
+05. For each object, decide recommended action: disable, keep but move to proof-hidden layer, replace material, replace mesh, or leave pending Unity visual inspection.
+06. Identify objects most likely responsible for the pale/yellow overhead sheet.
+07. Identify objects most likely responsible for surface/coast black/green banding.
+08. Identify objects that should never be accepted as final product-facing geometry because they are primitives/slabs.
+09. Identify any object that may be necessary service geometry and must not be deleted without replacement.
+10. Produce a safe staged removal order: one group at a time, proof screenshot after each, rollback after over-removal.
+11. Include exact rollback data: active state, renderer state, material, transform.
+12. Include a validator proposal for future: flag active product-facing primitive cube/plane slabs near camera/waterline unless whitelisted as non-rendered service.
+13. Include Minimum/Low/Middle/High/Ultra consequence only if a visual substitute is needed.
+14. Write `Docs/Reports/Batch23/2304_SCENE_SLAB_PATCHPACK.md`.
+15. Write `Docs/Reports/Batch23/2304_SCENE_SLAB_PATCHPACK.csv`.
+16. Append concise facts to `Docs/AgentLogs/LOG_2304.md`.
+17. Final answer: exact first 5 objects Unity owner should inspect/disable and why.
+
+REJECT
+- Broad delete lists without rollback.
+- Deleting service objects blindly.
+- Keeping visible primitives because they are "optimized".
+- Running Unity.

@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
 # Sanitized Accident Packet Body
 
-Sanitized Accident Packet Body is the player's first encounter with Deep Reach's public story. The company does not deny physics; it deletes the decisions that made physics fatal.
+Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it.
 
 ## Scanner
 
-The packet is too clean for a drowned room.
+Recovered public packet. Terms match real physics; missing fields match liability.
 
 ## Terminal
 
-PUBLIC SUMMARY: geotechnical cascade, storm damage, evacuation failure, Atlas log corruption, quarantine loss.
+PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.
 
 ## Audio
 
-A lie with correct nouns is still a lie.
+Correct nouns. Missing decisions.
 
 ## Field Note
 
-The first lie must not be stupid. It should be plausible until a physical object makes it indecent.
+Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.
 
 <!-- External Site; generated from P249_SANITIZED_ACCIDENT_PACKET_BODY/es_ES. -->

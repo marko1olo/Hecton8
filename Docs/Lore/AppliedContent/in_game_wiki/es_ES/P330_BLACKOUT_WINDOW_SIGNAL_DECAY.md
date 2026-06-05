@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ When the sky closes, the paperwork keeps breathing.
 
 ## Field Note
 
-Use as the comms cadence rule.
+Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both.
 
 <!-- In-Game Wiki; generated from P330_BLACKOUT_WINDOW_SIGNAL_DECAY/es_ES. -->

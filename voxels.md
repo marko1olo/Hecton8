@@ -3,6 +3,12 @@
 Status: AUTHORING LAW / STATIC DOC / RUNTIME PROOF NOT IMPLIED
 Scope: voxel caves, SDF terrain, carving, Marching Cubes output, seams, collision bake, persistence, and visual quality.
 
+## First-20 Route Hook
+
+- First-20 moment: world load, swim, tool interaction, first route change, and save/load return need seam-safe shallow caves/cuts, readable terrain silhouettes, collision-baked traversal, and persistent carve or blockage state where used.
+- Route blocker removed: prevents the opening route from exposing blocky caves, terrain/voxel seams, unbaked collision, direct per-tool rebuilds, or voxel edits that cannot survive save/load.
+- Proof class: STATIC_DOC only; route acceptance still requires seam/skirt capture, mesh/collider bake proof, persistence delta proof, compact/high visual capture, and profiler/GC/memory evidence for runtime carving or rebuild changes.
+
 ## Prime Law
 
 Voxel terrain must never look like blocks, random blobs, or low-poly caves. HECTON-8 voxel work exists to create carved pressure geography: caves, fractures, flooded industrial cuts, volcanic vents, collapsed tunnels, and player-made scars that remain physically readable.
@@ -74,6 +80,15 @@ Required:
 - unified raycast route for tools and interaction;
 - LOD synchronization;
 - AUP/floating-origin safety.
+
+## 2026-06-05 Static Source Anchors
+
+Evidence class: STATIC_SOURCE only. Compile, Unity import, voxel carve replay, profiler, GC, save/load, and player-build proof remain PENDING VERIFICATION.
+
+| Runtime | Owner / boundary | Static route | GlobalQualityWeight consequence | Missing proof |
+|---|---|---|---|---|
+| `Assets/_Project/Scripts/Gameplay/Mining/DeployableSdfDrillRuntime.cs` | `Hecton8.Gameplay.Mining`, DataVault owner `SystemID.GameplayTools`; deployable powered SDF thumper/mining node. It is not the handheld starter `SeafloorDrillTool`, does not own voxel terrain authority, and must treat SDF edits as requested visual/authoritative routes owned by voxel/mining owners. | Registers cold tick, late-frame tick, origin-shift, pool, cuttable, hot-swap, and interactable tree routes. Owns DataVault buffers `DeployableSdfDrillSlotOwners`, inventory capacities/quantities/item hashes/ore hashes, `DeployableSdfDrillBlackBox`, and `DeployableSdfDrillExtractionResult`. Statically references `VoxelDeltaProcessor`, `HectonVoxelVolume`, and `IVoxelSonarSdfReadModel`; emits `AcousticPingSignal`, `ItemAcquiredSignal`, `CombatDamageSignal`, and `DebrisSpawnSignal`. | Reads `HomeostasisBrain.GlobalQualityWeight` for snap SDF step and visual carve cadence/weight with hysteresis. Static source states quality affects visual SDF carve cadence; extraction truth and inventory authority must not downgrade with graphics quality. | No voxel-delta persistence proof, SDF collision/read model proof, visual carve capture, profiler/GCMonitor, save/load, power-grid runtime proof, or black-box dump artifact was provided by this static audit. |
+| `Assets/_Project/Scripts/World/HectonAnomalyEngine.cs` | `Hecton8.World`; caller-owned SDF processor for terrain snap, mega pillars, deep fissures, and lateral SDF displacement. It has no persistent DataVault/GPU/signal ownership. | Schedules jobs over caller-provided `NativeArray<float>` SDF and terrain height storage; caller owns job dependency, completion window, dirty chunk propagation, and persistence. | No direct quality read is visible. Callers must scale SDF dimensions/budgets continuously through their own `GlobalQualityWeight` route without changing carve permission, save delta identity, or collision truth. | No owning caller, proof artifact, player traversal capture, mesh/collider bake proof, profiler, GCMonitor, or save delta validation was provided by this static audit. |
 
 ## Visual Quality And GlobalQualityWeight Scaling
 

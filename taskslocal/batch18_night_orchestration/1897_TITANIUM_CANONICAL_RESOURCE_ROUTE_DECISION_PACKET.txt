@@ -1,0 +1,83 @@
+ID: 1897
+TITLE: TITANIUM_CANONICAL_RESOURCE_ROUTE_DECISION_PACKET
+MODE: REPORT_ONLY_STATIC_RESOURCE_ROUTE_DECISION
+
+You are HECTON-8 batch agent 1897.
+Do not edit source, assets, prefabs, scenes, binaries, `.meta`, generated meshes, DataMonolith, task files, or sibling outputs.
+
+PRIMARY GOAL
+
+Produce the canonical route decision packet for `Item_Titanium.prefab`, `TitaniumScrap`, resource pickup visuals/materials, inventory identity, and future DataMonolith/binary integration. Prior packets repeatedly flagged Titanium uncertainty; this task must make the future route explicit without mutating assets.
+
+READ
+
+- `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `VISION_LOCKS.md`
+- `TASTE.md`
+- `quality.md`
+- `inventory.md`
+- `resources.md` if present; if absent, state it.
+- `3dmodel.md`
+- `3DMODEL_TEXTURES_MATERIALS.md`
+- `Docs/Reports/Batch18/1814_COPPER_CATALOG_COLLISION_AUDIT.md` if present.
+- `Docs/Reports/Batch18/1826_COPPER_ROUTE_DATA_OWNER_PATCH_PACKET.md` if present.
+- `Docs/Reports/Batch18/1870_RESOURCE_PICKUP_VISUAL_SOURCE_PACKAGE.md`
+- `Docs/Reports/Batch18/1875_RESOURCE_PICKUP_MESH_SOURCE_AUTHORING_IMPLEMENTATION.md`
+- `Docs/Reports/Batch18/1881_RESOURCE_MATERIAL_TEXTURE_ROLE_PACKAGE.md`
+- `Docs/Reports/Batch18/1885_PRODUCT_FACE_PREFAB_ANCHOR_REFERENCE_STATIC_SNAPSHOT.md`
+- `Docs/Reports/Batch18/1887_PRODUCT_FACE_LEGACY_REFERENCE_QUARANTINE_DECISION_PACKET.md`
+- `Docs/Reports/Batch18/1888_PRODUCT_FACE_TEXTURE_CHANNEL_MANIFEST_AND_SHADER_AUDIT.md`
+- `Docs/Reports/Batch18/1890_PRODUCT_FACE_MATERIAL_TEXTURE_VALIDATOR_IMPLEMENTATION.md` if present.
+
+Mandates:
+
+- `.agents-skills/QA_Evidence_Text_Filter_Audit.txt`
+- `.agents-skills/DATA_Inventory_Resources_Items_SOA_Layout.txt` if present; if absent, state it.
+
+OUTPUTS YOU OWN
+
+- `Docs/Reports/Batch18/1897_TITANIUM_CANONICAL_RESOURCE_ROUTE_DECISION_PACKET.md`
+- `Docs/Reports/Batch18/1897_TITANIUM_CANONICAL_RESOURCE_ROUTE_MATRIX.csv`
+- `Docs/Tasks/Status_1897.md`
+- `Docs/AgentLogs/Rationale_1897.md`
+- `Docs/AgentLogs/LOG_1897.md`
+
+CSV COLUMNS
+
+- `artifact_path`
+- `artifact_type`
+- `current_identity`
+- `current_visual_or_material_route`
+- `canonical_owner`
+- `allowed_future_action`
+- `forbidden_action`
+- `data_monolith_implication`
+- `proof_required`
+- `status`
+
+REQUIRED WORK
+
+1. Locate current Titanium/TitaniumScrap prefabs, materials, item data, inventory records, scanner records, crafting references, and DataMonolith source records by static search.
+2. Distinguish raw titanium ore, titanium scrap, generic titanium material, and any old `Item_Titanium` legacy root.
+3. Decide whether `Item_Titanium.prefab` should inherit canonical `TitaniumScrap`, be renamed later, or be quarantined later. This is a decision packet, not an asset move.
+4. Preserve item IDs/save identity/data ownership. Do not propose breaking DataMonolith identity to clean visuals.
+5. Define future visual mesh/material requirements for titanium scrap pickup.
+6. Define future validator requirements to prevent default/package/flat resource material acceptance.
+7. Define future migration/alias plan if legacy `Item_Titanium` remains for compatibility.
+8. Define what must be baked into DataMonolith/static data later and what must remain editor/source only.
+9. Include Low/Middle/High/Ultra consequences for pickup visual detail without changing inventory truth.
+10. Do not edit any file.
+11. Do not claim runtime/crafting/scanner proof.
+
+VERIFICATION
+
+Run and record:
+
+- `git diff --check -- Docs/Reports/Batch18/1897_TITANIUM_CANONICAL_RESOURCE_ROUTE_DECISION_PACKET.md Docs/Reports/Batch18/1897_TITANIUM_CANONICAL_RESOURCE_ROUTE_MATRIX.csv Docs/Tasks/Status_1897.md Docs/AgentLogs/Rationale_1897.md Docs/AgentLogs/LOG_1897.md`
+- `Import-Csv Docs/Reports/Batch18/1897_TITANIUM_CANONICAL_RESOURCE_ROUTE_MATRIX.csv | Measure-Object`
+- static term cross-check for `Item_Titanium`, `TitaniumScrap`, `Data_Titanium`, `Data_TitaniumScrap`, `Mat_Resource_Scrap`, `DataMonolith`, `scanner`, `craft`.
+
+FINAL RESPONSE
+
+Report changed files, CSV row count, canonical decision, compatibility risk, and exact future owner actions.

@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Карантин Халдейна
+# Haldane Quarantine Hold
 
-Удержание Халдейна делает задержку эвакуации читаемой. Оно не отрицает flood; оно держит людей в петле сертификации, пока flood становится необратимым.
+The Haldane hold makes evacuation delay legible. It does not deny the flood; it keeps people inside a certification loop until extraction stops meaning rescue.
 
 ## Scanner
 
-Артефакт Deep Reach: карантинное удержание. Файлы эвакуации были правильными и поздними.
+Quarantine release hold. Evacuation files stayed correct and late.
 
 ## Terminal
 
-ХОЛД ХАЛДЕЙНА. Счет выживших временный, пока Atlas не решит.
+QUARANTINE HOLD DESK / HALDANE / RELEASE HOLD: survivor counts remain provisional. External extraction waits on contamination review, custody chain and Atlas log reconciliation.
 
 ## Audio
 
-Папка была в порядке. В этом и была проблема.
+The folder was orderly. That was the problem.
 
 ## Field Note
 
-Привязать к терминалам очереди и разделам статьи про карантинный выпуск.
+Haldane kept the folder clean. Survivor count provisional. Release pending. Door clocks kept moving while certification waited.
 
 <!-- In-Game Wiki; generated from P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT/ru_RU. -->

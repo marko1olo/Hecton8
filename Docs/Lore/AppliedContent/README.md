@@ -1,24 +1,30 @@
 # HECTON-8 Applied Content
 
-Status: production-facing content layer.
-Purpose: store content that can be used by the game, in-game wiki, external website/wiki, localization, audio, and image/art tasks.
+Status: source/export content layer. Static docs here do not prove publication, runtime readiness, Unity placement, or DataMonolith bake state.
+Purpose: store content sources and export candidates for the game, in-game wiki, external website/wiki, localization, audio, and image/art tasks.
 
 This folder is not an internal rationale archive.
 
 Local reader: run `python -m http.server 8788 --bind 127.0.0.1 --directory Docs/Lore/AppliedContent` from the project root, then open `http://127.0.0.1:8788/reader.html`.
 
+## Freshness Boundary
+
+Local counts and release-set lists in this README are static documentation snapshots unless a timestamped command output or audit artifact says otherwise. Use `Publication_Surface_Index.csv`, `Publication_Cluster_Index.csv`, release-set manifests, and the scoped graph/route/binding CSV inventories as the current source/export inventory. None of those files is runtime, publication, localization-review, or placement proof by itself.
+
 ## Folders
 
 - `packets/`: structured content packets with all target surfaces and translations.
 - `in_game_wiki/`: player-facing wiki/codex articles.
-- `external_site/`: publication-ready website/wiki articles.
+- `external_site/`: website/wiki source/export candidate articles. Public release approval requires separate publication and localization proof.
 - `image_briefs/`: art prompts and image requirements for articles, codex, cards, and marketing.
-- `release_sets/`: grouped publish/runtime batches.
+- `release_sets/`: grouped source/export batches. Runtime use requires importer, route-card export, string-pool bake, h8bin/DataMonolith validation, and Unity placement proof where applicable.
 - `binding_maps/`: scene-authoring maps for assigning baked packet hashes to concrete POIs, scan fragments, and terminals.
 - `graphs/`: evidence-chain maps for packet prerequisites, next leads, depth bands, decision pressure, and primary display surfaces.
 - `route_cards/`: gameplay route cards tying packet groups to phases, depth bounds, replay axes, and ending pressure.
 
-## Current Release Sets
+## Release-Set Snapshot
+
+This local list is a static snapshot, not a freshness proof. The folder inventory currently extends beyond the older RS001-RS092 list; visible newer release-set manifests include `RS093_LORE_SYSTEM_INTEGRATION_BRIDGE`, `RS094_PUBLIC_AUTHORITY_BRIDGE_EXPANSION`, and `RS095_CORPORATE_PRESSURE_CHAIN_BRIDGE`.
 
 - `RS001_FIRST_DESCENT`: first five content packets for crash shelf, Black Keel contact, Barnard mark, blue debt, and repair scar.
 - `RS002_DEEPENING_DESCENT`: second five content packets for dead claim caches, brine traversal, evacuation truth, bottom factory, and payload-window endings.
@@ -46,14 +52,15 @@ No runtime markdown parsing. No runtime translation. No scene search for content
 - Import: `Tools/AppliedLoreImporter.py`.
 - Page export: `Tools/AppliedLorePageExporter.py` fills localized markdown pages and `INDEX.md` files for in-game wiki and external site surfaces from the same packet JSON without overwriting hand-authored packet pages by default.
 - Localization status: authoring-only draft/native-review prefixes are stripped before CSV/page export; `flags & H8AppliedLoreHashes.RowFlagDraftLocalization` and page frontmatter carry `draft_native_pass_pending` without leaking tool notes into player-visible prose.
-- Localization status index: `Localization_Status_Index.md` is regenerated from packet JSON and reports source-ready vs native-review-pending rows per locale.
+- Localization status index: `Localization_Status_Index.md` is regenerated from release-set manifests and packet JSON sources, then reports source-authority, draft/localization-review-pending, and explicitly reviewed rows per locale.
 - Publication surface index: `Publication_Surface_Index.csv` is regenerated from packet JSON and lists every generated page by surface, locale, release set, unlock id, localization status, tags and relative page path for site/wiki ingestion.
 - Publication cluster index: `Publication_Cluster_Index.csv` is regenerated from `RS084_SITE_WIKI_NAVIGATION_CLUSTERS_evidence_graph.csv` and maps the hard-sci-fi encyclopedia hubs to every locale/surface with spoiler tier, page path, route question and truth payload.
-- Route-card export: `Tools/AppliedLoreRouteCardExporter.py` converts checked route cards into `Assets/_SourceData/DataMonolith/Narrative/applied_lore_route_cards.csv` with stable route, phase, packet, prerequisite, surface, and ending-pressure hashes.
+- Route-card export: `Tools/AppliedLoreRouteCardExporter.py` converts route-card source CSVs into `Assets/_SourceData/DataMonolith/Narrative/applied_lore_route_cards.csv` with stable route, phase, packet, prerequisite, surface, and ending-pressure hashes when a scoped export/audit proves the handoff.
 - CSV export: `Assets/_SourceData/DataMonolith/Narrative/applied_lore_packets.csv`.
 - Constants export: `Assets/_Project/Scripts/Core/Generated/H8AppliedLoreHashes.cs`.
 - Bake targets: `H8DataSectionId.AppliedLorePackets` and `H8DataSectionId.AppliedLoreRoutes` in `static_data.h8bin`.
 - Offline audit: `Tools/AppliedLoreRuntimeAudit.py --root .` checks CSV rows, generated constants, baked packet and route section layouts, sorted packet/locale records, every UTF-8 text slice against the blob, route-card fixed-record hashes/depths/prerequisites/slot padding, source-route symbols from importer through PDA/scanner/terminal/POI consumers, all `binding_maps/*_runtime_binding_map.csv`, all `graphs/*_evidence_graph.csv`, all `route_cards/*_route_cards.csv`, the route-card source-data export, publication page coverage for all baked packet/locale pairs, and localized publication indexes. Use `--source-only` when authoring has advanced but `static_data.h8bin` cannot be rebuilt yet.
+- 1770 sorting audit: `production_audits/1770/` maps packet inventory, release-set scope, surface ownership, locale coverage, publication index drift, route/binding coverage, blockers, and handoff notes.
 - Runtime read: `H8AppliedLoreRuntime` and `H8StaticDataArena`.
 - Consumers: PDA encyclopedia, scanner title route, `MessageTerminal`, and TerminalOS preview line.
 - Unlock route: `H8AppliedLoreRuntime.TryRaisePacketUnlocked` publishes `LoreFragmentScannedSignal`; PDA consumes the signal and unlocks/selects the baked packet.
@@ -100,7 +107,7 @@ No runtime markdown parsing. No runtime translation. No scene search for content
 - `RS054_DOSSIER_CONTRACT_UI_COPY_DECK`: Lock PDA/dossier/contract UI copy surfaces for start screen, contract fields, rumor families, route warnings and ending records.
 - `RS055_ENDING_PAYLOAD_RECORD_SURFACES`: Lock concrete ending record packets for material payout, partial return, public ledger, Atlas severance and preserve/quarantine outcomes.
 - `RS056_NATIVE_LOCALIZATION_REVIEW_PACK`: Lock native review packets for RU, CJK, RTL, European-language and subtitle/audio QA gates.
-- `RS057_PUBLIC_SITE_READY_ARTICLE_SECTIONS`: Lock publication-ready public article sections for HECTON-8, Aegir, Deep Reach, Atlas-6 spoiler gates and blue debt.
+- `RS057_PUBLIC_SITE_READY_ARTICLE_SECTIONS`: Lock public-site source/export candidate sections for HECTON-8, Aegir, Deep Reach, Atlas-6 spoiler gates and blue debt. The release-set name is historical; publication readiness still needs separate proof.
 - `RS058_IN_GAME_ARTIFACT_AUDIO_SURFACES`: Lock concrete in-game note/audio/object fragments for capsule, P-63, worker lockers, Marauder corrections and quarantine relay pressure.
 - `RS059_ECOLOGY_CODEX_SPECIMEN_CARDS`: Lock scanner/codex specimen cards for photic mats, glass grazers, lantern drifts, brine vanes and sensor-tagged fauna.
 - `RS060_FINAL_DESCENT_ROUTE_FRAGMENTS`: Lock late-game route fragments for abyssal machine-field warning, Atlas basin gate, factory-temple entry, payload authority and no-clean-ending dossier tone.
@@ -136,3 +143,6 @@ No runtime markdown parsing. No runtime translation. No scene search for content
 - `RS090_UNITY_PLACEMENT_SCENE_BRIEFS`: Lock Unity placement briefs for first-hour anchors, mid-depth route objects, ecology scan anchors, final descent anchors and terminal-slot promotion.
 - `RS091_NATIVE_LOCALIZATION_AND_ACCESSIBILITY_QA_BRIEFS`: Lock native localization and accessibility QA briefs for RU encoding, CJK wrapping, RTL numeric direction, European expansion fit and subtitle/audio timing.
 - `RS092_PUBLIC_SITE_LONGFORM_ARTICLE_BRIEFS`: Lock longform public/site article briefs for home, Aegir hard-sci-fi, Deep Reach liability, Atlas spoiler layers and blue debt resources.
+- `RS093_LORE_SYSTEM_INTEGRATION_BRIDGE`: source bridge packets for future site/wiki/in-game surfaces and static-data bake contracts; no runtime proof.
+- `RS094_PUBLIC_AUTHORITY_BRIDGE_EXPANSION`: source candidate bridge packets for public authority surfaces; runtime, source-CSV wiring, h8bin bake, native localization, Unity placement, and publication remain pending unless separately proven.
+- `RS095_CORPORATE_PRESSURE_CHAIN_BRIDGE`: static-source candidate for corporate pressure-chain bridge packets; runtime, importer, h8bin, native localization, Unity placement, and publication readiness are false/pending verification in the release-set file.

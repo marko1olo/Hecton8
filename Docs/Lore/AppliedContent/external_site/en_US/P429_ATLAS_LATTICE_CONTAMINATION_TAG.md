@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -20,7 +20,7 @@ The deeper economy becomes unstable because repaired life, metal and evidence ar
 
 ## Scanner
 
-Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.
+Atlas-lattice contamination tag: custody risk and ecology risk elevated. Keep sample isolated.
 
 ## Terminal
 
@@ -32,6 +32,6 @@ If Atlas touched it, the receipt is also a warning label.
 
 ## Field Note
 
-Use for contaminated sample scanner, ecology wiki and ending payload flags.
+If the tag lists lattice contact, do not put it near food water, filter shell, or payout samples.
 
 <!-- External Site; generated from P429_ATLAS_LATTICE_CONTAMINATION_TAG/en_US. -->

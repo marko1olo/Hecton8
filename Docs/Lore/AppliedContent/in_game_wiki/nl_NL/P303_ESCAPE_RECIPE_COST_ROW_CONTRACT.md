@@ -10,21 +10,21 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Escape Recipe Cost Row Contract
+# Escape Recipe Cost Boundary
 
-Escape Recipe Cost Row Contract keeps the exit chain mechanical instead of arbitrary quest gating.
+Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.
 
 ## Scanner
 
-Escape recipe row: component class, pressure tier, route proof, authority state.
+Escape recipe boundary: component class, pressure tier, route proof, authority state.
 
 ## Terminal
 
-RECIPE HANDOFF: ascent-qualified costs must name relay, seal, guidance, ascent energy, legal handshake and payload authority requirements.
+ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.
 
 ## Audio
 
@@ -32,6 +32,6 @@ The way up has parts. The parts have owners.
 
 ## Field Note
 
-Use bands from RS035; exact costs belong to recipe tables.
+Pressure bands come from containment rules; exact costs belong to recipe tables.
 
 <!-- In-Game Wiki; generated from P303_ESCAPE_RECIPE_COST_ROW_CONTRACT/nl_NL. -->

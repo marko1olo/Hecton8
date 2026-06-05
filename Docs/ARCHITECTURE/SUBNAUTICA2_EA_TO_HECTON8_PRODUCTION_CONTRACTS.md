@@ -3,6 +3,9 @@
 Date: 2026-05-17
 
 Status: ACTIVE PRODUCTION-CONTRACT REFERENCE / RUNTIME PENDING
+Evidence class: STATIC_DOC
+Owner domain: architecture/static production contract reference
+Review disposition: YELLOW / STATIC_DOC_ONLY until compile/import/runtime/profiler/player proof exists.
 
 ## Legal Boundary
 

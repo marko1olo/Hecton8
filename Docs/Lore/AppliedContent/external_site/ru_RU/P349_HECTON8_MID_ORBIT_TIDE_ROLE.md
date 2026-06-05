@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Mid-orbit tide role HECTON-8
+# HECTON-8 Mid-Orbit Tide Role
 
-HECTON-8 - одна луна в larger Aegir ladder. Её position делает pressure, tides and extraction believable.
+HECTON-8 is one moon in a larger Aegir ladder. Its position makes pressure, tides and resource extraction believable.
 
 ## Scanner
 
-Tide record HECTON-8. Mid-orbit position делает океан полезным и смертельным.
+Hecton-8 tide record. Mid-orbit position makes the ocean useful and lethal.
 
 ## Terminal
 
-ORBIT NOTE: HECTON-8 не ближняя и не дальняя луна. Tide load, magnetosphere windows и drowned crust сделали её местом, где Deep Reach могла добывать и провалиться.
+ORBIT NOTE: HECTON-8 is not the closest moon and not the farthest. Its tide load, magnetosphere windows and drowned crust make it the place Deep Reach could exploit and fail.
 
 ## Audio
 
-Она стоит там, где работа кажется возможной, пока вода не начинает считать.
+It sits in the part of the ladder where work looks possible until the water starts doing math.
 
 ## Field Note
 
-Для статьи HECTON-8 и orbital map.
+HECTON-8 atlas record: mid-orbit tides make ocean work possible and catastrophe credible.
 
 <!-- External Site; generated from P349_HECTON8_MID_ORBIT_TIDE_ROLE/ru_RU. -->

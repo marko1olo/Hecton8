@@ -2,6 +2,8 @@
 
 Date: 2026-05-18
 
+Owner domain: input/determinism and replay route
+
 Status: PENDING VERIFICATION
 
 ## Source Anchors

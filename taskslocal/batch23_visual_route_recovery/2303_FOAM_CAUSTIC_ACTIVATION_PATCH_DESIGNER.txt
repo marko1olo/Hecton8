@@ -1,0 +1,63 @@
+ID: 2303
+ROLE: FOAM_CAUSTIC_ACTIVATION_PATCH_DESIGNER
+CHAT NAME: 2303 foam caustic patch plan
+
+MISSION
+Batch22 proved foam/caustic systems exist but are disabled, fragmented, or not proven live. Produce a minimal activation/patch plan that makes foam and caustics believable without re-enabling ugly debug ribbons or primitive quads. Do not run Unity.
+
+AUTHORITIES TO READ
+1. `AGENTS.md`
+2. `PROJECT_BIBLES.md`
+3. `TASTE.md`
+4. `VISION_LOCKS.md`
+5. `water.md`
+6. `vfx.md`
+7. `lighting.md`
+8. `.agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`
+9. `.agents-skills/REND_VFX_Fluid_Aesthetics_Compute_Particles.txt`
+10. `.agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
+
+EVIDENCE BASIS
+- `Docs/Reports/Batch22/2201_FOAM_CAUSTICS_UNDERWATER_ACTIVATION_MATRIX.md`
+- `Docs/Screenshots/MCP/h8_1473_mainrt_crest_foam_shoreline.png`
+- `Docs/Screenshots/MCP/h8_1473_rt_foam_organic_only.png`
+- `Docs/Screenshots/MCP/h8_1473_rt_foam_vertex_only.png`
+- `Docs/Screenshots/MCP/h8_1473_rt_foam_lace_only.png`
+
+OWNED SCOPE
+Read-only:
+- `Assets/_Project/Scenes/02_HECTON_WORLD.unity`
+- `Assets/_Project/Art/Materials/**Foam**`
+- `Assets/_Project/Art/Materials/**Caustic**`
+- `Assets/_Project/Art/Shaders/**Foam**`
+- `Assets/_Project/Art/Shaders/**Caustic**`
+- `Assets/_Project/Scripts/**Foam**`
+- `Assets/_Project/Scripts/**Caustic**`
+- Crest ocean/underwater materials/settings.
+
+TASKS
+01. Record relevant mandates in `Docs/Tasks/Status_2303.md`.
+02. Re-read Batch22 2201 and extract active, disabled, and dangerous foam/caustic routes.
+03. Classify every foam route: organic/premium candidate, debug-looking risk, primitive slab risk, disabled but salvageable, reject/delete candidate.
+04. Classify every caustic route: receiver material, projected/floor fake, deferred feature, runtime publisher, disabled legacy.
+05. Identify material/shader property mismatches that can make enabled routes invisible.
+06. Identify which routes can be activated by scene YAML only, which require runtime owner, and which require material edit.
+07. Design a three-step foam activation sequence for Unity owner: one route at a time, one screenshot after each, rollback after bad result.
+08. Design a three-step caustic activation sequence for Unity owner: floor receiver, deferred/publisher, material strength. One screenshot after each.
+09. Explicitly forbid re-enabling the ugly 1473 foam wedge/sheet routes unless material/mesh is replaced first.
+10. Define what believable shoreline foam must look like: contact breakup, scale variation, opacity falloff, no rectangular sheet, no pixel grid.
+11. Define what believable photic caustics must look like: subtle moving light lace on seabed/rocks, not neon stripes, not flat decal spam.
+12. Include Minimum/Low/Middle/High/Ultra tier behavior.
+13. Include profiler/proof requirements.
+14. Include rollback state per route.
+15. Produce a direct Unity-owner handoff section with exact object/material names from Batch22.
+16. Write `Docs/Reports/Batch23/2303_FOAM_CAUSTIC_PATCH_PLAN.md`.
+17. Write `Docs/Reports/Batch23/2303_FOAM_CAUSTIC_ROUTE_CLASSIFICATION.csv`.
+18. Append concise facts to `Docs/AgentLogs/LOG_2303.md`.
+19. Final answer: top 3 safe candidates, top 3 reject candidates, proof gate.
+
+REJECT
+- Equating "enabled" with "good".
+- Turning on every disabled object.
+- Using foam/caustics as noisy visual clutter.
+- Running Unity.

@@ -1,0 +1,78 @@
+ID: 2203
+ROLE: PHOTIC_TEXTURE_SOURCE_AND_GEMINI_PROMPT_PACK
+CHAT NAME: 2203 photic texture prompts
+
+MISSION
+Create a production-grade source-art prompt and intake package for the missing or weak photic visual materials: wet basalt, shoreline foam/salt, shallow sand/shell substrate, caustic decal masks, shallow coral/algae color breakup. This task prepares good generation requests and audit rules; it does not blindly import generated images into Unity.
+
+AUTHORITIES TO READ
+1. `AGENTS.md`
+2. `PROJECT_BIBLES.md`
+3. `TASTE.md`
+4. `VISION_LOCKS.md`
+5. `quality.md`
+6. `3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md`
+7. `3DMODEL_TEXTURES_MATERIALS.md`
+8. `water.md`
+9. `terrain.md`
+10. `Docs/Codex_Workflow_Kit_RU` files relevant to Gemini/image generation if present
+11. `.agents-skills/STRM_Async_Asset_Upload_Texture_Settings.txt`
+12. `.agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
+
+EVIDENCE BASIS
+- `Docs/GeneratedAssets/Gemini/Outputs/Batch21/TX_B21_PhoticShellSandSubstrate_AlbedoSource_20260604_Gemini_164642.png`
+- Its manifest marks it as source/reference only; audit rejected it for seam/band/luminance issues.
+- Latest 1472 screenshots still show weak terrain/coast/seabed material identity and no believable caustic/foam detail.
+
+OWNED SCOPE
+May edit only:
+- `Docs/GeneratedAssets/Gemini/**`
+- `Docs/Reports/Batch22/**`
+- `Docs/Tasks/Status_2203.md`
+- `Docs/AgentLogs/Rationale_2203.md`
+- `Docs/AgentLogs/LOG_2203.md`
+Do not edit `Assets/**` in this task.
+
+MANDATES
+- Gemini/source art is not production-ready until intake passes.
+- Prompts must be in strong English with seamless/tileable/orthographic/PBR/source constraints.
+- Avoid baked lighting when generating albedo.
+- Generate source channels deliberately: albedo source, height source, roughness/mask source, normal only if later derived or explicitly generated.
+- Do not use one image as every PBR channel.
+
+TASKS
+01. Read authority docs and record mandates in `Status_2203.md`.
+02. Inspect existing Gemini output manifests/audits under `Docs/GeneratedAssets/Gemini`.
+03. Summarize which existing images are `SOURCE_ONLY`, `REJECT`, `CANDIDATE`, or `READY_FOR_DERIVATION`.
+04. Inspect `Tools/GeminiTextureIntakeAudit.py` behavior and current audit output without rewriting it unless a narrow bug is proven.
+05. Define a texture target taxonomy for photic shallows: wet basalt, basalt with cyan mineral veins, sand/shell substrate, shoreline foam/salt lace, caustic decal/mask, shallow algae/coral tint.
+06. For each target, write material intent: where it appears, scale in meters, desired repetition tolerance, albedo/height/roughness/normal requirements, forbidden artifacts.
+07. Produce at least 10 English Gemini prompts. Each prompt must ask for one square seamless tileable texture/source, top-down or orthographic when needed, no perspective, no labels, no borders, no lighting baked into albedo unless explicitly a reference photo.
+08. Include prompts for "redo/correction" messages when the first result has visible seams or repeated hero shells/stones.
+09. Include prompts for image-to-image follow-up using a generated result as reference to create a clean height/roughness/normal source, but mark these as optional.
+10. Create a generation budget plan for 7 accounts x about 3-4 generations/day: priority order and stop conditions.
+11. Create a download naming convention with timestamp, role, target, source, and manifest rule.
+12. Create an intake checklist: visual 2x2 tile inspection, edge seam metrics, band mismatch, luminance range, baked shadow check, repeated hero motif check.
+13. Create a "do not import" checklist for rejected textures.
+14. Create a "derivation candidate" checklist for textures that need Substance/Python/material baking before Unity.
+15. Create a PBR channel derivation plan for the already downloaded sand/shell candidate if the art director still likes it: crop/retile/clone source, derive normal/height/roughness later; no direct production import.
+16. Include hardware consequences: compact/mid/high texture resolution and compression expectations.
+17. Include proof path: manifest, audit CSV, 2x2 preview, Unity material preview only after candidate passes source audit.
+18. Write `Docs/Reports/Batch22/2203_PHOTIC_TEXTURE_PROMPT_PACK.md`.
+19. Write `Docs/Reports/Batch22/2203_TEXTURE_INTAKE_CHECKLIST.md`.
+20. Write `Docs/GeneratedAssets/Gemini/README_GENERATION_QUEUE_20260604.md` or update it if it exists; do not duplicate.
+21. Append concise log to `LOG_2203.md`.
+22. Final report: list next 5 best Gemini prompts and which assets they target.
+
+PROOF PACKET
+- `Status_2203.md`
+- `Rationale_2203.md` if prompt taxonomy choices are non-trivial
+- `LOG_2203.md`
+- `Docs/Reports/Batch22/2203_PHOTIC_TEXTURE_PROMPT_PACK.md`
+- `Docs/Reports/Batch22/2203_TEXTURE_INTAKE_CHECKLIST.md`
+
+REJECT
+- Importing rejected art into Unity.
+- Prompting for "beautiful texture" without scale/channel constraints.
+- Using AI output as normal/roughness/albedo all at once without derivation proof.
+- Claiming seamless without audit/2x2 proof.

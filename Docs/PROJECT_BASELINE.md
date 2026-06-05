@@ -10,14 +10,14 @@ Purpose: stable engineering entry point. This file is not a work log, task board
 ## Authority
 
 - Source under `Assets/_Project` wins over dated reports.
-- `AGENTS.md`, `.agents-skills/`, and `Docs/ARCHITECTURE` define operating doctrine.
+- `AGENTS.md`, `.agents-skills/`, `PROJECT_BIBLES.md`, `VISION_LOCKS.md`, and `Docs/ARCHITECTURE` define operating doctrine.
 - `Docs/Reports` stores evidence snapshots. It is not a contract layer.
 - `Docs/DEPRECATED`, `Docs/_Archive`, and `Docs/Archive` are historical storage.
 - A report fact becomes active only after it is distilled into `Docs/ARCHITECTURE` or another stable contract.
 
 ## Root and Docs Boundary
 
-- Repository root text anchors are limited to `AGENTS.md`, `TASTE.md`, `textes.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`.
+- Repository root text anchors are limited to `AGENTS.md`, `PROJECT_BIBLES.md`, `VISION_LOCKS.md`, `TASTE.md`, `textes.md`, `MASTER_RELEASE_WORK_PLAN.md`, `BUILD_PLAYTEST_ISSUES.md`, and standing root route bibles listed under `Routes` in `PROJECT_BIBLES.md`.
 - `Docs/` root is for stable maps, governance, quality gates, project contracts, and architecture entry points.
 - Generated/tool-required root paths must stay short and contract-shaped; full generated bodies belong in reports, regenerated artifacts, or deprecated snapshots.
 - Large generated documentation artifacts belong in `Docs/Generated`.
@@ -26,7 +26,7 @@ Purpose: stable engineering entry point. This file is not a work log, task board
 - `Docs/Marketing` is the public/commercial planning corpus; public copy still obeys root `textes.md` and proof gates.
 - `Docs/Modding` is the mod/API planning and audit corpus; source and runtime artifacts decide actual API behavior.
 - `Docs/Design`, `Docs/Audio`, `Docs/Atmosphere`, and `Docs/AI_Texturing_Templates` are support corpora. Promote durable engineering facts into `Docs/ARCHITECTURE` before using them as contracts.
-- Dated notes, prompt extracts, report chains, task status files, local telemetry, and temporary scan counters do not belong in `Docs/` root.
+- Dated notes, prompt extracts, report chains, task status files, work logs, generated evidence, local telemetry, and temporary scan counters do not belong in repository root or `Docs/` root.
 - Current proof snapshots belong in `Docs/Reports` and the concise evidence sections of `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
 
 ## Stable Runtime Doctrine

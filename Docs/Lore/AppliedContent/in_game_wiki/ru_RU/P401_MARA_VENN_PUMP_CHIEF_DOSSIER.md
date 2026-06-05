@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Мара Венн/насосы
+# Mara Venn/Pump Chief
 
-Мара Венн закрепляет человеческий слой колонии через работу. Ее цепочка: значок, доска ритма, исправленный водный журнал и стертая рукоять обхода.
+Mara Venn anchors the colony's practical humanity. Her evidence chain is a badge, a cadence board, a corrected water ledger and a bypass handle polished by repeated use.
 
 ## Scanner
 
-Досье: Мара Венн. Ритм насоса и водный журнал совпадают.
+Dossier: Mara Venn. Pump rhythm and water ledger agree.
 
 ## Terminal
 
-МАРА ВЕНН/НАСОСЫ. Ручной обход удержан; вода не фон, а нагрузка.
+MARA VENN/PUMPS. Held bypass; water stayed a machine load, not scenery.
 
 ## Audio
 
-Венн не оставила речь. Она оставила ритм насоса, по которому остальные дышали.
+Venn did not leave a speech. She left the pump rhythm everyone else used to breathe.
 
 ## Field Note
 
-Ставить как кластер насосной; не привязывать к семье игрока.
+Pump-room evidence cluster: badge, cadence board, ledger correction, and polished bypass handle keep Mara Venn procedural, not melodramatic.
 
 <!-- In-Game Wiki; generated from P401_MARA_VENN_PUMP_CHIEF_DOSSIER/ru_RU. -->

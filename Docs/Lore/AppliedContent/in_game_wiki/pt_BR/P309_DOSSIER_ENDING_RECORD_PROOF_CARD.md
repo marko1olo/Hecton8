@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Ending Record Proof Card
+# Dossier Ending Record
 
-Dossier Ending Record Proof Card defines what persists between runs as knowledge, not equipment power.
+Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.
 
 ## Scanner
 
-Dossier proof: ending family, receiver, evidence state, route warning, unresolved cost.
+Dossier record: route warnings, unresolved costs, receiver authority, ending trace.
 
 ## Terminal
 
-DOSSIER PROOF: ending records must show payload route, receiver authority, evidence state, material result and unresolved cost.
+The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.
 
 ## Audio
 
-The dossier remembers the trade.
+Knowledge survives the route. Equipment does not.
 
 ## Field Note
 
-Use for ending record UI implementation and save-profile knowledge flags.
+Keep dossier persistence limited to knowledge records, route warnings, and ending evidence.
 
 <!-- In-Game Wiki; generated from P309_DOSSIER_ENDING_RECORD_PROOF_CARD/pt_BR. -->

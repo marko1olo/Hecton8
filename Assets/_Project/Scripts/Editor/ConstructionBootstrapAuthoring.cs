@@ -41,6 +41,9 @@ namespace Hecton8.EditorTools
         [MenuItem("Hecton/Authoring/Rebuild Starter Construction Kit", priority = 215)]
         public static void RebuildStarterConstructionKit()
         {
+            if (!WorldProceduralFinalPrefabQualityGate.AllowLegacyPrimitiveFinalAuthoring(nameof(ConstructionBootstrapAuthoring), FinalPrefabFolder))
+                return;
+
             EnsureFolder("Assets/_Project/Art/Materials");
             EnsureFolder("Assets/_Project/Art/Materials/Construction");
             EnsureFolder("Assets/_Project/Data");

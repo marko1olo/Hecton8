@@ -10,17 +10,17 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Brine Vane Codex Card
 
-Brine Vane Codex Card turns mid-depth flora into route-reading evidence.
+Brine vanes grow along density shear and make the canyon readable. Aligned edges can guide descent. Open glow and false-floor sonar returns are not safe routes.
 
 ## Scanner
 
-Brine vane: roots in density shear. Follow aligned edges, not open glow.
+Brine vane: density-shear root. Follow aligned edges; avoid open glow and false-floor returns.
 
 ## Terminal
 
@@ -32,6 +32,6 @@ The plant is not pointing up. It is pointing through.
 
 ## Field Note
 
-Use as mid-depth codex: beautiful vertical structures that are also navigation logic.
+Vertical beauty, bad floor. Keep one vane edge in sight and one hand on buoyancy trim.
 
 <!-- In-Game Wiki; generated from P294_BRINE_VANE_CODEX_CARD/en_US. -->

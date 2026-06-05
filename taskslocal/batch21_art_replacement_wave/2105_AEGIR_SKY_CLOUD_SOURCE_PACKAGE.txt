@@ -1,0 +1,101 @@
+HECTON-8 LOCAL TASK FILE
+ID: 2105
+Role: AEGIR_SKY_CLOUD_SOURCE_PACKAGE_AND_HORIZON_PROOF_GATES
+Batch: batch21_art_replacement_wave
+
+OBJECTIVE
+Create a self-contained Aegir, skybox, cloud atlas, moon/horizon, and atmosphere source package plus proof gates for future Unity-owner binding and capture. Do not import, relink, or edit Unity assets.
+
+WHY THIS EXISTS
+2016 ranks Skybox.mat, Mat_HectonSky.mat, and Mat_HectonSky_CloudOverlay.mat as top blockers due to unresolved skybox/cloud refs and empty material roles. 2019 matrix row G001 keeps surface sky/cloud materials SOURCE_MISSING. 2022 ranks Aegir cloud bands and bright surface cloud deck as source candidates.
+
+AUTHORITY DOCS TO READ
+- AGENTS.md
+- TASTE.md
+- VISION_LOCKS.md
+- PROJECT_BIBLES.md
+- quality.md
+- 3DMODEL_TEXTURES_MATERIALS.md
+- 3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md
+- world.md
+- water.md
+- atmosphere.md
+- celestial.md
+- rendering.md
+- shaders.md
+- Docs/Reports/Batch20/2016_SURFACE_PHOTIC_MATERIAL_DEBT_TRIAGE.md
+- Docs/Reports/Batch20/2019_PRIMITIVE_PROXY_ART_DEBT_ELIMINATION_PLAN.md
+- Docs/Reports/Batch20/2019_PROXY_DEBT_QUEUE.csv
+- Docs/Reports/Batch20/2019_GENERATION_ROUTE_MATRIX.csv
+- Docs/Reports/Batch21/2022_GEMINI_TEXTURE_BUDGET_AND_PROMPT_QUEUE.md
+- Docs/Orchestration/GEMINI_BROWSER_IMAGE_ASSET_WORKFLOW.md if present and only for source-intake process, not account details.
+
+OWNED DOMAIN
+Sky/Aegir/cloud/horizon/celestial source package and static QA/proof gates.
+
+OWNED OUTPUT SCOPE
+- Docs/Reports/Batch21/2105_*
+- Docs/GeneratedAssets/Gemini/Prompts/Batch21/2105_* if prompt files are needed.
+- Docs/Tasks/Status_2105.md
+- Docs/AgentLogs/Rationale_2105.md only for real decisions.
+- Docs/AgentLogs/LOG_2105.md
+
+FORBIDDEN ACTIONS
+- Do not run Unity, MCP, Play Mode, profiler, imports, dotnet build, csc, or any project build.
+- Do not edit Assets, Packages, ProjectSettings, Library, Temp, UserSettings, scenes, prefabs, materials, shaders, skyboxes, or runtime scripts.
+- Do not write generated images into Assets.
+- Do not reject Aegir for blue/purple direction alone; reject only muddy, low-res, scribbled, disconnected, or unproofed art.
+- Do not claim sky/horizon visual proof from static material YAML or path existence.
+- Do not depend on sibling tasks.
+
+QUALITY SCALING EXPECTATION
+Low: readable sky, Aegir/moon silhouette, cloud structure, horizon, and ocean color; reduced resolution/layers only.
+Middle: full source roles and believable surface atmosphere for expected player hardware.
+High: richer cloud depth, atmospheric softness, horizon scale, moon/Aegir detail, and water reflection support.
+Ultra: cinematic cloud/celestial overkill only after same source passes QA, import, capture, and performance proof.
+
+PHASE 0 - AUTHORITY AND EVIDENCE DISCOVERY
+01. Read required authorities. Proof: Status_2105.md doc list.
+02. Extract sky/Aegir/cloud blockers from 2016, 2019 queue/matrix, and 2022 queue. Proof: evidence table with file/row references where available.
+03. Discover whether prompt index, sky/cloud source reports, Aegir manifests, or current Gemini prompt files exist. Proof: discovered path table. Blocker: absent paths are CANDIDATE.
+04. Separate source package scope from future Unity binding/tuning. Proof: scope statement.
+05. Write Status_2105.md with evidence inputs, CANDIDATE paths, and no-Unity acknowledgment.
+06. Gate: if no sky/cloud/Aegir evidence exists, mark NOT APPLICABLE and stop. Do not invent celestial art debt.
+
+PHASE 1 - SOURCE PACKAGE DESIGN
+07. Define source families: Aegir cloud bands, Aegir atmosphere softness, bright surface cloud deck, cloud overlay alpha/coverage, moon/horizon supporting source, sky gradient/cubemap roles. Proof: family table.
+08. Define visual truth: Aegir blue/purple/methane-rich direction allowed if premium; cloud bands must have hierarchy, scale, softness, no sine scribbles; horizon must be bright/readable outside storm/eclipse windows. Proof: design contract.
+09. Define map/source roles: albedo/cloud-band source, alpha/coverage mask, normal/height only if relevant to clouds, skybox/cubemap source roles, linear vs sRGB intent. Proof: source role table.
+10. Write prompt requirements for `TX_B21_AegirCloudBands_AlbedoSource_20260604` and bright cloud deck if needed without running generation. Proof: prompt pack.
+11. Define source QA: no baked object lighting, no text/logo/watermark, no low-res bands, no random stripes, no muddy noir grade, no horizon/perspective when seamless source required. Proof: QA checklist.
+12. Define atmosphere/horizon proof criteria: 360 sky, cropped Aegir, moon silhouette, horizon line, surface ocean reflection context, shallow-water sky read. Proof: future proof list.
+13. Define channel/material contract for future Unity owner: cloud atlas roles, overlay opacity, skybox face/cubemap roles, material slots, shader parameters CANDIDATE until verified. Proof: handoff table.
+14. Define surface brightness lock: normal surface cannot be permanently dark; storm/eclipse may temporarily dim but must preserve readability and route cues. Proof: rejection gate section.
+
+PHASE 2 - QA AND HANDOFF
+15. Define import-intent: sRGB for albedo/cloud color, linear for masks, compression/mips/streaming/max size by quality lane, no runtime texture generation. Proof: import-intent table.
+16. Define future dependency scan: unresolved sky/cloud refs fixed or no production route binds broken material; static report alone not enough. Proof: scan template.
+17. Define visual rejection gates: unresolved refs, empty primary material roles, muddy surface, procedural sine stripes, low-res moon/Aegir, crushed blacks, generic sci-fi gradient, no horizon proof. Proof: rejection list.
+18. Define continuous GlobalQualityWeight consequences for sky/celestial sources. Proof: scaling table.
+19. Define future Unity-owner packet fields: source paths, GUIDs after import, material/cubemap slots, captures, Frame Debugger/profiler only if render path changes. Proof: handoff template.
+20. Cross-check no sibling dependency exists. Proof: self-audit.
+21. Cross-check no static source/path claim is upgraded to visual proof. Proof: evidence label audit.
+22. Write 2105 final source package report under Docs/Reports/Batch21. Proof: report path.
+
+PHASE 3 - REPORTING
+23. Update Status_2105.md with checklist, files created, and PENDING Unity/source proof.
+24. Update Rationale_2105.md only for real decisions, including why Aegir direction was retained or rejected by source criteria.
+25. Append LOG_2105.md with concise proof and residual risks.
+26. Final chat report: list outputs and future Unity-owner pending proof. No surface/sky readiness claim.
+
+PROOF PACKET
+- STATIC VERIFIED: source package, prompt requirements, QA/proof gates.
+- PENDING VERIFICATION: image generation, source QA, Unity import, sky material binding, 360/crop captures, Frame Debugger, profiler, GC, memory, VRAM.
+
+BLOCKER RULES
+- If a named source/material path is not locally verified, mark CANDIDATE.
+- If source output is muddy or procedural-looking, reject. Do not "noir" the surface to hide it.
+- If a future step requires Unity, write it as handoff only.
+
+FINAL REPORT REQUIREMENTS
+Use exact proof labels. In-game result is not run and remains PENDING VERIFICATION.

@@ -199,6 +199,13 @@ namespace Hecton8.AI
         private const int SteeringDumpVersion = 1;
         private const int SteeringPresentationCadenceLowFrames = 10;
         private const int SteeringPresentationCadenceUltraFrames = 3;
+        private const float SteeringNearMissCameraRadiusMeters = 96f;
+        private const float SteeringNearMissCameraAmplitudeScale = 0.82f;
+        private const float SteeringNearMissCameraTranslationGain = 0.85f;
+        private const float SteeringNearMissCameraRotationGain = 1.15f;
+        private const float SteeringArmorGlanceCameraAmplitudeScale = 0.95f;
+        private const float SteeringArmorGlanceCameraTranslationGain = 0.90f;
+        private const float SteeringArmorGlanceCameraRotationGain = 1.35f;
         private const uint SteeringDirectorControlStaleFrames = 8u;
         private const string SteeringDumpRelativePath = "Docs/AgentLogs/Dump_1702.bin";
         private const string SteeringDumpPayloadLabel = "predatorSteeringTelemetryDumpPayload";
@@ -827,7 +834,17 @@ namespace Hecton8.AI
             impact.PointAup = AbsoluteUniversePosition.FromAbsolutePosition(entry.FirstAup);
             impact.Intensity = severity;
             impact.Force = math.max(severity, maxLungeVelocity);
-            CameraJuiceSignals.TryPublishImpact(in impact, averageVelocity);
+            bool armorGlance = (entry.Flags & SteeringTelemetryFlagArmorGlance) != 0u;
+            CameraJuiceSignals.TryPublishImpact(
+                in impact,
+                averageVelocity,
+                armorGlance ? CameraJuiceSignals.SharpKineticImpactProfileHash : CameraJuiceSignals.LowFreqSeismicHeaveProfileHash,
+                armorGlance ? SteeringArmorGlanceCameraAmplitudeScale : SteeringNearMissCameraAmplitudeScale,
+                armorGlance ? CameraJuiceSignals.HighPriority : CameraJuiceSignals.NormalPriority,
+                SteeringNearMissCameraRadiusMeters,
+                armorGlance ? SteeringArmorGlanceCameraTranslationGain : SteeringNearMissCameraTranslationGain,
+                armorGlance ? SteeringArmorGlanceCameraRotationGain : SteeringNearMissCameraRotationGain,
+                entry.StateHash);
             _lastLeviathanSteeringPresentationFrame = entry.Frame;
         }
 

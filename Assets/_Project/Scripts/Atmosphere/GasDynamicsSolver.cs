@@ -57,7 +57,9 @@ namespace Hecton8.Atmosphere
         private const ushort TelemetryFlagHibernating = 1 << 2;
         private const ushort TelemetryFlagFailure = 1 << 15;
         private const ushort TelemetryFailureStateWriteLock = (ushort)(TelemetryFlagFailure | 3);
+        private const ushort TelemetryFailureStepCompletionDeferred = (ushort)(TelemetryFlagFailure | 4);
         private const byte ConsecutiveStateWriteLockFailureDumpThreshold = 4;
+        private const byte StepCompletionDeferralWarningThreshold = 4;
         private const ushort ToxicityFlagCO2 = 1 << 0;
         private const ushort ToxicityFlagNarcosis = 1 << 1;
         private const uint PlayerTargetHash = 0x504C5952u; // PLYR
@@ -213,6 +215,8 @@ namespace Hecton8.Atmosphere
         private JobHandle _stepHandle;
         private bool _stepRunning;
         private bool _stepScheduled;
+        private byte _stepCompletionDeferralCount;
+        private bool _stepCompletionDeferralTelemetryPending;
         private float _scheduledStepDeltaTime;
         private bool _registeredTicks;
         private bool _registeredRegistry;
@@ -2136,6 +2140,8 @@ namespace Hecton8.Atmosphere
 
                 _stepRunning = true;
                 _stepScheduled = true;
+                _stepCompletionDeferralCount = 0;
+                _stepCompletionDeferralTelemetryPending = false;
                 _scheduledStepDeltaTime = deltaTime;
                 _stepHandle = job.Schedule();
                 scheduled = true;
@@ -2149,6 +2155,8 @@ namespace Hecton8.Atmosphere
                     _stepHandle = default;
                     _stepRunning = false;
                     _stepScheduled = false;
+                    _stepCompletionDeferralCount = 0;
+                    _stepCompletionDeferralTelemetryPending = false;
                     _scheduledStepDeltaTime = 0f;
                     ReleaseStateWriteLocks();
                 }
@@ -2160,15 +2168,24 @@ namespace Hecton8.Atmosphere
             if (!_stepScheduled)
                 return;
 
+            DispatcherJobFence.BeginPostFixedSwapWindow();
             bool completed = false;
             try
             {
-                completed = DispatcherJobFence.TryComplete(ref _stepHandle, forceComplete: true);
+                completed = DispatcherJobFence.TryComplete(ref _stepHandle, forceComplete: false);
             }
             finally
             {
+                DispatcherJobFence.EndPostFixedSwapWindow();
                 if (completed)
+                {
+                    _stepCompletionDeferralCount = 0;
                     CompleteScheduledStepAfterFence();
+                }
+                else
+                {
+                    RecordDeferredStepCompletion();
+                }
             }
         }
 
@@ -2200,6 +2217,14 @@ namespace Hecton8.Atmosphere
             Swap(ref _roomNitrogenHandle, ref _roomNitrogenBackHandle);
             Swap(ref _roomPressureHandle, ref _roomPressureBackHandle);
             bool telemetryPublished = TryPublishStepTelemetryFromScratch();
+            if (_stepCompletionDeferralTelemetryPending)
+            {
+                _stepCompletionDeferralTelemetryPending = false;
+                telemetryPublished |= TryWriteFailureTelemetry(
+                    unchecked((uint)(int)BufferID.GasDynamicsTelemetryRing),
+                    TelemetryFailureStepCompletionDeferred);
+            }
+
             _tickCount++;
             _pendingPresentationDeltaTime = deltaTime;
             _pendingPostFixedPresentation = true;
@@ -2211,8 +2236,21 @@ namespace Hecton8.Atmosphere
             _stepHandle = default;
             _stepRunning = false;
             _stepScheduled = false;
+            _stepCompletionDeferralCount = 0;
+            _stepCompletionDeferralTelemetryPending = false;
             _scheduledStepDeltaTime = 0f;
             ReleaseStateWriteLocks();
+        }
+
+        private void RecordDeferredStepCompletion()
+        {
+            if (_stepCompletionDeferralCount < byte.MaxValue)
+                _stepCompletionDeferralCount++;
+
+            if (_stepCompletionDeferralCount != StepCompletionDeferralWarningThreshold)
+                return;
+
+            _stepCompletionDeferralTelemetryPending = true;
         }
 
         private bool TryCompleteStep()
@@ -3096,6 +3134,8 @@ namespace Hecton8.Atmosphere
             CompleteScheduledStepForTeardown();
             _stepRunning = false;
             _stepScheduled = false;
+            _stepCompletionDeferralCount = 0;
+            _stepCompletionDeferralTelemetryPending = false;
             _scheduledStepDeltaTime = 0f;
             _stepHandle = default;
             ReleaseTelemetryRingStepLock();
@@ -3107,6 +3147,8 @@ namespace Hecton8.Atmosphere
 
             _stepRunning = false;
             _stepScheduled = false;
+            _stepCompletionDeferralCount = 0;
+            _stepCompletionDeferralTelemetryPending = false;
             _scheduledStepDeltaTime = 0f;
             _stepHandle = default;
             _seededStandardAtmosphere = false;

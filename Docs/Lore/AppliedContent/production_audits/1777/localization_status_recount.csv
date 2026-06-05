@@ -1,0 +1,16 @@
+locale,direction,source_ready,draft_native_pass_pending,packet_rows,exported_pages,in_game_wiki_pages,external_site_pages
+en_US,ltr,460,0,460,920,460,460
+ru_RU,ltr,435,25,460,920,460,460
+ja_JP,ltr,60,400,460,920,460,460
+zh_CN,ltr,60,400,460,920,460,460
+fr_FR,ltr,65,395,460,920,460,460
+es_ES,ltr,65,395,460,920,460,460
+de_DE,ltr,65,395,460,920,460,460
+pl_PL,ltr,65,395,460,920,460,460
+uk_UA,ltr,65,395,460,920,460,460
+ar_SA,rtl,65,395,460,920,460,460
+id_ID,ltr,60,400,460,920,460,460
+ko_KR,ltr,65,395,460,920,460,460
+he_IL,rtl,65,395,460,920,460,460
+pt_BR,ltr,65,395,460,920,460,460
+nl_NL,ltr,60,400,460,920,460,460

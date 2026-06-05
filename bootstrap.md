@@ -1,6 +1,7 @@
 # HECTON-8 Bootstrap, Initialization, And Scene Transition Bible
 
 Status: AUTHORING LAW / STATIC DOC / RUNTIME PROOF NOT IMPLIED
+Evidence class: STATIC_DOC
 Scope: startup, boot state machine, service registration, GlobalRegistry cold setup, data monolith load, hardware detection, non-reload transitions, scene handoff, shutdown, and bootstrap proof gates.
 
 ## Prime Law
@@ -14,6 +15,12 @@ Every runtime owner must be registered, initialized, validated, and failure-rout
 Bootstrap owns initialization order, cold dependency wiring, boot validation, hardware/quality seed, data monolith readiness gate, scene transition fences, and shutdown ordering. It does not own gameplay system truth after handoff.
 
 Runtime systems publish from their owner phases. Bootstrap may inject dependencies and initial immutable snapshots, but it must not become a hot coordinator.
+
+## Presentation-Only Boundary
+
+Splash screens, loading bars, boot captions, transition fades, animated diagnostics, boot audio, and fault panels are presentation-only. They may report explicit boot state, but they must not invent readiness, scene activation, save validity, hardware tier, `GlobalQualityWeight`, or gameplay owner truth.
+
+Progress UI consumes boot state from the bootstrap owner. It must not advance gameplay, mark systems ready, repair missing dependencies, poll scene objects, or hide failed initialization behind cosmetic progress.
 
 ## Boot Sequence Law
 
@@ -60,6 +67,17 @@ Forbidden:
 ## GlobalQualityWeight Scaling
 
 Bootstrap computes or receives initial quality facts and publishes them through the approved route. `GlobalQualityWeight` may influence boot-time asset preloads, diagnostics depth, shader warmup breadth, capture verbosity, and optional validation depth. It must not change ownership, DTO layout, save identity, or authority routes.
+
+Low/Middle/High/Ultra are continuous planning labels on the same `GlobalQualityWeight` curve, not binary switches:
+
+- Low: minimal warmup breadth, required owner validation, compact diagnostics, clear boot faults.
+- Middle: broader preload validation, more transition polish, fuller dependency summaries.
+- High: deeper shader/material warmup, richer transition presentation, expanded optional diagnostics.
+- Ultra: maximum nonblocking validation/capture verbosity and presentation polish without changing boot truth, scene order, or authority routes.
+
+## First-20 Route Hook
+
+Bootstrap first-20 responsibility is to hand off into the playable route only after required owners, data, input, player, camera, UI, world, and proof labels are valid. A beautiful loading transition cannot mask missing first-20 readiness.
 
 ## Production Packet
 

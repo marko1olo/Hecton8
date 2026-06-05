@@ -19,7 +19,14 @@ namespace Hecton8.UI
         private const string AuthoredStageRootName = "H8_MENU_VISUAL_STAGE_1428";
         private const string AuthoredBackdropName = "Stage_Deep_Backdrop";
         private const string AuthoredHazeName = "Stage_Back_Pressure_Window";
+        private const string InterfaceGlowLightName = "Menu_AAA_Interface_Glow";
+        private const string CoolFillLightName = "Menu_AAA_CoolFill_Key";
+        private const string WarmRimLightName = "Menu_AAA_Warm_Rim";
+        private const float LightApplyEpsilon = 0.001f;
         private static readonly Color AbyssFloorColor = new Color(0.016f, 0.024f, 0.032f, 1f);
+        private static readonly Color InterfaceGlowColor = new Color(0.16f, 0.88f, 0.72f, 1f);
+        private static readonly Color CoolFillColor = new Color(0.46f, 0.76f, 1f, 1f);
+        private static readonly Color WarmRimColor = new Color(1f, 0.72f, 0.38f, 1f);
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
 
@@ -38,6 +45,12 @@ namespace Hecton8.UI
         [SerializeField] private MeshRenderer _hazeRenderer;
         [SerializeField] private MeshRenderer[] _siltRenderers = new MeshRenderer[SiltStripCount];
         [SerializeField] private MeshRenderer[] _edgeRenderers = new MeshRenderer[EdgeMaskCount];
+        [SerializeField, Tooltip("Motivated cyan instrument glow. Resolved by name when unassigned.")]
+        private Light _interfaceGlowLight;
+        [SerializeField, Tooltip("Optional high-tier cool fill. Resolved by name when unassigned.")]
+        private Light _coolFillLight;
+        [SerializeField, Tooltip("Optional amber service rim. Resolved by name when unassigned.")]
+        private Light _warmRimLight;
 
         private MaterialPropertyBlock _backdropProperties;
         private MaterialPropertyBlock _hazeProperties;
@@ -50,6 +63,9 @@ namespace Hecton8.UI
 
         private Camera _camera;
         private Transform _cameraTransform;
+        private float _lastInterfaceGlowIntensity = -1f;
+        private float _lastCoolFillIntensity = -1f;
+        private float _lastWarmRimIntensity = -1f;
         private bool _configured;
 
         public void Configure(Camera camera)
@@ -69,6 +85,7 @@ namespace Hecton8.UI
             EnsureHazeCold();
             EnsureSiltCold();
             EnsureEdgeMasksCold();
+            ResolveAuthoredLightsCold();
             ApplyCameraClearColor(AbyssFloorColor);
             _configured = true;
         }
@@ -97,6 +114,7 @@ namespace Hecton8.UI
             ApplyHaze(in state, quality, time, deltaTime, conceptBias);
             ApplySilt(in state, quality, time, deltaTime, conceptBias);
             ApplyEdgeMasks(in state, quality, time, conceptBias);
+            ApplyPracticalLights(in state, quality, conceptBias);
         }
 
         private void EnsurePropertyBlocksCold()
@@ -151,6 +169,39 @@ namespace Hecton8.UI
                 if (_edgeMasks[i] == null)
                     _edgeMasks[i] = FindChildRecursiveByNameCold(searchRoot, ResolveEdgeMaskName(i));
             }
+        }
+
+        private void ResolveAuthoredLightsCold()
+        {
+            if (_interfaceGlowLight == null)
+                _interfaceGlowLight = FindLightByNameCold(InterfaceGlowLightName);
+            if (_coolFillLight == null)
+                _coolFillLight = FindLightByNameCold(CoolFillLightName);
+            if (_warmRimLight == null)
+                _warmRimLight = FindLightByNameCold(WarmRimLightName);
+
+            ConfigurePracticalLightCold(_interfaceGlowLight, InterfaceGlowColor, 11f);
+            ConfigurePracticalLightCold(_coolFillLight, CoolFillColor, 18f);
+            ConfigurePracticalLightCold(_warmRimLight, WarmRimColor, 10f);
+        }
+
+        private Light FindLightByNameCold(string targetName)
+        {
+            Transform lightTransform = FindSceneTransformByNameCold(targetName);
+            if (lightTransform != null && lightTransform.TryGetComponent(out Light light))
+                return light;
+
+            return null;
+        }
+
+        private static void ConfigurePracticalLightCold(Light light, Color color, float range)
+        {
+            if (light == null)
+                return;
+
+            light.color = color;
+            light.range = math.max(0.01f, range);
+            light.shadows = LightShadows.None;
         }
 
         private void EnsureVisualArraysCold()
@@ -452,6 +503,35 @@ namespace Hecton8.UI
                     renderer.enabled = true;
                 SetRendererColor(renderer, GetArrayValue(_edgeProperties, i), color);
             }
+        }
+
+        private void ApplyPracticalLights(in MenuVisualStyleState state, float quality, float conceptBias)
+        {
+            float instrument = 0.72f + quality * 0.58f + state.TextGlowWeight * 0.16f;
+            float coolFill = math.smoothstep(0.28f, 0.82f, quality) * (0.44f + state.WetGlassWeight * 0.16f);
+            float warmRim = math.smoothstep(0.08f, 0.70f, quality) * (0.26f + conceptBias * 0.11f);
+
+            ApplyLightIntensity(_interfaceGlowLight, ref _lastInterfaceGlowIntensity, 2.0f * instrument);
+            ApplyLightIntensity(_coolFillLight, ref _lastCoolFillIntensity, 5.2f * coolFill);
+            ApplyLightIntensity(_warmRimLight, ref _lastWarmRimIntensity, 1.35f * warmRim);
+        }
+
+        private static void ApplyLightIntensity(Light light, ref float lastIntensity, float intensity)
+        {
+            if (light == null)
+                return;
+
+            float safeIntensity = math.max(0f, math.select(0f, intensity, math.isfinite(intensity)));
+            bool shouldEnable = safeIntensity > LightApplyEpsilon;
+            GameObject lightObject = light.gameObject;
+            if (lightObject != null && lightObject.activeSelf != shouldEnable)
+                lightObject.SetActive(shouldEnable);
+
+            if (math.abs(lastIntensity - safeIntensity) <= LightApplyEpsilon)
+                return;
+
+            light.intensity = safeIntensity;
+            lastIntensity = safeIntensity;
         }
 
         private void SetEdgeMaskPose(int index, Vector3 localPosition, Vector3 localScale)

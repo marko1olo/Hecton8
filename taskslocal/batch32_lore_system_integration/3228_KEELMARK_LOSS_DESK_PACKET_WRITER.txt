@@ -1,0 +1,61 @@
+ID: 3228
+Role: STATIC_DOC lore packet writer.
+Task: Create P479_KEELMARK_LOSS_DESK_CONVERSION_BRIDGE.production.md.
+
+Scope:
+- Write exactly one new production packet:
+  Docs/Lore/AppliedContent/production_packets/P479_KEELMARK_LOSS_DESK_CONVERSION_BRIDGE.production.md
+- Write concise tracking files:
+  Docs/Tasks/Status_3228.md
+  Docs/AgentLogs/LOG_3228.md
+  Docs/AgentLogs/Rationale_3228.md
+
+Authority to read:
+- AGENTS.md
+- writing.md
+- narrative.md
+- localization.md
+- data.md
+- authoring.md
+- quality.md
+- Docs/Lore/Canon_Locks.md
+- Docs/Lore/Lore_Bible.md
+- Docs/Lore/Lore_Content_System.md
+- Docs/Lore/Lore_Localization_Model.md
+- .agents-skills/QA_Evidence_Text_Filter_Audit.txt
+- .agents-skills/UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt
+- .agents-skills/DATA_Runtime_Struct_Layout_ARM64.txt
+- .agents-skills/TOOL_Designer_Facades_CSV_Binary_Bridge.txt
+- .agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+
+Canon target:
+- Explain `Keelmark Loss Desk` as the insurance/custody surface that converts missing workers, delayed recovery, sample mass, evidence payload, and welfare addenda into claim/load categories.
+- Link it to Keelmark Mutual and Black Keel tonne-window pressure without duplicating P470.
+- Include Dario Ibarra only as signoff/procedure surface if used, not as cartoon mastermind.
+- Show why a worker can become a ledger state before they become a rescued person.
+
+Packet requirements:
+- Evidence class: STATIC_DOC only.
+- Include 15 locale sections exactly:
+  en_US, ar_SA, de_DE, es_ES, fr_FR, he_IL, id_ID, ja_JP, ko_KR, nl_NL, pl_PL, pt_BR, ru_RU, uk_UA, zh_CN.
+- en_US row must be source_authority.
+- Non-English rows must be draft_machine_or_llm, native-pass pending.
+- Use natural readable prose. Long enough for future website/wiki/in-game surfaces.
+- Include future integration notes for site/wiki/scanner/terminal/audio/field_note/black_box/static-data bake.
+- Include explicit boundary: no runtime, Unity, h8bin, source CSV, route-card, generated page, native localization, or publication readiness claimed.
+- Include first-20 or mid-depth route moment improved.
+
+Forbidden:
+- Do not edit P461-P478.
+- Do not edit release sets, packets JSON, source CSV, route cards, graphs, binding maps, h8bin, generated pages/hashes, Unity assets, runtime scripts, or BATCH_INDEX.
+- Do not claim runtime-ready, native-reviewed, Unity-verified, DataMonolith-ready, h8bin-ready, published, accepted, or visually verified.
+- Do not invent instant rescue, FTL, family revenge motive, clean hero ship ownership, or Aegir as first extrasolar system.
+
+Validation before final:
+- UTF-8 read.
+- Locale headings count = 15 and unique.
+- source_authority rows = 1.
+- draft_machine_or_llm rows = 14.
+- U+FFFD = 0.
+- Check explicit mojibake markers such as Ã, Â, Ð, Ñ, Ø, æ, ì, ×.
+- readiness boundary hits = 0 for positive runtime/DataMonolith/h8bin/Unity/native/publication claims.

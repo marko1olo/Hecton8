@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ The inner moon is not a destination. It is a timing bruise with a beacon bolted 
 
 ## Field Note
 
-Use for system atlas entries and orbital UI labels.
+Orbital label record: inner moons act as relay anchors, hazards, and traffic timing, not alternate campaign worlds.
 
 <!-- External Site; generated from P347_INNER_RELAY_MOON_TRAFFIC_ROLE/zh_CN. -->

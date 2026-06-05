@@ -10,21 +10,21 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Cable Reef Symbiosis
 
-Cable Reef Symbiosis turns abandoned infrastructure into a readable ecological and industrial hybrid.
+Cable reef symbiosis makes abandoned infrastructure useful and dangerous at the same time: living sleeves can protect signal lines or hide failure.
 
 ## Scanner
 
-Flora is growing on power trunks and signal lines. The reef is using the colony's wiring as skeleton.
+Flora is bonded to power trunks and signal lines. Some growth protects the cable; some hides failed insulation.
 
 ## Terminal
 
-Maintenance note: cable-root mats reduce abrasion and preserve signal continuity, but attract drones and grazing fauna.
+MAINTENANCE NOTE: cable-root mats reduce abrasion and preserve signal continuity. Drone and grazer traffic increases near live trunks.
 
 ## Audio
 
@@ -32,6 +32,6 @@ A living reef learned the shape of a service corridor.
 
 ## Field Note
 
-The first merge is useful before it is horrible.
+If it is growing on a cable, prove it is killing the line before you strip it.
 
 <!-- External Site; generated from P033_CABLE_REEF_SYMBIOSIS/en_US. -->

@@ -4,6 +4,7 @@
 
 Owner: SHINOBU_160
 
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
 
 
 Domain: Echelon 9 Meta/Polish/Integration

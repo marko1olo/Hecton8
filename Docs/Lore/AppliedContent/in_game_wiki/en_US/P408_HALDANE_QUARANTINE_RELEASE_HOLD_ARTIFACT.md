@@ -10,21 +10,21 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Haldane Quarantine Hold
 
-The Haldane hold makes the evacuation delay legible. It does not deny the flood; it keeps people inside a certification loop while the flood becomes irreversible.
+The Haldane hold makes evacuation delay legible. It does not deny the flood; it keeps people inside a certification loop until extraction stops meaning rescue.
 
 ## Scanner
 
-Deep Reach artifact: quarantine release hold. Evacuation files stayed correct and late.
+Quarantine release hold. Evacuation files stayed correct and late.
 
 ## Terminal
 
-HALDANE HOLD. Keep survivor count provisional until Atlas continuity resolves.
+QUARANTINE HOLD DESK / HALDANE / RELEASE HOLD: survivor counts remain provisional. External extraction waits on contamination review, custody chain and Atlas log reconciliation.
 
 ## Audio
 
@@ -32,6 +32,6 @@ The folder was orderly. That was the problem.
 
 ## Field Note
 
-Bind to queue terminals and quarantine-release article sections.
+Haldane kept the folder clean. Survivor count provisional. Release pending. Door clocks kept moving while certification waited.
 
 <!-- In-Game Wiki; generated from P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT/en_US. -->

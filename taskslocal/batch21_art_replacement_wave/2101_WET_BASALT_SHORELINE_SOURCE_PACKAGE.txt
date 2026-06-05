@@ -1,0 +1,102 @@
+HECTON-8 LOCAL TASK FILE
+ID: 2101
+Role: WET_BASALT_SHORELINE_SOURCE_PACKAGE_AND_QA_GATE
+Batch: batch21_art_replacement_wave
+
+OBJECTIVE
+Create a self-contained shoreline wet basalt, triplanar rock, wetness, foam/salt contact, and waterline material source package plus QA gate for future Unity-owner import. Do not import, relink, or edit Unity assets.
+
+WHY THIS EXISTS
+Batch20 evidence keeps surface/coast material readiness rejected. 2016 ranks terrain, triplanar rock, wetness, and surface rock material blockers. 2019 queue rows Q005, Q011, Q016 and matrix rows G002, G003, G011 show generated-source blockers. 2022 ranks wet basalt shoreline and shore foam/salt contact as spend-first texture targets.
+
+AUTHORITY DOCS TO READ
+- AGENTS.md
+- TASTE.md
+- VISION_LOCKS.md
+- PROJECT_BIBLES.md
+- quality.md
+- PROCEDURAL_ASSET_PIPELINE.md
+- 3dmodel.md
+- 3DMODEL_GEOLOGY_ROCKS.md
+- 3DMODEL_TEXTURES_MATERIALS.md
+- 3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md
+- world.md
+- terrain.md
+- water.md
+- rendering.md
+- shaders.md
+- Docs/Reports/Batch20/2016_SURFACE_PHOTIC_MATERIAL_DEBT_TRIAGE.md
+- Docs/Reports/Batch20/2019_PRIMITIVE_PROXY_ART_DEBT_ELIMINATION_PLAN.md
+- Docs/Reports/Batch20/2019_PROXY_DEBT_QUEUE.csv
+- Docs/Reports/Batch20/2019_GENERATION_ROUTE_MATRIX.csv
+- Docs/Reports/Batch21/2022_GEMINI_TEXTURE_BUDGET_AND_PROMPT_QUEUE.md
+
+OWNED DOMAIN
+Shoreline/coastline material source package, texture-generation prompts, static QA checklist, and future Unity-owner handoff notes.
+
+OWNED OUTPUT SCOPE
+- Docs/Reports/Batch21/2101_*
+- Docs/GeneratedAssets/Gemini/Prompts/Batch21/2101_* if prompt files are needed.
+- Docs/Tasks/Status_2101.md
+- Docs/AgentLogs/Rationale_2101.md only for real decisions.
+- Docs/AgentLogs/LOG_2101.md
+
+FORBIDDEN ACTIONS
+- Do not run Unity, MCP, Play Mode, profiler, imports, dotnet build, csc, or any project build.
+- Do not edit Assets, Packages, ProjectSettings, Library, Temp, UserSettings, scenes, prefabs, materials, shaders, or runtime scripts.
+- Do not write generated images into Assets.
+- Do not relink materials or claim Unity material readiness.
+- Do not accept static YAML, path existence, or filename roles as visual proof.
+- Do not depend on tasks 2102-2107.
+
+QUALITY SCALING EXPECTATION
+Low: smaller future import sizes, fewer secondary detail maps, earlier HLOD, but wet/dry basalt identity, strata, waterline, foam/salt edge, and readable shoreline silhouettes remain mandatory.
+Middle: complete PBR role table and material read suitable for expected player hardware.
+High: richer normals, wetness masks, mineral breakup, foam contact, and detail maps.
+Ultra: hero shoreline microdetail and visual overkill only after the same source passes static, import, scene, and profiler proof.
+
+PHASE 0 - AUTHORITY AND EVIDENCE DISCOVERY
+01. Read the authority docs listed above. Proof: Status_2101.md lists docs read. Blocker: if a doc is absent, mark MISSING and continue with the closest verified authority.
+02. Discover whether 2016_TOP_BLOCKING_MATERIALS.csv, 2016_REPLACEMENT_ACCEPTANCE_RUBRIC.csv, 2005_GEOLOGY_SHORELINE_ROCK_SOURCE_PACKAGE.md, 2005_TEXTURE_CHANNEL_CONTRACTS.csv, and WET_BASALT_SEAMFIX_QA_CHECKLIST_20260604.md exist. Proof: write discovered paths as VERIFIED or CANDIDATE. Blocker: do not fabricate absent paths.
+03. Extract only report-cited shoreline blockers: terrain/triplanar rock, leak wet sheen, surface rocks, wet/dry shoreline geology, waterline foam/salt contact. Proof: evidence table with report row/source. Blocker: if evidence is static text only, label STATIC_DOC.
+04. Read 2022 queue rows for wet basalt shoreline and shore foam/salt contact. Proof: quote prompt IDs or mark CANDIDATE if the machine-readable CSV is absent. Blocker: no browser generation in this task.
+05. Write Status_2101.md with checklist, verified evidence inputs, and forbidden-action acknowledgment. Proof: status file path. Blocker: status is PENDING VERIFICATION until final static package exists.
+06. Gate: if no shoreline material blockers are supported by existing reports, mark NOT APPLICABLE and stop. Do not invent a material family.
+
+PHASE 1 - SOURCE PACKAGE DESIGN
+07. Define the material families: wet basalt shoreline, dry basalt transition, triplanar cliff rock, foam/salt contact mask, wet sheen/leak/waterline mask. Proof: 2101 source package section. Blocker: unsupported families are CANDIDATE.
+08. For each family, define physical material truth: basalt fracture, wet mineral sheen, erosion shelf, salt residue, foam contact, sediment cavity, and scale in meters per tile. Proof: role table. Blocker: reject generic black rock or gray diffuse.
+09. Define map stack per family: albedo, normal or height source, packed MRAO/mask, detail, optional wetness/foam mask. Proof: CSV with sRGB/linear intent. Blocker: no guessed channel order.
+10. Define PBR channel contract. R metallic must be zero except real exposed metal; G roughness or smoothness must be named; B AO; A wetness/emission/family mask as declared. Proof: channel contract table. Blocker: unknown shader channel meaning stays CANDIDATE.
+11. Write Gemini or offline-source prompt requirements for rank 1 and rank 2 targets from 2022 without running generation. Proof: prompt pack under Docs or embedded prompts in report. Blocker: no account names, emails, browser steps, or image claims.
+12. Define source QA criteria: seamless 2x2/3x3 review, no baked lighting, no perspective, no logos/text, no border, no directional highlights, no muddy/crayon output, no false normal data. Proof: QA checklist. Blocker: any failed source remains diagnostic only.
+13. Define PBR derivation route: albedo cleanup, height/normal derivation, roughness from wet/dry state, AO cavity bias, wetness/foam masks, packed output. Proof: derivation checklist. Blocker: no production MRAO if albedo fails.
+14. Define import-intent table for future Unity owner: texture type, sRGB, compression, mips, streaming, max size by quality lane. Proof: import-intent table. Blocker: static import intent is not Unity import proof.
+
+PHASE 2 - QA GATE AND FUTURE UNITY HANDOFF
+15. Build a future material preview proof list: albedo-only, normal-only, mask-channel, flat-light, grazing-light, final URP-lit, shoreline close/wide, waterline edge, low-tier capture. Proof: report section. Blocker: do not claim these captures exist.
+16. Define dependency scan needed before relink: old broken material fixed or no production scene/prefab binds it. Proof: scan specification. Blocker: no deletion/relink instruction without dependency proof.
+17. Define visual rejection gates: primitive/flat material, muddy/noir surface, unresolved texture refs, generic glossy overlay, guessed channel order, weak wet/dry boundary, broad terrain tile seam. Proof: rejection list. Blocker: no exception for "optimized".
+18. Define continuous GlobalQualityWeight source consequences for compact, middle, high, and ultra. Proof: scaling table. Blocker: no binary low/high switch.
+19. Define future Unity-owner packet fields: source paths, GUIDs after import, material slots, shader contract, captures, Frame Debugger/profiler only if render/material route changes. Proof: handoff template. Blocker: no Unity work in this task.
+20. Cross-check 2101 package for no sibling dependencies. Proof: report states "uses existing evidence only." Blocker: remove any reference requiring 2102-2107 output.
+21. Cross-check no task instruction accepts static YAML/path existence as visual proof. Proof: self-audit section. Blocker: downgrade all such claims to STATIC_DOC or PENDING VERIFICATION.
+22. Write 2101 final report file under Docs/Reports/Batch21. Proof: path listed in LOG_2101.md. Blocker: if file cannot be written, mark BLOCKED with OS error.
+
+PHASE 3 - REPORTING
+23. Update Status_2101.md with completed checklist, created files, and remaining PENDING Unity proof. Proof: status file.
+24. Update Rationale_2101.md only for non-trivial decisions such as excluding a material family, marking a path CANDIDATE, or changing prompt priority. Proof: rationale file or explicit "no non-trivial decisions."
+25. Append LOG_2101.md with what was wrong, what was created, proof class, files, and residual Unity-owner requirements. Proof: log file.
+26. Final chat report: list source package files, static verification state, and exact future Unity-owner pending items. Do not say ready, complete, or accepted without runtime artifacts.
+
+PROOF PACKET
+- STATIC VERIFIED: docs read, report rows extracted, source package written, QA checklist written.
+- PENDING VERIFICATION: image generation, source image QA, PBR derivation, Unity import, material binding, route captures, Frame Debugger, profiler, GC, memory, VRAM.
+
+BLOCKER RULES
+- If required evidence is absent, mark the family CANDIDATE instead of fabricating.
+- If prompt/source package conflicts with VISION_LOCKS or TASTE, root visual lock wins.
+- If an instruction would require Unity or Assets writes, move it to future Unity-owner handoff and continue the static source package.
+
+FINAL REPORT REQUIREMENTS
+Use AGENTS.md report shape: what was wrong, what was created, in-game result, what was verified. For this task, in-game result must be "not run; PENDING VERIFICATION."

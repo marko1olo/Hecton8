@@ -2,6 +2,8 @@
 
 Status: static source integration pending Unity compile/import proof.
 
+Owner domain: inventory / SOA routing network
+
 ## Source Anchors
 
 Evidence class: STATIC_SOURCE / FILESYSTEM path check. These anchors prove current path visibility only, not inventory runtime, transaction correctness, UI route, profiler, GC, save/load, or player-build proof.

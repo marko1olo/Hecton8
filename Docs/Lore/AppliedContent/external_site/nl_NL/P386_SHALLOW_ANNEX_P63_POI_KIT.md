@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ First room with air. First room with a lie.
 
 ## Field Note
 
-Use as first-hour POI placement checklist.
+POI evidence kit: Shallow Annex P-63 anchors first-hour shelter, repair pressure, and the first official contradiction.
 
 <!-- External Site; generated from P386_SHALLOW_ANNEX_P63_POI_KIT/nl_NL. -->

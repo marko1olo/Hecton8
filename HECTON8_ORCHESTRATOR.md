@@ -36,6 +36,27 @@ Default deliverable for distributable agent tasks:
 The user may then distribute those `.txt` files to agents manually.
 Each file must be self-contained and extraction-free.
 
+PARALLEL WAVE LAW
+Agents in one wave work simultaneously.
+If a small batch is distributed as one wave, treat the whole batch as simultaneous too.
+
+Task files must not assume that a sibling agent's new output already exists.
+Allowed dependencies are only:
+- artifacts that already exist before dispatch and were verified locally;
+- stable root authorities and route bibles;
+- explicitly staged earlier-wave outputs that are already on disk;
+- cold handoff notes that do not block current execution.
+
+Forbidden task structure:
+- "Agent B implements this after Agent A creates it" inside the same wave;
+- hidden dependencies on future sibling files, new APIs, new DTO fields, new scenes, or new assets;
+- sibling task IDs used as proof that a route exists;
+- forcing one agent to wait for another unless the batch is explicitly split into staged waves.
+
+If sequential work is required, split it into separate waves or separate batches.
+If an agent discovers that a sibling output would be useful, the agent writes a handoff note and continues with verified local scope.
+If a dependency is not already present, it is CANDIDATE/BLOCKED/PENDING, not a license to fabricate.
+
 PRIMARY AUTHORITIES
 Before generating tasks or judging reports, use:
 - Hecton8/AGENTS.md
@@ -84,18 +105,44 @@ Before outputting a batch:
 5. Verify every named method/class/DTO/signal you name.
 6. If not verified, phrase it as "candidate, agent must discover".
 7. Check that every agent ID is unique.
-8. Keep the batch small unless the user explicitly asks for a large one.
+8. Keep direct local fixes small, but use large phase-gated prompts for serious distributable agent waves.
+
+ORCHESTRATOR RESUME PREFLIGHT
+If the local orchestrator was resumed after context compression, model handoff, tool interruption, or a long gap, it must run this before creating tasks or judging agents:
+1. Tail the current `Docs/Orchestration/ORCHESTRATOR_*YYYYMMDD*.md` memory file.
+2. Read the newest relevant handoff/steer file in `Docs/Orchestration/`.
+3. Read the newest relevant batch synthesis/report in `Docs/Reports/`.
+4. Inspect current proof artifact timestamps for the active front.
+5. Inspect active Unity/build/process state if Unity or visual proof is the current front.
+6. Write or state the current front: active owner, last accepted evidence, last rejected evidence, blockers, and next action.
+
+Do not generate new batches from stale compressed-chat memory. Do not resume old side tasks until the current front is re-established from disk.
+
+PORTFOLIO CONTROL LAW
+The orchestrator is not a babysitter for one active agent.
+
+When one lane is blocked or occupied, especially Unity, the orchestrator must keep other independent lanes moving:
+- new Codex GUI agents for non-conflicting task files;
+- local subagents for bounded audits and synthesis;
+- static validation and source/report review;
+- browser/Gemini asset generation when it serves a verified asset need;
+- proof packet review and rejection notes;
+- next-batch task generation;
+- process hygiene and workstation control.
+
+A single active Unity owner can be the primary blocker, but it must not consume the whole orchestration cycle unless all other useful independent fronts are genuinely exhausted.
 
 DEFAULT BATCH SIZE
 - 3-8 agents per batch.
-- 6-12 tasks per agent.
+- 20-30 tasks per agent for serious HECTON-8 agent waves.
+- 6-12 tasks per agent only for narrow housekeeping, single-bug, or direct local follow-up work.
 - One objective per agent.
 - One owned domain per agent unless cross-domain integration is explicitly required.
 
-Do not generate 20-30 task monster prompts by default. Big prompts cause refactor loops, missed verification, and hallucinated completion unless they are explicitly requested and phase-gated.
+Large prompts are the default for user-distributed heavy waves. They must be phase-gated, evidence-based, and checkpointed so they do not become refactor loops or hallucinated completion.
 
-USER-REQUESTED LONG PROMPTS: 20-30 TASK STRUCTURE
-If the user explicitly asks for a large prompt, a 20-30 task prompt is allowed.
+HEAVY WAVE PROMPTS: 20-30 TASK STRUCTURE
+For serious agent waves, a 20-30 task prompt is expected.
 Long prompts are for deeper execution, not broader guessing.
 
 Mandatory structure for every long prompt:
@@ -266,7 +313,7 @@ When converting an existing `CURRENT_BATCH.md`:
 - replace "DO IT IN MIND" with real artifact, real command output, screenshot/profiler proof, or `PENDING VERIFICATION`;
 - replace fake exact line numbers, hashes, microseconds, and "mathematical proof" language with measured evidence or explicit estimates;
 - mark every unverified path/class/method/signal as `CANDIDATE` until the receiving agent verifies it locally;
-- keep large prompts large when the user explicitly asks for 20-30 tasks.
+- keep large prompts large for serious HECTON-8 agent waves unless the user asks for a small/narrow prompt.
 
 Browser-controller mode:
 - The browser controller may only generate tasks from attached evidence packets.

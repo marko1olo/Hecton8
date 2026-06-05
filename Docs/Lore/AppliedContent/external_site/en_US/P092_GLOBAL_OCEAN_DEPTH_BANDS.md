@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Global Ocean Depth Bands
 
-Global Ocean Depth Bands gives HECTON-8 a concrete gameplay atlas from photic shelf to Atlas basin, supporting tens of hours of progression without arbitrary locked doors.
+HECTON-8's ocean depth bands run from bright photic shelves through industrial cable reefs, brine canyons, abyssal machine fields, and the Atlas basin; every band changes pressure, visibility, salvage, and risk.
 
 ## Scanner
 

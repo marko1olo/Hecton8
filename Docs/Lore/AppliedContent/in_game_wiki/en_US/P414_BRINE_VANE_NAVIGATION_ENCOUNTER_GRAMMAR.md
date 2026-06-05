@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -20,7 +20,7 @@ Brine-vane encounters show the ocean as a process network without making it a sp
 
 ## Scanner
 
-Encounter grammar: brine vane. Current fans and sonar warps create navigable density turns.
+Brine vane field. Aligned fans mark density turns; sonar warps near open glow.
 
 ## Terminal
 
@@ -32,6 +32,6 @@ The vane does not guide you. It obeys the water loudly enough to follow.
 
 ## Field Note
 
-Use for mid-depth navigation and Atlas repair-network foreshadowing.
+Follow the vane edge like a handrail. If the line bends wrong, your buoyancy reading is late.
 
 <!-- In-Game Wiki; generated from P414_BRINE_VANE_NAVIGATION_ENCOUNTER_GRAMMAR/en_US. -->

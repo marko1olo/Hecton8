@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ Keeping it alive does not mean keeping it free.
 
 ## Field Note
 
-Use for preserve/quarantine ending record and public-spoiler copy.
+Receiver record: preservation blocks direct corporate transfer while risking quarantine as another custody system.
 
 <!-- External Site; generated from P378_PAYLOAD_PRESERVE_QUARANTINE_RECEIVER_PROTOCOL/en_US. -->

@@ -10,13 +10,13 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Marauder Dossier Persistence
 
-The Marauder dossier is the meta layer. It can retain endings, rumors, contract classes, evidence categories and route warnings. It should not retain combat power or break the survival economy. Knowledge changes decisions; it does not make pressure harmless.
+The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.
 
 ## Scanner
 
@@ -32,6 +32,6 @@ The next run starts with scars in the file, not muscles in the suit.
 
 ## Field Note
 
-Replay meta must respect hard mode: no magical strength retention.
+The dossier remembers evidence and warnings; it does not make pressure forgiving.
 
 <!-- In-Game Wiki; generated from P099_MARAUDER_DOSSIER_PERSISTENCE/en_US. -->

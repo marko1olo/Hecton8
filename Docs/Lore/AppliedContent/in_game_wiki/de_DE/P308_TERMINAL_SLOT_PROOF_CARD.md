@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Terminal Slot Proof Card
+# Terminal Slot Chain
 
-Terminal Slot Proof Card constrains terminal text to authored slots and baked strings.
+Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.
 
 ## Scanner
 
-Terminal proof: limited slots, packet hash, operator surface, no live markdown.
+Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.
 
 ## Terminal
 
-TERMINAL PROOF: terminal entries consume baked packet hashes and string-pool rows; runtime must not parse markdown or JSON.
+Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.
 
 ## Audio
 
-A terminal slot is not a filing cabinet.
+A station terminal remembers what the crew typed there, not a distant narrator's explanation.
 
 ## Field Note
 
-TerminalOS expansion remains a Unity placement task, not this source pass.
+Terminal rows bind to authored slot IDs, preserved text rows, and POI context.
 
 <!-- In-Game Wiki; generated from P308_TERMINAL_SLOT_PROOF_CARD/de_DE. -->

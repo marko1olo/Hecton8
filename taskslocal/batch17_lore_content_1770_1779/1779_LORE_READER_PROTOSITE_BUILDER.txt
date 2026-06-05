@@ -1,0 +1,113 @@
+HECTON-8 LOCAL TASK FILE
+Batch: batch17_lore_content_1770_1779
+Agent ID: 1779
+Role: Lore Reader Protosite and Multilingual Navigation Builder
+Distribution: give this whole file to one agent. No XML extraction is required.
+Wave mode: PARALLEL. Agents 1770-1779 work simultaneously. Do not wait for them, do not depend on their future output.
+
+IDENTIFICATION LINE
+First response must begin exactly:
+PROMPT IDENTIFIED: 1779 | DOMAIN: Applied Lore Static Reader / Protosite | TASK COUNT: 20
+
+OBJECTIVE
+Improve the local static lore reader/protosite so the user can browse AppliedContent in all 15 languages across public site, in-game wiki, encyclopedia/codex-like pages, scanner/field-note/audio/terminal packet surfaces, clusters, status flags, and spoiler filters.
+Use the existing Docs/Lore/AppliedContent/reader.html as the base.
+
+AUTHORITY DOCS
+Read fully before editing:
+- AGENTS.md
+- PROJECT_BIBLES.md
+- writing.md
+- narrative.md
+- localization.md
+- textes.md
+- Docs/Lore/Lore_Bible.md
+- Docs/Lore/Canon_Locks.md
+- Docs/Lore/Lore_Content_System.md
+- Docs/Lore/Lore_Localization_Model.md
+- Docs/Lore/Lore_Multilingual_Content_Architecture.md
+- Docs/Lore/AppliedContent/README.md
+- Docs/Lore/Website_Publication_Map.md
+
+OWNED SCOPE
+Primary inspect/edit scope:
+- Docs/Lore/AppliedContent/reader.html
+- Docs/Lore/AppliedContent/Publication_Surface_Index.csv
+- Docs/Lore/AppliedContent/Publication_Cluster_Index.csv
+- Docs/Lore/AppliedContent/Localization_Status_Index.md
+- Docs/Lore/AppliedContent/external_site/
+- Docs/Lore/AppliedContent/in_game_wiki/
+- Docs/Lore/AppliedContent/packets/
+- Docs/Lore/AppliedContent/production_audits/1779/
+
+Do not depend on agents 1770-1778. Build from existing files only.
+Do not use internet/CDN dependencies. The reader must work locally from the repo.
+
+PROTO-SITE REQUIREMENTS
+- Static local HTML/JS/CSS is acceptable.
+- Support all 15 locales.
+- Support RTL display for ar_SA and he_IL.
+- Filter by locale, surface, packet, release set, cluster, status, spoiler state if data exists.
+- Show public-site pages and in-game wiki pages.
+- Show packet surfaces where available: title, scanner, field_note, terminal, audio, in_game_wiki, external_site.
+- Show localization status without putting draft labels into player text itself.
+- Help the user inspect content quality quickly.
+
+15-LOCALE CONTRACT
+Locale selector must include:
+en_US, ru_RU, ja_JP, zh_CN, fr_FR, es_ES, de_DE, pl_PL, uk_UA, ar_SA, id_ID, ko_KR, he_IL, pt_BR, nl_NL.
+
+TASKS
+Task 01: Create/update Docs/Tasks/Status_1779.md with all 20 tasks and checkpoints after Tasks 05, 10, 15, and 20.
+
+Task 02: Create/update Docs/AgentLogs/Rationale_1779.md with exact reader/protosite decisions and rejected complexity.
+
+Task 03: Inspect existing reader.html fully. Document current capabilities and gaps in production_audits/1779/current_reader_audit.md.
+
+Task 04: Inspect Publication_Surface_Index.csv, Publication_Cluster_Index.csv, Localization_Status_Index.md, and packet JSON shape. Document usable data sources and parse risks.
+
+Task 05: Checkpoint. Decide an implementation plan that improves reader.html without waiting for sibling agents or requiring a build step.
+
+Task 06: Update reader.html to expose all 15 locales clearly, including direction handling for ar_SA and he_IL.
+
+Task 07: Add or improve filters for surface: external_site, in_game_wiki, packet title, scanner, field_note, terminal, audio, and any existing codex/encyclopedia-style label.
+
+Task 08: Add or improve search across title, packet ID, article ID, body text, cluster, release set, and locale if data is available client-side.
+
+Task 09: Add or improve cluster/navigation view using Publication_Cluster_Index.csv. Keep fallback behavior sane if the file is missing or a row is malformed.
+
+Task 10: Checkpoint. Open/read changed reader.html and verify it has no CDN or internet dependency.
+
+Task 11: Add localization status visibility from Localization_Status_Index.md or available index fields. It must be controller/editor-facing UI, not injected into article bodies.
+
+Task 12: Add spoiler/status display if existing index data contains spoiler fields. If not, show "not indexed" rather than inventing states.
+
+Task 13: Add packet detail rendering for AppliedContent packet JSON where browser local fetch can access the files from the local server. Include graceful failure instructions in the page UI only if needed.
+
+Task 14: Add a compact "surface brightness canon" warning in editor/controller UI only if page text contains suspect dark-surface keywords. Do not modify content here.
+
+Task 15: Checkpoint. Run local static smoke test command if possible: python -m http.server 8788 --bind 127.0.0.1 --directory Docs/Lore/AppliedContent. If server cannot be left running, document manual command and run HTML parse/static checks.
+
+Task 16: Validate reader.html for syntax with available tools. If no HTML validator exists, use browser-free grep/PowerShell checks and document limits.
+
+Task 17: Test the page with representative locales: en_US, ru_RU, ja_JP, ar_SA, he_IL, pt_BR. If no browser automation is available, document static checks and expected manual route.
+
+Task 18: Update Docs/Lore/AppliedContent/README.md only if reader usage instructions need a precise change. Keep it concise.
+
+Task 19: Write Docs/AgentLogs/HANDOFF_1779.md with reader gaps that require future generated indexes or browser QA. No sibling dependency.
+
+Task 20: Final verification. Reopen edited files, update Status_1779.md, append final report to Docs/AgentLogs/LOG_1779.md.
+
+ACCEPTANCE PROOF
+- reader.html is improved from existing base.
+- Locale selector covers all 15 locales.
+- RTL handling exists for ar_SA/he_IL.
+- Surface and cluster/status browsing are improved or exact blockers are documented.
+- Final LOG_1779.md lists edited files, smoke tests, and limitations.
+
+REJECTION CONDITIONS
+- Reader depends on internet/CDN.
+- Locale roster is incomplete.
+- Page assumes sibling-generated files exist.
+- Player-facing content is silently rewritten by the reader.
+- UI hides localization/status risk from the controller.

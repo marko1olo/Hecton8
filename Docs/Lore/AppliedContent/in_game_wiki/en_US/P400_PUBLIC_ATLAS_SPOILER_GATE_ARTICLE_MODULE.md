@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
-# Public Atlas Spoiler Gate Article Module
+# Atlas Access Boundary
 
-Atlas can be described publicly as a failed industrial governor and repair ecology. Final payload receivers stay gated.
+Atlas can be described early as damaged industrial continuity that learned through repair ecology. Final receiver records remain evidence-gated because they change the meaning of earlier repairs.
 
 ## Scanner
 
-Publication module: Atlas spoiler gate. Show failed maintenance ecology, hide receiver outcomes.
+Atlas boundary record. Open evidence shows industrial repair logic and maintenance ecology; deeper receiver records require recovered proof.
 
 ## Terminal
 
-PUBLIC MODULE ATLAS: open layer = industrial AI and repair ecology. Spoiler layer = payload receiver, severance and final custody.
+PUBLIC ARCHIVE NODE // ATLAS ACCESS BOUNDARY. Current layer: failed continuity infrastructure, repair ecology, biofilm bus, shell seal. Restricted layer: receiver custody and final payload consequence.
 
 ## Audio
 
-Say it repairs. Do not say yet what it thinks is repair.
+Say it repairs. Wait before naming what it counts as repaired.
 
 ## Field Note
 
-Use for Atlas public article, spoiler modal copy and final-depth publication boundary.
+Marauder note: a machine can preserve proof and still damage the person inside it.
 
 <!-- In-Game Wiki; generated from P400_PUBLIC_ATLAS_SPOILER_GATE_ARTICLE_MODULE/en_US. -->

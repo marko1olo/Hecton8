@@ -1,13 +1,10 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
-using Hecton8.Core.Memory;
+using Hecton8.Core;
 using Hecton8.VFX.Wakes;
-using Hecton8.World;
-using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-using Unity.Jobs;
 using Unity.Mathematics;
 
 namespace Hecton8.VFX
@@ -116,19 +113,31 @@ namespace Hecton8.VFX
         public const int EventRingCapacity = 512;
         public const int TelemetryCapacity = 300;
         public const int WakeProfileCapacity = 64;
+        public const float MaxWakeProfileEmissionRate = 64f;
+        public const byte WakeSourceVehicle = 2;
+        public const byte WakeSourceApexPredator = 3;
+        public const uint MockSourceFlag = 1u;
+        public const uint VehicleWakeSourceFlag = 2u;
+        public const uint WakeSourceBridgeFlag = 4u;
         public const uint LayoutHash = 0x53483237u;
         public const uint DefaultWakeProfileHash = 0x933B5BDEu;
-        public const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_237.bin";
+        public const string DumpRelativePath = "Docs/AgentLogs/Dump_PROPWASH_GPU.h8dump";
 
         public static bool ValidateRuntimeLayouts()
         {
-            return UnsafeUtility.SizeOf<PropwashEventDTO>() == EventStrideBytes &&
-                UnsafeUtility.SizeOf<KinematicWakeSourceDTO>() == KinematicSourceStrideBytes &&
-                UnsafeUtility.SizeOf<WakeSource>() == WakeSourceStrideBytes &&
-                UnsafeUtility.SizeOf<PropwashRingCursorDTO>() == RingCursorStrideBytes &&
-                UnsafeUtility.SizeOf<PropwashTelemetryEntry>() == TelemetryEntryStrideBytes &&
-                UnsafeUtility.SizeOf<PropwashGpuTuningDTO>() == TuningStrideBytes &&
-                UnsafeUtility.SizeOf<PropwashWakeProfileDTO>() == WakeProfileStrideBytes;
+            return HasAlignedStride<PropwashEventDTO>(EventStrideBytes) &&
+                HasAlignedStride<KinematicWakeSourceDTO>(KinematicSourceStrideBytes) &&
+                HasAlignedStride<WakeSource>(WakeSourceStrideBytes) &&
+                HasAlignedStride<PropwashRingCursorDTO>(RingCursorStrideBytes) &&
+                HasAlignedStride<PropwashTelemetryEntry>(TelemetryEntryStrideBytes) &&
+                HasAlignedStride<PropwashGpuTuningDTO>(TuningStrideBytes) &&
+                HasAlignedStride<PropwashWakeProfileDTO>(WakeProfileStrideBytes);
+        }
+
+        private static bool HasAlignedStride<T>(int expectedStride) where T : struct
+        {
+            int actualStride = UnsafeUtility.SizeOf<T>();
+            return actualStride == expectedStride && (actualStride & 7) == 0;
         }
 
         public static PropwashGpuTuningDTO CreateDefaultTuning()
@@ -187,345 +196,6 @@ namespace Hecton8.VFX
             hash = (hash ^ math.asuint(qualityWeight)) * 16777619u;
             hash = (hash ^ profileHash) * 16777619u;
             return hash == 0u ? LayoutHash : hash;
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    public struct GenerateMockPropwashEventsJob : IJob
-    {
-        [NoAlias] public NativeArray<PropwashEventDTO> Events;
-        [NoAlias] public NativeArray<PropwashRingCursorDTO> Cursor;
-        public float TimeSeconds;
-        public float GlobalQualityWeight;
-        public int RequestedCount;
-        public int Frame;
-
-        public void Execute()
-        {
-            int capacity = Events.IsCreated ? Events.Length : 0;
-            if (capacity <= 0 || !Cursor.IsCreated || Cursor.Length <= 0)
-                return;
-
-            int eventCount = math.clamp(RequestedCount, 0, math.min(capacity, PropwashGpuContracts.MockEventCount));
-            PropwashRingCursorDTO cursor = Cursor[0];
-            int baseCursor = WrapIndex(cursor.WriteCursor, capacity);
-            float quality = math.saturate(GlobalQualityWeight);
-            float radiusScale = math.lerp(0.62f, 1.35f, quality);
-            float forceScale = math.lerp(0.45f, 1.85f, quality);
-
-            for (int i = 0; i < eventCount; i++)
-            {
-                float lane = i + 1f;
-                float lane01 = lane * math.rcp(math.max(1f, eventCount));
-                float phase = TimeSeconds * (0.23f + lane01 * 0.41f) + lane * 0.013671875f;
-                float side = TriangleSigned(phase) * (0.35f + 7.5f * lane01);
-                float lift = TriangleSigned(phase * 0.37f + 0.25f) * (0.18f + 0.75f * lane01);
-                float range = 1.5f + lane01 * 18f;
-                float swirl = TriangleSigned(phase * 0.71f + 0.5f);
-                float intensity = math.saturate(0.18f + lane01 * 0.82f) * forceScale;
-                float radius = (1.15f + 5.25f * lane01) * radiusScale;
-                int slot = WrapIndex(baseCursor + i, capacity);
-
-                Events[slot] = new PropwashEventDTO
-                {
-                    LocalPosition = new float3(side, lift - 0.35f, -range),
-                    ThrustVector = new float3(swirl * 0.28f, math.max(0.02f, intensity * 0.11f), -intensity),
-                    Intensity = intensity,
-                    Radius = radius
-                };
-            }
-
-            cursor.WriteCursor = WrapIndex(baseCursor + eventCount, capacity);
-            cursor.EventCount = eventCount;
-            cursor.DroppedCount = math.max(0, RequestedCount - eventCount);
-            cursor.LastFrame = Frame;
-            cursor.GlobalQualityWeight = quality;
-            cursor.StateHash = PropwashGpuContracts.HashState(Frame, eventCount, quality, 0u);
-            cursor.Flags = eventCount > 0 ? 1u : 0u;
-            Cursor[0] = cursor;
-        }
-
-        private static int WrapIndex(int value, int capacity)
-        {
-            int safeCapacity = math.max(1, capacity);
-            int wrapped = value % safeCapacity;
-            return wrapped < 0 ? wrapped + safeCapacity : wrapped;
-        }
-
-        private static float TriangleSigned(float phase)
-        {
-            float t = math.frac(phase);
-            return (math.abs(t * 2f - 1f) * 2f) - 1f;
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    public unsafe struct HarvestWakeSourcePropwashJob : IJob
-    {
-        private const byte WakeSourceVehicle = 2;
-        private const byte WakeSourceApexPredator = 3;
-        private const uint WakeSourceBridgeFlag = 4u;
-
-        [ReadOnly, NoAlias] public NativeArray<WakeSource> WakeSources;
-        [NoAlias] public NativeArray<PropwashEventDTO> Events;
-        [NoAlias] public NativeArray<PropwashRingCursorDTO> Cursor;
-        public double3 CameraAup;
-        public int SourceScanLimit;
-        public int WriteLimit;
-        public int Frame;
-        public float GlobalQualityWeight;
-        public uint ProfileHash;
-
-        public void Execute()
-        {
-            int capacity = Events.IsCreated ? Events.Length : 0;
-            if (capacity <= 0 ||
-                !Cursor.IsCreated ||
-                Cursor.Length <= 0 ||
-                !WakeSources.IsCreated ||
-                WakeSources.Length <= 0)
-                return;
-
-            int scanLimit = math.clamp(SourceScanLimit, 0, WakeSources.Length);
-            int writeLimit = math.clamp(WriteLimit, 0, math.min(capacity, scanLimit));
-            if (scanLimit <= 0 || writeLimit <= 0)
-                return;
-
-            PropwashRingCursorDTO cursor = Cursor[0];
-            int previousCount = math.clamp(cursor.EventCount, 0, capacity);
-            int writeCursor = WrapIndex(cursor.WriteCursor, capacity);
-            int dropped = math.max(0, cursor.DroppedCount);
-            int written = 0;
-            float quality = math.saturate(GlobalQualityWeight);
-            float forceScale = math.lerp(0.55f, 1.45f, quality);
-            float radiusScale = math.lerp(0.75f, 1.65f, quality);
-            void* sourceBase = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(WakeSources);
-
-            for (int i = 0; i < scanLimit && written < writeLimit; i++)
-            {
-                ref readonly WakeSource source = ref UnsafeUtility.AsRef<WakeSource>(
-                    (byte*)sourceBase + i * PropwashGpuContracts.WakeSourceStrideBytes);
-                byte sourceKind = source.SourceKind != 0
-                    ? source.SourceKind
-                    : (byte)(source.SourceFlags & 0xFFu);
-                if (source.Active == 0 ||
-                    (sourceKind != WakeSourceVehicle && sourceKind != WakeSourceApexPredator))
-                    continue;
-
-                float3 velocity = source.VelocityWS;
-                float intensity = math.max(0f, source.Intensity);
-                float radius = math.max(0.05f, source.Radius);
-                double3 localDouble = ToAbsoluteDouble3(in source.PositionAup) - CameraAup;
-                float3 local = new float3((float)localDouble.x, (float)localDouble.y, (float)localDouble.z);
-                float speedSq = math.lengthsq(velocity);
-                bool valid =
-                    intensity > 0.0001f &&
-                    radius > 0.05f &&
-                    speedSq > 0.0001f &&
-                    math.all(math.isfinite(local)) &&
-                    math.all(math.isfinite(velocity));
-                if (!valid)
-                    continue;
-
-                float invSpeed = math.rsqrt(math.max(speedSq, 0.0001f));
-                float3 direction = velocity * invSpeed;
-                float faunaWeight = sourceKind == WakeSourceApexPredator ? 0.72f : 1f;
-                int slot = WrapIndex(writeCursor + written, capacity);
-                Events[slot] = new PropwashEventDTO
-                {
-                    LocalPosition = local,
-                    ThrustVector = direction * (intensity * forceScale * faunaWeight),
-                    Intensity = math.saturate(intensity * faunaWeight),
-                    Radius = math.clamp(radius * radiusScale, 0.25f, 32f)
-                };
-
-                if (previousCount >= capacity && dropped < int.MaxValue)
-                    dropped++;
-                else
-                    previousCount = math.min(capacity, previousCount + 1);
-                written++;
-            }
-
-            if (written <= 0)
-                return;
-
-            cursor.WriteCursor = WrapIndex(writeCursor + written, capacity);
-            cursor.EventCount = previousCount;
-            cursor.DroppedCount = dropped;
-            cursor.LastFrame = Frame;
-            cursor.GlobalQualityWeight = quality;
-            cursor.StateHash = PropwashGpuContracts.HashState(Frame, previousCount, quality, ProfileHash);
-            cursor.Flags = cursor.EventCount > 0 ? (cursor.Flags | WakeSourceBridgeFlag) : cursor.Flags;
-            Cursor[0] = cursor;
-        }
-
-        private static double3 ToAbsoluteDouble3(in AbsoluteUniversePosition position)
-        {
-            const double cellSize = AbsoluteUniversePosition.CellSizeMeters;
-            return new double3(
-                (position.GridX * cellSize) + position.LocalX,
-                (position.GridY * cellSize) + position.LocalY,
-                (position.GridZ * cellSize) + position.LocalZ);
-        }
-
-        private static int WrapIndex(int value, int capacity)
-        {
-            int safeCapacity = math.max(1, capacity);
-            int wrapped = value % safeCapacity;
-            return wrapped < 0 ? wrapped + safeCapacity : wrapped;
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    public unsafe struct HarvestKinematicWakeJob : IJobParallelFor
-    {
-        [ReadOnly, NoAlias] public NativeArray<KinematicWakeSourceDTO> Sources;
-        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<PropwashEventDTO> Events;
-        public double3 CameraAup;
-        public int RingWriteCursor;
-        public int SourceCount;
-        public float GlobalQualityWeight;
-
-        public void Execute(int index)
-        {
-            int capacity = Events.IsCreated ? Events.Length : 0;
-            int count = math.min(math.min(SourceCount, Sources.IsCreated ? Sources.Length : 0), capacity);
-            if (index < 0 || index >= count || capacity <= 0)
-                return;
-
-            void* sourceBase = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(Sources);
-            ref readonly KinematicWakeSourceDTO source = ref UnsafeUtility.AsRef<KinematicWakeSourceDTO>(
-                (byte*)sourceBase + index * PropwashGpuContracts.KinematicSourceStrideBytes);
-
-            int writeIndex = WrapIndex(RingWriteCursor + index, capacity);
-            double3 delta = source.EngineAup - CameraAup;
-            float3 localPosition = new float3((float)delta.x, (float)delta.y, (float)delta.z);
-            float3 forward = math.normalizesafe(source.Forward, new float3(0f, 0f, 1f));
-            float3 velocity = source.LinearVelocity;
-            float3 slip = velocity - forward * math.dot(velocity, forward);
-            float slipMagnitude = math.length(slip);
-            float quality = math.saturate(source.QualityWeight >= 0f ? source.QualityWeight : GlobalQualityWeight);
-            float engine = math.max(0f, source.EnginePower);
-            float tailSweep = math.max(0f, source.TailSweepPower);
-            float intensity = math.saturate(engine + tailSweep * 0.65f + slipMagnitude * 0.035f);
-            bool valid = intensity > 0.0001f &&
-                math.all(math.isfinite(localPosition)) &&
-                math.all(math.isfinite(forward)) &&
-                math.all(math.isfinite(velocity));
-
-            Events[writeIndex] = valid
-                ? new PropwashEventDTO
-                {
-                    LocalPosition = localPosition,
-                    ThrustVector = -forward * (intensity * math.lerp(0.45f, 1.5f, quality)) + math.normalizesafe(slip) * (slipMagnitude * 0.025f),
-                    Intensity = intensity,
-                    Radius = math.clamp(source.Radius * math.lerp(0.75f, 1.75f, quality), 0.25f, 24f)
-                }
-                : default;
-        }
-
-        private static int WrapIndex(int value, int capacity)
-        {
-            int safeCapacity = math.max(1, capacity);
-            int wrapped = value % safeCapacity;
-            return wrapped < 0 ? wrapped + safeCapacity : wrapped;
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    public struct CommitVehicleWakePropwashEventJob : IJob
-    {
-        [NoAlias] public NativeArray<PropwashEventDTO> Events;
-        [NoAlias] public NativeArray<PropwashRingCursorDTO> Cursor;
-        public float3 LocalPosition;
-        public float3 ThrustVector;
-        public float Intensity;
-        public float Radius;
-        public int Frame;
-        public float GlobalQualityWeight;
-        public uint ProfileHash;
-
-        public void Execute()
-        {
-            int capacity = Events.IsCreated ? Events.Length : 0;
-            if (capacity <= 0 || !Cursor.IsCreated || Cursor.Length <= 0)
-                return;
-
-            float intensity = math.max(0f, Intensity);
-            float radius = math.clamp(Radius, 0.25f, 32f);
-            bool valid =
-                intensity > 0.0001f &&
-                math.all(math.isfinite(LocalPosition)) &&
-                math.all(math.isfinite(ThrustVector)) &&
-                math.isfinite(radius);
-
-            PropwashRingCursorDTO cursor = Cursor[0];
-            int previousCount = math.clamp(cursor.EventCount, 0, capacity);
-            int write = WrapIndex(cursor.WriteCursor, capacity);
-            if (valid)
-            {
-                Events[write] = new PropwashEventDTO
-                {
-                    LocalPosition = LocalPosition,
-                    ThrustVector = ThrustVector,
-                    Intensity = intensity,
-                    Radius = radius
-                };
-            }
-
-            int written = valid ? 1 : 0;
-            int nextCount = math.min(capacity, previousCount + written);
-            cursor.WriteCursor = WrapIndex(write + written, capacity);
-            cursor.EventCount = nextCount;
-            cursor.DroppedCount += previousCount >= capacity && written > 0 ? 1 : 0;
-            cursor.LastFrame = Frame;
-            cursor.GlobalQualityWeight = math.saturate(GlobalQualityWeight);
-            cursor.StateHash = PropwashGpuContracts.HashState(Frame, nextCount, cursor.GlobalQualityWeight, ProfileHash);
-            cursor.Flags = nextCount > 0 ? (cursor.Flags | 2u) : 0u;
-            Cursor[0] = cursor;
-        }
-
-        private static int WrapIndex(int value, int capacity)
-        {
-            int safeCapacity = math.max(1, capacity);
-            int wrapped = value % safeCapacity;
-            return wrapped < 0 ? wrapped + safeCapacity : wrapped;
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    public struct CommitPropwashRingWriteJob : IJob
-    {
-        [NoAlias] public NativeArray<PropwashRingCursorDTO> Cursor;
-        public int PreviousWriteCursor;
-        public int WrittenCount;
-        public int Capacity;
-        public int Frame;
-        public float GlobalQualityWeight;
-        public uint ProfileHash;
-
-        public void Execute()
-        {
-            if (!Cursor.IsCreated || Cursor.Length <= 0)
-                return;
-
-            int safeCapacity = math.max(1, Capacity);
-            int count = math.clamp(WrittenCount, 0, safeCapacity);
-            PropwashRingCursorDTO cursor = Cursor[0];
-            cursor.WriteCursor = WrapIndex(PreviousWriteCursor + count, safeCapacity);
-            cursor.EventCount = count;
-            cursor.DroppedCount = math.max(0, WrittenCount - count);
-            cursor.LastFrame = Frame;
-            cursor.GlobalQualityWeight = math.saturate(GlobalQualityWeight);
-            cursor.StateHash = PropwashGpuContracts.HashState(Frame, count, cursor.GlobalQualityWeight, ProfileHash);
-            cursor.Flags = count > 0 ? 1u : 0u;
-            Cursor[0] = cursor;
-        }
-
-        private static int WrapIndex(int value, int capacity)
-        {
-            int wrapped = value % capacity;
-            return wrapped < 0 ? wrapped + capacity : wrapped;
         }
     }
 
@@ -660,7 +330,7 @@ namespace Hecton8.VFX
                 !TryParseOptionalFloat(line, ref cursor, ref profile.SpawnJitter))
                 return false;
 
-            profile.EmissionRate = math.clamp(profile.EmissionRate, 0f, 1000000f);
+            profile.EmissionRate = math.clamp(profile.EmissionRate, 0f, 64f);
             profile.ParticleLifetime = math.clamp(profile.ParticleLifetime, 0.05f, 12f);
             profile.TurbulenceMultiplier = math.clamp(profile.TurbulenceMultiplier, 0f, 8f);
             profile.RadiusMultiplier = math.clamp(profile.RadiusMultiplier, 0.05f, 8f);
@@ -848,14 +518,65 @@ namespace Hecton8.VFX
 
     public static unsafe class PropwashTelemetryDump
     {
-        public static bool TryWrite(string projectRoot, NativeArray<PropwashTelemetryEntry> telemetryRing, int writeIndex, int writtenCount)
+        private const string PayloadOwner = nameof(PropwashTelemetryDump);
+        private const string PayloadLabel = "PropwashTelemetryDumpPayload";
+
+        public static bool TryWrite(
+            string projectRoot,
+            NativeArray<PropwashTelemetryEntry>.ReadOnly telemetryRing,
+            int writeIndex,
+            int writtenCount)
         {
-            _ = projectRoot;
-            _ = writeIndex;
             int count = telemetryRing.IsCreated
                 ? math.clamp(writtenCount, 0, math.min(telemetryRing.Length, PropwashGpuContracts.TelemetryCapacity))
                 : 0;
-            return count > 0;
+            if (count <= 0)
+                return false;
+
+            NativeArray<byte> payload = default;
+            try
+            {
+                int byteCount = 16 + count * PropwashGpuContracts.TelemetryEntryStrideBytes;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(byteCount, PayloadOwner, PayloadLabel);
+                byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                WriteUInt32LittleEndian(payloadPtr, 0, PropwashGpuContracts.LayoutHash);
+                WriteUInt32LittleEndian(payloadPtr, 4, unchecked((uint)PropwashGpuContracts.TelemetryCapacity));
+                WriteUInt32LittleEndian(payloadPtr, 8, unchecked((uint)PropwashGpuContracts.TelemetryEntryStrideBytes));
+                WriteUInt32LittleEndian(payloadPtr, 12, unchecked((uint)math.max(0, writtenCount)));
+
+                int readIndex = count >= PropwashGpuContracts.TelemetryCapacity ? WrapIndex(writeIndex, PropwashGpuContracts.TelemetryCapacity) : 0;
+                byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetryRing);
+                int firstCount = math.min(count, PropwashGpuContracts.TelemetryCapacity - readIndex);
+                UnsafeUtility.MemCpy(
+                    payloadPtr + 16,
+                    basePtr + readIndex * PropwashGpuContracts.TelemetryEntryStrideBytes,
+                    firstCount * PropwashGpuContracts.TelemetryEntryStrideBytes);
+                int secondCount = count - firstCount;
+                if (secondCount > 0)
+                {
+                    UnsafeUtility.MemCpy(
+                        payloadPtr + 16 + firstCount * PropwashGpuContracts.TelemetryEntryStrideBytes,
+                        basePtr,
+                        secondCount * PropwashGpuContracts.TelemetryEntryStrideBytes);
+                }
+
+                string path = string.IsNullOrWhiteSpace(projectRoot)
+                    ? PropwashGpuContracts.DumpRelativePath
+                    : Path.Combine(projectRoot, PropwashGpuContracts.DumpRelativePath);
+                return NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(ref payload, PayloadOwner, PayloadLabel);
+            }
         }
 
         private static int WrapIndex(int value, int capacity)
@@ -863,6 +584,14 @@ namespace Hecton8.VFX
             int safeCapacity = math.max(1, capacity);
             int wrapped = value % safeCapacity;
             return wrapped < 0 ? wrapped + safeCapacity : wrapped;
+        }
+
+        private static void WriteUInt32LittleEndian(byte* target, int offset, uint value)
+        {
+            target[offset] = (byte)value;
+            target[offset + 1] = (byte)(value >> 8);
+            target[offset + 2] = (byte)(value >> 16);
+            target[offset + 3] = (byte)(value >> 24);
         }
     }
 }

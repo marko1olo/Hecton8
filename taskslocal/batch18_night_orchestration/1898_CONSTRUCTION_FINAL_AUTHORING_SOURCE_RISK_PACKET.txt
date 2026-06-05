@@ -1,0 +1,90 @@
+ID: 1898
+TITLE: CONSTRUCTION_FINAL_AUTHORING_SOURCE_RISK_PACKET
+MODE: REPORT_ONLY_STATIC_SOURCE_RISK_PACKET
+
+You are HECTON-8 batch agent 1898.
+Do not edit source, assets, prefabs, scenes, binaries, `.meta`, generated meshes, DataMonolith, task files, or sibling outputs.
+
+PRIMARY GOAL
+
+Create the exact source-risk and future implementation packet for replacing the 10 primitive `Construction/Final` blockers without unblocking legacy primitive authoring. This task must turn 1855 into an implementation-ready route with file scopes, source candidates, validator hooks, and abort conditions.
+
+READ
+
+- `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `VISION_LOCKS.md`
+- `TASTE.md`
+- `quality.md`
+- `construction.md`
+- `world.md`
+- `3dmodel.md`
+- `3DMODEL_TEXTURES_MATERIALS.md`
+- `3DMODEL_HARD_SURFACE_MODULES.md`
+- `PROCEDURAL_ASSET_PIPELINE.md`
+- `Docs/Reports/Batch18/1851_GENERATED_ASSET_PRODUCTION_AUDIT.md`
+- `Docs/Reports/Batch18/1853_PRIMITIVE_FINAL_REPLACEMENT_PLAN.md`
+- `Docs/Reports/Batch18/1855_CONSTRUCTION_FINAL_MESH_REBUILD_PACKET.md`
+- `Docs/Reports/Batch18/1861_PRIMITIVE_FACTORY_SOURCE_GATES.md`
+
+Targeted source/data reads:
+
+- `Assets/_Project/Scripts/Editor/ConstructionBootstrapAuthoring.cs`
+- `Assets/_Project/Editor/Assembly/WreckagePrefabFactory.cs` if present
+- construction family/buildable data referenced by 1855
+- ScifiFacility model/prefab inventories by targeted filesystem listing only
+
+Mandates:
+
+- `.agents-skills/QA_Evidence_Text_Filter_Audit.txt`
+- `.agents-skills/TOOL_Procedural_Wreckage_Generator.txt` if present; if absent, state it.
+- `.agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt`
+- `.agents-skills/STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt` if present; if absent, state it.
+
+OUTPUTS YOU OWN
+
+- `Docs/Reports/Batch18/1898_CONSTRUCTION_FINAL_AUTHORING_SOURCE_RISK_PACKET.md`
+- `Docs/Reports/Batch18/1898_CONSTRUCTION_FINAL_AUTHORING_SEQUENCE.csv`
+- `Docs/Tasks/Status_1898.md`
+- `Docs/AgentLogs/Rationale_1898.md`
+- `Docs/AgentLogs/LOG_1898.md`
+
+CSV COLUMNS
+
+- `target_prefab`
+- `current_defect`
+- `source_candidate`
+- `future_source_file_scope`
+- `future_asset_output_route`
+- `preserve_contract`
+- `validator_hook`
+- `abort_condition`
+- `proof_required`
+- `status`
+
+REQUIRED WORK
+
+1. Inventory all 10 construction blockers from 1855.
+2. Name exact future implementation source files allowed to be touched.
+3. Name exact future source files that must remain blocked or fail-closed.
+4. Define how to use ScifiFacility models without direct unsafe prefab drop-in.
+5. Define how WreckagePrefabFactory can be used only after real source set exists.
+6. Define how `ConstructionBootstrapAuthoring` primitive route stays blocked.
+7. Define output mesh/material/texture/proof folders.
+8. Define relink-vs-in-place replacement strategy and GUID preservation risks.
+9. Define buildable/template/socket/interior/power contracts to preserve.
+10. Define red gates and rollback.
+11. Do not implement source.
+12. Do not claim Unity proof.
+
+VERIFICATION
+
+Run and record:
+
+- `git diff --check -- Docs/Reports/Batch18/1898_CONSTRUCTION_FINAL_AUTHORING_SOURCE_RISK_PACKET.md Docs/Reports/Batch18/1898_CONSTRUCTION_FINAL_AUTHORING_SEQUENCE.csv Docs/Tasks/Status_1898.md Docs/AgentLogs/Rationale_1898.md Docs/AgentLogs/LOG_1898.md`
+- `Import-Csv Docs/Reports/Batch18/1898_CONSTRUCTION_FINAL_AUTHORING_SEQUENCE.csv | Measure-Object`
+- static term cross-check for `PFB_Module_Corridor`, `PFB_Module_Foundation`, `PFB_Ruin_Megastructure`, `ScifiFacility`, `ConstructionBootstrapAuthoring`, `WreckagePrefabFactory`, `PENDING UNITY`.
+
+FINAL RESPONSE
+
+Report changed files, CSV row count, most dangerous implementation risk, and the exact future source scopes.

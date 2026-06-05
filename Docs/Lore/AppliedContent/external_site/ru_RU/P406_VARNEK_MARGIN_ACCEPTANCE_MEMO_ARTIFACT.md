@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Мемо Варнека
+# Varnek Margin Memo
 
-Главное преступление Deep Reach - не магическое злодейство, а бумажный след, где реальная физика стала приемлемой потерей.
+Deep Reach liability begins where real physics became an acceptable loss line.
 
 ## Scanner
 
-Артефакт Deep Reach: мемо о пределе. Риск затопления не выдумали, но его оценили в деньгах.
+Aegir Operations Risk memo. Tide margin was accepted as payable exposure.
 
 ## Terminal
 
-МЕМО ВАРНЕКА. Риск потопа оценили; остановку проиграла непрерывность Atlas.
+AEGIR OPS RISK / VARNEK / TIDE-MARGIN REVIEW: average model remains billable. Tail exposure accepted under Atlas continuity cost. Independent shutdown not recommended.
 
 ## Audio
 
-Никто не подписал приказ об убийстве. Они подписали предел.
+No murder order. A margin acceptance.
 
 ## Field Note
 
-Использовать как якорь нюанса для сайта и поздний proof terminal.
+Varnek did not deny the water. He moved it into a cost column and stamped continuity exposure over the evacuation reserve.
 
 <!-- External Site; generated from P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT/ru_RU. -->

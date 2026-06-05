@@ -4,6 +4,8 @@ Date: 2026-06-02
 
 Status: PENDING VERIFICATION
 
+Owner domain: core dispatch / execution pipeline
+
 ## Source Anchors
 
 Evidence class: STATIC_SOURCE / FILESYSTEM path check. These anchors prove current path visibility only, not dispatcher runtime health, profiler, GC, or player-build proof.
@@ -66,7 +68,7 @@ Evidence class: STATIC_SOURCE / CLI_COMPILE_BLOCKED_BY_EXTERNAL_DEPENDENCY.
 - 64-bucket time slicing uses `Time.frameCount & 63`; `byte.MaxValue` means always active.
 
 - A 300-frame dispatcher pipeline ring records PreSim, SimWait, PostSim, and VisualSync timings.
-- Planned fault artifact: `Docs/AgentLogs/Dump_SYSTEM_DISPATCHER.bin`.
+- Planned dump target: `Docs/AgentLogs/Dump_SYSTEM_DISPATCHER.bin`; absent until a dispatcher fault export writes it.
 - Trigger: SimWait exceeds `8 ms`.
 - No existing artifact is implied without timestamped trigger and output file.
 
@@ -220,9 +222,9 @@ May 3 source guard:
 
 - Tool: `Tools/ReloadAudit/Scan-FoundationGuards.ps1`
 
-- Output: `Docs/Reports/2026-05-03_FOUNDATION_GUARD_SCAN.md`
+- Missing historical output path: `Docs/Reports/2026-05-03_FOUNDATION_GUARD_SCAN.md`; not current proof until the scan is rerun or the artifact is restored.
 
-- Global registry self-registration inventory: `493`
+- Legacy reported global registry self-registration inventory: `493`
 
 - Blind registry flag drift: `0`
 

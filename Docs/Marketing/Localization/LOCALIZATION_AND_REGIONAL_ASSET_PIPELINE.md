@@ -1,4 +1,10 @@
-﻿# Localization And Regional Asset Pipeline
+# Localization And Regional Asset Pipeline
+
+## Authority Boundary
+
+Static localization preparation only. Language priority, asset-type rows, QA forms, one-pager templates, and regional feedback tables do not prove quality, release, platform, Steam, wishlist, demo, performance, legal/compliance, localization, monitoring, launch, or public-response readiness.
+Public voice routes to root `textes.md`. Quality, release, platform, Steam, wishlist, demo, performance, feedback, review/forum response, legal/compliance, localization, monitoring, operations, partnership, contract, and launch claims route through root `quality.md`, `release.md`, and `platform.md` with current proof artifacts plus local permission gates where present.
+No launch/release readiness, localized public use, public response, creator contract send, platform claim, Steam approval, wishlist claim, demo approval, or public send approval exists from draft translations, regional rows, owner familiarity, or static localization plans; exact localized public use requires `localization_public_permission_gate = ALLOW_LOCALIZED_PUBLIC_USE_VERIFIED`.
 
 Status: regional prep / review required before sending
 Public stance: single-player-first scope / proof-first public copy
@@ -113,7 +119,7 @@ One-line pitch:
 [localized]
 
 What it is:
-[single-player-first underwater survival about pressure, machinery, salvage, black water]
+[single-player-first underwater survival about beautiful alien water, pressure, machinery, salvage, black-water depth]
 
 What it is not:
 [unsupported multiplayer-scope promise, competitor-attack pitch]

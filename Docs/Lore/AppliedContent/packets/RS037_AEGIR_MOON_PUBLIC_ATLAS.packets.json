@@ -492,139 +492,139 @@
       },
       "localized": {
         "en_US": {
-          "title": "Ran Aegir Ephemeris Tuning Rule",
-          "scanner": "Exact ephemeris numbers are table work; current lore locks route bands and hazard causes.",
+          "title": "RAN Aegir Ephemeris Bands",
+          "scanner": "Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.",
           "field_note": "Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.",
-          "terminal": "EPHEMERIS RULE: publication text may say window band, hazard class and relation to Aegir. Exact orbital periods, inclinations and resonance values belong to the future celestial data table.",
+          "terminal": "EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.",
           "audio": "A band is honest until the numbers have an owner.",
-          "in_game_wiki": "Ephemeris tuning keeps hard-sci-fi taste without freezing unproven astronomy values in prose.",
-          "external_site": "Ran Aegir Ephemeris Tuning Rule separates stable lore bands from future numeric celestial tables."
+          "in_game_wiki": "Ephemeris bands keep hard-sci-fi taste without freezing unverified astronomy values in prose.",
+          "external_site": "RAN Aegir ephemeris bands separate stable route lore from exact celestial data."
         },
         "ru_RU": {
-          "title": "Правило настройки ephemeris Ran/Aegir",
-          "scanner": "Точные ephemeris числа - работа таблиц; текущий лор фиксирует route bands и причины опасностей.",
-          "field_note": "Не придумывать точные периоды в прозе. Использовать bands, пока celestial table не станет владельцем чисел.",
-          "terminal": "EPHEMERIS RULE: публикационный текст может называть window band, hazard class и связь с Aegir. Точные orbital periods, inclinations и resonance values принадлежат будущей celestial data table.",
+          "title": "Draft RU localization pending native pass. RAN Aegir Ephemeris Bands",
+          "scanner": "Draft RU localization pending native pass. Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.",
+          "field_note": "Draft RU localization pending native pass. Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.",
+          "terminal": "Draft RU localization pending native pass. EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.",
           "audio": "Диапазон честен, пока у чисел нет владельца.",
-          "in_game_wiki": "Настройка ephemeris сохраняет hard-sci-fi вкус без фиксации непроверенных astronomy values в прозе.",
-          "external_site": "Правило настройки ephemeris Ran/Aegir отделяет стабильные lore bands от будущих numeric celestial tables."
+          "in_game_wiki": "Draft RU localization pending native pass. Ephemeris bands keep hard-sci-fi taste without freezing unverified astronomy values in prose.",
+          "external_site": "Draft RU localization pending native pass. RAN Aegir ephemeris bands separate stable route lore from exact celestial data."
         },
         "ja_JP": {
-          "title": "Ran Aegir Ephemeris Tuning Rule",
-          "scanner": "Draft JP localization pending native pass. Exact ephemeris numbers are table work; current lore locks route bands and hazard causes.",
+          "title": "Draft JP localization pending native pass. RAN Aegir Ephemeris Bands",
+          "scanner": "Draft JP localization pending native pass. Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.",
           "field_note": "Draft JP localization pending native pass. Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.",
-          "terminal": "Draft JP localization pending native pass. EPHEMERIS RULE: publication text may say window band, hazard class and relation to Aegir. Exact orbital periods, inclinations and resonance values belong to the future celestial data table.",
+          "terminal": "Draft JP localization pending native pass. EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.",
           "audio": "Draft JP localization pending native pass. A band is honest until the numbers have an owner.",
-          "in_game_wiki": "Draft JP localization pending native pass. Ephemeris tuning keeps hard-sci-fi taste without freezing unproven astronomy values in prose.",
-          "external_site": "Draft JP localization pending native pass. Ran Aegir Ephemeris Tuning Rule separates stable lore bands from future numeric celestial tables."
+          "in_game_wiki": "Draft JP localization pending native pass. Ephemeris bands keep hard-sci-fi taste without freezing unverified astronomy values in prose.",
+          "external_site": "Draft JP localization pending native pass. RAN Aegir ephemeris bands separate stable route lore from exact celestial data."
         },
         "zh_CN": {
-          "title": "Ran Aegir Ephemeris Tuning Rule",
-          "scanner": "Draft CN localization pending native pass. Exact ephemeris numbers are table work; current lore locks route bands and hazard causes.",
+          "title": "Draft CN localization pending native pass. RAN Aegir Ephemeris Bands",
+          "scanner": "Draft CN localization pending native pass. Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.",
           "field_note": "Draft CN localization pending native pass. Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.",
-          "terminal": "Draft CN localization pending native pass. EPHEMERIS RULE: publication text may say window band, hazard class and relation to Aegir. Exact orbital periods, inclinations and resonance values belong to the future celestial data table.",
+          "terminal": "Draft CN localization pending native pass. EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.",
           "audio": "Draft CN localization pending native pass. A band is honest until the numbers have an owner.",
-          "in_game_wiki": "Draft CN localization pending native pass. Ephemeris tuning keeps hard-sci-fi taste without freezing unproven astronomy values in prose.",
-          "external_site": "Draft CN localization pending native pass. Ran Aegir Ephemeris Tuning Rule separates stable lore bands from future numeric celestial tables."
+          "in_game_wiki": "Draft CN localization pending native pass. Ephemeris bands keep hard-sci-fi taste without freezing unverified astronomy values in prose.",
+          "external_site": "Draft CN localization pending native pass. RAN Aegir ephemeris bands separate stable route lore from exact celestial data."
         },
         "fr_FR": {
-          "title": "Ran Aegir Ephemeris Tuning Rule",
-          "scanner": "Draft FR localization pending native pass. Exact ephemeris numbers are table work; current lore locks route bands and hazard causes.",
+          "title": "Draft FR localization pending native pass. RAN Aegir Ephemeris Bands",
+          "scanner": "Draft FR localization pending native pass. Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.",
           "field_note": "Draft FR localization pending native pass. Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.",
-          "terminal": "Draft FR localization pending native pass. EPHEMERIS RULE: publication text may say window band, hazard class and relation to Aegir. Exact orbital periods, inclinations and resonance values belong to the future celestial data table.",
+          "terminal": "Draft FR localization pending native pass. EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.",
           "audio": "Draft FR localization pending native pass. A band is honest until the numbers have an owner.",
-          "in_game_wiki": "Draft FR localization pending native pass. Ephemeris tuning keeps hard-sci-fi taste without freezing unproven astronomy values in prose.",
-          "external_site": "Draft FR localization pending native pass. Ran Aegir Ephemeris Tuning Rule separates stable lore bands from future numeric celestial tables."
+          "in_game_wiki": "Draft FR localization pending native pass. Ephemeris bands keep hard-sci-fi taste without freezing unverified astronomy values in prose.",
+          "external_site": "Draft FR localization pending native pass. RAN Aegir ephemeris bands separate stable route lore from exact celestial data."
         },
         "es_ES": {
-          "title": "Ran Aegir Ephemeris Tuning Rule",
-          "scanner": "Draft ES localization pending native pass. Exact ephemeris numbers are table work; current lore locks route bands and hazard causes.",
+          "title": "Draft ES localization pending native pass. RAN Aegir Ephemeris Bands",
+          "scanner": "Draft ES localization pending native pass. Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.",
           "field_note": "Draft ES localization pending native pass. Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.",
-          "terminal": "Draft ES localization pending native pass. EPHEMERIS RULE: publication text may say window band, hazard class and relation to Aegir. Exact orbital periods, inclinations and resonance values belong to the future celestial data table.",
+          "terminal": "Draft ES localization pending native pass. EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.",
           "audio": "Draft ES localization pending native pass. A band is honest until the numbers have an owner.",
-          "in_game_wiki": "Draft ES localization pending native pass. Ephemeris tuning keeps hard-sci-fi taste without freezing unproven astronomy values in prose.",
-          "external_site": "Draft ES localization pending native pass. Ran Aegir Ephemeris Tuning Rule separates stable lore bands from future numeric celestial tables."
+          "in_game_wiki": "Draft ES localization pending native pass. Ephemeris bands keep hard-sci-fi taste without freezing unverified astronomy values in prose.",
+          "external_site": "Draft ES localization pending native pass. RAN Aegir ephemeris bands separate stable route lore from exact celestial data."
         },
         "de_DE": {
-          "title": "Ran Aegir Ephemeris Tuning Rule",
-          "scanner": "Draft DE localization pending native pass. Exact ephemeris numbers are table work; current lore locks route bands and hazard causes.",
+          "title": "Draft DE localization pending native pass. RAN Aegir Ephemeris Bands",
+          "scanner": "Draft DE localization pending native pass. Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.",
           "field_note": "Draft DE localization pending native pass. Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.",
-          "terminal": "Draft DE localization pending native pass. EPHEMERIS RULE: publication text may say window band, hazard class and relation to Aegir. Exact orbital periods, inclinations and resonance values belong to the future celestial data table.",
+          "terminal": "Draft DE localization pending native pass. EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.",
           "audio": "Draft DE localization pending native pass. A band is honest until the numbers have an owner.",
-          "in_game_wiki": "Draft DE localization pending native pass. Ephemeris tuning keeps hard-sci-fi taste without freezing unproven astronomy values in prose.",
-          "external_site": "Draft DE localization pending native pass. Ran Aegir Ephemeris Tuning Rule separates stable lore bands from future numeric celestial tables."
+          "in_game_wiki": "Draft DE localization pending native pass. Ephemeris bands keep hard-sci-fi taste without freezing unverified astronomy values in prose.",
+          "external_site": "Draft DE localization pending native pass. RAN Aegir ephemeris bands separate stable route lore from exact celestial data."
         },
         "pl_PL": {
-          "title": "Ran Aegir Ephemeris Tuning Rule",
-          "scanner": "Draft PL localization pending native pass. Exact ephemeris numbers are table work; current lore locks route bands and hazard causes.",
+          "title": "Draft PL localization pending native pass. RAN Aegir Ephemeris Bands",
+          "scanner": "Draft PL localization pending native pass. Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.",
           "field_note": "Draft PL localization pending native pass. Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.",
-          "terminal": "Draft PL localization pending native pass. EPHEMERIS RULE: publication text may say window band, hazard class and relation to Aegir. Exact orbital periods, inclinations and resonance values belong to the future celestial data table.",
+          "terminal": "Draft PL localization pending native pass. EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.",
           "audio": "Draft PL localization pending native pass. A band is honest until the numbers have an owner.",
-          "in_game_wiki": "Draft PL localization pending native pass. Ephemeris tuning keeps hard-sci-fi taste without freezing unproven astronomy values in prose.",
-          "external_site": "Draft PL localization pending native pass. Ran Aegir Ephemeris Tuning Rule separates stable lore bands from future numeric celestial tables."
+          "in_game_wiki": "Draft PL localization pending native pass. Ephemeris bands keep hard-sci-fi taste without freezing unverified astronomy values in prose.",
+          "external_site": "Draft PL localization pending native pass. RAN Aegir ephemeris bands separate stable route lore from exact celestial data."
         },
         "uk_UA": {
-          "title": "Ran Aegir Ephemeris Tuning Rule",
-          "scanner": "Draft UA localization pending native pass. Exact ephemeris numbers are table work; current lore locks route bands and hazard causes.",
+          "title": "Draft UA localization pending native pass. RAN Aegir Ephemeris Bands",
+          "scanner": "Draft UA localization pending native pass. Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.",
           "field_note": "Draft UA localization pending native pass. Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.",
-          "terminal": "Draft UA localization pending native pass. EPHEMERIS RULE: publication text may say window band, hazard class and relation to Aegir. Exact orbital periods, inclinations and resonance values belong to the future celestial data table.",
+          "terminal": "Draft UA localization pending native pass. EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.",
           "audio": "Draft UA localization pending native pass. A band is honest until the numbers have an owner.",
-          "in_game_wiki": "Draft UA localization pending native pass. Ephemeris tuning keeps hard-sci-fi taste without freezing unproven astronomy values in prose.",
-          "external_site": "Draft UA localization pending native pass. Ran Aegir Ephemeris Tuning Rule separates stable lore bands from future numeric celestial tables."
+          "in_game_wiki": "Draft UA localization pending native pass. Ephemeris bands keep hard-sci-fi taste without freezing unverified astronomy values in prose.",
+          "external_site": "Draft UA localization pending native pass. RAN Aegir ephemeris bands separate stable route lore from exact celestial data."
         },
         "ar_SA": {
-          "title": "Ran Aegir Ephemeris Tuning Rule",
-          "scanner": "Draft AR localization pending native pass. Exact ephemeris numbers are table work; current lore locks route bands and hazard causes.",
+          "title": "Draft AR localization pending native pass. RAN Aegir Ephemeris Bands",
+          "scanner": "Draft AR localization pending native pass. Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.",
           "field_note": "Draft AR localization pending native pass. Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.",
-          "terminal": "Draft AR localization pending native pass. EPHEMERIS RULE: publication text may say window band, hazard class and relation to Aegir. Exact orbital periods, inclinations and resonance values belong to the future celestial data table.",
+          "terminal": "Draft AR localization pending native pass. EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.",
           "audio": "Draft AR localization pending native pass. A band is honest until the numbers have an owner.",
-          "in_game_wiki": "Draft AR localization pending native pass. Ephemeris tuning keeps hard-sci-fi taste without freezing unproven astronomy values in prose.",
-          "external_site": "Draft AR localization pending native pass. Ran Aegir Ephemeris Tuning Rule separates stable lore bands from future numeric celestial tables."
+          "in_game_wiki": "Draft AR localization pending native pass. Ephemeris bands keep hard-sci-fi taste without freezing unverified astronomy values in prose.",
+          "external_site": "Draft AR localization pending native pass. RAN Aegir ephemeris bands separate stable route lore from exact celestial data."
         },
         "id_ID": {
-          "title": "Ran Aegir Ephemeris Tuning Rule",
-          "scanner": "Draft ID localization pending native pass. Exact ephemeris numbers are table work; current lore locks route bands and hazard causes.",
+          "title": "Draft ID localization pending native pass. RAN Aegir Ephemeris Bands",
+          "scanner": "Draft ID localization pending native pass. Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.",
           "field_note": "Draft ID localization pending native pass. Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.",
-          "terminal": "Draft ID localization pending native pass. EPHEMERIS RULE: publication text may say window band, hazard class and relation to Aegir. Exact orbital periods, inclinations and resonance values belong to the future celestial data table.",
+          "terminal": "Draft ID localization pending native pass. EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.",
           "audio": "Draft ID localization pending native pass. A band is honest until the numbers have an owner.",
-          "in_game_wiki": "Draft ID localization pending native pass. Ephemeris tuning keeps hard-sci-fi taste without freezing unproven astronomy values in prose.",
-          "external_site": "Draft ID localization pending native pass. Ran Aegir Ephemeris Tuning Rule separates stable lore bands from future numeric celestial tables."
+          "in_game_wiki": "Draft ID localization pending native pass. Ephemeris bands keep hard-sci-fi taste without freezing unverified astronomy values in prose.",
+          "external_site": "Draft ID localization pending native pass. RAN Aegir ephemeris bands separate stable route lore from exact celestial data."
         },
         "ko_KR": {
-          "title": "Ran Aegir Ephemeris Tuning Rule",
-          "scanner": "Draft KO localization pending native pass. Exact ephemeris numbers are table work; current lore locks route bands and hazard causes.",
+          "title": "Draft KO localization pending native pass. RAN Aegir Ephemeris Bands",
+          "scanner": "Draft KO localization pending native pass. Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.",
           "field_note": "Draft KO localization pending native pass. Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.",
-          "terminal": "Draft KO localization pending native pass. EPHEMERIS RULE: publication text may say window band, hazard class and relation to Aegir. Exact orbital periods, inclinations and resonance values belong to the future celestial data table.",
+          "terminal": "Draft KO localization pending native pass. EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.",
           "audio": "Draft KO localization pending native pass. A band is honest until the numbers have an owner.",
-          "in_game_wiki": "Draft KO localization pending native pass. Ephemeris tuning keeps hard-sci-fi taste without freezing unproven astronomy values in prose.",
-          "external_site": "Draft KO localization pending native pass. Ran Aegir Ephemeris Tuning Rule separates stable lore bands from future numeric celestial tables."
+          "in_game_wiki": "Draft KO localization pending native pass. Ephemeris bands keep hard-sci-fi taste without freezing unverified astronomy values in prose.",
+          "external_site": "Draft KO localization pending native pass. RAN Aegir ephemeris bands separate stable route lore from exact celestial data."
         },
         "he_IL": {
-          "title": "Ran Aegir Ephemeris Tuning Rule",
-          "scanner": "Draft HE localization pending native pass. Exact ephemeris numbers are table work; current lore locks route bands and hazard causes.",
+          "title": "Draft HE localization pending native pass. RAN Aegir Ephemeris Bands",
+          "scanner": "Draft HE localization pending native pass. Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.",
           "field_note": "Draft HE localization pending native pass. Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.",
-          "terminal": "Draft HE localization pending native pass. EPHEMERIS RULE: publication text may say window band, hazard class and relation to Aegir. Exact orbital periods, inclinations and resonance values belong to the future celestial data table.",
+          "terminal": "Draft HE localization pending native pass. EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.",
           "audio": "Draft HE localization pending native pass. A band is honest until the numbers have an owner.",
-          "in_game_wiki": "Draft HE localization pending native pass. Ephemeris tuning keeps hard-sci-fi taste without freezing unproven astronomy values in prose.",
-          "external_site": "Draft HE localization pending native pass. Ran Aegir Ephemeris Tuning Rule separates stable lore bands from future numeric celestial tables."
+          "in_game_wiki": "Draft HE localization pending native pass. Ephemeris bands keep hard-sci-fi taste without freezing unverified astronomy values in prose.",
+          "external_site": "Draft HE localization pending native pass. RAN Aegir ephemeris bands separate stable route lore from exact celestial data."
         },
         "pt_BR": {
-          "title": "Ran Aegir Ephemeris Tuning Rule",
-          "scanner": "Draft PT localization pending native pass. Exact ephemeris numbers are table work; current lore locks route bands and hazard causes.",
+          "title": "Draft PT localization pending native pass. RAN Aegir Ephemeris Bands",
+          "scanner": "Draft PT localization pending native pass. Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.",
           "field_note": "Draft PT localization pending native pass. Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.",
-          "terminal": "Draft PT localization pending native pass. EPHEMERIS RULE: publication text may say window band, hazard class and relation to Aegir. Exact orbital periods, inclinations and resonance values belong to the future celestial data table.",
+          "terminal": "Draft PT localization pending native pass. EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.",
           "audio": "Draft PT localization pending native pass. A band is honest until the numbers have an owner.",
-          "in_game_wiki": "Draft PT localization pending native pass. Ephemeris tuning keeps hard-sci-fi taste without freezing unproven astronomy values in prose.",
-          "external_site": "Draft PT localization pending native pass. Ran Aegir Ephemeris Tuning Rule separates stable lore bands from future numeric celestial tables."
+          "in_game_wiki": "Draft PT localization pending native pass. Ephemeris bands keep hard-sci-fi taste without freezing unverified astronomy values in prose.",
+          "external_site": "Draft PT localization pending native pass. RAN Aegir ephemeris bands separate stable route lore from exact celestial data."
         },
         "nl_NL": {
-          "title": "Ran Aegir Ephemeris Tuning Rule",
-          "scanner": "Draft NL localization pending native pass. Exact ephemeris numbers are table work; current lore locks route bands and hazard causes.",
+          "title": "Draft NL localization pending native pass. RAN Aegir Ephemeris Bands",
+          "scanner": "Draft NL localization pending native pass. Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.",
           "field_note": "Draft NL localization pending native pass. Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.",
-          "terminal": "Draft NL localization pending native pass. EPHEMERIS RULE: publication text may say window band, hazard class and relation to Aegir. Exact orbital periods, inclinations and resonance values belong to the future celestial data table.",
+          "terminal": "Draft NL localization pending native pass. EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.",
           "audio": "Draft NL localization pending native pass. A band is honest until the numbers have an owner.",
-          "in_game_wiki": "Draft NL localization pending native pass. Ephemeris tuning keeps hard-sci-fi taste without freezing unproven astronomy values in prose.",
-          "external_site": "Draft NL localization pending native pass. Ran Aegir Ephemeris Tuning Rule separates stable lore bands from future numeric celestial tables."
+          "in_game_wiki": "Draft NL localization pending native pass. Ephemeris bands keep hard-sci-fi taste without freezing unverified astronomy values in prose.",
+          "external_site": "Draft NL localization pending native pass. RAN Aegir ephemeris bands separate stable route lore from exact celestial data."
         }
       }
     },

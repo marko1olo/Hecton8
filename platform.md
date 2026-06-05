@@ -1,7 +1,14 @@
 # HECTON-8 Platform And Hardware Bible
 
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
+Evidence class: STATIC_DOC
 Scope: hardware tiers, platform proof ladder, MX350/i3 baseline, Steam Deck/Linux, macOS, XR, Quest/PICO, console-readiness boundaries, shader portability, native plugin risk, and platform quality scaling.
+
+## First-20 Route Hook
+
+- First-20 moment: the opening route must prove boot, world load, readable shallows, input/UI, save/load, and visual floor first on Windows/Copper Wire before broader platform claims.
+- Route blocker removed: platform theater from settings, package presence, static docs, skipped proof ladder, compact unreadability, and high-end captures that hide route failure.
+- Proof class: `STATIC_DOC` until build/launch artifacts, Unity Console, profiler/GC/memory/VRAM, input/UI/storage, save/load, and device-specific captures exist.
 
 ## 1. Prime Law
 
@@ -61,6 +68,10 @@ Required lanes:
 - XR/VR: comfort, stencil/fragment rejection, input readability, foveation proof, thermal proof.
 
 `GlobalQualityWeight` moves continuously across these lanes. It may scale presentation. It must not change gameplay authority.
+
+User hardware lock: Compact remains the minimum proof lane, but the main expected player lane is Middle PC / medium-strength hardware. Middle PC must look genuinely good, detailed, beautiful, and premium. It is not a compromise target where visuals may become merely acceptable.
+
+Compact is also not ugly mode. It preserves ocean readability, route silhouettes, sky/Aegir/moon clarity, wet terrain material identity, instrument readability, and enough density to avoid a flat prototype look.
 
 ## 5. MX350 And Compact Rules
 

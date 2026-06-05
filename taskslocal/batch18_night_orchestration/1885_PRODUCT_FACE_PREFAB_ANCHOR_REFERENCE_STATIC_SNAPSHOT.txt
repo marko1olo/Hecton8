@@ -1,0 +1,156 @@
+ID: 1885
+TITLE: PRODUCT_FACE_PREFAB_ANCHOR_REFERENCE_STATIC_SNAPSHOT
+MODE: REPORT_ONLY_STATIC_PREFAB_SNAPSHOT
+
+You are HECTON-8 batch agent 1885.
+You are running concurrently with other agents. Do not depend on sibling output that does not already exist on disk.
+Do not edit source code, Unity assets, prefabs, scenes, binaries, generated meshes, `.meta` files, DataMonolith files, or task files.
+
+PRIMARY GOAL
+
+Create a static preservation snapshot for product-face prefabs before any future Unity relink slot.
+
+The project currently has product-face primitive debt, but future relink must not break player hands, first-person cameras, HUD roots, tool anchors, scan/beam/muzzle origins, pickup triggers, resource data links, or transport rider/dismount anchors.
+
+This task produces a precise reference/anchor preservation package from YAML/static files only.
+
+READ FIRST
+
+Read fully:
+
+- `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `VISION_LOCKS.md`
+- `TASTE.md`
+- `quality.md`
+- `player.md`
+- `tools.md`
+- `inventory.md`
+- `vehicles.md`
+- `water.md`
+- `3dmodel.md`
+- `3DMODEL_TEXTURES_MATERIALS.md`
+- `Docs/Reports/Batch18/1867_PRODUCT_FACE_PREFAB_AUDIT_GATE.md`
+- `Docs/Reports/Batch18/1879_PRODUCT_FACE_RELINK_AND_PROOF_CONTRACT.md`
+- `Docs/Reports/Batch18/1879_PRODUCT_FACE_RELINK_SEQUENCE.csv`
+- `Docs/Reports/Batch18/1872_PLAYER_BODY_VISUAL_SOURCE_PACKAGE.md`
+- `Docs/Reports/Batch18/1869_TOOL_VISUAL_SOURCE_PACKAGE.md`
+- `Docs/Reports/Batch18/1870_RESOURCE_PICKUP_VISUAL_SOURCE_PACKAGE.md`
+- `Docs/Reports/Batch18/1871_TRANSPORT_VISUAL_SOURCE_PACKAGE.md`
+
+Read relevant mandates from `.agents-skills`:
+
+- `QA_Evidence_Text_Filter_Audit.txt`
+- `CORE_Tools_Equipment_Interaction_Raycast_Heat.txt`
+- `DATA_Inventory_Resources_Items_SOA_Layout.txt`
+- `PHYS_Physics_Integrity_Determinism_ForceMode.txt`
+
+SCOPE PREFABS
+
+Inspect only static prefab YAML/text for these roots:
+
+- `Assets/_Project/Prefabs/Player.prefab`
+- `Assets/_Project/Prefabs/Tools/Held/*.prefab`
+- `Assets/_Project/Prefabs/Items/Tools/*.prefab`
+- `Assets/_Project/Prefabs/Resources/Pickups/*.prefab`
+- `Assets/_Project/Prefabs/Transport/*.prefab`
+- `Assets/_Project/Prefabs/Item_Titanium.prefab`
+- `Assets/_Project/Prefabs/Sky_System.prefab`
+- `Assets/_Project/Prefabs/Ocean_Crest.prefab`
+- `Assets/_Project/Prefabs/STRUCTURES.prefab`
+- `Assets/_Project/Prefabs/Buildings/Cube.prefab`
+
+Do not inspect unrelated prefabs unless a scoped reference from the target prefab points to a required preservation anchor/data asset.
+
+REQUIRED SNAPSHOT CONTENT
+
+1. Player prefab preservation:
+   - list GameObject names for all `HandAnchor`, `Swim_*Attachment`, first-person/overlay/space/HUD cameras, `Suit_Visor`, HUD projection roots, and visible primitive body/visor roots from prior evidence;
+   - list component type names visible in YAML where practical;
+   - identify which anchors must have local transform comparison before/after relink;
+   - mark current visual primitive state as `RED_STATIC`, not accepted.
+
+2. Tool held/world preservation:
+   - for each held and world tool prefab, list preservation anchors by name: grip, pickup, scan, ray, beam, muzzle, nozzle, tether, AUP/local origin, screen/lens/light roots where present;
+   - list likely owner components/data references by type/name where visible;
+   - identify held/world family pair preservation requirements;
+   - mark current primitive/body state as `RED_STATIC`.
+
+3. Resource pickup preservation:
+   - for each resource pickup and `Item_Titanium`, list pickup trigger/collider/highlight/scan/data references visible in YAML;
+   - confirm canonical data path expectations from reports, especially `CopperOre -> Data_Copper.asset` and `Item_Titanium -> Data_TitaniumScrap.asset`;
+   - mark unresolved/missing data or material GUID risks without editing them.
+
+4. Transport preservation:
+   - for CargoSled, ExosuitFrame, MicroSub, ScoutGlider, list `RiderAnchor`, `DismountAnchor`, camera/mount/drive/occupancy/transport components visible in YAML;
+   - identify local transform comparison requirements before/after visual relink;
+   - classify visual primitive state as `RED_STATIC`.
+
+5. Sky/Ocean preservation:
+   - list sky camera follow/runtime reference routes visible in prefab YAML;
+   - list Crest input objects/components for ocean and classify hidden-input candidates separately from visible art debt;
+   - do not generalize hidden input exceptions beyond exact evidence.
+
+6. Legacy loose roots:
+   - for `Item_Titanium`, `STRUCTURES.prefab`, and `Buildings/Cube.prefab`, list production-reference uncertainty and what must be proven before quarantine or relink.
+
+7. Future Unity-owner checklist:
+   - produce a short serialized checklist that a future Unity relink agent can follow before replacing MeshFilter/sharedMesh or Renderer/material references;
+   - include pre/post YAML snapshot, anchor local transform comparison, component reference preservation, static validator gates, visual capture, and rollback.
+
+OUTPUTS YOU OWN
+
+Create/update only:
+
+- `Docs/Reports/Batch18/1885_PRODUCT_FACE_PREFAB_ANCHOR_REFERENCE_STATIC_SNAPSHOT.md`
+- `Docs/Reports/Batch18/1885_PRODUCT_FACE_PREFAB_ANCHOR_REFERENCE_MATRIX.csv`
+- `Docs/Tasks/Status_1885.md`
+- `Docs/AgentLogs/Rationale_1885.md`
+- `Docs/AgentLogs/LOG_1885.md`
+
+CSV REQUIREMENTS
+
+The CSV must parse with `Import-Csv`.
+Columns:
+
+- `category`
+- `prefab_path`
+- `preservation_target`
+- `target_type`
+- `static_evidence`
+- `pre_relink_check`
+- `post_relink_check`
+- `risk_if_broken`
+- `status`
+
+Status values:
+
+- `PRESERVE_EXACT`
+- `PRESERVE_AND_COMPARE_TRANSFORM`
+- `PRESERVE_REFERENCE`
+- `RED_STATIC_PRIMITIVE`
+- `QUARANTINE_OR_RELINK_DECISION`
+- `HIDDEN_INPUT_CANDIDATE_PENDING_PROOF`
+- `MISSING_STATIC_EVIDENCE`
+
+PROHIBITIONS
+
+- Do not run Unity.
+- Do not run dotnet build.
+- Do not use Unity MCP.
+- Do not run menu items, import, bake, screenshots, PlayMode, profiler, or DataMonolith.
+- Do not edit prefabs, source code, `.meta`, assets, scenes, binaries, generated mesh assets, or materials.
+- Do not claim runtime/visual acceptance.
+- Do not infer exact transforms unless visible in YAML; mark missing evidence instead of guessing.
+
+VERIFICATION REQUIRED
+
+Run and record:
+
+- `git diff --check -- Docs/Reports/Batch18/1885_PRODUCT_FACE_PREFAB_ANCHOR_REFERENCE_STATIC_SNAPSHOT.md Docs/Reports/Batch18/1885_PRODUCT_FACE_PREFAB_ANCHOR_REFERENCE_MATRIX.csv Docs/Tasks/Status_1885.md Docs/AgentLogs/Rationale_1885.md Docs/AgentLogs/LOG_1885.md`
+- `Import-Csv Docs/Reports/Batch18/1885_PRODUCT_FACE_PREFAB_ANCHOR_REFERENCE_MATRIX.csv | Measure-Object`
+- static term cross-check for `HandAnchor`, `Suit_Visor`, `Swim_`, `RiderAnchor`, `DismountAnchor`, `Data_Copper`, `Data_TitaniumScrap`, `Ocean_Crest`, and `Sky_System` in your report and CSV.
+
+FINAL RESPONSE
+
+Report changed files, CSV row count, highest breakage risks, and exact future Unity-owner checks.

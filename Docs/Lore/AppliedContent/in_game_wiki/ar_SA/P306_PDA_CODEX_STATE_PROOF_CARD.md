@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PDA Codex State Proof Card
+# PDA Evidence State
 
-PDA Codex State Proof Card defines what the in-game wiki must expose after the player earns evidence.
+The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.
 
 ## Scanner
 
-PDA proof: hint, fragment, proof, synthesis, ending record.
+Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.
 
 ## Terminal
 
-UI PROOF: PDA codex entries must show unlock tier, packet hash, evidence source and route warning state.
+PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.
 
 ## Audio
 
-The PDA is a receipt, not a teacher.
+The PDA does not explain the world first. It waits for a receipt.
 
 ## Field Note
 
-Runtime implementation still needs Unity device proof and baked string-pool binding.
+Bind codex rows to baked packet hashes and device-tested layout before release.
 
 <!-- In-Game Wiki; generated from P306_PDA_CODEX_STATE_PROOF_CARD/ar_SA. -->

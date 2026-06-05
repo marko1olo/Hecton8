@@ -1,0 +1,29 @@
+ID: 2804_AEGIR_SKY_ROUTE_STATIC_OWNER_AUDIT
+Role: Aegir/sky owner route auditor
+
+Read:
+- `C:\hades\Hecton8\AGENTS.md`
+- `C:\hades\Hecton8\PROJECT_BIBLES.md`
+- `C:\hades\Hecton8\TASTE.md`
+- relevant `.agents-skills`: `REND_Shader_Noir_Aesthetics_Dithering_Fog.txt`, `REND_GPU_Sovereignty.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`
+- `Docs/Reports/Batch27/2705_AEGIR_SKY_OWNER_VISUAL_POLISH_ROUTE_AUDIT.md`
+- `Docs/Reports/Batch27/BATCH27_SYNTHESIS_FOR_UNITY_OWNER.md`
+
+Mission:
+Static-audit Aegir/sky/sun ownership after the current route decision `PrimarySunDiscOwner=SkyMaterial`. Identify exact source/material changes needed so warnings and proof metadata align with sky-material ownership.
+
+Do:
+1. Inspect `HectonCelestialEngine`, `HectonUnderwaterVisuals`, sky shaders/materials, Aegir materials, and scene YAML references.
+2. Verify why activating `SURFACE_LOW_SUN_DISC_1428` is rejected.
+3. Identify where route-aware warning/proof metadata should be added.
+4. Define shader/material metadata required in the `1475` manifest.
+5. List visual artifact checks: rim, veil, seam, sticker, stripe, dirty-noir hiding.
+
+Do not:
+- Run Unity.
+- Enable inactive scene objects.
+- Modify source unless explicitly asked by controller after report.
+
+Deliver:
+- `Docs/Reports/Batch28/2804_AEGIR_SKY_ROUTE_STATIC_OWNER_AUDIT.md`
+with exact file paths, source hooks, and proof metadata plan.

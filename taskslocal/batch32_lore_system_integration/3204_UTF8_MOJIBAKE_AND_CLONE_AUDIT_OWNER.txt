@@ -1,0 +1,39 @@
+ID: 3204
+Role: UTF8_MOJIBAKE_AND_CLONE_AUDIT_OWNER
+
+Objective:
+Build a static audit report for AppliedContent text corruption and English-clone localization risk without claiming native quality.
+
+Why this is needed:
+P462 initially passed a U+FFFD replacement-character check while visible locale rows were mojibake. The project needs a stricter static proof lane for future production packets and publication exports.
+
+Owned scope:
+- Read-only audit of `Docs/Lore/AppliedContent/production_packets/*.md`.
+- Read-only audit samples from `Docs/Lore/AppliedContent/in_game_wiki/*/*.md` and `Docs/Lore/AppliedContent/external_site/*/*.md`.
+- Write only `Docs/Reports/Batch32/3204_UTF8_MOJIBAKE_AND_CLONE_AUDIT.md`, `Docs/Tasks/Status_3204.md`, and `Docs/AgentLogs/LOG_3204.md`.
+- Do not edit packet content, generated pages, route cards, source CSV, h8bin, Unity assets, or scripts.
+
+Authority docs:
+AGENTS.md, writing.md, localization.md, quality.md, Docs/Lore/Lore_Localization_Model.md, Docs/Lore/Lore_Multilingual_Content_Architecture.md.
+
+Tasks:
+1. Read authority docs and relevant mandates from BATCH_INDEX.
+2. Define static mojibake markers using codepoint counts, not only display grep: at minimum U+00C3, U+00D0, U+00D8, U+00E6, U+00EC, U+00D7, U+FFFD, and any additional markers you prove from samples.
+3. Scan production packets and report per-file marker counts.
+4. Sample latest generated pages P456-P460 across all 15 locales and both surfaces. Identify English-clone risk by comparing non-English body/title snippets to en_US where safe.
+5. Report false-positive risk for legitimate Latin-1/Cyrillic/Arabic/Hebrew/CJK codepoints. Do not delete or rewrite content based only on broad marker hits.
+6. Recommend exact future validator behavior: fail, warn, or sample-manual-review.
+7. Label all evidence STATIC_SOURCE or STATIC_DOC only.
+
+Proof packet:
+- Command snippets and concise outputs.
+- Files sampled.
+- Marker counts.
+- English-clone risk summary.
+- Recommended next owner action.
+
+Rejection gates:
+- No native localization claim.
+- No runtime claim.
+- No content rewrite.
+- No heavy Unity/build/dotnet work.

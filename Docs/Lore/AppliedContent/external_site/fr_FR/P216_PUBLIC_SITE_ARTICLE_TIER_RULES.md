@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Public Site Article Tier Rules
+# Public Article Tier Rules
 
-Public Site Article Tier Rules defines HECTON-8 publication boundaries for website and external wiki articles.
+Public article tiers define what can be said openly about pressure, route cost, old lies, and Atlas-basin payload truth.
 
 ## Scanner
 
@@ -24,7 +24,7 @@ Public copy can name pressure, route cost and old lies; it must gate Atlas-basin
 
 ## Terminal
 
-SITE TIERS: T0 public premise, T1 early tools/routes, T2 corporate evidence, T3 Atlas-basin consequences, T4 internal-only table/runtime notes.
+ARTICLE TIERS: T0 public premise, T1 early tools and routes, T2 corporate evidence, T3 Atlas-basin consequences, T4 sealed implementation records.
 
 ## Audio
 
@@ -32,6 +32,6 @@ Market the wound. Do not sell the autopsy before the player earns it.
 
 ## Field Note
 
-Article tiers: public setting, early systems, mid-depth evidence, spoiler-gated endings, internal-only implementation.
+Article tiers separate public setting, early systems, mid-depth evidence, spoiler-gated endings, and sealed table records.
 
 <!-- External Site; generated from P216_PUBLIC_SITE_ARTICLE_TIER_RULES/fr_FR. -->

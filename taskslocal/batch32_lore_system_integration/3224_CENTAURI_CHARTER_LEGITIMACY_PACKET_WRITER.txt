@@ -1,0 +1,69 @@
+ID: 3224
+Role: CENTAURI_CHARTER_LEGITIMACY_PACKET_WRITER
+
+Objective:
+Create one STATIC_DOC production draft packet for `P475_CENTAURI_CHARTER_LEGITIMACY_BRIDGE`, explaining Centauri Compact as the old extrasolar legitimacy language Deep Reach can cite while violating intent.
+
+Why this is needed:
+Canon locks Centauri Compact as the early extrasolar legitimacy anchor. It makes Deep Reach charters sound respectable without making Aegir clean. The current bridge wave covers Sol finance, Tau public pressure, Luyten custody, Barnard salvage culture, and local Black Keel/Keelmark pressure; Centauri legitimacy remains uncovered as a public/in-game bridge.
+
+Owned scope:
+- `Docs/Lore/AppliedContent/production_packets/P475_CENTAURI_CHARTER_LEGITIMACY_BRIDGE.production.md`
+- `Docs/Tasks/Status_3224.md`
+- `Docs/AgentLogs/LOG_3224.md`
+- `Docs/AgentLogs/Rationale_3224.md` only if needed
+
+Do not edit:
+- P461-P474 production packets
+- RS093/RS094 release sets or packet bundles
+- binding maps
+- graphs
+- route_cards
+- source CSV
+- h8bin
+- generated pages/indexes
+- Unity scenes, prefabs, assets, or runtime scripts
+- other agents' status/log/rationale files
+
+Authority docs:
+AGENTS.md, writing.md, narrative.md, localization.md, data.md, authoring.md, quality.md, `Docs/Lore/Canon_Locks.md`, `Docs/Lore/Lore_Bible.md`, `Docs/Lore/Lore_Content_System.md`, `Docs/Lore/Lore_Localization_Model.md`.
+
+Mandates:
+- QA_Evidence_Text_Filter_Audit.txt
+- UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt
+- DATA_Runtime_Struct_Layout_ARM64.txt
+- TOOL_Designer_Facades_CSV_Binary_Bridge.txt
+- OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+
+Packet requirements:
+- Evidence class: STATIC_DOC.
+- Packet ID: `P475_CENTAURI_CHARTER_LEGITIMACY_BRIDGE`.
+- Release set candidate: `RS094_PUBLIC_AUTHORITY_BRIDGE_EXPANSION`.
+- Article ID: `applied_lore.centauri_charter_legitimacy_bridge`.
+- Loc namespace: `LORE_CENTAURI_CHARTER_LEGITIMACY`.
+- Primary surfaces: `external_site / in_game_wiki / scanner / terminal / audio / field_note / black_box`.
+- Authority locale: `en_US`.
+- Non-English locales: `ar_SA`, `de_DE`, `es_ES`, `fr_FR`, `he_IL`, `id_ID`, `ja_JP`, `ko_KR`, `nl_NL`, `pl_PL`, `pt_BR`, `ru_RU`, `uk_UA`, `zh_CN`.
+- Status vocabulary: exactly `source_authority` for en_US and `draft_machine_or_llm` for every non-English row.
+- Include source brief, English authority surfaces, 15 locale rows, Runtime/Monolith placement notes, GlobalQualityWeight presentation density, QA, and hard boundary that runtime must not parse Markdown.
+- Natural-language style: charter plate, audit seal, old extrasolar civic language, legal legitimacy, Deep Reach citation abuse. No utopian exposition, no generic government lore, no instant rescue.
+- First-20 route moment improved: player understands why old respectable charter language can appear on dirty Aegir hardware.
+- Spoiler boundary: public-to-early legal infrastructure. No final payload receiver outcomes, no Atlas basin truth, no ending route disclosure.
+- Route-card candidate note only. Do not create authoritative route-card CSV.
+
+Validation to run:
+- Static UTF-8 scan: 15 locale headings, 1 source row, 14 draft rows, 0 U+FFFD, and 0 exact mojibake marker codepoints U+00C3/U+00D0/U+00D8/U+00E6/U+00EC/U+00D7 unless there is a proven legitimate language reason.
+- Clone scan: non-English rows must not be English clones.
+- Boundary scan: no runtime/DataMonolith/native/localization/publication readiness claim.
+
+Final report:
+- What was wrong.
+- What you did.
+- In-game result.
+- What was verified.
+
+Rejection gates:
+- No source CSV/export/h8bin/Unity/runtime edits.
+- No fake native-reviewed claim.
+- No runtime-ready claim.
+- No route-card CSV creation.

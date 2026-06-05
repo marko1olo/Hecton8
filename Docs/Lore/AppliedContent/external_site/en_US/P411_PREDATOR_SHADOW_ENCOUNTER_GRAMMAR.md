@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -20,7 +20,7 @@ HECTON-8 fauna is designed as encounter grammar: warnings, routes, pressure and 
 
 ## Scanner
 
-Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.
+Predator trace: sonar gap, cut prey path, broad shadow. Body not confirmed; keep light discipline.
 
 ## Terminal
 
@@ -32,6 +32,6 @@ The safest sign is not seeing the thing. It is watching everything else stop.
 
 ## Field Note
 
-Use for AI/spawn design notes and scanner cards.
+If prey routes stop at open water, the animal is already using your light. Back out before you name it.
 
 <!-- External Site; generated from P411_PREDATOR_SHADOW_ENCOUNTER_GRAMMAR/en_US. -->

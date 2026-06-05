@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir Hard Sci-Fi Longform Brief
+# Aegir Transfer Windows
 
-Aegir codex pages should explain why communication, recovery and descent are different physical problems.
+Aegir distance turns communication, descent and recovery into separate problems. A message can arrive while the carrier is out of position; a carrier can wait while weather shutters close; a legal claim can open while the ocean below remains physically unreachable.
 
 ## Scanner
 
-Public brief: Aegir article explains no-FTL distance, moon ladder, local windows and Black Keel transfer limits.
+Route archive. Aegir traffic moves through light delay, transfer mass, relay custody, weather shutters and Black Keel claim timing.
 
 ## Terminal
 
-AEGIR ARTICLE: use bands, hazard classes and route functions until celestial tables own exact constants.
+PUBLIC ARCHIVE NODE // AEGIR ROUTE LIMITS. No FTL channel is recorded. Recovery depends on relay packet age, carrier position, storm plumes, descent mass and custody handshake.
 
 ## Audio
 
-Map note: the sky is a timetable that does not care about you.
+The sky is a schedule. It can be beautiful and still refuse to move for you.
 
 ## Field Note
 
-Use diagrams: route band, moon ladder roles, recovery-window stack. Do not promise all moons are playable.
+Marauder note: read Aegir like weather and paperwork at once. A clear sky can still mean the route is closed.
 
 <!-- In-Game Wiki; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/fr_FR. -->

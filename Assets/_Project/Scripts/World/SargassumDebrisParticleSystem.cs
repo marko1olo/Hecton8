@@ -1,5 +1,6 @@
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.VFX;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -13,6 +14,13 @@ namespace Hecton8.World
     public sealed class SargassumDebrisParticleSystem : MonoBehaviour, ILateFrameTickable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private const int MaxQueuedParticleEmits = 64;
+        private const int MaxParticlesPerQueuedEmit = 32;
+        private const int MaxLeafParticlesPerBurst = 32;
+        private const int MaxBubbleParticlesPerBurst = 16;
+        private const float MaxAmbientSpawnRate = 48f;
+        private const float QualityRefreshEpsilon = 0.01f;
+        private const float MinimumRendererMaxParticleSize = 0.025f;
+        private const float OverkillRendererMaxParticleSize = 0.075f;
         private static readonly int _DryColorId = Shader.PropertyToID("_DryColor");
         private static readonly int _WetColorId = Shader.PropertyToID("_WetColor");
         private static readonly int _BubbleColorId = Shader.PropertyToID("_BubbleColor");
@@ -159,8 +167,11 @@ namespace Hecton8.World
         private bool _hotSwapRegistered;
         private bool _runtimeTargetRefreshRequested = true;
         private int _queuedEmitCount;
+        private int _queuedParticleCount;
+        private int _appliedQualityParticleCap;
+        private float _appliedQualityWeight = -1f;
         private SargassumGlobalDragManager _sargassumDrag;
-        private readonly PendingParticleEmit[] _queuedEmits = new PendingParticleEmit[MaxQueuedParticleEmits];
+        private readonly PendingParticleEmit[] _queuedEmits = new PendingParticleEmit[MaxQueuedParticleEmits]; // COLD ALLOC: PendingParticleEmit[64] - fixed debris emit queue for LateFrameTick flushing - owner: SargassumDebrisParticleSystem
 
         private void Awake()
         {
@@ -197,6 +208,9 @@ namespace Hecton8.World
             _debugAmbientSpawnBudget = 0f;
             _debugAmbientEmissionThisTick = 0;
             _queuedEmitCount = 0;
+            _queuedParticleCount = 0;
+            _appliedQualityParticleCap = 0;
+            _appliedQualityWeight = -1f;
         }
 
         private void OnDestroy()
@@ -208,15 +222,16 @@ namespace Hecton8.World
         private void OnValidate()
         {
             minLeafParticles = Mathf.Max(1, minLeafParticles);
-            maxLeafParticles = Mathf.Max(minLeafParticles, maxLeafParticles);
-            maxBubbleParticles = Mathf.Max(0, maxBubbleParticles);
+            minLeafParticles = Mathf.Min(minLeafParticles, MaxLeafParticlesPerBurst);
+            maxLeafParticles = Mathf.Clamp(maxLeafParticles, minLeafParticles, MaxLeafParticlesPerBurst);
+            maxBubbleParticles = Mathf.Clamp(maxBubbleParticles, 0, MaxBubbleParticlesPerBurst);
             leafLifetime = Mathf.Max(0.05f, leafLifetime);
             bubbleLifetime = Mathf.Max(0.05f, bubbleLifetime);
             leafSize = Mathf.Max(0.01f, leafSize);
             bubbleSize = Mathf.Max(0.01f, bubbleSize);
             ambientDensityThreshold = Mathf.Clamp01(ambientDensityThreshold);
             ambientSampleRadius = Mathf.Max(0.1f, ambientSampleRadius);
-            ambientSpawnRate = Mathf.Max(0f, ambientSpawnRate);
+            ambientSpawnRate = Mathf.Clamp(ambientSpawnRate, 0f, MaxAmbientSpawnRate);
             ambientVolume.x = Mathf.Max(0.1f, ambientVolume.x);
             ambientVolume.y = Mathf.Max(0.1f, ambientVolume.y);
             ambientVolume.z = Mathf.Max(0.1f, ambientVolume.z);
@@ -225,6 +240,8 @@ namespace Hecton8.World
             ambientBubbleChance = Mathf.Clamp01(ambientBubbleChance);
             ambientDriftSpeed = Mathf.Max(0f, ambientDriftSpeed);
             ambientRiseSpeed = Mathf.Max(0f, ambientRiseSpeed);
+            _appliedQualityParticleCap = 0;
+            _appliedQualityWeight = -1f;
         }
 
         /// <summary>
@@ -347,7 +364,7 @@ namespace Hecton8.World
 
             float canopyDensityBias = LerpClamped(0.82f, 1.12f, 1f - sample.Window01);
             _ambientSpawnAccumulator = Mathf.Min(
-                _ambientSpawnAccumulator + ambientSpawnRate * densityT * canopyDensityBias * deltaTime,
+                _ambientSpawnAccumulator + ResolveAmbientSpawnRateForQuality() * densityT * canopyDensityBias * deltaTime,
                 8f);
 
             int spawnCount = Mathf.Min(6, Mathf.FloorToInt(_ambientSpawnAccumulator));
@@ -365,6 +382,7 @@ namespace Hecton8.World
 
         public void LateFrameTick()
         {
+            RefreshQualityParticleCap();
             AdvanceAmbientDebrisEmission(SystemDispatcher.CurrentFrameDeltaTime);
             FlushQueuedParticleEmits();
         }
@@ -416,14 +434,90 @@ namespace Hecton8.World
 
             ParticleSystem.MainModule main = _particleSystem.main;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
+            ApplyQualityParticleCap(ResolveGlobalQualityWeight01());
         }
 
         private void ApplyRendererMaterial()
         {
-            if (_particleRenderer == null || debrisMaterial == null)
+            if (_particleRenderer == null)
                 return;
 
-            _particleRenderer.sharedMaterial = debrisMaterial;
+            if (debrisMaterial != null)
+                _particleRenderer.sharedMaterial = debrisMaterial;
+
+            _particleRenderer.maxParticleSize = ResolveRendererMaxParticleSize(ResolveGlobalQualityWeight01());
+        }
+
+        private void RefreshQualityParticleCap()
+        {
+            if (_particleSystem == null)
+                return;
+
+            float qualityWeight = ResolveGlobalQualityWeight01();
+            if (_appliedQualityParticleCap > 0 &&
+                math.abs(qualityWeight - _appliedQualityWeight) < QualityRefreshEpsilon)
+            {
+                return;
+            }
+
+            ApplyQualityParticleCap(qualityWeight);
+        }
+
+        private void ApplyQualityParticleCap(float qualityWeight)
+        {
+            if (_particleSystem == null)
+                return;
+
+            int particleCap = ResolveQualityParticleCap(qualityWeight);
+            if (particleCap != _appliedQualityParticleCap)
+            {
+                ParticleSystem.MainModule main = _particleSystem.main;
+                main.maxParticles = particleCap;
+                _appliedQualityParticleCap = particleCap;
+            }
+
+            if (_particleRenderer != null)
+                _particleRenderer.maxParticleSize = ResolveRendererMaxParticleSize(qualityWeight);
+
+            _appliedQualityWeight = qualityWeight;
+        }
+
+        private int ResolveQualityParticleCap(float qualityWeight)
+        {
+            int catalogCap = VfxComputeParticleBudgetCatalog.ResolvePoolCapacity(
+                qualityWeight,
+                0,
+                VFXEmissionProfile.FluidType.Debris);
+            return math.clamp(
+                math.max(1, catalogCap),
+                1,
+                VfxComputeParticleBudgetCatalog.OverkillQualityDebrisCount);
+        }
+
+        private static float ResolveRendererMaxParticleSize(float qualityWeight)
+        {
+            return LerpClamped(
+                MinimumRendererMaxParticleSize,
+                OverkillRendererMaxParticleSize,
+                SmoothQuality01(qualityWeight));
+        }
+
+        private float ResolveAmbientSpawnRateForQuality()
+        {
+            float qualityWeight = _appliedQualityWeight >= 0f ? _appliedQualityWeight : ResolveGlobalQualityWeight01();
+            return ambientSpawnRate * LerpClamped(0.45f, 1f, SmoothQuality01(qualityWeight));
+        }
+
+        private static float ResolveGlobalQualityWeight01()
+        {
+            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(0f, qualityWeight, math.isfinite(qualityWeight)));
+        }
+
+        private static float SmoothQuality01(float qualityWeight)
+        {
+            float q = math.saturate(qualityWeight);
+            return q * q * (3f - 2f * q);
         }
 
         private void TryRegister()
@@ -561,6 +655,14 @@ namespace Hecton8.World
             if (_queuedEmitCount >= MaxQueuedParticleEmits)
                 return;
 
+            int remainingParticleBudget = ResolveQueuedParticleBudget() - _queuedParticleCount;
+            if (remainingParticleBudget <= 0)
+                return;
+
+            int emitCount = math.min(
+                math.clamp(count, 1, MaxParticlesPerQueuedEmit),
+                remainingParticleBudget);
+
             _queuedEmits[_queuedEmitCount++] = new PendingParticleEmit
             {
                 PositionWS = positionWS,
@@ -569,8 +671,9 @@ namespace Hecton8.World
                 Size = size,
                 Color = color,
                 RandomSeed = randomSeed,
-                Count = Mathf.Max(1, count)
+                Count = emitCount
             };
+            _queuedParticleCount += emitCount;
         }
 
         private void FlushQueuedParticleEmits()
@@ -578,6 +681,7 @@ namespace Hecton8.World
             if (_queuedEmitCount <= 0 || _particleSystem == null)
             {
                 _queuedEmitCount = 0;
+                _queuedParticleCount = 0;
                 return;
             }
 
@@ -597,6 +701,15 @@ namespace Hecton8.World
             }
 
             _queuedEmitCount = 0;
+            _queuedParticleCount = 0;
+        }
+
+        private int ResolveQueuedParticleBudget()
+        {
+            if (_appliedQualityParticleCap > 0)
+                return _appliedQualityParticleCap;
+
+            return ResolveQualityParticleCap(ResolveGlobalQualityWeight01());
         }
 
         private Vector3 BuildJitterVector()

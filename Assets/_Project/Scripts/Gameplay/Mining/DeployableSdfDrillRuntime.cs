@@ -1115,7 +1115,16 @@ namespace Hecton8.Gameplay.Mining
             if (!_extractionPending)
                 return;
 
-            DispatcherJobFence.TryComplete(ref _extractionHandle, forceComplete: true);
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref _extractionHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
+
             _extractionPending = false;
             CommitExtractionResult(SystemDispatcher.CurrentUnscaledTimeSeconds);
         }

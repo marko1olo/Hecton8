@@ -32,133 +32,133 @@
           "terminal": "ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
           "audio": "Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
           "in_game_wiki": "The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
-          "external_site": "Ran-Aegir Distance Model gives site/wiki text a clean scale: reachable by infrastructure, unreachable by sympathy."
+          "external_site": "The Ran-Aegir distance model sets the scale: reachable by infrastructure, unreachable by sympathy."
         },
         "ru_RU": {
-          "title": "Модель дистанции Ran-Aegir",
-          "scanner": "Aegir достаточно близок, чтобы к 2190 году туда добрались, и достаточно далек, чтобы помощь стала историей.",
-          "field_note": "Числа маршрута нужны как давление на игрока, а не как декоративная звездная карта.",
-          "terminal": "ROUTE MODEL: Ran/Aegir трактуется как цель класса примерно 10.5 световых лет от Sol. В игровом тексте используется Aegir; сухие каталоги используют RAN-B:H8. Точная ephemeris остается table work.",
-          "audio": "Десять световых лет - немного для астрономии. Этого хватает, чтобы спасение стало банкротством.",
-          "in_game_wiki": "Модель маршрута держит HECTON-8 в hard sci-fi без превращения кампании в домашку по астрономии. До Aegir можно добраться инфраструктурой, но нельзя casually rescue. Игрок чувствует дистанцию через долг, задержку, custody и локальные машины.",
-          "external_site": "Модель дистанции Ran-Aegir дает сайту и wiki чистый масштаб: reachable by infrastructure, unreachable by sympathy."
+          "title": "Draft RU localization pending native pass. Ran-Aegir Distance Model",
+          "scanner": "Draft RU localization pending native pass. Aegir is close enough to be reachable by 2190, far enough that help is history.",
+          "field_note": "Draft RU localization pending native pass. Use approximate route numbers as pressure, not as a decorative star chart.",
+          "terminal": "Draft RU localization pending native pass. ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
+          "audio": "Draft RU localization pending native pass. Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
+          "in_game_wiki": "Draft RU localization pending native pass. The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
+          "external_site": "Draft RU localization pending native pass. The Ran-Aegir distance model sets the scale: reachable by infrastructure, unreachable by sympathy."
         },
         "ja_JP": {
-          "title": "Ran-Aegir Distance Model",
-          "scanner": "Draft JP localization pending native pass. Aegir is close enough to be reachable by 2190, far enough that help is history.",
-          "field_note": "Draft JP localization pending native pass. Use approximate route numbers as pressure, not as a decorative star chart.",
-          "terminal": "Draft JP localization pending native pass. ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
-          "audio": "Draft JP localization pending native pass. Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
-          "in_game_wiki": "Draft JP localization pending native pass. The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
-          "external_site": "Draft JP localization pending native pass. Ran-Aegir Distance Model gives site/wiki text a clean scale: reachable by infrastructure, unreachable by sympathy."
+          "title": "Draft JA localization pending native pass. Ran-Aegir Distance Model",
+          "scanner": "Draft JA localization pending native pass. Aegir is close enough to be reachable by 2190, far enough that help is history.",
+          "field_note": "Draft JA localization pending native pass. Use approximate route numbers as pressure, not as a decorative star chart.",
+          "terminal": "Draft JA localization pending native pass. ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
+          "audio": "Draft JA localization pending native pass. Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
+          "in_game_wiki": "Draft JA localization pending native pass. The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
+          "external_site": "Draft JA localization pending native pass. The Ran-Aegir distance model sets the scale: reachable by infrastructure, unreachable by sympathy."
         },
         "zh_CN": {
-          "title": "Ran-Aegir Distance Model",
-          "scanner": "Draft CN localization pending native pass. Aegir is close enough to be reachable by 2190, far enough that help is history.",
-          "field_note": "Draft CN localization pending native pass. Use approximate route numbers as pressure, not as a decorative star chart.",
-          "terminal": "Draft CN localization pending native pass. ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
-          "audio": "Draft CN localization pending native pass. Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
-          "in_game_wiki": "Draft CN localization pending native pass. The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
-          "external_site": "Draft CN localization pending native pass. Ran-Aegir Distance Model gives site/wiki text a clean scale: reachable by infrastructure, unreachable by sympathy."
+          "title": "Draft ZH localization pending native pass. Ran-Aegir Distance Model",
+          "scanner": "Draft ZH localization pending native pass. Aegir is close enough to be reachable by 2190, far enough that help is history.",
+          "field_note": "Draft ZH localization pending native pass. Use approximate route numbers as pressure, not as a decorative star chart.",
+          "terminal": "Draft ZH localization pending native pass. ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
+          "audio": "Draft ZH localization pending native pass. Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
+          "in_game_wiki": "Draft ZH localization pending native pass. The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
+          "external_site": "Draft ZH localization pending native pass. The Ran-Aegir distance model sets the scale: reachable by infrastructure, unreachable by sympathy."
         },
         "fr_FR": {
-          "title": "Ran-Aegir Distance Model",
+          "title": "Draft FR localization pending native pass. Ran-Aegir Distance Model",
           "scanner": "Draft FR localization pending native pass. Aegir is close enough to be reachable by 2190, far enough that help is history.",
           "field_note": "Draft FR localization pending native pass. Use approximate route numbers as pressure, not as a decorative star chart.",
           "terminal": "Draft FR localization pending native pass. ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
           "audio": "Draft FR localization pending native pass. Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
           "in_game_wiki": "Draft FR localization pending native pass. The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
-          "external_site": "Draft FR localization pending native pass. Ran-Aegir Distance Model gives site/wiki text a clean scale: reachable by infrastructure, unreachable by sympathy."
+          "external_site": "Draft FR localization pending native pass. The Ran-Aegir distance model sets the scale: reachable by infrastructure, unreachable by sympathy."
         },
         "es_ES": {
-          "title": "Ran-Aegir Distance Model",
+          "title": "Draft ES localization pending native pass. Ran-Aegir Distance Model",
           "scanner": "Draft ES localization pending native pass. Aegir is close enough to be reachable by 2190, far enough that help is history.",
           "field_note": "Draft ES localization pending native pass. Use approximate route numbers as pressure, not as a decorative star chart.",
           "terminal": "Draft ES localization pending native pass. ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
           "audio": "Draft ES localization pending native pass. Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
           "in_game_wiki": "Draft ES localization pending native pass. The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
-          "external_site": "Draft ES localization pending native pass. Ran-Aegir Distance Model gives site/wiki text a clean scale: reachable by infrastructure, unreachable by sympathy."
+          "external_site": "Draft ES localization pending native pass. The Ran-Aegir distance model sets the scale: reachable by infrastructure, unreachable by sympathy."
         },
         "de_DE": {
-          "title": "Ran-Aegir Distance Model",
+          "title": "Draft DE localization pending native pass. Ran-Aegir Distance Model",
           "scanner": "Draft DE localization pending native pass. Aegir is close enough to be reachable by 2190, far enough that help is history.",
           "field_note": "Draft DE localization pending native pass. Use approximate route numbers as pressure, not as a decorative star chart.",
           "terminal": "Draft DE localization pending native pass. ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
           "audio": "Draft DE localization pending native pass. Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
           "in_game_wiki": "Draft DE localization pending native pass. The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
-          "external_site": "Draft DE localization pending native pass. Ran-Aegir Distance Model gives site/wiki text a clean scale: reachable by infrastructure, unreachable by sympathy."
+          "external_site": "Draft DE localization pending native pass. The Ran-Aegir distance model sets the scale: reachable by infrastructure, unreachable by sympathy."
         },
         "pl_PL": {
-          "title": "Ran-Aegir Distance Model",
+          "title": "Draft PL localization pending native pass. Ran-Aegir Distance Model",
           "scanner": "Draft PL localization pending native pass. Aegir is close enough to be reachable by 2190, far enough that help is history.",
           "field_note": "Draft PL localization pending native pass. Use approximate route numbers as pressure, not as a decorative star chart.",
           "terminal": "Draft PL localization pending native pass. ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
           "audio": "Draft PL localization pending native pass. Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
           "in_game_wiki": "Draft PL localization pending native pass. The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
-          "external_site": "Draft PL localization pending native pass. Ran-Aegir Distance Model gives site/wiki text a clean scale: reachable by infrastructure, unreachable by sympathy."
+          "external_site": "Draft PL localization pending native pass. The Ran-Aegir distance model sets the scale: reachable by infrastructure, unreachable by sympathy."
         },
         "uk_UA": {
-          "title": "Ran-Aegir Distance Model",
-          "scanner": "Draft UA localization pending native pass. Aegir is close enough to be reachable by 2190, far enough that help is history.",
-          "field_note": "Draft UA localization pending native pass. Use approximate route numbers as pressure, not as a decorative star chart.",
-          "terminal": "Draft UA localization pending native pass. ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
-          "audio": "Draft UA localization pending native pass. Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
-          "in_game_wiki": "Draft UA localization pending native pass. The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
-          "external_site": "Draft UA localization pending native pass. Ran-Aegir Distance Model gives site/wiki text a clean scale: reachable by infrastructure, unreachable by sympathy."
+          "title": "Draft UK localization pending native pass. Ran-Aegir Distance Model",
+          "scanner": "Draft UK localization pending native pass. Aegir is close enough to be reachable by 2190, far enough that help is history.",
+          "field_note": "Draft UK localization pending native pass. Use approximate route numbers as pressure, not as a decorative star chart.",
+          "terminal": "Draft UK localization pending native pass. ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
+          "audio": "Draft UK localization pending native pass. Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
+          "in_game_wiki": "Draft UK localization pending native pass. The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
+          "external_site": "Draft UK localization pending native pass. The Ran-Aegir distance model sets the scale: reachable by infrastructure, unreachable by sympathy."
         },
         "ar_SA": {
-          "title": "Ran-Aegir Distance Model",
+          "title": "Draft AR localization pending native pass. Ran-Aegir Distance Model",
           "scanner": "Draft AR localization pending native pass. Aegir is close enough to be reachable by 2190, far enough that help is history.",
           "field_note": "Draft AR localization pending native pass. Use approximate route numbers as pressure, not as a decorative star chart.",
           "terminal": "Draft AR localization pending native pass. ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
           "audio": "Draft AR localization pending native pass. Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
           "in_game_wiki": "Draft AR localization pending native pass. The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
-          "external_site": "Draft AR localization pending native pass. Ran-Aegir Distance Model gives site/wiki text a clean scale: reachable by infrastructure, unreachable by sympathy."
+          "external_site": "Draft AR localization pending native pass. The Ran-Aegir distance model sets the scale: reachable by infrastructure, unreachable by sympathy."
         },
         "id_ID": {
-          "title": "Ran-Aegir Distance Model",
+          "title": "Draft ID localization pending native pass. Ran-Aegir Distance Model",
           "scanner": "Draft ID localization pending native pass. Aegir is close enough to be reachable by 2190, far enough that help is history.",
           "field_note": "Draft ID localization pending native pass. Use approximate route numbers as pressure, not as a decorative star chart.",
           "terminal": "Draft ID localization pending native pass. ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
           "audio": "Draft ID localization pending native pass. Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
           "in_game_wiki": "Draft ID localization pending native pass. The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
-          "external_site": "Draft ID localization pending native pass. Ran-Aegir Distance Model gives site/wiki text a clean scale: reachable by infrastructure, unreachable by sympathy."
+          "external_site": "Draft ID localization pending native pass. The Ran-Aegir distance model sets the scale: reachable by infrastructure, unreachable by sympathy."
         },
         "ko_KR": {
-          "title": "Ran-Aegir Distance Model",
+          "title": "Draft KO localization pending native pass. Ran-Aegir Distance Model",
           "scanner": "Draft KO localization pending native pass. Aegir is close enough to be reachable by 2190, far enough that help is history.",
           "field_note": "Draft KO localization pending native pass. Use approximate route numbers as pressure, not as a decorative star chart.",
           "terminal": "Draft KO localization pending native pass. ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
           "audio": "Draft KO localization pending native pass. Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
           "in_game_wiki": "Draft KO localization pending native pass. The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
-          "external_site": "Draft KO localization pending native pass. Ran-Aegir Distance Model gives site/wiki text a clean scale: reachable by infrastructure, unreachable by sympathy."
+          "external_site": "Draft KO localization pending native pass. The Ran-Aegir distance model sets the scale: reachable by infrastructure, unreachable by sympathy."
         },
         "he_IL": {
-          "title": "Ran-Aegir Distance Model",
+          "title": "Draft HE localization pending native pass. Ran-Aegir Distance Model",
           "scanner": "Draft HE localization pending native pass. Aegir is close enough to be reachable by 2190, far enough that help is history.",
           "field_note": "Draft HE localization pending native pass. Use approximate route numbers as pressure, not as a decorative star chart.",
           "terminal": "Draft HE localization pending native pass. ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
           "audio": "Draft HE localization pending native pass. Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
           "in_game_wiki": "Draft HE localization pending native pass. The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
-          "external_site": "Draft HE localization pending native pass. Ran-Aegir Distance Model gives site/wiki text a clean scale: reachable by infrastructure, unreachable by sympathy."
+          "external_site": "Draft HE localization pending native pass. The Ran-Aegir distance model sets the scale: reachable by infrastructure, unreachable by sympathy."
         },
         "pt_BR": {
-          "title": "Ran-Aegir Distance Model",
+          "title": "Draft PT localization pending native pass. Ran-Aegir Distance Model",
           "scanner": "Draft PT localization pending native pass. Aegir is close enough to be reachable by 2190, far enough that help is history.",
           "field_note": "Draft PT localization pending native pass. Use approximate route numbers as pressure, not as a decorative star chart.",
           "terminal": "Draft PT localization pending native pass. ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
           "audio": "Draft PT localization pending native pass. Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
           "in_game_wiki": "Draft PT localization pending native pass. The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
-          "external_site": "Draft PT localization pending native pass. Ran-Aegir Distance Model gives site/wiki text a clean scale: reachable by infrastructure, unreachable by sympathy."
+          "external_site": "Draft PT localization pending native pass. The Ran-Aegir distance model sets the scale: reachable by infrastructure, unreachable by sympathy."
         },
         "nl_NL": {
-          "title": "Ran-Aegir Distance Model",
+          "title": "Draft NL localization pending native pass. Ran-Aegir Distance Model",
           "scanner": "Draft NL localization pending native pass. Aegir is close enough to be reachable by 2190, far enough that help is history.",
           "field_note": "Draft NL localization pending native pass. Use approximate route numbers as pressure, not as a decorative star chart.",
           "terminal": "Draft NL localization pending native pass. ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
           "audio": "Draft NL localization pending native pass. Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
           "in_game_wiki": "Draft NL localization pending native pass. The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
-          "external_site": "Draft NL localization pending native pass. Ran-Aegir Distance Model gives site/wiki text a clean scale: reachable by infrastructure, unreachable by sympathy."
+          "external_site": "Draft NL localization pending native pass. The Ran-Aegir distance model sets the scale: reachable by infrastructure, unreachable by sympathy."
         }
       },
       "release_set_id": "RS029_ROUTE_TIME_DISTANCE_MODEL"

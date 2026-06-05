@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -20,7 +20,7 @@ Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but
 
 ## Scanner
 
-Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.
+Blue debt receipt: value tied to custody chain, pressure history and contamination. Mass alone is low-grade.
 
 ## Terminal
 
@@ -32,6 +32,6 @@ The expensive part is not the mineral. It is proving where it has been.
 
 ## Field Note
 
-Use for scanner receipt, contract payout tease and resource wiki.
+Weigh the seal record before the sample. A heavy dirty lot can cost more than it pays.
 
 <!-- In-Game Wiki; generated from P426_BLUE_DEBT_CUSTODY_GRADE_RECEIPT/en_US. -->

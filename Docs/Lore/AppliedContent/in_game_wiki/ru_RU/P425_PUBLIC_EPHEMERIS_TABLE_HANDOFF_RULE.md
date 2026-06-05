@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Правило ephemeris handoff
+# Ephemeris Data Boundary Rule
 
-Это правило сохраняет hard-sci-fi lore полезным, не замораживая simulation constants в narrative prose.
+This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.
 
 ## Scanner
 
-Правило: текст владеет полосами; числа ждут таблицу.
+Data boundary: prose owns bands; final orbital numbers stay table-owned.
 
 ## Terminal
 
-HANDOFF. Текст может дать роли, риски и полосы; точных орбит нет.
+DATA BOUNDARY: prose may state roles, hazards, and bands. Exact orbital values stay out.
 
 ## Audio
 
-Числа допустимы, когда ими владеет таблица.
+Numbers are allowed when the table owns them.
 
 ## Field Note
 
-Для внутренней/публичной границы astronomy articles и будущей работы с DataMonolith tables.
+Ephemeris records explain route logic while exact constants remain table-owned data.
 
 <!-- In-Game Wiki; generated from P425_PUBLIC_EPHEMERIS_TABLE_HANDOFF_RULE/ru_RU. -->

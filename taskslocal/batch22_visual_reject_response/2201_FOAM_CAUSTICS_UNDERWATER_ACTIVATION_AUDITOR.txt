@@ -1,0 +1,93 @@
+ID: 2201
+ROLE: FOAM_CAUSTICS_UNDERWATER_ACTIVATION_AUDITOR
+CHAT NAME: 2201 foam caustics underwater
+
+MISSION
+The 1472 Unity proof packet is rejected because foam, caustics, underwater haze/particulate density, and photic-shallow water believability are absent or not visible. Audit existing systems and scene/material wiring to prove whether the routes are absent, disabled, misconfigured, hidden by bad capture geometry, or active but visually ineffective.
+
+DO NOT TAKE THE UNITY SLOT BY DEFAULT.
+The thread `Продолжить работу по логам` owns Unity. Work from files, reports, screenshots, YAML, materials, renderer assets, and logs unless the controller later assigns the Unity slot.
+
+AUTHORITIES TO READ
+1. `AGENTS.md`
+2. `PROJECT_BIBLES.md`
+3. `TASTE.md`
+4. `VISION_LOCKS.md`
+5. `quality.md`
+6. `water.md`
+7. `vfx.md`
+8. `lighting.md`
+9. `.agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`
+10. `.agents-skills/REND_VFX_Fluid_Aesthetics_Compute_Particles.txt`
+11. `.agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
+
+EVIDENCE BASIS
+- `Docs/Screenshots/MCP/h8_1472_surface_coast_aegir_ui_off.png`
+- `Docs/Screenshots/MCP/h8_1472_shoreline_close_1m.png`
+- `Docs/Screenshots/MCP/h8_1472_underwater_0_5m.png`
+- `Docs/Screenshots/MCP/h8_1472_underwater_20_50m_route.png`
+- `Docs/Screenshots/MCP/h8_1472_regression_low_oblique.png`
+- User critique: no foam, no caustics, underwater is too transparent, picture is flat/poor versus reference.
+
+OWNED SCOPE
+Read-only unless a later controller prompt explicitly permits edits:
+- `Assets/_Project/Scenes/02_HECTON_WORLD.unity`
+- `Assets/_Project/Art/Materials/**`
+- `Assets/_Project/Art/Shaders/**`
+- `Assets/_Project/Scripts/**Water**`
+- `Assets/_Project/Scripts/**Caustic**`
+- `Assets/_Project/Scripts/**Underwater**`
+- `Assets/_Project/Scripts/**MarineSnow**`
+- `Assets/_Project/Scripts/VFX/**`
+- `Assets/_Project/Settings/**`
+- `Docs/Reports/Batch21/**`
+- `Docs/Reports/Batch22/**`
+- `Docs/AgentLogs/UnityEditor_visual_audit_restart*.log`
+
+MANDATES
+- Fake-first is correct; cheap-looking-first is rejected.
+- Foam/caustics/haze can be shader fakes, decals, projected quads, LUTs, or pooled particles, but must look premium.
+- Compact tier still needs beautiful water color, readable waterline, specular response, and material identity.
+- No runtime allocations/hot polling/global scene searches in proposed fixes.
+- Static audit cannot claim acceptance; it can only produce a handoff.
+
+TASKS
+01. Read the authorities above and list the 2-8 mandates that govern this task in `Docs/Tasks/Status_2201.md`.
+02. Inspect `water.md`, `vfx.md`, and `lighting.md` for the intended ownership routes for foam, caustics, underwater haze, marine snow, and water optics.
+03. Enumerate all files/classes/materials/shaders containing `Foam`, `Caustic`, `Underwater`, `Haze`, `MarineSnow`, `WaterOptics`, `Crest`, and `Jacobian`; use `rg`, not broad manual browsing.
+04. Build a route inventory table with columns: route name, file path, owner type, scene/prefab/material reference, active/inactive evidence, proof boundary.
+05. Inspect `02_HECTON_WORLD.unity` YAML references for every foam/caustic/haze/marine-snow owner found. Mark exact GameObject names and enabled states when visible in YAML.
+06. Check renderer assets/features for deferred caustics, water optics, and underwater passes. Do not assume a feature is active just because a script exists.
+07. Check material property names for foam routes; identify mismatches such as `_Foam`, `_FoamTexture`, `_FoamTex`, `_DepthFogDensity`, `_MainTex`, or type conflicts.
+08. Gate after task 07: update `Status_2201.md` with `STATIC VERIFIED` inventory or `BLOCKED` findings. Do not proceed with guessed conclusions.
+09. Inspect whether the scene uses Crest underwater rendering, project custom underwater rendering, both, or neither in the proof route.
+10. Inspect whether active underwater visual scripts are serialized in scene/prefab YAML or only exist as code.
+11. Check whether marine snow or particulate density exists as a runtime owner and whether it has scene bindings.
+12. Check whether caustics are floor-only, screen/deferred-only, projected-only, or disabled by missing buffers/features.
+13. Identify the most likely reason `1472` shows no visible caustics despite any active caustic files: inactive renderer feature, hidden by geometry plane, too weak material response, bad camera path, missing texture, or runtime fault.
+14. Identify the most likely reason surface/shoreline foam is absent: disabled GameObject, material alpha zero, wrong layer/camera, too-small mesh, shader property mismatch, disabled renderer, or hidden below waterline.
+15. Identify the most likely reason underwater is too transparent/empty: haze owner absent, fog disabled, capture camera outside correct post stack, URP feature inactive, or material/camera layer issue.
+16. Produce a safe activation sequence for Unity owner: smallest steps first, one proof capture after each, no broad scene rewrite.
+17. Include tier consequences: Minimum/Low/Middle/High/Ultra for foam, caustics, haze, marine snow. Do not use binary low/high logic.
+18. Include profiler requirements for each proposed runtime route. If no profiler proof exists, mark `PENDING PROFILER`.
+19. Include a rollback path for every proposed enable/disable/material change.
+20. Check that proposed fixes do not write screenshots to `Assets/Screenshots`.
+21. Check that proposed fixes do not use darkness/fog to hide bad terrain or primitive geometry.
+22. Write `Docs/Reports/Batch22/2201_FOAM_CAUSTICS_UNDERWATER_ACTIVATION_MATRIX.md`.
+23. Write `Docs/Reports/Batch22/2201_FOAM_CAUSTICS_UNDERWATER_ACTIVATION_MATRIX.csv`.
+24. Append concise result to `Docs/AgentLogs/LOG_2201.md`: wrong state, likely root causes, handoff, proof boundary, files inspected.
+25. Final report in chat: only facts, no acceptance claim.
+
+PROOF PACKET
+- `Status_2201.md`
+- `Rationale_2201.md` only for non-trivial route choices
+- `LOG_2201.md`
+- `Docs/Reports/Batch22/2201_FOAM_CAUSTICS_UNDERWATER_ACTIVATION_MATRIX.md`
+- `Docs/Reports/Batch22/2201_FOAM_CAUSTICS_UNDERWATER_ACTIVATION_MATRIX.csv`
+
+REJECT
+- Claiming visual success without screenshots.
+- Touching Unity/Play Mode while Unity slot is occupied.
+- Treating "script exists" as "system active".
+- Hiding weak visuals with dark grading.
+- Fake exact performance metrics.

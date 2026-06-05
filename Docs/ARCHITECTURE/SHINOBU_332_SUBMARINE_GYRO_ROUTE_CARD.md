@@ -1,5 +1,10 @@
 ﻿# SHINOBU_332 Submarine Gyro Route Card
 
+Status: `STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING`
+Evidence class: `STATIC_DOC / STATIC_SOURCE`
+Owner domain: vehicles/submarine kinematics
+Review disposition: `YELLOW / STATIC_DOC_ONLY` until compile/import/runtime/profiler/player proof exists.
+
 | Field | Value |
 | --- | --- |
 | Date | 2026-05-22 |

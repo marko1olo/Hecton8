@@ -10,13 +10,13 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
 # Asset Silence Board Signatures
 
-Asset Silence Board signatures let the player see how bureaucracy turns people into missing load.
+Asset Silence Board signatures let the player trace how bureaucracy converts people into missing load categories.
 
 ## Scanner
 

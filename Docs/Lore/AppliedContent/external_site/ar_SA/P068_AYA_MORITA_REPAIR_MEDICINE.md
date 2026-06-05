@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
 # Aya Morita Repair Medicine
 
-Aya Morita Repair Medicine gives HECTON-8 its body horror without magic: a medic documents the moment industrial repair and human triage collapse into the same Atlas category.
+Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category.
 
 ## Scanner
 

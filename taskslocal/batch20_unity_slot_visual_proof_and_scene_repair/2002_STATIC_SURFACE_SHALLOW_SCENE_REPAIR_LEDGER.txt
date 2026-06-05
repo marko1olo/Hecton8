@@ -1,0 +1,129 @@
+TASK 2002: STATIC SURFACE SHALLOW SCENE REPAIR LEDGER
+
+Role:
+Static proof author for surface and photic-shallow scene repair planning.
+
+Unity status:
+NO UNITY. Do not open Unity, run Unity, or require the Unity slot.
+
+Primary objective:
+Create a static ledger of surface/shallow visual blockers and repair candidates by inspecting source assets, scenes, prefabs, placement rules, editor generation scripts, and previous static reports. This task must make later Unity-slot work faster and more exact. Static evidence is not runtime proof.
+
+Authority files to read first:
+1. AGENTS.md
+2. TASTE.md
+3. VISION_LOCKS.md
+4. PROJECT_BIBLES.md
+5. quality.md
+6. rendering.md
+7. water.md
+8. terrain.md
+9. world.md
+10. presentation.md
+11. performance.md
+12. PROCEDURAL_ASSET_PIPELINE.md
+13. 3dmodel.md
+14. 3DMODEL_TEXTURES_MATERIALS.md
+
+Relevant mandates to load:
+1. .agents-skills/REND_Terrain_VirtualTexturing.txt
+2. .agents-skills/REND_Instanced_Flora_Physics.txt
+3. .agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt
+4. .agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt
+5. .agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt
+
+Exact project files and tools to inspect:
+1. Use rg and rg --files first.
+2. Search active scene YAML under Assets for ProductFace, sky, ocean, shoreline, terrain, kelp, rocks, coral, Aegir, moon, cloud, material, prefab references.
+3. Assets/_Project/Data/World/ProceduralPlacementRules/*.asset
+4. Assets/_Project/Scripts/Editor/ProceduralGen/BioForgeWindow.cs
+5. Assets/_Project/Scripts/Editor/ProceduralGen/BioForgeGenerator.cs
+6. Assets/_Project/Scripts/Editor/ProceduralGen/ShallowsBioForgeBatchBaker.cs
+7. Assets/_Project/Scripts/Editor/GeologyForge/GeologyForgeWindow.cs
+8. Assets/_Project/Scripts/Editor/GeologyForge/GeologyForgeGenerator.cs
+9. Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs
+10. Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs
+11. Assets/_Project/Scripts/Editor/ProductFaceSkyOceanSourceValidator.cs
+12. Assets/_Project/Scripts/Editor/ProductFacePrefabQualityValidator.cs
+13. Assets/_Project/Scripts/Editor/ProductFaceMaterialTextureValidator.cs
+14. Tools/ProductFaceStaticRouteAudit.py
+15. Tools/MaterialAudit.py
+16. Tools/GeneratedAssetProductionAudit.py
+17. taskslocal/batch18_night_orchestration/1901_SHALLOW_PROOF_ARTIFACT_PRIORITY_RUNBOOK.txt
+18. taskslocal/batch18_night_orchestration/1892_PRODUCT_FACE_SINGLE_UNITY_OWNER_RUNBOOK.txt
+19. taskslocal/batch19_art_source_and_static_proof/BATCH_INDEX.txt
+20. taskslocal/batch19_art_source_and_static_proof/1909_STATIC_VISUAL_DEBT_AUDIT_PROOF_MATRIX.txt
+
+Forbidden actions:
+1. Do not run Unity.
+2. Do not run builds.
+3. Do not edit Assets.
+4. Do not claim runtime proof from YAML.
+5. Do not instruct random scatter as a final repair route.
+6. Do not accept primitive rocks, primitive seaweed, flat cards, package/default materials, or missing texture channel contracts.
+7. Do not bulk-read unrelated old logs or archives.
+
+Ownership boundaries:
+1. You own a static repair ledger only.
+2. You may create reports under Docs/Reports/Batch20.
+3. You may create/update Status_2002, Rationale_2002, LOG_2002.
+4. You do not own Unity captures, scene edits, material relinks, or generated candidate art.
+5. If sibling Batch20 outputs already exist, you may reference them as optional input. Their absence is not a blocker.
+
+Deliverables:
+1. Docs/Reports/Batch20/2002_SURFACE_SHALLOW_SCENE_REPAIR_LEDGER.md
+2. Docs/Reports/Batch20/2002_SURFACE_SHALLOW_SCENE_REPAIR_LEDGER.csv
+3. Docs/Reports/Batch20/2002_STATIC_EVIDENCE_COMMANDS.txt
+4. Docs/Tasks/Status_2002.md
+5. Docs/AgentLogs/Rationale_2002.md
+6. Docs/AgentLogs/LOG_2002.md
+
+Required ledger columns:
+1. ID
+2. Finding
+3. Visual risk
+4. Optimization risk
+5. Gameplay risk
+6. Exact file path
+7. Exact reference or line evidence
+8. Current proof label
+9. Repair owner route
+10. Unity-slot required: yes/no
+11. Low/Middle/High/Ultra consequence
+12. Next proof artifact
+
+Work plan:
+1. Confirm this is a no-Unity task in Status_2002.
+2. Read only the authority files and mandates listed above.
+3. Create the Batch20 report folder if missing.
+4. Run rg searches for default/package material references, primitive prefab names, kelp/rock/coral placement rules, Aegir/sky/ocean references, and ProductFace validators.
+5. Inspect procedural placement rule YAML for kelp, rocks, coral, and shoreline-relevant scatter.
+6. Record the static baseline: kelp/rocks with minDepthMeters 0 and preferSeafloor 0 are plausible dry-land causes when dry terrain maps to depth 0.
+7. Find any active scene or prefab references to primitive Cube/Sphere/Capsule/Cylinder/Plane or placeholder mesh routes in surface/shallow contexts.
+8. Find material references to package/default URP Lit and other default material GUIDs named in prior static packets.
+9. Inspect ProductFace validator coverage. Record what it can prove and what it cannot prove without Unity.
+10. Inspect BioForge/GeologyForge/Flora generation tool entry points. Record the correct repair owner route for each bad scatter class.
+11. Inspect ocean/sky source validators for current static coverage.
+12. Cross-reference only relevant Batch18/Batch19 task files for static ProductFace and visual debt notes. Do not treat them as fresh proof.
+13. Classify each finding as blocking, high, medium, or low risk.
+14. For each finding, choose exactly one owner route: Unity slot, BioForge, GeologyForge, Flora, ProductFace relink, ocean render, sky/Aegir source, material texture contract, or static validator.
+15. Add low/middle/high/ultra consequences for every blocking and high finding.
+16. Add proof needed for closeout: screenshot, profiler, Unity console, material import, validator output, or generated asset manifest.
+17. Write exact commands used into 2002_STATIC_EVIDENCE_COMMANDS.txt.
+18. Mark every static-only conclusion as STATIC VERIFIED, not EDITOR/PLAYMODE/PROFILER verified.
+19. Write concise rationale explaining why random scatter and primitive replacements are rejected.
+20. Finalize status with count of findings by owner route.
+
+Three-pillar acceptance:
+1. Graphics: ledger identifies every static source of surface/shallow cheapness found.
+2. Optimization: ledger flags any route likely to add hot-path cost, overdraw, alpha blending, or runtime generation.
+3. Gameplay: ledger flags route readability risks such as land kelp, blocked shore entries, fake hazards, unreadable depth, or misleading silhouettes.
+
+GlobalQualityWeight consequences:
+1. Low: identify allowed cheaper approximation and forbidden floor-breaking simplification.
+2. Middle: identify expected default.
+3. High: identify added fidelity route.
+4. Ultra: identify visual overkill route and proof needed that gameplay truth is unchanged.
+
+Closeout standard:
+The report must be useful to a Unity-slot owner without asking them to rediscover static file paths.

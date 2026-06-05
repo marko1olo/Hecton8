@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Блок review для субтитров и аудио
+# Subtitle And Audio Timing Contract
 
-Эта статья объясняет, как HECTON-8 сохраняет translated audio полезным без chatter.
+HECTON-8 subtitles are treated as instruments: they identify who or what speaks, stay readable during pressure, and do not turn hazards into chatter.
 
 ## Scanner
 
-Caption может заспойлерить больше, чем voice.
+A caption can spoil more than a voice.
 
 ## Terminal
 
-SUBTITLE REVIEW: survival warnings first, flavor last, no source-less omniscience.
+Survival warnings take priority over flavor. No threat line appears without a sensor, voice, or visible source.
 
 ## Audio
 
-Если игрок не может действовать по этому, оставь тише.
+If the player cannot act on it, keep it quiet.
 
 ## Field Note
 
-Review gate: speaker/source tag, max line length, alarm priority, sensor justification, censor tier и audio timing.
+Check source labels, line length, alarm priority, sensor justification, censor tier, and audio timing.
 
 <!-- External Site; generated from P280_SUBTITLE_AUDIO_REVIEW_LOCK/ru_RU. -->

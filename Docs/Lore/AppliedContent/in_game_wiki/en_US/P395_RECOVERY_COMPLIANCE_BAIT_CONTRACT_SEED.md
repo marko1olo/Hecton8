@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ Some contracts are not offers. They are envelopes with your name already on the 
 
 ## Field Note
 
-Use for high-spoiler replay contract and ending-pressure setup.
+Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap.
 
 <!-- In-Game Wiki; generated from P395_RECOVERY_COMPLIANCE_BAIT_CONTRACT_SEED/en_US. -->

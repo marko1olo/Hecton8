@@ -10,17 +10,17 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Site Deep Reach Evidence Composition Lock
+# Deep Reach Evidence Composition Rule
 
 Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.
 
 ## Scanner
 
-Deep Reach site lock: procedure, memo, damage, not cartoon villainy.
+Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.
 
 ## Terminal
 

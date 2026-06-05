@@ -10,21 +10,21 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Контракт строки добычи ресурса
+# Resource Yield Data Boundary
 
-Ценность ресурсов HECTON-8 задается таблицами, привязанными к давлению, custody и evidence.
+Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.
 
 ## Scanner
 
-Строка добычи: класс ресурса, давление, custody grade, depletion rule.
+Yield boundary: resource class, pressure band, custody grade, depletion rule.
 
 ## Terminal
 
-TABLE HANDOFF: resource_yield rows должны связывать packet hash, класс ресурса, depth band, rarity curve и depletion behavior.
+RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.
 
 ## Audio
 
@@ -32,6 +32,6 @@ TABLE HANDOFF: resource_yield rows должны связывать packet hash, 
 
 ## Field Note
 
-Для gameplay-table pass; финальные yields не писать в логе или public copy.
+Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree.
 
 <!-- External Site; generated from P301_RESOURCE_YIELD_ROW_CONTRACT/ru_RU. -->

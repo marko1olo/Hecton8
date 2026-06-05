@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
 # Revoked Access Language Trace
 
-The protagonist's past gives HECTON-8 a specific investigative texture: old procedure language acts as both clue and barrier.
+The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.
 
 ## Scanner
 
@@ -32,6 +32,6 @@ That is not security. That is a memo pretending to be a door.
 
 ## Field Note
 
-Use on locks that hint at hidden liability without granting free access.
+Lockout language hints at hidden liability without granting free access.
 
 <!-- External Site; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/nl_NL. -->

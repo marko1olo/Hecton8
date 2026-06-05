@@ -1,7 +1,14 @@
 # HECTON-8 Math, Determinism, And AUP Bible
 
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
+Evidence class: STATIC_DOC
 Scope: Absolute Universe Position, floating origin, deterministic RNG, hot-path math, distance checks, SIMD/Burst policy, math LOD, CI math gates, replay safety, and numerical proof.
+
+## First-20 Route Hook
+
+- First-20 moment: first exit, swim/orient, return-path reading, resource pickup, tool hit, hazard consequence, and save/load restore must share AUP, finite math, and deterministic RNG rules.
+- Route blocker removed: transform-position authority, origin-shift drift, nondeterministic resource rolls, hot-path sqrt waste, and quality-tier math changes that alter route truth.
+- Proof class: `STATIC_DOC` until CI math gate, replay/drift probe, save/load position restore, profiler/GC, and black-box artifacts exist.
 
 ## 1. Prime Law
 

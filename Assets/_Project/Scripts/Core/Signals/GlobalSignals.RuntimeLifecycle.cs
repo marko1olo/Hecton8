@@ -172,7 +172,8 @@ namespace Hecton8.Core
             ValidateSignalSize<RigidbodySleepSignal>(64);
             ValidateSignalSize<ScannerToolActiveSignal>(32);
             ValidateSignalPayload<ScanCompleteSignal>(64);
-            ValidateSignalSize<LoreFragmentScannedSignal>(64);
+            ValidateSignalSize<LoreFragmentScannedSignal>(LoreFragmentScannedSignal.SizeBytes);
+            ValidateSignalSize<AppliedLoreTerminalPreviewSignal>(AppliedLoreTerminalPreviewSignal.SizeBytes);
             ValidateSignalSize<BlueprintUnlockedSignal>(32);
             ValidateSignalSize<CraftingStartedSignal>(32);
             ValidateSignalSize<CraftingCompletedSignal>(32);

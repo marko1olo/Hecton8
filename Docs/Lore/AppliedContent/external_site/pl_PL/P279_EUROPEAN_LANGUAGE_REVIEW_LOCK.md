@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# PL LOC HOLD: EU Loc Gate
+# European Text Expansion Contract
 
-PL LOC HOLD: European Language Review Lock explains text expansion proof for HECTON-8 contract and dossier UI.
+German, French, Spanish, Polish, Dutch, Portuguese, and related text need real expansion handling across game screens and site pages, not smaller fonts as a cover-up.
 
 ## Scanner
 
-PL LOC HOLD: A longer word is allowed. A hidden field is not.
+A longer word is acceptable. A hidden field is not.
 
 ## Terminal
 
-PL LOC HOLD: EU REVIEW: expanded copy must fit or shorten; never hide lien, custody or return penalty.
+Expanded copy may shorten for fit, but it must not hide lien, custody, return penalty, or survival warning text.
 
 ## Audio
 
-PL LOC HOLD: The field that clips is the field the player stops using.
+The clipped field is the field the player stops trusting.
 
 ## Field Note
 
-PL LOC HOLD: Review gate: contract label fit, tooltip fallback, unit abbreviations, legal terms and public-site paragraph expansion.
+Check contract labels, tooltip fallback, unit abbreviations, legal terms, and public-site paragraph expansion.
 
 <!-- External Site; generated from P279_EUROPEAN_LANGUAGE_REVIEW_LOCK/pl_PL. -->

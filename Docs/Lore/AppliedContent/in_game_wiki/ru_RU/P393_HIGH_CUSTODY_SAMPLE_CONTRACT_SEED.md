@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Replay seed: high custody sample
+# High Custody Sample Contract Seed
 
-High-custody sample seeds заставляют resources конкурировать с evidence и escape engineering. Это не simple loot multiplier.
+High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.
 
 ## Scanner
 
-Contract seed: high custody sample. Blue debt платит больше и утяжеляет каждый route choice.
+Contract seed: high custody sample. Blue debt pays more and burdens every route choice.
 
 ## Terminal
 
-SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay и Deep Reach receiver pressure.
+SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay and Deep Reach receiver pressure.
 
 ## Audio
 
-Sample может стать тяжелее после того, как попал в ledger.
+A sample can weigh more after it enters the ledger.
 
 ## Field Note
 
-Для sample-heavy replay contracts и inventory/custody UI.
+Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation.
 
 <!-- In-Game Wiki; generated from P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED/ru_RU. -->

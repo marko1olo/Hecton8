@@ -60,6 +60,7 @@ namespace Hecton8.Core.Contracts
         public const byte ExplicitCancel = 2;
         public const byte DevSkip = 3;
         public const byte NonFinite = 4;
+        public const byte SurvivalAbort = 5;
     }
 
     public static class PrologueSignalSourceHashes

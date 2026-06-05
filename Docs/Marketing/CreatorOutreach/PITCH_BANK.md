@@ -1,4 +1,4 @@
-﻿# HECTON-8 Pitch Bank
+# HECTON-8 Pitch Bank
 
 ## Authority Boundary
 
@@ -128,7 +128,7 @@ Best angle: 30-60 minute demo or first build.
 - NASA-punk survival below the light
 - HECTON-8 demo candidate for future coverage
 - A darker industrial ocean survival project
-- Pressure, salvage, machinery, black water
+- Beautiful alien water when shown, pressure, salvage, machinery, black-water depth
 - HECTON-8 - proof-first industrial underwater survival pitch
 - Upcoming underwater survival with heavy machinery and hostile depth
 - First-look candidate: pressure-based underwater survival

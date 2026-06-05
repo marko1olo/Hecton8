@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Photic Shelf Life
 
-Photic Shelf Life defines the bright opening biome: not a safe aquarium, but the living baseline that makes deeper Atlas repair corruption legible.
+Photic shelf life is the bright opening baseline: living mats, transparent grazers and route algae before deeper cable reefs and Atlas repair tissue complicate the water.
 
 ## Scanner
 
-Shallow shelf biology is bright, loud and mostly unaltered. The moon is not dead at the surface.
+Native shallow ecology confirmed: living mats, glass grazers, pressureweed and route algae. Bright water is readable, not harmless.
 
 ## Terminal
 
-Shelf survey: living mats, transparent grazers, pressureweed and route algae remain outside Atlas repair dominance.
+SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.
 
 ## Audio
 
-The first living water is not mercy. It is baseline.
+The first living water is not mercy. It is a baseline.
 
 ## Field Note
 
-Beauty is the control sample.
+Beauty is useful only if you remember what it looked like before the machinery grew over it.
 
 <!-- External Site; generated from P031_PHOTIC_SHELF_LIFE/en_US. -->

@@ -1,0 +1,49 @@
+AGENT ID: 1859
+ROLE: NON_PROXY_PRIMITIVE_PREFAB_CLASSIFICATION_PACKET
+MODE: No-mutation static classification packet. Do not edit prefabs, assets, source, scenes, binaries, or `.meta`.
+
+PRIMARY GOAL
+Classify non-`WorldProceduralProxy` prefabs under `Assets/_Project/Prefabs` that use Unity built-in primitive mesh ids. A quick static scan found 183 total primitive-prefab hits, 95 outside `WorldProceduralProxy`, and 21 in production `Final` roots already covered by 1851-1858. This task must separate real visual blockers from acceptable hidden/dev/collider/temporary cases and produce the next prioritized replacement queue.
+
+READ
+- AGENTS.md, PROJECT_BIBLES.md, VISION_LOCKS.md, TASTE.md, quality.md
+- 3dmodel.md, 3DMODEL_TEXTURES_MATERIALS.md, gameplay.md, tools.md, inventory.md, vehicles.md, world.md if present
+- Docs/Reports/Batch18/1851_GENERATED_ASSET_PRODUCTION_AUDIT.md
+- Docs/Reports/Batch18/1853_PRIMITIVE_FINAL_REPLACEMENT_PLAN.md
+- Assets/_Project/Prefabs
+
+OWNED OUTPUTS
+- Docs/Tasks/Status_1859.md
+- Docs/AgentLogs/Rationale_1859.md for non-trivial decisions only
+- Docs/AgentLogs/LOG_1859.md
+- Docs/Reports/Batch18/1859_NON_PROXY_PRIMITIVE_PREFAB_CLASSIFICATION_PACKET.md
+- Docs/Reports/Batch18/1859_NON_PROXY_PRIMITIVE_PREFAB_MATRIX.csv
+
+HARD RULES
+- Do not run Unity, PlayMode, builds, importers, bakes, screenshots, or DataMonolith tools.
+- Do not edit prefabs/assets/source/scenes.
+- Do not auto-reject diagnostic/dev/hidden/collision-only objects without proof.
+- Do not auto-accept player-held tools, pickups, vehicles, or world runtime prefabs if they are visible gameplay items.
+- Do not duplicate 1854-1858 replacement planning; reference those for the 21 production Final blockers.
+
+20 TASKS
+01. Create tracking files and mark evidence class STATIC_SOURCE.
+02. Read authorities and 2-8 relevant mandates from `.agents-skills`.
+03. Run or reproduce a static scan for built-in primitive mesh guid under `Assets/_Project/Prefabs`.
+04. Exclude `Assets/_Project/Prefabs/WorldProceduralProxy` from primary queue and report it as dev/proxy risk only.
+05. Confirm counts: total primitive-prefab hits, non-proxy hits, production Final hits.
+06. Categorize non-proxy hits by folder: WorldRuntime, Items, Tools, Construction, WorldSupport, Resources, Transport, Player, Ocean/Sky, Diagnostics, Buildings, root loose prefabs.
+07. Mark the 21 production Final hits as already covered by 1851-1858.
+08. Inspect representative visible tool/world pickup prefabs and decide whether primitive mesh is visible art, pickup icon stand-in, collider-only, or dev marker.
+09. Inspect representative transport prefabs and decide whether primitive mesh is visible vehicle art, hidden marker, or unacceptable placeholder.
+10. Inspect representative `Player.prefab`, `Ocean_Crest.prefab`, `Sky_System.prefab`, and root loose prefabs for visible primitive risk.
+11. Inspect `WorldRuntime` hits and classify as route/runtime support, visible gameplay, diagnostic, or unknown.
+12. Define severity classes: BLOCKER, HIGH, MEDIUM, LOW, DEV_ONLY, UNKNOWN.
+13. Define replacement strategy per class: real mesh authoring, hidden marker split, dev quarantine, collider-only documentation, or future Unity proof.
+14. Define which classes should be added to `GeneratedAssetProductionAudit.py` as hard errors later.
+15. Define which classes need a separate visual proof pass rather than source-only classification.
+16. Build CSV matrix with path, refs, category, likely visibility, risk, severity, proposed next owner, notes.
+17. Identify top 20 next replacements after production Final blockers.
+18. Identify false-positive-safe cases and the proof needed to keep them out of production error gates.
+19. Append concise LOG/Rationale.
+20. Mark CLASSIFICATION_COMPLETE or BLOCKED with exact missing evidence.

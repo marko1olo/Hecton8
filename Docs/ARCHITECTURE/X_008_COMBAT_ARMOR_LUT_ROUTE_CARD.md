@@ -1,8 +1,12 @@
 ﻿# X_008 Combat Armor LUT Route Card
 
 Date: 2026-05-24
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
+Evidence class: STATIC_DOC
 Owner: X_008 / COMBAT_DAMAGE_AND_ARMOR_LUT_OPTIMIZER
+Owner domain: Echelon 5 Combat & Survival Physiology / armor LUT
 Domain: Echelon 5 Combat & Survival Physiology
+Review disposition: YELLOW / STATIC_DOC_ONLY until compile/import/runtime/profiler/player proof exists.
 
 ## Route
 

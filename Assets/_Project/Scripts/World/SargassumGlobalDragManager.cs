@@ -52,6 +52,11 @@ namespace Hecton8.World
         private const int MaxDynamicTextureRefreshStrideFrames = 18;
         private const int MaxDisruptionZoneCapacity = 16;
         private const int MaxEditorValidateDepth = 2;
+#if UNITY_EDITOR
+        private const string CollapseChunkFallbackPrefabPath = "Assets/_Project/Prefabs/Construction/Final/PFB_SargassumCollapseChunk.prefab";
+        private const string FinalPrefabQualityGateAssemblyName = "Hecton8.Editor";
+        private const string FinalPrefabQualityGateTypeName = "Hecton8.EditorTools.WorldProceduralFinalPrefabQualityGate";
+#endif
         private const float MinDensityThreshold = 0.025f;
         private const int ExternalSiteChunkSizeMeters = 64;
         private const float ExternalSiteQuantizationMeters = 0.5f;
@@ -3998,8 +4003,7 @@ namespace Hecton8.World
             try
             {
 #if UNITY_EDITOR
-                if (collapseChunkPrefab == null)
-                    collapseChunkPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/Construction/Final/PFB_SargassumCollapseChunk.prefab");
+                ValidateCollapseChunkPrefabAssignment();
 #endif
                 SanitizeSettings();
                 if (!Application.isPlaying)
@@ -4033,6 +4037,85 @@ namespace Hecton8.World
                 _editorValidateDepth--;
             }
         }
+
+#if UNITY_EDITOR
+        private void ValidateCollapseChunkPrefabAssignment()
+        {
+            if (collapseChunkPrefab != null)
+            {
+                if (!UsesUnityBuiltInPrimitiveMeshViaEditorGate(collapseChunkPrefab))
+                    return;
+
+                string assignedPath = UnityEditor.AssetDatabase.GetAssetPath(collapseChunkPrefab);
+                collapseChunkPrefab = null;
+                Hecton8.Core.H8Debug.LogError(
+                    $"Sargassum collapse chunk prefab rejected: '{assignedPath}' uses Unity built-in primitive mesh. Real non-primitive collapse chunk art is required.",
+                    this);
+            }
+
+            if (!AssetPathUsesUnityBuiltInPrimitiveMeshViaEditorGate(CollapseChunkFallbackPrefabPath))
+            {
+                collapseChunkPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(CollapseChunkFallbackPrefabPath);
+                if (collapseChunkPrefab != null)
+                    return;
+            }
+
+            Hecton8.Core.H8Debug.LogError(
+                $"Sargassum collapse chunk fallback not assigned: '{CollapseChunkFallbackPrefabPath}' is missing or uses Unity built-in primitive mesh. Real non-primitive collapse chunk art is required.",
+                this);
+        }
+
+        private bool UsesUnityBuiltInPrimitiveMeshViaEditorGate(GameObject prefab)
+        {
+            return InvokePrimitiveGateBool(nameof(UsesUnityBuiltInPrimitiveMeshViaEditorGate), "UsesUnityBuiltInPrimitiveMesh", prefab);
+        }
+
+        private bool AssetPathUsesUnityBuiltInPrimitiveMeshViaEditorGate(string assetPath)
+        {
+            return InvokePrimitiveGateBool(nameof(AssetPathUsesUnityBuiltInPrimitiveMeshViaEditorGate), "AssetPathUsesUnityBuiltInPrimitiveMesh", assetPath);
+        }
+
+        private bool InvokePrimitiveGateBool(string ownerMethod, string gateMethod, object argument)
+        {
+            System.Reflection.Assembly gateAssembly;
+            try
+            {
+                gateAssembly = System.Reflection.Assembly.Load(FinalPrefabQualityGateAssemblyName);
+            }
+            catch (Exception exception)
+            {
+                Hecton8.Core.H8Debug.LogError(
+                    $"Sargassum collapse chunk validation failed closed: cannot load {FinalPrefabQualityGateAssemblyName}.{FinalPrefabQualityGateTypeName} for {ownerMethod}. {exception.GetType().Name}: {exception.Message}",
+                    this);
+                return true;
+            }
+
+            Type gateType = gateAssembly.GetType(FinalPrefabQualityGateTypeName);
+            System.Reflection.MethodInfo method = gateType?.GetMethod(
+                gateMethod,
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+            if (method == null)
+            {
+                Hecton8.Core.H8Debug.LogError(
+                    $"Sargassum collapse chunk validation failed closed: missing {FinalPrefabQualityGateTypeName}.{gateMethod}.",
+                    this);
+                return true;
+            }
+
+            try
+            {
+                object result = method.Invoke(null, new[] { argument });
+                return result is bool usesPrimitive && usesPrimitive;
+            }
+            catch (Exception exception)
+            {
+                Hecton8.Core.H8Debug.LogError(
+                    $"Sargassum collapse chunk validation failed closed: {FinalPrefabQualityGateTypeName}.{gateMethod} threw during {ownerMethod}. {exception.GetType().Name}: {exception.Message}",
+                    this);
+                return true;
+            }
+        }
+#endif
 
         private void TryRegister()
         {

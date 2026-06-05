@@ -1,0 +1,90 @@
+ID: 1803
+Role: FIRST20_GAMEPLAY_ROUTE_BLOCKER_AUDITOR
+Chat name: 1803 First 20 Gameplay Route
+
+OBJECTIVE
+Determine what still blocks a real first-20-minutes playable route with oxygen, pressure, semi-open exploration, salvage, scanner/sonar/map usefulness, danger, return path, and spectacle.
+
+This is a gameplay/product integration audit, not a rewrite.
+
+AUTHORITY DOCS
+Read:
+- AGENTS.md
+- PROJECT_BIBLES.md
+- VISION_LOCKS.md
+- TASTE.md
+- quality.md
+- gameplay.md
+- survival.md
+- player.md
+- tools.md
+- inventory.md
+- construction.md
+- sonar.md
+- ui.md
+- world.md
+- water.md
+- creatures.md
+- Docs/ARCHITECTURE/FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md
+- Docs/ARCHITECTURE/FIRST_20_MINUTES_ROUTE_BRIEF.md
+
+Before non-trivial conclusions, identify 2-8 relevant `.agents-skills` mandates and read only those.
+
+OWNED SCOPE
+Allowed:
+- Docs/Reports/Batch18/
+- Docs/Tasks/Status_1803.md
+- Docs/AgentLogs/Rationale_1803.md
+- Docs/AgentLogs/LOG_1803.md
+- static inspection of gameplay/survival/tools/inventory/sonar/UI/player scripts and recent Status/LOG reports
+
+Do not:
+- rewrite gameplay systems in this audit;
+- launch Unity if another agent is using it;
+- claim first-20 runtime proof from docs;
+- create tasks that depend on sibling Batch 18 outputs.
+
+TASKS
+Phase 0 - Contract And Existing Evidence
+01. Create Status_1803.md with all tasks and proof labels.
+02. Read authority docs and record the locked player route assumptions in Rationale_1803.md.
+03. Inspect the first-20 contract and route brief. Extract concrete required beats: start, first exit, oxygen risk, calm view time, first danger, salvage, return, base/safe anchor, scanner/map/sonar use.
+04. Search static code for survival/oxygen, player controller, inventory, tools/scanner, sonar/map, interaction, base/safe anchor, death/respawn, creature threat. Verify paths before naming.
+05. Inspect recent Status/LOG reports only when relevant to first-20 route readiness. Do not bulk copy old logs.
+Checkpoint A: update Status_1803 with verified systems and missing proof.
+
+Phase 1 - Blocker Matrix
+06. Build `Docs/Reports/Batch18/1803_FIRST20_ROUTE_BLOCKER_MATRIX.md`.
+07. For each required beat, classify: IMPLEMENTED STATIC EVIDENCE, PARTIAL, MISSING, NEEDS UNITY PLAY PROOF, or BLOCKED.
+08. Identify gameplay blockers that make the route beautiful but empty: no oxygen consequence, no return planning, no salvage verb, no tool decision, no threat staging, no map/sonar usefulness.
+09. Identify performance/architecture blockers: hot polling, binary quality switches, scene searches, missing black-box fields, runtime allocations in critical route systems.
+10. Identify content/world blockers that prevent the route from being spectacular and readable.
+Checkpoint B: matrix must separate gameplay blockers from visual blockers and proof blockers.
+
+Phase 2 - No-Unity Improvements
+11. For every blocker, decide whether it can be advanced by static/docs/data/task prep without Unity. Name the safe output.
+12. Propose 5-10 independent implementation tasks for later agents. Each must have owner scope and proof route.
+13. Define the first minimal Play Mode test packet that should be run when Unity slot is free.
+14. Define the screenshot/capture packet needed to prove route readability and spectacle.
+15. Define Compact/Middle/High/Ultra expectations for route gameplay clarity. Compact may reduce density but not remove decision readability.
+Checkpoint C: update Status_1803 with report path and next wave candidates.
+
+Phase 3 - Handoff
+16. Write a "Unity slot needed" section: exact actions to run when the editor is available, including no build if CPU/compilers busy.
+17. Write "Do not do" section: no family melodrama hook, no dark ugly surface, no generic resource treadmill, no omniscient debug map, no hunting old IDs.
+18. Append LOG_1803.md with evidence and PENDING verification.
+19. Final report must use proof labels from quality.md.
+20. If a route beat cannot be proven from static evidence, mark PENDING VERIFICATION, not DONE.
+
+PROOF PACKET
+Required:
+- Status_1803.md
+- Rationale_1803.md
+- LOG_1803.md
+- Docs/Reports/Batch18/1803_FIRST20_ROUTE_BLOCKER_MATRIX.md
+
+REJECTION GATES
+- No runtime proof from static docs.
+- No gameplay system rewrite.
+- No sibling dependency.
+- No boring Copper Wire-only first route as product-facing V0.

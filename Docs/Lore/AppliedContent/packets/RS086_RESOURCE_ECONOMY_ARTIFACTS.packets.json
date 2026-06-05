@@ -28,12 +28,12 @@
       "localized": {
         "en_US": {
           "title": "Blue Debt Custody Grade Receipt",
-          "scanner": "Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
+          "scanner": "Blue debt receipt: value tied to custody chain, pressure history and contamination. Mass alone is low-grade.",
           "terminal": "SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
           "audio": "The expensive part is not the mineral. It is proving where it has been.",
           "in_game_wiki": "Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
           "external_site": "HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
-          "field_note": "Use for scanner receipt, contract payout tease and resource wiki."
+          "field_note": "Weigh the seal record before the sample. A heavy dirty lot can cost more than it pays."
         },
         "ru_RU": {
           "title": "Квитанция custody-grade Blue Debt",
@@ -183,12 +183,12 @@
       "localized": {
         "en_US": {
           "title": "Pressure Glass Field Certificate",
-          "scanner": "Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
+          "scanner": "Pressure glass certificate: usable as salvage, sealant feedstock or escape proof if fracture state passes.",
           "terminal": "CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
           "audio": "A clean shard is worth less than a shard that proves it held.",
           "in_game_wiki": "Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
           "external_site": "Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
-          "field_note": "Use for scanner, fabrication UI copy and fieldguide article."
+          "field_note": "A clear pane is not a safe pane. Stamp the crack map before the cutter touches it."
         },
         "ru_RU": {
           "title": "Полевой сертификат pressure glass",
@@ -338,12 +338,12 @@
       "localized": {
         "en_US": {
           "title": "Brine Salt Process Lot Card",
-          "scanner": "Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
+          "scanner": "Brine salt lot: density origin, vent exposure and filtration risk logged. Corrosion hazard likely.",
           "terminal": "LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
           "audio": "The salt is a route record. Taste it and you are reading the wrong way.",
           "in_game_wiki": "Brine materials connect geology, survival chemistry and colony process infrastructure.",
           "external_site": "Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
-          "field_note": "Use for brine canyon scanner cards and resource article."
+          "field_note": "Keep brine lots off clean fittings. One bad bag can eat a clamp overnight."
         },
         "ru_RU": {
           "title": "Процессная lot-карта brine salt",
@@ -493,12 +493,12 @@
       "localized": {
         "en_US": {
           "title": "Atlas Lattice Contamination Tag",
-          "scanner": "Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
+          "scanner": "Atlas-lattice contamination tag: custody risk and ecology risk elevated. Keep sample isolated.",
           "terminal": "TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
           "audio": "If Atlas touched it, the receipt is also a warning label.",
           "in_game_wiki": "Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
           "external_site": "The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
-          "field_note": "Use for contaminated sample scanner, ecology wiki and ending payload flags."
+          "field_note": "If the tag lists lattice contact, do not put it near food water, filter shell, or payout samples."
         },
         "ru_RU": {
           "title": "Тэг загрязнения Atlas lattice",
@@ -648,12 +648,12 @@
       "localized": {
         "en_US": {
           "title": "Black Keel Payout Mass Ledger",
-          "scanner": "Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
+          "scanner": "Black Keel payout ledger: mass, custody, receiver risk and evidence suppression priced separately.",
           "terminal": "LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
           "audio": "The ledger can pay you and still steal the story.",
           "in_game_wiki": "The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
           "external_site": "HECTON-8's salvage economy separates getting paid from understanding what you sold.",
-          "field_note": "Use for contract board, false exit records and spoiler-gated ending pages."
+          "field_note": "Carrier math is not your math. A clean witness hash can weigh more than a full crate."
         },
         "ru_RU": {
           "title": "Mass-ledger выплат Black Keel",

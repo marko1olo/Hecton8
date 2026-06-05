@@ -33,16 +33,16 @@
           "audio": "Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.",
           "in_game_wiki": "Needleprobes make the setting hard-sci-fi: Aegir was not reached by FTL or heroic jumps. It entered human ledgers through slow survey payloads, delayed telemetry and risk models.",
           "external_site": "HECTON-8 sits in a no-FTL future. First contact with the Aegir route came through long-duration survey hardware, not instant travel.",
-          "field_note": "Use for encyclopedia route history and public hard-sci-fi primer."
+          "field_note": "Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived."
         },
         "ru_RU": {
-          "title": "Программа игольчатых зондов",
-          "scanner": "Архив дальних зондов. Люди узнали об Aegir до пилотируемых грузовых рейсов.",
-          "terminal": "АРХИВ RAN: Aegir картировали игольчатые зонды, телеметрия pellet-lane и запоздалые relay-пинги. Deep Reach купила уверенность до того, как экипаж увидел HECTON-8.",
-          "audio": "Первыми туда добрались не люди. Железо пришло, подождало и продало нам маршрут обратно.",
-          "in_game_wiki": "Игольчатые зонды держат сеттинг в hard sci-fi: Aegir вошёл в человеческие реестры через медленную разведку, а не через FTL.",
-          "external_site": "HECTON-8 существует в будущем без FTL. Aegir сначала появился как телеметрия долгих зондов.",
-          "field_note": "Для энциклопедии маршрута и публичного hard-sci-fi вступления."
+          "title": "Draft RU localization pending native pass. Needleprobe Precursor Program",
+          "scanner": "Draft RU localization pending native pass. Long-baseline probe archive. Human survey reached Aegir before crewed freight did.",
+          "terminal": "Draft RU localization pending native pass. RAN ARCHIVE: Aegir was mapped by needleprobes, pellet-lane telemetry and delayed relay pings. Deep Reach bought confidence before any crew saw HECTON-8 with human eyes.",
+          "audio": "Draft RU localization pending native pass. Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.",
+          "in_game_wiki": "Draft RU localization pending native pass. Needleprobes make the setting hard-sci-fi: Aegir was not reached by FTL or heroic jumps. It entered human ledgers through slow survey payloads, delayed telemetry and risk models.",
+          "external_site": "Draft RU localization pending native pass. HECTON-8 sits in a no-FTL future. First contact with the Aegir route came through long-duration survey hardware, not instant travel.",
+          "field_note": "Draft RU localization pending native pass. Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Needleprobe Precursor Program",
@@ -51,7 +51,7 @@
           "audio": "Draft JA localization pending native pass. Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.",
           "in_game_wiki": "Draft JA localization pending native pass. Needleprobes make the setting hard-sci-fi: Aegir was not reached by FTL or heroic jumps. It entered human ledgers through slow survey payloads, delayed telemetry and risk models.",
           "external_site": "Draft JA localization pending native pass. HECTON-8 sits in a no-FTL future. First contact with the Aegir route came through long-duration survey hardware, not instant travel.",
-          "field_note": "Draft JA localization pending native pass. Use for encyclopedia route history and public hard-sci-fi primer."
+          "field_note": "Draft JA localization pending native pass. Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Needleprobe Precursor Program",
@@ -60,7 +60,7 @@
           "audio": "Draft ZH localization pending native pass. Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.",
           "in_game_wiki": "Draft ZH localization pending native pass. Needleprobes make the setting hard-sci-fi: Aegir was not reached by FTL or heroic jumps. It entered human ledgers through slow survey payloads, delayed telemetry and risk models.",
           "external_site": "Draft ZH localization pending native pass. HECTON-8 sits in a no-FTL future. First contact with the Aegir route came through long-duration survey hardware, not instant travel.",
-          "field_note": "Draft ZH localization pending native pass. Use for encyclopedia route history and public hard-sci-fi primer."
+          "field_note": "Draft ZH localization pending native pass. Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Needleprobe Precursor Program",
@@ -69,7 +69,7 @@
           "audio": "Draft FR localization pending native pass. Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.",
           "in_game_wiki": "Draft FR localization pending native pass. Needleprobes make the setting hard-sci-fi: Aegir was not reached by FTL or heroic jumps. It entered human ledgers through slow survey payloads, delayed telemetry and risk models.",
           "external_site": "Draft FR localization pending native pass. HECTON-8 sits in a no-FTL future. First contact with the Aegir route came through long-duration survey hardware, not instant travel.",
-          "field_note": "Draft FR localization pending native pass. Use for encyclopedia route history and public hard-sci-fi primer."
+          "field_note": "Draft FR localization pending native pass. Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Needleprobe Precursor Program",
@@ -78,7 +78,7 @@
           "audio": "Draft ES localization pending native pass. Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.",
           "in_game_wiki": "Draft ES localization pending native pass. Needleprobes make the setting hard-sci-fi: Aegir was not reached by FTL or heroic jumps. It entered human ledgers through slow survey payloads, delayed telemetry and risk models.",
           "external_site": "Draft ES localization pending native pass. HECTON-8 sits in a no-FTL future. First contact with the Aegir route came through long-duration survey hardware, not instant travel.",
-          "field_note": "Draft ES localization pending native pass. Use for encyclopedia route history and public hard-sci-fi primer."
+          "field_note": "Draft ES localization pending native pass. Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Needleprobe Precursor Program",
@@ -87,7 +87,7 @@
           "audio": "Draft DE localization pending native pass. Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.",
           "in_game_wiki": "Draft DE localization pending native pass. Needleprobes make the setting hard-sci-fi: Aegir was not reached by FTL or heroic jumps. It entered human ledgers through slow survey payloads, delayed telemetry and risk models.",
           "external_site": "Draft DE localization pending native pass. HECTON-8 sits in a no-FTL future. First contact with the Aegir route came through long-duration survey hardware, not instant travel.",
-          "field_note": "Draft DE localization pending native pass. Use for encyclopedia route history and public hard-sci-fi primer."
+          "field_note": "Draft DE localization pending native pass. Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Needleprobe Precursor Program",
@@ -96,7 +96,7 @@
           "audio": "Draft PL localization pending native pass. Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.",
           "in_game_wiki": "Draft PL localization pending native pass. Needleprobes make the setting hard-sci-fi: Aegir was not reached by FTL or heroic jumps. It entered human ledgers through slow survey payloads, delayed telemetry and risk models.",
           "external_site": "Draft PL localization pending native pass. HECTON-8 sits in a no-FTL future. First contact with the Aegir route came through long-duration survey hardware, not instant travel.",
-          "field_note": "Draft PL localization pending native pass. Use for encyclopedia route history and public hard-sci-fi primer."
+          "field_note": "Draft PL localization pending native pass. Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Needleprobe Precursor Program",
@@ -105,7 +105,7 @@
           "audio": "Draft UK localization pending native pass. Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.",
           "in_game_wiki": "Draft UK localization pending native pass. Needleprobes make the setting hard-sci-fi: Aegir was not reached by FTL or heroic jumps. It entered human ledgers through slow survey payloads, delayed telemetry and risk models.",
           "external_site": "Draft UK localization pending native pass. HECTON-8 sits in a no-FTL future. First contact with the Aegir route came through long-duration survey hardware, not instant travel.",
-          "field_note": "Draft UK localization pending native pass. Use for encyclopedia route history and public hard-sci-fi primer."
+          "field_note": "Draft UK localization pending native pass. Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Needleprobe Precursor Program",
@@ -114,7 +114,7 @@
           "audio": "Draft AR localization pending native pass. Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.",
           "in_game_wiki": "Draft AR localization pending native pass. Needleprobes make the setting hard-sci-fi: Aegir was not reached by FTL or heroic jumps. It entered human ledgers through slow survey payloads, delayed telemetry and risk models.",
           "external_site": "Draft AR localization pending native pass. HECTON-8 sits in a no-FTL future. First contact with the Aegir route came through long-duration survey hardware, not instant travel.",
-          "field_note": "Draft AR localization pending native pass. Use for encyclopedia route history and public hard-sci-fi primer."
+          "field_note": "Draft AR localization pending native pass. Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Needleprobe Precursor Program",
@@ -123,7 +123,7 @@
           "audio": "Draft ID localization pending native pass. Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.",
           "in_game_wiki": "Draft ID localization pending native pass. Needleprobes make the setting hard-sci-fi: Aegir was not reached by FTL or heroic jumps. It entered human ledgers through slow survey payloads, delayed telemetry and risk models.",
           "external_site": "Draft ID localization pending native pass. HECTON-8 sits in a no-FTL future. First contact with the Aegir route came through long-duration survey hardware, not instant travel.",
-          "field_note": "Draft ID localization pending native pass. Use for encyclopedia route history and public hard-sci-fi primer."
+          "field_note": "Draft ID localization pending native pass. Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Needleprobe Precursor Program",
@@ -132,7 +132,7 @@
           "audio": "Draft KO localization pending native pass. Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.",
           "in_game_wiki": "Draft KO localization pending native pass. Needleprobes make the setting hard-sci-fi: Aegir was not reached by FTL or heroic jumps. It entered human ledgers through slow survey payloads, delayed telemetry and risk models.",
           "external_site": "Draft KO localization pending native pass. HECTON-8 sits in a no-FTL future. First contact with the Aegir route came through long-duration survey hardware, not instant travel.",
-          "field_note": "Draft KO localization pending native pass. Use for encyclopedia route history and public hard-sci-fi primer."
+          "field_note": "Draft KO localization pending native pass. Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Needleprobe Precursor Program",
@@ -141,7 +141,7 @@
           "audio": "Draft HE localization pending native pass. Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.",
           "in_game_wiki": "Draft HE localization pending native pass. Needleprobes make the setting hard-sci-fi: Aegir was not reached by FTL or heroic jumps. It entered human ledgers through slow survey payloads, delayed telemetry and risk models.",
           "external_site": "Draft HE localization pending native pass. HECTON-8 sits in a no-FTL future. First contact with the Aegir route came through long-duration survey hardware, not instant travel.",
-          "field_note": "Draft HE localization pending native pass. Use for encyclopedia route history and public hard-sci-fi primer."
+          "field_note": "Draft HE localization pending native pass. Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Needleprobe Precursor Program",
@@ -150,7 +150,7 @@
           "audio": "Draft PT localization pending native pass. Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.",
           "in_game_wiki": "Draft PT localization pending native pass. Needleprobes make the setting hard-sci-fi: Aegir was not reached by FTL or heroic jumps. It entered human ledgers through slow survey payloads, delayed telemetry and risk models.",
           "external_site": "Draft PT localization pending native pass. HECTON-8 sits in a no-FTL future. First contact with the Aegir route came through long-duration survey hardware, not instant travel.",
-          "field_note": "Draft PT localization pending native pass. Use for encyclopedia route history and public hard-sci-fi primer."
+          "field_note": "Draft PT localization pending native pass. Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Needleprobe Precursor Program",
@@ -159,7 +159,7 @@
           "audio": "Draft NL localization pending native pass. Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.",
           "in_game_wiki": "Draft NL localization pending native pass. Needleprobes make the setting hard-sci-fi: Aegir was not reached by FTL or heroic jumps. It entered human ledgers through slow survey payloads, delayed telemetry and risk models.",
           "external_site": "Draft NL localization pending native pass. HECTON-8 sits in a no-FTL future. First contact with the Aegir route came through long-duration survey hardware, not instant travel.",
-          "field_note": "Draft NL localization pending native pass. Use for encyclopedia route history and public hard-sci-fi primer."
+          "field_note": "Draft NL localization pending native pass. Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived."
         }
       }
     },
@@ -188,16 +188,16 @@
           "audio": "The ship is not fast by magic. It is fast because half the route is machinery you never see.",
           "in_game_wiki": "Beam sails and pellet lanes explain why interstellar travel is possible but still punishing. Speed comes from infrastructure, not FTL.",
           "external_site": "Humanity reaches frontier systems through layered propulsion corridors: sail beams, pellet lanes, fusion stages, braking reserves and relay custody.",
-          "field_note": "Use for ship technology article and route UI context."
+          "field_note": "Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year."
         },
         "ru_RU": {
-          "title": "Beam-sail и pellet-lane",
-          "scanner": "Запись транзитной линии. Медленный freight живёт потому, что ускорение делает инфраструктура.",
-          "terminal": "ЗАМЕТКА МАРШРУТА: внутренние домены толкают зонды и freight beam-sail assist, pellet streams и fusion catch stages. Aegir дорог, потому что пропущенное окно стоит лет.",
-          "audio": "Корабль быстрый не из-за магии. Половина скорости спрятана в инфраструктуре маршрута.",
-          "in_game_wiki": "Beam-sail и pellet-lane объясняют, почему межзвёздные рейсы возможны, но всё ещё жестоки по цене и времени.",
-          "external_site": "Человечество летит к фронтиру через propulsion corridors: beam, pellet, fusion, braking reserve и relay custody.",
-          "field_note": "Для статьи о кораблях и UI маршрута."
+          "title": "Draft RU localization pending native pass. Beam Sail and Pellet Lane",
+          "scanner": "Draft RU localization pending native pass. Transit lane record. Slow freight survives because infrastructure does the acceleration math.",
+          "terminal": "Draft RU localization pending native pass. ROUTE NOTE: inner domains push probes and freight with beam-sail assists, pellet streams and fusion catch stages. Aegir remains expensive because every missed window turns into years.",
+          "audio": "Draft RU localization pending native pass. The ship is not fast by magic. It is fast because half the route is machinery you never see.",
+          "in_game_wiki": "Draft RU localization pending native pass. Beam sails and pellet lanes explain why interstellar travel is possible but still punishing. Speed comes from infrastructure, not FTL.",
+          "external_site": "Draft RU localization pending native pass. Humanity reaches frontier systems through layered propulsion corridors: sail beams, pellet lanes, fusion stages, braking reserves and relay custody.",
+          "field_note": "Draft RU localization pending native pass. Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Beam Sail and Pellet Lane",
@@ -206,7 +206,7 @@
           "audio": "Draft JA localization pending native pass. The ship is not fast by magic. It is fast because half the route is machinery you never see.",
           "in_game_wiki": "Draft JA localization pending native pass. Beam sails and pellet lanes explain why interstellar travel is possible but still punishing. Speed comes from infrastructure, not FTL.",
           "external_site": "Draft JA localization pending native pass. Humanity reaches frontier systems through layered propulsion corridors: sail beams, pellet lanes, fusion stages, braking reserves and relay custody.",
-          "field_note": "Draft JA localization pending native pass. Use for ship technology article and route UI context."
+          "field_note": "Draft JA localization pending native pass. Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Beam Sail and Pellet Lane",
@@ -215,7 +215,7 @@
           "audio": "Draft ZH localization pending native pass. The ship is not fast by magic. It is fast because half the route is machinery you never see.",
           "in_game_wiki": "Draft ZH localization pending native pass. Beam sails and pellet lanes explain why interstellar travel is possible but still punishing. Speed comes from infrastructure, not FTL.",
           "external_site": "Draft ZH localization pending native pass. Humanity reaches frontier systems through layered propulsion corridors: sail beams, pellet lanes, fusion stages, braking reserves and relay custody.",
-          "field_note": "Draft ZH localization pending native pass. Use for ship technology article and route UI context."
+          "field_note": "Draft ZH localization pending native pass. Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Beam Sail and Pellet Lane",
@@ -224,7 +224,7 @@
           "audio": "Draft FR localization pending native pass. The ship is not fast by magic. It is fast because half the route is machinery you never see.",
           "in_game_wiki": "Draft FR localization pending native pass. Beam sails and pellet lanes explain why interstellar travel is possible but still punishing. Speed comes from infrastructure, not FTL.",
           "external_site": "Draft FR localization pending native pass. Humanity reaches frontier systems through layered propulsion corridors: sail beams, pellet lanes, fusion stages, braking reserves and relay custody.",
-          "field_note": "Draft FR localization pending native pass. Use for ship technology article and route UI context."
+          "field_note": "Draft FR localization pending native pass. Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Beam Sail and Pellet Lane",
@@ -233,7 +233,7 @@
           "audio": "Draft ES localization pending native pass. The ship is not fast by magic. It is fast because half the route is machinery you never see.",
           "in_game_wiki": "Draft ES localization pending native pass. Beam sails and pellet lanes explain why interstellar travel is possible but still punishing. Speed comes from infrastructure, not FTL.",
           "external_site": "Draft ES localization pending native pass. Humanity reaches frontier systems through layered propulsion corridors: sail beams, pellet lanes, fusion stages, braking reserves and relay custody.",
-          "field_note": "Draft ES localization pending native pass. Use for ship technology article and route UI context."
+          "field_note": "Draft ES localization pending native pass. Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Beam Sail and Pellet Lane",
@@ -242,7 +242,7 @@
           "audio": "Draft DE localization pending native pass. The ship is not fast by magic. It is fast because half the route is machinery you never see.",
           "in_game_wiki": "Draft DE localization pending native pass. Beam sails and pellet lanes explain why interstellar travel is possible but still punishing. Speed comes from infrastructure, not FTL.",
           "external_site": "Draft DE localization pending native pass. Humanity reaches frontier systems through layered propulsion corridors: sail beams, pellet lanes, fusion stages, braking reserves and relay custody.",
-          "field_note": "Draft DE localization pending native pass. Use for ship technology article and route UI context."
+          "field_note": "Draft DE localization pending native pass. Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Beam Sail and Pellet Lane",
@@ -251,7 +251,7 @@
           "audio": "Draft PL localization pending native pass. The ship is not fast by magic. It is fast because half the route is machinery you never see.",
           "in_game_wiki": "Draft PL localization pending native pass. Beam sails and pellet lanes explain why interstellar travel is possible but still punishing. Speed comes from infrastructure, not FTL.",
           "external_site": "Draft PL localization pending native pass. Humanity reaches frontier systems through layered propulsion corridors: sail beams, pellet lanes, fusion stages, braking reserves and relay custody.",
-          "field_note": "Draft PL localization pending native pass. Use for ship technology article and route UI context."
+          "field_note": "Draft PL localization pending native pass. Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Beam Sail and Pellet Lane",
@@ -260,7 +260,7 @@
           "audio": "Draft UK localization pending native pass. The ship is not fast by magic. It is fast because half the route is machinery you never see.",
           "in_game_wiki": "Draft UK localization pending native pass. Beam sails and pellet lanes explain why interstellar travel is possible but still punishing. Speed comes from infrastructure, not FTL.",
           "external_site": "Draft UK localization pending native pass. Humanity reaches frontier systems through layered propulsion corridors: sail beams, pellet lanes, fusion stages, braking reserves and relay custody.",
-          "field_note": "Draft UK localization pending native pass. Use for ship technology article and route UI context."
+          "field_note": "Draft UK localization pending native pass. Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Beam Sail and Pellet Lane",
@@ -269,7 +269,7 @@
           "audio": "Draft AR localization pending native pass. The ship is not fast by magic. It is fast because half the route is machinery you never see.",
           "in_game_wiki": "Draft AR localization pending native pass. Beam sails and pellet lanes explain why interstellar travel is possible but still punishing. Speed comes from infrastructure, not FTL.",
           "external_site": "Draft AR localization pending native pass. Humanity reaches frontier systems through layered propulsion corridors: sail beams, pellet lanes, fusion stages, braking reserves and relay custody.",
-          "field_note": "Draft AR localization pending native pass. Use for ship technology article and route UI context."
+          "field_note": "Draft AR localization pending native pass. Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Beam Sail and Pellet Lane",
@@ -278,7 +278,7 @@
           "audio": "Draft ID localization pending native pass. The ship is not fast by magic. It is fast because half the route is machinery you never see.",
           "in_game_wiki": "Draft ID localization pending native pass. Beam sails and pellet lanes explain why interstellar travel is possible but still punishing. Speed comes from infrastructure, not FTL.",
           "external_site": "Draft ID localization pending native pass. Humanity reaches frontier systems through layered propulsion corridors: sail beams, pellet lanes, fusion stages, braking reserves and relay custody.",
-          "field_note": "Draft ID localization pending native pass. Use for ship technology article and route UI context."
+          "field_note": "Draft ID localization pending native pass. Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Beam Sail and Pellet Lane",
@@ -287,7 +287,7 @@
           "audio": "Draft KO localization pending native pass. The ship is not fast by magic. It is fast because half the route is machinery you never see.",
           "in_game_wiki": "Draft KO localization pending native pass. Beam sails and pellet lanes explain why interstellar travel is possible but still punishing. Speed comes from infrastructure, not FTL.",
           "external_site": "Draft KO localization pending native pass. Humanity reaches frontier systems through layered propulsion corridors: sail beams, pellet lanes, fusion stages, braking reserves and relay custody.",
-          "field_note": "Draft KO localization pending native pass. Use for ship technology article and route UI context."
+          "field_note": "Draft KO localization pending native pass. Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Beam Sail and Pellet Lane",
@@ -296,7 +296,7 @@
           "audio": "Draft HE localization pending native pass. The ship is not fast by magic. It is fast because half the route is machinery you never see.",
           "in_game_wiki": "Draft HE localization pending native pass. Beam sails and pellet lanes explain why interstellar travel is possible but still punishing. Speed comes from infrastructure, not FTL.",
           "external_site": "Draft HE localization pending native pass. Humanity reaches frontier systems through layered propulsion corridors: sail beams, pellet lanes, fusion stages, braking reserves and relay custody.",
-          "field_note": "Draft HE localization pending native pass. Use for ship technology article and route UI context."
+          "field_note": "Draft HE localization pending native pass. Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Beam Sail and Pellet Lane",
@@ -305,7 +305,7 @@
           "audio": "Draft PT localization pending native pass. The ship is not fast by magic. It is fast because half the route is machinery you never see.",
           "in_game_wiki": "Draft PT localization pending native pass. Beam sails and pellet lanes explain why interstellar travel is possible but still punishing. Speed comes from infrastructure, not FTL.",
           "external_site": "Draft PT localization pending native pass. Humanity reaches frontier systems through layered propulsion corridors: sail beams, pellet lanes, fusion stages, braking reserves and relay custody.",
-          "field_note": "Draft PT localization pending native pass. Use for ship technology article and route UI context."
+          "field_note": "Draft PT localization pending native pass. Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Beam Sail and Pellet Lane",
@@ -314,7 +314,7 @@
           "audio": "Draft NL localization pending native pass. The ship is not fast by magic. It is fast because half the route is machinery you never see.",
           "in_game_wiki": "Draft NL localization pending native pass. Beam sails and pellet lanes explain why interstellar travel is possible but still punishing. Speed comes from infrastructure, not FTL.",
           "external_site": "Draft NL localization pending native pass. Humanity reaches frontier systems through layered propulsion corridors: sail beams, pellet lanes, fusion stages, braking reserves and relay custody.",
-          "field_note": "Draft NL localization pending native pass. Use for ship technology article and route UI context."
+          "field_note": "Draft NL localization pending native pass. Transit-lane records belong beside route windows: beam assists, pellet streams, braking reserves, and the cost of every missed year."
         }
       }
     },
@@ -343,16 +343,16 @@
           "audio": "The colony started as cargo that managed to stop.",
           "in_game_wiki": "Seed ships explain why Aegir had infrastructure before it had a stable human community. Arrival was a staged industrial process.",
           "external_site": "Aegir was not settled by a single heroic landing. It was assembled from seed cargo, braking architecture and delayed crew rotations.",
-          "field_note": "Use for settlement timeline and domain logistics article."
+          "field_note": "Settlement timeline record: seed cargo, braking debris, assembly phases, and delayed crews explain how infrastructure preceded community."
         },
         "ru_RU": {
-          "title": "Тормозная архитектура seed ship",
-          "scanner": "Архив seed ship. Прибытие зависело от тормозной массы, а не от веры в цель.",
-          "terminal": "ЛОГ КОЛОНИИ: раннее железо Aegir пришло как seed cargo, reactor shells, printers, water chemistry rigs и braking debris. Люди унаследовали то, что пережило торможение.",
-          "audio": "Колония началась как груз, который смог остановиться.",
-          "in_game_wiki": "Seed ships объясняют, почему у Aegir была инфраструктура до устойчивого человеческого сообщества.",
-          "external_site": "Aegir заселяли не одним героическим landing, а seed cargo, braking architecture и delayed crew rotations.",
-          "field_note": "Для timeline заселения и статьи о логистике доменов."
+          "title": "Draft RU localization pending native pass. Seed Ship Braking Architecture",
+          "scanner": "Draft RU localization pending native pass. Seed ship archive. Arrival depended on braking mass, not faith in the destination.",
+          "terminal": "Draft RU localization pending native pass. COLONY LOG: early Aegir hardware arrived as seed cargo, reactor shells, printers, water chemistry rigs and braking debris. The first human phase inherited what survived deceleration.",
+          "audio": "Draft RU localization pending native pass. The colony started as cargo that managed to stop.",
+          "in_game_wiki": "Draft RU localization pending native pass. Seed ships explain why Aegir had infrastructure before it had a stable human community. Arrival was a staged industrial process.",
+          "external_site": "Draft RU localization pending native pass. Aegir was not settled by a single heroic landing. It was assembled from seed cargo, braking architecture and delayed crew rotations.",
+          "field_note": "Draft RU localization pending native pass. Settlement timeline record: seed cargo, braking debris, assembly phases, and delayed crews explain how infrastructure preceded community."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Seed Ship Braking Architecture",
@@ -361,7 +361,7 @@
           "audio": "Draft JA localization pending native pass. The colony started as cargo that managed to stop.",
           "in_game_wiki": "Draft JA localization pending native pass. Seed ships explain why Aegir had infrastructure before it had a stable human community. Arrival was a staged industrial process.",
           "external_site": "Draft JA localization pending native pass. Aegir was not settled by a single heroic landing. It was assembled from seed cargo, braking architecture and delayed crew rotations.",
-          "field_note": "Draft JA localization pending native pass. Use for settlement timeline and domain logistics article."
+          "field_note": "Draft JA localization pending native pass. Settlement timeline record: seed cargo, braking debris, assembly phases, and delayed crews explain how infrastructure preceded community."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Seed Ship Braking Architecture",
@@ -370,7 +370,7 @@
           "audio": "Draft ZH localization pending native pass. The colony started as cargo that managed to stop.",
           "in_game_wiki": "Draft ZH localization pending native pass. Seed ships explain why Aegir had infrastructure before it had a stable human community. Arrival was a staged industrial process.",
           "external_site": "Draft ZH localization pending native pass. Aegir was not settled by a single heroic landing. It was assembled from seed cargo, braking architecture and delayed crew rotations.",
-          "field_note": "Draft ZH localization pending native pass. Use for settlement timeline and domain logistics article."
+          "field_note": "Draft ZH localization pending native pass. Settlement timeline record: seed cargo, braking debris, assembly phases, and delayed crews explain how infrastructure preceded community."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Seed Ship Braking Architecture",
@@ -379,7 +379,7 @@
           "audio": "Draft FR localization pending native pass. The colony started as cargo that managed to stop.",
           "in_game_wiki": "Draft FR localization pending native pass. Seed ships explain why Aegir had infrastructure before it had a stable human community. Arrival was a staged industrial process.",
           "external_site": "Draft FR localization pending native pass. Aegir was not settled by a single heroic landing. It was assembled from seed cargo, braking architecture and delayed crew rotations.",
-          "field_note": "Draft FR localization pending native pass. Use for settlement timeline and domain logistics article."
+          "field_note": "Draft FR localization pending native pass. Settlement timeline record: seed cargo, braking debris, assembly phases, and delayed crews explain how infrastructure preceded community."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Seed Ship Braking Architecture",
@@ -388,7 +388,7 @@
           "audio": "Draft ES localization pending native pass. The colony started as cargo that managed to stop.",
           "in_game_wiki": "Draft ES localization pending native pass. Seed ships explain why Aegir had infrastructure before it had a stable human community. Arrival was a staged industrial process.",
           "external_site": "Draft ES localization pending native pass. Aegir was not settled by a single heroic landing. It was assembled from seed cargo, braking architecture and delayed crew rotations.",
-          "field_note": "Draft ES localization pending native pass. Use for settlement timeline and domain logistics article."
+          "field_note": "Draft ES localization pending native pass. Settlement timeline record: seed cargo, braking debris, assembly phases, and delayed crews explain how infrastructure preceded community."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Seed Ship Braking Architecture",
@@ -397,7 +397,7 @@
           "audio": "Draft DE localization pending native pass. The colony started as cargo that managed to stop.",
           "in_game_wiki": "Draft DE localization pending native pass. Seed ships explain why Aegir had infrastructure before it had a stable human community. Arrival was a staged industrial process.",
           "external_site": "Draft DE localization pending native pass. Aegir was not settled by a single heroic landing. It was assembled from seed cargo, braking architecture and delayed crew rotations.",
-          "field_note": "Draft DE localization pending native pass. Use for settlement timeline and domain logistics article."
+          "field_note": "Draft DE localization pending native pass. Settlement timeline record: seed cargo, braking debris, assembly phases, and delayed crews explain how infrastructure preceded community."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Seed Ship Braking Architecture",
@@ -406,7 +406,7 @@
           "audio": "Draft PL localization pending native pass. The colony started as cargo that managed to stop.",
           "in_game_wiki": "Draft PL localization pending native pass. Seed ships explain why Aegir had infrastructure before it had a stable human community. Arrival was a staged industrial process.",
           "external_site": "Draft PL localization pending native pass. Aegir was not settled by a single heroic landing. It was assembled from seed cargo, braking architecture and delayed crew rotations.",
-          "field_note": "Draft PL localization pending native pass. Use for settlement timeline and domain logistics article."
+          "field_note": "Draft PL localization pending native pass. Settlement timeline record: seed cargo, braking debris, assembly phases, and delayed crews explain how infrastructure preceded community."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Seed Ship Braking Architecture",
@@ -415,7 +415,7 @@
           "audio": "Draft UK localization pending native pass. The colony started as cargo that managed to stop.",
           "in_game_wiki": "Draft UK localization pending native pass. Seed ships explain why Aegir had infrastructure before it had a stable human community. Arrival was a staged industrial process.",
           "external_site": "Draft UK localization pending native pass. Aegir was not settled by a single heroic landing. It was assembled from seed cargo, braking architecture and delayed crew rotations.",
-          "field_note": "Draft UK localization pending native pass. Use for settlement timeline and domain logistics article."
+          "field_note": "Draft UK localization pending native pass. Settlement timeline record: seed cargo, braking debris, assembly phases, and delayed crews explain how infrastructure preceded community."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Seed Ship Braking Architecture",
@@ -424,7 +424,7 @@
           "audio": "Draft AR localization pending native pass. The colony started as cargo that managed to stop.",
           "in_game_wiki": "Draft AR localization pending native pass. Seed ships explain why Aegir had infrastructure before it had a stable human community. Arrival was a staged industrial process.",
           "external_site": "Draft AR localization pending native pass. Aegir was not settled by a single heroic landing. It was assembled from seed cargo, braking architecture and delayed crew rotations.",
-          "field_note": "Draft AR localization pending native pass. Use for settlement timeline and domain logistics article."
+          "field_note": "Draft AR localization pending native pass. Settlement timeline record: seed cargo, braking debris, assembly phases, and delayed crews explain how infrastructure preceded community."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Seed Ship Braking Architecture",
@@ -433,7 +433,7 @@
           "audio": "Draft ID localization pending native pass. The colony started as cargo that managed to stop.",
           "in_game_wiki": "Draft ID localization pending native pass. Seed ships explain why Aegir had infrastructure before it had a stable human community. Arrival was a staged industrial process.",
           "external_site": "Draft ID localization pending native pass. Aegir was not settled by a single heroic landing. It was assembled from seed cargo, braking architecture and delayed crew rotations.",
-          "field_note": "Draft ID localization pending native pass. Use for settlement timeline and domain logistics article."
+          "field_note": "Draft ID localization pending native pass. Settlement timeline record: seed cargo, braking debris, assembly phases, and delayed crews explain how infrastructure preceded community."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Seed Ship Braking Architecture",
@@ -442,7 +442,7 @@
           "audio": "Draft KO localization pending native pass. The colony started as cargo that managed to stop.",
           "in_game_wiki": "Draft KO localization pending native pass. Seed ships explain why Aegir had infrastructure before it had a stable human community. Arrival was a staged industrial process.",
           "external_site": "Draft KO localization pending native pass. Aegir was not settled by a single heroic landing. It was assembled from seed cargo, braking architecture and delayed crew rotations.",
-          "field_note": "Draft KO localization pending native pass. Use for settlement timeline and domain logistics article."
+          "field_note": "Draft KO localization pending native pass. Settlement timeline record: seed cargo, braking debris, assembly phases, and delayed crews explain how infrastructure preceded community."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Seed Ship Braking Architecture",
@@ -451,7 +451,7 @@
           "audio": "Draft HE localization pending native pass. The colony started as cargo that managed to stop.",
           "in_game_wiki": "Draft HE localization pending native pass. Seed ships explain why Aegir had infrastructure before it had a stable human community. Arrival was a staged industrial process.",
           "external_site": "Draft HE localization pending native pass. Aegir was not settled by a single heroic landing. It was assembled from seed cargo, braking architecture and delayed crew rotations.",
-          "field_note": "Draft HE localization pending native pass. Use for settlement timeline and domain logistics article."
+          "field_note": "Draft HE localization pending native pass. Settlement timeline record: seed cargo, braking debris, assembly phases, and delayed crews explain how infrastructure preceded community."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Seed Ship Braking Architecture",
@@ -460,7 +460,7 @@
           "audio": "Draft PT localization pending native pass. The colony started as cargo that managed to stop.",
           "in_game_wiki": "Draft PT localization pending native pass. Seed ships explain why Aegir had infrastructure before it had a stable human community. Arrival was a staged industrial process.",
           "external_site": "Draft PT localization pending native pass. Aegir was not settled by a single heroic landing. It was assembled from seed cargo, braking architecture and delayed crew rotations.",
-          "field_note": "Draft PT localization pending native pass. Use for settlement timeline and domain logistics article."
+          "field_note": "Draft PT localization pending native pass. Settlement timeline record: seed cargo, braking debris, assembly phases, and delayed crews explain how infrastructure preceded community."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Seed Ship Braking Architecture",
@@ -469,7 +469,7 @@
           "audio": "Draft NL localization pending native pass. The colony started as cargo that managed to stop.",
           "in_game_wiki": "Draft NL localization pending native pass. Seed ships explain why Aegir had infrastructure before it had a stable human community. Arrival was a staged industrial process.",
           "external_site": "Draft NL localization pending native pass. Aegir was not settled by a single heroic landing. It was assembled from seed cargo, braking architecture and delayed crew rotations.",
-          "field_note": "Draft NL localization pending native pass. Use for settlement timeline and domain logistics article."
+          "field_note": "Draft NL localization pending native pass. Settlement timeline record: seed cargo, braking debris, assembly phases, and delayed crews explain how infrastructure preceded community."
         }
       }
     },
@@ -498,16 +498,16 @@
           "audio": "The carrier is not your home. It is a machine that knows who owns your debt.",
           "in_game_wiki": "The player arrives through a practical salvage stack: old carrier, claim-pool custody, automatic handling and limited rescue agency.",
           "external_site": "HECTON-8's ship fantasy is not a private yacht. It is rented industrial salvage hardware tied to contracts and delayed orbital windows.",
-          "field_note": "Use for carrier ownership and player start clarity."
+          "field_note": "Carrier ownership record: Black Keel is industrial custody hardware, not a personal rescue ship."
         },
         "ru_RU": {
-          "title": "System carrier tug stack",
-          "scanner": "Запись carrier stack. Black Keel двигает salvage через tugs, timers и custody locks.",
-          "terminal": "СПЕЦИФИКАЦИЯ BLACK KEEL: carrier - claim-pool salvage platform. Он держит орбиту, принимает cargo, считает долг и сбрасывает capsules. Он не чинит сломанную moon insertion chain сам.",
-          "audio": "Carrier - не дом. Это машина, которая знает, кому принадлежит твой долг.",
-          "in_game_wiki": "Игрок прилетает через рабочий salvage stack: старый carrier, claim-pool custody, автоматика и ограниченная rescue agency.",
-          "external_site": "Корабль HECTON-8 - не личная яхта, а арендованное индустриальное salvage-железо.",
-          "field_note": "Для ownership carrier и старта игрока."
+          "title": "Draft RU localization pending native pass. System Carrier Tug Stack",
+          "scanner": "Draft RU localization pending native pass. Carrier stack record. Black Keel moves salvage by tugs, timers and custody locks.",
+          "terminal": "Draft RU localization pending native pass. BLACK KEEL SPEC: the carrier is a claim-pool salvage platform. It can hold orbit, receive cargo, recycle debt and deploy capsules. It cannot solve a broken moon insertion chain by itself.",
+          "audio": "Draft RU localization pending native pass. The carrier is not your home. It is a machine that knows who owns your debt.",
+          "in_game_wiki": "Draft RU localization pending native pass. The player arrives through a practical salvage stack: old carrier, claim-pool custody, automatic handling and limited rescue agency.",
+          "external_site": "Draft RU localization pending native pass. HECTON-8's ship fantasy is not a private yacht. It is rented industrial salvage hardware tied to contracts and delayed orbital windows.",
+          "field_note": "Draft RU localization pending native pass. Carrier ownership record: Black Keel is industrial custody hardware, not a personal rescue ship."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. System Carrier Tug Stack",
@@ -516,7 +516,7 @@
           "audio": "Draft JA localization pending native pass. The carrier is not your home. It is a machine that knows who owns your debt.",
           "in_game_wiki": "Draft JA localization pending native pass. The player arrives through a practical salvage stack: old carrier, claim-pool custody, automatic handling and limited rescue agency.",
           "external_site": "Draft JA localization pending native pass. HECTON-8's ship fantasy is not a private yacht. It is rented industrial salvage hardware tied to contracts and delayed orbital windows.",
-          "field_note": "Draft JA localization pending native pass. Use for carrier ownership and player start clarity."
+          "field_note": "Draft JA localization pending native pass. Carrier ownership record: Black Keel is industrial custody hardware, not a personal rescue ship."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. System Carrier Tug Stack",
@@ -525,7 +525,7 @@
           "audio": "Draft ZH localization pending native pass. The carrier is not your home. It is a machine that knows who owns your debt.",
           "in_game_wiki": "Draft ZH localization pending native pass. The player arrives through a practical salvage stack: old carrier, claim-pool custody, automatic handling and limited rescue agency.",
           "external_site": "Draft ZH localization pending native pass. HECTON-8's ship fantasy is not a private yacht. It is rented industrial salvage hardware tied to contracts and delayed orbital windows.",
-          "field_note": "Draft ZH localization pending native pass. Use for carrier ownership and player start clarity."
+          "field_note": "Draft ZH localization pending native pass. Carrier ownership record: Black Keel is industrial custody hardware, not a personal rescue ship."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. System Carrier Tug Stack",
@@ -534,7 +534,7 @@
           "audio": "Draft FR localization pending native pass. The carrier is not your home. It is a machine that knows who owns your debt.",
           "in_game_wiki": "Draft FR localization pending native pass. The player arrives through a practical salvage stack: old carrier, claim-pool custody, automatic handling and limited rescue agency.",
           "external_site": "Draft FR localization pending native pass. HECTON-8's ship fantasy is not a private yacht. It is rented industrial salvage hardware tied to contracts and delayed orbital windows.",
-          "field_note": "Draft FR localization pending native pass. Use for carrier ownership and player start clarity."
+          "field_note": "Draft FR localization pending native pass. Carrier ownership record: Black Keel is industrial custody hardware, not a personal rescue ship."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. System Carrier Tug Stack",
@@ -543,7 +543,7 @@
           "audio": "Draft ES localization pending native pass. The carrier is not your home. It is a machine that knows who owns your debt.",
           "in_game_wiki": "Draft ES localization pending native pass. The player arrives through a practical salvage stack: old carrier, claim-pool custody, automatic handling and limited rescue agency.",
           "external_site": "Draft ES localization pending native pass. HECTON-8's ship fantasy is not a private yacht. It is rented industrial salvage hardware tied to contracts and delayed orbital windows.",
-          "field_note": "Draft ES localization pending native pass. Use for carrier ownership and player start clarity."
+          "field_note": "Draft ES localization pending native pass. Carrier ownership record: Black Keel is industrial custody hardware, not a personal rescue ship."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. System Carrier Tug Stack",
@@ -552,7 +552,7 @@
           "audio": "Draft DE localization pending native pass. The carrier is not your home. It is a machine that knows who owns your debt.",
           "in_game_wiki": "Draft DE localization pending native pass. The player arrives through a practical salvage stack: old carrier, claim-pool custody, automatic handling and limited rescue agency.",
           "external_site": "Draft DE localization pending native pass. HECTON-8's ship fantasy is not a private yacht. It is rented industrial salvage hardware tied to contracts and delayed orbital windows.",
-          "field_note": "Draft DE localization pending native pass. Use for carrier ownership and player start clarity."
+          "field_note": "Draft DE localization pending native pass. Carrier ownership record: Black Keel is industrial custody hardware, not a personal rescue ship."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. System Carrier Tug Stack",
@@ -561,7 +561,7 @@
           "audio": "Draft PL localization pending native pass. The carrier is not your home. It is a machine that knows who owns your debt.",
           "in_game_wiki": "Draft PL localization pending native pass. The player arrives through a practical salvage stack: old carrier, claim-pool custody, automatic handling and limited rescue agency.",
           "external_site": "Draft PL localization pending native pass. HECTON-8's ship fantasy is not a private yacht. It is rented industrial salvage hardware tied to contracts and delayed orbital windows.",
-          "field_note": "Draft PL localization pending native pass. Use for carrier ownership and player start clarity."
+          "field_note": "Draft PL localization pending native pass. Carrier ownership record: Black Keel is industrial custody hardware, not a personal rescue ship."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. System Carrier Tug Stack",
@@ -570,7 +570,7 @@
           "audio": "Draft UK localization pending native pass. The carrier is not your home. It is a machine that knows who owns your debt.",
           "in_game_wiki": "Draft UK localization pending native pass. The player arrives through a practical salvage stack: old carrier, claim-pool custody, automatic handling and limited rescue agency.",
           "external_site": "Draft UK localization pending native pass. HECTON-8's ship fantasy is not a private yacht. It is rented industrial salvage hardware tied to contracts and delayed orbital windows.",
-          "field_note": "Draft UK localization pending native pass. Use for carrier ownership and player start clarity."
+          "field_note": "Draft UK localization pending native pass. Carrier ownership record: Black Keel is industrial custody hardware, not a personal rescue ship."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. System Carrier Tug Stack",
@@ -579,7 +579,7 @@
           "audio": "Draft AR localization pending native pass. The carrier is not your home. It is a machine that knows who owns your debt.",
           "in_game_wiki": "Draft AR localization pending native pass. The player arrives through a practical salvage stack: old carrier, claim-pool custody, automatic handling and limited rescue agency.",
           "external_site": "Draft AR localization pending native pass. HECTON-8's ship fantasy is not a private yacht. It is rented industrial salvage hardware tied to contracts and delayed orbital windows.",
-          "field_note": "Draft AR localization pending native pass. Use for carrier ownership and player start clarity."
+          "field_note": "Draft AR localization pending native pass. Carrier ownership record: Black Keel is industrial custody hardware, not a personal rescue ship."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. System Carrier Tug Stack",
@@ -588,7 +588,7 @@
           "audio": "Draft ID localization pending native pass. The carrier is not your home. It is a machine that knows who owns your debt.",
           "in_game_wiki": "Draft ID localization pending native pass. The player arrives through a practical salvage stack: old carrier, claim-pool custody, automatic handling and limited rescue agency.",
           "external_site": "Draft ID localization pending native pass. HECTON-8's ship fantasy is not a private yacht. It is rented industrial salvage hardware tied to contracts and delayed orbital windows.",
-          "field_note": "Draft ID localization pending native pass. Use for carrier ownership and player start clarity."
+          "field_note": "Draft ID localization pending native pass. Carrier ownership record: Black Keel is industrial custody hardware, not a personal rescue ship."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. System Carrier Tug Stack",
@@ -597,7 +597,7 @@
           "audio": "Draft KO localization pending native pass. The carrier is not your home. It is a machine that knows who owns your debt.",
           "in_game_wiki": "Draft KO localization pending native pass. The player arrives through a practical salvage stack: old carrier, claim-pool custody, automatic handling and limited rescue agency.",
           "external_site": "Draft KO localization pending native pass. HECTON-8's ship fantasy is not a private yacht. It is rented industrial salvage hardware tied to contracts and delayed orbital windows.",
-          "field_note": "Draft KO localization pending native pass. Use for carrier ownership and player start clarity."
+          "field_note": "Draft KO localization pending native pass. Carrier ownership record: Black Keel is industrial custody hardware, not a personal rescue ship."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. System Carrier Tug Stack",
@@ -606,7 +606,7 @@
           "audio": "Draft HE localization pending native pass. The carrier is not your home. It is a machine that knows who owns your debt.",
           "in_game_wiki": "Draft HE localization pending native pass. The player arrives through a practical salvage stack: old carrier, claim-pool custody, automatic handling and limited rescue agency.",
           "external_site": "Draft HE localization pending native pass. HECTON-8's ship fantasy is not a private yacht. It is rented industrial salvage hardware tied to contracts and delayed orbital windows.",
-          "field_note": "Draft HE localization pending native pass. Use for carrier ownership and player start clarity."
+          "field_note": "Draft HE localization pending native pass. Carrier ownership record: Black Keel is industrial custody hardware, not a personal rescue ship."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. System Carrier Tug Stack",
@@ -615,7 +615,7 @@
           "audio": "Draft PT localization pending native pass. The carrier is not your home. It is a machine that knows who owns your debt.",
           "in_game_wiki": "Draft PT localization pending native pass. The player arrives through a practical salvage stack: old carrier, claim-pool custody, automatic handling and limited rescue agency.",
           "external_site": "Draft PT localization pending native pass. HECTON-8's ship fantasy is not a private yacht. It is rented industrial salvage hardware tied to contracts and delayed orbital windows.",
-          "field_note": "Draft PT localization pending native pass. Use for carrier ownership and player start clarity."
+          "field_note": "Draft PT localization pending native pass. Carrier ownership record: Black Keel is industrial custody hardware, not a personal rescue ship."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. System Carrier Tug Stack",
@@ -624,7 +624,7 @@
           "audio": "Draft NL localization pending native pass. The carrier is not your home. It is a machine that knows who owns your debt.",
           "in_game_wiki": "Draft NL localization pending native pass. The player arrives through a practical salvage stack: old carrier, claim-pool custody, automatic handling and limited rescue agency.",
           "external_site": "Draft NL localization pending native pass. HECTON-8's ship fantasy is not a private yacht. It is rented industrial salvage hardware tied to contracts and delayed orbital windows.",
-          "field_note": "Draft NL localization pending native pass. Use for carrier ownership and player start clarity."
+          "field_note": "Draft NL localization pending native pass. Carrier ownership record: Black Keel is industrial custody hardware, not a personal rescue ship."
         }
       }
     },
@@ -653,16 +653,16 @@
           "audio": "You did not lose the whole ship. You lost the one chain that makes the ship matter.",
           "in_game_wiki": "The first escape blocker is engineering, not plot. The carrier still exists, but the damaged bathydrop interface cannot reconnect surface, orbit and timing without deep salvage.",
           "external_site": "HECTON-8 traps the player with specific machinery: damaged capsule systems, orbital windows, pressure-rated components and communication geometry.",
-          "field_note": "Use for first-hour repair chain and escape explanation."
+          "field_note": "First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing."
         },
         "ru_RU": {
-          "title": "Bathydrop interface Black Keel",
-          "scanner": "Bathydrop interface повреждён. Surface return chain не закрывается без deep-rated parts.",
-          "terminal": "ОТЧЁТ CAPSULE: heat shield trim цел, buoyancy gate погнут, comm mast затоплен, ascent latch заражён. Нужны pressure ceramic, sealant, relay math и проверенное окно.",
-          "audio": "Ты потерял не весь корабль. Ты потерял цепь, из-за которой корабль вообще имеет значение.",
-          "in_game_wiki": "Первый escape blocker - инженерный, не сюжетная стена. Carrier есть, но bathydrop interface не связывает поверхность, орбиту и время без deep salvage.",
-          "external_site": "HECTON-8 запирает игрока конкретной механикой: capsule systems, orbital windows, pressure-rated components and communication geometry.",
-          "field_note": "Для first-hour repair chain и объяснения побега."
+          "title": "Draft RU localization pending native pass. Black Keel Bathydrop Interface",
+          "scanner": "Draft RU localization pending native pass. Bathydrop interface damaged. Surface return chain cannot close without deep-rated parts.",
+          "terminal": "Draft RU localization pending native pass. CAPSULE REPORT: heat shield trim survived, buoyancy gate bent, comm mast flooded, ascent latch contaminated. Repair requires pressure ceramic, sealant, relay math and a verified window.",
+          "audio": "Draft RU localization pending native pass. You did not lose the whole ship. You lost the one chain that makes the ship matter.",
+          "in_game_wiki": "Draft RU localization pending native pass. The first escape blocker is engineering, not plot. The carrier still exists, but the damaged bathydrop interface cannot reconnect surface, orbit and timing without deep salvage.",
+          "external_site": "Draft RU localization pending native pass. HECTON-8 traps the player with specific machinery: damaged capsule systems, orbital windows, pressure-rated components and communication geometry.",
+          "field_note": "Draft RU localization pending native pass. First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing."
         },
         "ja_JP": {
           "title": "Draft JA localization pending native pass. Black Keel Bathydrop Interface",
@@ -671,7 +671,7 @@
           "audio": "Draft JA localization pending native pass. You did not lose the whole ship. You lost the one chain that makes the ship matter.",
           "in_game_wiki": "Draft JA localization pending native pass. The first escape blocker is engineering, not plot. The carrier still exists, but the damaged bathydrop interface cannot reconnect surface, orbit and timing without deep salvage.",
           "external_site": "Draft JA localization pending native pass. HECTON-8 traps the player with specific machinery: damaged capsule systems, orbital windows, pressure-rated components and communication geometry.",
-          "field_note": "Draft JA localization pending native pass. Use for first-hour repair chain and escape explanation."
+          "field_note": "Draft JA localization pending native pass. First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing."
         },
         "zh_CN": {
           "title": "Draft ZH localization pending native pass. Black Keel Bathydrop Interface",
@@ -680,7 +680,7 @@
           "audio": "Draft ZH localization pending native pass. You did not lose the whole ship. You lost the one chain that makes the ship matter.",
           "in_game_wiki": "Draft ZH localization pending native pass. The first escape blocker is engineering, not plot. The carrier still exists, but the damaged bathydrop interface cannot reconnect surface, orbit and timing without deep salvage.",
           "external_site": "Draft ZH localization pending native pass. HECTON-8 traps the player with specific machinery: damaged capsule systems, orbital windows, pressure-rated components and communication geometry.",
-          "field_note": "Draft ZH localization pending native pass. Use for first-hour repair chain and escape explanation."
+          "field_note": "Draft ZH localization pending native pass. First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing."
         },
         "fr_FR": {
           "title": "Draft FR localization pending native pass. Black Keel Bathydrop Interface",
@@ -689,7 +689,7 @@
           "audio": "Draft FR localization pending native pass. You did not lose the whole ship. You lost the one chain that makes the ship matter.",
           "in_game_wiki": "Draft FR localization pending native pass. The first escape blocker is engineering, not plot. The carrier still exists, but the damaged bathydrop interface cannot reconnect surface, orbit and timing without deep salvage.",
           "external_site": "Draft FR localization pending native pass. HECTON-8 traps the player with specific machinery: damaged capsule systems, orbital windows, pressure-rated components and communication geometry.",
-          "field_note": "Draft FR localization pending native pass. Use for first-hour repair chain and escape explanation."
+          "field_note": "Draft FR localization pending native pass. First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing."
         },
         "es_ES": {
           "title": "Draft ES localization pending native pass. Black Keel Bathydrop Interface",
@@ -698,7 +698,7 @@
           "audio": "Draft ES localization pending native pass. You did not lose the whole ship. You lost the one chain that makes the ship matter.",
           "in_game_wiki": "Draft ES localization pending native pass. The first escape blocker is engineering, not plot. The carrier still exists, but the damaged bathydrop interface cannot reconnect surface, orbit and timing without deep salvage.",
           "external_site": "Draft ES localization pending native pass. HECTON-8 traps the player with specific machinery: damaged capsule systems, orbital windows, pressure-rated components and communication geometry.",
-          "field_note": "Draft ES localization pending native pass. Use for first-hour repair chain and escape explanation."
+          "field_note": "Draft ES localization pending native pass. First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing."
         },
         "de_DE": {
           "title": "Draft DE localization pending native pass. Black Keel Bathydrop Interface",
@@ -707,7 +707,7 @@
           "audio": "Draft DE localization pending native pass. You did not lose the whole ship. You lost the one chain that makes the ship matter.",
           "in_game_wiki": "Draft DE localization pending native pass. The first escape blocker is engineering, not plot. The carrier still exists, but the damaged bathydrop interface cannot reconnect surface, orbit and timing without deep salvage.",
           "external_site": "Draft DE localization pending native pass. HECTON-8 traps the player with specific machinery: damaged capsule systems, orbital windows, pressure-rated components and communication geometry.",
-          "field_note": "Draft DE localization pending native pass. Use for first-hour repair chain and escape explanation."
+          "field_note": "Draft DE localization pending native pass. First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing."
         },
         "pl_PL": {
           "title": "Draft PL localization pending native pass. Black Keel Bathydrop Interface",
@@ -716,7 +716,7 @@
           "audio": "Draft PL localization pending native pass. You did not lose the whole ship. You lost the one chain that makes the ship matter.",
           "in_game_wiki": "Draft PL localization pending native pass. The first escape blocker is engineering, not plot. The carrier still exists, but the damaged bathydrop interface cannot reconnect surface, orbit and timing without deep salvage.",
           "external_site": "Draft PL localization pending native pass. HECTON-8 traps the player with specific machinery: damaged capsule systems, orbital windows, pressure-rated components and communication geometry.",
-          "field_note": "Draft PL localization pending native pass. Use for first-hour repair chain and escape explanation."
+          "field_note": "Draft PL localization pending native pass. First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing."
         },
         "uk_UA": {
           "title": "Draft UK localization pending native pass. Black Keel Bathydrop Interface",
@@ -725,7 +725,7 @@
           "audio": "Draft UK localization pending native pass. You did not lose the whole ship. You lost the one chain that makes the ship matter.",
           "in_game_wiki": "Draft UK localization pending native pass. The first escape blocker is engineering, not plot. The carrier still exists, but the damaged bathydrop interface cannot reconnect surface, orbit and timing without deep salvage.",
           "external_site": "Draft UK localization pending native pass. HECTON-8 traps the player with specific machinery: damaged capsule systems, orbital windows, pressure-rated components and communication geometry.",
-          "field_note": "Draft UK localization pending native pass. Use for first-hour repair chain and escape explanation."
+          "field_note": "Draft UK localization pending native pass. First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing."
         },
         "ar_SA": {
           "title": "Draft AR localization pending native pass. Black Keel Bathydrop Interface",
@@ -734,7 +734,7 @@
           "audio": "Draft AR localization pending native pass. You did not lose the whole ship. You lost the one chain that makes the ship matter.",
           "in_game_wiki": "Draft AR localization pending native pass. The first escape blocker is engineering, not plot. The carrier still exists, but the damaged bathydrop interface cannot reconnect surface, orbit and timing without deep salvage.",
           "external_site": "Draft AR localization pending native pass. HECTON-8 traps the player with specific machinery: damaged capsule systems, orbital windows, pressure-rated components and communication geometry.",
-          "field_note": "Draft AR localization pending native pass. Use for first-hour repair chain and escape explanation."
+          "field_note": "Draft AR localization pending native pass. First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing."
         },
         "id_ID": {
           "title": "Draft ID localization pending native pass. Black Keel Bathydrop Interface",
@@ -743,7 +743,7 @@
           "audio": "Draft ID localization pending native pass. You did not lose the whole ship. You lost the one chain that makes the ship matter.",
           "in_game_wiki": "Draft ID localization pending native pass. The first escape blocker is engineering, not plot. The carrier still exists, but the damaged bathydrop interface cannot reconnect surface, orbit and timing without deep salvage.",
           "external_site": "Draft ID localization pending native pass. HECTON-8 traps the player with specific machinery: damaged capsule systems, orbital windows, pressure-rated components and communication geometry.",
-          "field_note": "Draft ID localization pending native pass. Use for first-hour repair chain and escape explanation."
+          "field_note": "Draft ID localization pending native pass. First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing."
         },
         "ko_KR": {
           "title": "Draft KO localization pending native pass. Black Keel Bathydrop Interface",
@@ -752,7 +752,7 @@
           "audio": "Draft KO localization pending native pass. You did not lose the whole ship. You lost the one chain that makes the ship matter.",
           "in_game_wiki": "Draft KO localization pending native pass. The first escape blocker is engineering, not plot. The carrier still exists, but the damaged bathydrop interface cannot reconnect surface, orbit and timing without deep salvage.",
           "external_site": "Draft KO localization pending native pass. HECTON-8 traps the player with specific machinery: damaged capsule systems, orbital windows, pressure-rated components and communication geometry.",
-          "field_note": "Draft KO localization pending native pass. Use for first-hour repair chain and escape explanation."
+          "field_note": "Draft KO localization pending native pass. First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing."
         },
         "he_IL": {
           "title": "Draft HE localization pending native pass. Black Keel Bathydrop Interface",
@@ -761,7 +761,7 @@
           "audio": "Draft HE localization pending native pass. You did not lose the whole ship. You lost the one chain that makes the ship matter.",
           "in_game_wiki": "Draft HE localization pending native pass. The first escape blocker is engineering, not plot. The carrier still exists, but the damaged bathydrop interface cannot reconnect surface, orbit and timing without deep salvage.",
           "external_site": "Draft HE localization pending native pass. HECTON-8 traps the player with specific machinery: damaged capsule systems, orbital windows, pressure-rated components and communication geometry.",
-          "field_note": "Draft HE localization pending native pass. Use for first-hour repair chain and escape explanation."
+          "field_note": "Draft HE localization pending native pass. First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing."
         },
         "pt_BR": {
           "title": "Draft PT localization pending native pass. Black Keel Bathydrop Interface",
@@ -770,7 +770,7 @@
           "audio": "Draft PT localization pending native pass. You did not lose the whole ship. You lost the one chain that makes the ship matter.",
           "in_game_wiki": "Draft PT localization pending native pass. The first escape blocker is engineering, not plot. The carrier still exists, but the damaged bathydrop interface cannot reconnect surface, orbit and timing without deep salvage.",
           "external_site": "Draft PT localization pending native pass. HECTON-8 traps the player with specific machinery: damaged capsule systems, orbital windows, pressure-rated components and communication geometry.",
-          "field_note": "Draft PT localization pending native pass. Use for first-hour repair chain and escape explanation."
+          "field_note": "Draft PT localization pending native pass. First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing."
         },
         "nl_NL": {
           "title": "Draft NL localization pending native pass. Black Keel Bathydrop Interface",
@@ -779,7 +779,7 @@
           "audio": "Draft NL localization pending native pass. You did not lose the whole ship. You lost the one chain that makes the ship matter.",
           "in_game_wiki": "Draft NL localization pending native pass. The first escape blocker is engineering, not plot. The carrier still exists, but the damaged bathydrop interface cannot reconnect surface, orbit and timing without deep salvage.",
           "external_site": "Draft NL localization pending native pass. HECTON-8 traps the player with specific machinery: damaged capsule systems, orbital windows, pressure-rated components and communication geometry.",
-          "field_note": "Draft NL localization pending native pass. Use for first-hour repair chain and escape explanation."
+          "field_note": "Draft NL localization pending native pass. First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing."
         }
       }
     }

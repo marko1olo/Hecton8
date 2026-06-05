@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ Truth has a lower listed value until someone tries to bury it.
 
 ## Field Note
 
-Use for public-ledger replay runs and legal/notary UI.
+Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
 
 <!-- External Site; generated from P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED/ar_SA. -->

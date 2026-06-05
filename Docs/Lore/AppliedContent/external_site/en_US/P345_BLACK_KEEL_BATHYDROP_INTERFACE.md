@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ You did not lose the whole ship. You lost the one chain that makes the ship matt
 
 ## Field Note
 
-Use for first-hour repair chain and escape explanation.
+First-hour escape record: damaged bathydrop parts define why surface return needs pressure-rated salvage and route timing.
 
 <!-- External Site; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/en_US. -->

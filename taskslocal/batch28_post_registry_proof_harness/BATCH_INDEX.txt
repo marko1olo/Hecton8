@@ -1,0 +1,23 @@
+Batch28 Post-Registry Proof Harness Static Wave
+
+Date: 2026-06-04
+Controller: local orchestrator
+Unity slot: do not use. Unity is owned by the GUI thread "Продолжить работу по логам".
+
+Current evidence:
+- `1474` six-view packet remains REJECTED.
+- `h8_1908_surface_runtime_ui_on.png` is a single raw surface screenshot, not a proof packet.
+- `SeamGapDitherRenderer` and `HectonUnderwaterVisuals`/`GameBootstrapper` patches are PENDING UNITY VERIFICATION.
+
+Tasks:
+- 2801: Owned proof harness source route audit.
+- 2802: False underwater route/camera predicate audit.
+- 2803: Shoreline foam and photic terrain static art route audit.
+- 2804: Aegir/sky material route and sun owner static audit.
+- 2805: Log/process/proof gate tool route audit.
+
+Rules:
+- No Unity, Play Mode, editor focus, or build.
+- No `Assets/**` writes unless the task explicitly proves a tiny source-only patch is safe and the controller approves it.
+- Reports go to `Docs/Reports/Batch28/`.
+- Static reports are not runtime proof.

@@ -1,0 +1,62 @@
+ID: 3210
+Role: RS093_SOURCE_WIRING_AND_EXPORT_OWNER
+
+Objective:
+Wire validated RS093 canonical packet JSON into the AppliedLore source pipeline and regenerate source/export outputs without touching route cards, h8bin, Unity, or runtime scenes.
+
+Why this is needed:
+3207 created `Docs/Lore/AppliedContent/packets/RS093_LORE_SYSTEM_INTEGRATION_BRIDGE.packets.json` for P461-P464. The next safe step is manifest source wiring plus importer/page export so these packets become canonical CSV/hash/publication source rows. Route cards and h8bin remain later steps.
+
+Owned scope:
+- `Docs/Lore/AppliedContent/release_sets/RS093_LORE_SYSTEM_INTEGRATION_BRIDGE_manifest.json`
+- `Assets/_SourceData/DataMonolith/Narrative/applied_lore_packets.csv`
+- `Assets/_Project/Scripts/Core/Generated/H8AppliedLoreHashes.cs`
+- Generated pages/indexes under `Docs/Lore/AppliedContent/in_game_wiki`, `external_site`, `Publication_Surface_Index.csv`, `Publication_Cluster_Index.csv`, `Localization_Status_Index.md`
+- `Docs/Tasks/Status_3210.md`
+- `Docs/AgentLogs/LOG_3210.md`
+- `Docs/AgentLogs/Rationale_3210.md` only if needed
+
+Do not edit:
+- route_cards
+- `Assets/_SourceData/DataMonolith/Narrative/applied_lore_route_cards.csv`
+- `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`
+- Unity scenes/assets/prefabs
+- runtime C# outside generated hash constants
+- production packet Markdown
+
+Authority docs:
+AGENTS.md, authoring.md, data.md, localization.md, writing.md, quality.md, Docs/Lore/Lore_Content_System.md, Docs/Lore/Lore_Localization_Model.md.
+
+Inputs:
+- `Docs/Lore/AppliedContent/packets/RS093_LORE_SYSTEM_INTEGRATION_BRIDGE.packets.json`
+- `Docs/Tasks/Status_3207.md`
+- `Docs/Reports/Batch32/3202_APPLIED_LORE_BAKE_BRIDGE_MAP.md`
+- `Tools/AppliedLoreImporter.py`
+- `Tools/AppliedLorePageExporter.py`
+- `Tools/AppliedLoreRuntimeAudit.py`
+
+Tasks:
+1. Read authority docs and relevant mandates from BATCH_INDEX.
+2. Parse RS093 packet JSON and confirm P461-P464, 15 locales, 7 required fields, 60 importer rows, 56 draft rows.
+3. Update RS093 manifest to include `packet_sources` pointing at `Docs/Lore/AppliedContent/packets/RS093_LORE_SYSTEM_INTEGRATION_BRIDGE.packets.json`.
+4. Keep `authoring_packet_sources` intact for document custody.
+5. Set canonical/importer readiness fields only if the manifest vocabulary already supports it without lying. Do not claim runtime readiness.
+6. Run `python Tools/AppliedLoreImporter.py --root .`.
+7. Run `python Tools/AppliedLorePageExporter.py --root . --overwrite`.
+8. Run `python Tools/AppliedLoreRuntimeAudit.py --root . --source-only`.
+9. Run `python Tools/AppliedLoreTextIntegrityAudit.py --root . --packet-glob 'P46[1-4]*'` if the tool exists.
+10. Verify P461-P464 now exist in source CSV, generated hash constants, and publication index rows.
+11. Verify no RS093 route card CSV was created and no h8bin was edited.
+
+Proof packet:
+- Commands and outputs.
+- Row counts before/after if available.
+- Files changed.
+- Evidence class STATIC_SOURCE.
+
+Rejection gates:
+- No route-card CSV.
+- No h8bin bake/edit.
+- No Unity/build/dotnet.
+- No runtime/native/DataMonolith-ready claim.
+- If source audit fails, do not hide it; report exact blocker and leave route/h8bin blocked.

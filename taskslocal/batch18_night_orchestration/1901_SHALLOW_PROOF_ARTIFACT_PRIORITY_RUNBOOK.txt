@@ -1,0 +1,82 @@
+ID: 1901
+TITLE: SHALLOW_PROOF_ARTIFACT_PRIORITY_RUNBOOK
+MODE: REPORT_ONLY_STATIC_VISUAL_PROOF_RUNBOOK
+
+You are HECTON-8 batch agent 1901.
+Do not edit source, assets, prefabs, scenes, binaries, `.meta`, generated meshes, DataMonolith, task files, or sibling outputs.
+
+PRIMARY GOAL
+
+Create the concrete visual proof artifact runbook for clearing the 338 `SURFACE_SHALLOW_VISUAL_PROOF_PENDING` warnings without lowering the visual bar. This must specify exact asset stems, screenshot/proof filenames, views, rejection criteria, and future Unity capture sequence.
+
+READ
+
+- `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `VISION_LOCKS.md`
+- `TASTE.md`
+- `quality.md`
+- `world.md`
+- `ocean.md`
+- `terrain.md`
+- `3dmodel.md`
+- `3DMODEL_TEXTURES_MATERIALS.md`
+- `3DMODEL_FLORA_CORAL.md`
+- `3DMODEL_GEOLOGY_ROCKS.md`
+- `Docs/Reports/Batch18/1851_GENERATED_ASSET_PRODUCTION_AUDIT.md`
+- `Docs/Reports/Batch18/1858_GENERATED_FLORA_GEOLOGY_MANIFEST_PROOF_PACKET.md`
+- `Docs/Reports/Batch18/1801_WORLD_SURFACE_ROUTE_EVIDENCE.md` if present
+- `Docs/Reports/Batch18/1802_SURFACE_SHALLOW_ASSET_INVENTORY.md` if present
+- `Docs/Reports/Batch18/1816_SURFACE_ROUTE_UNITY_SLOT_PACKET.md` if present
+
+Mandates:
+
+- `.agents-skills/QA_Evidence_Text_Filter_Audit.txt`
+- `.agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt`
+- `.agents-skills/REND_Terrain_VirtualTexturing.txt`
+
+OUTPUTS YOU OWN
+
+- `Docs/Reports/Batch18/1901_SHALLOW_PROOF_ARTIFACT_PRIORITY_RUNBOOK.md`
+- `Docs/Reports/Batch18/1901_SHALLOW_PROOF_ARTIFACT_PRIORITY_MATRIX.csv`
+- `Docs/Tasks/Status_1901.md`
+- `Docs/AgentLogs/Rationale_1901.md`
+- `Docs/AgentLogs/LOG_1901.md`
+
+CSV COLUMNS
+
+- `asset_stem`
+- `asset_family`
+- `priority_band`
+- `route_use`
+- `required_manifest_path`
+- `required_proof_filenames`
+- `required_views`
+- `visual_rejection_conditions`
+- `performance_rejection_conditions`
+- `status`
+
+REQUIRED WORK
+
+1. Use 1858 priority lists as starting point.
+2. Build a first proof wave of at least 30 asset stems and a second wave of at least 16 stems.
+3. Define exact proof filenames containing full asset stem.
+4. Define exact required views: flat/clay, final material, wire/LOD/collider, compact gameplay distance, high gameplay distance, route composition.
+5. Define screenshot capture locations/contexts where available from prior route reports.
+6. Define rejection conditions: muddy, blurry, flat, primitive silhouette, bad alpha, bad material channels, no LOD, collision misuse, dark/fog masking.
+7. Define what can be cleared by text manifests and what requires real screenshots.
+8. Do not create fake proof artifacts.
+9. Do not claim warnings cleared.
+10. Include compact/middle/high/ultra proof consequences.
+
+VERIFICATION
+
+Run and record:
+
+- `git diff --check -- Docs/Reports/Batch18/1901_SHALLOW_PROOF_ARTIFACT_PRIORITY_RUNBOOK.md Docs/Reports/Batch18/1901_SHALLOW_PROOF_ARTIFACT_PRIORITY_MATRIX.csv Docs/Tasks/Status_1901.md Docs/AgentLogs/Rationale_1901.md Docs/AgentLogs/LOG_1901.md`
+- `Import-Csv Docs/Reports/Batch18/1901_SHALLOW_PROOF_ARTIFACT_PRIORITY_MATRIX.csv | Measure-Object`
+- static term cross-check for `SURFACE_SHALLOW_VISUAL_PROOF_PENDING`, `Subnautica`, `compact`, `final material`, `wire`, `route composition`, `PENDING UNITY`.
+
+FINAL RESPONSE
+
+Report changed files, CSV row count, first proof wave size, and exact warning-clearance rule.

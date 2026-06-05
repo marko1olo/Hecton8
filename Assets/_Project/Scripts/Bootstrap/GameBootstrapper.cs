@@ -554,6 +554,7 @@ namespace Hecton8.Bootstrap
         [SerializeField] private Vector3 fallbackSpawnPosition = new Vector3(0f, 10f, 0f);
         [SerializeField] private GameObject playerObject;
         [SerializeField] private MonoBehaviour playerController;
+        [SerializeField] private HectonUnderwaterVisuals underwaterVisuals;
         [SerializeField] private Rigidbody playerRigidbody;
         [SerializeField] private float worldGenWaitTime = 2f;
         [SerializeField] private float bootstrapTimeout = 30f;
@@ -6839,6 +6840,52 @@ namespace Hecton8.Bootstrap
                 playerObject.TryGetComponent(out playerController);
 
             PublishPlayerRuntimeReference();
+            TryPublishUnderwaterVisualsRuntimeReference(scene);
+        }
+
+        private void TryPublishUnderwaterVisualsRuntimeReference(Scene scene)
+        {
+            if (!Application.isPlaying || !RequiresGameplaySceneActivation(scene))
+                return;
+
+            if (!IsPublishableUnderwaterVisualsRuntime(underwaterVisuals, scene) &&
+                TryResolveSceneComponent(scene, includeInactive: true, out HectonUnderwaterVisuals resolvedUnderwaterVisuals) &&
+                IsPublishableUnderwaterVisualsRuntime(resolvedUnderwaterVisuals, scene))
+            {
+                underwaterVisuals = resolvedUnderwaterVisuals;
+            }
+
+            if (!IsPublishableUnderwaterVisualsRuntime(underwaterVisuals, scene))
+                return;
+
+            bool runtimePublicationGateOpen = false;
+            try
+            {
+                GlobalRegistry.BeginSceneRuntimePublicationGate();
+                runtimePublicationGateOpen = true;
+
+                if (GlobalRegistry.UnderwaterVisuals != underwaterVisuals)
+                    GlobalRegistry.RegisterUnderwaterVisualsRuntime(underwaterVisuals);
+            }
+            finally
+            {
+                if (runtimePublicationGateOpen)
+                    GlobalRegistry.EndSceneRuntimePublicationGate();
+            }
+        }
+
+        private static bool IsPublishableUnderwaterVisualsRuntime(
+            HectonUnderwaterVisuals candidate,
+            Scene scene)
+        {
+            if (candidate == null || IsTemporaryRuntimeShellObject(candidate.gameObject))
+                return false;
+
+            Scene candidateScene = candidate.gameObject.scene;
+            return candidateScene.IsValid() &&
+                   candidateScene.isLoaded &&
+                   RequiresGameplaySceneActivation(candidateScene) &&
+                   string.Equals(candidateScene.path, scene.path, StringComparison.Ordinal);
         }
 
         private bool VerifySingletons()

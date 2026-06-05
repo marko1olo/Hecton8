@@ -24,6 +24,7 @@ namespace Hecton8.Editor.Assembly
         private const string DefaultEmissionStrengthProperty = "_EmissionStrength";
         private const string DefaultGlobalQualityProperty = "_H8GlobalQualityWeight";
         private const string AnalyticFallbackSourcePath = "analytic://1740.power-grid";
+        private const string BuiltInPrimitiveMeshGuid = "0000000000000000e000000000000000";
         private const int MaxShaderIncludeScanDepth = 4;
 
         private enum PowerNodeTypeID
@@ -194,12 +195,31 @@ namespace Hecton8.Editor.Assembly
                 }
             }
 
-            int fallbackCount = AppendMissingAnalyticFallbackGroups(groups);
-            if (fallbackCount > 0)
-                report.violations.Add("WARN: appended " + fallbackCount.ToString(CultureInfo.InvariantCulture) + " analytic fallback power prefab seeds for missing baseline node types.");
+            int missingBaselineNodeTypes = CountMissingBaselineNodeTypes(groups);
+            if (missingBaselineNodeTypes > 0)
+                report.violations.Add("FATAL: missing " + missingBaselineNodeTypes.ToString(CultureInfo.InvariantCulture) + " power node source group(s). Analytic primitive fallback authoring is blocked for production power prefabs.");
 
             groups.Sort(CompareGroupsByName);
             return groups;
+        }
+
+        private static int CountMissingBaselineNodeTypes(List<PowerSourceGroup> groups)
+        {
+            int missingCount = 0;
+            if (!HasGroupWithNodeType(groups, PowerNodeTypeID.Reactor))
+                missingCount++;
+            if (!HasGroupWithNodeType(groups, PowerNodeTypeID.Rtg))
+                missingCount++;
+            if (!HasGroupWithNodeType(groups, PowerNodeTypeID.Battery))
+                missingCount++;
+            if (!HasGroupWithNodeType(groups, PowerNodeTypeID.Relay))
+                missingCount++;
+            if (!HasGroupWithNodeType(groups, PowerNodeTypeID.Breaker))
+                missingCount++;
+            if (!HasGroupWithNodeType(groups, PowerNodeTypeID.Junction))
+                missingCount++;
+
+            return missingCount;
         }
 
         private static int AppendMissingAnalyticFallbackGroups(List<PowerSourceGroup> groups)
@@ -389,8 +409,7 @@ namespace Hecton8.Editor.Assembly
             {
                 if (group.useAnalyticFallback)
                 {
-                    visualRoot = CreateAnalyticVisualRoot(root.transform, group);
-                    metric.warnings.Add("Analytic fallback visual used; replace with authored mesh when available.");
+                    throw new InvalidOperationException("Analytic primitive fallback visual is blocked for production power prefab: " + group.name);
                 }
                 else
                 {
@@ -909,6 +928,8 @@ namespace Hecton8.Editor.Assembly
                 throw new InvalidOperationException("Saved prefab contains MeshCollider: " + prefabPath);
             if (prefab.GetComponentsInChildren<ParticleSystem>(true).Length != 0)
                 throw new InvalidOperationException("Saved prefab contains ParticleSystem: " + prefabPath);
+            if (AssetPathUsesUnityBuiltInPrimitiveMesh(prefabPath))
+                throw new InvalidOperationException("Saved power prefab contains Unity built-in primitive mesh: " + prefabPath);
             if (prefab.GetComponent<NetworkNodeData>() == null)
                 throw new InvalidOperationException("Saved prefab missing NetworkNodeData: " + prefabPath);
             if (prefab.GetComponent<BreakerMetadata>() == null)
@@ -919,6 +940,19 @@ namespace Hecton8.Editor.Assembly
             if (breaker == null || !breaker.HasSerializedRuntimeBindings || !breaker.HasValidActivationTargets)
                 throw new InvalidOperationException("Saved prefab missing valid PowerBreakerRuntime bindings: " + prefabPath);
             metric.savedPrefabValidated = true;
+        }
+
+        private static bool AssetPathUsesUnityBuiltInPrimitiveMesh(string assetPath)
+        {
+            if (string.IsNullOrWhiteSpace(assetPath))
+                return false;
+
+            string fullPath = ProjectRelativeToFullPath(assetPath);
+            if (!File.Exists(fullPath))
+                return false;
+
+            string prefabText = File.ReadAllText(fullPath);
+            return prefabText.IndexOf(BuiltInPrimitiveMeshGuid, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private static void ValidateRendererMaterials(

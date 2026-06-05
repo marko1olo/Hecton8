@@ -1,0 +1,116 @@
+BATCH: batch19_art_source_and_static_proof
+DATE: 2026-06-04
+WORKER MODE: task-file generation only
+UNITY OWNER: NO
+BUILD OWNER: NO
+WRITE SCOPE FOR THIS PACKET: taskslocal/batch19_art_source_and_static_proof/**
+
+PURPOSE
+Create five independent, heavy, extraction-free agent task files for Batch19 source-art and static-proof work. These lanes prepare premium source texture, PBR channel, terrain/coastline, flora/coral/kelp, and static proof artifacts without Unity ownership.
+
+GLOBAL HARD GATES FOR EVERY AGENT IN THIS PACKET
+1. Do not open Unity.
+2. Do not run Unity MCP tools.
+3. Do not run dotnet build, Unity build, player build, or package restore.
+4. Do not edit scenes, prefabs, materials, import settings, shaders, scripts, packages, ProjectSettings, StreamingAssets, DataMonolith, or anything under Assets/**.
+5. Do not write .meta, .mat, .asset, .prefab, .unity, .controller, .shader, .cs, .asmdef, or generated runtime assets.
+6. Do not claim runtime, editor, playmode, profiler, or visual verification from static evidence.
+7. Use STATIC VERIFIED only for text/file/image-source evidence that was actually inspected.
+8. Use PENDING UNITY OWNER for import, assignment, shader binding, scene placement, runtime visual proof, performance proof, screenshots from Unity, and player capture.
+9. No darkness/noir/storm/depth excuse is allowed for surface, sky, Aegir, moons, coastline, ocean surface, photic shallows, or medium-depth hero route art debt.
+10. GlobalQualityWeight must be treated as continuous 0.0 to 1.0. No binary low/high quality switch language.
+
+AUTHORITY FILES READ FOR THIS PACKET
+- AGENTS.md
+- HECTON8_ORCHESTRATOR.md
+- HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md
+- PROJECT_BIBLES.md
+- TASTE.md
+- VISION_LOCKS.md
+- Docs/Orchestration/GEMINI_BROWSER_IMAGE_ASSET_WORKFLOW.md
+- 3dmodel.md
+- 3DMODEL_TEXTURES_MATERIALS.md
+- 3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md
+- 3DMODEL_FLORA_CORAL.md
+- 3DMODEL_GEOLOGY_ROCKS.md
+- PROCEDURAL_ASSET_PIPELINE.md
+- terrain.md
+- world.md
+- water.md
+- rendering.md
+- performance.md
+- quality.md
+
+MANDATES SELECTED FOR THIS PACKET
+- STRM_Async_Asset_Upload_Texture_Settings.txt
+- REND_Terrain_VirtualTexturing.txt
+- REND_Instanced_Flora_Physics.txt
+- REND_URP_Graphics_HotPath_Optimization_HLOD.txt
+- OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt
+- OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt
+- QA_Evidence_Text_Filter_Audit.txt
+
+RELEVANT BATCH18 EVIDENCE USED
+- Docs/Reports/Batch18/1802_SURFACE_SHALLOW_ASSET_INVENTORY.md
+- Docs/Reports/Batch18/1821_SHORELINE_WATERLINE_OFFLINE_BAKE_SPEC.md
+- Docs/Reports/Batch18/1858_GENERATED_FLORA_GEOLOGY_MANIFEST_PROOF_PACKET.md
+- Docs/Reports/Batch18/1883_SKY_OCEAN_MATERIAL_TEXTURE_ROLE_PACKAGE.md
+- Docs/Reports/Batch18/1886_PRODUCT_FACE_TEXTURE_AUTHORING_PIPELINE_DISCOVERY.md
+- Docs/Reports/Batch18/1888_PRODUCT_FACE_TEXTURE_CHANNEL_MANIFEST_AND_SHADER_AUDIT.md
+- Docs/Reports/Batch18/1891_AITEXTURE_PRODUCT_FACE_HARDENING_PACKET.md
+- Docs/Reports/Batch18/1893_PRODUCT_FACE_ACTUAL_MATERIAL_ASSIGNMENT_MATRIX.md
+- Docs/Reports/Batch18/1894_PRODUCT_FACE_TEXTURE_SOURCE_MANIFEST_SCHEMA.md
+- Docs/Reports/Batch18/1895_PRODUCT_FACE_STATIC_ROUTE_AUDIT_TOOL.md
+- Docs/Reports/Batch18/1901_SHALLOW_PROOF_ARTIFACT_PRIORITY_RUNBOOK.md
+
+TASK FILES
+1. 1905_GEMINI_TEXTURE_SOURCE_GENERATION_PACKET.txt
+   Lane: Gemini browser source texture generation and source intake QA.
+   Output class: Docs/GeneratedAssets/Gemini/** and Docs/Reports/Batch19/** only when the task is actually launched.
+   Unity ownership: none.
+
+2. 1906_PBR_CHANNEL_DERIVATION_QA_PACKET.txt
+   Lane: PBR channel derivation QA, shader-channel contract validation, source-only packed-map proof.
+   Output class: Docs/GeneratedAssets/Gemini/QA/** and Docs/Reports/Batch19/** only when the task is actually launched.
+   Unity ownership: none.
+
+3. 1907_TERRAIN_COASTLINE_MATERIAL_PACKAGE_PREP.txt
+   Lane: terrain, coastline, wet basalt, foam, waterline, and shallow material source package prep.
+   Output class: Docs/Reports/Batch19/** and optional Docs/GeneratedAssets/Gemini/Prompts/** only when launched.
+   Unity ownership: none.
+
+4. 1908_FLORA_CORAL_KELP_SOURCE_ATLAS_PREP.txt
+   Lane: flora, coral, kelp, and source atlas preparation with static proof naming.
+   Output class: Docs/Reports/Batch19/** and optional Docs/GeneratedAssets/Gemini/Prompts/** only when launched.
+   Unity ownership: none.
+
+5. 1909_STATIC_VISUAL_DEBT_AUDIT_PROOF_MATRIX.txt
+   Lane: static visual debt audit and proof matrix, evidence-class locked.
+   Output class: Docs/Reports/Batch19/** only when launched.
+   Unity ownership: none.
+
+PARALLEL INDEPENDENCE
+- 1905 can generate source candidates without waiting on other Batch19 agents.
+- 1906 can QA any existing or newly produced source files but must not require 1905 output to begin; missing inputs become PENDING SOURCE, not a dependency failure.
+- 1907 uses Batch18 terrain/coastline evidence and can prepare packages without touching Unity.
+- 1908 uses Batch18 flora/geology and texture bibles and can prepare atlas manifests without touching Unity.
+- 1909 audits static debt and proof gaps from reports and file evidence; it must not claim visual closure.
+
+COMMON PROOF LANGUAGE
+- STATIC VERIFIED: file exists, text inspected, image source inspected, or non-Unity static QA artifact exists.
+- STATIC REJECTED: inspected source failed a documented source-art or channel-contract gate.
+- PENDING SOURCE: required source candidate not found or not generated.
+- PENDING UNITY OWNER: requires Unity import, material assignment, scene placement, runtime/editor screenshot, profiler, build, or player capture.
+- BLOCKED BY AUTHORITY: requested action conflicts with AGENTS.md, project bibles, mandates, or no-Unity gates.
+
+CONTINUOUS QUALITY CONSEQUENCES
+- GlobalQualityWeight 0.0 to 0.25: preserve silhouette, readability, tile cleanliness, non-muddy color, and material identity with compact source sizes and minimal channel set.
+- GlobalQualityWeight 0.25 to 0.55: add stronger normals, cleaner roughness/AO separation, medium source sizes, readable foam/coastline/flora variety.
+- GlobalQualityWeight 0.55 to 0.85: add richer microdetail, atlas variants, biome-specific masks, emission logic, wetness/salt/sediment transitions.
+- GlobalQualityWeight 0.85 to 1.0: visual overkill source detail, hero-route atlas variants, high-resolution source masters, sharper proof matrices, but no extra gameplay truth or DTO changes.
+
+REJECTION SUMMARY
+- Reject generic AI images that are illustrations instead of tileable materials.
+- Reject baked lighting, perspective, horizon lines, objects, text, logos, UI, signatures, watermark remnants, cartoon/painterly/low-poly style, muddy darkness, blur, obvious repeating seams, and fake PBR.
+- Reject ambiguous ARM/MRAO/ORM channel assumptions unless the exact shader contract is cited.
+- Reject any future agent task result that edits Assets/** or claims Unity proof without Unity-owner artifacts.

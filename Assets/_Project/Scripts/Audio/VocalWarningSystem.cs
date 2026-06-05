@@ -310,6 +310,18 @@ namespace Hecton8.Audio
         private const uint PackedDirectionShift = 16;
         private const uint PackedDirectionMask = 0xFFFFu << (int)PackedDirectionShift;
         private const SystemID VaultOwner = SystemID.AudioVocalWarning;
+        private static readonly ulong VocalWarningFrameMutationGuardMask =
+            VocalWarningMutationGuardBit(BufferID.AudioVocalWarningQueue) |
+            VocalWarningMutationGuardBit(AlarmStateBufferId) |
+            VocalWarningMutationGuardBit(BufferID.AudioVocalWarningFlags) |
+            VocalWarningMutationGuardBit(BufferID.AudioVocalWarningCooldowns) |
+            VocalWarningMutationGuardBit(BufferID.AudioVocalWarningSeverity) |
+            VocalWarningMutationGuardBit(BufferID.AudioVocalWarningSourceIds) |
+            VocalWarningMutationGuardBit(VocalWarningCurrentStateBufferId) |
+            VocalWarningMutationGuardBit(VocalWarningDispatchBufferId) |
+            VocalWarningMutationGuardBit(VocalWarningProfilesBufferId) |
+            VocalWarningMutationGuardBit(VocalWarningTuningBufferId) |
+            VocalWarningMutationGuardBit(BufferID.AudioVocalWarningTelemetry);
         private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_352_VWS.bin";
         private const string AgentTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_X_011.bin";
 
@@ -332,7 +344,10 @@ namespace Hecton8.Audio
         private VaultGenerationHandle<VocalWarningTuningDTO> _tuningHandle;
         private VaultGenerationHandle<VwsTelemetryEntry> _telemetryRingHandle;
         private VaultGenerationHandle<VesselTelemetryEntry> _vesselTelemetryHandle;
-        private PostSimulationPhaseSystem _postSimulationSystem;
+        private SimulationPhaseSystem _simulationSystem;
+        private VisualSyncPhaseSystem _visualSyncSystem;
+        private JobHandle _pendingVocalWarningJobHandle;
+        private IDataVault _pendingVocalWarningGuardVault;
         private int _telemetryCursor;
         private int _queueCount;
         private int _registeredUpdate;
@@ -342,6 +357,7 @@ namespace Hecton8.Audio
         private int _registeredRuntime;
         private int _registeredPostSimulation;
         private int _nativeAllocated;
+        private int _vocalWarningJobsPending;
         private int _telemetryDumpRequested;
         private int _telemetryDumped;
         private int _telemetrySamplesWritten;
@@ -357,6 +373,7 @@ namespace Hecton8.Audio
         private float _warningPlaybackRemainingSeconds;
         private float _currentPriorityScore;
         private float _lastBurstExecutionMicros;
+        private float _pendingVocalWarningScheduleMicros;
         private uint _currentAudioBankHashID;
         private uint _lastDispatchedAudioBankHashID;
         private uint _lastInterruptCount;
@@ -670,13 +687,20 @@ namespace Hecton8.Audio
             if (Volatile.Read(ref _registeredPostSimulation) != 0)
                 return;
 
-            if (_postSimulationSystem == null)
-                _postSimulationSystem = new PostSimulationPhaseSystem(this);
+            if (_simulationSystem == null)
+                _simulationSystem = new SimulationPhaseSystem(this);
+            if (_visualSyncSystem == null)
+                _visualSyncSystem = new VisualSyncPhaseSystem(this);
 
-            if (GlobalRegistry.TryRegisterDispatcherSystem(_postSimulationSystem))
+            if (GlobalRegistry.TryRegisterDispatcherSystem(_simulationSystem))
             {
-                Volatile.Write(ref _registeredPostSimulation, 1);
-                return;
+                if (GlobalRegistry.TryRegisterDispatcherSystem(_visualSyncSystem))
+                {
+                    Volatile.Write(ref _registeredPostSimulation, 1);
+                    return;
+                }
+
+                GlobalRegistry.UnregisterDispatcherSystem(_simulationSystem);
             }
 
             if (GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment))
@@ -689,9 +713,15 @@ namespace Hecton8.Audio
 
         private void UnregisterRuntime()
         {
+            CompletePendingVocalWarningJobsForTeardown();
             CancelRendererPlaybackAndClearQueues();
-            if (Interlocked.Exchange(ref _registeredPostSimulation, 0) != 0 && _postSimulationSystem != null)
-                GlobalRegistry.UnregisterDispatcherSystem(_postSimulationSystem);
+            if (Interlocked.Exchange(ref _registeredPostSimulation, 0) != 0)
+            {
+                if (_simulationSystem != null)
+                    GlobalRegistry.UnregisterDispatcherSystem(_simulationSystem);
+                if (_visualSyncSystem != null)
+                    GlobalRegistry.UnregisterDispatcherSystem(_visualSyncSystem);
+            }
             if (Interlocked.Exchange(ref _registeredHotSwap, 0) != 0)
                 GlobalRegistry.UnregisterHotSwapListener(this);
             if (Interlocked.Exchange(ref _registeredSlowTick, 0) != 0)
@@ -898,6 +928,7 @@ namespace Hecton8.Audio
             if (ReferenceEquals(_dataVault, vault))
                 return;
 
+            CompletePendingVocalWarningJobsForTeardown();
             ReleaseVaultBackedStorage();
             _dataVault = vault;
             Volatile.Write(ref _nativeAllocated, 0);
@@ -1023,6 +1054,7 @@ namespace Hecton8.Audio
             if (Interlocked.Exchange(ref _nativeAllocated, 0) == 0 && _dataVault == null)
                 return;
 
+            CompletePendingVocalWarningJobsForTeardown();
             ReleaseVaultBackedStorage();
             _dataVault = null;
             _queueCount = 0;
@@ -1042,93 +1074,181 @@ namespace Hecton8.Audio
 
         private void RunVocalWarningFrame(float deltaTime, uint frame)
         {
+            ScheduleVocalWarningFrame(deltaTime, frame, default);
+        }
+
+        private JobHandle ScheduleVocalWarningFrame(float deltaTime, uint frame, JobHandle dependsOn)
+        {
             if (Volatile.Read(ref _nativeAllocated) == 0)
-                return;
+                return dependsOn;
 
             if (Volatile.Read(ref _visualSyncPresentationPending) != 0)
-                return;
+                return dependsOn;
+
+            if (Volatile.Read(ref _vocalWarningJobsPending) != 0)
+                return dependsOn;
 
             if (_lastProcessedFrame == frame)
-                return;
+                return dependsOn;
             _lastProcessedFrame = frame;
 
-            if (!TryResolveVwsOwnerViews(out VwsVaultViews views))
-                return;
+            if (!TryAcquireVocalWarningFrameGuard(out IDataVault guardVault))
+                return dependsOn;
 
-            bool cancelRequested = Interlocked.Exchange(ref _pendingCancelRequest, 0) != 0;
-            uint pendingFaultFlags = (uint)Interlocked.Exchange(ref _pendingExternalFaultFlags, 0);
-            if (cancelRequested)
-                CancelRendererPlaybackAndClearQueues(ref views, false);
-            if (pendingFaultFlags != 0u)
-                MarkPriorityFault(ref views, pendingFaultFlags);
-            if (cancelRequested)
+            bool guardTransferred = false;
+            if (!TryResolveVwsOwnerViews(out VwsVaultViews views))
             {
-                _pendingPresentationFrame = frame;
-                Volatile.Write(ref _visualSyncPresentationPending, 1);
-                return;
+                ReleaseVocalWarningFrameGuard(guardVault);
+                return dependsOn;
             }
 
-            float dt = math.max(0f, math.select(0f, deltaTime, math.isfinite(deltaTime)));
-            _vwsClockSeconds += dt;
-            _globalQualityWeight01 = ResolveGlobalQualityWeight01();
-            RefreshVesselTelemetryHandleIfMissing(frame);
-            _vesselCareTone01 = ReadVesselCareTone01();
-            float vesselCareTone01 = _vesselCareTone01;
-            int maxEvaluations = ResolveMaxEvaluations(_globalQualityWeight01, views.Queue.Length);
-            AbsoluteUniversePosition listenerAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
-
-            EvaluateWarningPrioritiesJob evaluateJob = new EvaluateWarningPrioritiesJob
+            try
             {
-                Queue = views.Queue,
-                PriorityState = views.PriorityState,
-                Cooldowns = views.Cooldowns,
-                WarningFlags = views.WarningFlags,
-                WarningSeverity = views.WarningSeverity,
-                WarningSourceIds = views.WarningSourceIds,
-                Tuning = views.Tuning,
-                Profiles = views.Profiles,
-                VocalWarnings = SignalBus<VocalWarningSignal>.GetFrameSnapshotArray(),
-                VitalWarnings = SignalBus<VitalWarningSignal>.GetFrameSnapshotArray(),
-                CrushWarnings = SignalBus<CrushWarningSignal>.GetFrameSnapshotArray(),
-                Brownouts = SignalBus<BrownoutSignal>.GetFrameSnapshotArray(),
-                HealthSignals = SignalBus<SystemHealthIndexSignal>.GetFrameSnapshotArray(),
-                RadiationSignals = SignalBus<RadiationDoseSignal>.GetFrameSnapshotArray(),
-                OxygenSignals = SignalBus<OxygenCriticalSignal>.GetFrameSnapshotArray(),
-                FloodSignals = SignalBus<SubmarineFloodStateSignal>.GetFrameSnapshotArray(),
-                FluidSignals = SignalBus<FluidIncursionSignal>.GetFrameSnapshotArray(),
-                PipeSignals = SignalBus<PipeRuptureSignal>.GetFrameSnapshotArray(),
-                BatterySignals = SignalBus<BatteryLevelSignal>.GetFrameSnapshotArray(),
-                SurvivalSignals = SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshotArray(),
-                ListenerAup = listenerAup,
-                TimeSeconds = _vwsClockSeconds,
-                DeltaSeconds = dt,
-                FallbackCooldownSeconds = ResolveCooldownSeconds(fallbackCooldownSeconds),
-                MaxEvaluations = maxEvaluations
-            };
+                bool cancelRequested = Interlocked.Exchange(ref _pendingCancelRequest, 0) != 0;
+                uint pendingFaultFlags = (uint)Interlocked.Exchange(ref _pendingExternalFaultFlags, 0);
+                if (cancelRequested)
+                    CancelRendererPlaybackAndClearQueues(ref views, false);
+                if (pendingFaultFlags != 0u)
+                    MarkPriorityFault(ref views, pendingFaultFlags);
+                if (cancelRequested)
+                {
+                    _pendingPresentationFrame = frame;
+                    Volatile.Write(ref _visualSyncPresentationPending, 1);
+                    return dependsOn;
+                }
 
-            long startTicks = Stopwatch.GetTimestamp();
-            evaluateJob.Run();
+                float dt = math.max(0f, math.select(0f, deltaTime, math.isfinite(deltaTime)));
+                _vwsClockSeconds += dt;
+                _globalQualityWeight01 = ResolveGlobalQualityWeight01();
+                RefreshVesselTelemetryHandleIfMissing(frame);
+                _vesselCareTone01 = ReadVesselCareTone01();
+                float vesselCareTone01 = _vesselCareTone01;
+                int maxEvaluations = ResolveMaxEvaluations(_globalQualityWeight01, views.Queue.Length);
+                AbsoluteUniversePosition listenerAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
 
-            EvaluateAlarmPriorityJob dispatchJob = new EvaluateAlarmPriorityJob
+                EvaluateWarningPrioritiesJob evaluateJob = new EvaluateWarningPrioritiesJob
+                {
+                    Queue = views.Queue,
+                    PriorityState = views.PriorityState,
+                    Cooldowns = views.Cooldowns,
+                    WarningFlags = views.WarningFlags,
+                    WarningSeverity = views.WarningSeverity,
+                    WarningSourceIds = views.WarningSourceIds,
+                    Tuning = views.Tuning,
+                    Profiles = views.Profiles,
+                    VocalWarnings = SignalBus<VocalWarningSignal>.GetFrameSnapshotArray(),
+                    VitalWarnings = SignalBus<VitalWarningSignal>.GetFrameSnapshotArray(),
+                    CrushWarnings = SignalBus<CrushWarningSignal>.GetFrameSnapshotArray(),
+                    Brownouts = SignalBus<BrownoutSignal>.GetFrameSnapshotArray(),
+                    HealthSignals = SignalBus<SystemHealthIndexSignal>.GetFrameSnapshotArray(),
+                    RadiationSignals = SignalBus<RadiationDoseSignal>.GetFrameSnapshotArray(),
+                    OxygenSignals = SignalBus<OxygenCriticalSignal>.GetFrameSnapshotArray(),
+                    FloodSignals = SignalBus<SubmarineFloodStateSignal>.GetFrameSnapshotArray(),
+                    FluidSignals = SignalBus<FluidIncursionSignal>.GetFrameSnapshotArray(),
+                    PipeSignals = SignalBus<PipeRuptureSignal>.GetFrameSnapshotArray(),
+                    BatterySignals = SignalBus<BatteryLevelSignal>.GetFrameSnapshotArray(),
+                    SurvivalSignals = SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshotArray(),
+                    ListenerAup = listenerAup,
+                    TimeSeconds = _vwsClockSeconds,
+                    DeltaSeconds = dt,
+                    FallbackCooldownSeconds = ResolveCooldownSeconds(fallbackCooldownSeconds),
+                    MaxEvaluations = maxEvaluations
+                };
+
+                long startTicks = Stopwatch.GetTimestamp();
+                JobHandle evaluateHandle = evaluateJob.Schedule(dependsOn);
+
+                EvaluateAlarmPriorityJob dispatchJob = new EvaluateAlarmPriorityJob
+                {
+                    Queue = views.Queue,
+                    PriorityState = views.PriorityState,
+                    CurrentState = views.CurrentState,
+                    Dispatch = views.Dispatch,
+                    Tuning = views.Tuning,
+                    TimeSeconds = _vwsClockSeconds,
+                    DeltaSeconds = dt,
+                    QualityWeight01 = _globalQualityWeight01,
+                    VesselCareTone01 = vesselCareTone01,
+                    VoiceGain = voiceGain,
+                    Frame = frame
+                };
+                JobHandle dispatchHandle = dispatchJob.Schedule(evaluateHandle);
+                long scheduledTicks = Stopwatch.GetTimestamp();
+
+                _pendingVocalWarningScheduleMicros = (float)((scheduledTicks - startTicks) * 1000000.0 / Stopwatch.Frequency);
+                _pendingPresentationFrame = frame;
+                _pendingVocalWarningJobHandle = dispatchHandle;
+                _pendingVocalWarningGuardVault = guardVault;
+                guardTransferred = true;
+                Volatile.Write(ref _vocalWarningJobsPending, 1);
+                Volatile.Write(ref _visualSyncPresentationPending, 1);
+                H8Memory.RegisterActiveJob(VaultOwner, dispatchHandle);
+                return dispatchHandle;
+            }
+            finally
             {
-                Queue = views.Queue,
-                PriorityState = views.PriorityState,
-                CurrentState = views.CurrentState,
-                Dispatch = views.Dispatch,
-                Tuning = views.Tuning,
-                TimeSeconds = _vwsClockSeconds,
-                DeltaSeconds = dt,
-                QualityWeight01 = _globalQualityWeight01,
-                VesselCareTone01 = vesselCareTone01,
-                VoiceGain = voiceGain,
-                Frame = frame
-            };
-            dispatchJob.Run();
-            long endTicks = Stopwatch.GetTimestamp();
+                if (!guardTransferred)
+                    ReleaseVocalWarningFrameGuard(guardVault);
+            }
+        }
 
-            _lastBurstExecutionMicros = (float)((endTicks - startTicks) * 1000000.0 / Stopwatch.Frequency);
-            _pendingPresentationFrame = frame;
+        private bool TryFinalizePendingVocalWarningJobsForPresentation()
+        {
+            if (Volatile.Read(ref _vocalWarningJobsPending) == 0)
+                return true;
+
+            JobHandle handle = _pendingVocalWarningJobHandle;
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref handle))
+            {
+                _pendingVocalWarningJobHandle = handle;
+                return false;
+            }
+
+            _pendingVocalWarningJobHandle = default;
+            Volatile.Write(ref _vocalWarningJobsPending, 0);
+            ReleasePendingVocalWarningFrameGuard();
+            _lastBurstExecutionMicros = math.max(0f, _pendingVocalWarningScheduleMicros);
+            _pendingVocalWarningScheduleMicros = 0f;
             Volatile.Write(ref _visualSyncPresentationPending, 1);
+            return true;
+        }
+
+        private void CompletePendingVocalWarningJobsForTeardown()
+        {
+            if (Interlocked.Exchange(ref _vocalWarningJobsPending, 0) == 0)
+                return;
+
+            JobHandle handle = _pendingVocalWarningJobHandle;
+            DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            _pendingVocalWarningJobHandle = default;
+            _pendingVocalWarningScheduleMicros = 0f;
+            ReleasePendingVocalWarningFrameGuard();
+        }
+
+        private bool TryAcquireVocalWarningFrameGuard(out IDataVault guardVault)
+        {
+            guardVault = _dataVault;
+            return guardVault != null &&
+                   !guardVault.IsCompactionFenceActive &&
+                   guardVault.TryAcquireMutationGuard(VocalWarningFrameMutationGuardMask);
+        }
+
+        private void ReleasePendingVocalWarningFrameGuard()
+        {
+            IDataVault guardVault = _pendingVocalWarningGuardVault;
+            _pendingVocalWarningGuardVault = null;
+            ReleaseVocalWarningFrameGuard(guardVault);
+        }
+
+        private static void ReleaseVocalWarningFrameGuard(IDataVault guardVault)
+        {
+            if (guardVault != null)
+                guardVault.ReleaseMutationGuard(VocalWarningFrameMutationGuardMask);
+        }
+
+        private static ulong VocalWarningMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private void CompletePresentationPhase(ref VwsVaultViews views, uint frame)
@@ -1142,19 +1262,39 @@ namespace Hecton8.Audio
 
         private void VisualSyncPresentationTick()
         {
+            if (!TryFinalizePendingVocalWarningJobsForPresentation())
+                return;
+
             if (Interlocked.Exchange(ref _visualSyncPresentationPending, 0) == 0)
                 return;
 
             if (Volatile.Read(ref _nativeAllocated) == 0)
                 return;
 
-            if (!TryResolveVwsOwnerViews(out VwsVaultViews views))
+            if (!TryAcquireVocalWarningFrameGuard(out IDataVault guardVault))
             {
                 Volatile.Write(ref _visualSyncPresentationPending, 1);
                 return;
             }
 
-            CompletePresentationPhase(ref views, _pendingPresentationFrame);
+            try
+            {
+                if (!TryResolveVwsOwnerViews(out VwsVaultViews views))
+                {
+                    Volatile.Write(ref _visualSyncPresentationPending, 1);
+                    return;
+                }
+
+                uint presentationFrame = _pendingPresentationFrame;
+                if (Interlocked.Exchange(ref _pendingCancelRequest, 0) != 0)
+                    CancelRendererPlaybackAndClearQueues(ref views, false);
+
+                CompletePresentationPhase(ref views, presentationFrame);
+            }
+            finally
+            {
+                ReleaseVocalWarningFrameGuard(guardVault);
+            }
         }
 
         private uint NextOwnerFrameId()
@@ -2819,30 +2959,51 @@ namespace Hecton8.Audio
             }
         }
 
-        private sealed class PostSimulationPhaseSystem : IDispatcherSystem
+        private sealed class SimulationPhaseSystem : IDispatcherSystem
         {
             private readonly VocalWarningSystem _owner;
 
-            public PostSimulationPhaseSystem(VocalWarningSystem owner)
+            public SimulationPhaseSystem(VocalWarningSystem owner)
             {
                 _owner = owner;
             }
 
             public uint GetSystemIdHash() => VocalWarningSystemHash;
-            public DispatcherPhase GetDispatcherPhase() => DispatcherPhase.PostSimulation;
+            public DispatcherPhase GetDispatcherPhase() => DispatcherPhase.Simulation;
+            public byte GetBucketId() => 0;
+            public int GetDependencyCount() => 0;
+            public uint GetDependencyHash(int dependencyIndex) => 0u;
+            public void PreSimulationTick(in DispatcherTimingDTO timing) { }
+            public JobHandle ScheduleSimulation(in DispatcherTimingDTO timing, in DispatcherJobContext context, JobHandle dependsOn)
+            {
+                return _owner.ScheduleVocalWarningFrame(timing.FrameDelta, timing.FrameId, dependsOn);
+            }
+
+            public void PostSimulationTick(in DispatcherTimingDTO timing) { }
+            public void VisualSyncTick(in DispatcherTimingDTO timing) { }
+        }
+
+        private sealed class VisualSyncPhaseSystem : IDispatcherSystem
+        {
+            private readonly VocalWarningSystem _owner;
+
+            public VisualSyncPhaseSystem(VocalWarningSystem owner)
+            {
+                _owner = owner;
+            }
+
+            public uint GetSystemIdHash() => VocalWarningSystemHash ^ 0x5653594Eu; // VSYN
+            public DispatcherPhase GetDispatcherPhase() => DispatcherPhase.VisualSync;
             public byte GetBucketId() => 0;
             public int GetDependencyCount() => 0;
             public uint GetDependencyHash(int dependencyIndex) => 0u;
             public void PreSimulationTick(in DispatcherTimingDTO timing) { }
             public JobHandle ScheduleSimulation(in DispatcherTimingDTO timing, in DispatcherJobContext context, JobHandle dependsOn) => dependsOn;
+            public void PostSimulationTick(in DispatcherTimingDTO timing) { }
+
             public void VisualSyncTick(in DispatcherTimingDTO timing)
             {
                 _owner.VisualSyncPresentationTick();
-            }
-
-            public void PostSimulationTick(in DispatcherTimingDTO timing)
-            {
-                _owner.RunVocalWarningFrame(timing.FrameDelta, timing.FrameId);
             }
         }
     }

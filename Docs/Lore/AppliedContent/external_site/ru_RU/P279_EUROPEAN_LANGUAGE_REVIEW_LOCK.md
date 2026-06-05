@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Блок review для европейских языков
+# European Text Expansion Contract
 
-Эта статья объясняет text expansion proof для contract и dossier UI HECTON-8.
+German, French, Spanish, Polish, Dutch, Portuguese, and related text need real expansion handling across game screens and site pages, not smaller fonts as a cover-up.
 
 ## Scanner
 
-Длинное слово допустимо. Скрытое поле - нет.
+A longer word is acceptable. A hidden field is not.
 
 ## Terminal
 
-EU REVIEW: expanded copy must fit or shorten; never hide lien, custody or return penalty.
+Expanded copy may shorten for fit, but it must not hide lien, custody, return penalty, or survival warning text.
 
 ## Audio
 
-Поле, которое клиппит, игрок перестает использовать.
+The clipped field is the field the player stops trusting.
 
 ## Field Note
 
-Review gate: contract label fit, tooltip fallback, unit abbreviations, legal terms и public-site paragraph expansion.
+Check contract labels, tooltip fallback, unit abbreviations, legal terms, and public-site paragraph expansion.
 
 <!-- External Site; generated from P279_EUROPEAN_LANGUAGE_REVIEW_LOCK/ru_RU. -->

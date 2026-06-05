@@ -1,0 +1,41 @@
+AGENT ID: 1813
+ROLE: STALE_BLOCKER_ERRATA_PACKET
+MODE: No-Unity documentation/control task. Independent.
+
+PRIMARY GOAL
+Create a concise errata packet that stops future agents from chasing stale or overstated blocker claims found by 1805. This should reduce wasted agent work and prevent false destructive fixes.
+
+READ
+- AGENTS.md
+- PROJECT_BIBLES.md
+- quality.md
+- HECTON8_ORCHESTRATOR.md
+- HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md
+- Docs/Reports/Batch18/1805_AGENT_OUTPUT_TRIAGE_DASHBOARD.md
+
+OWNED OUTPUTS
+- Docs/Tasks/Status_1813.md
+- Docs/AgentLogs/LOG_1813.md
+- Docs/Reports/Batch18/1813_STALE_BLOCKER_ERRATA_PACKET.md
+
+20 TASKS
+01. Create tracking files.
+02. Extract stale/overstated claims from 1805.
+03. Write errata for ProceduralWreckGenerator: editor-only/play-guarded fallback.
+04. Write errata for MissionMarkerSystem: no CreateMarkerMesh fallback; missing resources disable markers.
+05. Write errata for P288 stale-binary mismatch: historical unless reproduced.
+06. Write errata for static microsecond estimates: not profiler proof.
+07. Write errata for old PlayMode screenshots: stale after later changes.
+08. Write errata for static visual reports: not runtime acceptance.
+09. Write errata for generated pages vs source truth.
+10. Write errata for localization/native-review claims.
+11. Include "what to do instead" per errata.
+12. Include "do not launch" cautions.
+13. Make it short and controller-readable.
+14. Do not edit AGENTS.md.
+15. Do not create broad bureaucracy.
+16. Append log.
+17. Final scan for overclaiming.
+18. Mark complete.
+19. Include exact source report paths.
+20. Provide a copy-paste prompt for future agents to read errata when relevant.

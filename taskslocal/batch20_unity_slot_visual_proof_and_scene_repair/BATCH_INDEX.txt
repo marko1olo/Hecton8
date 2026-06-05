@@ -1,0 +1,143 @@
+BATCH20: UNITY SLOT VISUAL PROOF AND SCENE REPAIR PLANNING
+
+Batch folder:
+C:\hades\Hecton8\taskslocal\batch20_unity_slot_visual_proof_and_scene_repair\
+
+Purpose:
+Create proof-driven, independent work packets around the single Unity owner. The batch is for surface, sky, Aegir, moons, clouds, coastline, ocean surface, photic shallows, and medium-depth visual proof plus scene repair planning. The floor is bright, beautiful, readable, Subnautica-level or better. Darkness/noir belongs to depth, caves, interiors, storms, and temporary eclipse windows. It is not allowed as camouflage for weak surface/water/shore art.
+
+Global authority files already used to author this batch:
+- C:\hades\Hecton8\AGENTS.md
+- C:\hades\Hecton8\HECTON8_ORCHESTRATOR.md
+- C:\hades\Hecton8\HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md
+- C:\hades\Hecton8\TASTE.md
+- C:\hades\Hecton8\VISION_LOCKS.md
+- C:\hades\Hecton8\PROJECT_BIBLES.md
+- C:\hades\Hecton8\quality.md
+- C:\hades\Hecton8\rendering.md
+- C:\hades\Hecton8\water.md
+- C:\hades\Hecton8\terrain.md
+- C:\hades\Hecton8\world.md
+- C:\hades\Hecton8\celestial.md
+- C:\hades\Hecton8\atmosphere.md
+- C:\hades\Hecton8\lighting.md
+- C:\hades\Hecton8\shaders.md
+- C:\hades\Hecton8\presentation.md
+- C:\hades\Hecton8\performance.md
+- C:\hades\Hecton8\PROCEDURAL_ASSET_PIPELINE.md
+- C:\hades\Hecton8\3dmodel.md
+- C:\hades\Hecton8\3DMODEL_GEOLOGY_ROCKS.md
+- C:\hades\Hecton8\3DMODEL_FLORA_CORAL.md
+- C:\hades\Hecton8\3DMODEL_TEXTURES_MATERIALS.md
+- C:\hades\Hecton8\3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md
+- C:\hades\Hecton8\authoring.md
+- C:\hades\Hecton8\streaming.md
+- C:\hades\Hecton8\Docs\ARCHITECTURE\URP_SCREENSHOT_PIPELINE.md
+- C:\hades\Hecton8\Docs\ARCHITECTURE\SHINOBU_277_CREST_SHORELINE_FOAM_GRAFT.md
+
+Registry mandates loaded for this batch:
+- C:\hades\Hecton8\.agents-skills\REND_Shader_Noir_Aesthetics_Dithering_Fog.txt
+- C:\hades\Hecton8\.agents-skills\REND_Terrain_VirtualTexturing.txt
+- C:\hades\Hecton8\.agents-skills\REND_Instanced_Flora_Physics.txt
+- C:\hades\Hecton8\.agents-skills\REND_URP_Graphics_HotPath_Optimization_HLOD.txt
+- C:\hades\Hecton8\.agents-skills\OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt
+- C:\hades\Hecton8\.agents-skills\OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt
+- C:\hades\Hecton8\.agents-skills\OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+- C:\hades\Hecton8\.agents-skills\DBG_Telemetry_Crash_Reporting_PostMortem.txt
+
+Domain file note:
+C:\hades\Hecton8\Docs\Actual Domains of Project.txt was not present during batch authoring. The narrow domain used for this batch is product-face surface visuals, sky/ocean proof, shallow ecology placement, and Unity-slot repair planning.
+
+Current Unity ownership:
+The active Unity owner is thread/agent named "Продолжить работу по логам". No task in this batch may fight that owner. Only task 2001 is marked as a Unity slot task, and even task 2001 must wait until the owner slot is explicitly free or handed over.
+
+Hard batch rules:
+- Do not run Unity unless the task is explicitly marked UNITY SLOT and the current owner has handed over control.
+- Do not edit active Assets scene/material/prefab files unless the task is the Unity slot and the edit is explicitly scoped.
+- Do not run builds.
+- Do not launch dotnet build/rebuild.
+- Do not claim visual proof from static YAML, screenshots from old logs, or memory.
+- Do not create tiny chores. Each task must produce a real proof artifact or handoff packet.
+- Do not use primitive rocks, primitive seaweed, random land scatter, package/default materials, or placeholder-looking assets as acceptable final art.
+- Use BioForge, GeologyForge, Flora generation systems, WorldProcedural generation tools, existing Crest/ocean assets, and existing Aegir/sky assets as source-aware routes.
+- Gemini prompt packs may be generated offline. Candidate images require GUI/browser/manual generation or an orchestrator with Gemini access. Do not fake generated candidates.
+
+Static proof baseline to incorporate:
+- Dry-land kelp/rocks are plausible because ProceduralRule kelp/rocks currently use minDepthMeters 0 / preferSeafloor 0 and dry terrain maps to depth 0.
+- Relevant rule assets include:
+  - Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_kelp_tall.asset
+  - Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_kelp_starter.asset
+  - Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_kelp_patch_dense.asset
+  - Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_kelp_canopy.asset
+  - Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_rocks_floor.asset
+  - Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_rocks_cluster.asset
+  - Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_rocks_arch.asset
+  - Assets/_Project/Data/World/ProceduralPlacementRules/ProceduralRule_rule_rocks_shelf.asset
+- This is static plausibility, not runtime proof.
+
+Required proof shot set for the Unity slot:
+- Game View / Scene View matching pair from same camera/pose.
+- Shoreline closeup at player inspection distance.
+- Underwater 0-5m photic shallows.
+- Underwater 20-50m medium depth.
+- Aegir long shot.
+- Aegir crop showing texture/cloud/storm quality.
+- 360 sky pan sequence with sun, clouds, moons, Aegir, horizon, coastline, ocean.
+- Low / Middle / High / Ultra GlobalQualityWeight consequences, with visuals, optimization, and gameplay notes.
+
+Three-pillar acceptance:
+- Graphics: bright surface and shallows meet the visual floor without darkness, blur, fog spam, or placeholder scatter.
+- Optimization: no new suspicious hot path above 0.1 ms without profiler proof and no runtime allocation growth.
+- Gameplay: visuals preserve navigation, hazard reading, interactability, depth cues, and route legibility.
+
+Task list:
+- 2001_UNITY_SLOT_VISUAL_PROOF_CAPTURE_AND_TRIAGE.txt
+  Unity-slot-only capture, profiler, scene/game matching, and first repair triage. This is the only task allowed to control Unity.
+- 2002_STATIC_SURFACE_SHALLOW_SCENE_REPAIR_LEDGER.txt
+  Static scene/asset/rule ledger for surface and shallow blockers, with no Unity control.
+- 2003_KELP_ROCK_DRY_LAND_PLACEMENT_REPAIR_SPEC.txt
+  Placement-rule and dry-land kelp/rock repair specification based on static assets and generation contracts.
+- 2004_BIOFORGE_FLORA_CORAL_SOURCE_PACKAGE.txt
+  BioForge/Flora source package for premium shallow kelp/coral/flora replacements.
+- 2005_GEOLOGY_FORGE_SHORELINE_ROCK_SOURCE_PACKAGE.txt
+  GeologyForge source package for premium coastline/shallow rock replacements.
+- 2006_SKY_AEGIR_MOONS_CLOUD_SOURCE_AND_VALIDATOR_PACKET.txt
+  Sky/Aegir/moons/cloud source and validator packet for bright surface route proof.
+- 2007_OCEAN_SHORELINE_WATERLINE_RENDER_PROOF_PACKET.txt
+  Ocean surface, shoreline foam, waterline, and photic shallows render proof packet.
+- 2008_PRODUCTFACE_RELINK_AND_CHANNEL_CONTRACT_UNITY_HANDOFF.txt
+  ProductFace prefab/material/texture manifest debt handoff with safe relink plan.
+- 2009_GEMINI_PROMPT_PACKS_FOR_SURFACE_SHALLOWS.txt
+  Offline Gemini prompt packs and candidate intake rules for premium source texture generation.
+- 2010_QUALITY_SCALABILITY_MATRIX_AND_PROOF_CHECKLIST.txt
+  GlobalQualityWeight low/middle/high/ultra matrix and proof checklist for visual slot acceptance.
+- 2011_STATIC_VALIDATOR_RUNBOOK_FOR_VISUAL_DEBT.txt
+  Static validator runbook and aggregate visual debt proof without Unity.
+- 2012_SCENE_REPAIR_INTEGRATION_BACKLOG_AND_OWNER_HANDOFF.txt
+  Integration backlog and Unity owner handoff sequence for repair execution.
+
+Dispatch guidance:
+- Wave A, no Unity: 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 may run concurrently. They must not depend on sibling outputs.
+- Unity slot: 2001 runs only after explicit Unity slot handoff from "Продолжить работу по логам".
+- Integration: 2012 may be run before or after Wave A, but it must treat missing sibling outputs as PENDING, not as a blocker.
+
+Reporting required from each future task agent:
+- Because each future task has an explicit ID, create/update:
+  - Docs/Tasks/Status_[ID].md
+  - Docs/AgentLogs/Rationale_[ID].md
+  - Docs/AgentLogs/LOG_[ID].md
+- Keep them concise and factual. No copied chat. No fake metrics.
+
+Proof labels:
+- STATIC VERIFIED: source/config evidence only.
+- EDITOR VERIFIED: Unity editor import/console/asset state verified.
+- PLAYMODE VERIFIED: runtime verified in Play Mode.
+- PROFILER VERIFIED: profiler/GC/frame timing verified.
+- PLAYER-CAPTURE VERIFIED: player build or capture route verified.
+- PENDING VERIFICATION: not yet proven.
+
+Final batch acceptance:
+- At least one Unity-slot proof packet exists or is explicitly marked PENDING UNITY SLOT with current owner named.
+- Static repair ledgers identify every known primitive/default/package route blocker they touch.
+- Low/Middle/High/Ultra consequences are recorded as continuous GlobalQualityWeight behavior, not binary switches.
+- Every packet preserves the three pillars: graphics, optimization, gameplay.

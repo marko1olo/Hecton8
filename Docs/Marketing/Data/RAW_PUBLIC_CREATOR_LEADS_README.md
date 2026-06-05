@@ -1,4 +1,4 @@
-﻿## Authority Boundary
+## Authority Boundary
 
 Static documentation only. Current source, active architecture contracts, fresh proof artifacts, and official platform rules override dated claims in this file. No runtime, profiler, memory, render, platform, public-page, or ship-readiness proof is implied by this file alone.
 # Raw Public Creator Leads Readme
@@ -87,7 +87,7 @@ A verified lead gets one of four pitch modes:
 
 | Segment | Pitch mode |
 |---|---|
-| `direct_underwater_survival` | Compare by audience only, not by "killer" rhetoric. Lead with pressure/machinery/black water. |
+| `direct_underwater_survival` | Compare by audience only, not by "killer" rhetoric. Lead with beautiful water when shown, pressure, machinery, and black-water depth. |
 | `survival_route_risk` | Lead with expedition loop, scarcity, return planning, and fair failure. |
 | `engineering_base_systems` | Lead with base-as-machine, power, oxygen, pumps, pressure, and salvage logistics. |
 | `abyss_horror_pressure` | Lead with instruments, sound, darkness, and systemic dread. |

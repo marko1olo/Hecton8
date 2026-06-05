@@ -1,0 +1,7 @@
+artifact,path,status,packet_count,localized_row_count,locale_count,route_count,hash_constant_count,draft_localization_rows,notes
+AppliedLore packet CSV,Assets/_SourceData/DataMonolith/Narrative/applied_lore_packets.csv,present,460,6900,15,,,5180,15-locale matrix complete
+Generated AppliedLore hashes,Assets/_Project/Scripts/Core/Generated/H8AppliedLoreHashes.cs,present,460,,15,,483,,surface_masks=7 row_flags=1
+Route-card source CSV directory,Docs/Lore/AppliedContent/route_cards,present,460,,,454,,,files=90 unknown_packet_ids=0
+Baked route-card source export,Assets/_SourceData/DataMonolith/Narrative/applied_lore_route_cards.csv,present,,,,454,,,DataMonolith Narrative source table
+Binding map directory,Docs/Lore/AppliedContent/binding_maps,present,460,,,,,,files=176 rows=1668 ok_rows=1668
+DataMonolith H8BIN,Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin,stale_after_source_generation,6900,6900,15,454,,,bytes=3300608 magic=0x4D443848 format=2 sections=64 checksum=0xEAA4001C12652792; full_after_page_export_failed=P288_WORKER_LOCKER_NAMEPLATE_SAMPLE/ja_JP scanner length mismatch

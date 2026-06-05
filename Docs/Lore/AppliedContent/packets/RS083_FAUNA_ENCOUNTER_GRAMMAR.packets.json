@@ -28,12 +28,12 @@
       "localized": {
         "en_US": {
           "title": "Predator Shadow Encounter Grammar",
-          "scanner": "Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.",
+          "scanner": "Predator trace: sonar gap, cut prey path, broad shadow. Body not confirmed; keep light discipline.",
           "terminal": "FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.",
           "audio": "The safest sign is not seeing the thing. It is watching everything else stop.",
           "in_game_wiki": "Predator-shadow encounters make fear of depth readable. The animal is not a boss; it is a moving condition that changes oxygen spending, route choice and scan confidence.",
           "external_site": "HECTON-8 fauna is designed as encounter grammar: warnings, routes, pressure and imperfect readings.",
-          "field_note": "Use for AI/spawn design notes and scanner cards."
+          "field_note": "If prey routes stop at open water, the animal is already using your light. Back out before you name it."
         },
         "ru_RU": {
           "title": "Грамматика встречи с тенью хищника",
@@ -183,12 +183,12 @@
       "localized": {
         "en_US": {
           "title": "Glass Grazer Clearing Encounter Grammar",
-          "scanner": "Encounter grammar: glass grazer clearing. Scraped routes can be safe until the herd vanishes.",
+          "scanner": "Glass grazer clearing. Recent scrape marks suggest low predator pressure; risk rises if herd movement stops.",
           "terminal": "FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.",
           "audio": "The grazers make bright corridors. Something else decides when they empty.",
           "in_game_wiki": "Glass-grazer encounters contrast the horror. They are beautiful, useful and still dangerous because their movement predicts unseen pressure.",
           "external_site": "Bright shallow ecology is not decoration. It teaches systems through beauty first and threat second.",
-          "field_note": "Use for safe-zone literacy and shallow contrast."
+          "field_note": "A grazed corridor is useful until it goes quiet. Do not build the return plan on a herd you cannot see."
         },
         "ru_RU": {
           "title": "Грамматика поляны стеклянных пастухов",
@@ -338,12 +338,12 @@
       "localized": {
         "en_US": {
           "title": "Lantern Drift False-Safe Encounter Grammar",
-          "scanner": "Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.",
+          "scanner": "Lantern drift lane: oxygen, signal noise or displaced predators possible. Verify current before following.",
           "terminal": "FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.",
           "audio": "Light is not mercy. It is data your suit has not learned to separate.",
           "in_game_wiki": "Lantern-drift encounters keep shallow beauty unstable. The same bloom can help navigation, hide signal corruption or show that larger fauna have moved.",
           "external_site": "HECTON-8's bright shallows are readable, but never innocent.",
-          "field_note": "Use for scanner ambiguity and low-visibility pathing."
+          "field_note": "Bright water lies three ways here: current, bait, or panic. Check pinger return before you trust it."
         },
         "ru_RU": {
           "title": "Грамматика ложной безопасности фонарных дрейфов",
@@ -493,12 +493,12 @@
       "localized": {
         "en_US": {
           "title": "Brine Vane Navigation Encounter Grammar",
-          "scanner": "Encounter grammar: brine vane. Current fans and sonar warps create navigable density turns.",
+          "scanner": "Brine vane field. Aligned fans mark density turns; sonar warps near open glow.",
           "terminal": "FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.",
           "audio": "The vane does not guide you. It obeys the water loudly enough to follow.",
           "in_game_wiki": "Brine-vane encounters show the ocean as a process network without making it a speaking mind. Atlas can exploit the process, but the current is still physical.",
           "external_site": "The ocean does not need dialogue to be active. Its processes become routes, hazards and repair media.",
-          "field_note": "Use for mid-depth navigation and Atlas repair-network foreshadowing."
+          "field_note": "Follow the vane edge like a handrail. If the line bends wrong, your buoyancy reading is late."
         },
         "ru_RU": {
           "title": "Грамматика навигации по рассольным веерам",
@@ -648,12 +648,12 @@
       "localized": {
         "en_US": {
           "title": "Sensor-Tagged Fauna Pursuit Encounter Grammar",
-          "scanner": "Encounter grammar: sensor-tagged fauna. Noisy tags turn pursuit into repair-network feedback.",
+          "scanner": "Sensor-tagged fauna. Old biometal tag emits repair-network echo; avoid leading it toward shelter.",
           "terminal": "FAUNA GRAMMAR: tagged pursuit is not villain AI. Atlas is using living movement as distributed sensing under damaged assumptions.",
           "audio": "It follows because the network thinks following is a repair.",
           "in_game_wiki": "Sensor-tagged fauna make Atlas' repair logic visible. The animal remains local life; the tag turns its movement into a corrupted maintenance signal.",
           "external_site": "Atlas does not command an army. It misuses life as sensing, patching and feedback.",
-          "field_note": "Use near abyssal machine fields and final repair-network encounters."
+          "field_note": "The tag is not steering the animal cleanly. It is making your route easier to hear."
         },
         "ru_RU": {
           "title": "Грамматика погони сенсорно-помеченной фауны",

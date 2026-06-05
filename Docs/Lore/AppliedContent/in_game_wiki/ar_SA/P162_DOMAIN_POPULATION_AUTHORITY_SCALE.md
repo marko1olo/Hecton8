@@ -10,13 +10,13 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
 # Population And Authority Scale
 
-Population numbers stay loose, but authority roles are locked so contracts, terminals and website articles do not contradict each other.
+Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.
 
 ## Scanner
 

@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# HE LOC: Sato-Ren Return Packet
+# Sato-Ren Return Packet
 
-HE LOC HOLD: Deep Reach's return to HECTON-8 begins as paperwork: coordinates, custody, access, then maybe rescue.
+Deep Reach returns to HECTON-8 as paperwork moving through rare signal windows: coordinates, custody, access, then maybe rescue.
 
 ## Scanner
 
-HE LOC HOLD: Deep Reach artifact: return-action packet. Coordinates requested before rescue language.
+Recovery Compliance packet. Coordinates requested before rescue language.
 
 ## Terminal
 
-HE LOC: SATO-REN PACKET. Send coords, Atlas access and sample custody before extraction.
+RECOVERY COMPLIANCE / SATO-REN / RETURN ACTION: transmit coordinates, Atlas access state, XO sample custody and contractor silence acknowledgement before extraction language is issued.
 
 ## Audio
 
-HE LOC HOLD: The packet knows where the asset is. It is less certain where you are.
+The packet knows where the asset is. It is less certain where you are.
 
 ## Field Note
 
-HE LOC HOLD: Use as bridge between present comms, final payload choices and public spoiler gates.
+Sato-Ren asks for position, access state and custody before she uses the word extraction. That order is the threat.
 
 <!-- External Site; generated from P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT/he_IL. -->

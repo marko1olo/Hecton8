@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -20,11 +20,11 @@ Maintenance Ecology is the core biomechanical rule for HECTON-8: biology becomes
 
 ## Scanner
 
-Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.
+Conductive biofilm, shell growth, tagged fauna, vent heat, and drones are carrying repair traffic.
 
 ## Terminal
 
-ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.
+ATLAS ECOLOGY: biofilm bridge stable. Filter colony repeats pulse. Shell seal closes fracture. Fauna tag returns sensor packets.
 
 ## Audio
 
@@ -32,6 +32,6 @@ The ocean is not thinking like you. Atlas learned which parts of it carry a sign
 
 ## Field Note
 
-Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.
+Do not cut every living seam. Some are holding pressure. Scan for signal first, then decide what can be stripped.
 
 <!-- External Site; generated from P061_MAINTENANCE_ECOLOGY/en_US. -->

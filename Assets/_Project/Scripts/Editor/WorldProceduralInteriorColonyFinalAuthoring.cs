@@ -20,6 +20,11 @@ namespace Hecton8.EditorTools
         [MenuItem("Hecton/Authoring/Rebuild Procedural Interior And Colony Finals", priority = 180)]
         public static void RebuildInteriorAndColonyFinals()
         {
+            if (!WorldProceduralFinalPrefabQualityGate.AllowLegacyPrimitiveFinalAuthoring(
+                    nameof(WorldProceduralInteriorColonyFinalAuthoring),
+                    FinalPrefabFolder))
+                return;
+
             EnsureFolder("Assets/_Project/Art");
             EnsureFolder("Assets/_Project/Art/Materials");
             EnsureFolder("Assets/_Project/Art/Materials/Construction");

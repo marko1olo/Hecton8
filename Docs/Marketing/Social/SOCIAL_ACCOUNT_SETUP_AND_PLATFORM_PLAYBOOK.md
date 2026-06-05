@@ -4,6 +4,10 @@ Status: pre public social ops
 Owner lane: Marketing / social publishing
 Runtime impact: none
 
+## Authority Boundary
+
+Public voice routes through root `textes.md`. Quality, release, platform, Steam, wishlist, demo, performance, account, publish, and automation claims require `quality.md`, `release.md`, `platform.md`, and current proof artifacts. This file is an account and publishing plan only; account existence, handle candidates, browser/session notes, examples, or automation commands do not grant public posting, platform readiness, Steam, demo, or release claims.
+
 ## Purpose
 
 Social accounts exist to support Steam conversion, creator trust, and feedback loops. They are not the main product. Posting without assets wastes time.
@@ -97,7 +101,7 @@ Preferred handle: PlaySubmerge
 Backup handle: SubmergeGame
 Conflict-safe handles: SubmergeH8, SubmergeBlackwater, SubmergeBelow
 Display name: Submerge
-Short bio: Single player deep sea survival about pressure, salvage, machinery, and black water.
+Short bio: Single player underwater survival about beautiful alien water, pressure, salvage, machinery, and black-water depth.
 Website: HOLD_NO_PUBLIC_CTA
 Contact: HOLD_NO_PROJECT_INBOX_PUBLICATION
 Profile state: private/blank until first screenshot pack passes QA
@@ -132,7 +136,7 @@ Studio profile field kit:
 | Display name | `Teni Games` |
 | Japanese display variant | `Teni Games / 天衣` |
 | Japanese bio line | `テニゲームス / 天衣 / 天意` |
-| Bio short | `Small game studio. Building Submerge: pressure, machinery, salvage, black water.` |
+| Bio short | `Small game studio. Building Submerge: beautiful alien water, pressure, machinery, salvage, black-water depth.` |
 | Bio no-game-link | `Building Submerge. No Steam link until the current build can carry the screenshot.` |
 | Website | blank until official CTA gate |
 | Contact | blank until official inbox custody gate |
@@ -141,7 +145,7 @@ Studio profile field kit:
 | Banner | `MarketingAssets/00_Brand/Teni_Games_TenI_Banner_X_1500x500.png` |
 | Telegram handle | `@teni_games` |
 
-Platform-ready export pack:
+Platform-sized export candidate pack, not platform readiness proof:
 
 - `MarketingAssets/00_Brand/PlatformExports/teni_games_profile_fields.json`
 - `MarketingAssets/00_Brand/PlatformExports/platform_exports_contact_sheet.png`
@@ -172,7 +176,7 @@ Published text:
 ```text
 Teni Games is the name. Submerge is the game.
 
-Pressure, salvage, ugly machinery, black water, and a way back that keeps getting worse.
+Beautiful alien water, pressure, salvage, ugly machinery, black-water depth, and a way back that keeps getting worse.
 
 This is profile art, not gameplay.
 ```
@@ -264,7 +268,7 @@ Telegram-first description:
 
 ```text
 Submerge development notes from Teni Games.
-Pressure, machinery, salvage, black water.
+Beautiful alien water, pressure, machinery, salvage, black-water depth.
 No fake trailers. No wishlist begging. Screenshots have to earn the post.
 ```
 
@@ -407,7 +411,7 @@ Route class if posted by owner: `forced_reservation_no_link`.
 Post draft:
 
 ```text
-Working title: Submerge. A single-player deep-sea survival project about pressure, salvage, machinery, and black water. No Steam link yet. Public footage waits until current-build screenshots can prove the game without captions.
+Working title: Submerge. A single-player underwater survival project about beautiful alien water, pressure, salvage, machinery, and black-water depth. No Steam link yet. Public footage waits until current-build screenshots can prove the game without captions.
 ```
 
 Why this draft is the least bad pre-asset post:
@@ -425,7 +429,7 @@ Profile field draft for the existing account:
 | Field | Value |
 |---|---|
 | Display name | `Submerge` |
-| Bio | `Single-player deep-sea survival about pressure, salvage, machinery, and black water. Public footage only when captured from the current build.` |
+| Bio | `Single-player underwater survival about beautiful alien water, pressure, salvage, machinery, and black-water depth. Public footage only when captured from the current build.` |
 | Website | blank until Steam/site CTA gate |
 | Location | blank |
 | Avatar | `MarketingAssets/00_Brand/Submerge_Avatar_TextOnly_1024.png` |
@@ -457,12 +461,12 @@ Submerge account field kit:
 
 | Platform | Display name | First handle | Backup handle | Bio |
 |---|---|---|---|---|
-| X/Twitter | `Submerge` | `PlaySubmerge` | `SubmergeGame` | `Single-player deep-sea survival about pressure, salvage, machinery, and black water. Public footage waits for current-build proof.` |
-| Bluesky | `Submerge` | `playsubmerge.bsky.social` | `submergegame.bsky.social` | `Single-player deep-sea survival about pressure, salvage, machinery, and black water.` |
-| YouTube | `Submerge` | `@PlaySubmerge` | `@SubmergeGame` | `Official development channel for Submerge, a single-player deep-sea survival project about pressure, salvage, machinery, and black water.` |
-| Telegram | `Teni Games / 天衣` | `@teni_games` | hold | `Submerge development notes from Teni Games. Pressure, machinery, salvage, black water. Screenshots have to earn the post.` |
-| TikTok | `Submerge` | `@playsubmerge` | `@submergegame` | `Deep-sea survival. Pressure, salvage, machinery, black water.` |
-| Instagram | `Submerge` | `@playsubmerge` | `@submergegame` | `Single-player deep-sea survival: pressure, salvage, machinery, black water.` |
+| X/Twitter | `Submerge` | `PlaySubmerge` | `SubmergeGame` | `Single-player underwater survival about beautiful alien water, pressure, salvage, machinery, and black-water depth. Public footage waits for current-build proof.` |
+| Bluesky | `Submerge` | `playsubmerge.bsky.social` | `submergegame.bsky.social` | `Single-player underwater survival about beautiful alien water, pressure, salvage, machinery, and black-water depth.` |
+| YouTube | `Submerge` | `@PlaySubmerge` | `@SubmergeGame` | `Official development channel for Submerge, a single-player underwater survival project about beautiful alien water, pressure, salvage, machinery, and black-water depth.` |
+| Telegram | `Teni Games / 天衣` | `@teni_games` | hold | `Submerge development notes from Teni Games. Beautiful alien water, pressure, machinery, salvage, black-water depth. Screenshots have to earn the post.` |
+| TikTok | `Submerge` | `@playsubmerge` | `@submergegame` | `Underwater survival. Beautiful water, pressure, salvage, machinery, black-water depth.` |
+| Instagram | `Submerge` | `@playsubmerge` | `@submergegame` | `Single-player underwater survival: beautiful alien water, pressure, salvage, machinery, black-water depth.` |
 | Reddit | owner/dev account | `u/PlaySubmerge` | `u/SubmergeGame` | `Developer account for Submerge. Posts disclose dev status.` |
 
 No website/contact field until official inbox and CTA gates pass. No avatar/banner unless it is text-only or a current approved logo mark; do not use concept art as proof.
@@ -478,7 +482,7 @@ These are placeholder account visuals only. They are not Steam capsule art, game
 Pre-asset no-link post bank:
 
 ```text
-Working title: Submerge. A single-player deep-sea survival project about pressure, salvage, machinery, and black water. No Steam link yet. Public footage waits until current-build screenshots can prove the game without captions.
+Working title: Submerge. A single-player underwater survival project about beautiful alien water, pressure, salvage, machinery, and black-water depth. No Steam link yet. Public footage waits until current-build screenshots can prove the game without captions.
 ```
 
 ```text
@@ -486,7 +490,7 @@ If a screenshot needs a paragraph to explain what the player does, it fails. Sub
 ```
 
 ```text
-The lane is not colorful ocean wonder. Submerge is about machines trying to keep black water outside.
+The lane is not only colorful ocean wonder. Submerge must show beautiful alien surface/shallows when the asset earns it, then make the drop into pressure, machinery, and black water matter.
 ```
 
 ```text
@@ -534,7 +538,7 @@ Project: HECTON-8
 Preferred handle: Hecton8Game
 Backup handle: PlayHecton8
 Display name: HECTON-8
-Short bio: Single player deep sea survival about pressure, salvage, machinery, and black water.
+Short bio: Single player underwater survival about beautiful alien water, pressure, salvage, machinery, and black-water depth.
 Website: HOLD_NO_PUBLIC_CTA
 Contact: HOLD_NO_PROJECT_INBOX_PUBLICATION
 Profile state: private/blank until first screenshot pack passes QA
@@ -753,7 +757,7 @@ Results:
 |---|---|---|
 | YouTube | Public channel is now `Teni Games` at `https://www.youtube.com/@TeniGames`, with handle `@TeniGames`, English Submerge description, dark-wave banner, and Teni avatar. | No videos, Shorts, community posts, website, or contact email until proof assets and custody gates exist. Studio still warns that 2-Step Verification is not enabled. |
 | Reddit | Existing account is now branded as `Teni Games` at `https://www.reddit.com/user/Expert-Try8516/`, with dark-wave avatar/banner and about text: `Making Submerge. Deep water, pressure, ugly machinery, and getting back alive.` | Username remains `u/Expert-Try8516`; do not chase a rename. No subreddit posting/comment outreach until each community rule page is checked. |
-| Bluesky | Profile is now branded as `Teni Games` at `https://bsky.app/profile/teni-games.bsky.social`, with dark-wave avatar/banner and bio: `Making Submerge. Pressure, salvage, ugly machinery, black water.` | No first post until a real proof asset exists and the exact composer text is screenshot-verified before send. |
+| Bluesky | Profile is now branded as `Teni Games` at `https://bsky.app/profile/teni-games.bsky.social`, with dark-wave avatar/banner and bio: `Making Submerge. Beautiful alien water, pressure, salvage, ugly machinery, black-water depth.` | No first post until a real proof asset exists and the exact composer text is screenshot-verified before send. |
 
 ### 2026-05-31 Instagram Finalization Pass V1
 
@@ -768,7 +772,7 @@ Result:
 
 | Platform | Public result | Hold |
 |---|---|---|
-| Instagram | Public profile is now `Teni Games` at `https://www.instagram.com/teni_games/`, with bio `Building Submerge. Pressure, machinery, salvage, black water.` and dark-wave Teni avatar. | No posts, Reels, stories, links, or contact claims until current-build proof assets exist. Website/link edits are web-blocked by Instagram and require mobile. |
+| Instagram | Public profile is now `Teni Games` at `https://www.instagram.com/teni_games/`, with bio `Building Submerge. Beautiful alien water, pressure, machinery, salvage, black-water depth.` and dark-wave Teni avatar. | No posts, Reels, stories, links, or contact claims until current-build proof assets exist. Website/link edits are web-blocked by Instagram and require mobile. |
 
 ### 2026-06-01 X Profile Conversion Pass V1
 
@@ -783,7 +787,7 @@ Result:
 
 | Platform | Public result | Hold |
 |---|---|---|
-| X | Public profile is now `Teni Games` at `https://x.com/submerge_game`, with bio `Making Submerge. Pressure, salvage, ugly machinery, black water.`, dark-wave avatar, and dark-wave banner. | Handle remains `@submerge_game` until naming/handle review. No first post until current-build proof exists and exact composer text is screenshot-verified. |
+| X | Public profile is now `Teni Games` at `https://x.com/submerge_game`, with bio `Making Submerge. Beautiful alien water, pressure, salvage, ugly machinery, black-water depth.`, dark-wave avatar, and dark-wave banner. | Handle remains `@submerge_game` until naming/handle review. No first post until current-build proof exists and exact composer text is screenshot-verified. |
 
 Allowed `Current status` values:
 
@@ -811,7 +815,7 @@ Minimum X profile if a profile must be public:
 
 ```text
 HECTON-8
-Single player deep sea survival about pressure, salvage, machinery, and black water.
+Single player underwater survival about beautiful alien water, pressure, salvage, machinery, and black-water depth.
 Public assets not live yet.
 ```
 
@@ -819,7 +823,7 @@ Minimum profile while private/quiet:
 
 ```text
 HECTON-8
-Single player deep sea survival about pressure, salvage, machinery, and black water.
+Single player underwater survival about beautiful alien water, pressure, salvage, machinery, and black-water depth.
 Public assets not live yet.
 ```
 
@@ -833,20 +837,20 @@ Paste these fields only after `account_registration_permission_gate = ALLOW_ACCO
 |---|---|---|---|
 | Display name | `HECTON-8` | `HECTON-8 Game` | Keep hyphen consistent. |
 | Username/handle | `Hecton8Game` | `PlayHecton8` | Do not use unrelated/taken `Hecton8` handles. |
-| Short bio | `Single player deep sea survival about pressure, salvage, machinery, and black water.` | `Deep sea survival. Pressure, salvage, machinery, black water.` | Scope neutral; no FPS or competitor claim. |
+| Short bio | `Single player underwater survival about beautiful alien water, pressure, salvage, machinery, and black-water depth.` | `Underwater survival. Beautiful water, pressure, salvage, machinery, black-water depth.` | Scope neutral; no FPS or competitor claim. |
 | Long bio | `HECTON-8 is a single player deep sea survival game about pressure, salvage, machinery, and the Seed Ship anomaly.` | `Official HECTON-8 account. Public assets are released only when captured from the current build.` | Use on YouTube/About pages. |
 | Location | blank | blank | Avoid fake studio geography. |
 | Website | `[gated Steam URL after steam_page_publish + public_cta]` | `[gated presskit URL after press_release + public_cta]` | Do not link placeholders publicly. |
 | Contact | `[owner-controlled project email]` | blank | Use only after inbox custody passes. |
 | Avatar | approved logo mark | text only `HECTON-8` mark | Do not use concept art as proof. |
-| Banner | approved in game screenshot/capsule | black water machinery crop | Must pass asset QA. |
+| Banner | approved in game screenshot/capsule | bright photic route or black-water machinery crop | Must pass asset QA. |
 
 If a platform forces a first post after registration custody is already allowed, use only this no-link reservation placeholder and log it as a forced account-reservation artifact. If `public_post_permission_gate` is still held and the platform does not allow private/blank setup, abort registration instead.
 
 ```text
 Official HECTON-8 account reserved.
 
-Public gameplay assets are not live yet. HECTON-8 is single player deep sea survival about pressure, salvage, machinery, and black water.
+Public gameplay assets are not live yet. HECTON-8 is single player underwater survival about beautiful alien water, pressure, salvage, machinery, and black-water depth.
 ```
 
 Do not add a Steam link until `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`, and UTM rules are ready. If this forced reservation post is used after custody is allowed, log it as `route_class = forced_reservation_no_link` and do not count replies as anything beyond `consent_provenance = public_comment`.
@@ -854,7 +858,7 @@ Do not add a Steam link until `steam_page_publish_permission_gate = ALLOW_STEAM_
 ## Profile Bio Template
 
 ```text
-HECTON-8   single player deep sea survival about pressure, salvage, machinery, and the Seed Ship anomaly.
+HECTON-8   single player underwater survival about beautiful alien water, pressure, salvage, machinery, and the Seed Ship anomaly.
 Steam: HOLD_SOCIAL_STEAM_URL - fill only after `steam_page_publish_permission_gate` and `public_cta_permission_gate` pass for this exact profile surface.
 ```
 
@@ -924,19 +928,19 @@ Use the shortest variant that fits each platform. Do not add claims to fill spac
 
 | Platform | Bio |
 |---|---|
-| X / Bluesky | `Single player deep sea survival about pressure, salvage, machinery, and black water. Official HECTON-8 account.` |
-| YouTube | `HECTON-8 is a single player deep sea survival game about pressure, salvage, machinery, and the Seed Ship anomaly. Official clips, trailers, and dev updates.` |
-| TikTok / Shorts | `Deep sea survival. Pressure, machinery, salvage, black water. Official HECTON-8 clips.` |
-| Instagram | `Official HECTON-8 visuals: single player deep sea survival, pressure machinery, salvage, black water.` |
+| X / Bluesky | `Single player underwater survival: beautiful alien water, pressure, salvage, machinery, and black-water depth. Official HECTON-8 account.` |
+| YouTube | `HECTON-8 is a single player underwater survival game about beautiful water, pressure, salvage, machinery, and the Seed Ship anomaly. Official clips, trailers, and dev updates.` |
+| TikTok / Shorts | `Underwater survival. Beautiful water, pressure, machinery, salvage, black-water depth. Official HECTON-8 clips.` |
+| Instagram | `Official HECTON-8 visuals: beautiful alien water, pressure machinery, salvage, and black-water depth.` |
 | Reddit profile | `Developer account for HECTON-8. Single player first deep sea survival; public posts disclose dev status.` |
 
 ### First Three Public Posts
 
-Run only after `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED`, `PLAN-SHOT-001`, `PLAN-SHOT-003`, one agency/decision proof clip from `PLAN-CLIP-001` or `PLAN-CLIP-003`, and `PLAN-CAPSULE-001` pass QA, asset metadata claim checks, non-pending `viewer_named_decision`, valid non-held `capture_verdict`, AB-009/KPI decision-read fields where the post claims gameplay/pressure/route-risk proof, and official link/custody gates. If no decision clip exists, keep the second public post held instead of replacing it with another mood still.
+Run only after `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED`, `PLAN-SHOT-000`, `PLAN-SHOT-003`, one agency/decision proof clip from `PLAN-CLIP-001` or `PLAN-CLIP-003`, and `PLAN-CAPSULE-001` pass QA, asset metadata claim checks, non-pending `viewer_named_decision`, valid non-held `capture_verdict`, AB-009/KPI decision-read fields where the post claims gameplay/pressure/route-risk proof, and official link/custody gates. If no decision clip exists, keep the second public post held instead of replacing it with another mood still.
 
 | Order | Platform | Asset | Copy | CTA | Reporting | Kill if |
 |---|---|---|---|---|---|---|
-| 1 | X / Bluesky | `PLAN-SHOT-001` | `First in game look at HECTON-8. Single player deep sea survival about pressure, salvage, machinery, and black water. Blunt read wanted: does this feel like a distinct survival game, or just generic underwater sci fi?` | Feedback question only. | `route_class = no_link_feedback`; `consent_provenance = public_comment` only. | Replies mostly say "what do you do?" or "AI/concept art". |
+| 1 | X / Bluesky | `PLAN-SHOT-000` | `First in game look at HECTON-8. The shallow water is beautiful. That is not the same thing as safe. Blunt read wanted: does this feel like a route in an underwater survival game, or just scenery?` | Feedback question only. | `route_class = no_link_feedback`; `consent_provenance = public_comment` only. | Replies mostly say "what do you do?", "generic pretty water", "AI/concept art", or no route cost. |
 | 2 | YouTube Community / Short if available | `PLAN-CLIP-001` or `PLAN-CLIP-003` | `A pressure problem should read before the caption. If this clip needs explanation, it failed.` | Feedback question only. | `route_class = no_link_feedback`; `consent_provenance = public_comment` only. | First 3 seconds do not show action/consequence. |
 | 3 | Steam News / X / Bluesky | `PLAN-CAPSULE-001` winner + Steam URL | HOLD_SOCIAL_STEAM_PAGE_LIVE_COPY - say HECTON-8 has an official Steam page only after `steam_page_publish_permission_gate`, destination-specific `public_cta_permission_gate`, and this post's `public_post_permission_gate` pass. | HOLD_SOCIAL_STEAM_LINK - official Steam link only after the same gates pass. | `route_class = public_cta`; requires `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`, and `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED` before post. | Steam URL not live through the publish gate, capsule not cold read, public post gate missing, or copy implies unsupported multiplayer scope or performance. |
 
@@ -945,7 +949,7 @@ Run only after `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED`, `PLAN
 Use only after the official Steam URL exists through `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, the exact links pass destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`, and the pinned post has `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED`.
 
 ```text
-HECTON-8 is a single player deep sea survival game about pressure, salvage, machinery, and the cost of staying alive below the light.
+HECTON-8 is a single player underwater survival game about beautiful alien water, pressure, salvage, machinery, and the cost of staying alive when the route drops below the light.
 
 Steam: HOLD_SOCIAL_STEAM_URL - fill only after `steam_page_publish_permission_gate` and `public_cta_permission_gate` pass.
 Presskit: HOLD_SOCIAL_PRESSKIT_URL - fill only after `press_release_permission_gate` and `public_cta_permission_gate` pass.

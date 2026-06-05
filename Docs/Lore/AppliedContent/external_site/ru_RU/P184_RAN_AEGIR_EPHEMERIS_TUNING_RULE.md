@@ -10,21 +10,21 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Правило настройки ephemeris Ran/Aegir
+# RAN Aegir Ephemeris Bands
 
-Правило настройки ephemeris Ran/Aegir отделяет стабильные lore bands от будущих numeric celestial tables.
+RAN Aegir ephemeris bands separate stable route lore from exact celestial data.
 
 ## Scanner
 
-Точные ephemeris числа - работа таблиц; текущий лор фиксирует route bands и причины опасностей.
+Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.
 
 ## Terminal
 
-EPHEMERIS RULE: публикационный текст может называть window band, hazard class и связь с Aegir. Точные orbital periods, inclinations и resonance values принадлежат будущей celestial data table.
+EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.
 
 ## Audio
 
@@ -32,6 +32,6 @@ EPHEMERIS RULE: публикационный текст может называ�
 
 ## Field Note
 
-Не придумывать точные периоды в прозе. Использовать bands, пока celestial table не станет владельцем чисел.
+Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.
 
 <!-- External Site; generated from P184_RAN_AEGIR_EPHEMERIS_TUNING_RULE/ru_RU. -->

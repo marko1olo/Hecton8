@@ -43,7 +43,7 @@ namespace Hecton8.Dev
         [SerializeField] private GameObject[] coreQuickSlotPrefabs = new GameObject[4];
 
         [Header("Full Tool Kit")]
-        [SerializeField] private ItemData[] allToolItems = new ItemData[12];
+        [SerializeField] private ItemData[] allToolItems = new ItemData[13];
 
         [Header("Construction Materials")]
         [SerializeField] private ItemData[] starterConstructionItems = new ItemData[1];
@@ -243,6 +243,7 @@ namespace Hecton8.Dev
                 "Assets/_Project/Data/Items/Tools/Item_Tool_Knife.asset",
                 "Assets/_Project/Data/Items/Tools/Item_Tool_StunPistol.asset",
                 "Assets/_Project/Data/Items/Tools/Item_Tool_HarpoonLauncher.asset",
+                "Assets/_Project/Data/Items/Tools/Item_Tool_SeafloorDrill.asset",
             };
 
             for (int i = 0; i < allToolItems.Length && i < itemPaths.Length; i++)

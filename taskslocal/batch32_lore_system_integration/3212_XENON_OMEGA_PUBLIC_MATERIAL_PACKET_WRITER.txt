@@ -1,0 +1,41 @@
+ID: 3212
+Role: XENON_OMEGA_PUBLIC_MATERIAL_PACKET_WRITER
+
+Objective:
+Write one production draft packet about Xenon-Omega as a public pressure-material rumor and industrial handling concern without revealing internal/final truth.
+
+Why this is needed:
+The public/wiki/in-game lore bridge needs safe Xenon-Omega language. Players and site readers can hear about the material as a rumor, handling constraint, or Deep Reach procurement category before recovered evidence proves deeper function.
+
+Owned scope:
+- Create exactly one new file: `Docs/Lore/AppliedContent/production_packets/P468_XENON_OMEGA_PUBLIC_MATERIAL_BRIDGE.production.md`.
+- Do not edit P461-P467, RS093, route_cards, source CSV, h8bin, generated pages, Unity scenes, runtime scripts, or other workers' logs.
+
+Authority docs:
+AGENTS.md, PROJECT_BIBLES.md, TASTE.md, writing.md, narrative.md, localization.md, Docs/Lore/Canon_Locks.md, Docs/Lore/Lore_Bible.md, Docs/Lore/Website_Publication_Map.md, Docs/Lore/Codex_Delivery_Map.md.
+
+Tasks:
+1. Read authority docs and relevant mandates from BATCH_INDEX.
+2. Create source brief before prose.
+3. Topic: Xenon-Omega as public pressure-material rumor, procurement label, containment/handling note, and evidence-gated resource term.
+4. English authority text must include external site/wiki, in-game codex, scanner short, terminal/document, audio, Marauder field note, black-box fragment, and QA.
+5. Produce all 15 locale rows for title, site teaser, scanner, field note, and audio.
+6. Mark en_US `source_authority`; mark all other rows `draft_machine_or_llm`.
+7. Preserve names: HECTON-8, Aegir, Xenon-Omega, Deep Reach, Black Keel, Atlas-6, P-63.
+8. Avoid internal Xenon-Omega process truth, final Atlas basin truth, final payload receiver spoilers, murder-button simplification, family hook, instant rescue, FTL/ansible, and direct confession.
+9. Add Runtime/Monolith placement notes as authoring intent only: LocIDs, layer, surfaces, unlock route, relation tags, and explicit no-runtime-markdown boundary.
+10. Add GlobalQualityWeight presentation density for Low/Middle/High/Ultra without changing lore truth, LocID, unlock identity, or save identity.
+11. Validate 15 locale headers, 14 draft rows, zero U+FFFD, and no obvious mojibake codepoints U+00C3/U+00D0/U+00D8/U+00E6/U+00EC/U+00D7.
+
+Proof packet:
+- Canon sources used.
+- Locale roster present.
+- Native-review/runtime status honest.
+- Evidence class STATIC_DOC.
+- Static validation output.
+
+Rejection gates:
+- No English clone rows.
+- No native-reviewed/runtime-ready claim.
+- No route_cards/DataMonolith edits.
+- No internal Xenon-Omega/final Atlas truth.

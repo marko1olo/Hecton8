@@ -1,0 +1,48 @@
+ID: 2702
+Role: UnderwaterVisuals Registry Publication Route Auditor
+Mode: report-only, static/source/log audit. Do not edit project files except the required report.
+
+Objective:
+Define the owner-correct route to stop `HectonUnderwaterVisuals` ready-lock registration rejection without inventing a new global route or hot polling.
+
+Evidence basis:
+- Prior log contains `CriticalBootException: [GlobalRegistry] Ready-locked registry rejected registration: HectonUnderwaterVisuals`.
+- Scene has one static owner `H8_UNDERWATER_VISUALS_RUNTIME_OWNER_1474`, but static presence is not runtime proof.
+- `HectonUnderwaterVisuals.OnEnable()` registers runtime service; `Start()` retries many dependencies but not service publication.
+
+Read first:
+- `AGENTS.md`
+- `quality.md`
+- `water.md`
+- `.agents-skills/ARCH_Global_Registry_ServiceLocator_DI_Init.txt`
+- `.agents-skills/ARCH_Execution_Phases.txt`
+- `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md`
+- `Docs/Reports/Batch26/BATCH26_SYNTHESIS_FOR_UNITY_OWNER.md`
+
+Owned inspection scope:
+- `Assets/_Project/Scripts/HectonUnderwaterVisuals.cs`
+- `Assets/_Project/Scripts/Core/GlobalRegistry.cs`
+- `Assets/_Project/Scripts/GameBootstrapper*.cs` or bootstrap owner files only if directly needed
+- `Assets/_Project/Scenes/02_HECTON_WORLD.unity` only for static owner refs
+- current relevant logs read-only
+
+Tasks:
+1. Trace `HectonUnderwaterVisuals` service publication from Awake/OnEnable/Start through disable/destroy.
+2. Trace `GlobalRegistry.RegisterUnderwaterVisualsRuntime` and ready-lock policy.
+3. Identify the legitimate owner phase for scene runtime service publication.
+4. Check whether duplicate instances, additive loads, execute-always editor transitions, or manual AddComponent paths can cause late registration.
+5. Determine whether the fix is execution order, bootstrap publication gate, duplicate owner cleanup, source guard, scene wiring, or proof discipline.
+6. Reject any fix that makes registry hot, retries blindly every frame, or bypasses ready lock without a documented owner token.
+7. Produce a route card outline if a changed global authority route is required.
+8. Define exact fresh proof: clean log, single owner, no ready-lock rejection, registered runtime owner, underwater 0-5 m and 20-50 m manifest fields.
+
+Required report:
+`Docs/Reports/Batch27/2702_UNDERWATER_REGISTRY_PUBLICATION_ROUTE_AUDIT.md`
+
+Report must include:
+- phase map;
+- owner decision;
+- exact candidate fix plan;
+- rejected shortcuts;
+- proof requirements;
+- Low/Mid/High/Ultra consequences.

@@ -1,0 +1,54 @@
+AGENT ID: 1819
+ROLE: SDF_SUBSTRATE_PROOF_PACKET
+MODE: Static source/data proof packet. Independent; no Unity.
+
+PRIMARY GOAL
+Prepare the exact proof and blocker packet for GPR/Foundation/Drone SDF substrate consumption. 1805 says lease routes exist but real substrate consumption remains pending Unity/runtime proof. This task must separate current source truth from unproven acceptance and tell the single Unity owner exactly what to verify.
+
+READ
+- AGENTS.md, PROJECT_BIBLES.md, VISION_LOCKS.md, TASTE.md, quality.md
+- construction.md, vehicles.md, tools.md, physics.md, performance.md, architecture.md if present
+- Docs/Reports/Batch18/1805_AGENT_OUTPUT_TRIAGE_DASHBOARD.md
+- Docs/Reports/Batch18/1813_STALE_BLOCKER_ERRATA_PACKET.md
+
+LIKELY AREAS
+- GPR scanner/source scripts.
+- Foundation placement/build scripts.
+- Drone scanner/build/route scripts.
+- SDF, substrate, terrain, placement, collision, or voxel helper types found by search.
+
+OWNED OUTPUTS
+- Docs/Tasks/Status_1819.md
+- Docs/AgentLogs/Rationale_1819.md for non-trivial decisions only
+- Docs/AgentLogs/LOG_1819.md
+- Docs/Reports/Batch18/1819_SDF_SUBSTRATE_PROOF_PACKET.md
+- Optional: Docs/Reports/Batch18/1819_SDF_SUBSTRATE_ROUTE_MATRIX.csv
+
+HARD RULES
+- Do not run Unity.
+- Do not claim live substrate consumption.
+- Do not add scene dependencies or hot `GlobalRegistry` polling.
+- Do not hide construction/terrain weakness with vague wording.
+- Treat foundation fail-closed warnings as useful but not acceptance.
+
+20 TASKS
+01. Create tracking files.
+02. Read authorities and relevant mandates.
+03. Search for SDF/substrate/lease terms in source.
+04. Build route matrix: GPR, foundation, drone, owner, producer, consumer, fail behavior.
+05. Identify current proven source paths.
+06. Identify unproven runtime assumptions.
+07. Identify fail-closed warnings and their gameplay impact.
+08. Identify save/load implications.
+09. Identify data monolith/static-data implications if any.
+10. Identify hot-path/performance risks.
+11. Define minimal Unity verification steps.
+12. Define capture/profiler/log proof artifacts.
+13. Define Compact/Middle/High/Ultra consequences.
+14. Define blocked conditions.
+15. Propose narrow source/data fixes only if obvious and safe.
+16. Write future Unity-owner prompt.
+17. Append log.
+18. Final scan for overclaiming.
+19. Mark STATIC PROOF PACKET COMPLETE/BLOCKED.
+20. Include exact files inspected.

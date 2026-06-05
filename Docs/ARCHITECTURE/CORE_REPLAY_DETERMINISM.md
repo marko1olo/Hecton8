@@ -4,6 +4,8 @@ Date: 2026-05-12
 
 Status: STATIC_SOURCE REVIEWED / DEVELOPMENT-ONLY RUNTIME PENDING
 
+Owner domain: core replay determinism / development-only telemetry
+
 ## Boundary
 
 `DodReplayRecorder` is compiled for editor/development builds. It is a black-box replay recorder, not a shipping gameplay dependency.

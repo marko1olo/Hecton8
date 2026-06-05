@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Site Wiki System and Ships Cluster
+# Aegir Route and Ships
 
-This cluster holds the hard-sci-fi route articles: human domains, no-FTL travel, Aegir moon system, Black Keel carrier and the damaged drop interface.
+Hard-sci-fi route hub: human domains, no-FTL travel, the Aegir moon system, Black Keel carrier limits and the damaged drop interface.
 
 ## Scanner
 
-Publication cluster: system and ships. No FTL, Aegir route and carrier limits.
+Publication hub: no FTL, Aegir route timing, carrier limits and why rescue cannot arrive on demand.
 
 ## Terminal
 
-SITE NAV: group probes, beam/pellet lanes, Seed Ship braking, Black Keel custody, Aegir transfer orbit and bathydrop failure.
+SITE NAV: probes, beam/pellet lanes, Seed Ship braking, Black Keel custody, transfer orbit and bathydrop interface failure.
 
 ## Audio
 
-Distance is not lore trivia. It is why help cannot simply arrive.
+Distance is not lore trivia. It is the pressure on every decision.
 
 ## Field Note
 
-Use for site route map, wiki nav and codex hard-sci-fi index.
+Navigation cluster record: system and ships pages connect no-FTL travel, Aegir route scale, carrier custody, and drop-capsule constraints.
 
 <!-- In-Game Wiki; generated from P417_SITE_WIKI_SYSTEM_AND_SHIPS_CLUSTER/zh_CN. -->

@@ -10,28 +10,28 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Pressure bunk shift routine
+# Pressure Bunk Shift Routine
 
-Колония должна быть про рабочих, а не родню игрока. Shift routines дают боль без family-revenge archetype.
+Bunk routines make colony life legible through repeated work: sleep, tools, pressure notes, meals and descent assignments.
 
 ## Scanner
 
-Shift bunk slate. Рабочие спали по pressure schedule, не по комфорту day/night.
+Shift bunk slate. Sleep rotated by pump tone, not sunrise.
 
 ## Terminal
 
-BUNK RULE: pump tone, suit check, pressure note, meal token, tool custody, descent assignment. Колония человеческая потому, что повторялась.
+BUNK SLATE: 03:40 pump tone; suit check; pressure note; meal token; tool custody; descent assignment. Missed return flags bunk lead.
 
 ## Audio
 
-Тут не написано герой. Тут написано tired, trained, and due back in six hours.
+Tired, trained and due back in six hours.
 
 ## Field Note
 
-Для human evidence props в early safe modules.
+Bunk 12 still has damp sock tape on the rail. Wake tone was 03:40. Tool custody tag says D. Rivas owed the pump key back before meal.
 
 <!-- In-Game Wiki; generated from P356_PRESSURE_BUNK_SHIFT_ROUTINE/ru_RU. -->

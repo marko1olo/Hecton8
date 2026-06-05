@@ -4,6 +4,12 @@ Status: pre-list operating plan
 Owner lane: Marketing / owned audience
 Runtime impact: none
 
+## Authority Boundary
+
+Static marketing plan only. Public voice routes to root `textes.md`.
+Claims about quality, release, platform support, Steam, wishlist, demo/playtest state, performance, spend, audience size, email/newsletter permission, or public-readiness route through `quality.md`, `release.md`, `platform.md`, current proof artifacts, and the local permission gates named in this file.
+Rows, drafts, templates, offer copy, signup modes, or gate names in this file do not approve public send, paid spend, signup publication, newsletter import/send, Steam page/demo/wishlist claims, platform claims, or release claims.
+
 ## Purpose
 
 Steam wishlists matter, but HECTON-8 should not depend only on Steam algorithms, creator replies, Reddit luck, or paid reach. An owned mailing list gives the project a direct channel for demo access, playtest waves, launch reminders, and feedback.
@@ -73,7 +79,7 @@ DEMO_ALERT draft only.
 
 Get one email when the HECTON-8 demo or playtest opens.
 
-HECTON-8 is single-player deep-sea survival about pressure, salvage, machinery, and black water. Proof-first updates only; no weekly filler.
+HECTON-8 is single-player underwater survival about beautiful alien water, pressure, salvage, machinery, and black-water depth. Proof-first updates only; no weekly filler.
 ```
 
 Do not add this form to a public site, social bio, Discord, or Steam page before `owned_audience_permission_gate = ALLOW_OWNED_AUDIENCE_VERIFIED` and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`.
@@ -121,7 +127,7 @@ If any field is missing, keep the copy as a draft and do not publish the form.
 ```text
 Get one email when the HECTON-8 demo or playtest opens.
 
-HECTON-8 is single-player deep-sea survival about pressure, salvage, machinery, and black water. Proof-first updates only; no weekly filler.
+HECTON-8 is single-player underwater survival about beautiful alien water, pressure, salvage, machinery, and black-water depth. Proof-first updates only; no weekly filler.
 ```
 
 #### Playtest Waitlist

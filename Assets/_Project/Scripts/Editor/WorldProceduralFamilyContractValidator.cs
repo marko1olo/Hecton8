@@ -248,6 +248,17 @@ namespace Hecton8.EditorTools
                     errorCount++;
                 }
 
+                if (variant.finalReady && !variant.proxyOnly && WorldProceduralPlaceholderAuthoring.IsPlaceholderFinalVariant(variant))
+                {
+                    Debug.LogError($"[WorldProceduralFamilyContractValidator] {record.AssetPath}: final-ready variant '{variant.variantId}' is still a procedural placeholder. Replace it with a real authored/generated final prefab or mark it proxy-only/dev-only.");
+                    errorCount++;
+                }
+                else if (variant.finalReady && !variant.proxyOnly && WorldProceduralFinalPrefabQualityGate.UsesUnityBuiltInPrimitiveMesh(variant.prefab))
+                {
+                    Debug.LogError($"[WorldProceduralFamilyContractValidator] {record.AssetPath}: final-ready variant '{variant.variantId}' uses Unity built-in primitive mesh ids in prefab '{AssetDatabase.GetAssetPath(variant.prefab)}'. Replace with authored/generated production mesh assets.");
+                    errorCount++;
+                }
+
                 if (!variant.proxyOnly && !variant.finalReady)
                 {
                     Debug.LogError($"[WorldProceduralFamilyContractValidator] {record.AssetPath}: variant '{variant.variantId}' is marked non-proxy but not final-ready.");
@@ -263,8 +274,8 @@ namespace Hecton8.EditorTools
 
             if (metrics.RealFinalCount <= 0 && metrics.PlaceholderFinalCount > 0)
             {
-                Debug.LogWarning($"[WorldProceduralFamilyContractValidator] {record.AssetPath}: only placeholder finals are linked.");
-                warningCount++;
+                Debug.LogError($"[WorldProceduralFamilyContractValidator] {record.AssetPath}: only placeholder finals are linked. Production scatter requires at least one real final prefab.");
+                errorCount++;
             }
         }
 

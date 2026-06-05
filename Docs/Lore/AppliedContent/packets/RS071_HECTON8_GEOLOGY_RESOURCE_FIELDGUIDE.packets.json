@@ -28,12 +28,12 @@
       "localized": {
         "en_US": {
           "title": "Drowned Crust Strata Guide",
-          "scanner": "Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.",
+          "scanner": "Flooded strata expose old industry, pressure-glass seams and unstable mineral bands. Scan fracture lines before cutting.",
           "terminal": "FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.",
           "audio": "The map is not terrain. It is a stack of drownings.",
           "in_game_wiki": "The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.",
           "external_site": "HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.",
-          "field_note": "Use for geology codex and procedural world labels."
+          "field_note": "If a band rings hollow, do not trust the flat face. Mark the fracture, take the sample, and leave the wall holding."
         },
         "ru_RU": {
           "title": "Fieldguide drowned crust strata",
@@ -183,12 +183,12 @@
       "localized": {
         "en_US": {
           "title": "Brine Canyon Density Ladder Guide",
-          "scanner": "Brine canyon ladder detected. Density layers turn depth into route planning.",
+          "scanner": "Brine ladder detected: layered density, false floors, sonar bend. Follow edges; avoid blind drops.",
           "terminal": "FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.",
           "audio": "A canyon is a staircase if your hull can pay for each step.",
           "in_game_wiki": "Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.",
           "external_site": "HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.",
-          "field_note": "Use for scanner tutorials and resource route articles."
+          "field_note": "Use the vane shadows like steps. Open water here is not empty; it is a bad reading waiting to happen."
         },
         "ru_RU": {
           "title": "Brine canyon density ladder guide",
@@ -338,12 +338,12 @@
       "localized": {
         "en_US": {
           "title": "Vent Forge Field Process Guide",
-          "scanner": "Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.",
+          "scanner": "Vent-forge chemistry active. Sample quality depends on pressure history, heat pulse and slow cooling.",
           "terminal": "FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.",
           "audio": "The vent did not make ore. It made a process you interrupted.",
           "in_game_wiki": "Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.",
           "external_site": "Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.",
-          "field_note": "Use for resource taxonomy and crafting-table handoff."
+          "field_note": "Do not lift a fresh lot straight into cold water. Let the vent finish the anneal or the shell will craze."
         },
         "ru_RU": {
           "title": "Vent forge field process guide",
@@ -493,12 +493,12 @@
       "localized": {
         "en_US": {
           "title": "Blue Debt Pressure History Guide",
-          "scanner": "Blue debt sample tagged. Pressure history matters more than surface color.",
+          "scanner": "Blue debt sample tagged. Verify pressure history, containment stage and signal drift before export.",
           "terminal": "MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.",
           "audio": "Blue debt is what people call it after the invoice arrives.",
           "in_game_wiki": "Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.",
           "external_site": "Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.",
-          "field_note": "Use for resource glossary and Deep Reach motive articles."
+          "field_note": "Color is not grade. A quiet container with clean custody pays; a singing one buys you a drone wake."
         },
         "ru_RU": {
           "title": "Blue debt pressure history guide",
@@ -648,12 +648,12 @@
       "localized": {
         "en_US": {
           "title": "Pressure Glass and Sealant Guide",
-          "scanner": "Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.",
+          "scanner": "Pressure glass fracture sealed by Atlas chemistry. Safe lens stock only if the seal map stays intact.",
           "terminal": "FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.",
           "audio": "The repair network reads fractures the way you read a map.",
           "in_game_wiki": "Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.",
           "external_site": "The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
-          "field_note": "Use for Atlas repair-network explanation and geology crosslink."
+          "field_note": "Do not grind the pretty edge. Follow the fracture map and cut from the dead side of the seal."
         },
         "ru_RU": {
           "title": "Pressure glass and sealant guide",

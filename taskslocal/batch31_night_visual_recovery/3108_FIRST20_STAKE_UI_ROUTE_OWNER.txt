@@ -1,0 +1,46 @@
+ID: 3108
+Role: FIRST20_STAKE_UI_ROUTE_OWNER
+Objective: ensure proof views show actual first-20-minutes player stakes, instruments, route cues, salvage/machinery context, and decision value.
+
+Why this exists:
+- HECTON-8 rejects empty beauty shots.
+- The first exit must be beautiful but still a survival route with pressure, oxygen, instrument, return path, threat, or salvage decision.
+
+Authority docs:
+- AGENTS.md
+- TASTE.md
+- VISION_LOCKS.md
+- quality.md
+- gameplay.md
+- survival.md
+- player.md
+- ui.md
+- tools.md
+- Docs/ARCHITECTURE/FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md
+- Docs/ARCHITECTURE/FIRST_20_MINUTES_ROUTE_BRIEF.md
+
+Owned scope:
+- Docs/ARCHITECTURE/FIRST_20_MINUTES_*.md
+- first route proof/stake matrix
+- no scene or runtime edits unless explicitly assigned
+- Report output: Docs/Reports/Batch31/3108_FIRST20_STAKE_UI_ROUTE_OWNER.md
+
+Tasks:
+1. Read authority docs and first-20 route docs.
+2. Define the player decision each required proof view must sharpen.
+3. Identify missing visible stakes in rejected screenshots.
+4. Propose route cues: oxygen/pressure/instrument/readable return path/salvage/machinery/threat.
+5. Define what UI/instrument proof must show if a screenshot claims UI on.
+6. Keep scenic rest allowed but not empty.
+7. Create a six-view stake matrix for h8_1475+.
+8. Do not invent unimplemented mechanics; mark candidates honestly.
+9. Write Status_3108.md, Rationale_3108.md, LOG_3108.md, and Batch31 report.
+
+Proof packet:
+- STATIC VERIFIED for route/stake plan.
+- Runtime/gameplay proof pending Unity/player capture.
+
+Reject if:
+- View has no player decision, no route, no threat, no instrument, no machinery, and no evidence.
+- UI is claimed only by filename.
+

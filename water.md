@@ -40,6 +40,15 @@ Required surface/shallow traits:
 
 Depth can remove light and increase turbidity. The surface cannot be made ugly to save budget. Low hardware keeps the clean ocean read; high hardware buys richer reflection, caustics, spray, foam breakup, and underwater light shafts.
 
+Depth/light lock:
+
+- 0-100 m: mostly clear, bright, beautiful, and readable water.
+- Deep caves may be dim or dark even inside shallow bands.
+- 200-400 m: increasing turbidity and twilight.
+- 400-500 m and below: darkness/murk becomes normal, but route silhouettes, instruments, and return cues must survive.
+
+Subnautica-level surface/shallow water readability is the floor. HECTON-8 should exceed it through material response, shore/waterline detail, alien ecology, and technogenic traces where appropriate.
+
 ## 2. Truth Ownership
 
 Water truth is split deliberately:
@@ -52,6 +61,19 @@ Water truth is split deliberately:
 - `ui.md` owns instrument readout and warning presentation.
 
 No water script may become a hidden global owner for pressure, route, damage, AI, save, or vehicle truth. It must consume snapshots from the named owners and publish only its assigned presentation or authored field data.
+
+## 2.1 Current Static Source Anchor - Ocean Kinematics
+
+Evidence class: STATIC_SOURCE only. `Assets/_Project/Scripts/Plugins/Crest/OceanKinematics/OceanKinematicsVaultRuntime.cs` owns Vault-backed analytical ocean sampling buffers for the Crest/ocean bridge. It is not a Crest material wrapper, not a runtime material clone path, and not permission to instantiate or override Crest materials at runtime.
+
+Static source anchors:
+
+- owner/system: `SystemID.Fluid`; buffers are resolved through `IDataVault` generation handles;
+- buffers: `OceanKinematicsBufferIds` `72940` through `72950` for requests, results, Gerstner waves, tuning, macro state, telemetry ring/cursor, GPU cached results, CSV scratch, queue counters, and rollback fence;
+- capacity: `RequestCapacity = 50000`, `WaveCapacity = 8`, `TelemetryCapacity = 300`;
+- truth route: `OceanKinematicsSampleRequestDTO` to analytical Gerstner evaluation/cache to `FluidSampleResultDTO` and `OceanMacroStateDTO`; water rendering and Crest asset materials remain separate owners;
+- black-box route: `OceanKinematicsTelemetryEntry[300]`; source dump target is `Docs/AgentLogs/Dump_SHINOBU_261.bin` on fault;
+- proof gap: Unity import, Play Mode, profiler/GC, Frame Debugger/RenderGraph, Crest scene binding, and visual water quality remain `PENDING VERIFICATION`.
 
 ## 3. Cinematic Fake First
 
@@ -219,6 +241,12 @@ Ultra:
 
 No quality tier may change pressure truth, route truth, save data, collider truth, or vehicle authority.
 
+## First-20 Route Hook
+
+- First-20 moment: first exit and swim through bright photic water with readable depth, return route, oxygen pressure, and shallow hazard cues.
+- Route blocker removed: water cannot hide weak terrain, missing return cues, or absent pressure/flooding truth behind darkness, fog, or decorative particles.
+- Proof class: screenshot, Frame Debugger for water/fog/caustic passes when changed, Profiler/GCMonitor for runtime sampling or particles, Play Mode/player capture for swim readability, and save/load artifact for persistent flooding or wetness.
+
 ## 11. Proof Artifacts
 
 Water work must provide:
@@ -233,7 +261,7 @@ Water work must provide:
 - save/load proof for flooding or persistent wetness;
 - rejection note for any proposed real simulation.
 
-Static documentation may only claim `STATIC VERIFIED`. Runtime claims remain `PENDING UNITY/PROFILER VERIFICATION` until measured.
+Static documentation may only claim `STATIC_SOURCE_REVIEWED` or `STATIC_DOC_REVIEWED` with exact anchors. Runtime claims remain `PENDING UNITY/PROFILER VERIFICATION` until measured.
 
 ## 12. Rejection Gates
 

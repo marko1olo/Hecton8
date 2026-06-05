@@ -1,0 +1,76 @@
+ID: 3217
+Role: RS093_MANUAL_POLICY_AND_PLACEMENT_OWNER
+
+Objective:
+Repair the next RS093 source-only audit blocker by adding P461-P464 manual binding policy rows and scene placement plan rows, without touching Unity scenes/prefabs, route cards, h8bin, or packet Markdown.
+
+Why this is needed:
+After 3214 created `RS093_runtime_binding_map.csv` and `RS093_scene_binding_targets.csv`, `python Tools/AppliedLoreRuntimeAudit.py --root . --source-only` advanced to: `Manual binding policy missing packets: P461_PACKET_CUSTODY_BRIDGE, P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE, P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE, P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE`.
+
+Owned scope:
+- `Docs/Lore/AppliedContent/binding_maps/RS001_RS010_manual_binding_policy.csv`
+- `Docs/Lore/AppliedContent/binding_maps/RS001_RS010_scene_placement_plan.csv`
+- `Docs/Reports/Batch32/3217_RS093_MANUAL_POLICY_AND_PLACEMENT.md`
+- `Docs/Tasks/Status_3217.md`
+- `Docs/AgentLogs/LOG_3217.md`
+- `Docs/AgentLogs/Rationale_3217.md` only if needed
+
+Do not edit:
+- `Docs/Lore/AppliedContent/binding_maps/RS093_runtime_binding_map.csv`
+- `Docs/Lore/AppliedContent/binding_maps/RS093_scene_binding_targets.csv`
+- route_cards
+- h8bin
+- Unity scenes/prefabs/assets
+- runtime scripts
+- production packet Markdown
+- other agents' status/log/rationale files
+
+Authority docs:
+AGENTS.md, authoring.md, data.md, localization.md, writing.md, quality.md, Docs/Lore/Lore_Content_System.md, Docs/Lore/AppliedContent/binding_maps/README.md.
+
+Mandates:
+- QA_Evidence_Text_Filter_Audit.txt
+- UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt
+- DATA_Runtime_Struct_Layout_ARM64.txt
+- TOOL_Designer_Facades_CSV_Binary_Bridge.txt
+- OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+
+Required rows:
+- Add four `NarrativeDiscovery.appliedLorePacketHash` policy rows for P461-P464.
+- Use policy `discovery_world_prop_required`, required anchor type `visibly_marked_world_prop`, empty approved template prefab, non-empty `discovery_id`, non-empty placement rule, non-empty reason.
+- Use audit-expected hashes:
+  - P461_PACKET_CUSTODY_BRIDGE = `0xB9E31203` / `3118666243`
+  - P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE = `0x39EB648E` / `971728014`
+  - P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE = `0x64DCA3D4` / `1692181460`
+  - P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE = `0x6893BE85` / `1754513029`
+- Add four placement plan rows in `RS001_RS010_scene_placement_plan.csv`.
+- Scene path: `Assets/_Project/Scenes/02_HECTON_WORLD.unity`.
+- Placement root: `__APPLIED_LORE_SCENE_PLACEMENT`.
+- Use existing source prefab candidates only. Candidate prefabs from 3214 are allowed.
+- Use unique object names and discovery IDs.
+- Use `depth_band=authoring`, `zone_tag=applied_lore_backlog` unless a more precise already-established zone is found locally.
+
+Suggested discovery IDs:
+- `applied_lore_packet_custody_bridge`
+- `applied_lore_pressure_seal_first_repair_bridge`
+- `applied_lore_public_wiki_spoiler_gate_bridge`
+- `applied_lore_black_keel_claim_window_bridge`
+
+Validation:
+- Run lightweight CSV shape checks.
+- If process gate is clean, run `python Tools/AppliedLoreRuntimeAudit.py --root . --source-only`.
+- If the audit fails, report the exact next blocker. Do not hide it.
+- Verify no route-card CSV and no h8bin were created or modified by this task.
+
+Proof packet:
+- Files changed.
+- Row counts added.
+- Audit output or exact process gate blocker.
+- Evidence class STATIC_SOURCE.
+
+Rejection gates:
+- No raw YAML edits.
+- No Unity/build/dotnet.
+- No route-card CSV creation.
+- No h8bin edit.
+- No runtime/native/DataMonolith-ready claim.

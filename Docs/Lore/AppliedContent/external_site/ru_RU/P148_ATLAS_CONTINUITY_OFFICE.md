@@ -10,17 +10,17 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Офис непрерывности Atlas
+# Atlas Continuity Office
 
-Офис непрерывности Atlas связывает бюрократию Deep Reach напрямую с поведением Atlas.
+Atlas Continuity Office ties Deep Reach bureaucracy directly to Atlas behavior.
 
 ## Scanner
 
-Офис, который вписал worker safety в machine priority stack.
+The office that wrote worker safety into a machine priority stack.
 
 ## Terminal
 
@@ -28,10 +28,10 @@ ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, in
 
 ## Audio
 
-Они не приказали смерть. Они приказали compatibility.
+They did not order death. They ordered compatibility.
 
 ## Field Note
 
-Мемо может убить, не используя слово kill.
+A memo can kill without using the word kill.
 
 <!-- External Site; generated from P148_ATLAS_CONTINUITY_OFFICE/ru_RU. -->

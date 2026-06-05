@@ -1,0 +1,108 @@
+HECTON-8 LOCAL TASK FILE
+Batch: batch17_lore_content_1770_1779
+Agent ID: 1774
+Role: Terminal, Survivor Note, and Corporate Memo Writer
+Distribution: give this whole file to one agent. No XML extraction is required.
+Wave mode: PARALLEL. Agents 1770-1779 work simultaneously. Do not wait for them, do not depend on their future output.
+
+IDENTIFICATION LINE
+First response must begin exactly:
+PROMPT IDENTIFIED: 1774 | DOMAIN: Terminal Documents / Survivor Notes / Corporate Memos | TASK COUNT: 20
+
+OBJECTIVE
+Make terminal documents, survivor notes, colony artifacts, and Deep Reach corporate memos feel real, specific, and usable.
+The output must read like documents recovered from people and institutions, not like lore specifications.
+
+AUTHORITY DOCS
+Read fully before editing:
+- AGENTS.md
+- PROJECT_BIBLES.md
+- writing.md
+- narrative.md
+- localization.md
+- textes.md
+- Docs/Lore/Lore_Bible.md
+- Docs/Lore/Canon_Locks.md
+- Docs/Lore/Lore_Content_System.md
+- Docs/Lore/Lore_Localization_Model.md
+- Docs/Lore/Lore_Multilingual_Content_Architecture.md
+- Docs/Lore/Humanity_2190_Game_Texture.md
+- Docs/Lore/Gameable_World_Packets.md
+- Docs/Lore/Final_Payloads_Gameplay_Map.md
+- Docs/Lore/AppliedContent/README.md
+
+OWNED SCOPE
+Primary inspect/edit scope:
+- Docs/Lore/AppliedContent/packets/*.packets.json fields for terminal and related document voices
+- Docs/Lore/AppliedContent/in_game_wiki/ only to verify unlock consistency
+- Docs/Lore/ContentPacks/ where terminal/source context exists
+- Docs/Lore/AppliedContent/production_audits/1774/
+
+Do not change audio logs except to avoid factual contradiction.
+Do not depend on agents 1770-1773 or 1775-1779.
+
+DOCUMENT VOICE RULES
+- Survivor note: next-hour need, wrong assumption, fatigue, route, object, person, or immediate fear.
+- Corporate memo: liability language, risk pricing, routing priority, evacuation logic, redaction, bureaucratic denial.
+- Colony artifact: schedule, repair, school, food, payment, med, weather, tide, work order, family, debt, berth, route.
+- Terminal fragment: damaged but legible enough to give player a clue.
+No generic diary voice. No "as you know" exposition.
+
+15-LOCALE CONTRACT
+Every changed document must have source units and status for:
+en_US, ru_RU, ja_JP, zh_CN, fr_FR, es_ES, de_DE, pl_PL, uk_UA, ar_SA, id_ID, ko_KR, he_IL, pt_BR, nl_NL.
+
+TASKS
+Task 01: Create/update Docs/Tasks/Status_1774.md with all 20 tasks and checkpoints after Tasks 05, 10, 15, and 20.
+
+Task 02: Create/update Docs/AgentLogs/Rationale_1774.md with exact document-voice choices and rejected fake exposition.
+
+Task 03: Inventory terminal/document fields in packet bundles. Output production_audits/1774/terminal_document_inventory.csv with packet ID, voice, speaker/institution if known, unlock context, locale coverage.
+
+Task 04: Identify documents that are actually design notes, encyclopedia summaries, or generic AI prose. Mark exact paths and severity.
+
+Task 05: Checkpoint. Select a bounded set of high-impact terminal/survivor/corporate documents to repair now.
+
+Task 06: Rewrite selected terminal fragments into real recoverable documents. Keep facts canonical, keep damage/fragmentation readable, and preserve gameplay clue value.
+
+Task 07: Rewrite selected survivor notes so they carry immediate human pressure: a person, object, route, repair, lie, hunger, injury, oxygen, debt, or wrong assumption.
+
+Task 08: Rewrite selected Deep Reach/internal memos so they show liability/risk language instead of villain monologue.
+
+Task 09: Rewrite selected colony artifacts so the colony feels lived in: work shifts, maintenance, shoreline/weather, family, school, food, berth, salvage, debt, or evacuation friction.
+
+Task 10: Checkpoint. Reopen changed packet JSON and validate syntax.
+
+Task 11: Confirm each changed document has an evidence route: terminal, recovered slate, notice board, broken tablet, black-box text extract, station printer, work order, insurance archive, or PDA cache.
+
+Task 12: Remove any phrasing that says the HECTON-8 surface/shallows are inherently dark, ugly, or worse than depth. Correct to bright/coastal/oceanic beauty when the document is about surface or photic water.
+
+Task 13: Add or update translation-unit notes for changed documents: title, speaker/source, body, damaged lines, date/location, unlock hint, related packet.
+
+Task 14: Check all 15 locales for changed documents. If localized text exists and no longer matches source, mark pending review in audit/status notes.
+
+Task 15: Checkpoint. Run safe JSON/AppliedContent validation. Capture exact command and output.
+
+Task 16: Create production_audits/1774/document_voice_style_sheet.md with examples of accepted survivor, corporate, colony, and terminal voices based on actual edited content.
+
+Task 17: Update any surface/index row only when packet ID and page path are verified. Do not invent runtime bindings.
+
+Task 18: Write Docs/AgentLogs/HANDOFF_1774.md with existing packet IDs needing placement, voice acting, or terminal UI review. No sibling dependency.
+
+Task 19: Search changed files for AI markers: "as if", "like a", "serves as", "represents", "in this", "designed to", "symbolizes", "TODO", "placeholder". Fix player-facing misuse.
+
+Task 20: Final verification. Reopen edited files, update Status_1774.md, append final report to Docs/AgentLogs/LOG_1774.md.
+
+ACCEPTANCE PROOF
+- terminal_document_inventory.csv exists.
+- Selected documents are real in-world artifacts, not design notes.
+- Deep Reach memos show liability logic, not cartoon villainy.
+- 15-locale review status exists for changed content.
+- Final LOG_1774.md lists exact files and validations.
+
+REJECTION CONDITIONS
+- Document voice becomes exposition.
+- Corporate writing becomes melodrama.
+- Survivor notes become generic diary filler.
+- Any future sibling output is required.
+- JSON/index syntax breaks.

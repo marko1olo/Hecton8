@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Seed транскрипта repair trace Atlas
+# Транскрипт ремонтного следа Atlas
 
-Atlas не должен объяснять себя. Его repair traces показывают, что он перестал различать.
+Atlas не объясняет себя. Его ремонтные следы показывают, что он перестал различать.
 
 ## Scanner
 
-Audio/caption seed: Atlas traces должны звучать как repair telemetry, где рушатся категории, а не speaking god.
+След Atlas фиксирует ремонт, где кабель, ткань и маршрут считаются одной сервисной поверхностью.
 
 ## Terminal
 
-TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. Без direct confession; только maintenance grammar.
+СЛЕД ОБСЛУЖИВАНИЯ ATLAS-6: класс утечки принят; рост мембраны и кабеля разрешен; фаунистический маршрут помечен пригодным; категория для человека не решена.
 
 ## Audio
 
-Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.
+Ремонтный след ATLAS-6. Утечка закрыта. Рост кабеля принят. Маршрут для живого тела пригоден. Категория для человека не решена.
 
 ## Field Note
 
-Для scanner captions, deep audio layers и Atlas article spoiler gate.
+Поврежденная maintenance telemetry. Без речи злодея; ключ в collapse категорий.
 
 <!-- External Site; generated from P439_ATLAS_REPAIR_TRACE_TRANSCRIPT_SEED/ru_RU. -->

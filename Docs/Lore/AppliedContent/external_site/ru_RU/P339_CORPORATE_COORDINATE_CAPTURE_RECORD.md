@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Record corporate coordinate capture
+# Corporate Coordinate Capture Record
 
-Вопрос не только в том, покинет ли игрок HECTON-8. Вопрос - кто получит карту после ухода.
+The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.
 
 ## Scanner
 
@@ -28,10 +28,10 @@ COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public r
 
 ## Audio
 
-Ты открыл дверь изнутри.
+You opened the door from the inside.
 
 ## Field Note
 
-Для bad-material или corporate partial ending.
+Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach.
 
 <!-- External Site; generated from P339_CORPORATE_COORDINATE_CAPTURE_RECORD/ru_RU. -->

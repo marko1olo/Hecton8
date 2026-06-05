@@ -2,6 +2,8 @@
 
 Date: 2026-05-07
 
+Owner domain: habitat/logistics graph
+
 Status: PENDING VERIFICATION
 
 Purpose: canonical architecture contract for habitat logistics links, Bishop-frame pipe rendering, rupture buckling, and CSR adjacency rebuilds.
@@ -150,6 +152,18 @@ It keeps the graph in DataVault-backed flat buffers and solves power/oxygen pres
 - Designer CSV reload stages bytes in Vault-owned `ShinobuLogisticsCsvScratch=70550`; private managed CSV byte arrays are not authorized.
 
 The historical `PowerNode`/`LogisticsPipeNode` managed lists are authoring or adapter surfaces only. They must not become the runtime flow traversal authority.
+
+## Submarine Thermal Grid Anchor (2026-06-05)
+
+Evidence class: STATIC_SOURCE only. `Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs` is a submarine-local thermal/power grid anchor, not a habitat topology owner.
+
+- Authority boundary: habitat adjacency, construction persistence, rupture topology, and CSR publication remain owned by the habitat logistics graph route above.
+- Runtime anchor: submarine thermal graph uses Vault-backed nodes, edges, injections, external heat, anchors, tuning, counters, specs, visual state, convergence state, pending payload lanes, and a 300-frame telemetry ring.
+- Capacity: `MaxNodes = 512`, `MaxEdges = MaxNodes * 6`, `TelemetryFrameCount = 300`.
+- Dump targets in source: `Docs/AgentLogs/Dump_THERMAL_GRID.bin` and `Docs/AgentLogs/Dump_SHINOBU_203.bin`.
+- Quality rule: solver iteration count is resolved from continuous `GlobalQualityWeight`; graph ownership and DTO layout do not change by quality.
+- Interop boundary: thermal state signals and visual GPU upload are consumers/proxies. They do not mutate habitat graph buffers.
+- Proof gap: Unity import, runtime graph solve, profiler/GC, memory retention, thermal visual proof, and dump decode proof are not claimed here.
 
 Rebuild sequence:
 

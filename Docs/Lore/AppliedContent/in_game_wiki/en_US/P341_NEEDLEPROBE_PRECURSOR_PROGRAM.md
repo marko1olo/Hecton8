@@ -10,7 +10,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
@@ -32,6 +32,6 @@ Nobody discovered Aegir in person first. The machines got there, waited, and sol
 
 ## Field Note
 
-Use for encyclopedia route history and public hard-sci-fi primer.
+Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived.
 
 <!-- In-Game Wiki; generated from P341_NEEDLEPROBE_PRECURSOR_PROGRAM/en_US. -->

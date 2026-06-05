@@ -1,0 +1,58 @@
+AGENT ID: 1825
+ROLE: TERMINAL_SCANNER_AUDIOLOG_PLACEMENT_MANIFEST
+MODE: No-edit static placement manifest. No lore source edits, no scene placement, no Unity.
+
+PRIMARY GOAL
+Create a placement manifest for player-facing content surfaces in the first route and early game: terminal entries, scanner facts, in-game encyclopedia cards, survivor logs, audiolog candidates, and public/wiki/site content. This must turn lore/content packets into actionable placement queues without editing AppliedLore while 1820/1822/P151 work is active.
+
+READ
+- AGENTS.md, PROJECT_BIBLES.md, VISION_LOCKS.md, TASTE.md, quality.md
+- writing.md, narrative.md, localization.md, ui.md, audio.md, gameplay.md if present
+- Docs/Lore/WriterScenarioAgentPrompt.md
+- Docs/Reports/Batch18/1804_APPLIED_LORE_DATAMONOLITH_RECONCILE.md
+- Docs/Reports/Batch18/1805_AGENT_OUTPUT_TRIAGE_DASHBOARD.md
+- Docs/Reports/Batch18/1811_P456_PUBLIC_SOURCE_REPAIR.md
+- Docs/Reports/Batch18/1816_SURFACE_ROUTE_UNITY_SLOT_PACKET.md
+- If present when this task starts, Docs/Reports/Batch18/1820_LORE_LOCALIZATION_RELEASE_TRIAGE.md; if absent, do not wait.
+
+LIKELY INPUTS
+- Assets/_SourceData/DataMonolith/Narrative/applied_lore_packets.csv
+- Docs/Lore/AppliedContent/
+- Existing reports for 1773/1774/1775/1778 if present; discover by filename, do not fabricate.
+
+OWNED OUTPUTS
+- Docs/Tasks/Status_1825.md
+- Docs/AgentLogs/Rationale_1825.md for non-trivial decisions only
+- Docs/AgentLogs/LOG_1825.md
+- Docs/Reports/Batch18/1825_TERMINAL_SCANNER_AUDIOLOG_PLACEMENT_MANIFEST.md
+- Docs/Reports/Batch18/1825_CONTENT_PLACEMENT_QUEUE.csv
+
+HARD RULES
+- Do not edit AppliedLore source, generated pages, indexes, source data, binaries, scenes, UI, audio code, reader code, or task files.
+- Do not run Unity, PlayMode, profiler, builds, DataMonolith bake, or exporters.
+- Do not claim native-final translations.
+- Do not accept writer specifications as player-facing text.
+- Do not depend on 1820/1822 output if it is not already on disk.
+
+20 TASKS
+01. Create tracking files.
+02. Read authorities and relevant mandates for writing, localization, UI, audio, and data evidence.
+03. Discover current AppliedContent packet/page structure and release/status indexes.
+04. Discover any existing placement-related reports from earlier batches by filename.
+05. Sample first-route and early-game content packets across scanner, terminal, wiki, site, field notes, audio logs.
+06. Classify each sampled packet by surface: scanner_fact, terminal_note, encyclopedia_entry, survivor_log, audiolog_script, public_site, external_wiki, player_note, block.
+07. Mark each locale honestly: source_ready, draft_native_pass_pending, blocked_residue, missing, unknown.
+08. Identify production-residue blockers and AI/meta wording without bulk editing.
+09. Identify content that teaches gameplay route: oxygen, pressure seals, copper/tooling, GPR, scanner, base, safe room, drones, hazards.
+10. Identify content that sells world beauty/surface/shallow awe without making darkness the surface mood.
+11. Identify content that should not be early route because of spoilers or pacing.
+12. Build placement queue CSV with packet_id, title, surface, locale policy, route beat, POI candidate, proof source, blocker, next owner.
+13. Define how audiolog candidates must be written and localized before voice/audio implementation.
+14. Define scanner fact constraints: concise, believable, useful, no fake scientific fluff.
+15. Define terminal/survivor log constraints: human voice, no neural prose, no misplaced analogies, no exposition dump.
+16. Define website/wiki constraints: public-facing article prose, spoiler gates, and 15-locale status.
+17. Define DataMonolith/game integration handoff without running bake.
+18. Append concise log.
+19. Final scan for fake runtime/native-review/exporter proof.
+20. Mark PLACEMENT_MANIFEST_COMPLETE or BLOCKED.
+

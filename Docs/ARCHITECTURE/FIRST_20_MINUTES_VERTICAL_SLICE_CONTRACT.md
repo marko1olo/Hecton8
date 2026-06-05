@@ -4,6 +4,8 @@ Date: 2026-05-19
 
 Status: PENDING VERIFICATION
 
+Owner domain: product route / vertical slice contract
+
 Evidence class: PRODUCT_CONTRACT / STATIC_DOC. This file is not runtime proof.
 
 ## Source Anchors
@@ -28,7 +30,7 @@ route:
 
 ```text
 
-boot -> world load -> swim -> find resource -> tool interaction -> craft/repair/build
+boot -> world load -> semi-open beautiful shallow exit -> swim -> find resource -> tool interaction -> craft/repair/build
 
 -> hazard response -> save -> load -> return to same state
 
@@ -36,7 +38,7 @@ boot -> world load -> swim -> find resource -> tool interaction -> craft/repair/
 
 Selected V0 route: `FIRST_20_MINUTES_ROUTE_BRIEF.md` defines the current
 
-Copper Wire route. Scanner and Repair Tool are P1 route extensions until their
+spectacular semi-open shallow route. Copper Wire is only one candidate resource chain inside that route. Scanner and Repair Tool are route extensions until their
 
 scan gates have proven scene/prefab/data unlock paths.
 
@@ -56,6 +58,11 @@ If the answer is `none`, the work is parked unless it removes a current
 
 integration blocker.
 
+User vision lock 2026-06-03:
+
+The first route must be product-facing and visually compelling, not a narrow Copper Wire-only proof demo.
+The project may proceed broadly while this route is being proven, but broad work must not reduce first-route quality or fake readiness.
+
 ## Required Route
 
 | Moment | Minimum acceptance |
@@ -64,7 +71,9 @@ integration blocker.
 
 | Boot | New Game uses `00_BOOTSTRAP -> 01_MAIN_MENU -> 01_ORBIT -> 02_HECTON_WORLD`; load-game resumes may still enter `02_HECTON_WORLD` directly from `01_MAIN_MENU`. |
 
-| World load | One selected biome/route loads with terrain, water, lighting, fog, HUD, audio, and spawn safety. |
+| World load | One selected semi-open shallow/surface-adjacent route loads with terrain, water, lighting, fog, HUD, audio, spawn safety, and visual spectacle. |
+
+| First exit | Player exits into bright, beautiful, readable photic water with alien biota, wet terrain, sky/Aegir/moon context where visible, and technogenic traces. |
 
 | Swim | Player can navigate, surface/dive, read oxygen/pressure/depth, and return to a known point. |
 
@@ -74,33 +83,33 @@ integration blocker.
 
 | Craft/repair/build | One recipe, repair action, or base-support action consumes the resource and changes player capability or route safety. |
 
-| Hazard | One fair hazard creates a decision: pressure, leak, thermal, toxic, fauna, darkness, or route risk. |
+| Hazard | One fair hazard creates a decision: oxygen neglect, pressure, leak, thermal, toxic, fauna, route risk, or cave/interior/event darkness. In 0-100 m water, darkness is not the default hazard. |
 
 | Save/load | Save, quit/reload, and return preserve position, inventory, route state, opened/looted/scanned flags, and relevant hazard state. |
 
 | Proof | Console, Play Mode/player run, profiler, GC, memory, screenshot/clip, and save directory diff are captured. |
 
-## Parked Until Route Proof
+## Broad Work While Route Proof Is Pending
 
-These are not deleted. They are deprioritized until the route is live:
+These are not deleted or globally parked. HECTON-8 proceeds broadly, with proof discipline:
 
-- net-new biomes outside the selected route;
+- net-new biomes outside the selected route may proceed if they do not lower first-route quality;
 
-- broad DOTS/ECS expansion;
+- broad DOTS/ECS expansion remains constrained unless it supports route, platform, tooling, or future-proof foundations with proof;
 
-- co-op runtime claims beyond local state-contract preparation;
+- co-op runtime claims remain unproven; cautious foundation work may continue;
 
-- extra fauna/ecology breadth not visible on the route;
+- extra fauna/ecology breadth may continue, but route-visible fauna has priority;
 
 - new global authority surface not needed by the route;
 
-- marketing outreach beyond verification/asset planning;
+- marketing outreach may prepare structure but cannot claim readiness without proof;
 
-- visual overkill that is not captured in the route.
+- visual overkill is allowed when it improves route-relevant assets, surface/shallows/mid-depth hero views, or proof captures.
 
 ## Allowed Work Outside Route
 
-Allowed only when it directly unblocks the route:
+Always allowed when it directly unblocks the route, and also allowed when it builds approved broad foundations without weakening the route:
 
 - compile/import blockers;
 
@@ -113,6 +122,9 @@ Allowed only when it directly unblocks the route:
 - global authority collisions or ownership defects that can corrupt route state;
 
 - profiler/GC/memory blockers on route-critical systems.
+- lore/content/localization/site packaging that uses current canon and honest status labels;
+- platform/modding/XR/SDK groundwork without public readiness claims;
+- visual asset, water, terrain, sky, fauna, vehicle, or UI work that raises the route-facing quality floor.
 
 ## Proof Standard
 

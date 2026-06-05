@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ The colony started as cargo that managed to stop.
 
 ## Field Note
 
-Use for settlement timeline and domain logistics article.
+Settlement timeline record: seed cargo, braking debris, assembly phases, and delayed crews explain how infrastructure preceded community.
 
 <!-- External Site; generated from P343_SEED_SHIP_BRAKING_ARCHITECTURE/pt_BR. -->

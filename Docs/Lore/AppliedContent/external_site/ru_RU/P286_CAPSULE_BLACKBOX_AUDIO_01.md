@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Аудио черного ящика капсулы 01
+# Capsule Blackbox Audio 01
 
-Стартовое capsule audio дает HECTON-8 hard-sci-fi lock: выживание куплено той деталью, которая должна была вернуть игрока домой.
+The first recovered blackbox makes survival a debt: the capsule bought one landing by burning the part meant to take it back.
 
 ## Scanner
 
-Фрагмент blackbox подтверждает: ascent sleeve потрачен на survival burn.
+Blackbox fragment: survival burn spent the ascent sleeve.
 
 ## Terminal
 
-BLACKBOX: survival burn complete. Ascent sleeve unavailable. Recovery ring no-lock.
+BLACKBOX EXTRACT 01 / SURVIVAL BURN: COMPLETE / ASCENT SLEEVE: SPENT / RECOVERY RING: NO-LOCK / BUOY: UNRELIABLE.
 
 ## Audio
 
-Burn spent. Ring no-lock. Не запрашивать ascent.
+Burn spent. Ring no-lock. Do not request ascent.
 
 ## Field Note
 
-Короткое audio: crush-frame, flooded avionics, recovery ring shear, unreliable buoy, без narrator explanation.
+Crush-frame cracked at lower ring. Avionics bay smells of warm salt. Recovery ring reports no-lock; buoy repeats a dead ascent request.
 
 <!-- External Site; generated from P286_CAPSULE_BLACKBOX_AUDIO_01/ru_RU. -->

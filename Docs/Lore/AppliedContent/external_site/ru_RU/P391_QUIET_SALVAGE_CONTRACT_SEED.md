@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Replay seed: тихий salvage-контракт
+# Quiet Salvage Contract Seed
 
-Replay в HECTON-8 меняет pressure и route context, не inherited power. Quiet salvage - более легкий старт с худшими ownership terms.
+Replay in HECTON-8 varies pressure and route context, not inherited power. Quiet salvage is an easier start with worse ownership terms.
 
 ## Scanner
 
-Contract seed: quiet salvage. Меньше ранних hazards, чище payout, грязнее custody.
+Contract seed: quiet salvage. Fewer early hazards, cleaner payout, dirtier custody.
 
 ## Terminal
 
-SEED QUIET: reduced storm risk, reduced early hostility, increased claim-custody restriction и evidence ambiguity.
+SEED QUIET: reduced storm risk, reduced early hostility, increased claim-custody restriction and evidence ambiguity.
 
 ## Audio
 
-Низкие storm windows никогда не бесплатны. Их покупают где-то еще.
+Low storm windows are never free. They are bought somewhere else.
 
 ## Field Note
 
-Для contract selection и dossier rumor card.
+Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise.
 
 <!-- External Site; generated from P391_QUIET_SALVAGE_CONTRACT_SEED/ru_RU. -->

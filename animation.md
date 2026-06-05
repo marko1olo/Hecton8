@@ -1,7 +1,14 @@
 # HECTON-8 Animation Bible
 
 Status: AUTHORING LAW / STATIC DOC / RUNTIME PROOF NOT IMPLIED
+Evidence class: STATIC_DOC
 Scope: player motion, creature motion, IK, tools, rigs, procedural animation, VAT, secondary motion, and animation proof.
+
+## First-20 Route Hook
+
+- First-20 moment: first exit, swim, tool interaction, and first hazard response need heavy equipment motion, readable tool phases, contact confidence, and creature/threat intent.
+- Route blocker removed: prevents opening-route animation work from shipping floaty locomotion, unclear tool contact, or creature motion that gives no survival read.
+- Proof class: STATIC_DOC only; route acceptance still requires in-engine capture, compact readability proof, and profiler/GC evidence when runtime animation changes.
 
 ## Prime Law
 

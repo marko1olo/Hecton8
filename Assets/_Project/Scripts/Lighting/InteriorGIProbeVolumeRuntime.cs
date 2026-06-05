@@ -1075,7 +1075,16 @@ namespace Hecton8.Lighting
             JobHandle handle = job.Schedule(count, 64);
             H8Memory.RegisterActiveJob(MemoryOwner, handle);
             // COLD/EDITOR SYNC FACADE: UI Toolkit mock-grid button drains isolated proof data outside frame cadence.
-            DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            DispatcherJobFence.BeginLateFrameSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndLateFrameSwapWindow();
+            }
+
             _visualDirty = true;
         }
 
@@ -1557,7 +1566,16 @@ namespace Hecton8.Lighting
             if (!_gpuUploadPending)
                 return;
 
-            DispatcherJobFence.TryComplete(ref _gpuUploadHandle, forceComplete: true);
+            DispatcherJobFence.BeginLateFrameSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref _gpuUploadHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndLateFrameSwapWindow();
+            }
+
             GraphicsBuffer pending = _gpuUploadPendingBufferIndex == 0 ? _probeBufferA : _probeBufferB;
             if (pending != null && _gpuUploadPendingCount > 0)
                 pending.UnlockBufferAfterWrite<CustomLightProbeDTO>(_gpuUploadPendingCount);

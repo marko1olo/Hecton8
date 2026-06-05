@@ -91,8 +91,8 @@ namespace Hecton8.EditorTools
 
             if (metrics.RealFinalCount <= 0 && metrics.PlaceholderFinalCount > 0)
             {
-                Debug.LogWarning($"[WorldProceduralOrganicMiscFinalValidator] {record.AssetPath}: only placeholder organic misc finals are linked.");
-                warningCount++;
+                Debug.LogError($"[WorldProceduralOrganicMiscFinalValidator] {record.AssetPath}: only placeholder organic misc finals are linked. Organic scatter cannot ship with procedural placeholder finals.");
+                errorCount++;
             }
             else if (metrics.RealFinalCount <= 0)
             {
@@ -107,7 +107,18 @@ namespace Hecton8.EditorTools
                     continue;
 
                 if (WorldProceduralPlaceholderAuthoring.IsPlaceholderFinalVariant(variant))
+                {
+                    Debug.LogError($"[WorldProceduralOrganicMiscFinalValidator] {record.AssetPath}: organic misc variant '{variant.variantId}' is final-ready but still points at procedural placeholder prefab '{AssetDatabase.GetAssetPath(variant.prefab)}'.");
+                    errorCount++;
                     continue;
+                }
+
+                if (WorldProceduralFinalPrefabQualityGate.UsesUnityBuiltInPrimitiveMesh(variant.prefab))
+                {
+                    Debug.LogError($"[WorldProceduralOrganicMiscFinalValidator] {record.AssetPath}: organic misc variant '{variant.variantId}' uses Unity built-in primitive mesh ids in prefab '{AssetDatabase.GetAssetPath(variant.prefab)}'.");
+                    errorCount++;
+                    continue;
+                }
 
                 Renderer[] renderers = variant.prefab.GetComponentsInChildren<Renderer>(true);
                 if (renderers == null || renderers.Length <= 0)
@@ -117,7 +128,7 @@ namespace Hecton8.EditorTools
                     continue;
                 }
 
-            HashSet<Material> inspectedMaterials = new HashSet<Material>(16);
+                HashSet<Material> inspectedMaterials = new HashSet<Material>(16);
                 for (int rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
                 {
                     Renderer renderer = renderers[rendererIndex];

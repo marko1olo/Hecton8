@@ -3,6 +3,8 @@
 Date: 2026-05-07
 
 Status: PENDING VERIFICATION
+Owner domain: Echelon 5 Vehicles / submarine OS documentation
+Review disposition: YELLOW / STATIC_DOC_ONLY until compile/import/runtime/profiler/player proof exists.
 
 Verification: PENDING VERIFICATION
 

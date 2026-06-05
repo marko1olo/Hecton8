@@ -31,6 +31,7 @@ namespace Hecton8.EditorTools
             internal int ScannedSceneCount;
             internal readonly List<string> BrokenVariantAssets = new List<string>(16);
             internal readonly List<string> ReplacedPrefabAssets = new List<string>(16);
+            internal readonly List<string> SkippedPrefabAssetRepairs = new List<string>(16);
             internal readonly List<string> UnpackedInstances = new List<string>(16);
             internal readonly List<string> ReplacedInstances = new List<string>(16);
             internal readonly List<string> BrokenReferences = new List<string>(64);
@@ -44,7 +45,8 @@ namespace Hecton8.EditorTools
             Debug.Log(
                 $"[HectonPrefabIntegrityScanner] ScannedPrefabAssets={result.ScannedPrefabAssetCount}, " +
                 $"ScannedScenes={result.ScannedSceneCount}, BrokenVariantAssets={result.BrokenVariantAssets.Count}, " +
-                $"ReplacedPrefabAssets={result.ReplacedPrefabAssets.Count}, UnpackedInstances={result.UnpackedInstances.Count}, " +
+                $"ReplacedPrefabAssets={result.ReplacedPrefabAssets.Count}, SkippedPrefabAssetRepairs={result.SkippedPrefabAssetRepairs.Count}, " +
+                $"UnpackedInstances={result.UnpackedInstances.Count}, " +
                 $"ReplacedInstances={result.ReplacedInstances.Count}, BrokenReferences={result.BrokenReferences.Count}.");
         }
 
@@ -109,7 +111,7 @@ namespace Hecton8.EditorTools
                     bool prefabChanged = false;
                     try
                     {
-                        prefabChanged = ScanHierarchy(prefabPath, prefabRoot.scene, prefabRoot, result, errorCubePrefab, allowRepair: true);
+                        prefabChanged = ScanHierarchy(prefabPath, prefabRoot.scene, prefabRoot, result, errorCubePrefab, allowRepair: false);
                         if (prefabChanged)
                             PrefabUtility.SaveAsPrefabAsset(prefabRoot, prefabPath);
                     }
@@ -254,7 +256,7 @@ namespace Hecton8.EditorTools
                 string entry = $"{ownerPath}: {hierarchyPath}: missing prefab asset.";
                 if (!allowRepair)
                 {
-                    result.SkippedSceneRepairs.Add(entry);
+                    AddSkippedRepair(ownerPath, result, entry);
                 }
                 else if (TryUnpackMissingPrefabInstance(target))
                 {
@@ -302,75 +304,33 @@ namespace Hecton8.EditorTools
 
         private static void ReplaceBrokenPrefabAsset(string prefabPath, GameObject errorCubePrefab, ScanResult result)
         {
-            GameObject tempRoot = null;
-            try
-            {
-                GameObject replacementSource = ResolveBrokenVariantReplacementSource(prefabPath);
-                if (replacementSource != null)
-                {
-                    tempRoot = PrefabUtility.InstantiatePrefab(replacementSource) as GameObject;
-                    if (tempRoot == null)
-                        tempRoot = UnityEngine.Object.Instantiate(replacementSource);
+            GameObject replacementSource = ResolveBrokenVariantReplacementSource(prefabPath);
+            string replacementPath = replacementSource != null
+                ? AssetDatabase.GetAssetPath(replacementSource)
+                : ErrorPrefabPath;
+            string primitiveState = replacementSource != null &&
+                                    WorldProceduralFinalPrefabQualityGate.UsesUnityBuiltInPrimitiveMesh(replacementSource)
+                ? " primitive_candidate=true"
+                : string.Empty;
 
-                    tempRoot.name = Path.GetFileNameWithoutExtension(prefabPath);
-                    PrefabUtility.SaveAsPrefabAsset(tempRoot, prefabPath);
-                    result.ReplacedPrefabAssets.Add(
-                        $"{prefabPath}: restored broken variant asset from '{AssetDatabase.GetAssetPath(replacementSource)}'.");
-                    return;
-                }
-
-                tempRoot = PrefabUtility.InstantiatePrefab(errorCubePrefab) as GameObject;
-                if (tempRoot == null)
-                    tempRoot = UnityEngine.Object.Instantiate(errorCubePrefab);
-
-                tempRoot.name = Path.GetFileNameWithoutExtension(prefabPath);
-                PrefabUtility.SaveAsPrefabAsset(tempRoot, prefabPath);
-                result.ReplacedPrefabAssets.Add($"{prefabPath}: replaced broken variant asset with PFB_ErrorCube.");
-            }
-            finally
-            {
-                if (tempRoot != null)
-                    UnityEngine.Object.DestroyImmediate(tempRoot);
-            }
+            result.SkippedPrefabAssetRepairs.Add(
+                $"{prefabPath}: destructive prefab asset repair blocked; candidate replacement='{replacementPath}'{primitiveState}.");
         }
 
         private static bool TryRepairNullPrefabAsset(string prefabPath, GameObject errorCubePrefab, ScanResult result)
         {
             GameObject replacementSource = ResolveBrokenVariantReplacementSource(prefabPath);
-            GameObject tempRoot = null;
+            string replacementPath = replacementSource != null
+                ? AssetDatabase.GetAssetPath(replacementSource)
+                : ErrorPrefabPath;
+            string primitiveState = replacementSource != null &&
+                                    WorldProceduralFinalPrefabQualityGate.UsesUnityBuiltInPrimitiveMesh(replacementSource)
+                ? " primitive_candidate=true"
+                : string.Empty;
 
-            try
-            {
-                if (replacementSource != null)
-                {
-                    tempRoot = PrefabUtility.InstantiatePrefab(replacementSource) as GameObject;
-                    if (tempRoot == null)
-                        tempRoot = UnityEngine.Object.Instantiate(replacementSource);
-
-                    tempRoot.name = Path.GetFileNameWithoutExtension(prefabPath);
-                    PrefabUtility.SaveAsPrefabAsset(tempRoot, prefabPath);
-                    result.ReplacedPrefabAssets.Add(
-                        $"{prefabPath}: rebuilt null-loading prefab asset from '{AssetDatabase.GetAssetPath(replacementSource)}'.");
-                    return true;
-                }
-
-                if (errorCubePrefab == null)
-                    return false;
-
-                tempRoot = PrefabUtility.InstantiatePrefab(errorCubePrefab) as GameObject;
-                if (tempRoot == null)
-                    tempRoot = UnityEngine.Object.Instantiate(errorCubePrefab);
-
-                tempRoot.name = Path.GetFileNameWithoutExtension(prefabPath);
-                PrefabUtility.SaveAsPrefabAsset(tempRoot, prefabPath);
-                result.ReplacedPrefabAssets.Add($"{prefabPath}: rebuilt null-loading prefab asset with PFB_ErrorCube.");
-                return true;
-            }
-            finally
-            {
-                if (tempRoot != null)
-                    UnityEngine.Object.DestroyImmediate(tempRoot);
-            }
+            result.SkippedPrefabAssetRepairs.Add(
+                $"{prefabPath}: destructive null-prefab rebuild blocked; candidate replacement='{replacementPath}'{primitiveState}.");
+            return false;
         }
 
         private static GameObject ResolveBrokenVariantReplacementSource(string prefabPath)
@@ -568,6 +528,20 @@ namespace Hecton8.EditorTools
             }
 
             return false;
+        }
+
+        private static void AddSkippedRepair(string ownerPath, ScanResult result, string entry)
+        {
+            if (IsPrefabAssetPath(ownerPath))
+                result.SkippedPrefabAssetRepairs.Add(entry);
+            else
+                result.SkippedSceneRepairs.Add(entry);
+        }
+
+        private static bool IsPrefabAssetPath(string path)
+        {
+            return !string.IsNullOrWhiteSpace(path) &&
+                   path.EndsWith(".prefab", StringComparison.OrdinalIgnoreCase);
         }
 
         private static void CollectGameObjects(Transform root, List<GameObject> destination)

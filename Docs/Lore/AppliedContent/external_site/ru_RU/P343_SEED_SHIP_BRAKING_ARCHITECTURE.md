@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Тормозная архитектура seed ship
+# Seed Ship Braking Architecture
 
-Aegir заселяли не одним героическим landing, а seed cargo, braking architecture и delayed crew rotations.
+Aegir was not settled by a single heroic landing. It was assembled from seed cargo, braking architecture and delayed crew rotations.
 
 ## Scanner
 
-Архив seed ship. Прибытие зависело от тормозной массы, а не от веры в цель.
+Seed ship archive. Arrival depended on braking mass, not faith in the destination.
 
 ## Terminal
 
-ЛОГ КОЛОНИИ: раннее железо Aegir пришло как seed cargo, reactor shells, printers, water chemistry rigs и braking debris. Люди унаследовали то, что пережило торможение.
+COLONY LOG: early Aegir hardware arrived as seed cargo, reactor shells, printers, water chemistry rigs and braking debris. The first human phase inherited what survived deceleration.
 
 ## Audio
 
-Колония началась как груз, который смог остановиться.
+The colony started as cargo that managed to stop.
 
 ## Field Note
 
-Для timeline заселения и статьи о логистике доменов.
+Settlement timeline record: seed cargo, braking debris, assembly phases, and delayed crews explain how infrastructure preceded community.
 
 <!-- External Site; generated from P343_SEED_SHIP_BRAKING_ARCHITECTURE/ru_RU. -->

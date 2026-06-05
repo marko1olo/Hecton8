@@ -102,12 +102,7 @@ namespace Hecton8.Audio.Prologue
 
         private void OnDisable()
         {
-            if (_lateFrameRegistered)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-                _lateFrameRegistered = false;
-            }
-
+            UnregisterLateFrame();
             if (_hotSwapRegistered)
             {
                 GlobalRegistry.TryUnregisterHotSwapListener(this);
@@ -182,6 +177,7 @@ namespace Hecton8.Audio.Prologue
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Audio:
+                    ResetPreviousAudioService(_audioService, currentService);
                     CacheAudioService(currentService as IAudioService);
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
@@ -215,8 +211,8 @@ namespace Hecton8.Audio.Prologue
 
         private void RebindDispatcher(ITickDispatcher dispatcher)
         {
+            UnregisterLateFrame();
             _tickDispatcher = dispatcher;
-            _lateFrameRegistered = false;
             if (_tickDispatcher != null && isActiveAndEnabled)
                 RegisterLateFrame();
         }
@@ -227,6 +223,15 @@ namespace Hecton8.Audio.Prologue
                 return;
 
             _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void UnregisterLateFrame()
+        {
+            if (!_lateFrameRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _lateFrameRegistered = false;
         }
 
         private void RegisterHotSwap()
@@ -310,14 +315,14 @@ namespace Hecton8.Audio.Prologue
                 if ((signal.Flags & ReentryAcousticStressSignal.FlagAuthoritativeFilter) != 0)
                     _currentLowPassCutoffHertz = ClampCutoff(signal.LowPassCutoffHz);
 
-                if ((signal.Flags & ReentryAcousticStressSignal.FlagSplashdown) != 0)
+                if ((signal.Flags & ReentryAcousticStressSignal.FlagSplashdown) != 0 ||
+                    signal.Phase == ReentryAcousticStressSignal.PhaseSplashdown)
                 {
-                    _splashdownPending = true;
-                    _forcePublishTransition = true;
+                    ArmOceanHandoffAudio();
+                    return;
                 }
 
-                if (signal.Phase == ReentryAcousticStressSignal.PhaseWhiteout ||
-                    signal.Phase == ReentryAcousticStressSignal.PhaseSplashdown)
+                if (signal.Phase == ReentryAcousticStressSignal.PhaseWhiteout)
                 {
                     _stage = AudioTransitionState.StageWhiteout;
                 }
@@ -379,16 +384,21 @@ namespace Hecton8.Audio.Prologue
                 _prologueArmed = true;
                 _hasCompleteSequence = true;
                 _lastCompleteSequence = signal.Sequence;
-                _splashdownPending = true;
-                _sweepElapsedSeconds = 0f;
-                _sweepActive = true;
-                _currentLowPassCutoffHertz = ClampCutoff(SplashdownLowPassCutoffHertz);
-                _sweepStartLowPassCutoffHertz = _currentLowPassCutoffHertz;
-                _sweepSnapHeldForPublish = true;
-                _forcePublishTransition = true;
-
-                _stage = AudioTransitionState.StageOceanHandoff;
+                ArmOceanHandoffAudio();
             }
+        }
+
+        private void ArmOceanHandoffAudio()
+        {
+            _prologueArmed = true;
+            _splashdownPending = true;
+            _sweepElapsedSeconds = 0f;
+            _sweepActive = true;
+            _currentLowPassCutoffHertz = ClampCutoff(SplashdownLowPassCutoffHertz);
+            _sweepStartLowPassCutoffHertz = _currentLowPassCutoffHertz;
+            _sweepSnapHeldForPublish = true;
+            _forcePublishTransition = true;
+            _stage = AudioTransitionState.StageOceanHandoff;
         }
 
         private void AdvanceFilterSweep(float deltaSeconds)
@@ -549,20 +559,38 @@ namespace Hecton8.Audio.Prologue
 
         private void PublishNeutralTransitionOnDisable()
         {
-            if (!Application.isPlaying)
+            if (!Application.isPlaying || !HasActiveTransitionState())
                 return;
 
-            bool activeTransition = _prologueArmed ||
-                                    _sweepActive ||
-                                    _splashdownPending ||
-                                    _stage != AudioTransitionState.StageSpace ||
-                                    (_lastPublishedStage != 0 && _lastPublishedStage != AudioTransitionState.StageSpace);
-            if (!activeTransition)
-                return;
+            TryQueueNeutralTransition(_audioService);
+        }
 
-            IAudioService audioService = _audioService;
+        private void ResetPreviousAudioService(IAudioService previousAudioService, object currentService)
+        {
+            if (!Application.isPlaying ||
+                previousAudioService == null ||
+                ReferenceEquals(previousAudioService, currentService) ||
+                !HasActiveTransitionState())
+            {
+                return;
+            }
+
+            TryQueueNeutralTransition(previousAudioService);
+        }
+
+        private bool HasActiveTransitionState()
+        {
+            return _prologueArmed ||
+                   _sweepActive ||
+                   _splashdownPending ||
+                   _stage != AudioTransitionState.StageSpace ||
+                   (_lastPublishedStage != 0 && _lastPublishedStage != AudioTransitionState.StageSpace);
+        }
+
+        private bool TryQueueNeutralTransition(IAudioService audioService)
+        {
             if (audioService == null || !audioService.IsInitialized)
-                return;
+                return false;
 
             AudioTransitionState state = default;
             state.UniverseVelocityMetersPerSecond = 0f;
@@ -580,7 +608,7 @@ namespace Hecton8.Audio.Prologue
             state.QualityTier = _qualityTierByte;
             state.AbsoluteTimeSeconds = ResolveAbsoluteTimeSeconds();
 
-            audioService.QueuePrologueAudioTransition(in state);
+            return audioService.QueuePrologueAudioTransition(in state);
         }
 
         private void CacheAudioService(IAudioService audioService)

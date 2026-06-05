@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# System carrier tug stack
+# System Carrier Tug Stack
 
-Корабль HECTON-8 - не личная яхта, а арендованное индустриальное salvage-железо.
+HECTON-8's ship fantasy is not a private yacht. It is rented industrial salvage hardware tied to contracts and delayed orbital windows.
 
 ## Scanner
 
-Запись carrier stack. Black Keel двигает salvage через tugs, timers и custody locks.
+Carrier stack record. Black Keel moves salvage by tugs, timers and custody locks.
 
 ## Terminal
 
-СПЕЦИФИКАЦИЯ BLACK KEEL: carrier - claim-pool salvage platform. Он держит орбиту, принимает cargo, считает долг и сбрасывает capsules. Он не чинит сломанную moon insertion chain сам.
+BLACK KEEL SPEC: the carrier is a claim-pool salvage platform. It can hold orbit, receive cargo, recycle debt and deploy capsules. It cannot solve a broken moon insertion chain by itself.
 
 ## Audio
 
-Carrier - не дом. Это машина, которая знает, кому принадлежит твой долг.
+The carrier is not your home. It is a machine that knows who owns your debt.
 
 ## Field Note
 
-Для ownership carrier и старта игрока.
+Carrier ownership record: Black Keel is industrial custody hardware, not a personal rescue ship.
 
 <!-- External Site; generated from P344_SYSTEM_CARRIER_TUG_STACK/ru_RU. -->

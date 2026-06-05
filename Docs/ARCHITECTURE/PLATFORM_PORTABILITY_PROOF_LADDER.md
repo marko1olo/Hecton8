@@ -4,6 +4,8 @@ Date: 2026-05-28
 
 Status: PENDING VERIFICATION
 
+Owner domain: platform portability proof policy
+
 Evidence class: STATIC_DOC. This is platform policy, not proof that any
 
 platform build, import, launch, profiler capture, GC capture, memory capture,

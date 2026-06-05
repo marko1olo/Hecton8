@@ -2,6 +2,7 @@
 
 Date: 2026-06-02
 Status: TASTE AUTHORITY / STATIC DOC / RUNTIME PROOF NOT IMPLIED
+Evidence class: STATIC_DOC
 
 ## Purpose
 
@@ -106,6 +107,14 @@ The surface is not the abyss. Above-water views, coastline, photic shallows, sky
 
 Darkness belongs to depth, caves, storms, interiors, eclipse windows, and temporary route pressure. It is forbidden to use noir as an excuse to crush surface luminance, hide bad terrain, turn Aegir into procedural stripes, or make the moons and sky look like muddy placeholder art.
 
+Depth light lock:
+
+- 0-100 m: mostly bright, colorful, beautiful, and readable.
+- Deep caves may be dim or dark even inside shallow bands.
+- 200-400 m: progressively more subdued, twilight-like, and tense.
+- 400-500 m and below: true darkness/murk becomes normal, but must still preserve route structure, silhouettes, instruments, and evidence.
+- Surface tension comes from weather, route cost, radiation timing, wave state, sound, engineering risk, and visible descent contrast, not from making the surface ugly.
+
 Surface quality floor:
 
 - real ocean color with readable waves, refraction, specular response, foam, and waterline detail;
@@ -116,6 +125,12 @@ Surface quality floor:
 - high and ultra tiers adding reflection, atmosphere, cloud depth, shafts, material richness, and visual overkill without changing route truth.
 
 A surface screenshot that is black, muddy, crayon-like, or worse than Subnautica-level ocean readability is rejected. The correct contrast is: surface is beautiful and readable; descent is increasingly hostile; depth is dark, structured, and frightening.
+
+Subnautica-level surface/shallow/mid-depth readability and content density is the floor, not the ceiling. HECTON-8 should aim higher in material detail, route density, industrial traces, alien biota, and cinematic realism.
+
+The main visual mode is cinematic realism: believable PBR/material truth, physically motivated water/sky/rock/metal response, and controlled cinematic composition/color. It is not flat photoreal blandness and not cartoon stylization.
+
+Aegir's blue/purple/methane-rich visual direction is allowed when texture quality, cloud bands, atmospheric softness, scale, and route context are strong. Muddy sine stripes or low-resolution procedural bands remain rejected.
 
 ## The Standard
 
@@ -365,9 +380,17 @@ The first hour is good if the player learns the identity through action:
 - hear the first serious threat before seeing it;
 - return with a visible scar, opened path, repaired machine, recovered name, black-box clue, or changed room state.
 
-If the first hour teaches "collect colorful resources and expand comfort," it is wrong.
+If the first hour teaches only "collect colorful resources and expand comfort," it is wrong.
 
 It should teach: count air, read instruments, distrust clean language, respect pressure, plan return paths.
+
+User vision lock:
+
+- the first route is semi-open;
+- the first exit should be beautiful and readable, with an uneasy or threatening element nearby;
+- the player may pause and look around when oxygen and local safety allow it;
+- the first route must be more spectacular than a narrow Copper Wire-only proof chain;
+- immediate death is allowed when the player ignores oxygen or approaches an aggressive creature.
 
 ## Screenshot Taste
 
@@ -481,20 +504,24 @@ Bad:
 
 ## Base And Habitat Taste
 
-A base is not a home at this depth. It is a machine that keeps saying no to the ocean.
+A base is first a machine that keeps saying no to the ocean. It may also become a place the player loves.
 
 Good:
 
 - seals, pressure doors, pumps, sump logic, oxygen, power, condensation, alarms, repair access;
 - every comfortable zone still shows what maintains it;
 - damage creates route, audio, lighting, oxygen, or flooding consequences.
+- safe rooms and player bases may be warm, cozy, attractive, decorated, and worth protecting once the survival infrastructure is credible;
+- Subnautica-like base beauty and decoration are allowed when industrial pressure logic remains underneath.
 
 Bad:
 
-- cozy room fantasy;
+- cozy room fantasy that ignores pressure, oxygen, power, pumps, seals, and maintenance;
 - furniture-first base building;
 - clean modular interiors with no pressure vessel logic;
 - decorative flood effects.
+
+The correct target is industrial comfort under pressure, not sterile misery.
 
 ## Marketing Taste
 

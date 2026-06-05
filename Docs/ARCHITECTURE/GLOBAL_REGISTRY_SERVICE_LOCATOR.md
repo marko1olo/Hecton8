@@ -2,6 +2,8 @@
 
 Date: 2026-05-12
 
+Owner domain: core/global registry dependency injection
+
 Status: STATIC_SOURCE REVIEWED / RUNTIME PENDING
 
 ## Source Anchors

@@ -10,8 +10,8 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
 # Подписи Return Action Queue
@@ -32,6 +32,6 @@ SIGNATURE SEED: Amara Keene, Return Action Queue. Функция: ставит p
 
 ## Field Note
 
-Return Action signatures нужны там, где давление Deep Reach приходит через delayed packets, carrier clauses или payload bargains.
+Return Action signatures mark delayed packets, carrier clauses, payload bargains, and present-tense pressure from Deep Reach.
 
 <!-- In-Game Wiki; generated from P205_RETURN_ACTION_QUEUE_SIGNATURES/ru_RU. -->

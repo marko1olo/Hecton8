@@ -4,6 +4,8 @@ Date: 2026-05-19
 
 Status: PENDING VERIFICATION
 
+Owner domain: product route / first 20 minutes
+
 Evidence class: STATIC_SOURCE / STATIC_DOC. This is the selected product route,
 
 not Unity runtime proof.
@@ -28,31 +30,42 @@ not Unity runtime proof.
 
 ## Verdict
 
-Use the Copper Wire route as V0.
+Use the spectacular semi-open shallow route as product-facing V0.
 
-Do not use Scanner or Repair Tool as the first accepted route yet. Their recipes
+The old Copper Wire chain remains a useful verified resource/crafting spine inside V0.
+It is not sufficient as the identity of the first 20 minutes because it does not sell HECTON-8.
+
+Do not block the first accepted route on Scanner or Repair Tool unless their scene/prefab/data unlock routes are proven. Their recipes
 
 are valuable, but current static evidence still leaves `scan.expedition_contact`
 
 and `scan.structure_relay` without a proven production scene/prefab/data unlock
 
-route. Making either one the V0 gate would move the proof target behind an
+route. Making either one mandatory without proof would move the proof target behind an
 
 unproven scan chain.
+
+V0 must include bright/beautiful surface-adjacent or photic shallows, alien biota, technogenic colony/industrial traces, oxygen/depth pressure, a fair death-capable hazard, one resource/tool chain, one craft/repair/build result, and save/load preservation.
 
 ## Selected V0 Route
 
 ```text
 
-boot -> world load -> safe exit -> swim -> oxygen/depth pressure
+boot -> world load -> damaged safe anchor -> semi-open beautiful shallow exit
+
+-> swim -> oxygen/depth pressure -> local unease or avoidable danger
 
 -> find copper -> harvest/collect Data_Copper -> quest_copper_sample
 
--> craft Recipe_CopperWire -> save -> load -> return to same state
+-> craft/repair/build route improvement -> save -> load -> return to same state
 
 ```
 
 ## Why This Route
+
+- User vision rejects a boring proof-only first route.
+
+- The first playable route must sell HECTON-8: beautiful alien shallows, industrial traces, pressure, oxygen planning, tool use, and threat.
 
 - `Recipe_CopperWire.asset` is not scan-locked.
 
@@ -65,6 +78,8 @@ boot -> world load -> safe exit -> swim -> oxygen/depth pressure
 - Existing static project reports already identify copper -> item collected ->
 
   inventory -> quest -> Copper Wire -> save/load as the bounded gameplay proof.
+
+- Copper is useful proof material, not the whole V0 fantasy.
 
 - This route tests the product spine without making late systems the blocker:
 
@@ -80,61 +95,65 @@ boot -> world load -> safe exit -> swim -> oxygen/depth pressure
 
 | Boot | New Game reaches `00_BOOTSTRAP -> 01_MAIN_MENU -> 01_ORBIT -> 02_HECTON_WORLD`; load-game resumes may still enter `02_HECTON_WORLD` directly from `01_MAIN_MENU`. |
 
-| Safe exit | Player exits the start/lifepod state without hidden dev grants deciding the route. |
+| Safe anchor | Player starts from a damaged but usable safe anchor such as Shallow Annex P-63 or equivalent, without hidden dev grants deciding the route. |
+
+| First exit | Player exits into bright, beautiful, readable photic water or surface-adjacent shallows with alien biota and technogenic colony/industrial traces. |
 
 | Swim | Player can surface/dive, read oxygen/depth/pressure, and return to a known point. |
 
-| Hazard | Oxygen, depth, darkness, pressure, or route distance creates a fair return decision. |
+| Hazard | Oxygen neglect, depth, pressure, route distance, or avoidable aggressive creature contact creates a fair return/death decision. In 0-100 m water, darkness is not the default hazard outside caves, interiors, storms, eclipse windows, or route events. |
 
-| Resource | Player finds the selected copper source in the route, not through a console grant. |
+| Resource | Player finds the selected starter resource in the route, not through a console grant. Copper is allowed if the route proves it. |
 
-| Tool | Actual starter interaction can acquire the resource. If copper requires Drill and the player lacks a starter Drill route, this is a blocker, not a pass. |
+| Tool | Actual starter interaction can acquire or use the resource. If the chosen resource requires an unavailable tool, this is a blocker, not a pass. |
 
-| Inventory | `InteractionEvents.ItemCollected` or equivalent route event is observed and inventory contains cataloged `Data_Copper`. |
+| Inventory | `InteractionEvents.ItemCollected` or equivalent route event is observed and inventory contains the cataloged starter item. |
 
-| Quest | `quest_copper_sample` activates/completes through the route or its activation seam is logged as a blocker. |
+| Quest/Need | `quest_copper_sample` or another real route need activates/completes through the route, or its activation seam is logged as a blocker. |
 
-| Craft | Fabricator crafts `Recipe_CopperWire` into `Comp_CopperWire` without scan-gate dependency. |
+| Craft/repair/build | Fabricator, repair action, or base-support action consumes the resource and changes capability or route safety. Copper Wire is acceptable but not mandatory if a stronger verified chain exists. |
 
 | Save/load | Reload preserves position, inventory, quest state, crafted result, opened/looted flags, and hazard-relevant state. |
 
 | Capture | Console, Play Mode/player run, 60s profiler, GC, memory/VRAM, save diff, screenshot, and clip are captured. |
 
-## Park Until V0 Passes
+## Parallel Work While V0 Is Pending
 
-- Scanner crafting as a product gate, until `scan.expedition_contact` has a
+The project is not restricted to a narrow single-resource proof lane.
 
-  proven route.
+Allowed parallel work:
 
-- Repair Tool crafting as a product gate, until `scan.structure_relay` has a
+- surface, shallow, and medium-depth visual quality;
+- lore, AppliedContent, website/wiki, and localization packaging;
+- terrain, water, celestial visuals, assets, creatures, vehicles, UI, tools, platform, XR, modding, and SDK foundations when they follow root bibles;
+- Scanner and Repair Tool route proof as upgrades to the spectacular V0;
+- DataMonolith, Addressables, import/export foundations;
+- visual overkill work when it improves route-relevant scenes, assets, or captures.
 
-  proven route.
+Still constrained:
 
-- Extra fauna/ecology breadth outside the selected route.
-
-- Net-new biomes outside the selected route.
-
-- Broad DOTS/ECS expansion not needed to prove the route.
-
-- Co-op runtime claims beyond local state-contract preparation.
-
-- Visual overkill that is not captured in the route proof.
-
-- Marketing send-ready status without real assets from this route.
+- public readiness claims without proof;
+- co-op runtime claims beyond cautious foundation work;
+- unrelated breadth that lowers the first route quality;
+- placeholders below the visual floor in production route scenes.
 
 ## Current Route Blockers To Prove Or Fix
 
-- Starting tool truth: prove the player can acquire copper with real authored
+- Starting tool truth: prove the player can acquire or use the selected starter resource with real authored
 
   equipment, or pick a starter resource interaction that is already reachable.
 
-- Quest activation truth: prove `quest_copper_sample` activates before/when the
+- Spectacle truth: prove the first exit has bright, beautiful, readable water, terrain, sky/celestial context where visible, alien biota, and technogenic traces in Unity.
 
-  player collects copper in the real route.
+- Hazard truth: prove immediate death is possible only through fair player error such as oxygen neglect or avoidable aggressive creature contact.
 
-- Fabricator truth: prove the route has a reachable powered fabricator and
+- Quest activation truth: prove `quest_copper_sample` or the selected route need activates before/when the
 
-  enough inventory capacity to craft Copper Wire.
+  player collects/uses the starter resource in the real route.
+
+- Fabricator/repair/build truth: prove the route has a reachable powered fabricator, repair action, or base-support action and
+
+  enough inventory capacity to complete the chain.
 
 - Item identity truth: legacy root `Data_Copper` must not contaminate the route;
 

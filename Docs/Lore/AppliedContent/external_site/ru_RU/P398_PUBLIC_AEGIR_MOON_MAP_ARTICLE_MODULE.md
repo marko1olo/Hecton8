@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Публичный модуль: карта лун Aegir
+# Aegir Moon Route Map
 
-Aegir - multi-moon gas giant system. HECTON-8 - mid-orbit ocean moon, где tides, storms и relay geometry делают rescue conditional.
+Aegir is a gas giant system with enough moon traffic to turn the sky into operational pressure. HECTON-8 occupies one mid-route position, with tides, storms and relay geometry that make recovery conditional even when the carrier exists. Other moons matter because they bend schedules: inner relay hazards, ice scatter, dead beacons, radiation cover and transfer bands all change what a claim can promise.
 
 ## Scanner
 
-Publication module: Aegir map. Moons explain relay, radiation, scatter и rescue timing.
+System map record. Aegir moons define relay timing, radiation cover, ice scatter, tide pressure and recovery geometry.
 
 ## Terminal
 
-PUBLIC MODULE AEGIR: keep moon names as labels; route function is canon. Spoiler-gate Atlas payload consequences.
+PUBLIC ARCHIVE NODE // AEGIR MOON LADDER. Moon names are route labels. Each body changes signal age, transfer risk, storm exposure or custody timing.
 
 ## Audio
 
-Карта - не фон. Это причина, почему никто не приходит, когда ты просишь.
+The map is why no one arrives the moment you ask.
 
 ## Field Note
 
-Для Aegir public map, article art и route-window captions.
+Marauder note: mark the moon, then mark what it does to the route.
 
 <!-- External Site; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/ru_RU. -->

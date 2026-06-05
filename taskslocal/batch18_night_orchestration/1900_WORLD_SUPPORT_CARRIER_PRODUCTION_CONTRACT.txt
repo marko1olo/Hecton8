@@ -1,0 +1,86 @@
+ID: 1900
+TITLE: WORLD_SUPPORT_CARRIER_PRODUCTION_CONTRACT
+MODE: REPORT_ONLY_STATIC_SUPPORT_CARRIER_CONTRACT
+
+You are HECTON-8 batch agent 1900.
+Do not edit source, assets, prefabs, scenes, binaries, `.meta`, generated meshes, DataMonolith, task files, or sibling outputs.
+
+PRIMARY GOAL
+
+Create the production carrier contract for the nine WorldSupport final primitive blockers. This must separate hidden gameplay truth from visible premium carrier art and define how future implementation can replace primitive visible carriers without breaking spawn/resource/hazard/safe-pocket systems.
+
+READ
+
+- `AGENTS.md`
+- `PROJECT_BIBLES.md`
+- `VISION_LOCKS.md`
+- `TASTE.md`
+- `quality.md`
+- `world.md`
+- `terrain.md`
+- `creatures.md`
+- `vfx.md`
+- `3dmodel.md`
+- `3DMODEL_TEXTURES_MATERIALS.md`
+- `PROCEDURAL_ASSET_PIPELINE.md`
+- `Docs/Reports/Batch18/1851_GENERATED_ASSET_PRODUCTION_AUDIT.md`
+- `Docs/Reports/Batch18/1854_WORLD_SUPPORT_VISIBLE_CARRIER_REPLACEMENT_PACKET.md`
+- `Docs/Reports/Batch18/1858_GENERATED_FLORA_GEOLOGY_MANIFEST_PROOF_PACKET.md`
+
+Targeted reads:
+
+- WorldSupport final prefabs YAML by static text only
+- WorldSupport/procedural family assets by targeted search
+- flora/geology source folders listed in 1854
+
+Mandates:
+
+- `.agents-skills/QA_Evidence_Text_Filter_Audit.txt`
+- `.agents-skills/REND_Instanced_Flora_Physics.txt`
+- `.agents-skills/REND_Terrain_VirtualTexturing.txt`
+- `.agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt`
+
+OUTPUTS YOU OWN
+
+- `Docs/Reports/Batch18/1900_WORLD_SUPPORT_CARRIER_PRODUCTION_CONTRACT.md`
+- `Docs/Reports/Batch18/1900_WORLD_SUPPORT_CARRIER_PRODUCTION_MATRIX.csv`
+- `Docs/Tasks/Status_1900.md`
+- `Docs/AgentLogs/Rationale_1900.md`
+- `Docs/AgentLogs/LOG_1900.md`
+
+CSV COLUMNS
+
+- `support_family`
+- `current_prefab`
+- `hidden_truth_owner`
+- `visible_carrier_concept`
+- `allowed_source_ingredients`
+- `forbidden_shortcut`
+- `future_authoring_route`
+- `proof_required`
+- `status`
+
+REQUIRED WORK
+
+1. Cover all nine support blockers from 1854.
+2. Define hidden truth owner vs visible carrier for each.
+3. Define valid flora/geology/source ingredients and invalid proxy/placeholder shortcuts.
+4. Define future authoring scripts/data routes and output folders.
+5. Define material/texture/vertex-color contracts.
+6. Define collider and trigger policy.
+7. Define screenshot/profiler/Frame Debugger proof requirements.
+8. Define compact/middle/high/ultra consequences.
+9. Do not implement source.
+10. Do not claim Unity/runtime proof.
+
+VERIFICATION
+
+Run and record:
+
+- `git diff --check -- Docs/Reports/Batch18/1900_WORLD_SUPPORT_CARRIER_PRODUCTION_CONTRACT.md Docs/Reports/Batch18/1900_WORLD_SUPPORT_CARRIER_PRODUCTION_MATRIX.csv Docs/Tasks/Status_1900.md Docs/AgentLogs/Rationale_1900.md Docs/AgentLogs/LOG_1900.md`
+- `Import-Csv Docs/Reports/Batch18/1900_WORLD_SUPPORT_CARRIER_PRODUCTION_MATRIX.csv | Measure-Object`
+- static term cross-check for `family.creature.spawn.passive`, `family.pocket.safe`, `hidden truth`, `visible carrier`, `WorldProceduralProxy`, `Subnautica`, `PENDING UNITY`.
+
+FINAL RESPONSE
+
+Report changed files, CSV row count, top implementation risk, and exact future owner scope.

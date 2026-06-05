@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
 # Подписи Return Action Queue
 
-Подписи Return Action Queue закрепляют настоящее давление Deep Reach для HECTON-8.
+Return Action Queue signatures keep Deep Reach pressure alive in the present through delayed packets, carrier clauses, and payload-first recovery.
 
 ## Scanner
 
@@ -32,6 +32,6 @@ SIGNATURE SEED: Amara Keene, Return Action Queue. Функция: ставит p
 
 ## Field Note
 
-Return Action signatures нужны там, где давление Deep Reach приходит через delayed packets, carrier clauses или payload bargains.
+Return Action signatures mark delayed packets, carrier clauses, payload bargains, and present-tense pressure from Deep Reach.
 
 <!-- External Site; generated from P205_RETURN_ACTION_QUEUE_SIGNATURES/ru_RU. -->

@@ -38,6 +38,16 @@ Current source must be checked before implementing against old target names.
 | `BenchmarkRunner.cs` | target label; current tooling may be budget controller / verification probe code |
 | `ControlRemapper.cs`, `AccessibilitySettings.cs` | target labels; current rebind UI source owns concrete route |
 
+## 2026-06-05 Exact Core Anchors
+
+Evidence class: STATIC_SOURCE / STATIC_DOC. These anchors prove source visibility and contract intent only. Compile, Unity import, Play Mode, profiler, GC, save/load, player-build, and platform behavior remain PENDING VERIFICATION.
+
+| Source file | Owner | Static route / phase boundary | Hot-path prohibitions | Fault / black-box boundary | Missing proof |
+|---|---|---|---|---|---|
+| `Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs` | `Hecton8.Core.Contracts.Signals` DTO family owned by Core signal contracts | 105 explicit-layout `ISignal` payload structs plus one `ISignalSnapshotTransformer<CombatDamageSignal>`; configured through `SignalBus<T>`/retained `GlobalSignals` surfaces outside the DTO file; producer and consumer phases remain owner-specific, not declared in this file | Payloads are unmanaged records only: no managed strings, arrays, delegates, or Unity object references are accepted for hot signals | Includes telemetry/fault-facing payloads such as `CrashTelemetrySignal`, `TelemetryAnomalySignal`, `MemoryPressureSignal`, and `FramePacingWarningSignal`; payload existence is not dump implementation proof | duplicate-lane source scan, layout validator artifact, compile/import result, runtime lane stress, overflow telemetry, GC/profiler capture |
+| `Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs` | `Hecton8.Core.Persistence.Paging.H8BinaryWorldPager`; vault owner `SystemID.SavePersistence` | world page route: `world_data.h8bin` plus `h8_delta.wal`; cold `GlobalRegistry.DataVault` lookup, `IGlobalRegistryHotSwapListener`, background worker loop; no dispatcher phase is statically declared for caller-side enqueue/copy APIs | Save/page callers must not use this as a per-frame blocking read/write path; native staging must remain bounded and owner-owned | 300-entry `SaveWorldPagerTelemetryRing` is declared; dump names are declared, but static source shows `WriteBlackBoxDumps` and `WriteBlackBoxDump` bodies empty | page read/write roundtrip, WAL replay/corruption, dump artifact, DataVault ownership review, GC/profiler, player save/load |
+| `Assets/_Project/Scripts/Core/Memory/VaultMemoryContracts.cs` | Core DataVault memory sovereignty contracts, `SystemID.CoreDataVault` | explicit layout records, `VaultBufferContract`, `VaultSovereigntyTelemetry`, and `VaultSovereigntyMaintenance`; maintenance source states Core `PRE_SIMULATION` FrostTick work | Consumers resolve generation-checked handles/slices; no private persistent native ownership, scene search, or hot registry polling is accepted by contract | 300-entry `VaultSovereigntyTelemetryRing`; planned dump target `Docs/AgentLogs/Dump_SHINOBU_100.bin`, absent until a fault export writes it; stale-handle/generation/fault data belongs here | ABI/layout report, compile/import, mutation-guard stress, telemetry dump artifact, GC/profiler, weak-hardware cadence proof |
+
 ## Save Versioning and Migration
 
 Required:

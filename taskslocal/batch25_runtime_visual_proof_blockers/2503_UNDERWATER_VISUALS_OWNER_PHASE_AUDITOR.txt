@@ -1,0 +1,42 @@
+<AGENT_PROMPT id="2503">
+You are Batch25 agent 2503 for HECTON-8.
+
+Mission:
+Audit `HectonUnderwaterVisuals` ownership, serialization, and GlobalRegistry phase so the Unity owner has an exact route to clean proof.
+
+Context:
+Live capture at 19:05 showed warnings:
+- `[HectonUnderwaterVisuals] biomePalette not assigned.`
+- `[HectonUnderwaterVisuals] oceanUnderwaterMaterial not assigned.`
+- `[HectonUnderwaterVisuals] skyMaterial not assigned.`
+Static scene grep later shows one `HectonUnderwaterVisuals` block now has those references assigned, but `sunVisualTransform` route also appears as `{fileID: 0}` for a related celestial component.
+
+Read:
+- `AGENTS.md`
+- `.agents-skills/ARCH_Global_Registry_ServiceLocator_DI_Init.txt`
+- `.agents-skills/REND_Shader_Noir_Aesthetics_Dithering_Fog.txt`
+- `.agents-skills/QA_Evidence_Text_Filter_Audit.txt`
+- `Assets/_Project/Scripts/HectonUnderwaterVisuals.cs`
+- `Assets/_Project/Scripts/HectonCelestialEngine.cs`
+- `Assets/_Project/Scenes/02_HECTON_WORLD.unity` only around related component blocks
+- relevant material/meta GUIDs if needed
+
+Do:
+1. Identify all serialized `HectonUnderwaterVisuals` instances in `02_HECTON_WORLD`.
+2. Identify the exact component block with palette/material/sky assignments and the one(s) with unresolved `sunVisualTransform`.
+3. Identify registration timing for `GlobalRegistry.RegisterUnderwaterVisualsRuntime`.
+4. Determine whether registration can occur after ready-lock and why.
+5. Determine what clean proof must log after the Unity owner fix.
+6. Produce an exact checklist for Unity owner and a static YAML validation checklist.
+
+Output:
+- `Docs/Reports/Batch25/2503_UNDERWATER_VISUALS_OWNER_PHASE_AUDIT.md`
+- `Docs/Tasks/Status_2503.md`
+- `Docs/AgentLogs/LOG_2503.md`
+
+Forbidden:
+- No Unity.
+- No build.
+- No edits.
+- Do not recommend scene search/hot registration in runtime.
+</AGENT_PROMPT>

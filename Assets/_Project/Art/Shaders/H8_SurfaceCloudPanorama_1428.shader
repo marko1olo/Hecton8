@@ -80,6 +80,7 @@ Shader "HECTON/Sky/H8_SurfaceCloudPanorama_1428"
             {
                 float4 positionCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
+                float3 localDir : TEXCOORD1;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
@@ -92,6 +93,7 @@ Shader "HECTON/Sky/H8_SurfaceCloudPanorama_1428"
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
                 output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
                 output.uv = input.uv;
+                output.localDir = normalize(input.positionOS.xyz);
                 return output;
             }
 
@@ -105,25 +107,39 @@ Shader "HECTON/Sky/H8_SurfaceCloudPanorama_1428"
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
-                float2 uv = input.uv;
-                half vertical = saturate((half)uv.y);
-                half3 sky = lerp(_HorizonColor.rgb, _ZenithColor.rgb, smoothstep(0.02h, 1.0h, vertical));
+                float3 dir = normalize(input.localDir);
+                float u = frac(atan2(dir.x, dir.z) * 0.15915494309 + 0.73);
+                half vertical = saturate((half)(dir.y * 0.5 + 0.5));
+                half skyT = smoothstep(0.40h, 0.90h, vertical);
+                half3 sky = lerp(_HorizonColor.rgb, _ZenithColor.rgb, skyT);
 
-                float2 flowA = uv * _FlowA.zw + _Time.y * _FlowA.xy;
-                float2 flowB = uv * _FlowB.zw + _Time.y * _FlowB.xy + float2(0.21, 0.37);
+                float2 panoramaUv = float2(u, saturate(0.16 + vertical * 0.66));
+                float2 flowA = float2(
+                    frac(panoramaUv.x * _FlowA.z + _Time.y * _FlowA.x),
+                    frac(panoramaUv.y * _FlowA.w + _Time.y * _FlowA.y));
+                float2 flowB = float2(
+                    frac(panoramaUv.x * _FlowB.z + 0.21 + _Time.y * _FlowB.x),
+                    frac(panoramaUv.y * _FlowB.w + 0.37 + _Time.y * _FlowB.y));
                 half3 cloudA = (half3)SAMPLE_TEXTURE2D(_CloudTexA, sampler_CloudTexA, flowA).rgb;
                 half3 cloudB = (half3)SAMPLE_TEXTURE2D(_CloudTexB, sampler_CloudTexB, flowB).rgb;
-                half cloudSignal = saturate(Luma(cloudA) * 0.72h + Luma(cloudB) * 0.46h);
-                half cloudMask = smoothstep(_CloudThreshold, _CloudThreshold + _CloudSoftness, cloudSignal);
-                half horizonFade = smoothstep(0.05h, 0.34h, vertical);
-                half highFade = 1.0h - smoothstep(0.92h, 1.0h, vertical);
-                cloudMask *= horizonFade * highFade * _CloudOpacity;
+                half lumaA = Luma(cloudA);
+                half lumaB = Luma(cloudB);
+                half cloudSignal = saturate(lumaA * 0.82h + lumaB * 0.44h);
+                half billowMask = smoothstep(_CloudThreshold, _CloudThreshold + _CloudSoftness, cloudSignal);
+                half cirrusMask = smoothstep(0.08h, 0.42h, saturate(lumaB * 1.55h - lumaA * 0.035h));
+                half horizonFade = smoothstep(0.47h, 0.56h, vertical);
+                half highFade = 1.0h - smoothstep(0.90h, 1.0h, vertical);
+                half horizonShelf = (1.0h - smoothstep(0.53h, 0.66h, vertical)) * smoothstep(0.455h, 0.50h, vertical);
+                half zenithClear = smoothstep(0.70h, 0.98h, vertical);
+                half highCloudBudget = lerp(1.0h, 0.58h, zenithClear);
+                half cloudBand = horizonFade * highFade * highCloudBudget;
+                half cloudMask = saturate((billowMask + cirrusMask * 0.42h + horizonShelf * lumaA * 0.34h) * cloudBand * _CloudOpacity);
 
-                half detail = saturate((Luma(cloudA) - Luma(cloudB)) * 0.5h + 0.5h);
+                half detail = saturate((lumaA - lumaB) * 0.46h + 0.58h);
                 half3 cloudColor = lerp(_CloudShadow.rgb, _CloudLit.rgb, detail);
                 half3 color = lerp(sky, cloudColor, cloudMask);
 
-                half mist = (1.0h - smoothstep(0.08h, 0.26h, vertical)) * _HorizonMist;
+                half mist = (1.0h - smoothstep(0.50h, 0.62h, vertical)) * _HorizonMist;
                 color = lerp(color, _HorizonColor.rgb, mist);
                 return half4(color * _Exposure, 1.0h);
             }

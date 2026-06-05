@@ -1,5 +1,11 @@
 ﻿# Player Feedback Taxonomy And Triage
 
+## Authority Boundary
+
+Static feedback taxonomy only. Feedback classes, severity rows, survey plans, and digest templates do not prove quality, release, platform, Steam, wishlist, demo, performance, review/forum response, support-route, localization, monitoring, operations, launch, or public-response readiness.
+Public voice routes to root `textes.md`. Quality, release, platform, Steam, wishlist, demo, performance, feedback, review/forum response, legal/compliance, localization, monitoring, operations, partnership, contract, and launch claims route through root `quality.md`, `release.md`, and `platform.md` with current proof artifacts plus local permission gates where present.
+No launch/release readiness, localized public use, public response, creator contract send, platform claim, Steam approval, wishlist claim, demo approval, feedback-validity claim, or public send approval exists from taxonomy rows, comments, surveys, or static feedback digests.
+
 Status: feedback operating model / pre-public
 Public stance: single-player-first scope / proof-first public copy
 Runtime impact: none

@@ -1,0 +1,33 @@
+{
+  "id": "TX_B31_PhoticShellSandSubstrate_2102",
+  "evidence_class": "LOCAL_SOURCE_BAKE_STATIC_ONLY",
+  "source": "Docs/GeneratedAssets/Gemini/Outputs/Batch21/TX_B21_PhoticShellSandSubstrate_AlbedoSource_20260604_Gemini_164642.png",
+  "note": "Bright shell sand source. Good shallow-route source; still requires PBR authoring and seam proof.",
+  "not_unity_imported": true,
+  "not_visual_acceptance": true,
+  "requires": [
+    "Unity material binding",
+    "BC7/BC5 import settings",
+    "2x2 seam review",
+    "route screenshot proof",
+    "MRAO channel convention verification"
+  ],
+  "outputs": {
+    "source_crop": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_PhoticShellSandSubstrate_2102/TX_B31_PhoticShellSandSubstrate_2102_SourceCrop.png",
+    "albedo": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_PhoticShellSandSubstrate_2102/TX_B31_PhoticShellSandSubstrate_2102_AlbedoSource.png",
+    "height": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_PhoticShellSandSubstrate_2102/TX_B31_PhoticShellSandSubstrate_2102_HeightSource.png",
+    "normal": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_PhoticShellSandSubstrate_2102/TX_B31_PhoticShellSandSubstrate_2102_NormalSource.png",
+    "mrao": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_PhoticShellSandSubstrate_2102/TX_B31_PhoticShellSandSubstrate_2102_MRAOSource.png",
+    "tile2x2": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_PhoticShellSandSubstrate_2102/TX_B31_PhoticShellSandSubstrate_2102_Albedo_tile2x2.png",
+    "normal_tile2x2": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_PhoticShellSandSubstrate_2102/TX_B31_PhoticShellSandSubstrate_2102_Normal_tile2x2.png"
+  },
+  "sha256": {
+    "source_crop": "cf8bde94f8f27bad273e63c3455fa8a7f3d46e7700d2e6a7759482a6afe8adac",
+    "albedo": "b2143da41b9c0f489996fcca3502d457b01c40911a9e357ddbdf814d4fee4cd9",
+    "height": "fc05442d7dbe77ced55f2cf4a28f21a25249bc952b492e6bd5e224b9dbad8bc7",
+    "normal": "eb8047e159a8f96f28ad826df9fa725577aaad160c0c78645ee75a606e2cb31f",
+    "mrao": "d674f6770d9388c2785226af876e2df452707d6d18879e9025e9a4f00b4fcdb1",
+    "tile2x2": "591cad77977d5ae6716ad326911991412fcaee539d47eaa46b66655481e30fb9",
+    "normal_tile2x2": "969e222f505491d7b09faaf98aace490a85e8172c04f4da702580d2ca274aa46"
+  }
+}

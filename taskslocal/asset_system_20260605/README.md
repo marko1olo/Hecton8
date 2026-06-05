@@ -1,0 +1,225 @@
+# Asset System Local Tasks - 2026-06-05
+
+Purpose: continue asset-only recovery work without inventing batch IDs or writing Status/Rationale logs.
+
+Required first read:
+
+- `Docs/AssetAudit/README.md`
+- `Docs/AssetAudit/ASSET_AUTHORING_TOOL_INVENTORY_20260605.md`
+- `Docs/AssetAudit/ASSET_AUTHORING_TOOL_INVENTORY_20260605.csv`
+- `Docs/AssetAudit/ASSET_PROOF_ARTIFACT_INDEX_20260605.md`
+- `Docs/AssetAudit/ASSET_PROOF_ARTIFACT_INDEX_20260605.csv`
+- `Docs/AssetAudit/GENERATED_SOURCE_PACK_FILE_INVENTORY_20260605.md`
+- `Docs/AssetAudit/GENERATED_SOURCE_PACK_FILE_INVENTORY_20260605.csv`
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.md`
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`
+- `Docs/AssetAudit/ASSET_STATIC_ROW_BLOCKER_SUMMARY_20260605.md`
+- `Docs/AssetAudit/ASSET_STATIC_ROW_BLOCKER_SUMMARY_20260605.csv`
+- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`
+- `Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.md`
+- `Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.csv`
+- `Docs/AssetAudit/AUDIO_ASSET_TAXONOMY_20260605.md`
+- `Docs/AssetAudit/AUDIO_ASSET_TAXONOMY_20260605.csv`
+- `Docs/AssetAudit/AUDIO_FILE_TECHNICAL_PROPERTIES_20260605.md`
+- `Docs/AssetAudit/AUDIO_FILE_TECHNICAL_PROPERTIES_20260605.csv`
+- `Docs/AssetAudit/AUDIO_LOUDNESS_TECHNICAL_PROPERTIES_20260605.md`
+- `Docs/AssetAudit/AUDIO_LOUDNESS_TECHNICAL_PROPERTIES_20260605.csv`
+- `Docs/AssetAudit/AUDIO_SOURCE_FOLDER_ROUTE_MATRIX_20260605.md`
+- `Docs/AssetAudit/AUDIO_SOURCE_FOLDER_ROUTE_MATRIX_20260605.csv`
+- `Docs/AssetAudit/AUDIO_PROFILE_ROUTE_MATRIX_20260605.md`
+- `Docs/AssetAudit/AUDIO_PROFILE_ROUTE_MATRIX_20260605.csv`
+- `Docs/AssetAudit/AUDIO_DIRECT_REF_DETAIL_20260605.md`
+- `Docs/AssetAudit/AUDIO_DIRECT_REF_DETAIL_20260605.csv`
+- `Docs/AssetAudit/VISUAL_MESH_ASSET_TAXONOMY_20260605.md`
+- `Docs/AssetAudit/VISUAL_MESH_ASSET_TAXONOMY_20260605.csv`
+- `Docs/AssetAudit/MODEL_FILE_IMPORT_RISK_MATRIX_20260605.md`
+- `Docs/AssetAudit/MODEL_FILE_IMPORT_RISK_MATRIX_20260605.csv`
+- `Docs/AssetAudit/PREFAB_FILE_TECHNICAL_PROPERTIES_20260605.md`
+- `Docs/AssetAudit/PREFAB_FILE_TECHNICAL_PROPERTIES_20260605.csv`
+- `Docs/AssetAudit/MESH_PREFAB_SOURCE_FOLDER_ROUTE_MATRIX_20260605.md`
+- `Docs/AssetAudit/MESH_PREFAB_SOURCE_FOLDER_ROUTE_MATRIX_20260605.csv`
+- `Docs/AssetAudit/TEXTURE_MATERIAL_FAMILY_ROUTE_MATRIX_20260605.md`
+- `Docs/AssetAudit/TEXTURE_MATERIAL_FAMILY_ROUTE_MATRIX_20260605.csv`
+- `Docs/AssetAudit/TEXTURE_FILE_TECHNICAL_PROPERTIES_20260605.md`
+- `Docs/AssetAudit/TEXTURE_FILE_TECHNICAL_PROPERTIES_20260605.csv`
+- `Docs/AssetAudit/TEXTURE_DUPLICATE_HASH_MATRIX_20260605.md`
+- `Docs/AssetAudit/TEXTURE_DUPLICATE_HASH_MATRIX_20260605.csv`
+- `Docs/AssetAudit/TEXTURE_SOURCE_FOLDER_ROUTE_MATRIX_20260605.md`
+- `Docs/AssetAudit/TEXTURE_SOURCE_FOLDER_ROUTE_MATRIX_20260605.csv`
+- `Docs/AssetAudit/TEXTURE_ACTIVE_ROUTE_BLOCKER_DETAIL_20260605.md`
+- `Docs/AssetAudit/TEXTURE_ACTIVE_ROUTE_BLOCKER_DETAIL_20260605.csv`
+- `Docs/AssetAudit/MATERIAL_FILE_TECHNICAL_PROPERTIES_20260605.md`
+- `Docs/AssetAudit/MATERIAL_FILE_TECHNICAL_PROPERTIES_20260605.csv`
+- `Docs/AssetAudit/ASSET_ACTION_QUEUE_20260605.md`
+- `Docs/AssetAudit/ASSET_ACTION_QUEUE_20260605.csv`
+- `Docs/AssetAudit/TEXTURE_AUTHORING_RECIPES_20260605.md`
+- `Docs/AssetAudit/SOURCE_PROTOTYPE_REVIEW_20260605.md`
+- `Docs/AssetAudit/SOURCE_PROTOTYPE_CLEANUP_REVIEW_20260605.md`
+- `Docs/GeneratedAssets/AssetSystem_20260605/CleanupPass_20260605/CleanupPass_MANIFEST_20260605.md`
+- `Docs/AssetAudit/TEXTURE_IMPORT_ROLE_MATRIX_20260605.md`
+- `Docs/AssetAudit/TEXTURE_IMPORT_ROLE_MATRIX_20260605.csv`
+- `Docs/AssetAudit/ADDRESSABLES_ASSET_GROUP_PLAN_20260605.md`
+- `Docs/AssetAudit/ADDRESSABLES_ASSET_GROUP_PLAN_20260605.csv`
+- `Docs/AssetAudit/AUDIO_ROUTING_REMEDIATION_SPEC_20260605.md`
+- `Docs/AssetAudit/AUDIO_IMPORT_POLICY_EXCEPTION_TABLE_20260605.md`
+- `Docs/AssetAudit/AUDIO_IMPORT_POLICY_EXCEPTION_TABLE_20260605.csv`
+- `Docs/AssetAudit/AUDIO_LISTENING_PASS_QUEUE_20260605.md`
+- `Docs/AssetAudit/AUDIO_LISTENING_PASS_QUEUE_20260605.csv`
+- `Docs/AssetAudit/VISUAL_ASSET_REVIEW_QUEUE_20260605.md`
+- `Docs/AssetAudit/VISUAL_ASSET_REVIEW_QUEUE_20260605.csv`
+- `Docs/AssetAudit/MESH_PREFAB_REVIEW_QUEUE_20260605.md`
+- `Docs/AssetAudit/MESH_PREFAB_REVIEW_QUEUE_20260605.csv`
+- `Docs/Audio/audio_remediation_matrix_20260605.csv`
+- `Docs/AssetAudit/AUDIO_REMEDIATION_MATRIX_REVIEW_20260605.md`
+- `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md`
+- `Docs/AssetAudit/TEXTURE_ASSET_STATIC_LEDGER_20260605.csv`
+- `Docs/AssetAudit/AUDIO_ASSET_STATIC_LEDGER_20260605.csv`
+- `Docs/AssetAudit/TEXTURE_VISUAL_REVIEW_20260605.md`
+- `Docs/AssetAudit/AUDIO_WAVEFORM_REVIEW_20260605.md`
+- `Docs/AssetAudit/TEXTURE_MATERIAL_USAGE_REVIEW_20260605.md`
+- `Docs/AssetAudit/AUDIO_PROFILE_USAGE_REVIEW_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_WORKER_BOARD_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_HYGIENE_SWEEP_20260605.md`
+- `Docs/GeneratedAssets/AssetSystem_20260605/TEXTURE_AUTHORING_MANIFEST_3212_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/AUDIO_POLICY_CONFLICT_AND_CUE_DISPOSITION_3213_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/MESH_PREFAB_PROMOTION_STATIC_TABLE_3214_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/MATERIAL_READBACK_PREFLIGHT_STATIC_BLOCKERS_3215_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/UI_SPRITE_ROUTE_STATIC_TABLE_3216_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/AUDIO_IMPORT_POLICY_DECISION_BRIEF_3217_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ADDRESSABLES_STATIC_COVERAGE_GAP_3218_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ADDRESSABLES_GROUP_PLAN_3220_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/AUDIO_POLICY_ADOPTION_DRAFT_3221_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_PLANNING_CONSOLIDATION_3222_20260605.md`
+- `Docs/AssetAudit/ADDRESSABLES_ASSET_GROUP_PLAN_20260605.md`
+- `Docs/AssetAudit/ADDRESSABLES_ASSET_GROUP_PLAN_20260605.csv`
+- `Docs/AssetAudit/AUDIO_IMPORT_POLICY_EXCEPTION_TABLE_20260605.md`
+- `Docs/AssetAudit/AUDIO_IMPORT_POLICY_EXCEPTION_TABLE_20260605.csv`
+
+Evidence rule: all current asset readiness is `PENDING VERIFICATION` unless the assigned owner produces fresh proof. Static source scans do not prove Unity import, material binding, runtime audio behavior, VRAM safety, or visual quality.
+
+Current start-here navigator:
+
+- `Docs/AssetAudit/README.md` is the first handoff file for future asset agents. It states the current P0 blockers, evidence boundary, hard rejections, process gate, owner map, and Low/Middle/High/Ultra consequences.
+- `Docs/AssetAudit/ASSET_PROOF_ARTIFACT_INDEX_20260605.md/.csv` maps existing contact sheets, waveform sheets, generated source packs, and taxonomy artifacts without treating them as acceptance.
+- `Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.md/.csv` is the compact dispatch board for current P0/P1 asset owners.
+- `Docs/AssetAudit/ASSET_STATIC_ROW_BLOCKER_SUMMARY_20260605.md/.csv` is the compact cross-domain row-risk board for assigning packet owners without reading every source CSV row first.
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.md/.csv` maps the current asset-front files so future agents do not bulk-read unrelated reports.
+- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` records current static parse hygiene for 17 asset CSVs.
+- `Docs/AssetAudit/ASSET_AUTHORING_TOOL_INVENTORY_20260605.md/.csv` maps existing local offline/editor tools so future owners reuse known generators/scanners instead of inventing new ones.
+- `Docs/AssetAudit/AUDIO_PROFILE_ROUTE_MATRIX_20260605.md/.csv` maps MusicDirector/profile/cue-family blockers before audio owners touch route data.
+- `Docs/AssetAudit/AUDIO_SOURCE_FOLDER_ROUTE_MATRIX_20260605.md/.csv` maps audio source folders to long-bed, low-Q, direct-ref, placeholder, owner, and Addressables risks.
+- `Docs/AssetAudit/AUDIO_LOUDNESS_TECHNICAL_PROPERTIES_20260605.md/.csv` maps source loudness probes for short/critical rows and explicit deferred long-bed rows; no runtime mix/listening proof exists.
+- `Docs/AssetAudit/TEXTURE_MATERIAL_FAMILY_ROUTE_MATRIX_20260605.md/.csv` maps texture/material families to route moments, blockers, proof artifacts, import rows, and rejection rules.
+- `Docs/AssetAudit/TEXTURE_SOURCE_FOLDER_ROUTE_MATRIX_20260605.md/.csv` maps texture source folders to generated/source-only, active-route, proxy, visible-user, streaming-mip, and owner risks.
+- `Docs/AssetAudit/TEXTURE_DUPLICATE_HASH_MATRIX_20260605.md/.csv` maps exact hash, same-basename, and family-name duplicate risks; no deletion authorization.
+- `Docs/AssetAudit/MATERIAL_FILE_TECHNICAL_PROPERTIES_20260605.md/.csv` maps serialized material shader/texture/proxy/Crest route tokens before Unity material readback.
+- `Docs/AssetAudit/PREFAB_FILE_TECHNICAL_PROPERTIES_20260605.md/.csv` maps row-level prefab token risks before Unity prefab readback.
+- `Docs/AssetAudit/MODEL_FILE_IMPORT_RISK_MATRIX_20260605.md/.csv` maps first-party model source/meta import risks before Unity model importer readback.
+- `Docs/AssetAudit/MESH_PREFAB_SOURCE_FOLDER_ROUTE_MATRIX_20260605.md/.csv` maps prefab folders to LOD token, primitive mesh ref, MeshCollider, proxy/placeholder, and owner risks.
+- `taskslocal/asset_system_20260605/ASSET_OWNER_08_AUDIO_DIRECT_REF_UNWIRING_PACKET.md` is the exact packet for `Player.prefab` direct `AudioClip` refs.
+- `taskslocal/asset_system_20260605/ASSET_OWNER_09_TEXTURE_MATERIAL_IMPORT_BLOCKERS_PACKET.md` is the exact packet for texture/material blocker rows and safe import/material execution.
+- `taskslocal/asset_system_20260605/ASSET_OWNER_10_MUSICDIRECTOR_AUDIO_ROUTING_PACKET.md` is the exact packet for MusicDirector mixer/profile/cue routing blockers.
+- `taskslocal/asset_system_20260605/ASSET_OWNER_11_WATER_FOAM_CONTACT_AUTHORING_PACKET.md` is the exact packet for rejected active-route water foam/contact source replacement.
+- `taskslocal/asset_system_20260605/ASSET_OWNER_12_FLORA_PROXY_MATERIAL_REPLACEMENT_PACKET.md` is the exact packet for active-world `WorldProceduralProxy` flora/coral/kelp material replacement.
+- `taskslocal/asset_system_20260605/ASSET_OWNER_13_PRODUCT_FACE_PREFAB_PRIMITIVE_REPLACEMENT_PACKET.md` is the exact packet for visible product-face primitive prefab replacement.
+- `taskslocal/asset_system_20260605/ASSET_OWNER_14_SKY_AEGIR_CLOUD_SLOT_PROOF_PACKET.md` is the exact packet for sky/Aegir/cloud/moon source-slot proof and future replacement routing.
+- `taskslocal/asset_system_20260605/ASSET_OWNER_15_ADDRESSABLES_ASSET_GROUP_EXECUTION_BLOCKERS_PACKET.md` is the exact packet for Addressables group/key/lifecycle execution blockers.
+- `taskslocal/asset_system_20260605/ASSET_OWNER_16_TERRAIN_GEOLOGY_PBR_AUTHORING_PACKET.md` is the exact packet for terrain/geology PBR authoring and import proof routing.
+- `taskslocal/asset_system_20260605/ASSET_OWNER_17_UI_OXYGEN_SPRITE_ATLAS_PACKET.md` is the exact packet for UI oxygen sprite/atlas route cleanup.
+- `taskslocal/asset_system_20260605/ASSET_OWNER_18_PRODUCT_FACE_VALIDATOR_EVIDENCE_PACKET.md` is the exact packet for product-face validator execution and evidence interpretation.
+- `taskslocal/asset_system_20260605/ASSET_OWNER_19_AUDIO_IMPORT_AUTHORITY_ADOPTION_PACKET.md` is the exact packet for audio import authority adoption prerequisites.
+- `taskslocal/asset_system_20260605/ASSET_OWNER_20_OCEAN_CREST_CONTACT_PROOF_PACKET.md` is the exact packet for ocean/Crest contact proof routing.
+- `taskslocal/asset_system_20260605/ASSET_OWNER_21_TEXTURE_STREAMING_MIP_STATIC_RISK_PACKET.md` is the exact packet for texture streaming mip, hero-scale source, large-source, and sRGB/name-risk remediation.
+- `taskslocal/asset_system_20260605/ASSET_OWNER_22_PREFAB_COLLIDER_LOD_ROW_RISK_PACKET.md` is the exact packet for prefab collider, LOD, primitive mesh, proxy/placeholder, and no-renderer row risk remediation.
+- `taskslocal/asset_system_20260605/ASSET_OWNER_23_AUDIO_SOURCE_TECHNICAL_REMEDIATION_PACKET.md` is the exact packet for long-bed, multichannel, source-rate, import, listening, lifecycle, and DSP route remediation.
+
+Do not:
+
+- raw YAML patch `.mat`, `.prefab`, `.unity`, or `.asset`;
+- promote `WorldProceduralProxy` or `WorldRuntime/ProceduralPlaceholders` into visible route content;
+- clone or wrap Crest materials;
+- launch Unity/build/import while CPU is above gate or `dotnet`/`csc` is active;
+- call any candidate final without screenshots, readback, Console, and stats/proof.
+
+Task files:
+
+- `ASSET_OWNER_01_UNITY_MATERIAL_READBACK.md`
+- `ASSET_OWNER_02_TEXTURE_AUTHORING.md`
+- `ASSET_OWNER_03_AUDIO_LEDGER_LISTENING.md`
+- `ASSET_OWNER_04_MESH_PREFAB_PROMOTION.md`
+- `ASSET_OWNER_05_UI_SPRITE_ROUTE.md`
+- `ASSET_OWNER_06_UNITY_READBACK_EXECUTION_PACKET.md`
+- `ASSET_OWNER_07_TOOL_AND_ROUTE_EXECUTION_PACKET.md`
+- `ASSET_OWNER_08_AUDIO_DIRECT_REF_UNWIRING_PACKET.md`
+- `ASSET_OWNER_09_TEXTURE_MATERIAL_IMPORT_BLOCKERS_PACKET.md`
+- `ASSET_OWNER_10_MUSICDIRECTOR_AUDIO_ROUTING_PACKET.md`
+- `ASSET_OWNER_11_WATER_FOAM_CONTACT_AUTHORING_PACKET.md`
+- `ASSET_OWNER_12_FLORA_PROXY_MATERIAL_REPLACEMENT_PACKET.md`
+- `ASSET_OWNER_13_PRODUCT_FACE_PREFAB_PRIMITIVE_REPLACEMENT_PACKET.md`
+- `ASSET_OWNER_14_SKY_AEGIR_CLOUD_SLOT_PROOF_PACKET.md`
+- `ASSET_OWNER_15_ADDRESSABLES_ASSET_GROUP_EXECUTION_BLOCKERS_PACKET.md`
+- `ASSET_OWNER_16_TERRAIN_GEOLOGY_PBR_AUTHORING_PACKET.md`
+- `ASSET_OWNER_17_UI_OXYGEN_SPRITE_ATLAS_PACKET.md`
+- `ASSET_OWNER_18_PRODUCT_FACE_VALIDATOR_EVIDENCE_PACKET.md`
+- `ASSET_OWNER_19_AUDIO_IMPORT_AUTHORITY_ADOPTION_PACKET.md`
+- `ASSET_OWNER_20_OCEAN_CREST_CONTACT_PROOF_PACKET.md`
+- `ASSET_OWNER_21_TEXTURE_STREAMING_MIP_STATIC_RISK_PACKET.md`
+- `ASSET_OWNER_22_PREFAB_COLLIDER_LOD_ROW_RISK_PACKET.md`
+- `ASSET_OWNER_23_AUDIO_SOURCE_TECHNICAL_REMEDIATION_PACKET.md`
+
+Active follow-up workers:
+
+- Texture/material usage map output exists: `Docs/AssetAudit/TEXTURE_MATERIAL_USAGE_MAP_20260605.csv` and `Docs/AssetAudit/TEXTURE_MATERIAL_USAGE_REVIEW_20260605.md`.
+- Audio/profile usage map output exists: `Docs/Audio/audio_profile_usage_20260605.csv` and `Docs/AssetAudit/AUDIO_PROFILE_USAGE_REVIEW_20260605.md`.
+
+New hard blockers from usage maps:
+
+- `foam.png` is visually rejected but serialized-reachable through active world/ocean users.
+- Four `WorldProceduralProxy` flora/coral/kelp materials are serialized in `02_HECTON_WORLD.unity`.
+- `MusicDirectorConfig_Global.asset` has null music and stinger mixer group refs.
+- `Player.prefab` has direct AudioClip refs; Addressables owner/release route remains unproven.
+
+Dispatch order:
+
+1. P0 water foam active-route replacement/readback.
+2. P0 proxy flora/coral/kelp active-world replacement/readback.
+3. P0 MusicDirector mixer refs and Player prefab direct audio refs.
+4. P1 Aegir/cloud and terrain PBR authoring.
+5. P1/P2 import-role and UI sprite cleanup.
+
+Latest owner packets:
+
+- For step 3 direct `Player.prefab` audio refs, use `ASSET_OWNER_08_AUDIO_DIRECT_REF_UNWIRING_PACKET.md`.
+- For step 3 MusicDirector mixer/profile/cue blockers, use `ASSET_OWNER_10_MUSICDIRECTOR_AUDIO_ROUTING_PACKET.md`.
+- For steps 1, 2, and 4 texture/material blockers, use `ASSET_OWNER_09_TEXTURE_MATERIAL_IMPORT_BLOCKERS_PACKET.md`.
+- For step 1 rejected active-route foam/contact art, use `ASSET_OWNER_11_WATER_FOAM_CONTACT_AUTHORING_PACKET.md`.
+- For step 2 active-world flora/coral/kelp proxy material contamination, use `ASSET_OWNER_12_FLORA_PROXY_MATERIAL_REPLACEMENT_PACKET.md`.
+- For product-face primitive mesh replacement in visible tools/pickups/construction/transport/building/support prefabs, use `ASSET_OWNER_13_PRODUCT_FACE_PREFAB_PRIMITIVE_REPLACEMENT_PACKET.md`.
+- For step 4 sky/Aegir/cloud/moon proof or replacement routing, use `ASSET_OWNER_14_SKY_AEGIR_CLOUD_SLOT_PROOF_PACKET.md`.
+- For Addressables settings/groups/keys/labels/catalogs/load-release execution, use `ASSET_OWNER_15_ADDRESSABLES_ASSET_GROUP_EXECUTION_BLOCKERS_PACKET.md`.
+- For first-exit/photic/medium-depth terrain/geology PBR authoring or source promotion, use `ASSET_OWNER_16_TERRAIN_GEOLOGY_PBR_AUTHORING_PACKET.md`.
+- For HUD oxygen sprite/atlas/import/binding work, use `ASSET_OWNER_17_UI_OXYGEN_SPRITE_ATLAS_PACKET.md`.
+- For product-face validator execution or interpreting validator logs, use `ASSET_OWNER_18_PRODUCT_FACE_VALIDATOR_EVIDENCE_PACKET.md`.
+- For audio stable authority/import-policy exception adoption, use `ASSET_OWNER_19_AUDIO_IMPORT_AUTHORITY_ADOPTION_PACKET.md`.
+- For ocean surface, Crest contact, waterline, foam/contact proof work, use `ASSET_OWNER_20_OCEAN_CREST_CONTACT_PROOF_PACKET.md`.
+- For texture streaming mips, hero-scale source rows, large source rows, or sRGB/name-risk rows, use `ASSET_OWNER_21_TEXTURE_STREAMING_MIP_STATIC_RISK_PACKET.md`.
+- For prefab collider, LOD, primitive mesh, proxy/placeholder, or no-renderer row risks, use `ASSET_OWNER_22_PREFAB_COLLIDER_LOD_ROW_RISK_PACKET.md`.
+- For audio long-bed, multichannel, high-rate, import, listening, lifecycle, or DSP source remediation, use `ASSET_OWNER_23_AUDIO_SOURCE_TECHNICAL_REMEDIATION_PACKET.md`.
+
+Recipe/spec handoff:
+
+- Texture authoring owner must follow `TEXTURE_AUTHORING_RECIPES_20260605.md`.
+- Texture authoring owner must review source-only prototype folders under `Docs/GeneratedAssets/AssetSystem_20260605/` before creating new variants.
+- Current cleanup pass exists under `Docs/GeneratedAssets/AssetSystem_20260605/CleanupPass_20260605/`; it is source-only and not import-ready.
+- Texture import/meta owner must use `TEXTURE_IMPORT_ROLE_MATRIX_20260605.csv` before changing import settings.
+- Addressables owner must use `ADDRESSABLES_ASSET_GROUP_PLAN_20260605.csv` before creating groups, labels, keys, or exceptions. The plan is static only and not readiness proof.
+- Audio owner must follow `AUDIO_ROUTING_REMEDIATION_SPEC_20260605.md`.
+- Audio owner must use `AUDIO_IMPORT_POLICY_EXCEPTION_TABLE_20260605.csv` as a proposed exception table only. It is not stable authority and not import proof.
+- Audio listening owner must use `AUDIO_LISTENING_PASS_QUEUE_20260605.csv` for pass order.
+- Visual review owner must use `VISUAL_ASSET_REVIEW_QUEUE_20260605.csv` for target order.
+- Mesh/prefab owner must use `PREFAB_FILE_TECHNICAL_PROPERTIES_20260605.csv` plus `MESH_PREFAB_REVIEW_QUEUE_20260605.csv` for row-level risk and promotion/rejection order.
+- Audio owner must use `audio_remediation_matrix_20260605.csv` for row-level ordering; it currently has `58` rows and `6` P0 rows.
+- Audio policy inputs are draft-only: `AUDIO_POLICY_ADOPTION_DRAFT_3221_20260605.md` and `AUDIO_IMPORT_POLICY_EXCEPTION_TABLE_20260605.csv` do not change stable authority or import settings.
+- Addressables planning inputs are draft-only: `ADDRESSABLES_GROUP_PLAN_3220_20260605.md` and `ADDRESSABLES_ASSET_GROUP_PLAN_20260605.csv` do not create settings, groups, labels, keys, or catalogs.
+- Planning precedence is consolidated in `ASSET_PLANNING_CONSOLIDATION_3222_20260605.md`; use it before choosing between duplicated Addressables/audio/texture planning artifacts.

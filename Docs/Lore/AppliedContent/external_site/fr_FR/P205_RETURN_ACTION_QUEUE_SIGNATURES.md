@@ -10,13 +10,13 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
 # Return Action Queue Signatures
 
-Return Action Queue Signatures anchors present-tense Deep Reach pressure for HECTON-8.
+Return Action Queue signatures keep Deep Reach pressure alive in the present through delayed packets, carrier clauses, and payload-first recovery.
 
 ## Scanner
 
@@ -32,6 +32,6 @@ They are not ghosts. They are delayed paperwork with engines.
 
 ## Field Note
 
-Use Return Action signatures whenever Deep Reach pressure arrives through delayed packets, carrier clauses or payload bargains.
+Return Action signatures mark delayed packets, carrier clauses, payload bargains, and present-tense pressure from Deep Reach.
 
 <!-- External Site; generated from P205_RETURN_ACTION_QUEUE_SIGNATURES/fr_FR. -->

@@ -5,6 +5,12 @@ Window: before first real gameplay screenshots
 Public stance: single-player-first scope / proof-first campaign copy
 Runtime impact: none
 
+## Authority Boundary
+
+Static marketing plan only. Public voice routes to root `textes.md`.
+Claims about quality, release, platform support, Steam, wishlist, demo/playtest state, performance, spend, audience size, campaign readiness, or publication-readiness route through `quality.md`, `release.md`, `platform.md`, current proof artifacts, and the local permission gates named in this file.
+Rows, tasks, schedules, drafts, prepared copy, or gate names in this file do not approve public send, paid spend, Steam page/demo/wishlist claims, platform claims, or release claims.
+
 ## Objective
 
 Prepare the machinery of marketing before assets exist. This campaign does not ask the public for wishlists. It builds the page, lists, copy, tracking, verification queue, and visual requirements so the first screenshot drop is not improvised.

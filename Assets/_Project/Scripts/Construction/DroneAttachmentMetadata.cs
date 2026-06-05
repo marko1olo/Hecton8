@@ -218,18 +218,27 @@ namespace Hecton8.Construction
             for (int i = 0; i < authoredDescriptors.Length; i++)
             {
                 DroneAttachmentAnchorDescriptor descriptor = authoredDescriptors[i];
+                if (descriptor.AnchorIndex != i)
+                {
+                    failureReason = "DroneAttachmentMetadata table is not anchor-index ordered.";
+                    return false;
+                }
+
                 if ((uint)descriptor.AnchorIndex >= (uint)anchorRefs.Length ||
                     anchorRefs[descriptor.AnchorIndex] == null ||
                     descriptor.AnchorHash == 0u ||
                     descriptor.Kind == DroneAttachmentKind.None ||
                     descriptor.TierMask == 0 ||
                     descriptor.Flags == 0 ||
+                    descriptor.BoneIndex < -1 ||
                     !IsFinite(descriptor.LocalPosition) ||
                     !IsFinite(descriptor.LocalForward) ||
                     !IsFinite(descriptor.LocalUp) ||
                     math.lengthsq(ToFloat3(descriptor.LocalForward)) <= 0.000001f ||
                     math.lengthsq(ToFloat3(descriptor.LocalUp)) <= 0.000001f ||
-                    !math.isfinite(descriptor.MinQualityWeight))
+                    !math.isfinite(descriptor.MinQualityWeight) ||
+                    descriptor.MinQualityWeight < 0f ||
+                    descriptor.MinQualityWeight > 1f)
                 {
                     failureReason = "DroneAttachmentMetadata descriptor validation failed.";
                     return false;

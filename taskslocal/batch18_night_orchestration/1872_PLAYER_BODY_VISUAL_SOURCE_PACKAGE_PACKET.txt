@@ -1,0 +1,71 @@
+<AGENT_PROMPT id="1872">
+ROLE: Player body visual source package architect.
+
+READ FIRST:
+- C:\hades\Hecton8\AGENTS.md
+- C:\hades\Hecton8\PROJECT_BIBLES.md
+- C:\hades\Hecton8\VISION_LOCKS.md
+- C:\hades\Hecton8\TASTE.md
+- C:\hades\Hecton8\quality.md
+- C:\hades\Hecton8\player.md
+- C:\hades\Hecton8\tools.md
+- C:\hades\Hecton8\survival.md
+- C:\hades\Hecton8\3dmodel.md
+- C:\hades\Hecton8\3DMODEL_TEXTURES_MATERIALS.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1864_PRODUCT_FACE_PRIMITIVE_REPLACEMENT_QUEUE.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1864_PRODUCT_FACE_REPLACEMENT_MATRIX.csv
+- C:\hades\Hecton8\Docs\Reports\Batch18\1867_PRODUCT_FACE_PREFAB_AUDIT_GATE.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1868_PRODUCT_FACE_UNITY_VALIDATOR_GATE.md
+- Relevant .agents-skills only: QA_Evidence_Text_Filter_Audit, CORE_Tools_Equipment_Interaction_Raycast_Heat, CORE_Interaction_Deterministic_AUP_NoRuntimeSearch, REND_URP_Graphics_HotPath_Optimization_HLOD.
+
+OWNED WRITE SCOPE:
+- Docs/Tasks/Status_1872.md
+- Docs/AgentLogs/Rationale_1872.md
+- Docs/AgentLogs/LOG_1872.md
+- Docs/Reports/Batch18/1872_PLAYER_BODY_VISUAL_SOURCE_PACKAGE.md
+- Docs/Reports/Batch18/1872_PLAYER_BODY_VISUAL_SOURCE_MATRIX.csv
+
+NO SOURCE/PREFAB/ASSET/SCENE/META/BINARY EDITS.
+NO UNITY MENU, IMPORT, BAKE, PLAYMODE, PROFILER, DOTNET BUILD, OR DATA MONOLITH RUN.
+
+PARALLEL LAW:
+- You are running simultaneously with 1869, 1870, 1871, and 1873.
+- Do not wait for sibling output.
+- Do not modify files outside your owned write scope.
+
+TASK:
+Build a concrete source package for replacing primitive player body visuals in `Assets/_Project/Prefabs/Player.prefab`.
+
+Required work:
+1. Read `Player.prefab` YAML and identify active primitive body parts, disabled primitive visor/body remnants, materials, renderers, colliders, tool anchors, and HUD/visor elements.
+2. Resolve material GUIDs to material paths where possible.
+3. Resolve scripts/components relevant to player body/tool presentation without broad unrelated reads.
+4. Search for existing non-primitive player/suit/body/hand/visor meshes or source routes.
+5. Distinguish usable assets from placeholders, primitives, proxies, diagnostics, or unrelated UI meshes.
+6. Define required player suit visual silhouette: helmet/visor housing, gloves/hands, forearms, shoulder/chest volumes, hose/port seams, hard-shell plates, lamp/tool mounts.
+7. Define first-person and third-person/corpse/distant consequences separately.
+8. Define material/texture identity: graphite/rubber, scratched visor glass, wetness, salt, cyan/amber instrument edges, labels, seals, packed normal/MRAO.
+9. Define collider/proxy split: visual suit separate from movement capsule/body interaction proxies.
+10. Define tool anchor preservation: hand sockets, ray origins, camera/HUD relationships, AUP constraints.
+11. Define LOD/HLOD expectations and distance rules.
+12. Define Low/Middle/High/Ultra consequences using continuous `GlobalQualityWeight`; no ugly low mode.
+13. Define exact proof artifacts: prefab YAML, mesh/material paths, collider split, player capture, first-person tool capture, compact/high captures, profiler/build if presentation path changes.
+14. Identify whether current player body can be temporarily hidden without breaking gameplay, or whether it must be replaced before visual acceptance.
+15. Identify any source route that can accidentally regenerate primitive player body parts. Report only.
+16. Do not alter gameplay truth, movement collider, survival stats, tool grants, AUP, inventory, or HUD logic.
+17. Do not accept the existing non-primitive HUD quad as body replacement.
+18. Do not claim visual acceptance without screenshots.
+19. Do not claim Unity/runtime proof.
+20. Do not edit YAML/assets/source.
+
+OUTPUTS:
+- Markdown packet with exact findings, owner route, body/anchor replacement contract, risks, and proof ladder.
+- CSV with columns:
+  `prefab_path,primitive_body_evidence,current_material_paths,reusable_source_candidates,required_body_parts,required_material_slots,anchors_to_preserve,collider_proxy_split,lod_hlod_expectation,quality_scaling,proof_needed,status,next_owner`
+
+VERIFY:
+- Use static file reads/searches only.
+- Run `git diff --check` only on your owned outputs.
+- Final answer must list outputs and the no-edit/no-Unity guarantee.
+</AGENT_PROMPT>
+

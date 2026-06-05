@@ -119,6 +119,14 @@ No `Pack=1`, no managed fields, no Unity object references.
 - If Vault rows are unavailable, the request stays pending instead of being dropped.
 - Exact runtime GPU timing proof remains pending.
 
+## 2026-06-05 Visor Fluid Distortion Boundary
+
+Evidence class: STATIC_SOURCE / STATIC_DOC only. This addendum does not modify water optics ownership and does not prove Unity import, RenderGraph execution, profiler, GC, or visual quality.
+
+- `Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs` is a separate visor presentation consumer adjacent to this route, not the `_GlobalWaterOptics` owner. It reads cached player wet-lens/hull-stress movement state, diegetic lens globals, rain/ambient/water-density scalars, `IFluidSim` density fallback when available, and `HomeostasisBrain.GlobalQualityWeight`; it writes only visor refraction presentation and `BufferID.VisorRefractionBlackBox` telemetry under `SystemID.Vfx`.
+- RenderGraph ownership stays inside `HectonVisorFluidDistortionFeature.VisorFluidPass`: active color, depth, opaque color, optional lens mask, and imported constant buffers are declared reads; `_HectonVisorFluidDistortion` is the declared write; `resourceData.cameraColor` is the output handoff. The pass is a wet-glass/leak/refraction fake and must not be cited as flooding, fluid simulation, water optics DTO, save, quest, or pressure-damage truth.
+- Proof gaps before any acceptance wording: authored material/compute binding in renderer assets, Frame Debugger or RenderGraph Viewer showing the pass and resource order, compact/high captures showing center HUD and route readability, GC/profiler/GPU timing, and source/static scan that no runtime material factory or hidden shader fallback has returned.
+
 ## Rejected Alternatives
 
 - `Shader.SetGlobalVector`: rejected for per-parameter global churn and missing 64-byte DTO proof.

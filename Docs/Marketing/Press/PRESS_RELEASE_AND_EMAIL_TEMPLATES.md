@@ -4,6 +4,10 @@ Status: draft bank / not send ready
 Owner lane: Marketing / press operations
 Runtime impact: none
 
+## Authority Boundary
+
+Public voice routes through root `textes.md`. Quality, release, platform, Steam, wishlist, demo, performance, launch, presskit, and access claims require `quality.md`, `release.md`, `platform.md`, and current proof artifacts. This file is a draft bank only; templates, boilerplate, subject lines, or gated placeholders do not grant public send, press release, Steam news, demo, release, platform, or readiness permission.
+
 ## Public Release Permission Gate
 
 Current machine gate: `press_release_permission_gate = HOLD_NO_PRESS_RELEASE_PUBLICATION`.

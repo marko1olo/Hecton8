@@ -10,7 +10,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
@@ -32,6 +32,6 @@ A queue is a body count with cleaner formatting.
 
 ## Field Note
 
-Use for evidence rooms where salvage and proof preservation conflict.
+POI evidence kit: Evacuation Queue Terminal frames rooms where salvage value and proof preservation conflict.
 
 <!-- External Site; generated from P389_EVACUATION_QUEUE_TERMINAL_POI_KIT/fr_FR. -->

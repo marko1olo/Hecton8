@@ -10,21 +10,21 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Drowned Geology
 
-Drowned Geology explains replayability through terrain, brine, heat and pressure rather than arbitrary gates.
+Drowned geology makes routes change through terrain, brine, heat and pressure. A safe path is a reading that can expire after storms, silt drift or salvage cuts.
 
 ## Scanner
 
-Layered shelf, canyon, brine stair and vent geometry. This moon teaches descent through terrain, not level gates.
+Layered shelf, canyon funnel, brine stair and vent scar detected. Treat terrain as pressure routing, not background.
 
 ## Terminal
 
-Depth forecast: shelf collapse, service canyon funnels, brine density curtains, thermal plumes, abyss silt exposure.
+DEPTH FORECAST: shelf collapse, service-canyon funneling, brine-density curtains, thermal plumes, abyssal silt exposure. Route confidence falls after storm surge.
 
 ## Audio
 

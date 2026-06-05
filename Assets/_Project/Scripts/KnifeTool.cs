@@ -197,7 +197,10 @@ namespace Hecton8.Gameplay
                     direction,
                     ResolveImpulse(1f),
                     DamageSourceIds.SurvivalBlade,
-                    CombatDamageTypes.Impact);
+                    CombatDamageTypes.Impact,
+                    0u,
+                    0f,
+                    ToolCapabilityMasks.Cut);
                 if (applied && TryConsumeFeedbackGate())
                 {
                     PublishInfoMessage(StableText(LocalizationKeys.KNIFE_HUD_CONTACT, "SURVIVAL BLADE - CONTACT"));
@@ -388,7 +391,10 @@ namespace Hecton8.Gameplay
                 direction,
                 ResolveImpulse(1.5f),
                 DamageSourceIds.SurvivalBlade,
-                CombatDamageTypes.Impact);
+                CombatDamageTypes.Impact,
+                0u,
+                0f,
+                ToolCapabilityMasks.Cut);
             if (!applied)
                 return false;
 

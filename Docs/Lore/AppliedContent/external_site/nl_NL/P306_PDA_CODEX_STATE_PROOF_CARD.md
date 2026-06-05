@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PDA Codex State Proof Card
+# PDA Evidence State
 
-The in-game encyclopedia should lag behind discovery. It records proof, not spoilers.
+HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.
 
 ## Scanner
 
-PDA proof: hint, fragment, proof, synthesis, ending record.
+Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.
 
 ## Terminal
 
-UI PROOF: PDA codex entries must show unlock tier, packet hash, evidence source and route warning state.
+PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.
 
 ## Audio
 
-The PDA is a receipt, not a teacher.
+The PDA does not explain the world first. It waits for a receipt.
 
 ## Field Note
 
-Runtime implementation still needs Unity device proof and baked string-pool binding.
+Bind codex rows to baked packet hashes and device-tested layout before release.
 
 <!-- External Site; generated from P306_PDA_CODEX_STATE_PROOF_CARD/nl_NL. -->

@@ -9,6 +9,8 @@ Sonar is partial truth under pressure. It is not an omniscient minimap.
 
 The player should earn certainty through risk, power, noise, time, line of acoustic sight, and environmental interpretation. HECTON-8 rejects clean radar, magic objective arrows, always-accurate pips, scanner spam, and maps that erase fear. Navigation tools must give enough information to decide, not enough information to feel safe.
 
+Usability lock: map and sonar may be closer to Subnautica-level usability than to a hostile unreadable instrument sim. They should help the player explore, plan, and enjoy the world. They still must not become an omniscient debug map with perfect hidden truth, exact creature state, or free objective certainty.
+
 ## Truth Ownership
 
 Sonar/scanner/navigation owns sensed snapshots, confidence, bearing, stale state, map reveal state, acoustic ping events, and sensor UI payloads. It does not own world placement, AI truth, creature cognition, audio mix, route design, or objective truth.
@@ -89,6 +91,21 @@ Any sonar, scanner, navigation, or cartography implementation must declare:
 - profiler/GC proof when runtime sensor code changes.
 
 The packet must prove that the player is reading imperfect instrument data, not receiving an omniscient minimap.
+
+## First-20 Route Hook
+
+- First-20 moment: swim, resource, tool, and hazard response must prove one scanner/sonar/navigation cue that helps route finding or target confidence without revealing hidden truth for free.
+- Route blocker removed: scanner, sonar, compass, or beacon UI cannot be decorative, omniscient, unsaved when persistent, or detached from audio/tool/UI owners.
+- Proof class: screenshot, Play Mode/player capture for scan or ping use, Profiler/GCMonitor for sensor runtime, Frame Debugger for sensor visuals when changed, and save/load artifact for map reveal or recovered signal state.
+
+## Live Source Anchors - 2026-06-05
+
+Evidence class: STATIC_SOURCE / STATIC_DOC only. These anchors close stable-doc traceability gaps only; they do not prove Unity import, Play Mode, profiler, GC, Frame Debugger, save/load, or player-build readiness.
+
+- `Assets/_Project/Scripts/Visor/SpectrumSystem.cs` is the current visor spectrum/sonar presentation owner. Static source shows `SpectrumSystem : MonoBehaviour, ILateFrameTickable, IAcousticEchoEventListener, IPingReturnSignalListener, IGlobalRegistryHotSwapListener`; `SpectrumEvents` owns bounded fixed queues for mode changes, sonar pulse radius, active sonar ping, `SpatialSonarSnapshot`, `AcousticEchoEvent`, and `PingReturnSignal`. The source inputs are active acoustic pings through `SignalBus<AcousticPingSignal>`, acoustic echo callbacks, ping-return signals, spatial sonar snapshots, player AUP/runtime origin, spatial audio emitter samples for passive radar, and DataVault-backed active-sonar geo telemetry. This is sensed/presentation truth, not world/AI/objective truth.
+- `SpectrumSystem` writes a 300-row active-sonar geo telemetry ring under `SystemID.UI` and dumps `Dump_ACTIVE_SONAR_ILLUMINATION.bin` on non-finite active sonar geo state. It uses `HomeostasisBrain.GlobalQualityWeight` for active-sonar geo quality encoding. Missing proof: current Unity import, active sonar UI screenshot, compact readability capture, GC/profiler run, Frame Debugger/RenderGraph proof for sonar visuals, and duplicate-lane/static compile proof.
+- `Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs` is the diegetic compass navigation anchor. It consumes `AnomalyProximitySignal`, `CompassCalibratedSignal`, `SurvivalVitalsChangedSignal`, `SystemHealthSignal`, and `AupShiftSignal`; owns compass drift/presentation DataVault lanes and a 300-row compass black-box ring; and presents cardinal text through fixed chars. It must be documented as partial instrument bearing, not omniscient route/objective truth.
+- `Assets/_Project/Scripts/AtlasSignal/SignalBeacon.cs` is a beacon/acoustic breadcrumb source. It solves triangulated strength from three AUP points against the player AUP, cave-interference noise, and authored range; publishes dominant cached telemetry through `SignalBeaconRegistry`; and emits `PhysicsEventPayload` acoustic pings for audio/sonar consumers. It may recover encrypted audio-log fragments through `IAudioLogRuntime`, but this source does not prove quest progression, save persistence, or objective routing. Missing proof: save/load of recovered bits, quest-state bridge, PDA/HUD display proof, runtime audio/sonar reaction proof, and compact sensor UI proof.
 
 ## Proof Artifacts
 

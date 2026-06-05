@@ -1,0 +1,113 @@
+Batch: batch32_lore_system_integration
+Date: 2026-06-05
+Mode: lore/content/localization/static-data bridge only
+
+Controller memory:
+- Docs/Orchestration/ORCHESTRATOR_NIGHT_20260605.md
+- Docs/Lore/AppliedContent/production_packets/P461_PACKET_CUSTODY_BRIDGE.production.md
+- Docs/Lore/AppliedContent/production_packets/P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE.production.md
+- Docs/Lore/AppliedContent/production_packets/P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE.production.md
+- Docs/Lore/AppliedContent/production_packets/P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE.production.md
+- Docs/Lore/AppliedContent/release_sets/RS093_LORE_SYSTEM_INTEGRATION_BRIDGE.md
+
+Current front:
+- User narrowed the active orchestration task to lore system and its integration into future site/wiki/in-game systems, including monolith/scripts/binaries.
+- Unity/build/process gate is not clean; CPU recently sampled above 50 percent. Do not run dotnet build or Unity-heavy work.
+- Existing AppliedContent coverage is broad: all 15 locale directories exist for in_game_wiki and external_site, with about 436 files each.
+- Locale audit found P456-P460 present across all 15 locales and both surfaces, but non-English rows are mostly English text with `draft_native_pass_pending`.
+- 25 source packet IDs are missing from current surface index/page export. Do not claim full publication consistency until fixed or explicitly excluded.
+- `P461_PACKET_CUSTODY_BRIDGE`, `P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE`, `P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE`, and `P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE` are new production draft packets, not yet in AppliedLore source CSV/binary/export. They are STATIC_DOC only.
+- `P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE` was repaired after visible mojibake in non-English draft rows. Future agents must scan for mojibake byte-pattern text, not only U+FFFD replacement characters.
+
+Shared authority:
+- AGENTS.md
+- PROJECT_BIBLES.md
+- TASTE.md
+- VISION_LOCKS.md
+- quality.md
+- writing.md
+- narrative.md
+- localization.md
+- authoring.md
+- data.md
+- Docs/Lore/Canon_Locks.md
+- Docs/Lore/Lore_Bible.md
+- Docs/Lore/Lore_Content_System.md
+- Docs/Lore/Lore_Localization_Model.md
+- Docs/Lore/Lore_Multilingual_Content_Architecture.md
+
+Mandates:
+- QA_Evidence_Text_Filter_Audit.txt
+- UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt
+- DATA_Runtime_Struct_Layout_ARM64.txt
+- TOOL_Designer_Facades_CSV_Binary_Bridge.txt
+- OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+
+Agent files:
+- 3201_LOCALE_STATUS_AND_EXPORT_OWNER.txt
+- 3202_APPLIED_LORE_BAKE_BRIDGE_OWNER.txt
+- 3203_PUBLIC_WIKI_15_LOCALE_PACKET_WRITER.txt
+- 3204_UTF8_MOJIBAKE_AND_CLONE_AUDIT_OWNER.txt
+- 3205_BLACK_KEEL_CLAIM_WINDOW_PACKET_WRITER.txt
+- 3206_DEEP_REACH_MANAGED_VARIANCE_PACKET_WRITER.txt
+- 3207_RS093_CANONICAL_PACKET_JSON_BUILDER.txt
+- 3208_APPLIED_LORE_TEXT_INTEGRITY_VALIDATOR.txt
+- 3209_WORKER_TAG_EVIDENCE_PACKET_WRITER.txt
+- 3210_RS093_SOURCE_WIRING_AND_EXPORT_OWNER.txt
+- 3211_ATLAS6_PUBLIC_REPAIR_NETWORK_PACKET_WRITER.txt
+- 3212_XENON_OMEGA_PUBLIC_MATERIAL_PACKET_WRITER.txt
+- 3213_AEGIR_RELAY_WINDOW_PACKET_WRITER.txt
+- 3214_RS093_BINDING_MAP_AND_CLUSTER_BOUNDARY_OWNER.txt
+- 3215_KEELMARK_TONNE_WINDOW_PACKET_WRITER.txt
+- 3216_LUYTEN_PACKET_CUSTODY_PACKET_WRITER.txt
+- 3217_RS093_MANUAL_POLICY_AND_PLACEMENT_OWNER.txt
+- 3218_TAU_CETI_PUBLIC_LEDGER_PACKET_WRITER.txt
+- 3219_BARNARD_YARDS_SALVAGE_ORIGIN_PACKET_WRITER.txt
+- 3220_RS093_EVIDENCE_GRAPH_OWNER.txt
+- 3221_RS093_ROUTE_CARD_SOURCE_OWNER.txt
+- 3222_SOL_CORE_REMOTE_CLAIM_PACKET_WRITER.txt
+- 3223_RS094_CANONICAL_PACKET_JSON_BUILDER.txt
+- 3224_CENTAURI_CHARTER_LEGITIMACY_PACKET_WRITER.txt
+- 3225_AEGIR_CONTINUITY_HOLDINGS_PACKET_WRITER.txt
+- 3226_RECOVERY_COMPLIANCE_RETURN_ACTION_PACKET_WRITER.txt
+- 3227_ATLAS_CONTINUITY_OFFICE_PACKET_WRITER.txt
+- 3228_KEELMARK_LOSS_DESK_PACKET_WRITER.txt
+- 3229_CONTRACT_CONTINUITY_DESK_PACKET_WRITER.txt
+- 3230_PACKET_NOTARY_INTERFACE_PACKET_WRITER.txt
+- 3231_QUARANTINE_REVIEW_GATE_PACKET_WRITER.txt
+- 3232_ASSET_SILENCE_BOARD_PACKET_WRITER.txt
+- 3233_RS095_CANONICAL_PACKET_JSON_BUILDER.txt
+- 3234_PUBLIC_LEDGER_RELEASE_GATE_PACKET_WRITER.txt
+- 3235_CORPORATE_QUARANTINE_HOLD_PACKET_WRITER.txt
+- 3236_MATERIAL_PAYOUT_CLAIM_CONVERSION_PACKET_WRITER.txt
+- 3237_PARTIAL_RETURN_CONTRACT_DEBRIEF_PACKET_WRITER.txt
+- 3238_RS096_CANONICAL_PACKET_JSON_BUILDER.txt
+- 3239_PUBLIC_ARCHIVE_REDACTION_HEADER_PACKET_WRITER.txt
+- 3240_IN_GAME_EVIDENCE_QUEUE_PACKET_WRITER.txt
+- 3241_DATA_MONOLITH_ADMISSION_RECEIPT_PACKET_WRITER.txt
+- 3242_NATIVE_LOCALIZATION_HOLD_PACKET_WRITER.txt
+- 3243_RS097_CANONICAL_PACKET_JSON_BUILDER.txt
+- 3244_PUBLIC_ARCHIVE_CAPTION_CHAIN_PACKET_WRITER.txt
+- 3245_SCANNER_SPOILER_GATE_QUEUE_PACKET_WRITER.txt
+- 3246_WEBSITE_WIKI_EVIDENCE_INDEX_PACKET_WRITER.txt
+- 3247_STRING_POOL_CUSTODY_STAMP_PACKET_WRITER.txt
+- 3248_RS098_CANONICAL_PACKET_JSON_BUILDER.txt
+- 3249_PUBLIC_EVIDENCE_MISUSE_WARNING_PACKET_WRITER.txt
+- 3250_EVIDENCE_RELATION_GRAPH_DOSSIER_PACKET_WRITER.txt
+- 3251_TERMINAL_CLAIMANT_LANGUAGE_AUDIT_PACKET_WRITER.txt
+- 3252_PUBLIC_INDEX_SPOILER_CAP_PACKET_WRITER.txt
+
+Reporting because each task has an explicit ID:
+- Docs/Tasks/Status_[ID].md
+- Docs/AgentLogs/Rationale_[ID].md for non-trivial decisions only
+- Docs/AgentLogs/LOG_[ID].md final concise evidence report
+- Docs/Reports/Batch32/[ID]_[SHORT_NAME].md if a controller-facing report is useful
+
+Hard rules:
+- No fake runtime proof.
+- No native-reviewed/runtime-ready localization claim without proof.
+- No runtime markdown/CSV parsing.
+- No authoritative route_cards CSV for packets absent from source CSV/export.
+- No DataMonolith/static_data.h8bin readiness claim from docs.
+- No sibling dependencies inside this wave.
+- If a dependency is absent, mark BLOCKED BY DEPENDENCY and continue with verified scope.

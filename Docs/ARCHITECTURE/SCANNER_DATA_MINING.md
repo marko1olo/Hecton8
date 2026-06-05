@@ -4,6 +4,8 @@ Date: 2026-05-07
 
 Status: PENDING VERIFICATION
 
+Owner domain: tools / scanner data mining
+
 ## Source Anchors
 
 Evidence: STATIC_SOURCE / FILESYSTEM.

@@ -1,5 +1,9 @@
 ﻿# Data Monolith Runtime Integration
 
+Status: STATIC_ROUTE_DOC / RUNTIME_PROOF_PENDING
+
+Owner domain: data monolith / runtime integration
+
 | Field | Value |
 | --- | --- |
 | Date | 2026-06-02 |

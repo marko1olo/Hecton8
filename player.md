@@ -1,6 +1,7 @@
 # HECTON-8 Player Feel Bible
 
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
+Evidence class: STATIC_DOC
 Scope: input, controls, camera feel, movement, vehicle/submarine control feel, haptics, interaction cadence, and player embodiment.
 
 ## 0. Prime Player Law
@@ -95,9 +96,20 @@ Player truth is split deliberately:
 
 The player controller must not become a global coordinator for tools, vehicles, UI, damage, and camera.
 
+## 7A. Presentation-Only Boundary
+
+Camera shake, visor bob, sway, animation pose, tool recoil visuals, haptic texture, audio layers, screen effects, and cockpit UI are presentation-only. They may sell mass, pressure, fear, and machinery, but they must not own position, velocity, stance, interaction lock, oxygen, damage, vehicle authority, or tool result.
+
+Presentation reads finalized movement/tool/vehicle/survival snapshots in visual sync. It must not write gameplay truth back into player movement, contact, resource, or damage state.
+
 ## 8. GlobalQualityWeight Scaling
 
-Compact preserves control readability, route visibility, input buffering, core haptics, and simple camera response. Middle adds richer camera/audio/haptic layering. High adds better tool/vehicle feedback and physical micro-motion. Ultra adds sensory overload only after input clarity and motion comfort remain intact.
+Low/Middle/High/Ultra are continuous planning labels on the same `GlobalQualityWeight` curve, not binary switches:
+
+- Low: control readability, route visibility, input buffering, core haptics, simple camera response.
+- Middle: richer camera/audio/haptic layering, stronger tool stance cues, cleaner transition masking.
+- High: better tool/vehicle feedback, physical micro-motion, improved contact presentation.
+- Ultra: heavy sensory layering only after input clarity, comfort, and gameplay authority remain intact.
 
 ## 9. Proof Artifacts
 
@@ -110,6 +122,12 @@ Player-feel work must provide:
 - compact-tier readability proof;
 - GC allocation proof for input/control hot path;
 - vehicle/platform proof when reference frames are touched.
+
+## 9A. First-20 Route Hook
+
+The first-20 route must prove readable body control, oxygen-risk response, tool interaction cadence, route visibility, safe death/respawn feel, and at least one pressure/water/machinery feedback moment. Camera or haptic polish cannot compensate for weak movement authority.
+
+Proof class: Play Mode/player capture for movement and feedback, Profiler/GCMonitor for input/control hot paths, screenshot for route readability, and save/load artifact for restored player position/state.
 
 ## 10. Acceptance Sentence
 

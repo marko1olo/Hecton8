@@ -1,0 +1,62 @@
+<AGENT_PROMPT id="1864">
+ROLE: Product-face primitive replacement queue architect.
+
+READ FIRST:
+- C:\hades\Hecton8\AGENTS.md
+- C:\hades\Hecton8\PROJECT_BIBLES.md
+- C:\hades\Hecton8\VISION_LOCKS.md
+- C:\hades\Hecton8\TASTE.md
+- C:\hades\Hecton8\quality.md
+- C:\hades\Hecton8\3dmodel.md
+- C:\hades\Hecton8\3DMODEL_TEXTURES_MATERIALS.md
+- C:\hades\Hecton8\tools.md
+- C:\hades\Hecton8\inventory.md
+- C:\hades\Hecton8\vehicles.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1859_NON_PROXY_PRIMITIVE_PREFAB_CLASSIFICATION_PACKET.md
+- C:\hades\Hecton8\Docs\Reports\Batch18\1859_NON_PROXY_PRIMITIVE_PREFAB_MATRIX.csv
+- Relevant .agents-skills only: QA_Evidence_Text_Filter_Audit, CORE_Tools_Equipment_Interaction_Raycast_Heat, DATA_Inventory_Resources_Items_SOA_Layout, CORE_Submarine_Vehicles_Kinematics_AUP, REND_URP_Graphics_HotPath_Optimization_HLOD.
+
+OWNED WRITE SCOPE:
+- Docs/Tasks/Status_1864.md
+- Docs/AgentLogs/Rationale_1864.md
+- Docs/AgentLogs/LOG_1864.md
+- Docs/Reports/Batch18/1864_PRODUCT_FACE_PRIMITIVE_REPLACEMENT_QUEUE.md
+- Docs/Reports/Batch18/1864_PRODUCT_FACE_REPLACEMENT_MATRIX.csv
+
+NO SOURCE/PREFAB/ASSET/SCENE EDITS.
+
+TASK:
+Build a concrete replacement queue for product-face primitive prefabs outside production `Final` roots:
+- Player.prefab
+- Sky/ocean are excluded; 1865 owns them.
+- Tools/Held
+- Items/Tools
+- Resources/Pickups
+- Transport
+- Item_Titanium.prefab
+- STRUCTURES.prefab and Buildings/Cube only as ambiguous/legacy rows.
+
+For each row:
+1. Path.
+2. Product exposure class: first-person, pickup, vehicle, player body, inventory route, ambiguous.
+3. Why primitive is unacceptable for the surface/shallow visual floor.
+4. Required real mesh silhouette.
+5. Required material/texture identity.
+6. Required collision/proxy split.
+7. LOD/HLOD expectation.
+8. Required owner/source system.
+9. What proof is needed before acceptance: prefab YAML proof, Unity screenshot, player capture, profiler, build, etc.
+10. Low/Middle/High/Ultra consequence using continuous quality scaling, never binary low/ultra.
+
+Do not claim a replacement exists unless you verify the concrete mesh/material/prefab path.
+Do not propose relinking to WorldProceduralProxy or primitive diagnostics.
+Do not make one generic "make better" row; every high-risk prefab gets an actionable row.
+
+VERIFY:
+- Use static file reads/search only.
+- Report exact command classes and evidence boundaries.
+- `git diff --check -- Docs/Reports/Batch18/1864_PRODUCT_FACE_PRIMITIVE_REPLACEMENT_QUEUE.md Docs/Reports/Batch18/1864_PRODUCT_FACE_REPLACEMENT_MATRIX.csv Docs/Tasks/Status_1864.md Docs/AgentLogs/Rationale_1864.md Docs/AgentLogs/LOG_1864.md`
+
+REPORT:
+- Final answer must list outputs and no-edit guarantee.
+</AGENT_PROMPT>

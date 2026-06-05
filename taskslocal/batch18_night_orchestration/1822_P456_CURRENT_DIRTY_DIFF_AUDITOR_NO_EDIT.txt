@@ -1,0 +1,59 @@
+AGENT ID: 1822
+ROLE: P456_CURRENT_DIRTY_DIFF_AUDITOR_NO_EDIT
+MODE: No-edit AppliedLore audit. Do not repair source while 1811/other lore agents may be active.
+
+PRIMARY GOAL
+Audit the current dirty AppliedLore/P456 state without editing. Determine whether `P456_SITE_HOME_LONGFORM_BRIEF` still contains production-brief residue in source/generated pages, whether current dirty changes already attempted a repair, and what exact serialized follow-up is safe after 1811 or other AppliedLore owners finish.
+
+READ
+- AGENTS.md, PROJECT_BIBLES.md, VISION_LOCKS.md, TASTE.md, quality.md
+- writing.md, narrative.md, localization.md
+- Docs/Lore/WriterScenarioAgentPrompt.md
+- Docs/Reports/Batch18/1804_APPLIED_LORE_DATAMONOLITH_RECONCILE.md
+- Docs/Reports/Batch18/1805_AGENT_OUTPUT_TRIAGE_DASHBOARD.md
+- Docs/Reports/Batch18/1813_STALE_BLOCKER_ERRATA_PACKET.md
+- If present, Docs/Tasks/Status_1811.md and Docs/AgentLogs/LOG_1811.md
+
+LIKELY FILES
+- Assets/_SourceData/DataMonolith/Narrative/applied_lore_packets.csv
+- Docs/Lore/AppliedContent/external_site/*/P456_SITE_HOME_LONGFORM_BRIEF.md
+- Docs/Lore/AppliedContent/in_game_wiki/*/P456_SITE_HOME_LONGFORM_BRIEF.md
+- Docs/Lore/AppliedContent/Publication_Surface_Index.csv
+- Docs/Lore/AppliedContent/Localization_Status_Index.md
+
+OWNED OUTPUTS
+- Docs/Tasks/Status_1822.md
+- Docs/AgentLogs/Rationale_1822.md for non-trivial decisions only
+- Docs/AgentLogs/LOG_1822.md
+- Docs/Reports/Batch18/1822_P456_CURRENT_DIRTY_DIFF_AUDIT.md
+- Optional: Docs/Reports/Batch18/1822_P456_LOCALE_RESIDUE_MATRIX.csv
+
+HARD RULES
+- Do not edit AppliedLore source, generated pages, indexes, or packets.
+- Do not run DataMonolith bake/exporters.
+- Do not claim native-final translation.
+- Do not overwrite or revert dirty user/agent changes.
+- Do not run 1812 or any exporter task.
+- Treat generated pages as downstream artifacts, not source truth.
+
+20 TASKS
+01. Create tracking files.
+02. Read authorities and relevant mandates.
+03. Record dirty-file scope for P456/source/generated/index paths only.
+04. Inspect current P456 source rows in `applied_lore_packets.csv`.
+05. Inspect current generated P456 pages for all locales under external_site.
+06. Inspect current generated P456 pages for all locales under in_game_wiki.
+07. Search current P456 files for banned residue: Longform spine, Public brief, SITE HOME, Assemble for website, TODO, placeholder, AI/meta.
+08. Build locale residue matrix.
+09. Determine if en_US currently reads as public-facing copy.
+10. Determine if ru_RU currently reads as clean Russian public-facing copy.
+11. For other locales, record status honestly without native acceptance.
+12. Compare current state to 1804/1805 findings.
+13. Inspect 1811 tracking/log only; do not depend on 1811 completion.
+14. Identify safe follow-up order after AppliedLore source owner is clear.
+15. Identify whether 1812 P151 drift can run after P456/no-edit audit.
+16. Define exact repair prompt for a later writer/exporter owner, if still needed.
+17. Append log.
+18. Final scan for overclaiming.
+19. Mark NO-EDIT AUDIT COMPLETE/BLOCKED.
+20. Include exact files inspected and proof boundary.

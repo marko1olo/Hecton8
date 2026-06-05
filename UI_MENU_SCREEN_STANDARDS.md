@@ -1,7 +1,14 @@
 # UI_MENU_SCREEN_STANDARDS
 
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
+Evidence class: STATIC_DOC
 Scope: main menu, boot flow, pause, settings, save/load, death/retry, confirmation dialogs, frontend route screens, and non-HUD menu states.
+
+## First-20 Route Hook
+
+- First-20 moment: boot, main menu command, settings/accessibility access, New Game or Continue, save/load archive, death/retry, and route-state handoff into the opening dive.
+- Route blocker removed: generic launcher UI, unreadable primary commands, unproven save/settings truth, or decorative menu telemetry cannot start the product-facing route.
+- Proof class: STATIC_DOC until compact and normal screenshots, input navigation proof, localization/text-fit capture, save/settings evidence, and runtime menu profiler/GC artifacts exist.
 
 ## 0. Prime Menu Law
 
@@ -127,6 +134,9 @@ Death/retry must show evidence:
 - cause category;
 - last known depth/pressure/oxygen/hull/signal;
 - recovered black-box fragment or telemetry summary;
+- respawn/recovery point if known;
+- carried-resource drop/recovery status when ordinary death applies;
+- core tool retention/loss status from the persistence/survival owner;
 - retry/load/exit commands;
 - no melodramatic copy.
 

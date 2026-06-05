@@ -4,13 +4,21 @@ Status: creative direction / pre-key-art
 Owner lane: Marketing / creative positioning
 Runtime impact: none
 
+## Authority Boundary
+
+Static documentation only. Public visual identity, key art, creative, trailer, capsule, screenshot, performance, platform, release, publication, Steam, wishlist, demo, and gameplay-proof claims require root `textes.md` for voice plus `quality.md`, `release.md`, and `platform.md` with current proof artifacts and the local permission gates.
+No public post, Steam news, trailer/capsule approval, creator send, community launch, platform/release claim, demo claim, key-art approval, identity publication, or asset promotion is authorized by drafts, examples, direction rows, stress rules, or plan rows in this file.
+
 ## Core Visual Sentence
 
 HECTON-8 should look like industrial survival equipment losing an argument with the deep ocean.
 
+Surface, sky, Aegir, coastline, ocean skin, and photic shallows must also look beautiful, readable, and premium when they are the subject. The key art direction is contrast: bright alien ocean above/near the light, then pressure, machinery, corrosion, and black-water depth as the route gets worse.
+
 ## Must Own
 
 - pressure;
+- bright alien surface/photic beauty when shown;
 - corrosion;
 - black water;
 - hard silhouettes;
@@ -24,7 +32,7 @@ HECTON-8 should look like industrial survival equipment losing an argument with 
 ## Must Avoid
 
 - clean plastic sci-fi;
-- bright aquarium readability as default;
+- empty bright aquarium readability with no pressure, route, tool, or industrial trace;
 - generic diver silhouette;
 - generic alien fish as hero;
 - purple/blue gradient sci-fi poster;

@@ -10,21 +10,21 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
+localization_status: source_authority
 localization_flags: 0
 ---
 
 # Drowned Geology
 
-HECTON-8 geology is gameplay language: shelf survival, drowned rooms, canyon funnels, brine density, thermal routes and abyss exposure. Seeds can move routes without changing that physical truth.
+The geology scan is a route read. Exposed ridges usually give shallow shelter; collapsed shelves collect salvage and silt; canyon funnels amplify current; brine curtains bend sonar and buoyancy; vent scars can cure sealant or cook it. Use terrain shape to decide when to cache cargo, when to mark a second line and when a depth upgrade is not optional.
 
 ## Scanner
 
-Layered shelf, canyon, brine stair and vent geometry. This moon teaches descent through terrain, not level gates.
+Layered shelf, canyon funnel, brine stair and vent scar detected. Treat terrain as pressure routing, not background.
 
 ## Terminal
 
-Depth forecast: shelf collapse, service canyon funnels, brine density curtains, thermal plumes, abyss silt exposure.
+DEPTH FORECAST: shelf collapse, service-canyon funneling, brine-density curtains, thermal plumes, abyssal silt exposure. Route confidence falls after storm surge.
 
 ## Audio
 

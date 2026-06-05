@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: draft_native_pass_pending
+localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Public Starting Premise Article Module
+# Marauder Starting Claim
 
-You arrive at HECTON-8 as a debt-bound Marauder and former Deep Reach field-systems specialist. The contract looks like salvage until the old procedures start naming your past.
+The first HECTON-8 claim is personal only in the professional sense. The Marauder knows pressure systems, Deep Reach procedure and the kind of paperwork that turns risk into someone else's debt. Black Keel offers a salvage window because the route is valuable, not because the carrier has become generous. That starting frame keeps the descent grounded: repair the capsule, read the site, recover cargo or proof, and decide how much of the old company language can survive contact with the rooms below.
 
 ## Scanner
 
-Publication module: premise. Marauder contract, debt pressure and old Deep Reach language.
+Public claim record. The first route identifies a debt-bound Marauder with old Deep Reach field experience and a Black Keel salvage window.
 
 ## Terminal
 
-PUBLIC MODULE PREMISE: reveal ex-Deep-Reach professional context only as starting frame, not full liability proof.
+PUBLIC ARCHIVE NODE // STARTING CLAIM. Contractor history: former Deep Reach field-systems specialist. Current status: Marauder lien pressure. Route: Black Keel recovery claim, P-63 descent.
 
 ## Audio
 
-You are not discovering a legend. You are returning to paperwork you know too well.
+You are returning to paperwork you know too well.
 
 ## Field Note
 
-Use for website overview, store-page lore block and codex front matter.
+Marauder note: the contract knows your past. That does not make it honest.
 
 <!-- External Site; generated from P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE/fr_FR. -->

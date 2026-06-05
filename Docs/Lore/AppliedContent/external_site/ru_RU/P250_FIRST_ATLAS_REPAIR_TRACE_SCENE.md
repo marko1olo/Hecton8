@@ -10,28 +10,28 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localization_status: source_ready
-localization_flags: 0
+localization_status: draft_machine_or_llm
+localization_flags: 1
 ---
 
-# Первая сцена ремонтного следа Atlas
+# First Atlas Repair Trace
 
-Публичная статья: First Atlas Repair Trace Scene introduces Atlas-6 without a villain reveal. The machine-ocean system is helpful before it becomes horrifying.
+Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind.
 
 ## Scanner
 
-Сканер: The seal holds. That is the problem.
+Nonstandard sealant holds a human object closed. Classification unresolved.
 
 ## Terminal
 
-Терминал: MAINTENANCE TRACE: nonstandard sealant growth stabilized human-use object. Identity category unresolved.
+MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.
 
 ## Audio
 
-Аудио: It fixed the thing. It did not know what the thing meant.
+It saved the object. It did not know whose it was.
 
 ## Field Note
 
-Полевая заметка: The first Atlas trace should save something small while violating the category of what was saved.
+The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.
 
 <!-- External Site; generated from P250_FIRST_ATLAS_REPAIR_TRACE_SCENE/ru_RU. -->

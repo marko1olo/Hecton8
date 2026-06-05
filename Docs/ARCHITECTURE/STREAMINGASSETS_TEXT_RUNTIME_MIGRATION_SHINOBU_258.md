@@ -3,6 +3,9 @@
 Date: 2026-05-20
 
 Status: ACTIVE RED GATE
+Evidence class: STATIC_DOC
+Owner domain: Echelon 3 Data / StreamingAssets text migration
+Review disposition: YELLOW / STATIC_DOC_ONLY until compile/import/runtime/profiler/player proof exists.
 
 `Tools/h8bin_validator.py` now treats text payloads and runtime text loaders as build-stopping Data Monolith violations.
 
