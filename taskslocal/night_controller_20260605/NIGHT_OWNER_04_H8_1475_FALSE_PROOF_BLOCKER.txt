@@ -1,0 +1,50 @@
+NIGHT_OWNER_04_H8_1475_FALSE_PROOF_BLOCKER
+Role: h8_1475 proof packet and anti-false-proof owner.
+Status: PENDING EXECUTION
+
+Objective:
+Prevent scenic fake proof. Produce or reject a canonical h8_1475 packet only after active player/HUD/tool route and no-mutation Unity readback are known.
+
+Authority:
+- AGENTS.md
+- Docs/AGENT_AUTHORITY_ROUTING.md
+- PROJECT_BIBLES.md
+- TASTE.md
+- VISION_LOCKS.md
+- quality.md, player.md, ui.md, water.md, rendering.md, world.md, terrain.md, presentation.md
+- taskslocal/asset_system_20260605/ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md
+- taskslocal/asset_system_20260605/ASSET_OWNER_37_H8_1475_ANTI_FALSE_PROOF_ALIGNMENT_PACKET.md
+
+Owned scope:
+- Proof artifacts under Docs/Screenshots/HectonProofPackets/h8_1475_<timestamp>/ and matching Docs/Reports/AssetSystem_20260605 reports.
+- No Assets writes. No scene/prefab/material mutation.
+
+Evidence basis:
+- Docs/Orchestration/VISUAL_FRONT_P0_P1_SYNTHESIS_20260605.md
+- Docs/Orchestration/SURFACE_ROUTE_STATIC_CLASSIFICATION_20260605.md
+- Docs/Orchestration/PLAYER_HUD_MOVEMENT_P0_SYNTHESIS_20260605.md
+- Docs/Orchestration/UNITY_OWNER_DIALOGUE_REVIEW_20260605.md
+
+Tasks:
+1. Read owner 01 and owner 03 outputs. If active player/HUD/tool route is unknown, stop with BLOCKED_BY_RUNTIME_AUTHORITY.
+2. Confirm process gate green and Unity readback safe.
+3. Create session root with manifest plan.
+4. Capture required player/HUD/tool/source readback before scenic screenshots.
+5. Capture surface, shoreline, photic, underwater 0-5m, medium-depth if safe, HUD binding, product-face, Crest, sky, terrain readbacks.
+6. Create h8_1475_visual_reference_comparison.md from the project template.
+7. Compute real manifest.sha256.
+8. Copy Unity log and console export.
+9. Add dirty-state audit before/after.
+10. Final label is REJECTED, INCOMPLETE_PROOF_PACKET, BLOCKED_BY_RUNTIME_AUTHORITY, BLOCKED_BY_VISUAL_FLOOR, or PENDING_HUMAN_REVIEW. Do not write ACCEPTED without all proof and user approval.
+
+Acceptance:
+- Complete manifest/checksum/log/console/dirty/readback/screenshots/comparison packet.
+- No raw MCP PNG substitution.
+- No landscape-only proof.
+- No missing player/HUD/tool route.
+
+Rejection:
+- slab water, green seam haze, black undercuts, acid terrain, weak Aegir, no wet edge, no underwater route density, overlay HUD, primitive product face.
+
+Low/Middle/High/Ultra:
+Same truth route on all lanes. Higher lanes add capture density and polish only.

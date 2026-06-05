@@ -22,12 +22,12 @@ First-20 route blocker removed: runtime forbidden coroutine contamination in a v
 
 Original static source facts:
 
-- Class implements `ILateFrameTickable`, `ISlowTickable`, `IGlobalRegistryHotSwapListener`, `IGlobalRegistryHotSwapRefListener`, and `IResolutionScalerService`.
-- `RequestDispatcherPhaseRegistrationRepair()` calls `StartCoroutine(RepairDispatcherPhaseRegistrationCold())` at line `1560`.
-- `RepairDispatcherPhaseRegistrationCold()` yields `null` for up to `DispatcherRegistrationRepairMaxFrames`.
-- `OnDisable()` calls `StopAllCoroutines()`.
-- Dispatcher rebind/replacement callbacks, scene-loaded repair, `OnEnable`, and `Start` already call `TryRegister()` and `RequestDispatcherPhaseRegistrationRepair()`.
-- Same file also has a DRS black-box dump route defect tracked by packet 07: fixed historical `Dump_13KRA.bin` and the no-file-write black-box path must not survive the compile/profiler pass.
+- `ThermalDynamicResolutionAdapter.cs` implements `ILateFrameTickable`, `ISlowTickable`, `IGlobalRegistryHotSwapListener`, `IGlobalRegistryHotSwapRefListener`, and `IResolutionScalerService`.
+- Historically, the registration repair relied on a coroutine.
+- The repair state machine yielded null across frames.
+- A broad disable method halted all coroutines.
+- Dispatcher rebind/replacement callbacks already hook into the repair flow.
+- The DRS black-box dump route had historical naming and serialization defects tracking in packet 07.
 
 Current patched source facts:
 
@@ -63,33 +63,18 @@ Zero GC proof: no `StartCoroutine`, no `IEnumerator`, no `yield`, no `StopAllCor
 State check: no duplicate adapter owner, no lost late-frame/slow-tick registration, no stuck `_lateFrameRegistrationRequested`, no hot `GlobalRegistry` polling loop, no render-scale commit starvation after dispatcher replacement.
 Rule quote: runtime systems use dispatcher phases, not MonoBehaviour coroutine schedulers. `GlobalQualityWeight` remains continuous and presentation-only.
 
-## Required Repair Shape
+## Completed Repair Shape / Pending Verification
 
-1. Do not edit while CPU is over 50 percent or Unity/import/compiler/shader/package/dotnet/csc work is active.
-2. Coordinate with `RUNTIME_OWNER_07_THERMAL_DRS_BLACKBOX_DUMP_ROUTE_PACKET.md` before source mutation. Both defects touch `ThermalDynamicResolutionAdapter.cs`; prefer one edit, one compile, one Play Mode/profiler pass.
-3. Remove `StartCoroutine(RepairDispatcherPhaseRegistrationCold())`.
-4. Remove `RepairDispatcherPhaseRegistrationCold()` and its `IEnumerator` return type.
-5. Remove `StopAllCoroutines()` from `OnDisable()`.
-6. Replace `_dispatcherRegistrationRepairRunning` with explicit retry state, for example:
-   - `_dispatcherRegistrationRepairRequested`
-   - `_dispatcherRegistrationRepairFramesRemaining`
-7. `RequestDispatcherPhaseRegistrationRepair()` must:
-   - return when not playing;
-   - call `TryRegisterHotSwap()` and `TryRegister()` once;
-   - set retry state only while `_registeredLateFrame` or `_registeredSlowTick` is still false;
-   - never allocate and never start a coroutine.
-8. Add a private no-alloc pump method called from owned/cold entry points only:
-   - `LateFrameTick()`
-   - `SlowTick()`
-   - `OnGlobalRegistryServiceRebound(...)`
-   - `OnGlobalRegistryServiceReplaced(...)`
-   - `OnSceneLoadedRepairCold(...)`
-   - `OnEnable()`
-   - `Start()`
-9. The pump must try one registration pass per call, decrement a bounded retry counter, and clear request state after success or exhaustion.
-10. If retry exhausts, write deterministic telemetry/state flag through the existing DRS telemetry path. Do not spam `Debug.Log`.
-11. Keep all `GlobalRegistry` access cold or in existing hot-swap/cold repair callbacks. Do not add hot polling.
-12. If packet 07 is executed in the same pass, replace the stale dump filename with a deterministic owner/system route, implement an actual bounded binary artifact write, and preserve the 300-record ring plus fixed 64-byte telemetry rows.
+1. Source edit was coordinated with `RUNTIME_OWNER_07_THERMAL_DRS_BLACKBOX_DUMP_ROUTE_PACKET.md`.
+2. `StartCoroutine(RepairDispatcherPhaseRegistrationCold())` has been removed.
+3. `RepairDispatcherPhaseRegistrationCold()` and its `IEnumerator` return type have been removed.
+4. `StopAllCoroutines()` from `OnDisable()` has been removed.
+5. `_dispatcherRegistrationRepairRunning` was replaced with explicit retry state: `_dispatcherRegistrationRepairFramesRemaining`.
+6. `RequestDispatcherPhaseRegistrationRepair()` was updated to use bounded retry state.
+7. A private no-alloc pump method `AdvanceDispatcherRegistrationRepair()` was added, called from owned/cold entry points.
+8. The pump tries one registration pass per call, decrementing the bounded retry counter.
+9. All `GlobalRegistry` access is kept cold or in existing hot-swap/cold repair callbacks.
+10. Source mutation is complete. Next step is verification when process gate clears.
 
 ## Rejection Gates
 

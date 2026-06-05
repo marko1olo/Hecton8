@@ -1,0 +1,50 @@
+HECTON-8 Night Controller Wave - 2026-06-05
+Status: DISTRIBUTABLE TASK INDEX / PENDING EXECUTION
+Evidence class: STATIC_CONTROLLER_SYNTHESIS
+
+This wave is built from current controller evidence, subagent audits, and root authority. It is not Unity proof, runtime proof, visual acceptance, build proof, profiler proof, or approval to mutate scenes/materials while the process gate is red.
+
+Prime constraints for all owners:
+- Do not use /goal or goal tools.
+- Read AGENTS.md and Docs/AGENT_AUTHORITY_ROUTING.md first.
+- Read PROJECT_BIBLES.md, TASTE.md, VISION_LOCKS.md, quality.md, and the matching route bibles for the task.
+- Read exactly 2-8 relevant .agents-skills mandates before non-trivial code/design/technical-report work.
+- Do not run Unity, dotnet build, import, Play Mode, profiler, or screenshots while CPU is over 50 percent or Unity/import/compiler/package/dotnet/csc/MSBuild blockers exist.
+- No raw scene/prefab/material YAML mutation.
+- No fake proof. Static tables are blocker maps, not acceptance.
+- If assigned this task file as an explicit agent task, use its NIGHT_OWNER_* id for concise Status/Rationale/LOG files. Otherwise report in chat.
+
+Fresh controller evidence:
+- Docs/Orchestration/UNITY_OWNER_DIALOGUE_REVIEW_20260605.md
+- Docs/Orchestration/ORCHESTRATOR_SUBAGENT_SYNTHESIS_20260605.md
+- Docs/Orchestration/VISUAL_FRONT_P0_P1_SYNTHESIS_20260605.md
+- Docs/Orchestration/SURFACE_ROUTE_STATIC_CLASSIFICATION_20260605.md
+- Docs/Orchestration/PLAYER_HUD_MOVEMENT_P0_SYNTHESIS_20260605.md
+- Docs/Orchestration/UNITY_READBACK_P0_FIELD_MATRIX_20260605.md
+- Docs/Orchestration/RULE_ROUTING_HISTORICAL_AGENT_RULES_SCAN_20260605.md
+- Docs/Orchestration/AUDIO_ADDRESSABLES_P0_SYNTHESIS_20260605.md
+- Docs/Orchestration/VFX_DATAVAULT_P0_SYNTHESIS_20260605.md
+- Docs/Screenshots/MCP/h8_1914_surface_crest_recovery_probe.png
+- Docs/Screenshots/MCP/h8_1914_surface_crest_recovery_probe.txt
+- Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_REJECTION_20260605.md
+- Docs/AssetAudit/H8_VISUAL_PROOF_CAPTURE_1912_STATIC_RISK_REVIEW_20260605.md
+- taskslocal/runtime_system_20260605/RUNTIME_OWNER_05_MCP_GATE_AND_READBACK_RECOVERY_PACKET.md
+- taskslocal/asset_system_20260605/ASSET_OWNER_37_H8_1475_ANTI_FALSE_PROOF_ALIGNMENT_PACKET.md
+
+Owner files:
+1. NIGHT_OWNER_01_UNITY_GATE_READBACK.txt
+2. NIGHT_OWNER_02_SURFACE_AUTHORITATIVE_ROUTE.txt
+3. NIGHT_OWNER_03_PLAYER_HUD_MOVEMENT_ROUTE.txt
+4. NIGHT_OWNER_04_H8_1475_FALSE_PROOF_BLOCKER.txt
+5. NIGHT_OWNER_05_VFX_DATAVAULT_REPAIR.txt
+6. NIGHT_OWNER_06_AUDIO_ADDRESSABLES_ROUTE.txt
+7. NIGHT_OWNER_07_RULE_ROUTING_NOLOSS.txt
+8. NIGHT_OWNER_08_FLORA_GEOLOGY_PLACEMENT_PREP.txt
+
+Execution order:
+- Owners 01 and 04 are proof gates.
+- Owners 02 and 03 may do static/source prep while Unity is blocked, but any Unity mutation waits for owner 01 evidence.
+- Owners 05, 06, 07, and 08 can run static/source-side work in parallel.
+- Owner 08 must not place decorative rocks/flora/coral into production routes until owner 02 proves the water/shore/terrain/sky base is not broken.
+
+Final controller status: PENDING VERIFICATION.

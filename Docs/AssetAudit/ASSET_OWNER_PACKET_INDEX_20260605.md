@@ -10,8 +10,8 @@ CSV companion: `Docs/AssetAudit/ASSET_OWNER_PACKET_INDEX_20260605.csv`.
 
 ## Counts
 
-- Indexed owner IDs: 36.
-- Present packet files: 31.
+- Indexed owner IDs: 37.
+- Present packet files: 32.
 - Output-only IDs without tasklocal packet files: 5 (`29`-`33`).
 - Output-only IDs 29-33 are target-table worker outputs, not missing execution packets.
 
@@ -19,11 +19,11 @@ CSV companion: `Docs/AssetAudit/ASSET_OWNER_PACKET_INDEX_20260605.csv`.
 
 | Owner ID | Output artifact | Boundary |
 |---|---|---|
-| `29` | `Docs/AssetAudit/PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.md/.csv` | Target-table output only; use current routing synthesis and owner packets 24-36 before execution. |
-| `30` | `Docs/AssetAudit/PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.md/.csv` | Target-table output only; use current routing synthesis and owner packets 24-36 before execution. |
-| `31` | `Docs/AssetAudit/AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.md/.csv` | Target-table output only; use current routing synthesis and owner packets 24-36 before execution. |
-| `32` | `Docs/AssetAudit/H8_1475_READBACK_FIELD_MANIFEST_20260605.md/.csv` | Target-table output only; use current routing synthesis and owner packets 24-36 before execution. |
-| `33` | `Docs/AssetAudit/VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.md/.csv` | Target-table output only; use current routing synthesis and owner packets 24-36 before execution. |
+| `29` | `Docs/AssetAudit/PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.md/.csv` | Target-table output only; use current routing synthesis and owner packets 24-37 before execution. |
+| `30` | `Docs/AssetAudit/PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.md/.csv` | Target-table output only; use current routing synthesis and owner packets 24-37 before execution. |
+| `31` | `Docs/AssetAudit/AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.md/.csv` | Target-table output only; use current routing synthesis and owner packets 24-37 before execution. |
+| `32` | `Docs/AssetAudit/H8_1475_READBACK_FIELD_MANIFEST_20260605.md/.csv` | Target-table output only; use current routing synthesis and owner packets 24-37 before execution. |
+| `33` | `Docs/AssetAudit/VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.md/.csv` | Target-table output only; use current routing synthesis and owner packets 24-37 before execution. |
 
 ## Present Packet Domains
 
@@ -60,6 +60,7 @@ CSV companion: `Docs/AssetAudit/ASSET_OWNER_PACKET_INDEX_20260605.csv`.
 | `34` | `taskslocal/asset_system_20260605/ASSET_OWNER_34_ACTIVE_ROUTE_TRIAGE_PACKET.md` | `active_route_triage_packet` | `STATIC/PENDING UNITY READBACK` |
 | `35` | `taskslocal/asset_system_20260605/ASSET_OWNER_35_UNREFERENCED_SOURCE_CLEANUP_REVIEW_PACKET.md` | `unreferenced_source_cleanup_review_packet` | `STATIC / PENDING VERIFICATION` |
 | `36` | `taskslocal/asset_system_20260605/ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md` | `h8_1475_proof_execution_packet` | `DISTRIBUTABLE_TASK_PACKET / UNITY_NOT_RUN_BY_PACKET_WRITER` |
+| `37` | `taskslocal/asset_system_20260605/ASSET_OWNER_37_H8_1475_ANTI_FALSE_PROOF_ALIGNMENT_PACKET.md` | `h8_1475_anti_false_proof_alignment_packet` | `DISTRIBUTABLE_TASK_PACKET / UNITY_NOT_RUN_BY_PACKET_WRITER` |
 
 ## Dispatch Rule
 

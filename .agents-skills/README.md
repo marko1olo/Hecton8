@@ -48,6 +48,8 @@ Minimum examples:
 - Designer-tunable unmanaged data requires a human-readable bridge: CSV/SO/Editor facade to validated binary, with runtime parsing kept out of hot paths.
 - Mandate language is command language. "Consider", "maybe", "should", and "recommended" are rejected in new mandate text unless quoted as a banned pattern.
 - Unity import, Console, Play Mode, profiler, GCMonitor, player-build, memory, frame-time, scene wiring, and visual quality are `PENDING VERIFICATION` unless fresh artifacts prove them.
+- Verification has a budget. One scoped static scan and one scoped triage pass may route action; repeated checks over unchanged source/assets/proof are bureaucracy theater.
+- After `PENDING VERIFICATION` is known, the next useful step is proof run, source/asset fix, or concrete blocker report. More boards, CSVs, task packets, and validation summaries are rejected unless they name a new command/file/proof action.
 
 ## Engineering Data
 
@@ -113,3 +115,5 @@ When mandate text conflicts:
 [FORBID] Claiming platform readiness from `link.xml` text alone.
 [FORBID] Claiming data sovereignty while NativeArray references bypass GlobalDataVault.
 [FORBID] Using H-Phi score movement as proof that new global Registry/Signal/Event/Vault surface is architecturally correct.
+[FORBID] Repeating static checks over unchanged source/assets/proof after the missing Unity/player/profiler/device proof is already known.
+[FORBID] Treating report volume, CSV count, task packet count, or controller-board churn as progress.

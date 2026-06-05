@@ -1,0 +1,54 @@
+NIGHT_OWNER_01_UNITY_GATE_READBACK
+Role: Unity process/MCP/readback gate owner.
+Status: PENDING EXECUTION
+
+Objective:
+Recover a trustworthy no-mutation Unity readback lane. This removes the blocker that prevents active player/HUD/tool route proof and h8_1475 proof.
+
+Authority:
+- AGENTS.md
+- Docs/AGENT_AUTHORITY_ROUTING.md
+- HECTON8_ORCHESTRATOR.md only if acting as controller
+- systems.md, performance.md, quality.md, testing.md
+- Docs/Orchestration/UNITY_READBACK_P0_FIELD_MATRIX_20260605.md
+- taskslocal/runtime_system_20260605/RUNTIME_OWNER_05_MCP_GATE_AND_READBACK_RECOVERY_PACKET.md
+- .agents-skills/ARCH_Execution_Phases.txt
+- .agents-skills/ARCH_Project_Bootstrap_Sequence_Init_Safety.txt
+- .agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt
+- .agents-skills/DBG_Telemetry_Crash_Reporting_PostMortem.txt
+
+Owned scope:
+- Read-only process/MCP/Unity state evidence.
+- Write proof artifacts under Docs/Reports/RuntimeSystem_20260605/NIGHT_OWNER_01_* only.
+- No Assets, ProjectSettings, Packages, scene, prefab, material, Addressables, or raw YAML writes.
+
+Tasks:
+1. Read current ORCHESTRATOR_NIGHT_20260605.md tail and this batch index.
+2. Take 3 CPU samples at least 10 seconds apart.
+3. Stop if any sample is over 50 percent.
+4. Stop if Unity.ILPP.Runner, UnityShaderCompiler, UnityPackageManager, AssetImportWorker, dotnet, csc, or MSBuild exists.
+5. Confirm MCP endpoint and current server logs.
+6. If MCP resources/tools are stale or absent, record MCP_ROUTE_STALE and stop.
+7. If safe, read Unity editor state: compiling/importing/domain reload/play/saving/dirty state.
+8. Read console error/warning counts without clearing console.
+9. Read loaded scene list and active scene.
+10. Read active tagged/named Player objects.
+11. Read camera stack, HUD roots, compositor render modes, input owner, surface/Crest/terrain/sky route fields, audio/Addressables route fields, VFX/telemetry route fields, and dirty state before/after.
+12. Create process_mcp_editor_readback report.
+
+Acceptance:
+- GREEN only if all process samples pass, Unity is idle, MCP is current, no dirty mutation occurs, and active player/HUD/input/camera route facts are known.
+- Anything else is BLOCKED BY PROCESS GATE or BLOCKED BY MCP/UNITY READBACK.
+
+Proof required:
+- process samples table;
+- blocker process table;
+- MCP health/tool/session evidence;
+- editor state;
+- console summary;
+- loaded scene table;
+- active player/HUD/input/camera readback;
+- dirty-state before/after.
+
+Low/Middle/High/Ultra:
+Same gameplay truth on all lanes. Higher lanes may collect richer proof; lower lanes still require active route truth.

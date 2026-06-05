@@ -18,6 +18,15 @@ This index is a map of existing proof-adjacent artifacts. It is not product acce
 | `Docs/AssetAudit/ContactSheets/unknown_textures_contact_sheet.png` | Unassigned useful texture sources | Static image review only | Assign owner/material role before route use. |
 | `Docs/AssetAudit/ContactSheets/generated_source_only_contact_sheet.png` | Generated/source-only candidate overview | Static image review only | Treat as reference art only. |
 
+## Diagnostic Screenshot Reviews
+
+| Artifact | Role | Evidence Boundary | Owner Next Action |
+|---|---|---|---|
+| `Docs/Screenshots/MCP/h8_1914_surface_water_recovery_probe.png` | Surface/ocean diagnostic rejection | Static screenshot review only; editor-only unsaved capture | Use with `SURFACE_WATER_RECOVERY_PROBE_1914_STATIC_REVIEW_20260605.md`; do not accept as h8_1475 proof. |
+| `Docs/Screenshots/MCP/h8_1914_surface_water_recovery_probe.txt` | Surface/ocean diagnostic readback text | Static text capture only; editor-only unsaved capture | Route to ocean/Crest, terrain, and sky owners for future clean readback. |
+| `Docs/AssetAudit/SURFACE_WATER_RECOVERY_PROBE_1914_STATIC_REVIEW_20260605.md` | Surface/ocean visual rejection summary | Static screenshot review only | Use to reject flat slab water, clipped shoreline, billboard Aegir, and temp-haze proof substitution. |
+| `Docs/AssetAudit/H8_VISUAL_PROOF_CAPTURE_1912_STATIC_RISK_REVIEW_20260605.md` | h8_1475 proof-tool risk summary | Static source review only | Use to reject editor-mutated diagnostic probe methods as canonical acceptance proof. |
+
 ## Audio Waveform Artifacts
 
 | Artifact | Role | Evidence Boundary | Owner Next Action |

@@ -153,6 +153,21 @@ Reject if:
 - low-tier capture collapses into mud;
 - profiler/render proof is absent after implementation.
 
+## 8A. Capture Kill Switch
+
+Capture iteration must prove visual improvement, not produce a gallery of near-identical failures.
+
+Stop the lane and report `VISUAL_ROUTE_INVALID` when:
+
+- two captures from the same route class show the same root visual failure;
+- the agent is only changing tint, haze, fog, bloom, exposure, material color, or disabled-renderer state;
+- the capture uses editor-only unsaved probes, temporary objects, dirty scene state, or no-restore serialized changes;
+- the result still lacks credible waterline/contact, terrain material breakup, sky/Aegir integration, route readability, or player-scale context.
+
+After the kill switch fires, a valid continuation must identify the broken owner route and fix the underlying source path: active scene object, renderer, material, texture, terrain source, Crest/ocean binding, lighting, camera composition, or route asset package. The next capture must repeat the failed shot class so improvement is visible.
+
+Diagnostic captures can prove rejection only. They cannot prove acceptance.
+
 ## 9. Truth Ownership And Boundary
 
 Presentation consumes truth from rendering, physics, world, AI, audio, UI, and gameplay owners. It does not invent damage, route state, threat state, lighting eligibility, or objective truth.

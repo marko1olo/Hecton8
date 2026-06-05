@@ -670,8 +670,6 @@ namespace Hecton8.Environment
         private PropwashGpuTuningDTO _cachedPropwashTuning;
         private MockFlowField _cachedMockFlowField;
         private MockAcousticSignal _mockAcousticSignal;
-        private NativeArray<DynamicWakeDTO> _mockWakeScratch;
-        private NativeArray<PropwashEventDTO> _propwashEventScratch;
         private Vector3 _pendingAupShiftOffset;
         private bool _vehicleCommandListenerRegistered;
         private bool _nativeStateReady;
@@ -792,7 +790,6 @@ namespace Hecton8.Environment
             SetBubbleTrailState(0f, 0f);
             UnregisterRuntimeTickables();
             ReleaseBuffers();
-            DisposeRuntimeScratchBuffers();
             ClearNativeStateLease();
             _abyssalFlowGpuReadModel = null;
             _weatherService = null;
@@ -1317,89 +1314,7 @@ namespace Hecton8.Environment
             InitializeDefaultSiltTuning(vault);
             InitializeDefaultPropwashTuning(vault);
             InitializeDefaultPropwashWakeProfiles(vault);
-            return EnsureRuntimeScratchBuffers();
-        }
-
-        private bool EnsureRuntimeScratchBuffers()
-        {
-            return EnsureNativeArrayScratch(
-                    ref _mockWakeScratch,
-                    DynamicWakeDtoCapacity,
-                    "_mockWakeScratch") &&
-                EnsureNativeArrayScratch(
-                    ref _propwashEventScratch,
-                    PropwashEventRingCapacity,
-                    "_propwashEventScratch");
-        }
-
-        private static bool EnsureNativeArrayScratch<T>(
-            ref NativeArray<T> scratch,
-            int requiredLength,
-            string label) where T : struct
-        {
-            if (scratch.IsCreated && scratch.Length >= requiredLength)
-                return true;
-
-            DisposeNativeArrayScratch(ref scratch);
-            if (requiredLength <= 0)
-                return false;
-
-            scratch = new NativeArray<T>(
-                requiredLength,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: owner-local VFX staging scratch; hot paths reuse fixed capacity.
-            NativeMemorySentinel.RegisterNativeArray(scratch, nameof(HectonMarineSnowRenderer), label, NativeAllocationLifetime.Scene);
             return true;
-        }
-
-        private void DisposeRuntimeScratchBuffers()
-        {
-            DisposeNativeArrayScratch(ref _mockWakeScratch);
-            DisposeNativeArrayScratch(ref _propwashEventScratch);
-        }
-
-        private static void DisposeNativeArrayScratch<T>(ref NativeArray<T> scratch) where T : struct
-        {
-            if (!scratch.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(scratch);
-            scratch.Dispose();
-            scratch = default;
-        }
-
-        private static unsafe void CopyNativeArrayPrefix<T>(
-            NativeArray<T> source,
-            NativeArray<T> destination,
-            int count) where T : struct
-        {
-            if (!source.IsCreated || !destination.IsCreated || count <= 0)
-                return;
-
-            int safeCount = math.min(count, math.min(source.Length, destination.Length));
-            if (safeCount <= 0)
-                return;
-
-            void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
-            void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafePtr(destination);
-            UnsafeUtility.MemCpy(destinationPtr, sourcePtr, safeCount * UnsafeUtility.SizeOf<T>());
-        }
-
-        private static unsafe void CopyNativeArrayPrefix<T>(
-            NativeArray<T>.ReadOnly source,
-            NativeArray<T> destination,
-            int count) where T : struct
-        {
-            if (!source.IsCreated || !destination.IsCreated || count <= 0)
-                return;
-
-            int safeCount = math.min(count, math.min(source.Length, destination.Length));
-            if (safeCount <= 0)
-                return;
-
-            void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
-            void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafePtr(destination);
-            UnsafeUtility.MemCpy(destinationPtr, sourcePtr, safeCount * UnsafeUtility.SizeOf<T>());
         }
 
         private bool AreMarineSnowRuntimeResourcesReady()
@@ -1467,6 +1382,13 @@ namespace Hecton8.Environment
             events = default;
             return _nativeStateReady &&
                    TryReadOnlyVaultBuffer(ref _propwashEventHandle, BufferID.PropwashGpuEventRing, PropwashEventRingCapacity, out events);
+        }
+
+        private bool TryReadReadyDynamicWakes(out NativeArray<DynamicWakeDTO>.ReadOnly wakes)
+        {
+            wakes = default;
+            return _nativeStateReady &&
+                   TryReadOnlyVaultBuffer(ref _dynamicWakeDtoHandle, BufferID.MarineSnowDynamicWakes, DynamicWakeDtoCapacity, out wakes);
         }
 
         private bool TryReadReadyPropwashCursor(out NativeArray<PropwashRingCursorDTO>.ReadOnly cursor)
@@ -1881,10 +1803,19 @@ namespace Hecton8.Environment
 
         private void CommitVehicleWakePropwashEvent(in VehicleWakeJobResult result)
         {
-            if (!_propwashEventScratch.IsCreated ||
-                !TryReadPropwashCursorSnapshot(out PropwashRingCursorDTO cursor) ||
-                !TryCopyPropwashEventsToScratch() ||
+            if (!TryReadPropwashCursorSnapshot(out PropwashRingCursorDTO cursor) ||
                 !TryBuildPropwashLocalPosition(result.PositionWS, out float3 localPosition))
+            {
+                return;
+            }
+
+            IDataVault vault = _dataVault;
+            if (!TryAcquireOwnedVaultWriteBuffer(
+                    vault,
+                    in _propwashEventHandle,
+                    BufferID.PropwashGpuEventRing,
+                    PropwashEventRingCapacity,
+                    out NativeArray<PropwashEventDTO> events))
             {
                 return;
             }
@@ -1894,18 +1825,30 @@ namespace Hecton8.Environment
                 ? tuning.GlobalQualityWeightOverride
                 : HomeostasisBrain.GlobalQualityWeight;
             float radiusLimit = tuning.Version != 0u ? math.max(0.25f, tuning.MaxEventRadius) : 32f;
-            if (TryAppendVehicleWakePropwashEventToScratch(
-                    localPosition,
-                    result.VectorWS,
-                    result.Intensity,
-                    math.min(result.Radius, radiusLimit),
-                    unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
-                    quality,
-                    PropwashGpuContracts.DefaultWakeProfileHash,
-                    ref cursor))
+            bool publishEvents = false;
+            try
             {
-                TryPublishPropwashScratch(in cursor, copyEvents: true);
+                if (TryAppendVehicleWakePropwashEvent(
+                        events,
+                        localPosition,
+                        result.VectorWS,
+                        result.Intensity,
+                        math.min(result.Radius, radiusLimit),
+                        unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
+                        quality,
+                        PropwashGpuContracts.DefaultWakeProfileHash,
+                        ref cursor))
+                {
+                    publishEvents = true;
+                }
             }
+            finally
+            {
+                vault.ReleaseWriteLock(in _propwashEventHandle, VaultOwnerSystem);
+            }
+
+            if (publishEvents)
+                TryPublishPropwashEvents(in cursor);
         }
 
         private bool TryBuildPropwashLocalPosition(float3 runtimePosition, out float3 localPosition)
@@ -2319,7 +2262,7 @@ namespace Hecton8.Environment
             ClearGraphicsBuffer<Vector4>(_mockWakeVectorBuffer, MockWakeCapacity);
         }
 
-        private void UploadMockWakeGpuBuffers(NativeArray<DynamicWakeDTO> wakes, int activeCount)
+        private void UploadMockWakeGpuBuffers(NativeArray<DynamicWakeDTO>.ReadOnly wakes, int activeCount)
         {
             int dtoCount = ResolveSafeGpuWriteCount<DynamicWakeDTO>(_mockWakeDtoBuffer, MockWakeCapacity);
             int wakeCount = ResolveSafeGpuWriteCount<Vector4>(_mockWakeBuffer, MockWakeCapacity);
@@ -2357,7 +2300,7 @@ namespace Hecton8.Environment
             }
         }
 
-        private bool TryWriteMockWakeDtoGpuBuffer(NativeArray<DynamicWakeDTO> wakes, int safeCount, int enabledCount)
+        private bool TryWriteMockWakeDtoGpuBuffer(NativeArray<DynamicWakeDTO>.ReadOnly wakes, int safeCount, int enabledCount)
         {
             bool locked = false;
             NativeArray<DynamicWakeDTO> map = default;
@@ -2378,7 +2321,7 @@ namespace Hecton8.Environment
 
         private bool TryWriteMockWakePackedGpuBuffer(
             GraphicsBuffer buffer,
-            NativeArray<DynamicWakeDTO> wakes,
+            NativeArray<DynamicWakeDTO>.ReadOnly wakes,
             int safeCount,
             int enabledCount,
             bool writeForceVector)
@@ -2411,7 +2354,7 @@ namespace Hecton8.Environment
             }
         }
 
-        private void UploadPropwashEventGpuBuffer(NativeArray<PropwashEventDTO> events, PropwashRingCursorDTO cursor)
+        private void UploadPropwashEventGpuBuffer(NativeArray<PropwashEventDTO>.ReadOnly events, PropwashRingCursorDTO cursor)
         {
             GraphicsBuffer uploadBuffer = ResolvePropwashEventUploadBufferCandidate();
             int safeCount = ResolveSafeGpuWriteCount<PropwashEventDTO>(uploadBuffer, PropwashEventRingCapacity);
@@ -2572,10 +2515,10 @@ namespace Hecton8.Environment
             }
         }
 
-        private void BuildMockWakeScratch(int activeCount)
+        private int WriteMockWakeBuffer(NativeArray<DynamicWakeDTO> wakes, int activeCount)
         {
-            if (!_mockWakeScratch.IsCreated)
-                return;
+            if (!wakes.IsCreated)
+                return 0;
 
             Vector3 cameraPosition = targetCamera != null ? targetCamera.position : Vector3.zero;
             Vector3 cameraRightVector = targetCamera != null ? targetCamera.right : Vector3.right;
@@ -2583,13 +2526,13 @@ namespace Hecton8.Environment
             float3 cameraRight = new float3(cameraRightVector.x, cameraRightVector.y, cameraRightVector.z);
             float3 cameraUp = new float3(cameraUpVector.x, cameraUpVector.y, cameraUpVector.z);
             float3 cameraForward = math.normalizesafe(math.cross(cameraRight, cameraUp), new float3(0f, 0f, 1f));
-            int length = _mockWakeScratch.Length;
+            int length = wakes.Length;
             int active = math.clamp(activeCount, 0, math.min(length, MockWakeCapacity));
             for (int i = 0; i < length; i++)
             {
                 if (i >= active)
                 {
-                    _mockWakeScratch[i] = default;
+                    wakes[i] = default;
                     continue;
                 }
 
@@ -2602,7 +2545,7 @@ namespace Hecton8.Environment
                     cameraForward * (0.42f + lane * 0.08f) +
                     cameraRight * (TriangleSignedTurns((phase * 1.37f * InvTau) + 0.25f) * 0.22f) +
                     cameraUp * (TriangleSignedTurns(phase * 0.53f * InvTau) * 0.08f);
-                _mockWakeScratch[i] = new DynamicWakeDTO
+                wakes[i] = new DynamicWakeDTO
                 {
                     Position = new float3(cameraPosition.x, cameraPosition.y, cameraPosition.z) - cameraForward * (3.5f + lane * 2.0f) + cameraRight * lateral + cameraUp * vertical,
                     Radius = radius,
@@ -2610,42 +2553,47 @@ namespace Hecton8.Environment
                     Falloff = math.saturate(1.0f - i * 0.18f)
                 };
             }
+
+            return active;
         }
 
-        private bool TryCopyMockWakeScratchToVault()
+        private bool TryWriteMockWakeVaultAndGpu(int requestedActiveCount, out int writtenCount)
         {
-            if (!_mockWakeScratch.IsCreated)
-                return false;
-
+            writtenCount = 0;
             IDataVault vault = _dataVault;
-            if (!TryAcquireOwnedVaultWriteBuffer(vault, in _dynamicWakeDtoHandle, BufferID.MarineSnowDynamicWakes, DynamicWakeDtoCapacity, out NativeArray<DynamicWakeDTO> wakes))
+            if (!TryAcquireOwnedVaultWriteBuffer(
+                    vault,
+                    in _dynamicWakeDtoHandle,
+                    BufferID.MarineSnowDynamicWakes,
+                    DynamicWakeDtoCapacity,
+                    out NativeArray<DynamicWakeDTO> wakes))
+            {
                 return false;
+            }
 
             try
             {
-                int copyCount = math.min(wakes.Length, _mockWakeScratch.Length);
-                CopyNativeArrayPrefix(_mockWakeScratch, wakes, copyCount);
-                return true;
+                writtenCount = WriteMockWakeBuffer(wakes, requestedActiveCount);
+                if (writtenCount <= 0)
+                {
+                    ClearMockWakeGpuBuffers();
+                    return false;
+                }
+
             }
             finally
             {
                 vault.ReleaseWriteLock(in _dynamicWakeDtoHandle, VaultOwnerSystem);
             }
-        }
 
-        private bool TryCopyPropwashEventsToScratch()
-        {
-            if (!_propwashEventScratch.IsCreated ||
-                !TryReadReadyPropwashEvents(out NativeArray<PropwashEventDTO>.ReadOnly events))
+            if (!TryReadReadyDynamicWakes(out NativeArray<DynamicWakeDTO>.ReadOnly readyWakes))
             {
+                ClearMockWakeGpuBuffers();
                 return false;
             }
 
-            int copyCount = math.min(events.Length, _propwashEventScratch.Length);
-            CopyNativeArrayPrefix(events, _propwashEventScratch, copyCount);
-            for (int i = copyCount; i < _propwashEventScratch.Length; i++)
-                _propwashEventScratch[i] = default;
-            return copyCount > 0;
+            UploadMockWakeGpuBuffers(readyWakes, writtenCount);
+            return true;
         }
 
         private bool TryReadPropwashCursorSnapshot(out PropwashRingCursorDTO cursor)
@@ -2659,34 +2607,6 @@ namespace Hecton8.Environment
 
             cursor = cursorRing[0];
             return true;
-        }
-
-        private bool TryCopyPropwashScratchToVault()
-        {
-            if (!_propwashEventScratch.IsCreated)
-                return false;
-
-            IDataVault vault = _dataVault;
-            if (!TryAcquireOwnedVaultWriteBuffer(
-                    vault,
-                    in _propwashEventHandle,
-                    BufferID.PropwashGpuEventRing,
-                    PropwashEventRingCapacity,
-                    out NativeArray<PropwashEventDTO> events))
-            {
-                return false;
-            }
-
-            try
-            {
-                int copyCount = math.min(events.Length, _propwashEventScratch.Length);
-                CopyNativeArrayPrefix(_propwashEventScratch, events, copyCount);
-                return true;
-            }
-            finally
-            {
-                vault.ReleaseWriteLock(in _propwashEventHandle, VaultOwnerSystem);
-            }
         }
 
         private bool TryWritePropwashCursorToVault(in PropwashRingCursorDTO cursor)
@@ -2713,16 +2633,25 @@ namespace Hecton8.Environment
             }
         }
 
-        private bool TryPublishPropwashScratch(in PropwashRingCursorDTO cursor, bool copyEvents)
+        private bool TryPublishPropwashEvents(in PropwashRingCursorDTO cursor)
         {
-            if (copyEvents && !TryCopyPropwashScratchToVault())
+            if (!TryReadReadyPropwashEvents(out NativeArray<PropwashEventDTO>.ReadOnly events))
                 return false;
 
-            // Cursor is published after event bytes so readers never observe a new count before payload visibility.
+            // Cursor is published after the event write-lock is released so readers never observe a new count before payload visibility.
             if (!TryWritePropwashCursorToVault(in cursor))
                 return false;
 
-            UploadPropwashEventGpuBuffer(_propwashEventScratch, cursor);
+            UploadPropwashEventGpuBuffer(events, cursor);
+            return true;
+        }
+
+        private bool TryPublishPropwashCursorOnly(in PropwashRingCursorDTO cursor)
+        {
+            if (!TryWritePropwashCursorToVault(in cursor))
+                return false;
+
+            ResetPropwashDebugState();
             return true;
         }
 
@@ -2734,7 +2663,8 @@ namespace Hecton8.Environment
             _debugPropwashStrongestLocalPosition = default;
         }
 
-        private bool TryAppendVehicleWakePropwashEventToScratch(
+        private bool TryAppendVehicleWakePropwashEvent(
+            NativeArray<PropwashEventDTO> events,
             float3 localPosition,
             float3 thrustVector,
             float intensity,
@@ -2744,7 +2674,7 @@ namespace Hecton8.Environment
             uint profileHash,
             ref PropwashRingCursorDTO cursor)
         {
-            int capacity = _propwashEventScratch.IsCreated ? _propwashEventScratch.Length : 0;
+            int capacity = events.IsCreated ? events.Length : 0;
             if (capacity <= 0)
                 return false;
 
@@ -2760,7 +2690,7 @@ namespace Hecton8.Environment
 
             int previousCount = math.clamp(cursor.EventCount, 0, capacity);
             int write = WrapPropwashUploadIndex(cursor.WriteCursor, capacity);
-            _propwashEventScratch[write] = new PropwashEventDTO
+            events[write] = new PropwashEventDTO
             {
                 LocalPosition = localPosition,
                 ThrustVector = thrustVector,
@@ -2780,21 +2710,18 @@ namespace Hecton8.Environment
             return true;
         }
 
-        private bool TryBuildMockPropwashScratch(
+        private bool TryBuildMockPropwashEvents(
+            NativeArray<PropwashEventDTO> events,
             int requestedCount,
             float timeSeconds,
             float globalQualityWeight,
             int frame,
-            out PropwashRingCursorDTO cursor)
+            ref PropwashRingCursorDTO cursor)
         {
-            cursor = default;
-            if (!_propwashEventScratch.IsCreated ||
-                !TryReadPropwashCursorSnapshot(out cursor))
-            {
+            int capacity = events.IsCreated ? events.Length : 0;
+            if (capacity <= 0)
                 return false;
-            }
 
-            int capacity = _propwashEventScratch.Length;
             int eventCount = math.clamp(requestedCount, 0, math.min(capacity, PropwashGpuContracts.MockEventCount));
             int baseCursor = WrapPropwashUploadIndex(cursor.WriteCursor, capacity);
             float quality = math.saturate(globalQualityWeight);
@@ -2814,7 +2741,7 @@ namespace Hecton8.Environment
                 float safeRadius = (1.15f + 5.25f * lane01) * radiusScale;
                 int slot = WrapPropwashUploadIndex(baseCursor + i, capacity);
 
-                _propwashEventScratch[slot] = new PropwashEventDTO
+                events[slot] = new PropwashEventDTO
                 {
                     LocalPosition = new float3(side, lift - 0.35f, -range),
                     ThrustVector = new float3(swirl * 0.28f, math.max(0.02f, safeIntensity * 0.11f), -safeIntensity),
@@ -2833,7 +2760,54 @@ namespace Hecton8.Environment
             return true;
         }
 
-        private bool TryAppendWakeSourcePropwashToScratch(
+        private bool TryBuildAndPublishMockPropwashEvents(
+            int requestedCount,
+            float timeSeconds,
+            float globalQualityWeight,
+            int frame,
+            out PropwashRingCursorDTO cursor)
+        {
+            cursor = default;
+            if (!TryReadPropwashCursorSnapshot(out cursor))
+                return false;
+
+            IDataVault vault = _dataVault;
+            if (!TryAcquireOwnedVaultWriteBuffer(
+                    vault,
+                    in _propwashEventHandle,
+                    BufferID.PropwashGpuEventRing,
+                    PropwashEventRingCapacity,
+                    out NativeArray<PropwashEventDTO> events))
+            {
+                return false;
+            }
+
+            bool publishEvents = false;
+            try
+            {
+                publishEvents = TryBuildMockPropwashEvents(
+                    events,
+                    requestedCount,
+                    timeSeconds,
+                    globalQualityWeight,
+                    frame,
+                    ref cursor);
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _propwashEventHandle, VaultOwnerSystem);
+            }
+
+            if (!publishEvents)
+                return false;
+
+            return cursor.EventCount > 0
+                ? TryPublishPropwashEvents(in cursor)
+                : TryPublishPropwashCursorOnly(in cursor);
+        }
+
+        private bool TryAppendWakeSourcePropwash(
+            NativeArray<PropwashEventDTO> events,
             NativeArray<WakeSource>.ReadOnly wakeSources,
             double3 cameraAup,
             int sourceScanLimit,
@@ -2843,7 +2817,7 @@ namespace Hecton8.Environment
             uint profileHash,
             ref PropwashRingCursorDTO cursor)
         {
-            int capacity = _propwashEventScratch.IsCreated ? _propwashEventScratch.Length : 0;
+            int capacity = events.IsCreated ? events.Length : 0;
             if (capacity <= 0 || !wakeSources.IsCreated || wakeSources.Length <= 0)
                 return false;
 
@@ -2892,7 +2866,7 @@ namespace Hecton8.Environment
                 float3 direction = velocity * invSpeed;
                 float faunaWeight = sourceKind == PropwashGpuContracts.WakeSourceApexPredator ? 0.72f : 1f;
                 int slot = WrapPropwashUploadIndex(writeCursor + written, capacity);
-                _propwashEventScratch[slot] = new PropwashEventDTO
+                events[slot] = new PropwashEventDTO
                 {
                     LocalPosition = localPosition,
                     ThrustVector = direction * (sourceIntensity * forceScale * faunaWeight),
@@ -2959,14 +2933,14 @@ namespace Hecton8.Environment
 
             float propwashQuality = ResolvePropwashQualityWeight();
             int activePropwashCount = mockWakeActive ? ResolveMockPropwashEventCount(propwashQuality) : 0;
-            if (TryBuildMockPropwashScratch(
+            if (TryBuildAndPublishMockPropwashEvents(
                     activePropwashCount,
                     _simulationTime,
                     propwashQuality,
                     unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
                     out PropwashRingCursorDTO propwashCursor))
             {
-                if (!TryPublishPropwashScratch(in propwashCursor, copyEvents: activePropwashCount > 0))
+                if (propwashCursor.EventCount <= 0)
                     ResetPropwashDebugState();
             }
             else
@@ -2975,11 +2949,9 @@ namespace Hecton8.Environment
                 ResetPropwashDebugState();
             }
 
-            if (_mockWakeScratch.IsCreated)
+            if (TryWriteMockWakeVaultAndGpu(activeCount, out int writtenWakeCount))
             {
-                BuildMockWakeScratch(activeCount);
-                TryCopyMockWakeScratchToVault();
-                UploadMockWakeGpuBuffers(_mockWakeScratch, activeCount);
+                activeCount = writtenWakeCount;
             }
             else
             {
@@ -3006,16 +2978,14 @@ namespace Hecton8.Environment
             cursor.StateHash = PropwashGpuContracts.HashState(cursor.LastFrame, 0, 0f, 0u);
             cursor.GlobalQualityWeight = 0f;
             cursor.Flags = 0u;
-            TryPublishPropwashScratch(in cursor, copyEvents: false);
+            TryPublishPropwashCursorOnly(in cursor);
         }
 
         private void HarvestProceduralWakeSourcesIntoPropwash()
         {
             if (targetCamera == null ||
                 !TryReadReadyProceduralWakeSources(out NativeArray<WakeSource>.ReadOnly wakeSources) ||
-                !_propwashEventScratch.IsCreated ||
                 !TryReadPropwashCursorSnapshot(out PropwashRingCursorDTO propwashCursor) ||
-                !TryCopyPropwashEventsToScratch() ||
                 !TryResolveRuntimeAup(targetCamera.position, out AbsoluteUniversePosition cameraAup))
             {
                 return;
@@ -3033,23 +3003,46 @@ namespace Hecton8.Environment
             if (writeLimit <= 0)
                 return;
 
-            PropwashRingCursorDTO before = propwashCursor;
-            if (TryAppendWakeSourcePropwashToScratch(
-                    wakeSources,
-                    cameraAup.ToAbsoluteDouble3(),
-                    scanLimit,
-                    writeLimit,
-                    unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
-                    quality,
-                    PropwashGpuContracts.DefaultWakeProfileHash,
-                    ref propwashCursor) &&
-                (propwashCursor.WriteCursor != before.WriteCursor ||
-                 propwashCursor.EventCount != before.EventCount ||
-                 (propwashCursor.LastFrame == SystemDispatcher.CurrentFrameIndex &&
-                  (propwashCursor.Flags & PropwashGpuContracts.WakeSourceBridgeFlag) != 0u)))
+            IDataVault vault = _dataVault;
+            if (!TryAcquireOwnedVaultWriteBuffer(
+                    vault,
+                    in _propwashEventHandle,
+                    BufferID.PropwashGpuEventRing,
+                    PropwashEventRingCapacity,
+                    out NativeArray<PropwashEventDTO> events))
             {
-                TryPublishPropwashScratch(in propwashCursor, copyEvents: true);
+                return;
             }
+
+            bool publishEvents = false;
+            try
+            {
+                PropwashRingCursorDTO before = propwashCursor;
+                if (TryAppendWakeSourcePropwash(
+                        events,
+                        wakeSources,
+                        cameraAup.ToAbsoluteDouble3(),
+                        scanLimit,
+                        writeLimit,
+                        unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
+                        quality,
+                        PropwashGpuContracts.DefaultWakeProfileHash,
+                        ref propwashCursor) &&
+                    (propwashCursor.WriteCursor != before.WriteCursor ||
+                     propwashCursor.EventCount != before.EventCount ||
+                     (propwashCursor.LastFrame == SystemDispatcher.CurrentFrameIndex &&
+                      (propwashCursor.Flags & PropwashGpuContracts.WakeSourceBridgeFlag) != 0u)))
+                {
+                    publishEvents = true;
+                }
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _propwashEventHandle, VaultOwnerSystem);
+            }
+
+            if (publishEvents)
+                TryPublishPropwashEvents(in propwashCursor);
         }
 
         private static int ResolveProceduralWakeSourceBridgeWriteLimit(float globalQualityWeight, int scanLimit)

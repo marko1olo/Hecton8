@@ -35,7 +35,7 @@ Evidence class: STATIC_ONLY. Unity runtime, GPU profiler, Frame Debugger, Render
 3. Static blockers outside the catalog are split:
    - `ThermalDynamicResolutionAdapter.cs` is source-patched: no `Dump_13KRA`, no `DumpFileName`, no `StartCoroutine`, no `StopAllCoroutines`, no `IEnumerator`. Current source uses `DumpFilePrefix = "Dump_THERMAL_DRS_"` and `NativeFaultDumpWriter.TryWriteAll(...)`.
    - DRS acceptance remains blocked by compile, Unity Console, Play Mode forced-fault, binary artifact, GCMonitor, and profiler proof.
-   - `HectonMarineSnowRenderer.cs:673`, `:674`, `:712`, `:1347`, and `:2005` show persistent local `NativeArray` scratch in a MonoBehaviour. Current DataVault audit classifies `:1347` as editor/offline persistent and `:2005` as runtime persistent; future edits must not bulk-migrate both as identical runtime debt.
+   - `HectonMarineSnowRenderer.cs:673`, `:674`, `:712`, `:1347`, and `:2005` show persistent local `NativeArray` scratch in a MonoBehaviour. Source-context review classifies `:1347` as runtime scratch through `EnsureRuntimeScratchBuffers()` and `:2005` as editor/offline wake-profile CSV parse scratch; future edits must not bulk-migrate both as identical runtime debt.
 
 ## What I Did
 

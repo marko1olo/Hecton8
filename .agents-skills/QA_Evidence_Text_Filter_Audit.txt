@@ -22,6 +22,8 @@ Date: 2026-05-11
 
 [RULE] Any claim above its evidence class must be downgraded to `PENDING VERIFICATION`.
 [RULE] "Verified", "complete", "master grade", "0 GC", "0 errors", and timing claims require artifact paths, command lines, timestamps, and target hardware.
+[RULE] Verification has a budget: one scoped static scan and one scoped triage pass may route action. A third check of unchanged source/assets/proof requires new evidence or explicit user/controller authorization.
+[RULE] After `PENDING VERIFICATION` is established, the next useful artifact is the missing proof run, source/asset/root-route fix, or a concrete blocker note. Another validation summary that restates the missing proof is process debt.
 
 [FORBID] Using `rg`/`Select-String` hits as proof that a system is integrated or runtime-clean.
 [FORBID] Claiming Unity Editor status from generated project compile alone.
@@ -33,6 +35,7 @@ Date: 2026-05-11
 [FORBID] Reporting a task as done while `Status_[ID].md` remains unchecked or `LOG_[ID].md` is missing.
 [FORBID] Reporting hot-path purity while source still contains a private `Update()` fallback outside the dispatcher exception list.
 [FORBID] Claiming global-authority improvement from more `SignalBus<T>`, `GlobalRegistry`, `GlobalSignals`, `HectonEventBus`, or `GlobalDataVault` text hits without owner, phase, capacity, overflow, BufferID/SystemID, generation, and runtime proof as applicable.
+[FORBID] Repeated static scans, CSVs, boards, packets, status/rationale/log artifacts, or proof-language audits over unchanged state when the missing proof gate is already named.
 
 ## Batch 007 Inquisition Rules
 

@@ -25,11 +25,11 @@ Use this order when gathering documentation context:
 
 1. `AGENTS.md`
 2. `Docs/AGENT_AUTHORITY_ROUTING.md` for non-trivial task intake and no-loss rule routing
-3. `.agents-skills/README.md`
-4. task-relevant files under `.agents-skills/`
-5. `PROJECT_BIBLES.md`
-6. `VISION_LOCKS.md` when product vision or ambiguity is involved
-7. `TASTE.md` when player-facing, plus the matching root route bible for the current domain
+3. `PROJECT_BIBLES.md`
+4. `VISION_LOCKS.md` when product vision or ambiguity is involved
+5. `TASTE.md` when player-facing, plus the matching root route bible for the current domain
+6. `.agents-skills/README.md`
+7. task-relevant files under `.agents-skills/`
 8. this index plus the active stable files listed below
 9. current C# source under `Assets/_Project` for source reality checks
 10. fresh proof artifacts under `Docs/Reports`
@@ -46,6 +46,7 @@ Dated reports and archived files are evidence snapshots. They are not active sys
 | Need | Read |
 |---|---|
 | Agent task intake, no-loss rule routing, and tool-surface delegation | `Docs/AGENT_AUTHORITY_ROUTING.md` |
+| No-loss detail source for former monolithic `AGENTS.md` clauses | `Docs/AGENTS_RULE_DETAIL_LEDGER.md` |
 | Root bible routing and domain bible selection | `PROJECT_BIBLES.md` |
 | User product vision locks and ambiguity resolution | `VISION_LOCKS.md` |
 | Procedural asset package pipeline binding route bible | `PROCEDURAL_ASSET_PIPELINE.md` |

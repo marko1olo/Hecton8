@@ -8,6 +8,8 @@ Scope: root routing index for taste, bootstrap, gameplay, survival physiology, c
 
 Before creating a major system, boot route, screen, model, texture, shader, biome, terrain surface, ecosystem rule, sonar/scanner/navigation feature, logistics/power network, drone/automation route, XR feature, cinematic moment, celestial/macro-cycle, survival route, combat/damage path, input/control route, camera behavior, atmosphere/weather field, water effect, inventory/economy feature, creature, soundscape, lighting pass, VFX pass, menu, settings option, localized text route, performance budget, GPU compute route, networking/rollback surface, authoring tool, deterministic math route, telemetry route, modding route, SDK/API surface, testing/CI gate, platform claim, release claim, public text, or gameplay loop, read the relevant bible below. Technical mandates in `.agents-skills` still apply. These files define production taste, rejection gates, and system intent so agents do not produce polished-looking emptiness.
 
+Read the selected route bible as a complete document before judging its meaning. Do not replace domain reading with keyword extraction.
+
 ## Product Bar Rule
 
 A bible is useful only if it pushes work toward a playable, beautiful, optimized, believable product. It must turn taste into decisions, decisions into implementation boundaries, and implementation into proof.
@@ -48,10 +50,14 @@ Rule and bible updates must:
 - keep performance subordinate to product-face quality, gameplay clarity, stability, and scalability;
 - keep `WORK AS MUCH AS POSSIBLE` as autonomy for finishing the current front, not as permission for bureaucracy or unrelated scope expansion;
 - keep source-reality discipline explicit: live source, current assets, and fresh proof beat old reports, generated snapshots, task files, and stale logs;
+- keep `C:\Users\danat\.codex\AGENTS.md` as a thin global router that sends HECTON-8 work to root `AGENTS.md` and does not duplicate divergent project law;
+- keep `Docs/AGENTS_RULE_DETAIL_LEDGER.md` as the no-loss detail source for former monolithic root-law clauses until they are promoted into narrower route bibles or mandates;
+- keep `HECTON8_ORCHESTRATOR.md` lane contracts current for explicit multi-agent, batch, controller, and task-file work;
+- keep subagent rules available in root `AGENTS.md` and `HECTON8_ORCHESTRATOR.md` so delegation improves evidence quality without weakening primary responsibility;
 - sync `.codexrules/AGENTS.md`, `.github/agents/AGENTS.md`, and `.agent/rules/AGENTS.md` by delegation or byte-intent copy;
 - keep `Docs/AGENT_AUTHORITY_ROUTING.md` current as the no-loss intake map for agents and as the required protocol before shortening or splitting rule monoliths;
 - regenerate `Docs/PROJECT_ROOT_BIBLES_COMBINED.md` with `python -B Tools/Docs/BuildProjectRootBiblesCombined.py`;
-- run `python -B Tools/Docs/BuildProjectRootBiblesCombined.py --check` and `git diff --check` over touched rule/doc files before reporting.
+- run `python -B Tools/Docs/BuildProjectRootBiblesCombined.py --check`, `python -B Tools/Docs/TestAgentRuleRouting.py`, and `git diff --check` over touched rule/doc files before reporting.
 
 ## Routes
 

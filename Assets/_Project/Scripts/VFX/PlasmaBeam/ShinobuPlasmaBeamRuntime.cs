@@ -169,6 +169,8 @@ namespace Hecton8.VFX.PlasmaBeam
         private const ulong PlasmaBeamJobMutationGuardMask = 0x0000000000FF0000UL;
         private const string CsvRelativePath = "Assets/_Project/Data/VFX/Beam/beam_visuals.csv";
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_LASER_SURGEON.bin";
+        private const string DumpPayloadOwner = nameof(ShinobuPlasmaBeamRuntime);
+        private const string DumpPayloadLabel = "PlasmaBeamTelemetryDumpPayload";
         private const uint HashRadius = 0x0DBA4CB3u;
         private const uint HashNoiseFrequency = 0x451093ACu;
         private const uint HashNoiseAmplitude = 0xF2F668B3u;
@@ -1480,9 +1482,12 @@ namespace Hecton8.VFX.PlasmaBeam
                 header.EntrySize = (uint)entryBytes;
                 header.Flags = _runtimeFlags;
 
-                payload = new NativeArray<byte>(
+                // STATIC_SOURCE_REVIEWED: no owner-local dump scratch buffer exists here; use the
+                // central transient payload route so the Temp dump allocation is labeled/tracked.
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
                     byteCount,
-                    Allocator.Temp,
+                    DumpPayloadOwner,
+                    DumpPayloadLabel,
                     NativeArrayOptions.UninitializedMemory);
 
                 byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
@@ -1502,8 +1507,10 @@ namespace Hecton8.VFX.PlasmaBeam
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    DumpPayloadOwner,
+                    DumpPayloadLabel);
             }
         }
 

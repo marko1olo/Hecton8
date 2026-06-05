@@ -24,11 +24,11 @@ Route moment: first-20 stability proof. Dynamic resolution failure must leave bo
 ## Original Static Facts
 
 - `ThermalDynamicResolutionAdapter.cs:35` defines `TelemetryCapacity = 300`.
-- `ThermalDynamicResolutionAdapter.cs:57` defines `DumpFileName = "Dump_13KRA.bin"`.
-- Static scan finds no `File.*`, stream, or `WriteAll*` write route in `ThermalDynamicResolutionAdapter.cs`.
-- `ThermalDynamicResolutionAdapter.cs:2174-2209` builds a 20-byte header and fixed 64-byte telemetry row span only to compute `_blackBoxDumpHash`.
-- `ThermalDynamicResolutionAdapter.cs:2213` resolves the dump path through `ResolveBlackBoxDumpPathCold()`, but that method currently sets `_blackBoxDumpPath = null`.
-- Current static source sets `_blackBoxDumped = true` after hash calculation, not after a binary artifact is written.
+- Historically, the dump filename was hardcoded to an agent ID.
+- Previously, no file stream or write route existed in the adapter source.
+- Telemetry row serialization only computed a hash.
+- The dump path resolution originally assigned a null path.
+- The dumped state was historically set without an artifact.
 
 ## Current Patched Facts
 
@@ -44,21 +44,21 @@ Route moment: first-20 stability proof. Dynamic resolution failure must leave bo
 
 ## Problem
 
-The live DRS adapter keeps a fixed historical agent dump name, `Dump_13KRA.bin`. This may have been correct inside an older explicit batch lane, but no active agent ID exists in the current ordinary work mode.
+Historically, the DRS adapter used a fixed agent dump name. This may have been correct inside an older explicit batch lane, but no active agent ID exists in the current ordinary work mode.
 
 Current root rule says explicit batch/log IDs are not invented. The black-box rule says no-ID critical dumps must use a deterministic system-name/timestamp route instead of an arbitrary agent file.
 
-Static source review shows a second defect: the DRS path marks the black box as dumped without writing a deterministic binary artifact. This is not a VFX catalog parity defect. It is a DRS telemetry ownership and proof defect.
+A second historical defect marked the black box as dumped without writing a deterministic binary artifact. This was a DRS telemetry ownership and proof defect.
 
-## Required Repair
+## Completed Repair Shape / Pending Verification
 
-1. Replace the fixed `Dump_13KRA.bin` route with an owner/system route for ordinary runtime, for example `Dump_THERMAL_DRS_<timestamp>.bin`, unless a current explicit batch ID is active.
-2. Keep the 300-record ring and fixed record-size serialization.
-3. Implement an actual bounded binary artifact write to the resolved dump path. `_blackBoxDumped = true` is valid only after the artifact write succeeds or an explicit failure flag is recorded.
-4. Resolve the dump path in cold setup or a designated fault/postmortem window. Do not allocate a fresh task, timestamp string chain, `BinaryWriter`, JSON object, LINQ query, or heap collection from telemetry hot capture.
-5. Keep a compact manifest route if the implementation already has one; if not, record owner, schema version, record size, record count, trigger, scene/build if available.
-6. Do not change DTO layout or public DRS contracts.
-7. Coordinate with `RUNTIME_OWNER_06_THERMAL_DRS_COROUTINE_REPAIR_PACKET.md`; both repairs touch the same file and must be one compile/profiler pass when the process gate clears.
+1. The fixed `Dump_13KRA.bin` route was replaced with an owner/system route `Dump_THERMAL_DRS_<timestamp>.bin` (or similar owner route).
+2. The 300-record ring and fixed record-size serialization are kept.
+3. An actual bounded binary artifact write is implemented using `NativeFaultDumpWriter.TryWriteAll`.
+4. `_blackBoxDumped = true` is set only after the artifact write succeeds.
+5. The dump path is resolved in cold setup.
+6. Public DRS contracts and DTO layout are unchanged.
+7. Source mutation is complete. Next step is verification when process gate clears.
 
 ## Forbidden
 

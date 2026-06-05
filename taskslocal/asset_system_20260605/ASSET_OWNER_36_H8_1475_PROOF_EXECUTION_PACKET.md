@@ -33,6 +33,8 @@ Read before execution:
 - `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_REJECTION_20260605.md`
 - `Docs/Reports/AssetSystem_20260605/ASSET_OWNER_18_PRODUCT_FACE_VALIDATOR_SYNTHESIS_20260605.md`
 - `Docs/Reports/RuntimeSystem_20260605/ACTIVE_PLAYER_SCENE_CONFLICT_MAP_20260605.md`
+- `Docs/AssetAudit/H8_VISUAL_PROOF_CAPTURE_1912_STATIC_RISK_REVIEW_20260605.md`
+- `Docs/AssetAudit/SURFACE_WATER_RECOVERY_PROBE_1914_STATIC_REVIEW_20260605.md`
 
 Existing source-gate state:
 
@@ -42,6 +44,8 @@ Existing source-gate state:
 - `h8_1475` proof packet: absent.
 - `Docs/Screenshots/HectonProofPackets/` proof root: missing or not yet populated by accepted `h8_1475` session.
 - `Docs/Screenshots/MCP/*.png`: diagnostic only. Raw MCP PNGs are explicitly rejected as acceptance proof.
+- `H8VisualProofCapture1912.cs` contains diagnostic/editor-mutating capture paths. Any method that carries `editor_only_unsaved`, creates temp water/haze state, mutates Crest/OceanRenderer serialized fields, disables scene renderers, or saves the scene is rejected as canonical h8_1475 proof tooling.
+- `H8VisualProofCapture1912.cs` references the deleted `Assets/_Project/Art/Shaders/H8_SurfaceWaterReadability_1428.shader`. A missing diagnostic shader path is a proof-tool blocker and cannot be hidden by accepting the produced screenshot.
 
 Known blockers to verify through Unity readback, not mutate:
 
@@ -172,6 +176,7 @@ Raw `Docs/Screenshots/MCP/*.png` files are rejected as acceptance proof. They ma
 - No Crest setting change.
 - No canvas render-mode change.
 - No object disable/enable to improve a screenshot.
+- No `H8VisualProofCapture1912` diagnostic probe method as canonical proof capture unless the method is separately proven no-mutation and does not carry `editor_only_unsaved` metadata.
 - No raw YAML edit.
 - No temporary file under `Assets/`.
 - No Crest runtime wrapper, material clone, material instantiation, or override script.

@@ -1,0 +1,54 @@
+NIGHT_OWNER_05_VFX_DATAVAULT_REPAIR
+Role: VFX native ownership / DataVault repair owner.
+Status: PENDING EXECUTION
+
+Objective:
+Classify current VFX native ownership state without blind migration, preserve owner-correct DataVault rewrites, and prove zero-GC/black-box routes.
+
+Authority:
+- AGENTS.md
+- Docs/AGENT_AUTHORITY_ROUTING.md
+- PROJECT_BIBLES.md
+- systems.md, data.md, vfx.md, compute.md, telemetry.md, performance.md, rendering.md
+- .agents-skills/OPT_Native_Memory_Collections_JobSystem_Protocol.txt
+- .agents-skills/DBG_Telemetry_Crash_Reporting_PostMortem.txt
+- .agents-skills/REND_VFX_Fluid_Aesthetics_Compute_Particles.txt
+- .agents-skills/DATA_Runtime_Struct_Layout_ARM64.txt
+- .agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+
+Evidence basis:
+- Docs/Orchestration/ORCHESTRATOR_SUBAGENT_SYNTHESIS_20260605.md
+- Docs/Orchestration/VFX_DATAVAULT_P0_SYNTHESIS_20260605.md
+- Docs/AssetAudit/VFX_DATAVAULT_SOVEREIGNTY_STATIC_REVIEW_20260605.md
+- Docs/AssetAudit/VFX_DATAVAULT_SOVEREIGNTY_AUDIT_20260605.json
+- Docs/AssetAudit/VFX_DATAVAULT_REPAIR_ANCHOR_MAP_20260605.md
+- Docs/AssetAudit/BIOLUM_BLACKBOX_ROUTE_DECISION_20260605.md
+- Docs/AssetAudit/DATAVAULT_AUDIT_EXECUTION_SURFACE_RECHECK_20260605.md
+- taskslocal/runtime_system_20260605/RUNTIME_OWNER_08_VFX_DATAVAULT_SOVEREIGNTY_REPAIR_PACKET.md
+
+Owned scope:
+- Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs
+- Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs
+- Assets/_Project/Scripts/VFX/PlasmaBeam/ShinobuPlasmaBeamRuntime.cs only for fault-dump review
+- Tools/DataVaultSovereigntyAudit.py and tests only if scanner bug is proven
+
+Tasks:
+1. Classify each flagged buffer: runtime authority, runtime diagnostic mirror, black-box snapshot, editor/offline scratch, Burst job input view, or fault-dump scratch.
+2. For Biolum black-box rows 319/336/384/3993, preserve the owner-local telemetry exception from source decision lines 311-315 unless fresh proof contradicts it.
+3. For MarineSnow scratch around 673/674 and 1347, verify the current DataVault rewrite on disk and do not reintroduce runtime scratch fields.
+4. For MarineSnow 712/2005, route editor/offline scratch separately; do not perform runtime source repair against 2005.
+5. For MarineSnow/PlasmaBeam fault dumps, classify `NativeFaultDumpWriter.CreateTransientPayload` and managed file-write allocation risk as bounded fault-path debt unless runtime proof shows steady-state allocation.
+6. Do not bulk-migrate all NativeArray declarations.
+7. Patch only owner-correct runtime debt when CPU/build gate permits source edits and compile verification.
+8. Rerun DataVault audit and unit tests.
+9. Later prove compile, Play Mode, GC/profiler, and forced dump artifacts.
+
+Acceptance:
+- runtime-forbidden direct constructors/declarations are zero or explicitly approved with route proof after current scanner/test rerun.
+- Editor/offline scratch is not misclassified as gameplay runtime debt.
+- No new persistent NativeArray fields in runtime MonoBehaviour owners.
+- Current MarineSnow DataVault rewrite is preserved.
+- No hot allocation, no hidden Complete, no GlobalRegistry hot polling.
+
+Low/Middle/High/Ultra:
+Quality may scale particle cadence/density. Memory ownership and DTO layout do not change by tier.

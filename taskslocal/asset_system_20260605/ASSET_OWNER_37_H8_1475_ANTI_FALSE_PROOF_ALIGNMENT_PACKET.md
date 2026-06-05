@@ -28,6 +28,8 @@ First-20 route blocker targeted for removal: current diagnostic screenshots can 
 - `Docs/Reports/AssetSystem_20260605/H8_1475_CANONICAL_SHOTLIST_20260605.md`
 - `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.md`
 - `Docs/Reports/RuntimeSystem_20260605/ACTIVE_PLAYER_SCENE_CONFLICT_MAP_20260605.md`
+- `Docs/AssetAudit/H8_VISUAL_PROOF_CAPTURE_1912_STATIC_RISK_REVIEW_20260605.md`
+- `Docs/AssetAudit/SURFACE_WATER_RECOVERY_PROBE_1914_STATIC_REVIEW_20260605.md`
 - `taskslocal/runtime_system_20260605/RUNTIME_OWNER_04_PLAYER_UI_MOVEMENT_UNITY_READBACK_AND_REPAIR_PACKET.md`
 - `taskslocal/runtime_system_20260605/RUNTIME_OWNER_05_MCP_GATE_AND_READBACK_RECOVERY_PACKET.md`
 
@@ -38,6 +40,8 @@ First-20 route blocker targeted for removal: current diagnostic screenshots can 
 - Production `Player.prefab` has `HectonPlayerMovement`, `PlayerInteraction`, Rigidbody, camera, visor, and HUD bindings, but its GUID was not proven active in the targeted scene scan.
 - `HUD_Internal.prefab` keeps latent `forceScreenSpaceOverlay: 1`; interactive gameplay HUD acceptance requires approved diegetic/projection/world-space route proof, not a convenient overlay.
 - Current h8_1475 proof packet must include active player/HUD/product-face fields. A beauty shot without those fields is a false proof.
+- `H8VisualProofCapture1912.cs` has diagnostic capture paths that create or mutate editor-only visual state before capture. `CaptureSurfaceWaterRecoveryProbeAndExit()` emits `surface_water_recovery_probe_editor_only_unsaved`; `CaptureSurfaceCrestRecoveryProbeAndExit()` mutates OceanRenderer serialized fields through `ApplyModifiedPropertiesWithoutUndo()`. These methods are diagnostic probes, not canonical proof lanes.
+- The same editor capture script references deleted `Assets/_Project/Art/Shaders/H8_SurfaceWaterReadability_1428.shader` and `.meta`; the 1914 metadata records `H8_TEMP_SurfaceWaterReadabilityProbe_1428=MISSING`.
 
 ## Anti-False-Proof Rules
 
@@ -49,6 +53,8 @@ First-20 route blocker targeted for removal: current diagnostic screenshots can 
 - Reject rectangular horizon slabs, flat water planes, disconnected island chunks, noisy black/acid terrain, giant-sphere-only Aegir, low-detail foreground tools, proxy materials, null/default materials, and primitive-visible meshes.
 - Reject darkness, fog, bloom, vignette, DoF, or post-process camouflage used to hide weak surface, shoreline, water, terrain, sky, UI, tool, or route art.
 - Premium approximation is allowed only if it looks premium and preserves player belief. Flat cheap fakes are rejected.
+- Reject any capture method that creates temp water/haze objects, mutates Crest/OceanRenderer serialized fields, disables route renderers, saves `02_HECTON_WORLD.unity`, or carries `editor_only_unsaved` metadata while being presented as h8_1475 acceptance.
+- Reject proof that depends on a missing diagnostic shader path or silently falls back after a probe object fails to instantiate.
 
 ## Required h8_1475 Proof Fields
 

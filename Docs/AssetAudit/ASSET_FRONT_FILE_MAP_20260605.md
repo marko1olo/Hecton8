@@ -18,8 +18,8 @@ CSV companion: `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`.
 | `Docs/AssetAudit/ASSET_GUID_REFERENCE_MATRIX_20260605.md/.csv` | Static GUID reachability graph for texture, audio, material, model, prefab, scene, and vendor-path routing. |
 | `Docs/AssetAudit/ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.md/.csv` | Compact P0/P1 owner triage derived from the GUID reachability graph. |
 | `Docs/AssetAudit/ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.md/.csv` | Unreferenced GUID cleanup-review triage. No deletion authority. |
-| `Docs/AssetAudit/ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.md/.csv` | Compact P0 target/readback/capture routing crosswalk for owners 24-36. |
-| `Docs/AssetAudit/ASSET_OWNER_PACKET_INDEX_20260605.md/.csv` | Owner packet index for asset owner IDs 01-36 and output-only IDs 29-33. |
+| `Docs/AssetAudit/ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.md/.csv` | Compact P0 target/readback/capture routing crosswalk for owners 24-37. |
+| `Docs/AssetAudit/ASSET_OWNER_PACKET_INDEX_20260605.md/.csv` | Owner packet index for asset owner IDs 01-37 and output-only IDs 29-33. |
 | `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md` | Long-form asset system index and dispositions. |
 | `Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md` | Controller-level synthesis and parsed static row counts. |
 | `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.md/.csv` | Mandatory-reference critique gates for future h8_1475 screenshots. |
@@ -28,15 +28,20 @@ CSV companion: `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`.
 | `Docs/AssetAudit/H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.md/.csv` | Dependency order for future no-mutation h8_1475 proof execution and triage. |
 | `Docs/AssetAudit/LARGE_SOURCE_OWNER_REVIEW_20260605.md/.csv` | Large texture/audio source owner-review buckets before cleanup, import, or retention decisions. |
 | `Docs/AssetAudit/AUDIO_ROUTE_OWNER_REQUIREMENT_MATRIX_20260605.md/.csv` | Audio route owner requirement matrix for MusicDirector, player loops, ambience, UI, and VO blockers. |
+| `Docs/AssetAudit/AUDIO_MIX_PRIORITY_DECISION_QUEUE_20260605.md/.csv` | Audio mix-priority decision queue for warning, player-loop, ambience, music, stinger, UI, and VO proof order. |
+| `Docs/AssetAudit/AUDIO_CRITICAL_CUE_COVERAGE_MATRIX_20260605.md/.csv` | Audio critical cue family coverage matrix for missing warning, sonar/scanner, tool, UI, player-loop, ambience, music, stinger, and VO source proof. |
 | `Docs/AssetAudit/BATCH31_LOCAL_PBR_IMPORT_INTENT_20260605.md/.csv/.json` | Sparse static import intent for Batch31 local PBR sources; packed masks remain blocked by channel semantics. |
 | `Docs/AssetAudit/BATCH31_LOCAL_PBR_IMPORT_INTENT_STATIC_VALIDATION_20260605.md` | Static validation and unit-test result for Batch31 import intent. |
 | `Docs/AssetAudit/BATCH31_CHANNEL_SEMANTICS_DECISION_QUEUE_20260605.md/.csv` | Owner decision queue separating Batch31 usable albedo/normal candidates from blocked packed masks. |
 | `Docs/AssetAudit/FOAM_CONTACT_SOURCE_ROLE_DECISION_QUEUE_20260605.md/.csv` | Owner decision queue for rejected foam source, cleanup maps, and water-contact source roles. |
 | `Docs/AssetAudit/SURFACE_HORIZON_HAZE_1428_STATIC_REVIEW_20260605.md` | Static rejection review for the untracked horizon haze proof attempt. |
+| `Docs/AssetAudit/SURFACE_WATER_RECOVERY_PROBE_1914_STATIC_REVIEW_20260605.md` | Static rejection review for the diagnostic surface water recovery probe. |
+| `Docs/AssetAudit/H8_VISUAL_PROOF_CAPTURE_1912_STATIC_RISK_REVIEW_20260605.md` | Static source-risk review for `H8VisualProofCapture1912` diagnostic/editor-mutating probe paths. |
 | `Docs/Reports/AssetSystem_20260605/PRODUCT_FACE_STATIC_EXECUTION_REFINEMENT_20260605.md/.csv` | Product-face material/prefab P0 execution refinement before repair owners mutate anything. |
 | `Docs/AssetAudit/VISUAL_REFERENCE_PATH_CONTINUITY_20260605.md/.csv` | Current mandatory visual reference path inventory for h8_1475 critique. |
 | `Docs/AssetAudit/VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.md/.csv` | VREF-to-owner visual requirement matrix for water, terrain, sky, flora, UI, cockpit, and h8_1475 proof owners. |
 | `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_VS_CURRENT_REJECTION_MATRIX_20260605.md/.csv` | Static current-diagnostic rejection matrix against the mandatory references. |
+| `Docs/AssetAudit/VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.md/.csv` | Execution queue from mandatory visual references and source coverage into exact owner actions, proof gates, and rejection rules. |
 | `taskslocal/asset_system_20260605/README.md` | Local task packet index and owner dispatch order. |
 
 ## Detail Files By Domain
@@ -46,13 +51,20 @@ CSV companion: `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`.
 | cross-asset GUID references | `ASSET_GUID_REFERENCE_MATRIX_20260605.*`, `ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.*`, `ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.*` |
 | texture/material | `TEXTURE_MATERIAL_FAMILY_ROUTE_MATRIX_20260605.*`, `TEXTURE_FILE_TECHNICAL_PROPERTIES_20260605.*`, `TEXTURE_DUPLICATE_HASH_MATRIX_20260605.*`, `TEXTURE_SOURCE_FOLDER_ROUTE_MATRIX_20260605.*`, `TEXTURE_ACTIVE_ROUTE_BLOCKER_DETAIL_20260605.*`, `TEXTURE_IMPORT_ROLE_MATRIX_20260605.*`, `MATERIAL_FILE_TECHNICAL_PROPERTIES_20260605.*`, `TEXTURE_MATERIAL_USAGE_MAP_20260605.csv`, `TEXTURE_CANDIDATE_DISPOSITION_20260605.csv` |
 | visual/mesh/prefab | `VISUAL_MESH_ASSET_TAXONOMY_20260605.*`, `MODEL_FILE_IMPORT_RISK_MATRIX_20260605.*`, `PREFAB_FILE_TECHNICAL_PROPERTIES_20260605.*`, `MESH_PREFAB_SOURCE_FOLDER_ROUTE_MATRIX_20260605.*`, `VISUAL_ASSET_REVIEW_QUEUE_20260605.*`, `MESH_PREFAB_REVIEW_QUEUE_20260605.*` |
-| audio/music | `AUDIO_ASSET_TAXONOMY_20260605.*`, `AUDIO_FILE_TECHNICAL_PROPERTIES_20260605.*`, `AUDIO_LOUDNESS_TECHNICAL_PROPERTIES_20260605.*`, `AUDIO_SOURCE_FOLDER_ROUTE_MATRIX_20260605.*`, `AUDIO_PROFILE_ROUTE_MATRIX_20260605.*`, `AUDIO_DIRECT_REF_DETAIL_20260605.*`, `AUDIO_ROUTE_OWNER_REQUIREMENT_MATRIX_20260605.*`, `AUDIO_LISTENING_PASS_QUEUE_20260605.*`, `AUDIO_IMPORT_POLICY_EXCEPTION_TABLE_20260605.*`, `AUDIO_P0_STATIC_EXECUTION_REFINEMENT_20260605.*`, `audio_asset_ledger.csv`, `audio_remediation_matrix_20260605.csv`, `audio_preview_waveform_stats_20260605.csv` |
+| audio/music | `AUDIO_ASSET_TAXONOMY_20260605.*`, `AUDIO_FILE_TECHNICAL_PROPERTIES_20260605.*`, `AUDIO_LOUDNESS_TECHNICAL_PROPERTIES_20260605.*`, `AUDIO_SOURCE_FOLDER_ROUTE_MATRIX_20260605.*`, `AUDIO_PROFILE_ROUTE_MATRIX_20260605.*`, `AUDIO_DIRECT_REF_DETAIL_20260605.*`, `AUDIO_ROUTE_OWNER_REQUIREMENT_MATRIX_20260605.*`, `AUDIO_MIX_PRIORITY_DECISION_QUEUE_20260605.*`, `AUDIO_CRITICAL_CUE_COVERAGE_MATRIX_20260605.*`, `AUDIO_LISTENING_PASS_QUEUE_20260605.*`, `AUDIO_IMPORT_POLICY_EXCEPTION_TABLE_20260605.*`, `AUDIO_P0_STATIC_EXECUTION_REFINEMENT_20260605.*`, `audio_asset_ledger.csv`, `audio_remediation_matrix_20260605.csv`, `audio_preview_waveform_stats_20260605.csv` |
 | addressables | `ADDRESSABLES_ASSET_GROUP_PLAN_20260605.*`, `ADDRESSABLES_STATIC_COVERAGE_GAP_3218_20260605.md`, `ASSET_PLANNING_CONSOLIDATION_3222_20260605.md` |
 | proof artifacts | `ASSET_PROOF_ARTIFACT_INDEX_20260605.*`, `GENERATED_SOURCE_PACK_FILE_INVENTORY_20260605.*`, contact sheets, waveform sheets, generated source manifests |
 | large source review | `LARGE_SOURCE_OWNER_REVIEW_20260605.*` |
 | Batch31 local PBR import intent | `BATCH31_LOCAL_PBR_IMPORT_INTENT_20260605.md`, `.csv`, `.json`, `BATCH31_LOCAL_PBR_IMPORT_INTENT_STATIC_VALIDATION_20260605.md`, `BATCH31_CHANNEL_SEMANTICS_DECISION_QUEUE_20260605.*` |
 | foam/contact source role queue | `FOAM_CONTACT_SOURCE_ROLE_DECISION_QUEUE_20260605.*` |
 | surface horizon haze static rejection | `SURFACE_HORIZON_HAZE_1428_STATIC_REVIEW_20260605.md` |
+| surface water recovery probe static rejection | `SURFACE_WATER_RECOVERY_PROBE_1914_STATIC_REVIEW_20260605.md` |
+| h8 visual proof capture risk review | `H8_VISUAL_PROOF_CAPTURE_1912_STATIC_RISK_REVIEW_20260605.md` |
+| VFX DataVault/source context | `VFX_DATAVAULT_SOURCE_CONTEXT_REVIEW_20260605.*`, `VFX_DATAVAULT_REPAIR_ANCHOR_MAP_20260605.*`, `DATAVAULT_AUDIT_EXECUTION_SURFACE_RECHECK_20260605.md`, `BIOLUM_BLACKBOX_ROUTE_DECISION_20260605.*`, `VFX_DATAVAULT_SOVEREIGNTY_STATIC_REVIEW_20260605.md`, `VFX_DATAVAULT_SOVEREIGNTY_AUDIT_20260605.json` |
+| visual hero source coverage | `VISUAL_HERO_SOURCE_COVERAGE_MATRIX_20260605.*`, `VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.*`, `VISUAL_REFERENCE_VS_CURRENT_REJECTION_MATRIX_20260605.*` |
+| visual source promotion queue | `VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.*`, `VISUAL_HERO_SOURCE_COVERAGE_MATRIX_20260605.*`, `BATCH31_CHANNEL_SEMANTICS_DECISION_QUEUE_20260605.*`, `FOAM_CONTACT_SOURCE_ROLE_DECISION_QUEUE_20260605.*` |
+| audio mix-priority decision queue | `AUDIO_MIX_PRIORITY_DECISION_QUEUE_20260605.*` |
+| audio critical cue coverage matrix | `AUDIO_CRITICAL_CUE_COVERAGE_MATRIX_20260605.*` |
 | visual reference critique | `VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.*` |
 | h8_1475 canonical shotlist | `H8_1475_CANONICAL_SHOTLIST_20260605.*` |
 | h8_1475 visual comparison template | `H8_1475_VISUAL_REFERENCE_COMPARISON_TEMPLATE_20260605.md` |
@@ -86,6 +98,9 @@ CSV companion: `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`.
 | active-route execution packets | `ASSET_OWNER_34_ACTIVE_ROUTE_TRIAGE_PACKET.md` |
 | cleanup-review execution packets | `ASSET_OWNER_35_UNREFERENCED_SOURCE_CLEANUP_REVIEW_PACKET.md` |
 | h8_1475 proof execution packets | `ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md` |
+| h8_1475 anti-false-proof packets | `ASSET_OWNER_37_H8_1475_ANTI_FALSE_PROOF_ALIGNMENT_PACKET.md` |
+| visual proof capture guardrail validator | `Tools/ValidateVisualProofCaptureGuardrails.py`, `Tools/test_validate_visual_proof_capture_guardrails.py` |
+| asset static summary validator | `Tools/ValidateAssetStaticSummary.py`, `Tools/test_validate_asset_static_summary.py` |
 
 ## Rule
 

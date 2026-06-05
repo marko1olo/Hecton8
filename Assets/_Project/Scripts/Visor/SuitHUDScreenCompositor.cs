@@ -285,7 +285,7 @@ namespace NASAPunk.Visor
                 rect.localScale = Vector3.one;
 
 #if UNITY_EDITOR
-            if (forceScreenSpaceOverlay)
+            if (!Application.isPlaying && forceScreenSpaceOverlay)
             {
                 if (targetCanvas.renderMode != RenderMode.ScreenSpaceOverlay)
                     targetCanvas.renderMode = RenderMode.ScreenSpaceOverlay;

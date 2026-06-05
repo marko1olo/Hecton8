@@ -822,10 +822,14 @@ namespace Hecton8.World.Biomes
 
                 string fullPath = Path.Combine(root, BlackBoxDumpPath);
                 int byteCount = count * BlackBoxDumpEntryBytes;
-                NativeArray<byte> payload = default;
+                const string PayloadLabel = "biomeBoundaryTelemetryDumpPayload";
+                NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(BiomeBoundarySdfRuntime),
+                    PayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
                 try
                 {
-                    payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
                     int cursor = 0;
                     for (int i = 0; i < count; i++)
                         WriteTelemetryEntry(payload, ref cursor, _blackBoxDumpSnapshot[i]);
@@ -834,8 +838,10 @@ namespace Hecton8.World.Biomes
                 }
                 finally
                 {
-                    if (payload.IsCreated)
-                        payload.Dispose();
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(BiomeBoundarySdfRuntime),
+                        PayloadLabel);
                 }
             }
             catch (IOException)

@@ -76,7 +76,7 @@ If Unity readback proves this route is active for interactive first-party gamepl
 
 The scan found runtime-looking hits for `.text =`, `SetActive(`, `new MaterialPropertyBlock(`, `.material`, and `.materials`. Static grep cannot classify cadence. Some are cold bootstrap, editor-facade, debug, or one-time setup; some may be real hot-path defects. The next owner must triage by active route, dispatcher phase, and profiler/GC proof.
 
-`Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs` line 1560 is a P1 runtime repair defect after source-context triage: remove the coroutine repair route through `RUNTIME_OWNER_06_THERMAL_DRS_COROUTINE_REPAIR_PACKET.md` and coordinate the same source pass with `RUNTIME_OWNER_07_THERMAL_DRS_BLACKBOX_DUMP_ROUTE_PACKET.md`.
+`Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs` was source-patched after the original scan. Current static scan finds zero `StartCoroutine(` hits in `Assets/_Project/Scripts` and zero DRS coroutine repair symbols in that file. Acceptance is still blocked until compile, Unity Console, Play Mode, GC/profiler, registration churn, and binary dump artifact proof exist.
 
 ### Pattern Clear In This Scope
 

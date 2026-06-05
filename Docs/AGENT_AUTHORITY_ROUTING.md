@@ -26,6 +26,8 @@ Every non-trivial HECTON-8 task starts with this sequence:
 
 Small typo fixes, narrow mechanical edits, and ordinary chat answers may skip the full intake, but they must not contradict the authority spine.
 
+Authority files, route bibles, mandate files, and important task documents must be read as complete documents before meaning is evaluated. Text search is a navigation and audit tool only.
+
 ## Task Classes
 
 | Task class | Mandatory authority beyond `AGENTS.md` |
@@ -39,7 +41,7 @@ Small typo fixes, narrow mechanical edits, and ordinary chat answers may skip th
 | Narrative, codex, diaries, in-world prose | `writing.md`, `narrative.md`, `localization.md` when localized |
 | Public copy, store/social/creator text | `textes.md`, product proof gates for readiness claims |
 | Batch-agent run with supplied ID | Matching prompt block only, `AGENTS.md`, task-relevant bibles/mandates, active Status/Rationale/LOG files for that ID |
-| Orchestrator/controller work | `HECTON8_ORCHESTRATOR.md`, `C:\hades\.codex_ops\ORCHESTRATION_MEMORY.md`, active orchestration evidence, then task-relevant bibles/mandates |
+| Orchestrator/controller work | `HECTON8_ORCHESTRATOR.md` including `LOCAL SUBAGENT PROTOCOL` and `AGENT LANE CONTRACTS`, `C:\hades\.codex_ops\ORCHESTRATION_MEMORY.md`, active orchestration evidence, then task-relevant bibles/mandates |
 | Documentation/rule routing work | `AGENTS.md`, this file, `PROJECT_BIBLES.md`, `.agents-skills/README.md`, `Docs/DOC_GOVERNANCE.md`, `Docs/README.md`, live rule sources and generators |
 
 ## Authority Receipt
@@ -63,9 +65,11 @@ Routing sources:
 - `.agents-skills/README.md`
 - `Docs/README.md`
 - `Docs/DOC_GOVERNANCE.md`
+- `Docs/AGENTS_RULE_DETAIL_LEDGER.md` for no-loss conflict resolution and migration provenance only; do not bulk-read it for ordinary work.
 
 Delegated or generated surfaces:
 
+- `C:\Users\danat\.codex\AGENTS.md` is a global router only. It must route HECTON-8 work to root `AGENTS.md` and this file, and must not carry a divergent HECTON-8 law copy. If shortened, preserve the full previous text in an explicit recovery/provenance file.
 - `.codexrules/AGENTS.md` must delegate to or stay byte-intent synced with root `AGENTS.md`.
 - `.github/agents/AGENTS.md` must delegate to or stay byte-intent synced with root `AGENTS.md`.
 - `.agent/rules/AGENTS.md` delegates to root `AGENTS.md`.
@@ -98,3 +102,4 @@ Forbidden split behavior:
 
 Routing is a read discipline, not a paperwork mandate. Ordinary agents should improve code, assets, data, scenes, or concise docs for the current request. Status files, rationale logs, route cards, broad audits, and historical cleanup require explicit batch/logging/orchestration scope or a direct owner-route need.
 
+Verification loops are rejected. Once static review identifies a blocker or `PENDING VERIFICATION`, the next action is proof execution, source/asset/root-route repair, or a concrete blocker report. Do not keep reading, scanning, or writing reports over unchanged state to simulate progress.

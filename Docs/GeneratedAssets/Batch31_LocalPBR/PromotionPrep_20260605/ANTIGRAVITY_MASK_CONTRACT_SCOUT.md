@@ -1,27 +1,23 @@
-# ANTIGRAVITY MASK CONTRACT SCOUT
+# Batch31 Mask Contract Scout Report
 
-Evidence class: `STATIC_SOURCE` / `STATIC_DOC`.
+**Evidence Class:** `STATIC_SOURCE` / `STATIC_DOC`
 
 ## Findings
 
-**1. Authoritative Convention**
-There is a documented divergence between the source generation output and the preferred production packer route. The target shader (`Hecton_Master_Lit`) supports both, controlled by a material parameter.
-- The generation source convention is **MRAO** (R=Metallic, G=Roughness, B=AO).
-- The preferred production packed-mask route is **ARM** (R=AO, G=Roughness, B=Metallic).
-- The target shader supports both via `_MasterShadowParams.w` (0 for MRAO, 3 for ARM), but defaults to 0 (MRAO).
+1. **Authoritative Packed-Mask Convention:**
+   The production `_MaskMap` convention for Hecton8 standard pipeline is **ARM** (`R=AO, G=Roughness, B=Metallic`). However, `Hecton_Master_Lit` uses layout `0` (`MRAO`) by default. To correctly decode an ARM texture, it requires `_MasterShadowParams.w = 3`. To decode a true `MRAO` texture, it requires `_MasterShadowParams.w = 0`. The Batch31 promotion path currently provides `MRAOSource` textures.
 
-**2. Proof and Contradictions**
-- **Generation Source Constraint**: `3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md` (Line 51) dictates generated offline source output as MRAO: `R metallic, G roughness or smoothness... B ambient occlusion`.
-- **Production Packer Constraint**: `Docs/ARCHITECTURE/ARM_TEXTURE_PACKING_PIPELINE.md` (Lines 16, 20) claims the production route is ARM, but explicitly warns that `Hecton_Master_Lit` defaults to layout 0 (MRAO) and requires `_MasterShadowParams.w = 3` to decode ARM.
-- **Shader Decoding Support**: `Assets/_Project/Art/Shaders/Hecton_Master_Lit.shader` (Line 57) confirms `_MasterShadowParams.w` controls the layout (`0 MRAO, 1 legacy, 2 MetallicGloss, 3 ARM`) and defaults to 0.
-- **Audit Conflict Detection**: `Docs/AssetAudit/BATCH31_LOCAL_PBR_IMPORT_INTENT_20260605.md` (Lines 23-26) explicitly flags this MRAO-vs-ARM conflict as the reason for the semantic block.
+2. **File Proofs & Contradictions:**
+   - **`Docs/ARCHITECTURE/ARM_TEXTURE_PACKING_PIPELINE.md:16-28`**: Proves production `_MaskMap` is ARM (`R=AO`, `G=Roughness`, `B=Metallic`). Also states `Hecton_Master_Lit` requires `_MasterShadowParams.w = 3` to decode ARM, and its material default is layout `0` (`MRAO`). Explicitly forbids assigning `MRAOSource` to production `_MaskMap` by filename without a repack or an explicit material layout target.
+   - **`Assets/_Project/Art/Shaders/Hecton_Master_Lit.shader:57,241-263`**: Proves `_MasterShadowParams.w` selects mask layout. Layout `3` is ARM, Layout `0` is MRAO. Emission mask weighting requires layout `2`.
+   - **`Assets/_Project/Scripts/Editor/HectonMasterMaterialMigrator1615.cs:235,424-435`**: Proves the migrator serializes `_MasterShadowParams.w` to `3` (ARM) for UberNoir, or `0` for `_MraoMap`.
+   - **`Docs/AssetAudit/BATCH31_LOCAL_PBR_IMPORT_INTENT_20260605.md:23-27`**: Proves Batch31 source is `MRAO`, triggering `blocked_channel_semantics_mrao_vs_arm` against the ARM standard.
+   - **`Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/ANTIGRAVITY_MASTERLIT_PROMOTION_GUARD.md:24-26`**: Proves promotion blocks until `_MasterShadowParams.w` is serialized explicitly or textures repacked.
 
-**3. BLOCKED_CHANNEL_SEMANTICS Resolution**
-The `BLOCKED_CHANNEL_SEMANTICS` flag **cannot be removed** based on the current static state.
-To remove the block, an owner must make an explicit routing decision and provide static proof. The required change is:
-- **Either**: Repack the Batch31 MRAO source textures into ARM format offline, AND create/update a `.mat` artifact that serializes `_MasterShadowParams.w: 3`.
-- **Or**: Accept the MRAO source format directly, AND create/update a `.mat` artifact that explicitly serializes `_MasterShadowParams.w: 0` to prove the target material expects MRAO. 
+3. **Status of `BLOCKED_CHANNEL_SEMANTICS`:**
+   **No, it cannot be removed.** The mismatch is real and intentional to prevent broken visuals. To remove the block, one of the following changes is required:
+   - **Option A (Offline Repack):** An offline pipeline script must repack the `MRAOSource.png` assets into true `ARM.png` format before import, natively satisfying the production pipeline.
+   - **Option B (Material Serialization):** The material generator/importer must be updated to explicitly serialize `_MasterShadowParams.w = 0` on the target `.mat` files so they correctly decode the raw `MRAOSource`.
 
-**4. Safe Next Action**
-Without running Unity, the safe static next action is:
-- Author a python or static YAML script to generate `.mat` files for the Batch31 packages that explicitly target `Hecton_Master_Lit` and serialize the correct `_MasterShadowParams` vector, thereby satisfying the layout proof requirement.
+4. **Safe Next Action (Without Unity):**
+   Update the Python pipeline tools (e.g., `Tools/Batch31LocalPbrImportIntent.py`) to add an offline texture-repacking step from `MRAO` to `ARM`, or update the material generation definitions to enforce `_MasterShadowParams.w = 0`. Neither step requires Unity.

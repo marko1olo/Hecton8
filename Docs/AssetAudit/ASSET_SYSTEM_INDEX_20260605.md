@@ -41,6 +41,20 @@ Generated ledgers:
 - `Docs/AssetAudit/GENERATED_SOURCE_PACK_FILE_INVENTORY_20260605.csv`
 - `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.md`
 - `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`
+- `Docs/AssetAudit/VFX_DATAVAULT_SOURCE_CONTEXT_REVIEW_20260605.md`
+- `Docs/AssetAudit/VFX_DATAVAULT_SOURCE_CONTEXT_REVIEW_20260605.csv`
+- `Docs/AssetAudit/VFX_DATAVAULT_REPAIR_ANCHOR_MAP_20260605.md`
+- `Docs/AssetAudit/VFX_DATAVAULT_REPAIR_ANCHOR_MAP_20260605.csv`
+- `Docs/AssetAudit/DATAVAULT_AUDIT_EXECUTION_SURFACE_RECHECK_20260605.md`
+- `Docs/AssetAudit/BIOLUM_BLACKBOX_ROUTE_DECISION_20260605.md`
+- `Docs/AssetAudit/BIOLUM_BLACKBOX_ROUTE_DECISION_20260605.csv`
+- `Docs/AssetAudit/VISUAL_HERO_SOURCE_COVERAGE_MATRIX_20260605.md`
+- `Docs/AssetAudit/VISUAL_HERO_SOURCE_COVERAGE_MATRIX_20260605.csv`
+- `Docs/AssetAudit/VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.md`
+- `Docs/AssetAudit/VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.csv`
+- `Docs/AssetAudit/SURFACE_WATER_RECOVERY_PROBE_1914_STATIC_REVIEW_20260605.md`
+- `Docs/AssetAudit/H8_VISUAL_PROOF_CAPTURE_1912_STATIC_RISK_REVIEW_20260605.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_37_H8_1475_ANTI_FALSE_PROOF_ALIGNMENT_PACKET.md`
 - `Docs/AssetAudit/ASSET_GUID_REFERENCE_MATRIX_20260605.md`
 - `Docs/AssetAudit/ASSET_GUID_REFERENCE_MATRIX_20260605.csv`
 - `Docs/AssetAudit/ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.md`
@@ -125,7 +139,7 @@ Generated ledgers:
 - `Docs/AssetAudit/H8_1475_READBACK_FIELD_MANIFEST_20260605.md/.csv`: 123 readback/proof fields for no-mutation Unity h8_1475 execution.
 - `Docs/AssetAudit/VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.md/.csv`: 7 visual capture gap rows; `Docs/Screenshots/HectonProofPackets/` is absent and current MCP PNGs remain diagnostic only.
 - `Docs/AssetAudit/ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.md/.csv`: 5-row dispatch crosswalk across material, prefab, audio, h8_1475 readback, and visual capture-gap target tables.
-- `Docs/AssetAudit/ASSET_OWNER_PACKET_INDEX_20260605.md/.csv`: 36-row owner packet index; IDs 29-33 are target-table worker outputs, not missing task packet files.
+- `Docs/AssetAudit/ASSET_OWNER_PACKET_INDEX_20260605.md/.csv`: 37-row owner packet index; IDs 29-33 are target-table worker outputs, not missing task packet files.
 - `Docs/AssetAudit/H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.md/.csv`: 14-row dependency graph for future no-mutation h8_1475 proof execution; order/risk only, not Unity proof.
 - `Docs/Reports/AssetSystem_20260605/AUDIO_P0_STATIC_EXECUTION_REFINEMENT_20260605.md/.csv`: 6-row static execution refinement for the six audio P0 blockers; not runtime mix or listening proof.
 - `Docs/AssetAudit/LARGE_SOURCE_OWNER_REVIEW_20260605.md/.csv`: 5-bucket large texture/audio source owner review; not deletion/import/residency proof.
@@ -152,8 +166,8 @@ The usage-map CSVs are serialized-reference evidence only. They prove reachabili
 The GUID reference matrix is the broad static reachability graph for asset-like GUIDs under `Assets`. Use it before assigning texture, audio, material, model, prefab, scene, vendor-path, or Addressables owner work; it is GUID text reachability only, not Unity/import/runtime proof.
 The active-route GUID triage condenses the GUID graph to P0/P1 owner lanes. Use it before broad cleanup so active-world, direct-audio, scene-reachable, and vendor-path blockers stay ahead of unreferenced source sorting.
 The unreferenced GUID triage is cleanup-review input only. It must not be used as delete authorization because static GUID absence does not prove code use, editor use, Addressables labels, Resources route, AssetBundle membership, or safe `.meta` deletion.
-The P0 target-table routing synthesis is the compact dispatch crosswalk for owners 24-36. Use it before assigning product-face material, prefab, audio, h8_1475 readback, or visual capture-gap execution.
-The owner packet index maps asset owner IDs 01-36 and marks 29-33 as output-only target-table workers. Use it before recreating or redistributing packet IDs.
+The P0 target-table routing synthesis is the compact dispatch crosswalk for owners 24-37. Use it before assigning product-face material, prefab, audio, h8_1475 readback, visual capture-gap execution, or anti-false-proof gating.
+The owner packet index maps asset owner IDs 01-37 and marks 29-33 as output-only target-table workers. Use it before recreating or redistributing packet IDs.
 Use the action queue for owner dispatch priority. It is stricter than this index because it orders blockers by active route reachability and proof risk.
 Use the taxonomy files for future owner orientation only. They separate source-only prototypes, hard rejects, candidate pools, and readback-blocked routes; they do not promote any asset.
 Use the authoring-tool inventory to choose existing local tools before inventing a new generator, baker, atlas packer, or scanner. Tool presence is not acceptance.
@@ -425,7 +439,7 @@ Use `Docs/AssetAudit/VISUAL_ASSET_REVIEW_QUEUE_20260605.csv` for visual target o
 
 Latest asset-front parse summary: `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`.
 
-- Current asset CSV set: 55 files, 14553 data rows, zero empty cells.
+- Current asset CSV set: 62 files, 14646 data rows, zero empty cells.
 - `GENERATED_SOURCE_PACK_FILE_INVENTORY_20260605.csv`: 26 rows, 13 columns, zero empty cells.
 - `AUDIO_SOURCE_FOLDER_ROUTE_MATRIX_20260605.csv`: 15 folders, 17 columns, zero empty cells; covers 138 audio ledger rows and 28 direct prefab refs by folder.
 - `TEXTURE_SOURCE_FOLDER_ROUTE_MATRIX_20260605.csv`: 56 folders, 20 columns, zero empty cells; covers 190 texture ledger rows, 50 generated/source-only rows, 54 active-build-scene usage rows, 70 visible-route user rows, and 43 proxy/placeholder usage rows.
@@ -451,7 +465,7 @@ Latest asset-front parse summary: `Docs/Reports/AssetSystem_20260605/ASSET_STATI
 - `H8_1475_READBACK_FIELD_MANIFEST_20260605.csv`: 123 rows, 7 columns, zero empty cells; manifest is readback scope only, not proof by itself.
 - `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.csv`: 7 rows, 8 columns, zero empty cells; rows remain capture gaps/rejections, not visual acceptance.
 - `ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.csv`: 5 rows, 14 columns, zero empty cells; synthesis is dispatch routing only, not Unity/runtime/visual/audio acceptance.
-- `ASSET_OWNER_PACKET_INDEX_20260605.csv`: 36 rows, 13 columns, zero empty cells; index maps owner packet files and output-only target-table IDs, not execution completion.
+- `ASSET_OWNER_PACKET_INDEX_20260605.csv`: 37 rows, 13 columns, zero empty cells; index maps owner packet files and output-only target-table IDs, not execution completion.
 - `VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.csv`: 7 rows, 7 columns, zero empty cells; critique checklist maps mandatory references to h8_1475 reject gates, not visual acceptance.
 - `H8_1475_CANONICAL_SHOTLIST_20260605.csv`: 11 rows, 8 columns, zero empty cells; canonical shotlist and rejection rubric only, not screenshot existence or visual acceptance.
 - `H8_1475_VISUAL_REFERENCE_COMPARISON_TEMPLATE_20260605.md`: static template for future `h8_1475_visual_reference_comparison.md`; not screenshot existence, Unity proof, profiler, GC, memory, or visual acceptance.
@@ -459,13 +473,20 @@ Latest asset-front parse summary: `Docs/Reports/AssetSystem_20260605/ASSET_STATI
 - `LARGE_SOURCE_OWNER_REVIEW_20260605.csv`: 5 rows, 10 columns, zero empty cells; large texture/audio source owner buckets only, not delete/import/residency acceptance.
 - `VISUAL_REFERENCE_PATH_CONTINUITY_20260605.csv`: 15 rows, 7 columns, zero empty cells; current mandatory visual reference paths only, not visual acceptance.
 - `VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.csv`: 15 rows, 9 columns, zero empty cells; VREF-to-owner visual requirement routing only, not visual acceptance.
-- `VISUAL_REFERENCE_VS_CURRENT_REJECTION_MATRIX_20260605.csv`: 9 rows, 8 columns, zero empty cells; current diagnostic rejection matrix only, not visual acceptance.
+- `VISUAL_REFERENCE_VS_CURRENT_REJECTION_MATRIX_20260605.csv`: 10 rows, 8 columns, zero empty cells; current diagnostic rejection matrix only, not visual acceptance.
 - `AUDIO_ROUTE_OWNER_REQUIREMENT_MATRIX_20260605.csv`: 13 rows, 13 columns, zero empty cells; audio owner route matrix only, not runtime mix, listening, import, or Addressables acceptance.
+- `AUDIO_MIX_PRIORITY_DECISION_QUEUE_20260605.csv`: 10 rows, 13 columns, zero empty cells; audio mix-priority decision queue only, not runtime mix, listening, import, or Addressables acceptance.
+- `AUDIO_CRITICAL_CUE_COVERAGE_MATRIX_20260605.csv`: 12 rows, 15 columns, zero empty cells; critical cue coverage matrix only, not runtime mix, listening, import, Addressables, or source-authoring acceptance.
 - `BATCH31_LOCAL_PBR_IMPORT_INTENT_20260605.csv`: 21 rows, 38 columns, 36 sparse cells; sidecar import-intent table only, not part of the zero-empty curated set. Packed-mask rows remain blocked by MRAO/ARM channel semantics.
 - `BATCH31_CHANNEL_SEMANTICS_DECISION_QUEUE_20260605.csv`: 7 rows, 13 columns, zero empty cells; decision queue only, not Unity import, material binding, residency, or visual acceptance.
 - `FOAM_CONTACT_SOURCE_ROLE_DECISION_QUEUE_20260605.csv`: 8 rows, 13 columns, zero empty cells; source role queue only, not Unity import, material binding, residency, or visual acceptance.
+- `VFX_DATAVAULT_SOURCE_CONTEXT_REVIEW_20260605.csv`: 7 rows, 7 columns, zero empty cells; source-context correction only, not runtime source repair, Unity proof, GC/profiler proof, or dump artifact acceptance.
+- `VFX_DATAVAULT_REPAIR_ANCHOR_MAP_20260605.csv`: 11 rows, 14 columns, zero empty cells; anchor map only, not runtime source repair, Unity proof, GC/profiler proof, or dump artifact acceptance.
+- `BIOLUM_BLACKBOX_ROUTE_DECISION_20260605.csv`: 4 rows, 15 columns, zero empty cells; route decision/source-field readback only, not compile proof, Unity proof, GC/profiler proof, or runtime dump artifact acceptance.
+- `VISUAL_HERO_SOURCE_COVERAGE_MATRIX_20260605.csv`: 10 rows, 15 columns, zero empty cells; source coverage matrix only, not import, material binding, screenshot, Frame Debugger, memory, or visual acceptance.
 - `ASSET_STATIC_ROW_BLOCKER_SUMMARY_20260605.csv`: 16 rows, 9 columns, zero empty cells.
-- `ASSET_FRONT_FILE_MAP_20260605.csv`: 117 rows, 7 columns, zero empty cells.
+- `ASSET_FRONT_FILE_MAP_20260605.csv`: 139 rows, 7 columns, zero empty cells.
+- `VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.csv`: 10 rows, 15 columns, zero empty cells; visual source queue only, no import/material/screenshot/Frame Debugger/memory acceptance.
 - Current touched asset docs reported zero replacement characters.
 - Scoped asset-front `git diff --check` reported no whitespace errors.
 - Latest process gate sample remained blocked by CPU and active Unity/dotnet/import/compiler processes.

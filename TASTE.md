@@ -422,6 +422,28 @@ Reject:
 - menu screenshots made of decorative gridlines and floating buttons;
 - hero-asset screenshots with no wireframe/material/collider/render proof when requested.
 
+## Visual Failure Firewall
+
+Player-visible work is rejected when it keeps repainting the same broken route. Two same-failure captures are enough to stop cosmetic iteration and declare `VISUAL_ROUTE_INVALID`.
+
+Same-failure means the screenshot still reads as one of these:
+
+- slab/card/rectangle water;
+- black clipped terrain or low-detail colorized heightfield;
+- Aegir, moons, clouds, sky, ocean, terrain, flora, or UI below the stated visual floor;
+- waterline, foam, contact, wetness, route cue, or material breakup missing;
+- diagnostic probe, temp haze, temporary card, disabled-renderer view, or dirty-scene state used as acceptance;
+- color, fog, bloom, post, darkness, or grading used instead of fixing source art, binding, geometry, lighting, or composition.
+
+When this happens, the work must move to root-route recovery:
+
+- restore or replace the authoritative route owner, material binding, geometry, texture source, lighting, and shot composition;
+- inspect project reference images and existing quality assets before generating or inventing a replacement;
+- provide a repeated shot-list comparison from the same camera class;
+- keep the result rejected until the image itself passes the taste floor.
+
+Do not keep tuning colors on a route that has invalid geometry, missing waterline/contact, weak source textures, broken terrain, or an unproven sky/celestial route. That is not iteration; it is evidence that the owner picked the wrong problem.
+
 ## Audio Taste
 
 Good audio is information under pressure.

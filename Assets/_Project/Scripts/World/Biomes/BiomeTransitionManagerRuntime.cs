@@ -1516,18 +1516,33 @@ namespace Hecton8.World.Biomes
                 string fullPath = Path.Combine(root, BlackBoxDumpPath);
                 int rowBytes = BiomeTransitionConstants.TelemetryStrideBytes;
                 int totalBytes = count * rowBytes;
-                using NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-                Span<byte> bytes = new Span<byte>(payload.GetUnsafePtr(), totalBytes);
-                int writeOffset = 0;
-                for (int i = 0; i < count; i++)
+                const string PayloadLabel = "biomeTransitionTelemetryDumpPayload";
+                NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(BiomeTransitionManagerRuntime),
+                    PayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
+                try
                 {
-                    Span<byte> record = bytes.Slice(writeOffset, rowBytes);
-                    record.Clear();
-                    WriteTelemetryRecordLittleEndian(record, in _blackBoxDumpSnapshot[i]);
-                    writeOffset += rowBytes;
-                }
+                    Span<byte> bytes = new Span<byte>(payload.GetUnsafePtr(), totalBytes);
+                    int writeOffset = 0;
+                    for (int i = 0; i < count; i++)
+                    {
+                        Span<byte> record = bytes.Slice(writeOffset, rowBytes);
+                        record.Clear();
+                        WriteTelemetryRecordLittleEndian(record, in _blackBoxDumpSnapshot[i]);
+                        writeOffset += rowBytes;
+                    }
 
-                return NativeFaultDumpWriter.TryWriteAll(fullPath, payload, totalBytes);
+                    return NativeFaultDumpWriter.TryWriteAll(fullPath, payload, totalBytes);
+                }
+                finally
+                {
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(BiomeTransitionManagerRuntime),
+                        PayloadLabel);
+                }
             }
             catch (IOException)
             {
@@ -1944,24 +1959,39 @@ namespace Hecton8.World.Biomes
                 int count = telemetry.Length;
                 int rowBytes = BiomeTransitionConstants.TelemetryStrideBytes;
                 int totalBytes = count * rowBytes;
-                using NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-                Span<byte> bytes = new Span<byte>(payload.GetUnsafePtr(), totalBytes);
-                int start = math.clamp(cursor, 0, math.max(0, count - 1));
-                int writeOffset = 0;
-                for (int i = 0; i < count; i++)
+                const string PayloadLabel = "biomeTransitionEditorDumpPayload";
+                NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(BiomeTransitionManagerRuntime),
+                    PayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
+                try
                 {
-                    int index = start + i;
-                    if (index >= count)
-                        index -= count;
+                    Span<byte> bytes = new Span<byte>(payload.GetUnsafePtr(), totalBytes);
+                    int start = math.clamp(cursor, 0, math.max(0, count - 1));
+                    int writeOffset = 0;
+                    for (int i = 0; i < count; i++)
+                    {
+                        int index = start + i;
+                        if (index >= count)
+                            index -= count;
 
-                    BiomeTransitionTelemetryEntry entry = telemetry[index];
-                    Span<byte> record = bytes.Slice(writeOffset, rowBytes);
-                    record.Clear();
-                    WriteTelemetryRecordLittleEndian(record, in entry);
-                    writeOffset += rowBytes;
+                        BiomeTransitionTelemetryEntry entry = telemetry[index];
+                        Span<byte> record = bytes.Slice(writeOffset, rowBytes);
+                        record.Clear();
+                        WriteTelemetryRecordLittleEndian(record, in entry);
+                        writeOffset += rowBytes;
+                    }
+
+                    return NativeFaultDumpWriter.TryWriteAll(fullPath, payload, totalBytes);
                 }
-
-                return NativeFaultDumpWriter.TryWriteAll(fullPath, payload, totalBytes);
+                finally
+                {
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(BiomeTransitionManagerRuntime),
+                        PayloadLabel);
+                }
             }
             catch (Exception exception)
             {

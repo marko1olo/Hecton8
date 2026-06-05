@@ -1,0 +1,45 @@
+NIGHT_OWNER_07_RULE_ROUTING_NOLOSS
+Role: Rule routing and no-loss authority hygiene owner.
+Status: PENDING EXECUTION
+
+Objective:
+Verify the AGENTS/routing split preserves meaning, routes agents correctly, and does not leave stale generic Unity rules in control.
+
+Authority:
+- AGENTS.md
+- Docs/AGENT_AUTHORITY_ROUTING.md
+- Docs/DOC_GOVERNANCE.md
+- PROJECT_BIBLES.md
+- .agents-skills/README.md
+- Docs/AGENTS_RULE_DETAIL_LEDGER.md only for no-loss conflict review
+- Docs/Orchestration/RULE_ROUTING_HISTORICAL_AGENT_RULES_SCAN_20260605.md
+
+Owned scope:
+- Read-only audit unless explicitly assigned to edit rule files.
+- If edit authority is later granted: AGENTS.md, Docs/AGENT_AUTHORITY_ROUTING.md, Docs/DOC_GOVERNANCE.md, .agents-skills/README.md, mirror AGENTS shims, generator outputs through generator only.
+
+Tasks:
+1. Compare root AGENTS.md, .codexrules/AGENTS.md, .github/agents/AGENTS.md, and .agent/rules/AGENTS.md.
+2. Confirm mirrors delegate or byte-intent sync.
+3. Inspect .agent/rules/*.md for stale generic Unity rules that conflict with HECTON-8.
+4. Check Docs/AGENTS_RULE_DETAIL_LEDGER.md for no-loss byte preservation. Do not treat plain PowerShell mojibake as stored corruption without UTF-8 byte evidence.
+5. Verify .agents-skills/README.md mandate count and examples.
+6. Verify PROJECT_BIBLES.md routes player-visible, runtime, UI, audio, water, rendering, VFX, and quality domains.
+7. Check whether Tools/Docs/TestAgentRuleRouting.py exists and what it validates.
+8. Produce exact repair plan. Do not edit unless assigned.
+9. Preserve the Popper static findings unless fresh evidence contradicts them: root/.codexrules/.github byte-match SHA256 9249FB9CC17DACDA0B373B86840A481C53A17EE09DF28084183B0FF1D92BA15A, routing tests passed, historical .agent/rules remain the prompt-poisoning risk.
+
+Acceptance:
+- One canonical law entry point.
+- Thin shims for tool-specific mirrors.
+- No stale generic Unity rule can override HECTON-8 law.
+- No-loss ledger readable or explicitly byte-preserved with a readable recovery route.
+- Routing tests/generator checks named.
+
+Rejection:
+- Display mojibake used as proof of stored corruption without byte-level UTF-8 check.
+- Deleting detailed rules without live destination.
+- Hand-editing generated PROJECT_ROOT_BIBLES_COMBINED.md.
+
+Low/Middle/High/Ultra:
+Not visual. Same authority routing on all hardware.

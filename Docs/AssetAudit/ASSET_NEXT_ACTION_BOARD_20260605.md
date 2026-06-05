@@ -10,11 +10,12 @@ CSV companion: `Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.csv`.
 
 ## P0 Order
 
-1. Water/foam contact: rejected foam is active-route reachable. Start with `TEXTURE_ACTIVE_ROUTE_BLOCKER_DETAIL_20260605.csv`, `TEXTURE_MATERIAL_FAMILY_ROUTE_MATRIX_20260605.csv`, and `ASSET_OWNER_06_UNITY_READBACK_EXECUTION_PACKET.md`.
-2. Proxy flora/coral/kelp: `WorldProceduralProxy` material contamination reaches active world evidence. Start with texture blocker detail, visual/mesh taxonomy, and mesh prefab queue.
-3. MusicDirector routing: null music/stinger mixer refs block route-level audio judgment. Start with `AUDIO_PROFILE_ROUTE_MATRIX_20260605.csv`.
-4. Player prefab audio direct refs: 28 direct refs need owner/release/playback route. Start with `AUDIO_DIRECT_REF_DETAIL_20260605.csv`.
-5. Import/Addressables authority: audio import policy and Addressables groups remain planning only. Start with exception/group plan CSVs and do not mutate settings.
+1. h8_1475 proof-tool integrity: `H8VisualProofCapture1912` has editor-mutating diagnostic probe paths and a deleted `H8_SurfaceWaterReadability_1428.shader` reference. Start with `H8_VISUAL_PROOF_CAPTURE_1912_STATIC_RISK_REVIEW_20260605.md`, `SURFACE_WATER_RECOVERY_PROBE_1914_STATIC_REVIEW_20260605.md`, `ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md`, and `ASSET_OWNER_37_H8_1475_ANTI_FALSE_PROOF_ALIGNMENT_PACKET.md`.
+2. Water/foam contact: rejected foam is active-route reachable. Start with `TEXTURE_ACTIVE_ROUTE_BLOCKER_DETAIL_20260605.csv`, `TEXTURE_MATERIAL_FAMILY_ROUTE_MATRIX_20260605.csv`, and `ASSET_OWNER_06_UNITY_READBACK_EXECUTION_PACKET.md`.
+3. Proxy flora/coral/kelp: `WorldProceduralProxy` material contamination reaches active world evidence. Start with texture blocker detail, visual/mesh taxonomy, and mesh prefab queue.
+4. MusicDirector routing: null music/stinger mixer refs block route-level audio judgment. Start with `AUDIO_PROFILE_ROUTE_MATRIX_20260605.csv`.
+5. Player prefab audio direct refs: 28 direct refs need owner/release/playback route. Start with `AUDIO_DIRECT_REF_DETAIL_20260605.csv`.
+6. Import/Addressables authority: audio import policy and Addressables groups remain planning only. Start with exception/group plan CSVs and do not mutate settings.
 
 ## P1 Order
 
@@ -41,15 +42,23 @@ The current reference set has 15 images. Future visual review must cite `VREF-01
 Current static parse anchor:
 
 - `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`
-- 55 curated CSV files.
-- 14553 data rows.
-- `ASSET_FRONT_FILE_MAP_20260605.csv`: 117 rows.
+- 62 curated CSV files.
+- 14646 data rows.
+- `ASSET_NEXT_ACTION_BOARD_20260605.csv`: 12 rows.
+- `ASSET_FRONT_FILE_MAP_20260605.csv`: 139 rows.
 - `AUDIO_ROUTE_OWNER_REQUIREMENT_MATRIX_20260605.csv`: 13 rows.
+- `AUDIO_MIX_PRIORITY_DECISION_QUEUE_20260605.csv`: 10 rows.
+- `AUDIO_CRITICAL_CUE_COVERAGE_MATRIX_20260605.csv`: 12 rows.
 - `BATCH31_CHANNEL_SEMANTICS_DECISION_QUEUE_20260605.csv`: 7 rows.
 - `FOAM_CONTACT_SOURCE_ROLE_DECISION_QUEUE_20260605.csv`: 8 rows.
+- `VFX_DATAVAULT_SOURCE_CONTEXT_REVIEW_20260605.csv`: 7 rows.
+- `VFX_DATAVAULT_REPAIR_ANCHOR_MAP_20260605.csv`: 11 rows.
+- `BIOLUM_BLACKBOX_ROUTE_DECISION_20260605.csv`: 4 rows.
+- `VISUAL_HERO_SOURCE_COVERAGE_MATRIX_20260605.csv`: 10 rows.
+- `VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.csv`: 10 rows.
 - `BATCH31_LOCAL_PBR_IMPORT_INTENT_20260605.csv`: sparse sidecar, not in the zero-empty curated set.
 
-Unity gate remains blocked while `Unity.ILPP.Runner`, `UnityPackageManager`, `UnityShaderCompiler`, and `mcp-for-unity` are active.
+Unity gate remains blocked while active compiler/import/runtime processes or CPU pressure are present. Latest sample for this board showed CPU `59` with active `dotnet` and `Unity Hub`.
 
 ## Controller Continuation 45
 
@@ -81,7 +90,7 @@ New target tables:
 - `H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.md/.csv`: 14 dependency rows ordering future no-mutation h8_1475 proof execution; not Unity proof.
 - `LARGE_SOURCE_OWNER_REVIEW_20260605.md/.csv`: 5 large texture/audio source buckets; not deletion, import, or runtime residency proof.
 - `ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.md/.csv`: 5-row routing crosswalk across material, prefab, audio, h8_1475 readback, and visual capture-gap target tables.
-- `ASSET_OWNER_PACKET_INDEX_20260605.md/.csv`: 36 owner-id rows; 31 present packet files, 5 output-only IDs for target-table workers 29-33.
+- `ASSET_OWNER_PACKET_INDEX_20260605.md/.csv`: 37 owner-id rows; 32 present packet files, 5 output-only IDs for target-table workers 29-33.
 
 New execution packets:
 

@@ -19,6 +19,8 @@ This packet did not mutate Unity assets, scenes, prefabs, materials, project set
 
 - `Docs/AssetAudit/VFX_DATAVAULT_SOVEREIGNTY_STATIC_REVIEW_20260605.md`
 - `Docs/AssetAudit/VFX_DATAVAULT_SOVEREIGNTY_AUDIT_20260605.json`
+- `Docs/AssetAudit/VFX_DATAVAULT_SOURCE_CONTEXT_REVIEW_20260605.md`
+- `Docs/AssetAudit/VFX_DATAVAULT_SOURCE_CONTEXT_REVIEW_20260605.csv`
 - `Tools/DataVaultSovereigntyAudit.py`
 - `Tools/test_data_vault_sovereignty_audit.py`
 
@@ -32,14 +34,17 @@ This packet did not mutate Unity assets, scenes, prefabs, materials, project set
 ## Runtime Debt To Repair
 
 1. `Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs`
-   - Runtime persistent direct constructors: `330`, `3987`.
-   - Runtime forbidden persistent declarations: `313`, `378`.
-   - Context: black-box dump snapshot/write mirrors are owner-local persistent NativeArrays.
+   - Source decision comment: `311-315` (`SOURCE DECISION BIOLUM_BLACKBOX_OWNER_LOCAL_20260605`).
+   - Runtime persistent direct constructors: `336`, `3993`.
+   - Runtime forbidden persistent declarations: `319`, `384`.
+   - Context: black-box dump snapshot/write mirrors are owner-local diagnostic NativeArrays. Current source decision names Session lifetime, owner disposal, no gameplay authority, no cross-domain snapshot contract, and no blind DataVault migration.
+   - Required handling: do not blind-migrate Biolum mirrors. Remaining proof is compile, Unity, GC/profiler, scanner recheck, and deterministic dump artifact.
 
 2. `Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs`
-   - Runtime persistent direct constructor: `2005`.
-   - Runtime forbidden persistent declarations: `673`, `674`, `712`.
-   - Context: wake/profile parse or staging scratch crosses frames outside DataVault ownership.
+   - Runtime persistent direct constructor: `1347`.
+   - Runtime forbidden persistent declarations: `673`, `674`.
+   - Context: `_mockWakeScratch` and `_propwashEventScratch` are allocated through `EnsureRuntimeScratchBuffers()` and used for runtime vault/GPU upload paths.
+   - Correction: source-context review shows line `2005` is editor-only wake-profile CSV parse scratch inside `#if UNITY_EDITOR`; do not use it as the runtime constructor anchor.
 
 3. `Assets/_Project/Scripts/VFX/PlasmaBeam/ShinobuPlasmaBeamRuntime.cs`
    - Runtime direct constructor: `1483`.
@@ -47,12 +52,13 @@ This packet did not mutate Unity assets, scenes, prefabs, materials, project set
 
 ## Editor/Offline Debt Not To Misclassify As Runtime
 
-1. `Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs:3012`
+1. `Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs:3018`
    - Editor/offline persistent CSV staging inside an `#if UNITY_EDITOR` block.
    - Required handling: move under an Editor-only surface or document an editor/offline owner route. Do not migrate this as gameplay runtime state.
 
-2. `Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs:1347`
-   - Editor/offline persistent scratch.
+2. `Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs:2005`
+   - Editor/offline wake-profile CSV parse scratch inside `#if UNITY_EDITOR`.
+   - Source-context review corrected earlier routing: `1347` is runtime scratch via `EnsureRuntimeScratchBuffers()`, not editor/offline-only scratch.
    - Required handling: move under an Editor-only surface or document an editor/offline owner route. Do not count it as runtime VFX gameplay debt.
 
 ## Required Repair Shape
@@ -65,7 +71,7 @@ This packet did not mutate Unity assets, scenes, prefabs, materials, project set
    - editor/offline scratch;
    - Burst job input view.
 3. Runtime authority and persistent cross-frame scratch must be DataVault-owned or resolved as bounded generation-checked DataVault views inside the owning phase.
-4. Owner-local black-box mirrors are acceptable only with an explicit route card or in-file decision record naming owner, capacity, schema, lifetime, dump trigger, disposal, no gameplay authority, and no hot allocation.
+4. Owner-local black-box mirrors are acceptable only with an explicit route card or in-file decision record naming owner, capacity, schema, lifetime, dump trigger, disposal, no gameplay authority, and no hot allocation. Biolum has the in-file decision record; it still lacks compile, Unity, GC/profiler, scanner recheck, and dump artifact proof.
 5. Fault/dump serialization must use bounded buffers and must not allocate unmanaged scratch in gameplay hot paths.
 6. Editor/offline persistent scratch must be isolated from runtime classification. Prefer an Editor-only file/surface if the code is editor-only.
 7. Do not change DTO layout, public VFX contracts, SignalBus payloads, save identity, or gameplay truth ownership.

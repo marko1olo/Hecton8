@@ -5970,7 +5970,7 @@ Latest changes:
 - Runtime/product-face crosswalk now names the mandatory visual reference digest and h8_1475 visual-reference comparison template.
 - Crosswalk CSV now requires `h8_1475_visual_reference_comparison.md` for h8_1475 manifest and visual-floor proof rows.
 - DRS coroutine repair packet now cross-links packet 07 so coroutine removal and black-box route repair happen in one source edit, compile, and profiler pass after process gate clears.
-- DRS black-box packet corrected its static facts: current source keeps fixed `Dump_13KRA.bin`, has no `File.*`/stream/`WriteAll*` write route, and marks `_blackBoxDumped = true` after hash calculation rather than after binary artifact write.
+- DRS black-box packet corrected its prepatch static facts: source then kept a fixed historical dump name, had no file-write route, and marked `_blackBoxDumped = true` after hash calculation rather than after binary artifact write.
 - Added DRS static defect anchor report/CSV with seven source rows covering coroutine start, `IEnumerator`, `yield return`, `StopAllCoroutines`, stale dump const, null dump path, and missing file-write route.
 - Runtime index now states packet 07 must replace both stale filename and no-file-write black-box behavior with a deterministic owner/system binary dump route.
 - Runtime owner packet numbering corrected: MCP gate remains owner 05, DRS coroutine repair is owner 06, and DRS black-box dump route is owner 07. Duplicate owner 05 was removed from runtime packet routing.
@@ -5992,7 +5992,7 @@ Validation:
 Current state:
 
 - Static source/report hygiene only.
-- DRS runtime defects remain present in source until a clean process gate permits code edit plus compile/profiler proof.
+- Superseded by Cursor 76 and the postpatch DRS static review: DRS source patch is present, but full compile/profiler/runtime/artifact proof is still missing.
 - Unity readback/import/build/Play Mode remains blocked by the last recorded process gate.
 
 ## 2026-06-05 Thermal DRS Source Patch Cursor 76
@@ -6065,3 +6065,486 @@ Process recheck:
 - Gate verdict remains blocked because two samples exceeded 50 percent even though Unity/import/compiler/package process names were absent.
 - Second three-sample gate: CPU `90`, `62`, `68`; active watched processes included `Unity`, `Unity.ILPP.Runner`, `UnityPackageManager`, `UnityShaderCompiler`, and `mcp-for-unity`.
 - Gate verdict remains blocked for source repair, Unity readback, import, build, Play Mode, profiler, screenshot, and MCP Unity-state probing.
+
+## 2026-06-05 Thermal DRS Postpatch Documentation Reconciliation Cursor 78
+
+Current front:
+
+- Static readback confirms `ThermalDynamicResolutionAdapter.cs` remains source-patched after Cursor 76.
+- No Unity tool, Play Mode, player build, profiler, scene, prefab, material, Addressables, or project-setting mutation was performed.
+
+Integrated artifacts:
+
+- `Docs/Reports/RuntimeSystem_20260605/THERMAL_DRS_POSTPATCH_STATIC_REVIEW_20260605.md`
+- `Docs/Reports/RuntimeSystem_20260605/THERMAL_DRS_POSTPATCH_STATIC_REVIEW_20260605.csv`
+- `Docs/Reports/RuntimeSystem_20260605/THERMAL_DRS_STATIC_DEFECT_ANCHORS_20260605.md`
+- `Docs/Reports/RuntimeSystem_20260605/THERMAL_DRS_STATIC_DEFECT_ANCHORS_20260605.csv`
+- `Docs/Reports/RuntimeSystem_20260605/FORBIDDEN_RUNTIME_API_STATIC_SCAN_20260605.md`
+- `Docs/Reports/RuntimeSystem_20260605/FORBIDDEN_RUNTIME_API_STATIC_SCAN_20260605.csv`
+- `Docs/Reports/RuntimeSystem_20260605/FORBIDDEN_RUNTIME_API_ROUTE_TRIAGE_20260605.md`
+- `Docs/Reports/RuntimeSystem_20260605/FORBIDDEN_RUNTIME_API_ROUTE_TRIAGE_20260605.csv`
+- `taskslocal/runtime_system_20260605/README.md`
+
+Validation:
+
+- Current static scan: no `StartCoroutine(` hits in `Assets/_Project/Scripts`.
+- Current DRS static scan: no coroutine repair symbols and no stale historical dump route in `ThermalDynamicResolutionAdapter.cs`.
+- Current DRS static readback: bounded dispatcher repair state, `AdvanceDispatcherRegistrationRepair()`, owner/system dump prefix, `ResolveBlackBoxDumpPathCold()`, and `NativeFaultDumpWriter.TryWriteAll(...)` are present.
+
+Current state:
+
+- DRS source is `SOURCE PATCHED / PENDING FULL COMPILE AND UNITY PROOF`.
+- Missing proof: full compile, Unity Console, Play Mode registration churn, forced invalid DRS trigger, binary dump artifact, GCMonitor, and profiler.
+
+## 2026-06-05 VFX DataVault Source Context Correction Cursor 79
+
+Current front:
+
+- Process gate was red for runtime/source work: CPU reported `100`.
+- No Unity tool, Play Mode, player build, profiler, scene, prefab, material, Addressables, project-setting, or C# source mutation was performed.
+
+Integrated artifacts:
+
+- `Docs/AssetAudit/VFX_DATAVAULT_SOURCE_CONTEXT_REVIEW_20260605.md`
+- `Docs/AssetAudit/VFX_DATAVAULT_SOURCE_CONTEXT_REVIEW_20260605.csv`
+- `Docs/AssetAudit/VFX_DATAVAULT_SOVEREIGNTY_STATIC_REVIEW_20260605.md`
+- `taskslocal/runtime_system_20260605/RUNTIME_OWNER_08_VFX_DATAVAULT_SOVEREIGNTY_REPAIR_PACKET.md`
+- `taskslocal/runtime_system_20260605/README.md`
+
+Source-context correction:
+
+- Audit JSON already separates `HectonMarineSnowRenderer.cs:1347` as Runtime and `2005` as Editor.
+- Human summary and Owner 08 wording were corrected: runtime MarineSnow scratch debt is `_mockWakeScratch` / `_propwashEventScratch` through `EnsureRuntimeScratchBuffers()` at line `1347`; editor/offline wake-profile scratch is line `2005`.
+- Biolum black-box snapshot/write arrays remain runtime diagnostic mirror debt unless approved by route card or replaced with a bounded DataVault/shared dump payload route.
+- PlasmaBeam dump payload remains fault/export route review debt; do not turn it into a persistent owner-local field.
+
+Current state:
+
+- Static context only.
+- VFX source repair, scanner re-run, compile, Unity Console, Play Mode, GCMonitor, profiler, and dump artifact proof remain missing.
+
+## 2026-06-05 Unity Owner Dialogue Review Cursor 79
+
+Current front:
+
+- User supplied a pasted Unity-owner dialogue with angry steering and worker status.
+- Reviewed as controller evidence only. No Unity run, build, Play Mode, profiler, scene save, prefab save, material save, import, or project-setting mutation was performed by the orchestrator.
+
+Integrated artifact:
+
+- `Docs/Orchestration/UNITY_OWNER_DIALOGUE_REVIEW_20260605.md`
+
+Controller facts:
+
+- The dialogue confirms the Unity-owner lane spent too long treating the surface failure as a local color/haze/material A/B problem.
+- The useful strategic correction is now explicit: restore or replace the authoritative surface route, not green-overlay the current slab.
+- `surface_clean_ab6` and related A/B captures remain rejected. The frame shows slab water, green seam camouflage, black detached terrain underside, weak terrain material, and weak Aegir integration.
+- The active h8_1475 route must prove production player/HUD/tool/input before visual acceptance. Landscape-only screenshots are false proof.
+- Raman runtime audit completed and confirms the static player/HUD blocker set: active scene-local shell player candidate, production player prefab not statically proven active, direct input shell path, HUD overlay risks, and all movement/HUD/runtime proof still pending Unity readback.
+
+Source risk review:
+
+- `Assets/_Project/Scripts/Editor/H8VisualProofCapture1912.cs` now contains diagnostic capture methods.
+- `CaptureSurfaceCrestRecoveryProbeAndExit()` mutates `Crest.OceanRenderer` serialized fields through `ApplyModifiedPropertiesWithoutUndo()` and has no visible restore path.
+- `QuarantineSurfaceRejectsAndExit()` marks and saves the scene.
+- Therefore `H8VisualProofCapture1912.cs` is a diagnostic/rejection runner only unless a future owner proves a separate no-mutation capture method.
+
+Next action:
+
+- Keep Unity/build/profiler blocked while process gate is red.
+- Prioritize `RUNTIME_OWNER_05_MCP_GATE_AND_READBACK_RECOVERY_PACKET.md`, then `ASSET_OWNER_37_H8_1475_ANTI_FALSE_PROOF_ALIGNMENT_PACKET.md`, then `ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md`.
+- Surface repair lane must target active OceanRenderer/Crest route, terrain/wet-rock material route, foam/contact/waterline proof, Aegir/sky integration, and valid h8_1475 proof packet. Do not promote green haze, temp cards, or scenic screenshots.
+
+## 2026-06-05 Subagent Runtime/Asset/Rule Synthesis Cursor 80
+
+Current front:
+
+- Integrated completed subagent static audits for runtime player/HUD and asset/VFX/audio blocker boards.
+- No Unity, build, Play Mode, profiler, import, scene/prefab/material save, Addressables mutation, project-setting mutation, or AGENTS.md edit was performed by the orchestrator.
+
+Integrated artifact:
+
+- `Docs/Orchestration/ORCHESTRATOR_SUBAGENT_SYNTHESIS_20260605.md`
+
+Runtime audit facts:
+
+- Static blocker remains: active scene-local `Player` candidate with enabled `HectonWorldShellController1428`.
+- Shell direct-input route remains source-backed: `Keyboard.current`, `Mouse.current`, legacy `Input.GetKey`, and `Input.GetAxisRaw`.
+- Production `Player.prefab` has movement, swim presentation, interaction, HUD, Rigidbody, and CapsuleCollider pieces, but static scene proof does not show it active.
+- HUD route remains readback-pending: latent `forceScreenSpaceOverlay: 1`, overlay-starting `Suit_HUD_Canvas`, and unproven active projection/camera binding.
+- All walking/swimming/HUD/PDA/save/load/GC/profiler/black-box proof remains `PENDING UNITY READBACK`.
+
+Asset/VFX/audio audit facts:
+
+- VFX DataVault P0 debt remains in `BiolumPulseSyncRuntime.cs` and `HectonMarineSnowRenderer.cs`; repair must classify authority, diagnostic mirror, black-box snapshot, editor/offline scratch, or job input before mutation.
+- Compute particle budget catalog is static green only; GPU/profiler/visual density proof is absent.
+- MusicDirector null mixer refs and Player prefab direct clip refs remain P0 audio route blockers.
+- Addressables data is absent/empty; future group/key work must wait for clean Unity-safe execution.
+- Static tables are blocker maps, not acceptance.
+
+Rule routing front:
+
+- `Docs/AGENT_AUTHORITY_ROUTING.md` now exists and is directionally correct.
+- `Docs/AGENTS_RULE_DETAIL_LEDGER.md` contains visible mojibake in copied legacy text; it is not a clean human-readable no-loss ledger until repaired or explicitly byte-preserved.
+- Root/mirror `AGENTS.md` files are already dirty from another lane. Do not edit or revert them here.
+
+Next action:
+
+- Continue static/controller work while process gate remains red.
+- When gate clears, route Unity readback through `RUNTIME_OWNER_05_MCP_GATE_AND_READBACK_RECOVERY_PACKET.md`.
+- Keep h8 proof blocked by `ASSET_OWNER_37_H8_1475_ANTI_FALSE_PROOF_ALIGNMENT_PACKET.md` until active player/HUD/tool route is known.
+
+## 2026-06-05 Visual Front P0/P1 Synthesis Cursor 81
+
+Current front:
+
+- Integrated visual subagent audit against mandatory references and current rejection evidence.
+- No Unity, build, import, Play Mode, profiler, scene/prefab/material save, Addressables mutation, or project-setting mutation was performed.
+
+Integrated artifact:
+
+- `Docs/Orchestration/VISUAL_FRONT_P0_P1_SYNTHESIS_20260605.md`
+
+Controller verdict:
+
+- Visual promotion remains rejected.
+- Accepted static claim: current mandatory visual reference folder has 15 images and is the correct comparison source.
+- Rejected claims: surface water, foam/contact shoreline, coast/terrain material truth, Aegir/sky hero quality, photic/medium-depth proof, HUD/product-face proof, and any h8_1475 visual acceptance.
+- Latest inspected frames still show slab water, green seam haze, black shoreline undercuts, noisy acid terrain, weak translucent Aegir, no foam/wet edge, no underwater route density, and no HUD/tool proof.
+
+P0 visual order:
+
+1. Full `h8_1475` proof packet only after process gate clears and active player/HUD/tool route is known.
+2. Ocean/Crest readback and Frame Debugger rows.
+3. Kill slab-water/horizon geometry before haze/post.
+4. Replace rejected visible waterline art with cleaned contact source after semantics/import/material proof.
+5. Build real shoreline contact: wet rock, foam touching geometry, shallow transparency, contact breakup, gameplay-height capture.
+6. Repair terrain/geology material truth.
+7. Repair Aegir/sky/cloud integration.
+8. Capture underwater 0-5m route with water ceiling, seabed, route cue, flora/coral/fauna scale, and instrument state.
+
+P1 visual order:
+
+- Medium-depth hero route.
+- Flora/coral proxy purge from active world.
+- Coastline composition against `VREF-03` and `VREF-04`.
+- Continuous Low/Middle/High/Ultra proof without ugly low mode.
+
+Hard controller constraint:
+
+- Do not place rocks, plants, or coral as camouflage before water/shore/terrain/sky base passes.
+- Do not accept green haze/darkness/post as proof.
+
+## 2026-06-05 Asset Audio Mix Queue Integration Cursor 79
+
+Current front:
+
+- Asset-only documentation lane continued while Unity/runtime gate stayed red.
+- Latest process refresh for this lane showed CPU `97` with active `dotnet` and Unity Hub processes; no Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, or project-setting mutation was performed.
+
+Integrated artifact:
+
+- `Docs/AssetAudit/AUDIO_MIX_PRIORITY_DECISION_QUEUE_20260605.md`
+- `Docs/AssetAudit/AUDIO_MIX_PRIORITY_DECISION_QUEUE_20260605.csv`
+
+Updated routing docs:
+
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.md`
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`
+- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_WORKER_BOARD_20260605.md`
+- `Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.md`
+- `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md`
+- `Docs/AssetAudit/README.md`
+- `taskslocal/asset_system_20260605/README.md`
+
+Static facts:
+
+- Audio mix queue establishes future proof order: warnings/UI, breath/player loops, suit/interior motion, route ambience, MusicDirector beds, stingers, UI click, and VO placeholder handling.
+- No runtime mix, listening pass, import setting, Addressables, or DSP route proof was created.
+- Existing external asset-front changes raised `ASSET_PROOF_ARTIFACT_INDEX_20260605.csv` to 29 rows and `VISUAL_REFERENCE_VS_CURRENT_REJECTION_MATRIX_20260605.csv` to 10 rows; static summary was reconciled to those facts instead of overwriting them.
+
+Validation:
+
+- Curated static CSV set: 56 files, 14569 data rows, zero parse/count/empty-cell errors.
+- `ASSET_FRONT_FILE_MAP_20260605.csv`: 119 rows, 7 columns, zero empty cells.
+- `AUDIO_MIX_PRIORITY_DECISION_QUEUE_20260605.csv`: 10 rows, 13 columns, zero empty cells.
+- `ASSET_PROOF_ARTIFACT_INDEX_20260605.csv`: 29 rows, 8 columns, zero empty cells.
+- `VISUAL_REFERENCE_VS_CURRENT_REJECTION_MATRIX_20260605.csv`: 10 rows, 8 columns, zero empty cells.
+- Scoped replacement-character scan returned `0`.
+- Scoped `git diff --check` returned CRLF normalization warnings only.
+
+Current state:
+
+- Asset audio mix-priority queue is integrated as static routing evidence only.
+- Status remains `PENDING VERIFICATION`; runtime audio proof and Unity acceptance are still absent.
+
+## 2026-06-05 Asset Audio Critical Cue Coverage Cursor 80
+
+Current front:
+
+- Asset-only audio coverage lane continued while Unity/runtime gate stayed red.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, or project-setting mutation was performed.
+
+Integrated artifact:
+
+- `Docs/AssetAudit/AUDIO_CRITICAL_CUE_COVERAGE_MATRIX_20260605.md`
+- `Docs/AssetAudit/AUDIO_CRITICAL_CUE_COVERAGE_MATRIX_20260605.csv`
+
+Updated routing docs:
+
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.md`
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`
+- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_WORKER_BOARD_20260605.md`
+- `Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.md`
+- `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md`
+- `Docs/AssetAudit/README.md`
+- `taskslocal/asset_system_20260605/README.md`
+
+Static facts:
+
+- Current ledger/source scan found breath, suit, swim, water-entry, UI, ambience, MusicDirector bed, and stinger candidates.
+- Current ledger/source scan found no dedicated sonar/scanner/navigation ping source and no dedicated tool/repair/scanner feedback source.
+- `SHINOBU_352` has warning priority doctrine for hull/crush/oxygen/power, but static evidence does not prove AudioBankHashID-to-final-clip or bank mapping.
+- Music pressure beds and stingers are explicitly not accepted as warning-cue coverage.
+
+Validation:
+
+- Curated static CSV set: 57 files, 14584 data rows, summary total match `true`, zero parse/count/empty-cell errors.
+- `ASSET_FRONT_FILE_MAP_20260605.csv`: 121 rows, 7 columns, zero empty cells.
+- `AUDIO_CRITICAL_CUE_COVERAGE_MATRIX_20260605.csv`: 12 rows, 15 columns, zero empty cells.
+- `AUDIO_MIX_PRIORITY_DECISION_QUEUE_20260605.csv`: 10 rows, 13 columns, zero empty cells.
+- Scoped replacement-character scan returned `0`.
+- Scoped `git diff --check` returned CRLF normalization warnings only.
+
+Current state:
+
+- Critical cue coverage matrix is integrated as static routing evidence only.
+- Status remains `PENDING VERIFICATION`; missing sonar/scanner and tool-feedback source candidates require future source authoring/import/runtime proof.
+
+## 2026-06-05 Orchestrator Evidence Refresh Cursor 81
+
+Current front:
+
+- Orchestrator lane refreshed after user supplied Unity-worker dialogue and Popper rule-routing completion.
+- CPU/process gate is red: CPU `99`, active `dotnet`, `Unity`, `Unity.ILPP.Runner`, `UnityPackageManager`, Unity Hub, and licensing processes.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, or project-setting mutation was performed by this orchestrator update.
+
+Integrated evidence:
+
+- `Docs/Orchestration/UNITY_OWNER_DIALOGUE_REVIEW_20260605.md`
+- `Docs/Orchestration/VISUAL_FRONT_P0_P1_SYNTHESIS_20260605.md`
+- `Docs/Orchestration/SURFACE_ROUTE_STATIC_CLASSIFICATION_20260605.md`
+- `Docs/Orchestration/PLAYER_HUD_MOVEMENT_P0_SYNTHESIS_20260605.md`
+- `Docs/Orchestration/ORCHESTRATOR_SUBAGENT_SYNTHESIS_20260605.md`
+- `Docs/Orchestration/RULE_ROUTING_HISTORICAL_AGENT_RULES_SCAN_20260605.md`
+- `Docs/Orchestration/AUDIO_ADDRESSABLES_P0_SYNTHESIS_20260605.md`
+- `Docs/Orchestration/VFX_DATAVAULT_P0_SYNTHESIS_20260605.md`
+- `taskslocal/night_controller_20260605/NIGHT_OWNER_02_SURFACE_AUTHORITATIVE_ROUTE.txt`
+- `taskslocal/night_controller_20260605/NIGHT_OWNER_07_RULE_ROUTING_NOLOSS.txt`
+
+Fresh visual rejection:
+
+- Reviewed `Docs/Screenshots/MCP/h8_1914_surface_crest_recovery_probe.png`.
+- Metadata says `captureTruth=surface_actual_terrain_crest_recovery_probe_editor_only_unsaved`.
+- Capture route used diagnostic `H8VisualProofCapture1912.CaptureSurfaceCrestRecoveryProbeAndExit`.
+- Image still fails: rectangular slab water, black detached island underside, green flat haze/horizon line, weak pasted Aegir sphere, no HUD/tool/player route.
+- Verdict: `h8_1914_surface_crest_recovery_probe` is diagnostic evidence only, not h8_1475, not no-mutation proof, not product proof.
+- ProbeB/ProbeC repeated the same diagnostic runner and overwrote `Docs/Screenshots/MCP/h8_1914_surface_crest_recovery_probe.*`.
+- Latest PNG hash: `9AE99C3DAA35D23BCF61057AC669A87F37FEF300C44A323117AA41E2E3FF4115`.
+- Latest metadata hash: `6034F65E0C9DF9A8A7085ABBD498DDC40012E6D6DBB72849984236B9D138DB45`.
+- Latest image adds a visible lower-right rectangular terrain/material patch. Rejection is stronger.
+- Metadata shows MapMagic `Main Terrain` active at `size=(15000.00, 0.00, 15000.00)` plus first-party terrain shell and temporary haze. This is mixed diagnostic composition, not stable production surface.
+- Detailed surface classification now records active saved ocean as `02_HECTON_WORLD.unity` + `Ocean_Crest.prefab` + `Assets/Crest/Crest/Materials/Ocean.mat`; `MAT_H8_SurfaceCrestOcean_1428.mat` is candidate-only; temp haze is rejected cover.
+
+Rule-routing audit integrated:
+
+- Popper static audit returned `PASS`.
+- Root `AGENTS.md`, `.codexrules/AGENTS.md`, and `.github/agents/AGENTS.md` byte-match SHA256 `9249FB9CC17DACDA0B373B86840A481C53A17EE09DF28084183B0FF1D92BA15A`.
+- `.agent/rules/AGENTS.md` is a thin delegate.
+- `Tools/Docs/TestAgentRuleRouting.py` passed with `AGENT_RULE_ROUTING_CHECK=PASS`, `mandates=80`.
+- `Tools/Docs/BuildProjectRootBiblesCombined.py --check` passed.
+- Stored mojibake/replacement chars were not proven in active checked files; plain PowerShell display remains a decoding risk only.
+- Remaining risk: old `.agent/rules/*.md` generic Unity examples are demoted but still dangerous if a tool ignores metadata.
+- Concrete line anchors for that historical-body risk are now recorded in `Docs/Orchestration/RULE_ROUTING_HISTORICAL_AGENT_RULES_SCAN_20260605.md`.
+
+Current state:
+
+- Visual route remains rejected.
+- Rule routing is statically green but needs future hardening if user approves mirror/stub edits.
+- Unity owner must not treat h8_1914 probes as acceptance.
+- Surface owner must repair authoritative water/shore/terrain/sky route before flora/geology/coral placement.
+- Audio/Addressables remain P0 blocked: MusicDirector mixer refs are null, Player prefab direct clip refs remain unproved, managed `OnAudioFilterRead(float[])` route is not release-accepted, and Addressables data is empty.
+- Player/HUD/movement remain P0 blocked: active scene-local `Player` with enabled `HectonWorldShellController1428` is static evidence; production `Player.prefab` is candidate-only until Unity readback proves active authority.
+- VFX DataVault split is clarified: Biolum owner-local black-box mirror is accepted as a source decision pending proof; MarineSnow current disk state appears rewritten through DataVault and must be preserved/proved; editor/offline scratch must not be patched as gameplay runtime debt; MarineSnow/PlasmaBeam fault dump path still has bounded managed allocation risk through `NativeFaultDumpWriter`/`CoreLowLevelUtilities`.
+
+## 2026-06-05 VFX/Visual Asset Index Integration Cursor 82
+
+Current front:
+
+- Static asset-routing hygiene continued while runtime/Unity/build gates stayed blocked.
+- Process gate remains red: CPU sample `94`, active `dotnet` PID `19984`.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, or runtime source mutation was performed.
+
+Integrated files:
+
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.md`
+- `Docs/AssetAudit/README.md`
+- `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md`
+- `Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`
+
+Newly linked route evidence:
+
+- `Docs/AssetAudit/VFX_DATAVAULT_SOURCE_CONTEXT_REVIEW_20260605.md/.csv`
+- `Docs/AssetAudit/VFX_DATAVAULT_REPAIR_ANCHOR_MAP_20260605.md/.csv`
+- `Docs/AssetAudit/BIOLUM_BLACKBOX_ROUTE_DECISION_20260605.md/.csv`
+- `Docs/AssetAudit/VISUAL_HERO_SOURCE_COVERAGE_MATRIX_20260605.md/.csv`
+- Existing proof-risk rows for `SURFACE_WATER_RECOVERY_PROBE_1914_STATIC_REVIEW_20260605.md`, `H8_VISUAL_PROOF_CAPTURE_1912_STATIC_RISK_REVIEW_20260605.md`, and `ASSET_OWNER_37_H8_1475_ANTI_FALSE_PROOF_ALIGNMENT_PACKET.md` remain preserved and are reflected in the index.
+
+Validation:
+
+- `ASSET_FRONT_FILE_MAP_20260605.csv`: 134 rows, 7 columns, zero empty cells.
+- `VFX_DATAVAULT_SOURCE_CONTEXT_REVIEW_20260605.csv`: 7 rows, 7 columns, zero empty cells.
+- `VFX_DATAVAULT_REPAIR_ANCHOR_MAP_20260605.csv`: 11 rows, 14 columns, zero empty cells.
+- `BIOLUM_BLACKBOX_ROUTE_DECISION_20260605.csv`: 4 rows, 15 columns, zero empty cells.
+- `VISUAL_HERO_SOURCE_COVERAGE_MATRIX_20260605.csv`: 10 rows, 15 columns, zero empty cells.
+- `ASSET_OWNER_PACKET_INDEX_20260605.csv`: 37 rows, 13 columns, zero empty cells, owner IDs `01-37` present.
+- `ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`: 61 listed CSV files, summed `Import-Csv` rows `14631`, mismatch count `0`.
+- Stale-token scan over current asset/task/report files found no active old owner-index row anchor and no active old front-map/total anchors.
+- Scoped `git diff --check` returned CRLF normalization warnings only.
+
+Current state:
+
+- VFX DataVault source-context correction is now reachable from the asset front entry points.
+- MarineSnow line `1347` remains runtime scratch debt; MarineSnow line `2005` remains editor/offline wake-profile scratch.
+- Biolum black-box owner-local mirror has source decision fields present at `BiolumPulseSyncRuntime.cs:311-315`; compile, Unity, GC/profiler, scanner recheck, and deterministic dump artifact proof remain absent.
+- Visual hero source coverage remains `STATIC_IMAGE_QA_ONLY`; no import, material binding, screenshot, Frame Debugger, memory, or visual acceptance exists.
+- Status remains `PENDING VERIFICATION`.
+
+## 2026-06-05 Asset Static Anchor Reconciliation Cursor 83
+
+Current front:
+
+- Continued static asset-front reconciliation after Cursor 82.
+- Process gate remained red: CPU sample `59`; active processes included `dotnet` PID `19984` and Unity Hub processes.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, or runtime source mutation was performed.
+
+Reconciled stale anchors:
+
+- `Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_WORKER_BOARD_20260605.md`
+- `Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.md`
+- `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md`
+- `taskslocal/asset_system_20260605/README.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`
+
+Static facts:
+
+- Current curated asset CSV set is `61` files and `14631` summed data rows.
+- `ASSET_FRONT_FILE_MAP_20260605.csv` is `134` rows, `7` columns, zero empty cells.
+- `ASSET_OWNER_PACKET_INDEX_20260605.csv` is `37` rows, `13` columns, zero empty cells.
+- `VISUAL_HERO_SOURCE_COVERAGE_MATRIX_20260605.csv` is `10` rows, `15` columns, zero empty cells.
+- `BIOLUM_BLACKBOX_ROUTE_DECISION_20260605.csv` is `4` rows, `15` columns, zero empty cells.
+- Visual hero source coverage is static reference/source routing only. It is not visual acceptance.
+- Biolum black-box route decision is static source-field readback only. It is not compile proof, Unity proof, profiler proof, or dump artifact acceptance.
+
+Validation:
+
+- Summary-table-to-real-CSV validation: `61` files, summed rows `14631`, mismatch count `0`.
+- Stale-token scan over active asset-front anchors returned no current old file-count, row-count, or owner-index-count anchors.
+- Touched-file replacement-character scan returned `0`.
+- Scoped `git diff --check` returned CRLF normalization warnings only.
+
+Current state:
+
+- Asset-front control plane is internally consistent for the visual hero, VFX DataVault, Biolum black-box, h8_1475 anti-false-proof, audio, and source-routing matrices.
+- Runtime/Unity/product visual status remains `PENDING VERIFICATION`.
+
+## 2026-06-05 Biolum Black-Box Source Decision Reconciliation Cursor 84
+
+Current front:
+
+- Continued static VFX route reconciliation while process gate was red.
+- Process gate sample: CPU `100`; no Unity/build/profiler/runtime action was started.
+- No runtime C# source, Unity asset, scene, prefab, material, project-setting, import, Addressables, Play Mode, profiler, or build mutation was performed.
+
+Source readback:
+
+- `Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs:311-315` contains `SOURCE DECISION BIOLUM_BLACKBOX_OWNER_LOCAL_20260605`.
+- The source decision names Session lifetime, owner disposal, no gameplay authority, no cross-domain snapshot contract, no blind DataVault migration, and the purpose: decouple crash dump file IO from DataVault write guards while the DataVault black-box ring remains runtime telemetry authority.
+- Current source anchors after that comment are `Entries` line `319`, Entries constructor line `336`, `_blackBoxDumpWriteBytes` line `384`, write-byte constructor line `3993`, and editor CSV scratch line `3018`.
+
+Updated files:
+
+- `Docs/AssetAudit/BIOLUM_BLACKBOX_ROUTE_DECISION_20260605.md`
+- `Docs/AssetAudit/BIOLUM_BLACKBOX_ROUTE_DECISION_20260605.csv`
+- `Docs/AssetAudit/VFX_DATAVAULT_SOURCE_CONTEXT_REVIEW_20260605.md`
+- `Docs/AssetAudit/VFX_DATAVAULT_SOURCE_CONTEXT_REVIEW_20260605.csv`
+- `Docs/AssetAudit/VFX_DATAVAULT_REPAIR_ANCHOR_MAP_20260605.md`
+- `Docs/AssetAudit/VFX_DATAVAULT_REPAIR_ANCHOR_MAP_20260605.csv`
+- `Docs/AssetAudit/VFX_DATAVAULT_SOVEREIGNTY_STATIC_REVIEW_20260605.md`
+- `taskslocal/runtime_system_20260605/README.md`
+- `taskslocal/runtime_system_20260605/RUNTIME_OWNER_08_VFX_DATAVAULT_SOVEREIGNTY_REPAIR_PACKET.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md`
+
+Validation:
+
+- Stale-Biolum scan found no active old Biolum line anchors or blind DataVault/NativeFaultDumpWriter migration directives in current asset/runtime/report docs.
+- `BIOLUM_BLACKBOX_ROUTE_DECISION_20260605.csv`: 4 rows, 15 columns, zero empty cells.
+- `VFX_DATAVAULT_SOURCE_CONTEXT_REVIEW_20260605.csv`: 7 rows, 7 columns, zero empty cells.
+- `VFX_DATAVAULT_REPAIR_ANCHOR_MAP_20260605.csv`: 11 rows, 14 columns, zero empty cells.
+- `ASSET_FRONT_FILE_MAP_20260605.csv`: 134 rows, 7 columns, zero empty cells.
+- Scoped `git diff --check` returned CRLF normalization warnings only.
+
+Current state:
+
+- Biolum owner-local black-box mirrors are no longer classified as source-comment repair pending; source decision fields are present by static source readback.
+- Remaining Biolum blockers: scanner recheck, compile, Unity, GC/profiler, deterministic runtime dump artifact proof.
+- MarineSnow runtime scratch debt and PlasmaBeam fault-route review debt remain open.
+- Status remains `PENDING VERIFICATION`.
+
+## 2026-06-05 Orchestrator P0 Synthesis Integration Cursor 85
+
+Current front:
+
+- Integrated fresh static subagent results for surface route, player/HUD/movement, audio/Addressables, VFX DataVault, and rule-routing risk.
+- Process gate is red: CPU sample `99`; active blockers are Unity Hub/licensing processes. Unity Editor is not active, but CPU is over threshold.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, runtime source, or AGENTS mutation was performed by this orchestrator update.
+
+Integrated artifacts:
+
+- `Docs/Orchestration/SURFACE_ROUTE_STATIC_CLASSIFICATION_20260605.md`
+- `Docs/Orchestration/PLAYER_HUD_MOVEMENT_P0_SYNTHESIS_20260605.md`
+- `Docs/Orchestration/UNITY_READBACK_P0_FIELD_MATRIX_20260605.md`
+- `Docs/Orchestration/AUDIO_ADDRESSABLES_P0_SYNTHESIS_20260605.md`
+- `Docs/Orchestration/VFX_DATAVAULT_P0_SYNTHESIS_20260605.md`
+- `Docs/Orchestration/RULE_ROUTING_HISTORICAL_AGENT_RULES_SCAN_20260605.md`
+- `Docs/Orchestration/ORCHESTRATOR_SUBAGENT_SYNTHESIS_20260605.md`
+- `taskslocal/night_controller_20260605/*`
+
+Current P0 facts:
+
+- Surface: active saved ocean route is `02_HECTON_WORLD.unity` + `Ocean_Crest.prefab` + `Assets/Crest/Crest/Materials/Ocean.mat`, but current visual quality is rejected. `MAT_H8_SurfaceCrestOcean_1428.mat` is candidate-only. h8_1914 is diagnostic-only and latest image is a stronger reject due to visible rectangular terrain/material patch.
+- Player/HUD/movement: static scene contains active scene-local `Player` with enabled `HectonWorldShellController1428`; production `Player.prefab` is candidate-only until Unity readback proves active authority.
+- h8_1475: blocked by runtime authority and visual floor. Landscape-only or raw MCP PNG proof remains false proof.
+- Audio/Addressables: MusicDirector mixer refs are null, `Player.prefab` direct clip refs remain unproved, `DynamicMusicGranularSynthesizer.OnAudioFilterRead(float[])` is not release-accepted without proof/waiver, and `Assets/AddressableAssetsData` is empty.
+- VFX DataVault: Biolum owner-local black-box mirror is accepted as a source decision pending proof. MarineSnow current disk state appears rewritten through DataVault for mock wake/propwash and must be preserved/proved; do not reintroduce runtime scratch fields. MarineSnow/PlasmaBeam fault dump path still has bounded managed allocation risk through `NativeFaultDumpWriter` / `CoreLowLevelUtilities`.
+- Rule routing: active routing is static `PASS`; old `.agent/rules/*.md` bodies remain historical prompt-poisoning risk if a tool ignores metadata.
+
+Validation:
+
+- Orchestration/task touched-file replacement-character scans returned `0`.
+- Orchestration/task touched-file question-run scans returned `0`.
+- Scoped `git diff --check` returned CRLF normalization warnings only.
+
+Current state:
+
+- Unity owner must not run while CPU gate is red.
+- Next Unity action, only when gate is green: no-mutation readback from `Docs/Orchestration/UNITY_READBACK_P0_FIELD_MATRIX_20260605.md` covering active player/HUD/tool, ocean/Crest, terrain/MapMagic, sky/Aegir, audio/Addressables, VFX/telemetry, dirty state, console, and proof packet prerequisites.
+- Flora/geology/coral placement remains blocked from scene production until surface and player proof gates pass.
+- Runtime/Unity/product status remains `PENDING VERIFICATION`.

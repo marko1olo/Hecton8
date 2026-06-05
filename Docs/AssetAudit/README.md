@@ -51,12 +51,13 @@ This directory is the current asset-front control surface. It is not Unity accep
 32. `taskslocal/asset_system_20260605/ASSET_OWNER_34_ACTIVE_ROUTE_TRIAGE_PACKET.md`
 33. `taskslocal/asset_system_20260605/ASSET_OWNER_35_UNREFERENCED_SOURCE_CLEANUP_REVIEW_PACKET.md`
 34. `taskslocal/asset_system_20260605/ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md`
-35. `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.md`
-36. `Docs/AssetAudit/H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.md`
-37. `Docs/Reports/AssetSystem_20260605/AUDIO_P0_STATIC_EXECUTION_REFINEMENT_20260605.md`
-38. `Docs/AssetAudit/LARGE_SOURCE_OWNER_REVIEW_20260605.md`
-39. `Docs/Reports/AssetSystem_20260605/PRODUCT_FACE_STATIC_EXECUTION_REFINEMENT_20260605.md`
-40. `Docs/AssetAudit/VISUAL_REFERENCE_PATH_CONTINUITY_20260605.md`
+35. `taskslocal/asset_system_20260605/ASSET_OWNER_37_H8_1475_ANTI_FALSE_PROOF_ALIGNMENT_PACKET.md`
+36. `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.md`
+37. `Docs/AssetAudit/H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.md`
+38. `Docs/Reports/AssetSystem_20260605/AUDIO_P0_STATIC_EXECUTION_REFINEMENT_20260605.md`
+39. `Docs/AssetAudit/LARGE_SOURCE_OWNER_REVIEW_20260605.md`
+40. `Docs/Reports/AssetSystem_20260605/PRODUCT_FACE_STATIC_EXECUTION_REFINEMENT_20260605.md`
+41. `Docs/AssetAudit/VISUAL_REFERENCE_PATH_CONTINUITY_20260605.md`
 
 ## Current P0 Blockers
 
@@ -101,6 +102,8 @@ Use these files before assigning or doing asset work:
 - Audio taxonomy: `AUDIO_ASSET_TAXONOMY_20260605.md` and `.csv`.
 - Audio source folder matrix: `AUDIO_SOURCE_FOLDER_ROUTE_MATRIX_20260605.md` and `.csv`.
 - Audio route owner requirement matrix: `AUDIO_ROUTE_OWNER_REQUIREMENT_MATRIX_20260605.md` and `.csv`.
+- Audio mix-priority decision queue: `AUDIO_MIX_PRIORITY_DECISION_QUEUE_20260605.md` and `.csv`.
+- Audio critical cue coverage matrix: `AUDIO_CRITICAL_CUE_COVERAGE_MATRIX_20260605.md` and `.csv`.
 - Audio source technical probe matrix: `AUDIO_FILE_TECHNICAL_PROPERTIES_20260605.md` and `.csv`.
 - Audio loudness/source dynamics matrix: `AUDIO_LOUDNESS_TECHNICAL_PROPERTIES_20260605.md` and `.csv`.
 - Audio profile/cue route matrix: `AUDIO_PROFILE_ROUTE_MATRIX_20260605.md` and `.csv`.
@@ -116,7 +119,17 @@ Use these files before assigning or doing asset work:
 - Batch31 static validation: `BATCH31_LOCAL_PBR_IMPORT_INTENT_STATIC_VALIDATION_20260605.md` (`STATIC_VALIDATION_ONLY`; unit-tested import-intent generation, no Unity promotion).
 - Batch31 channel-semantics decision queue: `BATCH31_CHANNEL_SEMANTICS_DECISION_QUEUE_20260605.md` and `.csv` (`STATIC_IMAGE_QA`; usable albedo/normal candidates vs blocked packed-mask rows).
 - Foam/contact source role decision queue: `FOAM_CONTACT_SOURCE_ROLE_DECISION_QUEUE_20260605.md` and `.csv` (`STATIC_IMAGE_QA`; rejected foam, cleanup maps, and out-of-scope water/detail sources).
+- VFX DataVault source-context correction: `VFX_DATAVAULT_SOURCE_CONTEXT_REVIEW_20260605.md` and `.csv` (`STATIC_SOURCE_READBACK`; MarineSnow 1347 is runtime scratch debt, 2005 is editor/offline wake-profile scratch).
+- VFX DataVault repair anchor map: `VFX_DATAVAULT_REPAIR_ANCHOR_MAP_20260605.md` and `.csv` (`STATIC_SOURCE_READBACK`; Biolum, MarineSnow, and PlasmaBeam repair anchors only).
+- DataVault audit execution-surface recheck: `DATAVAULT_AUDIT_EXECUTION_SURFACE_RECHECK_20260605.md` (`STATIC_SOURCE_TOOL_OUTPUT`; proves the MarineSnow 1347/2005 split is human-summary debt, not scanner classifier failure).
+- Biolum black-box route decision: `BIOLUM_BLACKBOX_ROUTE_DECISION_20260605.md` and `.csv` (`STATIC_TOOL_OUTPUT`; source decision fields are present; compile, Unity, GC/profiler, and dump proof remain absent).
+- Visual hero source coverage matrix: `VISUAL_HERO_SOURCE_COVERAGE_MATRIX_20260605.md` and `.csv` (`STATIC_IMAGE_QA`; mandatory-reference source fit and blocker routing only).
+- Visual source promotion execution queue: `VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.md` and `.csv` (`STATIC_SOURCE_QUEUE_ONLY`; exact owner actions and rejection gates only).
 - Surface horizon haze rejection review: `SURFACE_HORIZON_HAZE_1428_STATIC_REVIEW_20260605.md` (`STATIC_REVIEW_ONLY`; rejects untracked `ZTest Always` haze and raw no-clip screenshot as proof).
+- Surface water recovery probe rejection review: `SURFACE_WATER_RECOVERY_PROBE_1914_STATIC_REVIEW_20260605.md` (`STATIC_SCREENSHOT_REVIEW`; rejects editor-only unsaved flat-water diagnostic screenshot as proof).
+- h8_1475 proof-tool risk review: `H8_VISUAL_PROOF_CAPTURE_1912_STATIC_RISK_REVIEW_20260605.md` (`STATIC_SOURCE_REVIEW`; rejects editor-mutated diagnostic capture paths as canonical proof).
+- Visual proof capture guardrail validator: `Tools/ValidateVisualProofCaptureGuardrails.py` and `Tools/test_validate_visual_proof_capture_guardrails.py` (`STATIC_SOURCE_TOOL`; validates risk-routing coverage only, not no-mutation Unity proof).
+- Asset static summary validator: `Tools/ValidateAssetStaticSummary.py` and `Tools/test_validate_asset_static_summary.py` (`STATIC_SOURCE_TOOL`; validates curated CSV row/count hygiene only, not whole-folder or Unity proof).
 - Batch31 local PBR promotion prep: `Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/Batch31_PromotionPrep_INDEX.md` (`STATIC_IMAGE_PREP_ONLY`; preview/source artifacts only).
 - Material serialized risk matrix: `MATERIAL_FILE_TECHNICAL_PROPERTIES_20260605.md` and `.csv`.
 - Audio direct-ref detail: `AUDIO_DIRECT_REF_DETAIL_20260605.md` and `.csv`.
@@ -182,7 +195,7 @@ If the gate is red, continue static/source documentation only.
 - H8 proof dependency owner: `H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.csv` before executing or triaging the canonical h8_1475 packet.
 - P0 target routing synthesis owner: `ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.csv` before choosing between material, prefab, audio, h8_1475, or visual-gap owner routes.
 - Owner packet index: `ASSET_OWNER_PACKET_INDEX_20260605.csv` before recreating, redistributing, or assuming missing asset owner packet IDs.
-- Audio owner: `AUDIO_SOURCE_FOLDER_ROUTE_MATRIX_20260605.csv`, `AUDIO_ROUTING_REMEDIATION_SPEC_20260605.md`, `AUDIO_IMPORT_POLICY_EXCEPTION_TABLE_20260605.csv`, `AUDIO_LISTENING_PASS_QUEUE_20260605.csv`, and `audio_remediation_matrix_20260605.csv`.
+- Audio owner: `AUDIO_SOURCE_FOLDER_ROUTE_MATRIX_20260605.csv`, `AUDIO_ROUTING_REMEDIATION_SPEC_20260605.md`, `AUDIO_IMPORT_POLICY_EXCEPTION_TABLE_20260605.csv`, `AUDIO_LISTENING_PASS_QUEUE_20260605.csv`, `AUDIO_MIX_PRIORITY_DECISION_QUEUE_20260605.csv`, `AUDIO_CRITICAL_CUE_COVERAGE_MATRIX_20260605.csv`, and `audio_remediation_matrix_20260605.csv`.
 - Audio profile owner: `AUDIO_PROFILE_ROUTE_MATRIX_20260605.csv` before any MusicDirector/profile/cue route edit.
 - Audio direct-ref owner: `ASSET_OWNER_08_AUDIO_DIRECT_REF_UNWIRING_PACKET.md` and `AUDIO_DIRECT_REF_DETAIL_20260605.csv` before touching `Player.prefab` audio refs.
 - MusicDirector owner: `ASSET_OWNER_10_MUSICDIRECTOR_AUDIO_ROUTING_PACKET.md` plus `AUDIO_PROFILE_ROUTE_MATRIX_20260605.csv` before profile/mixer/cue route edits.

@@ -18,6 +18,12 @@ Quality means the change improves at least one real product dimension:
 
 Documentation-only work is accepted only when it removes ambiguity, fixes stale authority, routes agents to the correct source, or records a durable proof boundary. Bureaucracy that does not unblock implementation is rejected.
 
+Work-product priority:
+
+- first: source, asset, scene, proof, runtime capture, profiler artifact, player-visible improvement, or blocker removal;
+- second: concise proof boundary or command-ready triage;
+- rejected: paperwork that substitutes for fixing, capturing, profiling, importing, or proving.
+
 Acceptance requires proof appropriate to the change:
 
 - static scan;
@@ -33,6 +39,53 @@ Acceptance requires proof appropriate to the change:
 - low-tier capture.
 
 If proof is missing, status is `PENDING VERIFICATION`.
+
+## 0A. Verification Loop Firewall
+
+Verification is useful only when it answers a named gate and changes the next action. It is process debt when it restates the same missing proof.
+
+Allowed:
+
+- one scoped static scan to locate defects;
+- one scoped triage pass to separate blockers from false positives;
+- one concise proof-boundary note when Unity, profiler, build, device, or process gates are genuinely blocked.
+
+Rejected:
+
+- repeated static scans over unchanged source or assets;
+- new CSVs, boards, packets, or validation summaries that only restate `PENDING VERIFICATION`;
+- "green" reports that do not unlock implementation, capture, runtime proof, or a blocker removal;
+- old-log mining after the active owner route and missing proof are already known;
+- using process-gate blockage as permission to keep writing reports instead of fixing source, preparing the exact proof command, or stopping.
+
+After a check finds a blocker, the next owner action must be one of:
+
+- run the missing proof command or Unity tool when the gate is clear;
+- make the source, scene, asset, material, or route-owner change that can make the proof pass;
+- mark the task blocked with the exact external blocker and stop that lane.
+
+A third check of the same unchanged state requires explicit user/controller authorization or new evidence. Without that, it is rejected as a verification loop.
+
+## 0B. Paper-Success Rejection
+
+The project rejects "work" that mainly increases artifact count while the player route, source route, visual result, or proof state stays unchanged.
+
+Paper-success signals:
+
+- many docs created, no source/asset/proof changed;
+- repeated `PENDING VERIFICATION` summaries with no new command, blocker, or owner action;
+- controller boards that multiply tasks instead of deleting, fixing, or proving a blocker;
+- "validation" that only checks formatting, rows, or links after the route defect is already known;
+- report language that sounds complete while the proof class remains static.
+
+Accepted documentation must do at least one of these:
+
+- remove a stale or conflicting rule that was blocking correct work;
+- define a missing acceptance gate that agents will actually hit;
+- map a known defect to one owner, one file route, and one proof command;
+- preserve a real proof boundary after a tool/process gate blocked the proof run.
+
+If none of these is true, stop writing and return to source, assets, Unity proof, or the concrete blocker.
 
 ## 1. Universal Review Questions
 
@@ -59,6 +112,31 @@ Every visual/UI/world/asset change needs screenshots when implemented:
 - debug view if relevant: wireframe, colliders, masks, LODs, overdraw, or UI layout.
 
 Reject beauty shots that hide problems.
+
+## 2A. Visual Failure Firewall
+
+Player-visible visual work must not become a repaint loop. If two consecutive fresh captures, or 90 minutes of work, still show the same root failure, the task status becomes `VISUAL_ROUTE_INVALID` and the agent must stop cosmetic iteration.
+
+Root failures include:
+
+- slab, card, or rectangle water;
+- terrain that reads as random noise, black clipped silhouettes, low-poly filler, or a colorized heightfield;
+- sky, Aegir, moons, clouds, water, terrain, flora, UI, VFX, lighting, or camera below the route bible visual floor;
+- waterline/foam/contact/wetness missing or visibly fake;
+- diagnostic-only capture presented as product proof;
+- temp haze, temp cards, disabled renderers, post-processing, darkness, or color grading used to hide weak source art, binding, geometry, lighting, or route composition.
+
+When `VISUAL_ROUTE_INVALID` is reached, the next action is route recovery, not another color pass:
+
+- identify the authoritative route owner and active scene/material/component binding;
+- inspect existing source assets and reference images before generating replacement visuals;
+- decide whether to restore, replace, or remove the broken route;
+- capture the same shot list again only after root cause changes;
+- keep all acceptance claims at `PENDING VERIFICATION` until the screenshots pass taste and the required Unity/profiler proof exists.
+
+Forbid visual task completion if the final evidence is only a diagnostic screenshot, editor-only unsaved probe, dirty-scene capture, temporary object, disabled-renderer A/B shot, or static text report. Such artifacts may reject a result; they cannot accept it.
+
+The controller must terminate or re-scope a visual owner that keeps producing same-failure captures. More boards, CSVs, task packets, or rationale prose are process debt unless they directly name the root route change and the next proof command.
 
 ## 3. Performance Gate
 

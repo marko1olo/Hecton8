@@ -1,0 +1,48 @@
+NIGHT_OWNER_08_FLORA_GEOLOGY_PLACEMENT_PREP
+Role: Flora/geology placement preparation owner.
+Status: PENDING EXECUTION
+
+Objective:
+Prepare premium rocks/flora/coral/geology placement candidates and rejection rules, but do not use them to hide broken water/shore/terrain/sky base.
+
+Authority:
+- AGENTS.md
+- Docs/AGENT_AUTHORITY_ROUTING.md
+- PROJECT_BIBLES.md
+- TASTE.md
+- VISION_LOCKS.md
+- quality.md, world.md, terrain.md, ecosystem.md, 3dmodel.md, 3DMODEL_GEOLOGY_ROCKS.md, 3DMODEL_FLORA_CORAL.md, 3DMODEL_TEXTURES_MATERIALS.md, rendering.md, performance.md
+- .agents-skills/REND_Instanced_Flora_Physics.txt
+- .agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt
+- .agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt
+- .agents-skills/OPT_Premium_Approximation_Protocol.txt
+
+Evidence basis:
+- Docs/Orchestration/VISUAL_FRONT_P0_P1_SYNTHESIS_20260605.md
+- Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.md
+- Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_REJECTION_20260605.md
+- Existing generated procedural asset tools and Nature/Rocks/ProceduralFinals candidates must be discovered from source.
+
+Owned scope:
+- Static asset/prefab/source candidate inventory while Unity gate is red.
+- Future placement only after NIGHT_OWNER_02 base water/shore/terrain/sky proof is not rejected.
+- No scene/prefab/material YAML mutation.
+
+Tasks:
+1. Inspect mandatory references for flora/geology density and silhouette expectations.
+2. Inventory candidate final rock/geology/flora/coral prefabs, meshes, materials, LODs, and generators under Assets/_Project.
+3. Separate final candidates from proxy/dev/blockout/package-default assets.
+4. Verify naming, material identity, LODGroup presence, collider proxy, and texture role from static source where possible.
+5. Build placement rules: near/mid/far density, route negative space, occlusion, cull distances, silhouette priorities.
+6. Build rejection list: floating blades, detached bulbs, proxy colors, aquarium-toy coral, low-poly silhouette collapse, primitive meshes, no LOD beyond 20m.
+7. Prepare Unity-safe placement plan for later: exact prefab candidates, zones, proof shots, and rollback.
+8. Do not place into production while slab water/black terrain/weak sky remains unresolved.
+
+Acceptance:
+- Candidate list names exact assets and proof gaps.
+- Placement plan preserves route readability and does not camouflage base failures.
+- LOD/material/collider requirements are explicit.
+- Future placement captures must include compact and high route views.
+
+Low/Middle/High/Ultra:
+Low uses fewer but high-quality silhouettes and impostors. Middle adds route density. High/Ultra spend budget on richer near-field flora/geology, VAT/motion, shadows where justified, and denser ecology without changing route truth.

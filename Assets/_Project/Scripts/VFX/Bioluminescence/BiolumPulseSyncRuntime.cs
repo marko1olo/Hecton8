@@ -308,6 +308,12 @@ namespace Hecton8.VFX.Bioluminescence
         private static readonly ulong BlackBoxDumpScratchGuardMask =
             BiolumMutationGuardBit(BiolumBlackBoxDumpScratchBufferId);
 
+        // SOURCE DECISION BIOLUM_BLACKBOX_OWNER_LOCAL_20260605: ACCEPT_OWNER_LOCAL_PENDING_PROOF.
+        // BlackBoxDumpSnapshotOwner.Entries and _blackBoxDumpWriteBytes stay owner-local diagnostic scratch.
+        // Lifetime: NativeAllocationLifetime.Session. Disposal: owner Dispose()/DisposeBlackBoxDumpSnapshot()
+        // and DisposeBlackBoxDumpWriteBytes() before lifecycle release. No gameplay authority, no cross-domain
+        // snapshot contract, and no blind DataVault migration; these buffers only decouple crash dump file IO
+        // from DataVault write guards while the DataVault black-box ring remains runtime telemetry authority.
         private struct BlackBoxDumpSnapshotOwner : IDisposable
         {
             public NativeArray<BiolumPulseTelemetryEntry> Entries;

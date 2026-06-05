@@ -1,0 +1,62 @@
+NIGHT_OWNER_02_SURFACE_AUTHORITATIVE_ROUTE
+Role: Surface water / coast / sky route repair owner.
+Status: PENDING EXECUTION
+
+Objective:
+Stop symptom patching. Recover or replace the authoritative surface route so the first surface view has real ocean, waterline contact, terrain material truth, and Aegir/sky integration.
+
+Authority:
+- AGENTS.md
+- Docs/AGENT_AUTHORITY_ROUTING.md
+- PROJECT_BIBLES.md
+- TASTE.md
+- VISION_LOCKS.md
+- quality.md, water.md, rendering.md, terrain.md, world.md, celestial.md, presentation.md, shaders.md, performance.md
+- .agents-skills/OPT_Premium_Approximation_Protocol.txt
+- .agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt
+- .agents-skills/REND_Shader_Noir_Aesthetics_Dithering_Fog.txt
+- .agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt
+
+Evidence basis:
+- Docs/Orchestration/VISUAL_FRONT_P0_P1_SYNTHESIS_20260605.md
+- Docs/Orchestration/UNITY_OWNER_DIALOGUE_REVIEW_20260605.md
+- Docs/Orchestration/SURFACE_ROUTE_STATIC_CLASSIFICATION_20260605.md
+- Docs/Screenshots/MCP/h8_1914_surface_crest_recovery_probe.png
+- Docs/Screenshots/MCP/h8_1914_surface_crest_recovery_probe.txt
+- Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_REJECTION_20260605.md
+- Docs/Reports/Batch31/3103_WATER_CREST_FOAM_CAUSTIC_OWNER.md
+- Docs/Reports/Batch30/3004_WATER_FOAM_CAUSTIC_ROUTE_AUDIT.md
+- Docs/AssetAudit/H8_VISUAL_PROOF_CAPTURE_1912_STATIC_RISK_REVIEW_20260605.md
+
+Owned scope:
+- Static/source audit while Unity gate is red.
+- Future Unity-safe material/scene/prefab edits only after NIGHT_OWNER_01 proves a green gate and readback identifies exact owner route.
+- Do not edit Crest package shaders/wrappers. Do not create runtime material clones.
+
+Tasks:
+1. Inspect mandatory visual references; cite VREF surface/water/shore/sky signals.
+2. Static-map active ocean candidates: Ocean_Crest, H8_WORLD_CREST_OCEAN_RUNTIME_1428, Ocean.mat, Ocean-Underwater.mat, MAT_H8_SurfaceCrestOcean_1428.mat, H8_SurfaceWaterReadability_1428.shader.
+3. Classify MAT_H8_SurfaceCrestOcean_1428 as active, candidate, or rejected-risk only from evidence. Do not assign blindly.
+4. Identify slab-water source: geometry extents, camera plane, ocean LOD, horizon occluders, low-water occlusion, curtains, or diagnostic temp objects.
+5. Identify terrain/shoreline material route and black undercut cause candidates.
+6. Identify foam/contact sources and rejected source rows. Do not reuse rejected foam.png visibly without cleanup/import/channel proof.
+7. Identify Aegir/sky/cloud active material route and stale candidates.
+8. Produce a repair plan with exact Unity readback fields and safe edit order.
+9. If Unity gate is green and controller allows, perform the smallest Unity-safe route repair. No raw YAML.
+10. Capture before/after screenshots and Frame Debugger/Stats where relevant.
+
+Acceptance:
+- No visible rectangular slab water or dark horizon band before haze/post.
+- Shoreline has wet-rock transition, foam/contact breakup, shallow transparency, material scale.
+- Terrain stops reading as black/yellow acid noise.
+- Aegir/sky has active slot proof and no toy transparent-sphere read.
+- h8_1475 proof still requires owner 04.
+
+Rejection:
+- Green haze as root fix.
+- Temporary water cards as product proof.
+- h8_1914 crest/water recovery probes as product proof; they are editor-only unsaved diagnostics.
+- Decorative rocks/flora/coral masking the broken base.
+
+Low/Middle/High/Ultra:
+Low preserves clean cyan/blue water, readable shore, terrain silhouette, and Aegir. High/Ultra add richer normals, foam, reflection, sky/cloud detail, and dense route dressing without changing route truth.

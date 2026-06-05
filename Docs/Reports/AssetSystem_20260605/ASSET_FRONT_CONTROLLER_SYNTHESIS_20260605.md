@@ -110,6 +110,10 @@ This synthesis is not Unity acceptance. No import, scene save, prefab mutation, 
   - `Docs/AssetAudit/VFX_DATAVAULT_SOVEREIGNTY_AUDIT_20260605.json`
 - Added audio route owner requirement matrix:
   - `Docs/AssetAudit/AUDIO_ROUTE_OWNER_REQUIREMENT_MATRIX_20260605.md/.csv`
+- Added audio mix-priority decision queue:
+  - `Docs/AssetAudit/AUDIO_MIX_PRIORITY_DECISION_QUEUE_20260605.md/.csv`
+- Added audio critical cue coverage matrix:
+  - `Docs/AssetAudit/AUDIO_CRITICAL_CUE_COVERAGE_MATRIX_20260605.md/.csv`
 - Integrated Batch31 local PBR import intent as sparse/blocked sidecar evidence:
   - `Docs/AssetAudit/BATCH31_LOCAL_PBR_IMPORT_INTENT_20260605.md/.csv/.json`
   - `Docs/AssetAudit/BATCH31_LOCAL_PBR_IMPORT_INTENT_STATIC_VALIDATION_20260605.md`
@@ -169,7 +173,7 @@ Static only:
   - `ASSET_AUTHORING_TOOL_INVENTORY_20260605.csv`: 13 rows.
   - `AUDIO_DIRECT_REF_DETAIL_20260605.csv`: 28 rows.
   - `TEXTURE_ACTIVE_ROUTE_BLOCKER_DETAIL_20260605.csv`: 109 rows.
-  - `ASSET_NEXT_ACTION_BOARD_20260605.csv`: 11 rows.
+  - `ASSET_NEXT_ACTION_BOARD_20260605.csv`: 12 rows.
   - `ASSET_STATIC_ROW_BLOCKER_SUMMARY_20260605.csv`: 16 rows.
   - `AUDIO_FILE_TECHNICAL_PROPERTIES_20260605.csv`: 138 rows.
   - `AUDIO_LOUDNESS_TECHNICAL_PROPERTIES_20260605.csv`: 138 rows.
@@ -182,10 +186,11 @@ Static only:
   - `ASSET_GUID_REFERENCE_MATRIX_20260605.csv`: 7420 rows.
   - `ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.csv`: 800 rows.
   - `ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.csv`: 3488 rows.
-  - `ASSET_FRONT_FILE_MAP_20260605.csv`: 117 rows.
+  - `ASSET_FRONT_FILE_MAP_20260605.csv`: 139 rows.
 - `Docs/AssetAudit/README.md` now centralizes the asset-front evidence boundary, P0 blockers, hard rejections, process gate, owner map, and Low/Middle/High/Ultra consequences.
-- `ASSET_PROOF_ARTIFACT_INDEX_20260605.md` maps contact sheets, waveform sheets, generated source packs, and taxonomy artifacts as proof-adjacent static material only.
-- `ASSET_PROOF_ARTIFACT_INDEX_20260605.csv` parses as 26 rows.
+- `ASSET_PROOF_ARTIFACT_INDEX_20260605.md` maps contact sheets, waveform sheets, generated source packs, diagnostic screenshot reviews, and taxonomy artifacts as proof-adjacent static material only.
+- `ASSET_PROOF_ARTIFACT_INDEX_20260605.csv` parses as 30 rows.
+- `ASSET_NEXT_ACTION_BOARD_20260605.csv` parses as 12 rows after adding the P0 h8_1475 proof-tool integrity blocker.
 - UI sprite static route: `oxygen-tank.png` is mask/silhouette; `ui/OXYGEN.png` is detailed source candidate, not proven bound.
 - Mesh/prefab static route:
   - `Nature/Rocks/ProceduralFinals` is the strongest static geometry candidate.
@@ -195,7 +200,7 @@ Static only:
 - `ASSET_GUID_REFERENCE_MATRIX_20260605.csv` parses as 7420 rows, 21 columns, zero empty cells; static counts: 3932 referenced rows, 3488 unreferenced rows, 630 active-world reachable rows, 25 direct audio scene/prefab review rows, and 3090 non-first-party or legacy path rows.
 - `ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.csv` parses as 800 rows, 15 columns, zero empty cells; static counts: 655 P0 active-route rows, 145 P1 scene-route rows, and 8 owner lanes.
 - `ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.csv` parses as 3488 rows, 15 columns, zero empty cells; static counts: 9 cleanup-review action buckets and 31 source rows >= 8 MB. It is not deletion authorization.
-- Current curated asset CSV set parses as 55 files, 14553 data rows, zero empty cells after generated source inventory, packets 01-28 and 34-37 mapping, four local static matrices, the GUID reference matrix, active-route GUID triage, unreferenced cleanup-review triage, the P0 target-table wave, P0 routing synthesis, owner packet index, visual reference critique checklist, current visual-reference path continuity, VREF-to-owner requirement matrix, h8_1475 shotlist/proof dependency graph, visual reference-vs-current rejection matrix, premium approximation rename triage, audio P0 execution refinement, audio route owner matrix, Batch31 channel-semantics decision queue, foam-contact source role decision queue, large source owner review, product-face execution refinement, waveform stats, static audio ledger, and audio remediation matrix. Whole-folder `Docs/AssetAudit/*.csv` hygiene is not claimed; older/sidecar texture usage ledgers and the sparse Batch31 import-intent CSV remain outside the zero-empty set.
+- Current curated asset CSV set parses as 62 files, 14646 data rows, zero empty cells after generated source inventory, packets 01-28 and 34-37 mapping, four local static matrices, the GUID reference matrix, active-route GUID triage, unreferenced cleanup-review triage, the P0 target-table wave, P0 routing synthesis, owner packet index, visual reference critique checklist, current visual-reference path continuity, VREF-to-owner requirement matrix, visual source promotion execution queue, h8_1475 shotlist/proof dependency graph, h8_1475 proof-tool integrity blocker routing, visual proof capture guardrail validation, visual reference-vs-current rejection matrix, premium approximation rename triage, audio P0 execution refinement, audio route owner matrix, audio mix-priority decision queue, audio critical cue coverage matrix, Batch31 channel-semantics decision queue, foam-contact source role decision queue, VFX DataVault source-context correction, VFX repair anchor map, DataVault execution-surface recheck, Biolum black-box route decision, visual hero source coverage matrix, large source owner review, product-face execution refinement, waveform stats, static audio ledger, and audio remediation matrix. Whole-folder `Docs/AssetAudit/*.csv` hygiene is not claimed; older/sidecar texture usage ledgers and the sparse Batch31 import-intent CSV remain outside the zero-empty set.
 - `PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.csv` parses as 124 rows; target table only, no material acceptance.
 - `PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.csv` parses as 39 rows; target table only, no prefab acceptance.
 - `AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.csv` parses as 6 rows; target table only, no runtime mix acceptance.
@@ -203,7 +208,8 @@ Static only:
 - `H8_1475_READBACK_FIELD_MANIFEST_20260605.csv` parses as 123 rows; field manifest only, no readback proof by itself.
 - `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.csv` parses as 7 rows; gap/rejection table only, no visual acceptance.
 - `ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.csv` parses as 5 rows; dispatch crosswalk only, no Unity or runtime acceptance.
-- `ASSET_OWNER_PACKET_INDEX_20260605.csv` parses as 36 rows; owner packet lookup only, no execution completion.
+- `ASSET_OWNER_PACKET_INDEX_20260605.csv` parses as 37 rows; owner packet lookup only, no execution completion.
+- `python Tools/ValidateVisualProofCaptureGuardrails.py` returns `VISUAL_PROOF_CAPTURE_GUARDRAILS_OK risks=7`; `python -m unittest Tools/test_validate_visual_proof_capture_guardrails.py` runs 3 tests OK. This proves static risk-routing coverage only, not clean no-mutation proof tooling or Unity visual acceptance.
 - `VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.csv` parses as 7 rows; visual rejection checklist only, no visual acceptance.
 - `H8_1475_CANONICAL_SHOTLIST_20260605.csv` parses as 11 rows; canonical shotlist and rejection rubric only, no screenshot existence or visual acceptance.
 - `H8_1475_VISUAL_REFERENCE_COMPARISON_TEMPLATE_20260605.md` is a static comparison template only, no screenshot existence or visual acceptance.
@@ -214,15 +220,24 @@ Static only:
 - Mandatory visual-reference image-read digest is present at `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`; it is static image-review evidence only, no Unity or screenshot acceptance.
 - h8_1475 canonical shotlist markdown/CSV and future proof execution packet now point at the image-read digest and reject surface-darkened, empty, muddy, toy-like, or stale-reference proof.
 - `PRODUCT_FACE_STATIC_EXECUTION_REFINEMENT_20260605.csv` parses as 14 rows; product-face material/prefab execution refinement only, no Unity proof or visual acceptance.
-- `VISUAL_REFERENCE_VS_CURRENT_REJECTION_MATRIX_20260605.csv` parses as 9 rows; rejection matrix only, no current screenshot pass/fail or runtime acceptance.
+- `VISUAL_REFERENCE_VS_CURRENT_REJECTION_MATRIX_20260605.csv` parses as 10 rows; rejection matrix only, no current screenshot pass/fail or runtime acceptance.
+- `SURFACE_WATER_RECOVERY_PROBE_1914_STATIC_REVIEW_20260605.md` rejects `Docs/Screenshots/MCP/h8_1914_surface_water_recovery_probe.png` as diagnostic-only. Text capture says `surface_water_recovery_probe_editor_only_unsaved`; PNG shows flat rectangular green water, black clipped shoreline slabs, low-detail terrain bands, oversized transparent Aegir billboard, and weak foam/contact.
+- `H8_VISUAL_PROOF_CAPTURE_1912_STATIC_RISK_REVIEW_20260605.md` marks `H8VisualProofCapture1912.cs` as a proof-tool risk: water/crest probe methods create or mutate editor-only visual state before capture, and `QuarantineSurfaceRejectsAndExit()` saves the scene. These paths can reject failures but must not be used as canonical h8_1475 acceptance proof.
+- Current worktree deletes `Assets/_Project/Art/Shaders/H8_SurfaceWaterReadability_1428.shader` and `.meta` while `H8VisualProofCapture1912.cs` still references that shader path. The 1914 text capture records `H8_TEMP_SurfaceWaterReadabilityProbe_1428=MISSING`; this is a proof-tool blocker, not water proof.
 - `PREMIUM_APPROXIMATION_RENAME_TRIAGE_20260605.csv` parses as 15 rows; stale mandate-reference patch queue only, no authority approval or visual acceptance.
 - `SURFACE_HORIZON_HAZE_1428_STATIC_REVIEW_20260605.md` rejects the untracked horizon haze shader and raw no-clip screenshot as proof; no Unity import, material binding, Frame Debugger, or runtime acceptance exists.
 - `python Tools/ValidateVfxParticleBudgetCatalog.py` returns `VFX_PARTICLE_BUDGET_CATALOG_OK`; `python -m unittest Tools/test_validate_vfx_particle_budget_catalog.py` runs 4 tests OK. This proves VFX catalog and current DRS dump prefix/writer static parity only, not GPU/runtime readiness.
 - `python Tools/DataVaultSovereigntyAudit.py --root Assets/_Project/Scripts/VFX --no-report --audit-json Docs/AssetAudit/VFX_DATAVAULT_SOVEREIGNTY_AUDIT_20260605.json --top 20` reports 18 VFX direct NativeArray constructors, 12 editor-only transient constructors, 4 runtime-forbidden constructors, 2 editor/offline persistent constructors, and 6 forbidden declarations; `python -m unittest Tools/test_data_vault_sovereignty_audit.py` runs 18 tests OK.
 - `AUDIO_ROUTE_OWNER_REQUIREMENT_MATRIX_20260605.csv` parses as 13 rows; route owner matrix only, no runtime mix, listening, import, or Addressables acceptance.
+- `AUDIO_MIX_PRIORITY_DECISION_QUEUE_20260605.csv` parses as 10 rows; mix-priority decision queue only, no runtime mix, listening, import, or Addressables acceptance.
+- `AUDIO_CRITICAL_CUE_COVERAGE_MATRIX_20260605.csv` parses as 12 rows; critical cue coverage matrix only, no runtime mix, listening, import, Addressables, or source-authoring acceptance.
 - `BATCH31_LOCAL_PBR_IMPORT_INTENT_20260605.csv` parses as 21 rows with 36 intentional sparse cells; it is sidecar import-intent evidence only, and packed-mask rows remain blocked by MRAO/ARM channel semantics.
 - `BATCH31_CHANNEL_SEMANTICS_DECISION_QUEUE_20260605.csv` parses as 7 rows; owner decision queue only, no Unity import, material binding, residency, or visual acceptance.
 - `FOAM_CONTACT_SOURCE_ROLE_DECISION_QUEUE_20260605.csv` parses as 8 rows; foam/contact source role queue only, no Unity import, material binding, residency, or visual acceptance.
+- `VFX_DATAVAULT_SOURCE_CONTEXT_REVIEW_20260605.csv` parses as 7 rows; source-context correction only, no runtime source repair, Unity proof, GC/profiler proof, or dump artifact acceptance.
+- `VFX_DATAVAULT_REPAIR_ANCHOR_MAP_20260605.csv` parses as 11 rows; repair anchor map only, no runtime source repair, Unity proof, GC/profiler proof, or dump artifact acceptance.
+- `BIOLUM_BLACKBOX_ROUTE_DECISION_20260605.csv` parses as 4 rows; source decision/readback only, no compile proof, Unity proof, GC/profiler proof, or runtime dump artifact acceptance.
+- `VISUAL_HERO_SOURCE_COVERAGE_MATRIX_20260605.csv` parses as 10 rows; source coverage matrix only, no import, material binding, screenshot, Frame Debugger, memory, or visual acceptance.
 - `audio_preview_waveform_stats_20260605.csv` parses as 11 rows; waveform proof-adjacent stats only, no listening proof.
 - `audio_asset_ledger.csv` parses as 138 rows; static audio ledger only, no import/runtime/Addressables proof.
 - `audio_remediation_matrix_20260605.csv` parses as 58 rows; remediation queue only, no runtime mix proof.

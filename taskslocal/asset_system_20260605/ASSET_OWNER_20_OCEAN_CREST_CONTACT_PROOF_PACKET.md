@@ -25,6 +25,9 @@ Route blocker mapped: future ocean owners get a narrow proof route instead of pr
 ## Static Blockers
 
 - `foam.png` is visually rejected and still static-reachable through active world/ocean route evidence. It cannot become final waterline/contact art.
+- `Docs/Screenshots/MCP/h8_1914_surface_water_recovery_probe.png` is diagnostically rejected: flat green rectangular water, black clipped shoreline slabs, low-detail terrain bands, oversized transparent Aegir billboard, and weak foam/contact.
+- `Docs/Screenshots/MCP/h8_1914_surface_water_recovery_probe.txt` says `captureTruth=surface_water_recovery_probe_editor_only_unsaved`, `H8_TEMP_SurfaceWaterReadabilityProbe_1428=MISSING`, active temp horizon haze, inactive underwater sheets, and inactive photic route terrain.
+- `Assets/_Project/Art/Shaders/H8_SurfaceWaterReadability_1428.shader` and `.meta` are deleted in the current worktree while the editor capture script still references that shader path. This is a diagnostic tooling blocker, not water proof.
 - Cleanup/source-only foam direction is reference material only. It needs route-owned maps, channel roles, importer readback, Crest/ocean slot proof, screenshots, Stats, Frame Debugger, and memory proof before visible use.
 - Static material paths do not prove active renderer use, shader response, Crest binding, texture residency, frame time, or in-game water quality.
 - Surface, ocean skin, shoreline, sky, Aegir, clouds, moons, and photic shallows are bright-route content. Darkness, fog, bloom, vignette, storm grade, or exposure crush cannot be used to conceal weak water, foam, terrain, or celestial art.
@@ -90,6 +93,10 @@ Route blocker mapped: future ocean owners get a narrow proof route instead of pr
 Reject the future route if:
 
 - `foam.png` remains visible as final reachable waterline/contact art.
+- `h8_1914_surface_water_recovery_probe.png` or any raw MCP diagnostic screenshot is used as acceptance proof.
+- Surface water still reads as a rectangular green/blue sheet, hard plane edge, or disconnected slab.
+- Shoreline still reads as black clipped geometry without wet geology, foam breakup, refraction, and waterline contact.
+- Aegir remains an oversized transparent billboard rather than integrated sky/celestial art owned by the sky packet.
 - Crest material clone, wrapper, runtime override, or runtime instantiation is introduced.
 - Any `.mat`, `.prefab`, `.unity`, `.asset`, or `.meta` file is raw-patched.
 - A scene is saved during readback without an explicit authorized edit task.

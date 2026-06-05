@@ -1,0 +1,53 @@
+NIGHT_OWNER_03_PLAYER_HUD_MOVEMENT_ROUTE
+Role: Production player, HUD, input, movement proof/repair owner.
+Status: PENDING EXECUTION
+
+Objective:
+Prove and repair the actual first-20 player route: full walking, swimming, ascend/descend, camera, interaction prompt, HUD/visor, PDA/pause/save route, and zero-GC input/HUD paths.
+
+Authority:
+- AGENTS.md
+- Docs/AGENT_AUTHORITY_ROUTING.md
+- PROJECT_BIBLES.md
+- TASTE.md
+- VISION_LOCKS.md
+- quality.md, player.md, input.md, ui.md, camera.md, gameplay.md, persistence.md, telemetry.md, performance.md
+- .agents-skills/UI_Data_Streaming_ZeroGC_Optimization.txt
+- .agents-skills/UI_Diegetic_Physical_Interfaces.txt
+- .agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+- .agents-skills/PHYS_Physics_Integrity_Determinism_ForceMode.txt
+
+Evidence basis:
+- Docs/Orchestration/ORCHESTRATOR_SUBAGENT_SYNTHESIS_20260605.md
+- Docs/Orchestration/PLAYER_HUD_MOVEMENT_P0_SYNTHESIS_20260605.md
+- Docs/Reports/RuntimeSystem_20260605/PLAYER_UI_TOOL_PRODUCT_FACE_CROSSWALK_20260605.md
+- Docs/Reports/RuntimeSystem_20260605/ACTIVE_PLAYER_SCENE_CONFLICT_MAP_20260605.md
+- taskslocal/runtime_system_20260605/RUNTIME_OWNER_04_PLAYER_UI_MOVEMENT_UNITY_READBACK_AND_REPAIR_PACKET.md
+- taskslocal/runtime_system_20260605/RUNTIME_OWNER_05_MCP_GATE_AND_READBACK_RECOVERY_PACKET.md
+
+Owned scope:
+- Static/source audit while Unity gate is red.
+- Future repair only in active player/bootstrap/HUD/input owners proven by readback.
+- Do not patch HectonWorldShellController1428 as production input route unless explicitly approved. It is a blocker candidate, not the target architecture.
+
+Tasks:
+1. Read owner 01 readback output if available. If absent, do static blocker map only.
+2. Verify active player source: scene shell, production prefab instance, bootstrap-spawned prefab, duplicate, null, or unknown.
+3. Static scan HectonWorldShellController1428 direct input and transform writes.
+4. Static inspect Player.prefab production components and missing scene relation.
+5. Static inspect InputDispatcher and PlayerInputState as intended input owner.
+6. Static inspect HUD_Internal, Suit_HUD_Canvas, SuitHUDScreenCompositor, SuitHUDV4CanvasOverlay, VisorHUDController, InteractionUI.
+7. If readback proves shell active, design repair through bootstrap/spawner/scene binding. No raw YAML.
+8. If readback proves HUD overlay active for gameplay, design diegetic/world-space/visor repair.
+9. Prove dry walk, surface swim, underwater swim, ascend/descend, camera, interaction prompt, PDA/pause, save/load if Unity gate and runtime proof are safe.
+10. Add or verify 300-frame telemetry/black-box route for player/input/HUD only if owner-correct.
+
+Acceptance:
+- Active production player route known and production-bound.
+- No active direct legacy input polling in gameplay player route.
+- Walking/swimming/ascend/descend and camera are Play Mode/player-capture verified.
+- Interactive HUD is not generic ScreenSpaceOverlay unless an approved bridge exists.
+- HUD hot text and input route have 0 B/frame proof.
+
+Low/Middle/High/Ultra:
+Low keeps control readability, input buffering, HUD state, and route cues. High/Ultra add richer visor/camera/tool presentation without changing movement or input truth.

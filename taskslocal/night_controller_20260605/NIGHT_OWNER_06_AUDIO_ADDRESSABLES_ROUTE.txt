@@ -1,0 +1,48 @@
+NIGHT_OWNER_06_AUDIO_ADDRESSABLES_ROUTE
+Role: Audio routing, player clip lifecycle, and Addressables authority owner.
+Status: PENDING EXECUTION
+
+Objective:
+Turn current audio/Addressables blocker maps into owner-correct routes without import/settings mutation while Unity is blocked.
+
+Authority:
+- AGENTS.md
+- Docs/AGENT_AUTHORITY_ROUTING.md
+- PROJECT_BIBLES.md
+- audio.md, streaming.md, performance.md, data.md, quality.md
+- .agents-skills/AUD_DSP_Audio_Synthesis_ThreadSafe_SPSC.txt
+- .agents-skills/STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt
+- .agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+- .agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt
+
+Evidence basis:
+- Docs/Orchestration/ORCHESTRATOR_SUBAGENT_SYNTHESIS_20260605.md
+- Docs/Orchestration/AUDIO_ADDRESSABLES_P0_SYNTHESIS_20260605.md
+- Docs/AssetAudit/AUDIO_ROUTE_OWNER_REQUIREMENT_MATRIX_20260605.md
+- Docs/AssetAudit/AUDIO_DIRECT_REF_DETAIL_20260605.md
+- Docs/AssetAudit/AUDIO_MIX_PRIORITY_DECISION_QUEUE_20260605.md
+- Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.md
+
+Owned scope:
+- Static docs/plans while Unity gate is red.
+- Future Unity-safe edits to MusicDirectorConfig_Global.asset and Player.prefab only after readback and explicit owner route.
+- No raw YAML, no Addressables settings creation until Unity-safe.
+
+Tasks:
+1. Confirm MusicDirector null mixer blockers: _musicMixerGroup and _stingerMixerGroup.
+2. Decide Unity-safe config repair or owned DSP/native bypass. Do not invent event strings.
+3. Classify Player.prefab direct refs: Underwater Ambient.wav and dive_splash.wav.
+4. Decide whether each direct ref becomes Addressables key, owned preload exception, or removed binding.
+5. Prepare hybrid audio import policy decision: duration default, player-loop exceptions, no generic streaming SFX.
+6. Prepare Addressables one-owner/one-key/one-proof matrix because Assets/AddressableAssetsData is currently empty.
+7. Do not import or mutate groups/settings while Unity gate is red.
+8. Later verify runtime profile entry/exit, crossfade, stinger, ducking, silence windows, memory, and 0 B/frame.
+
+Acceptance:
+- MusicDirector routes are non-null or explicitly bypassed by owner route.
+- Player clip refs have owner/lifecycle/release proof.
+- Addressables plan has group/key/profile/label schema and release ledger route.
+- Runtime listening, memory, and GC proof exist after Unity-safe execution.
+
+Low/Middle/High/Ultra:
+Low keeps priority warnings and essential ambience. High/Ultra add richer beds/stingers only through same owner/release truth.

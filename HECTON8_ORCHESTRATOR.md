@@ -133,6 +133,46 @@ When one lane is blocked or occupied, especially Unity, the orchestrator must ke
 
 A single active Unity owner can be the primary blocker, but it must not consume the whole orchestration cycle unless all other useful independent fronts are genuinely exhausted.
 
+LOCAL SUBAGENT PROTOCOL
+Use subagents when they reduce risk or wall-clock time on bounded evidence work:
+- source/proof inspection for a narrow route;
+- report synthesis across already named artifacts;
+- alternative design review for a risky owner boundary;
+- static checks that do not require Unity ownership;
+- lane-specific critique before dispatching a serious batch.
+
+Every subagent assignment must state:
+- role;
+- reason it is delegated;
+- exact authority docs already routed for the parent task;
+- owned read/edit scope;
+- forbidden scope;
+- expected output format;
+- evidence standard;
+- whether file edits are allowed.
+
+Subagents inherit HECTON-8 law, but they do not become authority.
+The primary agent remains responsible for:
+- selecting the subagent scope;
+- giving enough context to avoid shallow guesses;
+- merging only evidence-backed findings;
+- rejecting conflicts against root docs, route bibles, lane contracts, or live source;
+- verifying final claims before reporting to the user.
+
+Subagents are useful for parallelism, not for evasion.
+Do not use them to:
+- skip complete reading of controlling authority docs;
+- outsource the primary decision without review;
+- create hidden same-wave dependencies;
+- run broad unrelated audits;
+- produce another paper-success loop after a blocker is already known.
+
+If a subagent finds a blocker, the primary route becomes one of:
+- fix the source/asset/rule gate;
+- execute the missing proof;
+- rewrite the downstream task;
+- report `BLOCKED_BY_EXACT_EXTERNAL_GATE`.
+
 DEFAULT BATCH SIZE
 - 3-8 agents per batch.
 - 20-30 tasks per agent for serious HECTON-8 agent waves.
@@ -141,6 +181,96 @@ DEFAULT BATCH SIZE
 - One owned domain per agent unless cross-domain integration is explicitly required.
 
 Large prompts are the default for user-distributed heavy waves. They must be phase-gated, evidence-based, and checkpointed so they do not become refactor loops or hallucinated completion.
+
+AGENT LANE CONTRACTS
+Every serious local batch, XML batch, explicit multi-agent run, and controller task file must assign each agent exactly one primary `LANE_CLASS`.
+Lane classes are acceptance contracts, not titles.
+
+Cross-lane work is allowed only through an explicit owner route, interface route, signal lane, or handoff note.
+The primary `LANE_CLASS` decides what counts as valid completion, what is invalid paper-success, what proof is required, and when the agent must stop instead of polishing the same failure.
+
+Batch index files must include a lane roster:
+- agent ID;
+- role;
+- `LANE_CLASS`;
+- owned domain;
+- valid completion;
+- invalid completion;
+- evidence budget;
+- kill switch or exact blocker label.
+
+Every task file and XML prompt for serious agent work must include:
+- `LANE_CLASS`: one of the classes below;
+- `VALID_COMPLETION`: concrete artifact and proof that can close the task;
+- `INVALID_COMPLETION`: common fake-success shapes rejected for this lane;
+- `KILL_SWITCH`: when to stop the current route and report root cause;
+- `EVIDENCE_BUDGET`: maximum reasonable proof attempts before escalation.
+
+Valid terminal labels:
+- `FIXED_WITH_PROOF`: changed the owned artifact and produced the required proof.
+- `REJECTED_WITH_ROOT_CAUSE`: proved the requested route is wrong, obsolete, impossible, or below floor, with exact evidence.
+- `BLOCKED_BY_EXACT_EXTERNAL_GATE`: blocked by a named unavailable process, dependency, asset, permission, Unity state, build state, or owner route.
+
+Forbidden terminal labels:
+- "done" without artifact;
+- "looks acceptable" without the lane proof;
+- repeated `PENDING VERIFICATION` over unchanged state;
+- static report loops that do not change source, execute proof, or produce a concrete blocker.
+
+Lane classes:
+
+- `GAME_VISUAL`
+  Valid completion: source, scene, material, shader, prefab, lighting, camera, asset, or authored data change that improves the player-facing visual route, plus fresh capture/proof for the claimed view.
+  Valid rejection: exact root cause that proves the current route cannot meet `TASTE.md` or route-bible floor without a different owner, asset, tool, or Unity/proof gate.
+  Invalid completion: report-only, diagnostic-only capture, repaint loop over the same failed view, darkness/fog/post-process hiding weak art, or "visual acceptable" language.
+  Kill switch: same visual failure after 2 comparable captures, or 90 minutes on one route without a new artifact/proof vector, becomes `REJECTED_WITH_ROOT_CAUSE` or `BLOCKED_BY_EXACT_EXTERNAL_GATE`.
+
+- `RUNTIME_SYSTEM`
+  Valid completion: code/data/contract change in the owned runtime route plus the cheapest correct compile, static, Unity, play, profiler, or black-box proof for the claim.
+  Valid rejection: exact owner-route, API, dependency, compile wall, data contract, or process gate that prevents safe completion.
+  Invalid completion: docs-only, broad architecture essay, fake metrics, hidden `.Complete()`, hot-path allocations, binary quality switches, or unproved performance claims.
+  Kill switch: 3 failed attempts against the same compile/dependency wall triggers revert of the agent's broken chunk and `BLOCKED_BY_EXACT_EXTERNAL_GATE`.
+
+- `ASSET_PIPELINE`
+  Valid completion: importable asset, material, prefab, texture, audio, data package, bake/import script, manifest, or owner packet plus import/render/manifest proof.
+  Valid rejection: exact missing source, license, importer, reference, format, budget, or owner gate.
+  Invalid completion: prompt dump, source-only image without import route, unreferenced asset pile, deleted `.meta` damage, or asset report that never creates/repairs/imports the owned package.
+  Kill switch: repeated import/render failure over unchanged inputs triggers root-cause report or route reassignment.
+
+- `LORE_CONTENT`
+  Valid completion: canon text, narrative packet, codex entry, localization row, dialogue/content data, or content integration bridge that follows `writing.md`, `narrative.md`, and `localization.md` when relevant.
+  Valid rejection: exact canon conflict, route-bible conflict, localization blocker, or missing content owner.
+  Invalid completion: claiming runtime/UI/audio integration without runtime proof, lore that contradicts product locks, or prose polish that ignores route-bible constraints.
+  Kill switch: unresolved canon/product ambiguity that changes player truth requires `VISION_LOCKS.md` plus user/product decision or exact blocker.
+
+- `DOCS_RULES`
+  Valid completion: authority/routing/doc-generator/rule-surface edit, generated snapshot update, preserved provenance, and static routing check.
+  Valid rejection: exact conflict between live authority surfaces, stale generated file, missing provenance, or unsafe rule split.
+  Invalid completion: losing old rule text, replacing detailed rules with vague summaries, hand-editing generated snapshots as source, or report-only output unless explicitly assigned read-only audit.
+  Kill switch: if no-loss preservation cannot be proven, stop and preserve the source text before further edits.
+
+- `QA_PROOF`
+  Valid completion: one bounded proof pass that produces accepted proof, a concrete rejection, or a precise blocker with next owner/action.
+  Valid rejection: exact evidence that the artifact fails the lane floor or cannot be verified under current gates.
+  Invalid completion: repeating the same static scan after `PENDING VERIFICATION`, writing another summary over unchanged state, or claiming runtime/visual readiness from docs alone.
+  Kill switch: after the same blocker is identified once, the next action must execute proof, repair source/asset/root route, or escalate exact blocker.
+
+- `ORCHESTRATION`
+  Valid completion: batch index, lane roster, self-contained task files, evidence basis, dependency gates, and controller memory/update when applicable.
+  Valid rejection: exact reason the batch would be unsafe, duplicated, stale, unverifiable, or dependent on future sibling output.
+  Invalid completion: summary-only steering, fabricated paths/classes/IDs, same-wave hidden dependencies, or assigning work without valid completion/evidence budget.
+  Kill switch: stale memory, unverifiable evidence basis, or missing lane roster blocks dispatch until revalidated from disk.
+
+- `TOOLING_AUTOMATION`
+  Valid completion: script/tool/test/gate automation plus deterministic test, dry run, fixture, or documented command output.
+  Valid rejection: exact environment, dependency, permission, platform, or data-shape blocker.
+  Invalid completion: unrun script dump, tool that only prints optimism, destructive automation without scoped proof, or hidden broad filesystem mutation.
+  Kill switch: if the tool cannot prove its target set safely, convert to dry-run/report mode and block destructive action.
+
+Batch composition rule:
+- A serious production batch must not be mostly `QA_PROOF`, `DOCS_RULES`, or `ORCHESTRATION` unless the user explicitly requested audit/governance work.
+- Visual/runtime/player-facing fronts need at least one builder lane with a valid artifact path, not only reviewers.
+- Lore/docs lanes are real production lanes when the owned output is content/rules. They are not valid substitutes for visual/runtime fixes.
 
 HEAVY WAVE PROMPTS: 20-30 TASK STRUCTURE
 For serious agent waves, a 20-30 task prompt is expected.
@@ -166,6 +296,14 @@ Recommended long-prompt shape:
   Fresh evidence that proves this task is real.
   Hard paths/classes/methods must exist, or be labeled CANDIDATE with discovery as the first task.
   </EVIDENCE_BASIS>
+
+  <LANE_CONTRACT>
+  LANE_CLASS: GAME_VISUAL | RUNTIME_SYSTEM | ASSET_PIPELINE | LORE_CONTENT | DOCS_RULES | QA_PROOF | ORCHESTRATION | TOOLING_AUTOMATION.
+  VALID_COMPLETION: concrete artifact and proof that can close this lane.
+  INVALID_COMPLETION: report-only or fake-success shapes rejected for this lane.
+  KILL_SWITCH: exact repeated-failure condition that stops this route.
+  EVIDENCE_BUDGET: proof attempts/time/artifact limit before escalation.
+  </LANE_CONTRACT>
 
   <AUTHORITY_DOCS>
   Root authorities plus 1-4 exact route bibles.
@@ -246,6 +384,14 @@ Recommended shape:
   Mark unverified targets as CANDIDATE.
   </EVIDENCE_BASIS>
 
+  <LANE_CONTRACT>
+  LANE_CLASS: one primary lane class from AGENT LANE CONTRACTS.
+  VALID_COMPLETION: artifact plus proof.
+  INVALID_COMPLETION: rejected paper-success shapes.
+  KILL_SWITCH: when to stop the current route.
+  EVIDENCE_BUDGET: bounded proof attempts before escalation.
+  </LANE_CONTRACT>
+
   <AUTHORITY_DOCS>
   AGENTS.md, PROJECT_BIBLES.md, quality.md, TASTE.md if player-facing, and 1-4 route bibles.
   </AUTHORITY_DOCS>
@@ -295,6 +441,7 @@ The local Codex creates one large `.txt` task file per agent:
 Each task file must be directly distributable to one agent without requiring XML extraction.
 Each task file must include:
 - explicit ID and role;
+- `LANE_CLASS`, `VALID_COMPLETION`, `INVALID_COMPLETION`, `KILL_SWITCH`, and `EVIDENCE_BUDGET`;
 - source batch or evidence packet name;
 - why this task is still unstarted or still needed;
 - authority docs to read;
@@ -485,7 +632,11 @@ Before returning a batch, self-check:
 - No "visually acceptable" downgrade.
 - No immediate deletion.
 - No task requires unrelated archive reading.
-- Each prompt has 6-12 tasks by default.
+- Batch index includes a lane roster for serious multi-agent work.
+- Every serious agent prompt has `LANE_CLASS`, `VALID_COMPLETION`, `INVALID_COMPLETION`, `KILL_SWITCH`, and `EVIDENCE_BUDGET`.
+- Lane completion matches the assigned class; report-only is valid only for explicit `DOCS_RULES`, `QA_PROOF`, or orchestration audit work.
+- Batch composition includes builder lanes when the objective needs player-facing, runtime, asset, or tooling changes.
+- Each prompt has 20-30 tasks for serious heavy waves, or 6-12 tasks for narrow housekeeping/follow-up work.
 - Each prompt names authority docs.
 - Each prompt has proof packet.
 - One optional batch-level POLISH_MANDATE only.

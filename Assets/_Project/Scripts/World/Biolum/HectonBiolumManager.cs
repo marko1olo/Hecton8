@@ -1469,7 +1469,12 @@ namespace Hecton8.Biolum
                 string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
                 string dumpPath = Path.Combine(projectRoot, BiolumDumpRelativePath);
                 int byteCount = BiolumDumpHeaderBytes + BiolumTelemetryCapacity * BiolumDumpEntryBytes;
-                NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                const string PayloadLabel = "biolumTelemetryDumpPayload";
+                NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(HectonBiolumManager),
+                    PayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
                 try
                 {
                     int cursor = 0;
@@ -1498,8 +1503,10 @@ namespace Hecton8.Biolum
                 }
                 finally
                 {
-                    if (payload.IsCreated)
-                        payload.Dispose();
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(HectonBiolumManager),
+                        PayloadLabel);
                 }
             }
             finally
