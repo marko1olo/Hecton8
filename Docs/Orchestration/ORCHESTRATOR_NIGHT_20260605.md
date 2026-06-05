@@ -3225,6 +3225,39 @@ Next valid orchestration move:
 
 - Create another isolated STATIC_DOC packet wave, or plan source admission only under a clean process gate with explicit source/bake owner. Source CSV, route-card, generated-page, h8bin, Unity, runtime, native localization, and publication claims remain forbidden from static bundles alone.
 
+## 2026-06-05 Latest Controller Cursor 54
+
+Current front:
+
+- Asset/product-face, runtime/player-UI-movement, world placement staging, and Unity tooling gates remain active.
+- Product-face visual promotion remains rejected.
+- h8_1475 proof remains absent.
+- Audio P0 refinement is integrated but not runtime-proven.
+
+Latest integrated asset/audio artifact:
+
+- `Docs/Reports/AssetSystem_20260605/AUDIO_P0_STATIC_EXECUTION_REFINEMENT_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/AUDIO_P0_STATIC_EXECUTION_REFINEMENT_20260605.csv`
+- Darwin `019e987f-26b2-7a83-819e-721f97858173` completed and was closed.
+
+Latest validation:
+
+- Curated current asset CSV set: 42 files, 14195 rows, zero empty cells.
+- Scoped touched-doc replacement-character scan: zero for current asset/audio docs. The orchestration memory still contains older mojibake markers from earlier history and is not a clean encoding artifact.
+- Scoped touched-doc `git diff --check`: clean.
+
+Latest process/tooling gate:
+
+- CPU sample `100`.
+- Active blockers: `mcp-for-unity`, `Unity`, `Unity.ILPP.Runner`, `UnityPackageManager`, multiple `UnityShaderCompiler`.
+- MCP resources list returned empty.
+- Unity readback/import/build/Play Mode remains blocked.
+
+Next valid controller action:
+
+- Keep independent static/controller fronts moving while Unity gate is red.
+- Do not run Unity proof, build, import mutation, prefab/material save, Addressables changes, or h8_1475 capture until process gate and MCP/tooling state are clean.
+
 ## 2026-06-05 Asset / Audio Controller Continuation 53
 
 Evidence refresh:
@@ -4397,3 +4430,36 @@ Current state:
 Next valid orchestration move:
 
 - Create another isolated STATIC_DOC packet wave, or plan source admission only under a clean process gate with explicit source/bake owner. Source CSV, route-card, generated-page, h8bin, Unity, runtime, native localization, and publication claims remain forbidden from static bundles alone.
+
+## 2026-06-05 Latest Controller Cursor 55
+
+Current front:
+
+- Asset/product-face, runtime/player-UI-movement, world placement staging, and Unity tooling gates remain active.
+- Product-face visual promotion remains rejected.
+- h8_1475 proof remains absent.
+- Audio P0 refinement is integrated but not runtime-proven.
+
+Latest integrated asset/audio artifact:
+
+- `Docs/Reports/AssetSystem_20260605/AUDIO_P0_STATIC_EXECUTION_REFINEMENT_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/AUDIO_P0_STATIC_EXECUTION_REFINEMENT_20260605.csv`
+- Darwin `019e987f-26b2-7a83-819e-721f97858173` completed and was closed.
+
+Latest validation:
+
+- Curated current asset CSV set: 42 files, 14195 rows, zero empty cells.
+- Scoped touched-doc replacement-character scan: zero for current asset/audio docs. The orchestration memory still contains older mojibake markers from earlier history and is not a clean encoding artifact.
+- Scoped touched-doc `git diff --check`: clean.
+
+Latest process/tooling gate:
+
+- CPU sample `100`.
+- Active blockers: `mcp-for-unity`, `Unity`, `Unity.ILPP.Runner`, `UnityPackageManager`, multiple `UnityShaderCompiler`.
+- MCP resources list returned empty.
+- Unity readback/import/build/Play Mode remains blocked.
+
+Next valid controller action:
+
+- Keep independent static/controller fronts moving while Unity gate is red.
+- Do not run Unity proof, build, import mutation, prefab/material save, Addressables changes, or h8_1475 capture until process gate and MCP/tooling state are clean.
