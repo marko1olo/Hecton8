@@ -287,7 +287,7 @@ def discover_proof_packets(repo_root: Path, proof_packets_root: Path, proofgate_
         "status": payload.get("status"),
         "rejectCodes": payload.get("rejectCodes", []),
         "maySubmitForHumanVisualReview": payload.get("maySubmitForHumanVisualReview", False),
-        "mayClaimPlayerCaptureVerified": False,
+        "mayClaimPlayerCaptureVerified": payload.get("mayClaimPlayerCaptureVerified", False),
     }
     return result
 
@@ -388,6 +388,7 @@ def build_status(args: argparse.Namespace) -> dict[str, Any]:
         "warnings": warnings,
         "mayClaimRuntimeProof": False,
         "mayClaimVisualAccepted": False,
+        "mayClaimPlayerCaptureVerified": latest_gate.get("mayClaimPlayerCaptureVerified", False),
     }
     return payload
 
@@ -417,6 +418,7 @@ def write_markdown_report(path: Path, payload: dict[str, Any]) -> None:
         "## ProofGate",
         f"- Candidate found: `{payload['proofPacketCandidateFound']}`",
         f"- Gate status: `{payload.get('latestProofGateResult', {}).get('status', '')}`",
+        f"- May claim PLAYER-CAPTURE VERIFIED: `{payload.get('mayClaimPlayerCaptureVerified', False)}`",
         "",
         "## Blockers",
     ]

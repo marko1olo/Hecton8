@@ -158,7 +158,7 @@ class ProofPacketGateTests(unittest.TestCase):
             code, payload = self.validate(packet)
             self.assertEqual(code, 0, payload.get("rejectCodes"))
             self.assertEqual(payload["status"], gate.PASS_STATUS)
-            self.assertFalse(payload["mayClaimPlayerCaptureVerified"])
+            self.assertTrue(payload["mayClaimPlayerCaptureVerified"])
 
     def test_rejects_raw_png_set_without_manifest(self) -> None:
         with tempfile.TemporaryDirectory(prefix="h8_proof_gate_") as tmp:

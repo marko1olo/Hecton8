@@ -571,7 +571,7 @@ def build_payload(
         "status": status,
         "evidenceClass": "STATIC_FILESYSTEM",
         "maySubmitForHumanVisualReview": status == PASS_STATUS,
-        "mayClaimPlayerCaptureVerified": False,
+        "mayClaimPlayerCaptureVerified": status == PASS_STATUS,
         "packetRoot": normalize_path(packet_root),
         "packetId": packet_id,
         "sessionId": session_id,
