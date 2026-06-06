@@ -788,6 +788,9 @@ namespace Hecton8.Gameplay
         private float _maxPressureKPa = DefaultReferencePressureKPa;
         private float _speedKnots;
         private float _engineHeat01;
+        private float _engineHeatTrue01;
+        private float _engineHeatMaskDelta01;
+        private uint _atlasTelemetryFlags;
         private float _lastHullSpeedMetersPerSecond;
         private float _navigationRefreshAccumulator;
         private float _diagnosticsRefreshAccumulator;
@@ -1052,7 +1055,9 @@ namespace Hecton8.Gameplay
             }
 
             if (_atlas6Manager == null)
-                _atlas6Manager = UnityEngine.Object.FindAnyObjectByType<Hecton8.Gameplay.Atlas6Liability.Atlas6CorporateLiabilityManager>();
+            {
+                _atlas6Manager = Hecton8.Gameplay.Atlas6Liability.Atlas6CorporateLiabilityManager.ActiveRuntimeInstance;
+            }
         }
 
         private void RefreshCachedComponentReferencesHot()
@@ -1371,14 +1376,23 @@ namespace Hecton8.Gameplay
                 elapsedInv *
                 EngineHeatAccelerationReferenceInv);
             float targetHeat01 = math.saturate(math.max(speedLoad01 * EngineHeatCruiseLoadScale, accelerationLoad01));
+            float trueHeat01 = targetHeat01;
+            float maskDelta01 = 0f;
+            uint atlasTelemetryFlags = 0u;
 
             if (_atlas6Manager != null)
             {
                 var readout = _atlas6Manager.GetSubmarineOSReadout(targetHeat01);
                 targetHeat01 = readout.ReportedSheer;
+                trueHeat01 = readout.TrueSheer;
+                maskDelta01 = readout.MaskDelta01;
+                atlasTelemetryFlags = readout.Flags;
             }
 
             _engineHeat01 = QuantizeHeat01(targetHeat01);
+            _engineHeatTrue01 = QuantizeHeat01(trueHeat01);
+            _engineHeatMaskDelta01 = QuantizeHeat01(maskDelta01);
+            _atlasTelemetryFlags = atlasTelemetryFlags;
             _lastHullSpeedMetersPerSecond = hullSpeedMetersPerSecond;
             ApplyEngineDiagnosticsShaderGlobal();
         }
@@ -2040,6 +2054,9 @@ namespace Hecton8.Gameplay
                 _maxPressureKPa,
                 _speedKnots,
                 _engineHeat01,
+                _engineHeatTrue01,
+                _engineHeatMaskDelta01,
+                _atlasTelemetryFlags,
                 _sonarContactCount,
                 _nearestSonarContactMeters,
                 _vwsActiveFlags,
@@ -2066,6 +2083,9 @@ namespace Hecton8.Gameplay
                 _maxPressureKPa,
                 0f,
                 0f,
+                0f,
+                0f,
+                0u,
                 0,
                 0,
                 SubmarineVwsFlags.None,
@@ -2092,7 +2112,7 @@ namespace Hecton8.Gameplay
 
         private static bool IsFinite(Vector3 value)
         {
-            return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
+            return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
         }
 
         private SubmarineEmergencyLevel ResolveEmergencyLevel()
@@ -2134,6 +2154,9 @@ namespace Hecton8.Gameplay
                    math.abs(a.MaxPressureKPa - b.MaxPressureKPa) <= 0.5f &&
                    math.abs(a.SpeedKnots - b.SpeedKnots) <= 0.05f &&
                    math.abs(a.EngineHeat01 - b.EngineHeat01) <= 0.005f &&
+                   math.abs(a.EngineHeatTrue01 - b.EngineHeatTrue01) <= 0.005f &&
+                   math.abs(a.EngineHeatMaskDelta01 - b.EngineHeatMaskDelta01) <= 0.005f &&
+                   a.AtlasTelemetryFlags == b.AtlasTelemetryFlags &&
                    a.SonarContactCount == b.SonarContactCount &&
                    a.NearestSonarContactMeters == b.NearestSonarContactMeters &&
                    a.VocalWarningFlags == b.VocalWarningFlags &&

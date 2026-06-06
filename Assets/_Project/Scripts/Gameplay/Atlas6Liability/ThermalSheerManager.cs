@@ -6,7 +6,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
     /// <summary>
     /// Varnek Protocol: Thermal Sheer Masking
     /// Smooths a 14% risk variance to a 4% variance to avoid halting extraction.
-    /// UI deliberately lies to the player. Sensible feedback (groans, micro-fractures) 
+    /// UI deliberately lies to the player. Sensible feedback (groans, micro-fractures)
     /// is the only way to know the true state. Downgrades alerts.
     /// </summary>
     public sealed class ThermalSheerManager
@@ -39,7 +39,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         /// <summary>
         /// Calculates the telemetry to feed into the HectonSubmarineOS.
-        /// The OS will naturally display ReportedSheer, requiring the player to rely on 
+        /// The OS will naturally display ReportedSheer, requiring the player to rely on
         /// acoustic cues linked to TrueSheer.
         /// </summary>
         public TelemetryReadout CalculateTelemetry(float actualSheer, float distanceToDrillSite)

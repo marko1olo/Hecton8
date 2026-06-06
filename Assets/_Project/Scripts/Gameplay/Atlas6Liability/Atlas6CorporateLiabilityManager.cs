@@ -21,6 +21,8 @@ namespace Hecton8.Gameplay.Atlas6Liability
     /// </summary>
     public sealed class Atlas6CorporateLiabilityManager : MonoBehaviour, IUpdatable, IGlobalRegistryHotSwapListener
     {
+        public const float MaximumTrackedSectorXenonOmegaYield = 1000000f;
+
         public static Atlas6CorporateLiabilityManager ActiveRuntimeInstance { get; private set; }
 
         [Header("Corporate Directive Settings")]
@@ -40,6 +42,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         public event Action<Atlas6ThreatLevel> OnThreatLevelChanged;
         public Atlas6ThreatLevel CurrentThreatLevel => currentThreatLevel;
+        public float SectorXenonOmegaYield => sectorXenonOmegaYield;
 
         private bool _isRegistered;
         private bool _registeredHotSwapListener;
@@ -66,6 +69,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
             // Initialize baseline states
             DirectiveWeighting.Initialize(1.0f);
             ActuarialLiability.Initialize(5000f); // starting corporate credit
+            SanitizeSectorXenonOmegaYield();
         }
 
         private void OnEnable()
@@ -75,7 +79,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
             TryRegisterHotSwapListener();
             RegisterWithGlobalRegistry();
-            
+
             // Wire up internal events
             if (ActuarialLiability != null) ActuarialLiability.OnPlayerFlaggedAsActuarialThreat += HandleActuarialThreat;
             if (ExtractionGating != null) ExtractionGating.OnTetherSeveredSatoRen += HandleSatoRenSeverance;
@@ -85,10 +89,15 @@ namespace Hecton8.Gameplay.Atlas6Liability
         {
             UnregisterFromGlobalRegistry();
             TryUnregisterHotSwapListener();
-            
+
             if (ActuarialLiability != null) ActuarialLiability.OnPlayerFlaggedAsActuarialThreat -= HandleActuarialThreat;
             if (ExtractionGating != null) ExtractionGating.OnTetherSeveredSatoRen -= HandleSatoRenSeverance;
 
+            TryUnregisterActiveRuntimeInstance();
+        }
+
+        private void OnDestroy()
+        {
             TryUnregisterActiveRuntimeInstance();
         }
 
@@ -96,6 +105,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
         {
             if (!_isRegistered) return;
 
+            SanitizeSectorXenonOmegaYield();
             EvaluateThreatLevel();
             ApplyArendtDirectiveWeighting(deltaTime);
             ValidateExtractionGating();
@@ -153,6 +163,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         public void ReportXenonOmegaExtracted(float amount)
         {
+            SanitizeSectorXenonOmegaYield();
             bool invalidAmount = !math.isfinite(amount) || amount <= 0f;
             if (invalidAmount)
             {
@@ -167,13 +178,25 @@ namespace Hecton8.Gameplay.Atlas6Liability
                 return;
             }
 
-            sectorXenonOmegaYield += amount;
+            double accumulatedYield = (double)sectorXenonOmegaYield + amount;
+            Atlas6LiabilityFaultFlags faultFlags = Atlas6LiabilityFaultFlags.None;
+            if (accumulatedYield > MaximumTrackedSectorXenonOmegaYield)
+            {
+                sectorXenonOmegaYield = MaximumTrackedSectorXenonOmegaYield;
+                faultFlags = Atlas6LiabilityFaultFlags.InvalidRangeInput;
+            }
+            else
+            {
+                sectorXenonOmegaYield = (float)accumulatedYield;
+            }
+
             RecordTelemetry(
                 Atlas6LiabilityEventCode.XenonOmegaYieldReported,
                 Atlas6LiabilityEventSeverity.Info,
                 Atlas6LiabilityTelemetry.ManagerContextHash,
                 value0: sectorXenonOmegaYield,
-                value1: amount);
+                value1: amount,
+                faultFlags: faultFlags);
         }
 
         public void ReportWorkerTagScanned(string workerId)
@@ -207,6 +230,9 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         public ThermalSheerManager.TelemetryReadout GetSubmarineOSReadout(float trueSheer)
         {
+            if (ThermalSheer == null)
+                ThermalSheer = new ThermalSheerManager();
+
             return ThermalSheer.CalculateTelemetry(trueSheer, playerDistanceToPrimaryDrillSite);
         }
 
@@ -254,8 +280,8 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         private void ValidateExtractionGating()
         {
-            if (ExtractionGating != null && 
-               (ExtractionGating.CarrierState == ExtractionCarrierState.TetherRequested || 
+            if (ExtractionGating != null &&
+               (ExtractionGating.CarrierState == ExtractionCarrierState.TetherRequested ||
                 ExtractionGating.CarrierState == ExtractionCarrierState.TetherEstablished))
             {
                 // Haldane Quarantine: actively monitor exposure while tether is active
@@ -323,6 +349,9 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         private void RegisterWithGlobalRegistry()
         {
+            if (!Application.isPlaying)
+                return;
+
             if (!_isRegistered)
             {
                 _isRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
@@ -361,6 +390,44 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredHotSwapListener = false;
+        }
+
+        private void SanitizeSectorXenonOmegaYield()
+        {
+            if (!math.isfinite(sectorXenonOmegaYield))
+            {
+                sectorXenonOmegaYield = 0f;
+                RecordTelemetry(
+                    Atlas6LiabilityEventCode.InvalidXenonOmegaYieldReported,
+                    Atlas6LiabilityEventSeverity.Warning,
+                    Atlas6LiabilityTelemetry.ManagerContextHash,
+                    faultFlags: Atlas6LiabilityFaultFlags.NonFiniteInput);
+                return;
+            }
+
+            if (sectorXenonOmegaYield < 0f)
+            {
+                RecordTelemetry(
+                    Atlas6LiabilityEventCode.InvalidXenonOmegaYieldReported,
+                    Atlas6LiabilityEventSeverity.Warning,
+                    Atlas6LiabilityTelemetry.ManagerContextHash,
+                    value0: sectorXenonOmegaYield,
+                    faultFlags: Atlas6LiabilityFaultFlags.InvalidRangeInput);
+                sectorXenonOmegaYield = 0f;
+                return;
+            }
+
+            if (sectorXenonOmegaYield > MaximumTrackedSectorXenonOmegaYield)
+            {
+                RecordTelemetry(
+                    Atlas6LiabilityEventCode.InvalidXenonOmegaYieldReported,
+                    Atlas6LiabilityEventSeverity.Warning,
+                    Atlas6LiabilityTelemetry.ManagerContextHash,
+                    value0: sectorXenonOmegaYield,
+                    value1: MaximumTrackedSectorXenonOmegaYield,
+                    faultFlags: Atlas6LiabilityFaultFlags.InvalidRangeInput);
+                sectorXenonOmegaYield = MaximumTrackedSectorXenonOmegaYield;
+            }
         }
 
         private bool TryRegisterActiveRuntimeInstance()

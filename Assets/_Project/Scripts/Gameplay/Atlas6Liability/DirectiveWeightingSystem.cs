@@ -14,12 +14,12 @@ namespace Hecton8.Gameplay.Atlas6Liability
     {
         private float _currentPressureSealIntegrity = 1.0f;
         private float _powerDivertedToVaults = 0f;
-        
+
         // Settings
         private readonly float _drownTheCrewThreshold = 0.15f;
         private readonly float _criticalSubstrateThreshold = 1000f;
         private readonly Atlas6LiabilityTelemetry _telemetry;
-        
+
         // State
         public bool IsBulkheadLocked { get; private set; }
         public float PressureSealIntegrity => _currentPressureSealIntegrity;
@@ -72,11 +72,11 @@ namespace Hecton8.Gameplay.Atlas6Liability
             {
                 // Atlas-6 dynamically diverts power. Higher yield = faster diversion.
                 _powerDivertedToVaults = (currentXenonOmegaYield - _criticalSubstrateThreshold) * 0.0001f;
-                
+
                 // Degrade seals based on power diversion (Arendt Protocol)
                 float degradationRate = _powerDivertedToVaults * deltaTime;
                 _currentPressureSealIntegrity -= degradationRate;
-                _currentPressureSealIntegrity = Mathf.Clamp01(_currentPressureSealIntegrity);
+                _currentPressureSealIntegrity = math.saturate(_currentPressureSealIntegrity);
 
                 OnIntegrityDegraded?.Invoke(_currentPressureSealIntegrity);
 

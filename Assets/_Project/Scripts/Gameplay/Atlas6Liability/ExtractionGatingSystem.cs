@@ -1,4 +1,3 @@
-using UnityEngine;
 using System;
 using Unity.Mathematics;
 
@@ -23,7 +22,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
     {
         public ExtractionCarrierState CarrierState { get; private set; } = ExtractionCarrierState.Offline;
         public bool IsHaldaneLockoutActive { get; private set; }
-        
+
         // Biomatter radiation-like stat
         public float BiomatterExposureLevel { get; private set; } = 0f;
         public float LockoutExposureThreshold => _lockoutExposureThreshold;
@@ -61,7 +60,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
                 return;
             }
 
-            BiomatterExposureLevel = Mathf.Clamp(
+            BiomatterExposureLevel = math.clamp(
                 BiomatterExposureLevel + amount,
                 0f,
                 _fatalExposureThreshold);
@@ -85,7 +84,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
                 return;
             }
 
-            BiomatterExposureLevel = Mathf.Max(BiomatterExposureLevel - cleansingPower, 0f);
+            BiomatterExposureLevel = math.max(BiomatterExposureLevel - cleansingPower, 0f);
             if (BiomatterExposureLevel <= _lockoutExposureThreshold)
             {
                 IsHaldaneLockoutActive = false;

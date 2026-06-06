@@ -1,16 +1,18 @@
 using UnityEngine;
 using Hecton8.Core;
 using Hecton8.Gameplay.Atlas6Liability;
+using Unity.Mathematics;
 
 namespace Hecton8.UI.TerminalOS
 {
-    public class HectonSubmarineOS : MonoBehaviour, IUpdatable
+    [DisallowMultipleComponent]
+    public sealed class HectonSubmarineOS : MonoBehaviour, IUpdatable
     {
         private static readonly uint ThermalSheerUpdateHash = unchecked((uint)Animator.StringToHash("THERMAL_SHEER_UPDATE"));
         private static int s_signalDropCount;
 
         [SerializeField] private Atlas6CorporateLiabilityManager liabilityManager;
-        
+
         [Header("UI Readouts")]
         public float DisplayedThermalSheer;
         public float DisplayedHullStress;
@@ -21,7 +23,8 @@ namespace Hecton8.UI.TerminalOS
 
         private void OnEnable()
         {
-            _registeredTick = Hecton8.Core.GlobalRegistry.TryRegisterUpdatable(this, Hecton8.Core.PriorityLayer.UI);
+            if (Application.isPlaying)
+                _registeredTick = Hecton8.Core.GlobalRegistry.TryRegisterUpdatable(this, Hecton8.Core.PriorityLayer.UI);
         }
 
         private void OnDisable()
@@ -35,14 +38,13 @@ namespace Hecton8.UI.TerminalOS
 
         private void Start()
         {
-            if (liabilityManager == null)
-            {
-                liabilityManager = UnityEngine.Object.FindAnyObjectByType<Atlas6CorporateLiabilityManager>();
-            }
+            TryBindLiabilityManager();
         }
 
         public void Tick(float deltaTime)
         {
+            TryBindLiabilityManager();
+
             if (liabilityManager != null)
             {
                 // Retrieve the smoothed lie (Varnek Protocol)
@@ -53,14 +55,14 @@ namespace Hecton8.UI.TerminalOS
             {
                 DisplayedThermalSheer = actualThermalSheer;
             }
-            
+
             UpdateUIElements();
         }
 
         public void UpdateActualSensors(float realThermalSheer, float realHullStress)
         {
-            actualThermalSheer = realThermalSheer;
-            DisplayedHullStress = realHullStress; // Can be masked later if needed
+            actualThermalSheer = math.isfinite(realThermalSheer) ? math.saturate(realThermalSheer) : 0f;
+            DisplayedHullStress = math.isfinite(realHullStress) ? math.max(0f, realHullStress) : 0f;
         }
 
         private void UpdateUIElements()
@@ -72,6 +74,12 @@ namespace Hecton8.UI.TerminalOS
                 Frame = (uint)Time.frameCount
             };
             Hecton8.Core.Contracts.Signals.SignalBus<Hecton8.Core.Contracts.Signals.DiegeticHudSignal>.TryPushTracked(in hudSignal, ref s_signalDropCount);
+        }
+
+        private void TryBindLiabilityManager()
+        {
+            if (liabilityManager == null)
+                liabilityManager = Atlas6CorporateLiabilityManager.ActiveRuntimeInstance;
         }
     }
 }

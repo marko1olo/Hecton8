@@ -1,4 +1,3 @@
-using UnityEngine;
 using System;
 using Unity.Mathematics;
 
@@ -17,7 +16,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
         public float CorporateCreditBalance { get; private set; }
         private bool _actuarialThreatRaised;
         private readonly Atlas6LiabilityTelemetry _telemetry;
-        
+
         // Thresholds
         private readonly int _actuarialThreatThreshold = 5; // 5 tags recovered makes you a threat
 
@@ -52,7 +51,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
                 workerId = "UNREADABLE";
 
             RecoveredWorkerTags++;
-            
+
             // Base hostility increase
             CorporateHostilityIndex += 15.5f;
             _telemetry?.Record(
@@ -62,7 +61,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
                 subjectHash: Atlas6LiabilityTelemetry.ComputeStableHash(workerId),
                 value0: RecoveredWorkerTags,
                 value1: CorporateHostilityIndex);
-            
+
             OnCorporateHostilityIncreased?.Invoke(CorporateHostilityIndex);
 
             EvaluateActuarialThreatStatus();
@@ -90,8 +89,20 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
             // Corporate penalty: 50 credits per MB of "corrupted" historical data
             float deduction = dataSizeInMegabytes * 50f;
+            if (!math.isfinite(deduction))
+            {
+                _telemetry?.Record(
+                    Atlas6LiabilityEventCode.InvalidGhostPDADataReported,
+                    Atlas6LiabilityEventSeverity.Warning,
+                    Atlas6LiabilityTelemetry.ActuarialContextHash,
+                    value0: dataSizeInMegabytes,
+                    value1: CorporateCreditBalance,
+                    faultFlags: Atlas6LiabilityFaultFlags.InvalidRangeInput);
+                return;
+            }
+
             CorporateCreditBalance -= deduction;
-            
+
             _telemetry?.Record(
                 Atlas6LiabilityEventCode.CorporateCreditDeducted,
                 Atlas6LiabilityEventSeverity.Critical,
