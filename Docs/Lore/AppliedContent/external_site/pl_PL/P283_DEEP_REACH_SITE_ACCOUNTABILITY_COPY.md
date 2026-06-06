@@ -7,31 +7,34 @@ poi_tags: poi.deep_reach_public_dossier_box;poi.liability_timeline_teaser
 biome_tags: biome.publication;biome.deep_reach
 locale: pl_PL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "PL LOC HOLD: Deep Reach Site Accountability Copy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Deep Reach Site Accountability Copy
+# PL LOC HOLD: Deep Reach Site Accountability Copy
 
-Deep Reach's crime was not magic control over the ocean. It was the conversion of risk, rescue and human names into delay-tolerant corporate procedure.
+PL LOC HOLD: Deep Reach's crime was not magic control over the ocean. It was the conversion of risk, rescue and human names into delay-tolerant corporate procedure.
 
 ## Scanner
 
-Deep Reach copy: not cartoon villains; culpable weighting under real physics.
+PL LOC HOLD: Deep Reach copy: not cartoon villains; culpable weighting under real physics.
 
 ## Terminal
 
-PUBLIC DOSSIER LOCK: say culpable weighting; do not say omnipotent conspiracy.
+PL LOC HOLD: PUBLIC DOSSIER LOCK: say culpable weighting; do not say omnipotent conspiracy.
 
 ## Audio
 
-They did not order the water to rise. They made the exit wait.
+PL LOC HOLD: They did not order the water to rise. They made the exit wait.
 
 ## Field Note
 
-Use the public lie as contrast: real tide, real failure, missing weighting layer, missing delayed rescue chain.
+PL LOC HOLD: Use the public lie as contrast: real tide, real failure, missing weighting layer, missing delayed rescue chain.
 
 <!-- External Site; generated from P283_DEEP_REACH_SITE_ACCOUNTABILITY_COPY/pl_PL. -->

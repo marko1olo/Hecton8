@@ -7,31 +7,34 @@ poi_tags: poi.black_keel_contract_console;poi.claim_acceptance_stamp
 biome_tags: biome.black_keel_orbit
 locale: nl_NL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "NL LOC HOLD: Black Keel Claim Acceptance"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Black Keel Claim Acceptance
+# NL LOC HOLD: Black Keel Claim Acceptance
 
-A Black Keel claim terminal frames the opening around debt, oxygen addenda and custody before the ocean ever touches the screen.
+NL LOC HOLD: A Black Keel claim terminal frames the opening around debt, oxygen addenda and custody before the ocean ever touches the screen.
 
 ## Scanner
 
-Contract console. Aegir Reclamation Pool lists a 4.8 tonne-window lien before it lists oxygen.
+NL LOC HOLD: Contract console. Aegir Reclamation Pool lists a 4.8 tonne-window lien before it lists oxygen.
 
 ## Terminal
 
-BLACK KEEL / CLAIM ACCEPTANCE TERMINAL: route RAN-B:H8 salvage descent; lien relief 4.8 tonne-window conditional; oxygen welfare addenda billed after recovery; payload custody Black Keel primary, Keelmark Mutual witness; refusal penalty leaves Barnard blacklist review active.
+NL LOC HOLD: BLACK KEEL / CLAIM ACCEPTANCE TERMINAL: route RAN-B:H8 salvage descent; lien relief 4.8 tonne-window conditional; oxygen welfare addenda billed after recovery; payload custody Black Keel primary, Keelmark Mutual witness; refusal penalty leaves Barnard blacklist review active.
 
 ## Audio
 
-Black Keel to contractor: claim window is open. Oxygen is billable after recovery. Acknowledge if you can work.
+NL LOC HOLD: Black Keel to contractor: claim window is open. Oxygen is billable after recovery. Acknowledge if you can work.
 
 ## Field Note
 
-The stylus is tied to the screen with pressure cord. Someone expected trembling hands.
+NL LOC HOLD: The stylus is tied to the screen with pressure cord. Someone expected trembling hands.
 
 <!-- External Site; generated from P151_BLACK_KEEL_CONTRACT_APPROACH/nl_NL. -->

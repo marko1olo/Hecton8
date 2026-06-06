@@ -7,20 +7,23 @@ poi_tags: poi.site_aegir_art_brief;poi.orbital_window_caption
 biome_tags: biome.publication;biome.aegir
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "RU LOC HOLD: Aegir System Art Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Aegir System Art Rule
+# RU LOC HOLD: Aegir System Art Rule
 
 Aegir должен читаться как route system: moons, relay shadows, charged windows, transfer debt, salvage timing.
 
 ## Scanner
 
-Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.
+RU LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.
 
 ## Terminal
 

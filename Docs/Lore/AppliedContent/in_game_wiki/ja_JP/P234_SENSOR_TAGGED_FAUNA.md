@@ -7,31 +7,34 @@ poi_tags: poi.sensor_tagged_fauna;poi.biometal_eye_node
 biome_tags: biome.cable_reef;biome.abyssal_machine_field
 locale: ja_JP
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "JP LOC HOLD: Sensor-Tagged Fauna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Sensor-Tagged Fauna
+# JP LOC HOLD: Sensor-Tagged Fauna
 
-Sensor-Tagged Fauna defines Atlas-altered life as industrial scar ecology rather than magic corruption.
+JP LOC HOLD: Sensor-Tagged Fauna defines Atlas-altered life as industrial scar ecology rather than magic corruption.
 
 ## Scanner
 
-Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.
+JP LOC HOLD: Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.
 
 ## Terminal
 
-TAG NOTE: signal continuity weak, biological integration high, command response unreliable.
+JP LOC HOLD: TAG NOTE: signal continuity weak, biological integration high, command response unreliable.
 
 ## Audio
 
-The animal is not a drone. The drone is an old wound inside the animal.
+JP LOC HOLD: The animal is not a drone. The drone is an old wound inside the animal.
 
 ## Field Note
 
-Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.
+JP LOC HOLD: Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.
 
 <!-- In-Game Wiki; generated from P234_SENSOR_TAGGED_FAUNA/ja_JP. -->

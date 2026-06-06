@@ -7,31 +7,34 @@ poi_tags: poi.roster_size_sheet;poi.shift_board_frame
 biome_tags: biome.worker_locker;biome.p63_shallows
 locale: uk_UA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Worker Roster Size Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Worker Roster Size Rule
 
-The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.
+UA LOC HOLD: The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.
 
 ## Scanner
 
-The colony roster is large enough to feel inhabited and small enough to stay authored.
+UA LOC HOLD: The colony roster is large enough to feel inhabited and small enough to stay authored.
 
 ## Terminal
 
-ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.
+UA LOC HOLD: ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.
 
 ## Audio
 
-A name is evidence only when the room can prove the job.
+UA LOC HOLD: A name is evidence only when the room can prove the job.
 
 ## Field Note
 
-The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.
+UA LOC HOLD: The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.
 
 <!-- In-Game Wiki; generated from P206_WORKER_ROSTER_SIZE_RULE/uk_UA. -->

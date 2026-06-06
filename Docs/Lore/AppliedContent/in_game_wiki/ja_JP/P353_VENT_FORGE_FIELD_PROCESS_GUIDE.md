@@ -7,31 +7,34 @@ poi_tags: poi.vent_forge_sample;poi.cooling_path_tag
 biome_tags: biome.vent;biome.resource
 locale: ja_JP
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "JA LOC HOLD: Vent Forge Field Process Guide"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Vent Forge Field Process Guide
+# JA LOC HOLD: Vent Forge Field Process Guide
 
-Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.
+JA LOC HOLD: Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.
 
 ## Scanner
 
-Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.
+JA LOC HOLD: Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.
 
 ## Terminal
 
-FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.
+JA LOC HOLD: FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.
 
 ## Audio
 
-The vent did not make ore. It made a process you interrupted.
+JA LOC HOLD: The vent did not make ore. It made a process you interrupted.
 
 ## Field Note
 
-Use for resource taxonomy and crafting-table handoff.
+JA LOC HOLD: Use for resource taxonomy and crafting-table handoff.
 
 <!-- In-Game Wiki; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/ja_JP. -->

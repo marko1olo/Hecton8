@@ -7,31 +7,34 @@ poi_tags: poi.site_hecton8_hero_copy;poi.public_depth_band_strip
 biome_tags: biome.publication;biome.hecton8
 locale: zh_CN
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "CN LOC HOLD: HECTON-8 Public Opening Hook"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# HECTON-8 Public Opening Hook
+# CN LOC HOLD: HECTON-8 Public Opening Hook
 
-HECTON-8 Public Opening Hook keeps the first public record concrete: drowned moon, bright water, broken industry, salvage contract, and buried colony.
+CN LOC HOLD: HECTON-8 Public Opening Hook keeps the first public record concrete: drowned moon, bright water, broken industry, salvage contract, and buried colony.
 
 ## Scanner
 
-Public primer: beauty first, pressure second, Atlas unnamed.
+CN LOC HOLD: Public primer: beauty first, pressure second, Atlas unnamed.
 
 ## Terminal
 
-PUBLIC PRIMER: open summary may name bright water, dead colony, salvage contract, and pressure geography; final payload routes stay sealed.
+CN LOC HOLD: PUBLIC PRIMER: open summary may name bright water, dead colony, salvage contract, and pressure geography; final payload routes stay sealed.
 
 ## Audio
 
-The moon sells itself before it explains what it kept.
+ZH LOC HOLD: The moon sells itself before it explains what it kept.
 
 ## Field Note
 
-Opening copy starts with ocean moon, dead colony, salvage contract, pressure geography, and no final-truth spoilers.
+CN LOC HOLD: Opening copy starts with ocean moon, dead colony, salvage contract, pressure geography, and no final-truth spoilers.
 
 <!-- In-Game Wiki; generated from P281_HECTON8_SITE_OPENING_HOOK/zh_CN. -->

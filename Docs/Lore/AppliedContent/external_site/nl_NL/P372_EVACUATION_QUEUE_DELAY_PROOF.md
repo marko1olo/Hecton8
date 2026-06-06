@@ -7,31 +7,34 @@ poi_tags: poi.evacuation_queue_clock;poi.manual_witness_slot
 biome_tags: biome.colony;biome.safe_module
 locale: nl_NL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "NL LOC HOLD: Evacuation Queue Delay Proof"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Evacuation Queue Delay Proof
+# NL LOC HOLD: Evacuation Queue Delay Proof
 
-Deep Reach's culpability is procedural: the disaster happened, but authorization delays turned damage into abandonment.
+NL LOC HOLD: Deep Reach's culpability is procedural: the disaster happened, but authorization delays turned damage into abandonment.
 
 ## Scanner
 
-Queue clock stopped before route collapse. Delay, then water.
+NL LOC HOLD: Queue clock stopped before route collapse. Delay, then water.
 
 ## Terminal
 
-EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.
+NL LOC HOLD: EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.
 
 ## Audio
 
-They did not fail to save everyone. They waited until saving anyone became harder.
+NL LOC HOLD: They did not fail to save everyone. They waited until saving anyone became harder.
 
 ## Field Note
 
-Use in drowned evacuation corridors and triage rooms.
+NL LOC HOLD: Use in drowned evacuation corridors and triage rooms.
 
 <!-- External Site; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/nl_NL. -->

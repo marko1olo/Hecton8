@@ -7,31 +7,34 @@ poi_tags: poi.ren_okoye_density_slate;poi.brine_route_pinboard
 biome_tags: biome.brine_canyon;biome.density_ladder
 locale: id_ID
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "ID LOC HOLD: Ren Okoye/Brine Map"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Ren Okoye/Brine Map
+# ID LOC HOLD: Ren Okoye/Brine Map
 
-Ren Okoye frames HECTON-8 traversal as labor: reading brine, pressure and permission together.
+ID LOC HOLD: Ren Okoye frames HECTON-8 traversal as labor: reading brine, pressure and permission together.
 
 ## Scanner
 
-Dossier: Ren Okoye. Slate and pinboard show brine as a road.
+ID LOC HOLD: Dossier: Ren Okoye. Slate and pinboard show brine as a road.
 
 ## Terminal
 
-REN OKOYE/BRINE MAP. Safe currents moved faster than permits; legal routes lagged water.
+ID LOC HOLD: REN OKOYE/BRINE MAP. Safe currents moved faster than permits; legal routes lagged water.
 
 ## Audio
 
-Okoye drew roads that moved while management argued about permission.
+ID LOC HOLD: Okoye drew roads that moved while management argued about permission.
 
 ## Field Note
 
-Brine approach evidence: scanner-first cartography turns salt gradients, route marks, and worker traces into Ren Okoye's record.
+ID LOC HOLD: Brine approach evidence: scanner-first cartography turns salt gradients, route marks, and worker traces into Ren Okoye's record.
 
 <!-- External Site; generated from P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER/id_ID. -->

@@ -7,31 +7,34 @@ poi_tags: poi.ending_record_copy_card;poi.payload_receipt_panel
 biome_tags: biome.ui;biome.ending
 locale: he_IL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "HE LOC HOLD: Ending Record Ui Copy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Ending Record Ui Copy
+# HE LOC HOLD: Ending Record Ui Copy
 
-Ending Record UI Copy explains why HECTON-8 endings are records of tradeoffs rather than victory screens.
+HE LOC HOLD: Ending Record UI Copy explains why HECTON-8 endings are records of tradeoffs rather than victory screens.
 
 ## Scanner
 
-The record should hurt in one line.
+HE LOC HOLD: The record should hurt in one line.
 
 ## Terminal
 
-ENDING RECORD: no celebration copy; record the trade.
+HE LOC HOLD: ENDING RECORD: no celebration copy; record the trade.
 
 ## Audio
 
-You got out. That is not the same as settling it.
+HE LOC HOLD: You got out. That is not the same as settling it.
 
 ## Field Note
 
-Suggested labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.
+HE LOC HOLD: Suggested labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.
 
 <!-- External Site; generated from P270_ENDING_RECORD_UI_COPY/he_IL. -->

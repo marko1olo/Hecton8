@@ -7,31 +7,34 @@ poi_tags: poi.drop_capsule_damage_panel;poi.warped_crush_frame
 biome_tags: biome.crash_shelf;biome.photic_shelf
 locale: es_ES
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "ES LOC HOLD: Drop Capsule Damage Sequence"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Drop Capsule Damage Sequence
+# ES LOC HOLD: Drop Capsule Damage Sequence
 
-The drop capsule explains stranding through broken parts: warped frame, drowned avionics, lost antenna and a recovery ring that cannot lock.
+ES LOC HOLD: The drop capsule explains stranding through broken parts: warped frame, drowned avionics, lost antenna and a recovery ring that cannot lock.
 
 ## Scanner
 
-Capsule diagnostics. Descent saved the body by spending ascent hardware.
+ES LOC HOLD: Capsule diagnostics. Descent saved the body by spending ascent hardware.
 
 ## Terminal
 
-BATHY-DROP DAMAGE SUMMARY: crush-frame warped; high-gain mast lost; ascent avionics flooded; recovery/flotation ring torn; emergency buoy repeating no-lock. Shelter power available. Independent ascent unavailable.
+ES LOC HOLD: BATHY-DROP DAMAGE SUMMARY: crush-frame warped; high-gain mast lost; ascent avionics flooded; recovery/flotation ring torn; emergency buoy repeating no-lock. Shelter power available. Independent ascent unavailable.
 
 ## Audio
 
-Ascent bus flooded. Recovery ring no-lock. This capsule can keep you breathing, not take you home.
+ES LOC HOLD: Ascent bus flooded. Recovery ring no-lock. This capsule can keep you breathing, not take you home.
 
 ## Field Note
 
-Lower ring is oval by two fingers. High-gain mast gone. Buoy still asks for a launch it cannot make.
+ES LOC HOLD: Lower ring is oval by two fingers. High-gain mast gone. Buoy still asks for a launch it cannot make.
 
 <!-- External Site; generated from P152_DROP_CAPSULE_DAMAGE_SEQUENCE/es_ES. -->

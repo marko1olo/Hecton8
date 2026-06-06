@@ -7,31 +7,34 @@ poi_tags: poi.radiation_shutter;poi.inner_relay_dead_zone
 biome_tags: biome.orbital_window;biome.drowned_comms
 locale: pl_PL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Inner Moon Relay Hazards"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Inner Moon Relay Hazards
 
-Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.
+PL LOC HOLD: Inner moon hazards explain why contact, rescue and ascent windows fail without requiring magic interference. Radiation belts, ice scatter, eclipses and magnetic weather are real physical constraints that Deep Reach and Black Keel contracts exploit.
 
 ## Scanner
 
-Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.
+PL LOC HOLD: Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.
 
 ## Terminal
 
-INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.
+PL LOC HOLD: INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.
 
 ## Audio
 
-The orbital model is innocent. The clause written around it is not.
+PL LOC HOLD: The orbital model is innocent. The clause written around it is not.
 
 ## Field Note
 
-Radiation and eclipse can look like conspiracy until the contract uses them.
+PL LOC HOLD: Radiation and eclipse can look like conspiracy until the contract uses them.
 
 <!-- In-Game Wiki; generated from P078_INNER_MOON_RELAY_HAZARDS/pl_PL. -->

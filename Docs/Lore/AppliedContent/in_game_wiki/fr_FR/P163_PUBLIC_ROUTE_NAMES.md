@@ -7,31 +7,34 @@ poi_tags: poi.route_name_slate;poi.packet_lane_marker
 biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: fr_FR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "FR LOC HOLD: Public Route Names"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Public Route Names
+# FR LOC HOLD: Public Route Names
 
-Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.
+FR LOC HOLD: Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.
 
 ## Scanner
 
-Route names make travel feel owned before it feels adventurous.
+FR LOC HOLD: Route names make travel feel owned before it feels adventurous.
 
 ## Terminal
 
-ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.
+FR LOC HOLD: ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.
 
 ## Audio
 
-A route is a road only after somebody sells the delay twice.
+FR LOC HOLD: A route is a road only after somebody sells the delay twice.
 
 ## Field Note
 
-Every route name should sound like a tariff, not a wonder.
+FR LOC HOLD: Every route name should sound like a tariff, not a wonder.
 
 <!-- In-Game Wiki; generated from P163_PUBLIC_ROUTE_NAMES/fr_FR. -->

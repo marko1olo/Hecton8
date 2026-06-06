@@ -7,31 +7,34 @@ poi_tags: poi.predator_shadow_pass;poi.sonar_bite_warning
 biome_tags: biome.photic_shelf;biome.open_shallow_water
 locale: ko_KR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "KO LOC HOLD: Shallow Predator Shadow Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Shallow Predator Shadow Rule
+# KO LOC HOLD: Shallow Predator Shadow Rule
 
-Shallow Predator Shadow Rule defines early creature horror as readable systemic pressure: silence, shadow and route change before attack.
+KO LOC HOLD: Shallow Predator Shadow Rule defines early creature horror as readable systemic pressure: silence, shadow and route change before attack.
 
 ## Scanner
 
-A missing grazer band, a cut in bloom noise and a broad shadow are the first predator warning.
+KO LOC HOLD: A missing grazer band, a cut in bloom noise and a broad shadow are the first predator warning.
 
 ## Terminal
 
-CONTACT RULE: shallow predator evidence should pressure route choice before forcing combat.
+KO LOC HOLD: CONTACT RULE: shallow predator evidence should pressure route choice before forcing combat.
 
 ## Audio
 
-When the little mouths stop ticking, stop moving.
+KO LOC HOLD: When the little mouths stop ticking, stop moving.
 
 ## Field Note
 
-Do not reveal the shallow predator as a face first. Reveal absence, sound gap, silhouette, then consequence.
+KO LOC HOLD: Do not reveal the shallow predator as a face first. Reveal absence, sound gap, silhouette, then consequence.
 
 <!-- In-Game Wiki; generated from P225_SHALLOW_PREDATOR_SHADOW_RULE/ko_KR. -->

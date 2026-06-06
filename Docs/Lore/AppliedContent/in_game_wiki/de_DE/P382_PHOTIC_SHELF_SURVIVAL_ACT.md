@@ -7,31 +7,34 @@ poi_tags: poi.shallow_annex_p63;poi.first_bilge_room
 biome_tags: biome.photic_shelf;biome.shallow_annex
 locale: de_DE
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "DE LOC HOLD: Photic Shelf Survival Act"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Photic Shelf Survival Act
+# DE LOC HOLD: Photic Shelf Survival Act
 
-The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.
+DE LOC HOLD: The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.
 
 ## Scanner
 
-Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
+DE LOC HOLD: Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
 
 ## Terminal
 
-SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
+DE LOC HOLD: SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
 
 ## Audio
 
-The shallow water is not safe. It is only readable.
+DE LOC HOLD: The shallow water is not safe. It is only readable.
 
 ## Field Note
 
-Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
+DE LOC HOLD: Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
 
 <!-- In-Game Wiki; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/de_DE. -->

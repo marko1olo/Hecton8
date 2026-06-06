@@ -7,31 +7,34 @@ poi_tags: poi.pda_codex_state_card;poi.unlock_tier_strip
 biome_tags: biome.ui;biome.dossier
 locale: ja_JP
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "JA LOC HOLD: PDA Evidence State"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# PDA Evidence State
+# JA LOC HOLD: PDA Evidence State
 
-The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.
+JA LOC HOLD: The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.
 
 ## Scanner
 
-Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.
+JA LOC HOLD: Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.
 
 ## Terminal
 
-PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.
+JA LOC HOLD: PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.
 
 ## Audio
 
-The PDA does not explain the world first. It waits for a receipt.
+JA LOC HOLD: The PDA does not explain the world first. It waits for a receipt.
 
 ## Field Note
 
-Bind codex rows to baked packet hashes and device-tested layout before release.
+JA LOC HOLD: Bind codex rows to baked packet hashes and device-tested layout before release.
 
 <!-- In-Game Wiki; generated from P306_PDA_CODEX_STATE_PROOF_CARD/ja_JP. -->

@@ -7,31 +7,34 @@ poi_tags: poi.shift_bunk_slate;poi.pump_tone_schedule
 biome_tags: biome.colony;biome.safe_module
 locale: pl_PL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "PL LOC HOLD: Pressure Bunk Shift Routine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Pressure Bunk Shift Routine
+# PL LOC HOLD: Pressure Bunk Shift Routine
 
-The human layer of HECTON-8 is labor history under pressure: bunks, shifts, water, tools and debt before the disaster name.
+PL LOC HOLD: The human layer of HECTON-8 is labor history under pressure: bunks, shifts, water, tools and debt before the disaster name.
 
 ## Scanner
 
-Shift bunk slate. Sleep rotated by pump tone, not sunrise.
+PL LOC HOLD: Shift bunk slate. Sleep rotated by pump tone, not sunrise.
 
 ## Terminal
 
-BUNK SLATE: 03:40 pump tone; suit check; pressure note; meal token; tool custody; descent assignment. Missed return flags bunk lead.
+PL LOC HOLD: BUNK SLATE: 03:40 pump tone; suit check; pressure note; meal token; tool custody; descent assignment. Missed return flags bunk lead.
 
 ## Audio
 
-Tired, trained and due back in six hours.
+PL LOC HOLD: Tired, trained and due back in six hours.
 
 ## Field Note
 
-Bunk 12 still has damp sock tape on the rail. Wake tone was 03:40. Tool custody tag says D. Rivas owed the pump key back before meal.
+PL LOC HOLD: Bunk 12 still has damp sock tape on the rail. Wake tone was 03:40. Tool custody tag says D. Rivas owed the pump key back before meal.
 
 <!-- External Site; generated from P356_PRESSURE_BUNK_SHIFT_ROUTINE/pl_PL. -->

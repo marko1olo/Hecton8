@@ -7,31 +7,34 @@ poi_tags: poi.evidence_order_card;poi.dossier_route_strip
 biome_tags: biome.dossier;biome.colony_ruins
 locale: pl_PL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "PL LOC HOLD: Evidence Order Depth Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Evidence Order Depth Card
+# PL LOC HOLD: Evidence Order Depth Card
 
-Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival.
+PL LOC HOLD: Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival.
 
 ## Scanner
 
-The card does not change the crime. It changes the first proof you can afford to believe.
+PL LOC HOLD: The card does not change the crime. It changes the first proof you can afford to believe.
 
 ## Terminal
 
-DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.
+PL LOC HOLD: DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.
 
 ## Audio
 
-Same drowning. Different first name.
+PL LOC HOLD: Same drowning. Different first name.
 
 ## Field Note
 
-Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.
+PL LOC HOLD: Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.
 
 <!-- External Site; generated from P244_EVIDENCE_ORDER_DEPTH_CARD/pl_PL. -->

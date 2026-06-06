@@ -7,16 +7,19 @@ poi_tags: poi.ending_spoiler_nav_cluster;poi.payload_receiver_index
 biome_tags: biome.publication;biome.spoiler_gate
 locale: fr_FR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 2
+title: "FR LOC HOLD: Endings and Payload Custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Endings and Payload Custody
+# FR LOC HOLD: Endings and Payload Custody
 
-Every known HECTON-8 outcome begins before the final ascent. The decisive object is not only the body in the capsule, but the payload attached to it: coordinates, samples, Atlas records, worker evidence, quarantine status and the legal chain that decides who can call the recovery legitimate.
+FR LOC HOLD: Every known HECTON-8 outcome begins before the final ascent. The decisive object is not only the body in the capsule, but the payload attached to it: coordinates, samples, Atlas records, worker evidence, quarantine status and the legal chain that decides who can call the recovery legitimate.
 
 Black Keel can lift a survivor and still sell the truth badly. Deep Reach can receive coordinates and bury them under recovery compliance. A public ledger can damage the company without returning the dead. Quarantine can be medically rational and politically useful in the same hour. Material payout can be real money and still leave the ocean holding the important proof.
 

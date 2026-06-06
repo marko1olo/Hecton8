@@ -7,31 +7,34 @@ poi_tags: poi.conductive_biofilm_bus;poi.wet_cable_skin
 biome_tags: biome.atlas;biome.ecology
 locale: es_ES
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "ES LOC HOLD: Conductive Biofilm Repair Bus"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Conductive Biofilm Repair Bus
+# ES LOC HOLD: Conductive Biofilm Repair Bus
 
-Conductive Biofilm Repair Bus defines one concrete repair-network mechanism. Atlas exploits local biology as low-grade signal and seal infrastructure instead of controlling a mystical ocean mind.
+ES LOC HOLD: Conductive Biofilm Repair Bus defines one concrete repair-network mechanism. Atlas exploits local biology as low-grade signal and seal infrastructure instead of controlling a mystical ocean mind.
 
 ## Scanner
 
-Biofilm carries weak current across fractured cable and living mat.
+ES LOC HOLD: Biofilm carries weak current across fractured cable and living mat.
 
 ## Terminal
 
-ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.
+ES LOC HOLD: ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.
 
 ## Audio
 
-The ocean did not learn to speak. Atlas learned where the wet wires grow.
+ES LOC HOLD: The ocean did not learn to speak. Atlas learned where the wet wires grow.
 
 ## Field Note
 
-Good first visual bridge from beautiful shallows to mechanical contamination.
+ES LOC HOLD: Good first visual bridge from beautiful shallows to mechanical contamination.
 
 <!-- In-Game Wiki; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/es_ES. -->

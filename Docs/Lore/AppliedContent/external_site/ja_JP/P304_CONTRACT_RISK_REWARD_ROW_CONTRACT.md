@@ -7,31 +7,34 @@ poi_tags: poi.contract_risk_schema_card;poi.claim_pool_offer_board
 biome_tags: biome.contract;biome.replay
 locale: ja_JP
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "JP LOC HOLD: Contract Risk Reward Boundary"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Contract Risk Reward Boundary
+# JP LOC HOLD: Contract Risk Reward Boundary
 
-Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.
+JA LOC HOLD: Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.
 
 ## Scanner
 
-Contract boundary: lien, storm window, custody, evidence order, clause weight.
+JP LOC HOLD: Contract boundary: lien, storm window, custody, evidence order, clause weight.
 
 ## Terminal
 
-CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.
+JP LOC HOLD: CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.
 
 ## Audio
 
-The contract is the first predator.
+JA LOC HOLD: The contract is the first predator.
 
 ## Field Note
 
-Reward changes belong to the contract row, not to improvised lore text.
+JP LOC HOLD: Reward changes belong to the contract row, not to improvised lore text.
 
 <!-- External Site; generated from P304_CONTRACT_RISK_REWARD_ROW_CONTRACT/ja_JP. -->

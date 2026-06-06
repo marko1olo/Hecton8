@@ -7,31 +7,34 @@ poi_tags: poi.conflicting_dr_messages;poi.asset_silence_stamp
 biome_tags: biome.deep_reach;biome.truth
 locale: nl_NL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "NL LOC HOLD: Deep Reach Faction Message Split"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Deep Reach Faction Message Split
+# NL LOC HOLD: Deep Reach Faction Message Split
 
-The Deep Reach threat is stronger when it is institutional, not cartoonish. HECTON-8 lets different offices expose different failures.
+NL LOC HOLD: The Deep Reach threat is stronger when it is institutional, not cartoonish. HECTON-8 lets different offices expose different failures.
 
 ## Scanner
 
-Message sources conflict: asset recovery, legal silence, old engineering warning.
+NL LOC HOLD: Message sources conflict: asset recovery, legal silence, old engineering warning.
 
 ## Terminal
 
-SOURCE SPLIT: Recovery Compliance requests coordinates. Asset Silence rejects publication. Legacy engineering node warns against basin disturbance. Same corporation, different survival instincts.
+NL LOC HOLD: SOURCE SPLIT: Recovery Compliance requests coordinates. Asset Silence rejects publication. Legacy engineering node warns against basin disturbance. Same corporation, different survival instincts.
 
 ## Audio
 
-A company can be one logo and three knives.
+NL LOC HOLD: A company can be one logo and three knives.
 
 ## Field Note
 
-This is not redemption. It is pressure-source readability.
+NL LOC HOLD: This is not redemption. It is pressure-source readability.
 
 <!-- External Site; generated from P329_DEEP_REACH_FACTION_MESSAGE_SPLIT/nl_NL. -->

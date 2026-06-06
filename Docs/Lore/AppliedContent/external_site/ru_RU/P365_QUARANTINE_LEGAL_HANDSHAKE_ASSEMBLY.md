@@ -7,11 +7,14 @@ poi_tags: poi.quarantine_handshake_panel;poi.legal_receiver_key
 biome_tags: biome.safe_module;biome.abyssal_machine_field
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Сборка карантинно-правового handshake"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Сборка карантинно-правового handshake
@@ -32,6 +35,6 @@ RECOVERY HANDSHAKE: receiver key required. Keelmark принимает mass and 
 
 ## Field Note
 
-Exit readiness is mechanical, legal, and evidentiary at once; the chosen receiver defines what recovery means.
+RU LOC HOLD: Exit readiness is mechanical, legal, and evidentiary at once; the chosen receiver defines what recovery means.
 
 <!-- External Site; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/ru_RU. -->

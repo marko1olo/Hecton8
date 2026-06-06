@@ -7,31 +7,34 @@ poi_tags: poi.ibarra_loss_ledger;poi.claim_conversion_stamp
 biome_tags: biome.claim_archive;biome.deep_reach_office
 locale: ko_KR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "KO LOC HOLD: Ibarra Loss Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Ibarra Loss Ledger
+# KO LOC HOLD: Ibarra Loss Ledger
 
-Deep Reach and its insurers keep HECTON-8 valuable by converting loss into recoverable claim material.
+KO LOC HOLD: Deep Reach and its insurers keep HECTON-8 valuable by converting loss into recoverable claim material.
 
 ## Scanner
 
-Keelmark loss ledger. People, modules and claims share a conversion column.
+KO LOC HOLD: Keelmark loss ledger. People, modules and claims share a conversion column.
 
 ## Terminal
 
-KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel mass unresolved. Habitat modules, tools and claims retain recoverable asset status pending final witness packet.
+KO LOC HOLD: KEELMARK LOSS DESK / IBARRA / LOAD CONVERSION: personnel mass unresolved. Habitat modules, tools and claims retain recoverable asset status pending final witness packet.
 
 ## Audio
 
-The ledger did not forget names. It made them payable later.
+KO LOC HOLD: The ledger did not forget names. It made them payable later.
 
 ## Field Note
 
-The ledger did not forget the names. It moved them under unresolved personnel load and kept the hardware recoverable.
+KO LOC HOLD: The ledger did not forget the names. It moved them under unresolved personnel load and kept the hardware recoverable.
 
 <!-- External Site; generated from P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT/ko_KR. -->

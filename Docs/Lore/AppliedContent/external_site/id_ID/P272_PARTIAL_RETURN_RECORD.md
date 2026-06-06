@@ -7,31 +7,34 @@ poi_tags: poi.partial_return_record;poi.quarantine_reentry_order
 biome_tags: biome.ending;biome.replay
 locale: id_ID
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "ID LOC HOLD: Partial Return Record"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Partial Return Record
+# ID LOC HOLD: Partial Return Record
 
-Partial Return Record explains HECTON-8's bitter early extraction ladder.
+ID LOC HOLD: Partial Return Record explains HECTON-8's bitter early extraction ladder.
 
 ## Scanner
 
-Extraction granted. Claim unresolved.
+ID LOC HOLD: Extraction granted. Claim unresolved.
 
 ## Terminal
 
-ENDING RECORD: partial return; same seed eligible for reentry under extended custody.
+ID LOC HOLD: ENDING RECORD: partial return; same seed eligible for reentry under extended custody.
 
 ## Audio
 
-Out is not away.
+ID LOC HOLD: Out is not away.
 
 ## Field Note
 
-Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.
+ID LOC HOLD: Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.
 
 <!-- External Site; generated from P272_PARTIAL_RETURN_RECORD/id_ID. -->

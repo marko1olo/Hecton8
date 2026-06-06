@@ -7,31 +7,34 @@ poi_tags: poi.subtitle_audio_review_card;poi.audio_source_label_sheet
 biome_tags: biome.localization;biome.audio
 locale: fr_FR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "FR LOC HOLD: Subtitle And Audio Timing Contract"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Subtitle And Audio Timing Contract
+# FR LOC HOLD: Subtitle And Audio Timing Contract
 
-HECTON-8 subtitles are treated as instruments: they identify who or what speaks, stay readable during pressure, and do not turn hazards into chatter.
+FR LOC HOLD: HECTON-8 subtitles are treated as instruments: they identify who or what speaks, stay readable during pressure, and do not turn hazards into chatter.
 
 ## Scanner
 
-A caption can spoil more than a voice.
+FR LOC HOLD: A caption can spoil more than a voice.
 
 ## Terminal
 
-Survival warnings take priority over flavor. No threat line appears without a sensor, voice, or visible source.
+FR LOC HOLD: Survival warnings take priority over flavor. No threat line appears without a sensor, voice, or visible source.
 
 ## Audio
 
-If the player cannot act on it, keep it quiet.
+FR LOC HOLD: If the player cannot act on it, keep it quiet.
 
 ## Field Note
 
-Check source labels, line length, alarm priority, sensor justification, censor tier, and audio timing.
+FR LOC HOLD: Check source labels, line length, alarm priority, sensor justification, censor tier, and audio timing.
 
 <!-- External Site; generated from P280_SUBTITLE_AUDIO_REVIEW_LOCK/fr_FR. -->

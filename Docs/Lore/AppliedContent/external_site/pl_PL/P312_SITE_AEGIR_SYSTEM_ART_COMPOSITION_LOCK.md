@@ -7,31 +7,34 @@ poi_tags: poi.site_aegir_art_brief;poi.orbital_window_caption
 biome_tags: biome.publication;biome.aegir
 locale: pl_PL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "PL LOC HOLD: Aegir System Art Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Aegir System Art Rule
+# PL LOC HOLD: Aegir System Art Rule
 
-Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.
+PL LOC HOLD: Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.
 
 ## Scanner
 
-Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.
+PL LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.
 
 ## Terminal
 
-PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.
+PL LOC HOLD: PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.
 
 ## Audio
 
-The sky is a timetable.
+PL LOC HOLD: The sky is a timetable.
 
 ## Field Note
 
-No brown dwarf, no Solar System framing, no FTL implication.
+PL LOC HOLD: No brown dwarf, no Solar System framing, no FTL implication.
 
 <!-- External Site; generated from P312_SITE_AEGIR_SYSTEM_ART_COMPOSITION_LOCK/pl_PL. -->

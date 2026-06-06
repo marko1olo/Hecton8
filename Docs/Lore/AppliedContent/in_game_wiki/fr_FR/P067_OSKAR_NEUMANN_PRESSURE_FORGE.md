@@ -7,31 +7,34 @@ poi_tags: poi.pressure_forge;poi.clamp_ring_jig
 biome_tags: biome.deep_fabrication;biome.machine_trench
 locale: fr_FR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Oskar Neumann Pressure Forge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Oskar Neumann Pressure Forge
 
-Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.
+FR LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.
 
 ## Scanner
 
-Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.
+FR LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.
 
 ## Terminal
 
-NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.
+FR LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.
 
 ## Audio
 
-A launch is just a pressure door that moves upward. Build it like one.
+FR LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.
 
 ## Field Note
 
-The exit needs craft, not courage.
+FR LOC HOLD: The exit needs craft, not courage.
 
 <!-- In-Game Wiki; generated from P067_OSKAR_NEUMANN_PRESSURE_FORGE/fr_FR. -->

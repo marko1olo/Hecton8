@@ -7,31 +7,34 @@ poi_tags: poi.ending_record_card;poi.public_ledger_stamp
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: nl_NL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Ending Record Presentation"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Ending Record Presentation
 
-Ending records let the player remember consequences without inheriting mechanical power.
+NL LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.
 
 ## Scanner
 
-An ending record is evidence, not a trophy shelf.
+NL LOC HOLD: An ending record is evidence, not a trophy shelf.
 
 ## Terminal
 
-ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.
+NL LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.
 
 ## Audio
 
-The ending is not over. It is filed.
+NL LOC HOLD: The ending is not over. It is filed.
 
 ## Field Note
 
-Show who received the payload and what it cost.
+NL LOC HOLD: Show who received the payload and what it cost.
 
 <!-- In-Game Wiki; generated from P178_ENDING_RECORD_PRESENTATION/nl_NL. -->

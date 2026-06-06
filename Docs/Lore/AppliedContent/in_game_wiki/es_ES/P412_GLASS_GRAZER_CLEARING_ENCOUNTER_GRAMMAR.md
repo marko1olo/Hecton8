@@ -7,31 +7,34 @@ poi_tags: poi.glass_grazer_clearing;poi.scraped_mineral_path
 biome_tags: biome.photic_shelf;biome.grazer_meadow
 locale: es_ES
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "ES LOC HOLD: Glass Grazer Clearing Encounter Grammar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Glass Grazer Clearing Encounter Grammar
+# ES LOC HOLD: Glass Grazer Clearing Encounter Grammar
 
-Glass-grazer encounters contrast the horror. They are beautiful, useful and still dangerous because their movement predicts unseen pressure.
+ES LOC HOLD: Glass-grazer encounters contrast the horror. They are beautiful, useful and still dangerous because their movement predicts unseen pressure.
 
 ## Scanner
 
-Encounter grammar: glass grazer clearing. Scraped routes can be safe until the herd vanishes.
+ES LOC HOLD: Encounter grammar: glass grazer clearing. Scraped routes can be safe until the herd vanishes.
 
 ## Terminal
 
-FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.
+ES LOC HOLD: FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.
 
 ## Audio
 
-The grazers make bright corridors. Something else decides when they empty.
+ES LOC HOLD: The grazers make bright corridors. Something else decides when they empty.
 
 ## Field Note
 
-Use for safe-zone literacy and shallow contrast.
+ES LOC HOLD: Use for safe-zone literacy and shallow contrast.
 
 <!-- In-Game Wiki; generated from P412_GLASS_GRAZER_CLEARING_ENCOUNTER_GRAMMAR/es_ES. -->

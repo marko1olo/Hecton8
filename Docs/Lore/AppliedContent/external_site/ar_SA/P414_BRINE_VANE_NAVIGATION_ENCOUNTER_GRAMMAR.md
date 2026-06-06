@@ -7,31 +7,34 @@ poi_tags: poi.brine_vane_current_fan;poi.density_turn_marker
 biome_tags: biome.brine_canyon;biome.vane_forest
 locale: ar_SA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "AR LOC HOLD: Brine Vane Navigation Encounter Grammar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Brine Vane Navigation Encounter Grammar
+# AR LOC HOLD: Brine Vane Navigation Encounter Grammar
 
-The ocean does not need dialogue to be active. Its processes become routes, hazards and repair media.
+AR LOC HOLD: The ocean does not need dialogue to be active. Its processes become routes, hazards and repair media.
 
 ## Scanner
 
-Encounter grammar: brine vane. Current fans and sonar warps create navigable density turns.
+AR LOC HOLD: Encounter grammar: brine vane. Current fans and sonar warps create navigable density turns.
 
 ## Terminal
 
-FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.
+AR LOC HOLD: FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.
 
 ## Audio
 
-The vane does not guide you. It obeys the water loudly enough to follow.
+AR LOC HOLD: The vane does not guide you. It obeys the water loudly enough to follow.
 
 ## Field Note
 
-Use for mid-depth navigation and Atlas repair-network foreshadowing.
+AR LOC HOLD: Use for mid-depth navigation and Atlas repair-network foreshadowing.
 
 <!-- External Site; generated from P414_BRINE_VANE_NAVIGATION_ENCOUNTER_GRAMMAR/ar_SA. -->

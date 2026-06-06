@@ -7,31 +7,34 @@ poi_tags: poi.crew_rotation_manifest;poi.torpor_rack_cert
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: ar_SA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Human Crew Rotation Transit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Human Crew Rotation Transit
 
-Crew transit explains why HECTON-8 could be abandoned for decades and still matter. The human cost moves slower than the claim ledger.
+AR LOC HOLD: Crew transit explains why HECTON-8 could be abandoned for decades and still matter. The human cost moves slower than the claim ledger.
 
 ## Scanner
 
-Humans do not commute to Aegir. They spend years being cargo with opinions.
+AR LOC HOLD: Humans do not commute to Aegir. They spend years being cargo with opinions.
 
 ## Terminal
 
-CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.
+AR LOC HOLD: CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.
 
 ## Audio
 
-By the time home asks where you are, the room has already flooded.
+AR LOC HOLD: By the time home asks where you are, the room has already flooded.
 
 ## Field Note
 
-A frontier worker sells time before they sell labor.
+AR LOC HOLD: A frontier worker sells time before they sell labor.
 
 <!-- In-Game Wiki; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/ar_SA. -->

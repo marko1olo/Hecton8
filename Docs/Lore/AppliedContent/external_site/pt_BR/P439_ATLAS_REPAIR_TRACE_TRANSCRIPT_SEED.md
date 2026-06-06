@@ -7,31 +7,34 @@ poi_tags: poi.atlas_repair_trace_transcript;poi.conductive_biofilm_caption
 biome_tags: biome.atlas_repair_network;biome.deep_ecology
 locale: pt_BR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "PT LOC HOLD: Atlas Repair Trace Transcript Seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Atlas Repair Trace Transcript Seed
+# PT LOC HOLD: Atlas Repair Trace Transcript Seed
 
-Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.
+PT LOC HOLD: Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.
 
 ## Scanner
 
-Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.
+PT LOC HOLD: Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.
 
 ## Terminal
 
-TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.
+PT LOC HOLD: TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.
 
 ## Audio
 
-Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.
+PT LOC HOLD: Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.
 
 ## Field Note
 
-Use for scanner captions, deep audio layers and Atlas article spoiler gate.
+PT LOC HOLD: Use for scanner captions, deep audio layers and Atlas article spoiler gate.
 
 <!-- External Site; generated from P439_ATLAS_REPAIR_TRACE_TRANSCRIPT_SEED/pt_BR. -->

@@ -7,31 +7,34 @@ poi_tags: poi.first_carrier_voice_cache;poi.drop_capsule_speaker
 biome_tags: biome.arrival_shelf;biome.shallow_annex
 locale: id_ID
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Black Keel First Voice"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Black Keel First Voice
 
-Black Keel's first voice should arrive as clipped audio plus clean terminal text. It is not a friendly companion and not a villain monologue. It is a carrier monitor: useful, dry, conditional, and terrifying because every correct sentence still has a billing class behind it.
+ID LOC HOLD: Black Keel's first voice should arrive as clipped audio plus clean terminal text. It is not a friendly companion and not a villain monologue. It is a carrier monitor: useful, dry, conditional, and terrifying because every correct sentence still has a billing class behind it.
 
 ## Scanner
 
-Carrier voice cache. Audio clipped, text clean, sympathy absent.
+ID LOC HOLD: Carrier voice cache. Audio clipped, text clean, sympathy absent.
 
 ## Terminal
 
-BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.
+ID LOC HOLD: BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.
 
 ## Audio
 
-Operator signal acquired. Do not confuse acknowledgement with rescue.
+ID LOC HOLD: Operator signal acquired. Do not confuse acknowledgement with rescue.
 
 ## Field Note
 
-The first voice should feel useful before it feels bought.
+ID LOC HOLD: The first voice should feel useful before it feels bought.
 
 <!-- In-Game Wiki; generated from P089_BLACK_KEEL_FIRST_VOICE/id_ID. -->

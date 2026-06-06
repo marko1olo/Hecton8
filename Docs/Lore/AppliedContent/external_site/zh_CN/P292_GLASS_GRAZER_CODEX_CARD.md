@@ -7,31 +7,34 @@ poi_tags: poi.glass_grazer_scan;poi.grazer_tooth_mark
 biome_tags: biome.photic_shelf;biome.fauna
 locale: zh_CN
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "ZH LOC HOLD: Glass Grazer Codex Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Glass Grazer Codex Card
+# ZH LOC HOLD: Glass Grazer Codex Card
 
-HECTON-8's harmless life is part of the survival interface: movement, absence and damage tell the player what a meter cannot.
+ZH LOC HOLD: HECTON-8's harmless life is part of the survival interface: movement, absence and damage tell the player what a meter cannot.
 
 ## Scanner
 
-Glass grazer: non-hostile. If the school freezes, leave the open water.
+ZH LOC HOLD: Glass grazer: non-hostile. If the school freezes, leave the open water.
 
 ## Terminal
 
-SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.
+ZH LOC HOLD: SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.
 
 ## Audio
 
-When they stop eating, you stop moving.
+ZH LOC HOLD: When they stop eating, you stop moving.
 
 ## Field Note
 
-Use as tutorial for absence-as-warning without UI exposition.
+ZH LOC HOLD: Use as tutorial for absence-as-warning without UI exposition.
 
 <!-- External Site; generated from P292_GLASS_GRAZER_CODEX_CARD/zh_CN. -->

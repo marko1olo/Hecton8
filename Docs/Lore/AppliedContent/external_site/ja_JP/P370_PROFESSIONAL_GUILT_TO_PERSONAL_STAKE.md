@@ -7,31 +7,34 @@ poi_tags: poi.professional_guilt_note;poi.old_signature_match
 biome_tags: biome.colony;biome.atlas_basin
 locale: ja_JP
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "JA LOC HOLD: Professional Guilt To Personal Stake"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Professional Guilt To Personal Stake
+# JA LOC HOLD: Professional Guilt To Personal Stake
 
-HECTON-8's player motive grows from expertise. The former Deep Reach worker understands the crime because they understand the machinery of responsibility.
+JA LOC HOLD: HECTON-8's player motive grows from expertise. The former Deep Reach worker understands the crime because they understand the machinery of responsibility.
 
 ## Scanner
 
-Signature match. The form language is old. The names are new.
+JA LOC HOLD: Signature match. The form language is old. The names are new.
 
 ## Terminal
 
-DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.
+JA LOC HOLD: DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.
 
 ## Audio
 
-You came for a contract. You stayed because you understood the paperwork.
+JA LOC HOLD: You came for a contract. You stayed because you understood the paperwork.
 
 ## Field Note
 
-Use near late dossier and final payload route.
+JA LOC HOLD: Use near late dossier and final payload route.
 
 <!-- External Site; generated from P370_PROFESSIONAL_GUILT_TO_PERSONAL_STAKE/ja_JP. -->

@@ -7,16 +7,19 @@ poi_tags: poi.system_ship_nav_cluster;poi.no_ftl_route_index
 biome_tags: biome.publication;biome.human_space
 locale: nl_NL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 1
+title: "NL LOC HOLD: Aegir Route and Ships"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Aegir Route and Ships
+# NL LOC HOLD: Aegir Route and Ships
 
-Aegir is close enough to be exploited and far enough to be abandoned. No faster-than-light drive crosses the gap, and no ansible carries orders ahead of physics. Every message, contract and rescue claim moves through delay: probe packets, relay custody, beam schedules, pellet-fusion freight and transfer windows indifferent to human urgency.
+NL LOC HOLD: Aegir is close enough to be exploited and far enough to be abandoned. No faster-than-light drive crosses the gap, and no ansible carries orders ahead of physics. Every message, contract and rescue claim moves through delay: probe packets, relay custody, beam schedules, pellet-fusion freight and transfer windows indifferent to human urgency.
 
 The first Aegir traffic was not human. Needleprobes mapped the warm dwarf system and returned enough mineral, radiation and orbital data to justify heavier investment. Beam-sail packets followed, then slower cargo, then seed-ship mass that had to brake inside a planned infrastructure web. By the time Deep Reach arrived at HECTON-8, the route already belonged to institutions: carriers, insurers, domain offices, reclamation pools and companies skilled at making ownership difficult to name.
 

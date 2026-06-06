@@ -7,31 +7,34 @@ poi_tags: poi.system_ship_nav_cluster;poi.no_ftl_route_index
 biome_tags: biome.publication;biome.human_space
 locale: uk_UA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 1
+title: "UK LOC HOLD: Aegir Route and Ships"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Aegir Route and Ships
+# UK LOC HOLD: Aegir Route and Ships
 
-Hard-sci-fi route hub: human domains, no-FTL travel, the Aegir moon system, Black Keel carrier limits and the damaged drop interface.
+UK LOC HOLD: Hard-sci-fi route hub: human domains, no-FTL travel, the Aegir moon system, Black Keel carrier limits and the damaged drop interface.
 
 ## Scanner
 
-Publication hub: no FTL, Aegir route timing, carrier limits and why rescue cannot arrive on demand.
+UK LOC HOLD: Publication hub: no FTL, Aegir route timing, carrier limits and why rescue cannot arrive on demand.
 
 ## Terminal
 
-SITE NAV: probes, beam/pellet lanes, Seed Ship braking, Black Keel custody, transfer orbit and bathydrop interface failure.
+UK LOC HOLD: SITE NAV: probes, beam/pellet lanes, Seed Ship braking, Black Keel custody, transfer orbit and bathydrop interface failure.
 
 ## Audio
 
-Distance is not lore trivia. It is the pressure on every decision.
+UK LOC HOLD: Distance is not lore trivia. It is the pressure on every decision.
 
 ## Field Note
 
-Navigation cluster record: system and ships pages connect no-FTL travel, Aegir route scale, carrier custody, and drop-capsule constraints.
+UK LOC HOLD: Navigation cluster record: system and ships pages connect no-FTL travel, Aegir route scale, carrier custody, and drop-capsule constraints.
 
 <!-- In-Game Wiki; generated from P417_SITE_WIKI_SYSTEM_AND_SHIPS_CLUSTER/uk_UA. -->

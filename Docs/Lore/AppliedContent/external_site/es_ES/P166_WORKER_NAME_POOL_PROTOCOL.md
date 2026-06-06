@@ -7,31 +7,34 @@ poi_tags: poi.name_pool_card;poi.shift_name_strip
 biome_tags: biome.industrial_shelf;biome.shallow_annex
 locale: es_ES
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "ES LOC HOLD: Worker Name Pool Record"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Worker Name Pool Record
+# ES LOC HOLD: Worker Name Pool Record
 
-Worker name pools keep seeded worker evidence human: origin band, role, shift, badge fragment, and route permission.
+ES LOC HOLD: Worker name pools keep seeded worker evidence human: origin band, role, shift, badge fragment, and route permission.
 
 ## Scanner
 
-Names are evidence, not collectible flavor.
+ES LOC HOLD: Names are evidence, not collectible flavor.
 
 ## Terminal
 
-NAME POOL: workers derive from domain-origin bands, job role, shift, badge fragment, and route permission. Personal names stay stable across languages.
+ES LOC HOLD: NAME POOL: workers derive from domain-origin bands, job role, shift, badge fragment, and route permission. Personal names stay stable across languages.
 
 ## Audio
 
-A name is a route, a job, and a person Deep Reach tried to price.
+ES LOC HOLD: A name is a route, a job, and a person Deep Reach tried to price.
 
 ## Field Note
 
-Seed names must preserve identity without making family melodrama.
+ES LOC HOLD: Seed names must preserve identity without making family melodrama.
 
 <!-- External Site; generated from P166_WORKER_NAME_POOL_PROTOCOL/es_ES. -->

@@ -7,31 +7,34 @@ poi_tags: poi.duration_band_chart;poi.probe_freight_crew_table
 biome_tags: biome.relay_archive;biome.claim_admin
 locale: pl_PL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "PL LOC HOLD: Transit Duration Bands"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Transit Duration Bands
+# PL LOC HOLD: Transit Duration Bands
 
-Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock.
+PL LOC HOLD: Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock.
 
 ## Scanner
 
-The same route means different time for packets, freight and people.
+PL LOC HOLD: The same route means different time for packets, freight and people.
 
 ## Terminal
 
-DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.
+PL LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.
 
 ## Audio
 
-Cargo can arrive before mercy. That is the doctrine.
+PL LOC HOLD: Cargo can arrive before mercy. That is the doctrine.
 
 ## Field Note
 
-Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.
+PL LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.
 
 <!-- External Site; generated from P164_TRANSIT_DURATION_BANDS/pl_PL. -->

@@ -7,31 +7,34 @@ poi_tags: poi.claim_card_lien_strip;poi.black_keel_tariff_stamp
 biome_tags: biome.claim_admin;biome.carrier_interface
 locale: nl_NL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "NL LOC HOLD: Lien Severity Seed Class"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Lien Severity Seed Class
+# NL LOC HOLD: Lien Severity Seed Class
 
-Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.
+NL LOC HOLD: Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.
 
 ## Scanner
 
-The contract has a debt class before it has a destination.
+NL LOC HOLD: The contract has a debt class before it has a destination.
 
 ## Terminal
 
-SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.
+NL LOC HOLD: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.
 
 ## Audio
 
-Debt picks the weather before you see the water.
+NL LOC HOLD: Debt picks the weather before you see the water.
 
 ## Field Note
 
-Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.
+NL LOC HOLD: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.
 
 <!-- In-Game Wiki; generated from P241_LIEN_SEVERITY_SEED_CLASS/nl_NL. -->

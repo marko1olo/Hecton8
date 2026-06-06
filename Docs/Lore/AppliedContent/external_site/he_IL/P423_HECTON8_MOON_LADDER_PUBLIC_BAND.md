@@ -7,31 +7,34 @@ poi_tags: poi.moon_ladder_public_band;poi.hecton8_mid_orbit_card
 biome_tags: biome.aegir_system;biome.publication
 locale: he_IL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "HE LOC HOLD: HECTON-8 Moon Ladder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# HECTON-8 Moon Ladder
+# HE LOC HOLD: HECTON-8 Moon Ladder
 
-HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.
+HE LOC HOLD: HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.
 
 ## Scanner
 
-Moon ladder: HECTON-8 is one claim, not the whole Aegir system.
+HE LOC HOLD: Moon ladder: HECTON-8 is one claim, not the whole Aegir system.
 
 ## Terminal
 
-MOON LADDER. Public role labels only; exact orbital elements stay table-owned.
+HE LOC HOLD: MOON LADDER. Public role labels only; exact orbital elements stay table-owned.
 
 ## Audio
 
-Other moons are not side quests. They are why the route has teeth.
+HE LOC HOLD: Other moons are not side quests. They are why the route has teeth.
 
 ## Field Note
 
-Moon ladder record: public maps can show Aegir scale without promising playable moons.
+HE LOC HOLD: Moon ladder record: public maps can show Aegir scale without promising playable moons.
 
 <!-- External Site; generated from P423_HECTON8_MOON_LADDER_PUBLIC_BAND/he_IL. -->

@@ -7,31 +7,34 @@ poi_tags: poi.colony_worker_nav_cluster;poi.worker_dossier_index
 biome_tags: biome.publication;biome.colony_evidence
 locale: fr_FR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 1
+title: "FR LOC HOLD: Colonie et travailleurs"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Colonie et travailleurs
+# FR LOC HOLD: Colonie et travailleurs
 
-Deep Reach a classé l'échec comme tempête, effondrement, évacuation autonome ratée, tentative de sauvetage Atlas et données perdues; les archives de HECTON-8 gardent les noms attachés aux pompes, relais, routes de brine, triage et vent-forge.
+FR LOC HOLD: Deep Reach a classé l'échec comme tempête, effondrement, évacuation autonome ratée, tentative de sauvetage Atlas et données perdues; les archives de HECTON-8 gardent les noms attachés aux pompes, relais, routes de brine, triage et vent-forge.
 
 ## Scanner
 
-WORKER INDEX // Cinq noms liés à des routes. pump, relay, brine, triage, forge. Préserver la tag chain avant récupération matérielle.
+FR LOC HOLD: WORKER INDEX // Cinq noms liés à des routes. pump, relay, brine, triage, forge. Préserver la tag chain avant récupération matérielle.
 
 ## Terminal
 
-KEELMARK LOSS DESK: préserver les name tags liés à route, claim, custody ou pressure work.
+FR LOC HOLD: KEELMARK LOSS DESK: préserver les name tags liés à route, claim, custody ou pressure work.
 
 ## Audio
 
-Mara Venn, pump chief: si la pump chante clair, consigne-le. Si elle cesse de chanter, monte en courant.
+FR LOC HOLD: Mara Venn, pump chief: si la pump chante clair, consigne-le. Si elle cesse de chanter, monte en courant.
 
 ## Field Note
 
-Pas la famille. Le travail. Un nom sur une pump card explique pourquoi une porte est restée ouverte.
+FR LOC HOLD: Pas la famille. Le travail. Un nom sur une pump card explique pourquoi une porte est restée ouverte.
 
 <!-- External Site; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/fr_FR. -->

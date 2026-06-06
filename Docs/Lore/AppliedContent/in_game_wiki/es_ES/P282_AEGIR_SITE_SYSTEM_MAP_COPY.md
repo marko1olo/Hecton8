@@ -7,31 +7,34 @@ poi_tags: poi.site_aegir_map_caption;poi.moon_ladder_public_label
 biome_tags: biome.publication;biome.aegir
 locale: es_ES
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "ES LOC HOLD: Aegir Site System Map Copy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Aegir Site System Map Copy
+# ES LOC HOLD: Aegir Site System Map Copy
 
-Aegir Site System Map Copy fixes public map language around orbital windows and route costs.
+ES LOC HOLD: Aegir Site System Map Copy fixes public map language around orbital windows and route costs.
 
 ## Scanner
 
-Aegir map copy must read as timing pressure, not astronomy wallpaper.
+ES LOC HOLD: Aegir map copy must read as timing pressure, not astronomy wallpaper.
 
 ## Terminal
 
-PUBLIC MAP LOCK: every moon label must imply a route cost or signal constraint.
+ES LOC HOLD: PUBLIC MAP LOCK: every moon label must imply a route cost or signal constraint.
 
 ## Audio
 
-The map is not where you are. It is when help can afford to exist.
+ES LOC HOLD: The map is not where you are. It is when help can afford to exist.
 
 ## Field Note
 
-Use short map labels: relay shutter, radiation surge, ice-grain scatter, guidance lag, claim orbit.
+ES LOC HOLD: Use short map labels: relay shutter, radiation surge, ice-grain scatter, guidance lag, claim orbit.
 
 <!-- In-Game Wiki; generated from P282_AEGIR_SITE_SYSTEM_MAP_COPY/es_ES. -->

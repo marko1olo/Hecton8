@@ -7,31 +7,34 @@ poi_tags: poi.evac_cert_hold;poi.quarantine_release_panel
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: fr_FR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Noor Haldane Evac Cert"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Noor Haldane Evac Cert
 
-Noor Haldane's evacuation certificate shows a legal hold that reads defensible on paper and deadly inside a flooded room.
+FR LOC HOLD: Noor Haldane's evacuation certificate shows a legal hold that reads defensible on paper and deadly inside a flooded room.
 
 ## Scanner
 
-Certification hold. N. Haldane kept the route legal while the route died.
+FR LOC HOLD: Certification hold. N. Haldane kept the route legal while the route died.
 
 ## Terminal
 
-HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.
+FR LOC HOLD: HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.
 
 ## Audio
 
-The door was not locked by fear. It was locked by compliance.
+FR LOC HOLD: The door was not locked by fear. It was locked by compliance.
 
 ## Field Note
 
-This is the paper signature players should hate.
+FR LOC HOLD: This is the paper signature players should hate.
 
 <!-- External Site; generated from P108_NOOR_HALDANE_EVAC_CERT/fr_FR. -->

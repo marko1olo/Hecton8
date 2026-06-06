@@ -7,31 +7,34 @@ poi_tags: poi.ephemeris_tuning_sheet;poi.route_band_calculator
 biome_tags: biome.black_keel_orbit;biome.claim_admin
 locale: ja_JP
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "JP LOC HOLD: RAN Aegir Ephemeris Bands"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# RAN Aegir Ephemeris Bands
+# JP LOC HOLD: RAN Aegir Ephemeris Bands
 
-Ephemeris bands keep hard-sci-fi taste without freezing unverified astronomy values in prose.
+JP LOC HOLD: Ephemeris bands keep hard-sci-fi taste without freezing unverified astronomy values in prose.
 
 ## Scanner
 
-Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.
+JP LOC HOLD: Exact ephemeris numbers belong to celestial tables; current records lock route bands and hazard causes.
 
 ## Terminal
 
-EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.
+JP LOC HOLD: EPHEMERIS BANDS: public records may state window band, hazard class, and relation to Aegir. Exact orbital periods, inclinations, and resonance values stay table-owned.
 
 ## Audio
 
-A band is honest until the numbers have an owner.
+JP LOC HOLD: A band is honest until the numbers have an owner.
 
 ## Field Note
 
-Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.
+JP LOC HOLD: Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.
 
 <!-- In-Game Wiki; generated from P184_RAN_AEGIR_EPHEMERIS_TUNING_RULE/ja_JP. -->

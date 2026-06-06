@@ -7,14 +7,17 @@ poi_tags: poi.deep_reach_sanitized_transcript;poi.legal_delay_caption
 biome_tags: biome.deep_reach_archive;biome.claim_admin
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "RU LOC HOLD: Транскрипт очищенного пакета Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Транскрипт очищенного пакета Deep Reach
+# RU LOC HOLD: Транскрипт очищенного пакета Deep Reach
 
 Публичная ложь Deep Reach построена на умолчании: настоящая физика, задержанная авторизация и запрос координат собраны в защищаемую формулировку.
 

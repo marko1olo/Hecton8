@@ -7,31 +7,34 @@ poi_tags: poi.public_blue_debt_article;poi.sample_case_site_card
 biome_tags: biome.publication;biome.resource_custody
 locale: fr_FR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "FR LOC HOLD: Blue Debt Public Resource Article"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Blue Debt Public Resource Article
+# FR LOC HOLD: Blue Debt Public Resource Article
 
-Blue debt is Marauder slang for Xenon-Omega-bearing pressure substrate: a volatile family of clathrate, brine, mineral and industrial-biological material used for extreme computation and containment infrastructure.
+FR LOC HOLD: Blue debt is Marauder slang for Xenon-Omega-bearing pressure substrate: a volatile family of clathrate, brine, mineral and industrial-biological material used for extreme computation and containment infrastructure.
 
 ## Scanner
 
-The public name sounds like slang because the official name is built to hide liability.
+FR LOC HOLD: The public name sounds like slang because the official name is built to hide liability.
 
 ## Terminal
 
-PUBLIC ARTICLE TIER: sample behavior safe; exact recipe economics gated to gameplay tables.
+FR LOC HOLD: PUBLIC ARTICLE TIER: sample behavior safe; exact recipe economics gated to gameplay tables.
 
 ## Audio
 
-Ore is what people call it when they want to forget the paperwork.
+FR LOC HOLD: Ore is what people call it when they want to forget the paperwork.
 
 ## Field Note
 
-Blue debt text should keep the resource grounded in pressure chemistry, computation and custody.
+FR LOC HOLD: Blue debt text should keep the resource grounded in pressure chemistry, computation and custody.
 
 <!-- External Site; generated from P255_BLUE_DEBT_PUBLIC_RESOURCE_ARTICLE/fr_FR. -->

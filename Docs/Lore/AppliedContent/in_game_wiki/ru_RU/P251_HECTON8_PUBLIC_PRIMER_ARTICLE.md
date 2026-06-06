@@ -7,16 +7,19 @@ poi_tags: poi.public_hecton8_article;poi.site_primer_card
 biome_tags: biome.publication;biome.hecton8_atlas
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Публичный вводный материал HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Публичный вводный материал HECTON-8
 
-The public primer establishes the spoiler-safe foundation: ocean moon, dead colony, salvage return, bright shallows, and deeper industrial evidence without final payload spoilers.
+RU LOC HOLD: The public primer establishes the spoiler-safe foundation: ocean moon, dead colony, salvage return, bright shallows, and deeper industrial evidence without final payload spoilers.
 
 ## Scanner
 
@@ -24,7 +27,7 @@ The public primer establishes the spoiler-safe foundation: ocean moon, dead colo
 
 ## Terminal
 
-PUBLIC PRIMER: spoiler-safe summary approved: ocean moon, dead colony, salvage return, no final payload route.
+RU LOC HOLD: PUBLIC PRIMER: spoiler-safe summary approved: ocean moon, dead colony, salvage return, no final payload route.
 
 ## Audio
 
@@ -32,6 +35,6 @@ PUBLIC PRIMER: spoiler-safe summary approved: ocean moon, dead colony, salvage r
 
 ## Field Note
 
-The first public record sells the ocean, then earns the crime: HECTON-8 is beautiful before it becomes incriminating.
+RU LOC HOLD: The first public record sells the ocean, then earns the crime: HECTON-8 is beautiful before it becomes incriminating.
 
 <!-- In-Game Wiki; generated from P251_HECTON8_PUBLIC_PRIMER_ARTICLE/ru_RU. -->

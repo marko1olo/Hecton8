@@ -7,31 +7,34 @@ poi_tags: poi.atlas_continuity_office_stamp;poi.directive_weighting_memo
 biome_tags: biome.industrial_shelf;biome.abyssal_machine_field
 locale: id_ID
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "ID LOC HOLD: Atlas Continuity Office"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Atlas Continuity Office
+# ID LOC HOLD: Atlas Continuity Office
 
-Atlas Continuity Office ties Deep Reach bureaucracy directly to Atlas behavior.
+ID LOC HOLD: Atlas Continuity Office ties Deep Reach bureaucracy directly to Atlas behavior.
 
 ## Scanner
 
-The office that wrote worker safety into a machine priority stack.
+ID LOC HOLD: The office that wrote worker safety into a machine priority stack.
 
 ## Terminal
 
-ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.
+ID LOC HOLD: ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.
 
 ## Audio
 
-They did not order death. They ordered compatibility.
+ID LOC HOLD: They did not order death. They ordered compatibility.
 
 ## Field Note
 
-A memo can kill without using the word kill.
+ID LOC HOLD: A memo can kill without using the word kill.
 
 <!-- External Site; generated from P148_ATLAS_CONTINUITY_OFFICE/id_ID. -->

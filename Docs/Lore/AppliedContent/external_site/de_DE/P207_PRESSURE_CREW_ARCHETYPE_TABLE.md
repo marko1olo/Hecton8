@@ -7,31 +7,34 @@ poi_tags: poi.pressure_crew_board;poi.crew_color_strips
 biome_tags: biome.worker_locker;biome.industrial_shelf
 locale: de_DE
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Pressure Crew Archetype Table"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Pressure Crew Archetype Table
 
-Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness.
+DE LOC HOLD: Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness.
 
 ## Scanner
 
-Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.
+DE LOC HOLD: Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.
 
 ## Terminal
 
-CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.
+DE LOC HOLD: CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.
 
 ## Audio
 
-Job first. Memory second. That is how the colony survives.
+DE LOC HOLD: Job first. Memory second. That is how the colony survives.
 
 ## Field Note
 
-Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.
+DE LOC HOLD: Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.
 
 <!-- External Site; generated from P207_PRESSURE_CREW_ARCHETYPE_TABLE/de_DE. -->

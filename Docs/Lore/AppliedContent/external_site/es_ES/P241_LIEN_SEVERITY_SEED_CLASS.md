@@ -7,31 +7,34 @@ poi_tags: poi.claim_card_lien_strip;poi.black_keel_tariff_stamp
 biome_tags: biome.claim_admin;biome.carrier_interface
 locale: es_ES
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "ES LOC HOLD: Lien Severity Seed Class"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Lien Severity Seed Class
+# ES LOC HOLD: Lien Severity Seed Class
 
-Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite.
+ES LOC HOLD: Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite.
 
 ## Scanner
 
-The contract has a debt class before it has a destination.
+ES LOC HOLD: The contract has a debt class before it has a destination.
 
 ## Terminal
 
-SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.
+ES LOC HOLD: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.
 
 ## Audio
 
-Debt picks the weather before you see the water.
+ES LOC HOLD: Debt picks the weather before you see the water.
 
 ## Field Note
 
-Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.
+ES LOC HOLD: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.
 
 <!-- External Site; generated from P241_LIEN_SEVERITY_SEED_CLASS/es_ES. -->

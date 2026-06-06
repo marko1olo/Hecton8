@@ -7,31 +7,34 @@ poi_tags: poi.escape_recipe_table_draft;poi.ascent_part_cost_card
 biome_tags: biome.escape_chain;biome.atlas_basin
 locale: id_ID
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "ID LOC HOLD: Escape Recipe Value Draft Rows"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Escape Recipe Value Draft Rows
+# ID LOC HOLD: Escape Recipe Value Draft Rows
 
-The escape chain is hard sci-fi gameplay: signal, pressure, timing, energy and receiver legality all matter.
+ID LOC HOLD: The escape chain is hard sci-fi gameplay: signal, pressure, timing, energy and receiver legality all matter.
 
 ## Scanner
 
-Table draft: escape recipe rows require relay, seal, guidance, ascent energy and legal handshake bands.
+ID LOC HOLD: Table draft: escape recipe rows require relay, seal, guidance, ascent energy and legal handshake bands.
 
 ## Terminal
 
-ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority rows must remain distinct.
+ID LOC HOLD: ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority rows must remain distinct.
 
 ## Audio
 
-Fabricator note: a patch can save a room. It cannot certify an ascent.
+ID LOC HOLD: Fabricator note: a patch can save a room. It cannot certify an ascent.
 
 ## Field Note
 
-Draft bands: shallow survival recipes cheap; rated repairs mid-depth; containment-grade recipes brine/vent; ascent-qualified recipes require pressure glass; Atlas-authority rows require deep proof.
+ID LOC HOLD: Draft bands: shallow survival recipes cheap; rated repairs mid-depth; containment-grade recipes brine/vent; ascent-qualified recipes require pressure glass; Atlas-authority rows require deep proof.
 
 <!-- External Site; generated from P443_ESCAPE_RECIPE_VALUE_DRAFT_ROWS/id_ID. -->

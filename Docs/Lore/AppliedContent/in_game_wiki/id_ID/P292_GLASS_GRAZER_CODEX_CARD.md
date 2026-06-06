@@ -7,31 +7,34 @@ poi_tags: poi.glass_grazer_scan;poi.grazer_tooth_mark
 biome_tags: biome.photic_shelf;biome.fauna
 locale: id_ID
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "ID LOC HOLD: Glass Grazer Codex Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Glass Grazer Codex Card
+# ID LOC HOLD: Glass Grazer Codex Card
 
-Glass Grazer Codex Card turns a benign animal into a readable safety instrument.
+ID LOC HOLD: Glass Grazer Codex Card turns a benign animal into a readable safety instrument.
 
 ## Scanner
 
-Glass grazer: non-hostile. If the school freezes, leave the open water.
+ID LOC HOLD: Glass grazer: non-hostile. If the school freezes, leave the open water.
 
 ## Terminal
 
-SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.
+ID LOC HOLD: SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.
 
 ## Audio
 
-When they stop eating, you stop moving.
+ID LOC HOLD: When they stop eating, you stop moving.
 
 ## Field Note
 
-Use as tutorial for absence-as-warning without UI exposition.
+ID LOC HOLD: Use as tutorial for absence-as-warning without UI exposition.
 
 <!-- In-Game Wiki; generated from P292_GLASS_GRAZER_CODEX_CARD/id_ID. -->

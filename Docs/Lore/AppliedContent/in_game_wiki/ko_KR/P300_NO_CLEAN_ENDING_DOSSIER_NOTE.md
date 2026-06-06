@@ -7,31 +7,34 @@ poi_tags: poi.no_clean_ending_dossier_note;poi.outcome_hash_board
 biome_tags: biome.ending;biome.dossier
 locale: ko_KR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "KO LOC HOLD: No Clean Ending Dossier Note"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# No Clean Ending Dossier Note
+# KO LOC HOLD: No Clean Ending Dossier Note
 
-No Clean Ending Dossier Note defines the post-ending memory tone.
+KO LOC HOLD: No Clean Ending Dossier Note defines the post-ending memory tone.
 
 ## Scanner
 
-Dossier note: closure denied; consequence retained.
+KO LOC HOLD: Dossier note: closure denied; consequence retained.
 
 ## Terminal
 
-DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.
+KO LOC HOLD: DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.
 
 ## Audio
 
-You saved something. That is not the same as clearing it.
+KO LOC HOLD: You saved something. That is not the same as clearing it.
 
 ## Field Note
 
-The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.
+KO LOC HOLD: The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.
 
 <!-- In-Game Wiki; generated from P300_NO_CLEAN_ENDING_DOSSIER_NOTE/ko_KR. -->

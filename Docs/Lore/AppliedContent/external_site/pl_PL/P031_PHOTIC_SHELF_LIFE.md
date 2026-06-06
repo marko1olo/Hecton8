@@ -7,11 +7,14 @@ poi_tags: poi.shallow_biome_scan;poi.drop_shelter_window
 biome_tags: biome.crash_shelf;biome.photic_shelf
 locale: pl_PL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Życie półki świetlnej"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Życie półki świetlnej
@@ -24,7 +27,7 @@ Płytka półka jest jasna, głośna i prawie nietknięta. Księżyc nie jest ma
 
 ## Terminal
 
-SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.
+PL LOC HOLD: SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.
 
 ## Audio
 

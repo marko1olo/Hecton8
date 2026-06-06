@@ -7,31 +7,34 @@ poi_tags: poi.brine_density_marker;poi.canyon_current_gate
 biome_tags: biome.brine_canyon;biome.drop_zone
 locale: ja_JP
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Brine Canyon Route Ladder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Brine Canyon Route Ladder
 
-Brine canyons make depth progression physical. Dense brine layers, mineral walls, thermal leaks and acoustic distortion create routes that teach the player why deeper travel requires better instruments and better pressure discipline.
+JP LOC HOLD: Brine canyons make depth progression physical. Dense brine layers, mineral walls, thermal leaks and acoustic distortion create routes that teach the player why deeper travel requires better instruments and better pressure discipline.
 
 ## Scanner
 
-Brine density marker. The descent route is chemistry with walls.
+JP LOC HOLD: Brine density marker. The descent route is chemistry with walls.
 
 ## Terminal
 
-BRINE CANYON CONTROL: density interface stable enough for staged descent. Warning: acoustic relay distortion, vehicle buoyancy error and sensor false-floor events expected below 1800 m.
+JP LOC HOLD: BRINE CANYON CONTROL: density interface stable enough for staged descent. Warning: acoustic relay distortion, vehicle buoyancy error and sensor false-floor events expected below 1800 m.
 
 ## Audio
 
-The canyon is a staircase made of wrong water.
+JP LOC HOLD: The canyon is a staircase made of wrong water.
 
 ## Field Note
 
-You do not swim through the canyon. You negotiate with layers heavier than your suit.
+JP LOC HOLD: You do not swim through the canyon. You negotiate with layers heavier than your suit.
 
 <!-- In-Game Wiki; generated from P083_BRINE_CANYON_ROUTE_LADDER/ja_JP. -->

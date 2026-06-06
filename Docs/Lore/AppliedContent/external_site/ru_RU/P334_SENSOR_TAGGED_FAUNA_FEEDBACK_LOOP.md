@@ -7,11 +7,14 @@ poi_tags: poi.sensor_tagged_fauna_loop;poi.old_tag_new_growth
 biome_tags: biome.atlas;biome.fauna
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Feedback loop sensor-tagged fauna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Feedback loop sensor-tagged fauna
@@ -32,6 +35,6 @@ FAUNA LOOP: Atlas reads tagged movement as environmental state. Animal migration
 
 ## Field Note
 
-Scanner returns remain environmental evidence: tag, migration, repair priority, and no explicit predator command.
+RU LOC HOLD: Scanner returns remain environmental evidence: tag, migration, repair priority, and no explicit predator command.
 
 <!-- External Site; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/ru_RU. -->

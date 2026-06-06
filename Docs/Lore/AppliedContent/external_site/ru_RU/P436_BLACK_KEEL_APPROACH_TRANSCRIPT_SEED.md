@@ -7,16 +7,19 @@ poi_tags: poi.black_keel_approach_transcript;poi.opening_caption_card
 biome_tags: biome.first_hour;biome.black_keel_orbit
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "RU LOC HOLD: Транскрипт подхода Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Транскрипт подхода Black Keel
+# RU LOC HOLD: Транскрипт подхода Black Keel
 
-The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.
+RU LOC HOLD: The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.
 
 ## Scanner
 

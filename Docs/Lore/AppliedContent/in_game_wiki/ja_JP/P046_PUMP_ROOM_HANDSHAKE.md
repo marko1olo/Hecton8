@@ -7,31 +7,34 @@ poi_tags: poi.pump_room;poi.sump_control
 biome_tags: biome.pressure_hab;biome.drowned_colony
 locale: ja_JP
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Pump Room Handshake"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Pump Room Handshake
 
-Pump Room Handshake defines Submerge machinery language. The player reads a physical system, changes one pressure condition, and learns that repair is never free.
+JP LOC HOLD: Pump Room Handshake defines Submerge machinery language. The player reads a physical system, changes one pressure condition, and learns that repair is never free.
 
 ## Scanner
 
-The pump room is the first honest machine: if the player cannot read intake, output and failure noise, the room is useless.
+JP LOC HOLD: The pump room is the first honest machine: if the player cannot read intake, output and failure noise, the room is useless.
 
 ## Terminal
 
-Pump handshake: local valve authority accepted. Remote override denied by route-integrity check. Drain speed falls when return corridor pressure rises.
+JP LOC HOLD: Pump handshake: local valve authority accepted. Remote override denied by route-integrity check. Drain speed falls when return corridor pressure rises.
 
 ## Audio
 
-The pump does not save you. It buys time and makes another room worse.
+JP LOC HOLD: The pump does not save you. It buys time and makes another room worse.
 
 ## Field Note
 
-The room only works when the safe path and the flooding path share the same hardware.
+JP LOC HOLD: The room only works when the safe path and the flooding path share the same hardware.
 
 <!-- In-Game Wiki; generated from P046_PUMP_ROOM_HANDSHAKE/ja_JP. -->

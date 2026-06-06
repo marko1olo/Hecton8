@@ -7,31 +7,34 @@ poi_tags: poi.no_power_carryover_notice;poi.route_warning_card
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: uk_UA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Dossier Knowledge Not Power"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Dossier Knowledge Not Power
 
-Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.
+UA LOC HOLD: Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.
 
 ## Scanner
 
-No inherited oxygen, guns, hull, or magic shortcuts.
+UA LOC HOLD: No inherited oxygen, guns, hull, or magic shortcuts.
 
 ## Terminal
 
-META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.
+UA LOC HOLD: META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.
 
 ## Audio
 
-Memory does not reinforce a cracked hull.
+UA LOC HOLD: Memory does not reinforce a cracked hull.
 
 ## Field Note
 
-The player can become wiser. The ocean should not become smaller.
+UA LOC HOLD: The player can become wiser. The ocean should not become smaller.
 
 <!-- In-Game Wiki; generated from P140_DOSSIER_KNOWLEDGE_NOT_POWER/uk_UA. -->

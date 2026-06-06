@@ -7,31 +7,34 @@ poi_tags: poi.scanner_stage_rule;poi.scan_stage_badge
 biome_tags: biome.scanner_ui;biome.deep_ecology
 locale: uk_UA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "UK LOC HOLD: Scanner Stage Copy Escalation Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Scanner Stage Copy Escalation Rule
+# UK LOC HOLD: Scanner Stage Copy Escalation Rule
 
-Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.
+UK LOC HOLD: Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.
 
 ## Scanner
 
-Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.
+UK LOC HOLD: Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.
 
 ## Terminal
 
-SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.
+UK LOC HOLD: SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.
 
 ## Audio
 
-A scanner should get scared slowly and for reasons.
+UK LOC HOLD: A scanner should get scared slowly and for reasons.
 
 ## Field Note
 
-Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition.
+UK LOC HOLD: Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition.
 
 <!-- In-Game Wiki; generated from P432_SCANNER_STAGE_COPY_ESCALATION_RULE/uk_UA. -->

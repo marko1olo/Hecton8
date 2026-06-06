@@ -7,31 +7,34 @@ poi_tags: poi.claim_pool_ledger;poi.aegir_reclamation_stamp
 biome_tags: biome.arrival_shelf;biome.drowned_admin
 locale: ko_KR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Aegir Reclamation Pool"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Aegir Reclamation Pool
 
-Aegir Reclamation Pool defines Black Keel as infrastructure, not personal luxury. The protagonist arrives through a shared salvage economy where rescue is contracted, queued, billed, and legally conditional.
+KO LOC HOLD: Aegir Reclamation Pool defines Black Keel as infrastructure, not personal luxury. The protagonist arrives through a shared salvage economy where rescue is contracted, queued, billed, and legally conditional.
 
 ## Scanner
 
-Claim-pool stamp. Black Keel was assigned, not gifted.
+KO LOC HOLD: Claim-pool stamp. Black Keel was assigned, not gifted.
 
 ## Terminal
 
-AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.
+KO LOC HOLD: AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: priority variable.
 
 ## Audio
 
-The pool owns the route. You only rent the answer.
+KO LOC HOLD: The pool owns the route. You only rent the answer.
 
 ## Field Note
 
-A shared pool makes rescue cheaper, slower, and easier to hide behind.
+KO LOC HOLD: A shared pool makes rescue cheaper, slower, and easier to hide behind.
 
 <!-- External Site; generated from P086_AEGIR_RECLAMATION_POOL/ko_KR. -->

@@ -7,31 +7,34 @@ poi_tags: poi.final_payload_matrix;poi.atlas_choice_interface
 biome_tags: biome.factory_temple;biome.atlas_basin
 locale: he_IL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Final Choice Payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Final Choice Payload
 
-The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.
+HE LOC HOLD: The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.
 
 ## Scanner
 
-Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.
+HE LOC HOLD: Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.
 
 ## Terminal
 
-FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.
+HE LOC HOLD: FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.
 
 ## Audio
 
-There is no clean ownership for a crime scene that became alive in the wrong way.
+HE LOC HOLD: There is no clean ownership for a crime scene that became alive in the wrong way.
 
 ## Field Note
 
-The best ending should be defensible, not clean.
+HE LOC HOLD: The best ending should be defensible, not clean.
 
 <!-- In-Game Wiki; generated from P100_FINAL_CHOICE_PAYLOAD/he_IL. -->

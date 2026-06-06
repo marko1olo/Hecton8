@@ -7,31 +7,34 @@ poi_tags: poi.pressure_ceramic_tile;poi.deep_reach_kiln
 biome_tags: biome.industrial_shelf;biome.vent_forge
 locale: ko_KR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Deep Reach Pressure Ceramics"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Deep Reach Pressure Ceramics
 
-Pressure ceramics are local minerals pushed through Deep Reach kilns, catalyst baths and vent-forge cycles. They are practical crafting material for seals, clamp rings and ascent hardware. They also make old company infrastructure dangerous when thermal shock turns them into shard bloom.
+KO LOC HOLD: Pressure ceramics are local minerals pushed through Deep Reach kilns, catalyst baths and vent-forge cycles. They are practical crafting material for seals, clamp rings and ascent hardware. They also make old company infrastructure dangerous when thermal shock turns them into shard bloom.
 
 ## Scanner
 
-Amplified resource. Human process made local minerals hold pressure better and fail meaner.
+KO LOC HOLD: Amplified resource. Human process made local minerals hold pressure better and fail meaner.
 
 ## Terminal
 
-RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.
+KO LOC HOLD: RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.
 
 ## Audio
 
-The company was good at building things. That is part of the crime.
+KO LOC HOLD: The company was good at building things. That is part of the crime.
 
 ## Field Note
 
-Deep Reach did create value. That is why the lie is tempting.
+KO LOC HOLD: Deep Reach did create value. That is why the lie is tempting.
 
 <!-- In-Game Wiki; generated from P118_DEEP_REACH_PRESSURE_CERAMICS/ko_KR. -->

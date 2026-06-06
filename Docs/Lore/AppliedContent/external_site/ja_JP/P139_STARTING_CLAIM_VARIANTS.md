@@ -7,31 +7,34 @@ poi_tags: poi.claim_variant_selector;poi.salvage_origin_stamp
 biome_tags: biome.black_keel_orbit;biome.photic_shelf
 locale: ja_JP
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Starting Claim Variants"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Starting Claim Variants
 
-Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist.
+JP LOC HOLD: Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist.
 
 ## Scanner
 
-Same protagonist. Different claim pressure.
+JP LOC HOLD: Same protagonist. Different claim pressure.
 
 ## Terminal
 
-CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.
+JP LOC HOLD: CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.
 
 ## Audio
 
-You can change the job without changing who took it.
+JP LOC HOLD: You can change the job without changing who took it.
 
 ## Field Note
 
-Variants should color motive, not erase the canon character.
+JP LOC HOLD: Variants should color motive, not erase the canon character.
 
 <!-- External Site; generated from P139_STARTING_CLAIM_VARIANTS/ja_JP. -->

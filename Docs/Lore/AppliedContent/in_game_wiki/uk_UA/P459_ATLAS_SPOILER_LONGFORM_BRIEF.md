@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 3
-title: "Atlas Repair Ecology"
+title: "UK LOC HOLD: Atlas Repair Ecology"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Atlas Repair Ecology
+# UK LOC HOLD: Atlas Repair Ecology
 
-Atlas records open in layers because each recovered object changes the next claim. Early evidence shows maintenance behavior; later evidence connects biofilm, acoustic organs, shell sealant and receiver decisions to the colony's last witness.
+UK LOC HOLD: Atlas records open in layers because each recovered object changes the next claim. Early evidence shows maintenance behavior; later evidence connects biofilm, acoustic organs, shell sealant and receiver decisions to the colony's last witness.
 
 ## Scanner
 
-Restricted Atlas record. Surface traces show maintenance logic; deeper fragments tie repair biofilm, acoustic organs and custody decisions to surviving receiver hardware.
+UK LOC HOLD: Restricted Atlas record. Surface traces show maintenance logic; deeper fragments tie repair biofilm, acoustic organs and custody decisions to surviving receiver hardware.
 
 ## Terminal
 
-PUBLIC ARCHIVE NODE // ATLAS ACCESS LAYER. Current clearance exposes maintenance behavior, biofilm signal paths and shell-seal repairs. Receiver records require recovered evidence and explicit archive consent.
+UK LOC HOLD: PUBLIC ARCHIVE NODE // ATLAS ACCESS LAYER. Current clearance exposes maintenance behavior, biofilm signal paths and shell-seal repairs. Receiver records require recovered evidence and explicit archive consent.
 
 ## Audio
 
-Say it repairs before you decide whether the repair was mercy.
+UK LOC HOLD: Say it repairs before you decide whether the repair was mercy.
 
 ## Field Note
 
-Marauder note: a fixed cable can still be a crime scene. Do not treat every repair as mercy.
+UK LOC HOLD: Marauder note: a fixed cable can still be a crime scene. Do not treat every repair as mercy.
 
 <!-- In-Game Wiki; generated from P459_ATLAS_SPOILER_LONGFORM_BRIEF/uk_UA. -->

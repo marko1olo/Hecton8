@@ -7,24 +7,27 @@ poi_tags: poi.site_home_composition_card;poi.pressure_hero_image_brief
 biome_tags: biome.publication;biome.site
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "RU LOC HOLD: Public Opening Composition Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Public Opening Composition Rule
+# RU LOC HOLD: Public Opening Composition Rule
 
 Публичное открытие HECTON-8 должно показывать pressure problem: hatch, gauge, bad signal, costly return route.
 
 ## Scanner
 
-Public opening: one real machine or route image before lore explanation.
+RU LOC HOLD: Public opening: one real machine or route image before lore explanation.
 
 ## Terminal
 
-PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.
+RU LOC HOLD: PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.
 
 ## Audio
 
@@ -32,6 +35,6 @@ PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a 
 
 ## Field Note
 
-No hype calendar, wishlist, release, or demo claim appears without proof.
+RU LOC HOLD: No hype calendar, wishlist, release, or demo claim appears without proof.
 
 <!-- External Site; generated from P311_SITE_HOME_PAGE_COMPOSITION_LOCK/ru_RU. -->

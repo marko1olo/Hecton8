@@ -7,31 +7,34 @@ poi_tags: poi.last_normal_day_set;poi.unsigned_correction_note
 biome_tags: biome.colony;biome.evidence
 locale: zh_CN
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "ZH LOC HOLD: Last Normal Day Evidence Set"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Last Normal Day Evidence Set
+# ZH LOC HOLD: Last Normal Day Evidence Set
 
-HECTON-8 uses ordinary unfinished work as horror. The colony ends while routine is still on the board.
+ZH LOC HOLD: HECTON-8 uses ordinary unfinished work as horror. The colony ends while routine is still on the board.
 
 ## Scanner
 
-Last-normal-day set. The strongest evidence is unfinished ordinary work.
+ZH LOC HOLD: Last-normal-day set. The strongest evidence is unfinished ordinary work.
 
 ## Terminal
 
-EVIDENCE SET: locker plate unclaimed; correction note unsigned; pump task open; lunch token clipped; route clock still waiting for return stamp.
+ZH LOC HOLD: EVIDENCE SET: locker plate unclaimed; correction note unsigned; pump task open; lunch token clipped; route clock still waiting for return stamp.
 
 ## Audio
 
-The last day did not know it was last.
+ZH LOC HOLD: The last day did not know it was last.
 
 ## Field Note
 
-Locker plate unclaimed. Correction note unsigned. Pump task open. Lunch token still clipped. Nobody packed the board for history.
+ZH LOC HOLD: Locker plate unclaimed. Correction note unsigned. Pump task open. Lunch token still clipped. Nobody packed the board for history.
 
 <!-- External Site; generated from P360_LAST_NORMAL_DAY_EVIDENCE_SET/zh_CN. -->

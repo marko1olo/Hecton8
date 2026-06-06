@@ -7,31 +7,34 @@ poi_tags: poi.cjk_review_card;poi.cjk_wrap_sample
 biome_tags: biome.localization;biome.cjk
 locale: uk_UA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "UK LOC HOLD: CJK Font And Width Contract"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# CJK Font And Width Contract
+# UK LOC HOLD: CJK Font And Width Contract
 
-Japanese, Chinese, and Korean text require font atlas coverage, stable names, readable units, and predictable wrapping across compact instruments.
+UK LOC HOLD: Japanese, Chinese, and Korean text require font atlas coverage, stable names, readable units, and predictable wrapping across compact instruments.
 
 ## Scanner
 
-A missing glyph can erase an alarm.
+UK LOC HOLD: A missing glyph can erase an alarm.
 
 ## Terminal
 
-CJK copy must fit PDA, scanner, terminal, subtitle, and web surfaces without hiding numbers or names.
+UK LOC HOLD: CJK copy must fit PDA, scanner, terminal, subtitle, and web surfaces without hiding numbers or names.
 
 ## Audio
 
-Short text can still fail when the grid is wrong.
+UK LOC HOLD: Short text can still fail when the grid is wrong.
 
 ## Field Note
 
-Check glyph coverage, line wrapping, mixed Latin names, meter and tonne-window labels, terminal monospace alternatives, and article length.
+UK LOC HOLD: Check glyph coverage, line wrapping, mixed Latin names, meter and tonne-window labels, terminal monospace alternatives, and article length.
 
 <!-- In-Game Wiki; generated from P277_CJK_REVIEW_LOCK/uk_UA. -->

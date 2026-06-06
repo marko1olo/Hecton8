@@ -7,31 +7,34 @@ poi_tags: poi.lantern_drift_scan;poi.false_safe_light
 biome_tags: biome.photic_shelf;biome.light
 locale: nl_NL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "NL LOC HOLD: Lantern Drift Codex Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Lantern Drift Codex Card
+# NL LOC HOLD: Lantern Drift Codex Card
 
-Lantern Drift Codex Card links visual wonder with storm-window route pressure.
+NL LOC HOLD: Lantern Drift Codex Card links visual wonder with storm-window route pressure.
 
 ## Scanner
 
-Lantern drift: useful light. Verify current, charge and residue before following.
+NL LOC HOLD: Lantern drift: useful light. Verify current, charge and residue before following.
 
 ## Terminal
 
-SPECIMEN: lantern drift. Storm charge raises false-positive route glow.
+NL LOC HOLD: SPECIMEN: lantern drift. Storm charge raises false-positive route glow.
 
 ## Audio
 
-Pretty is not safe. Pretty is a reading.
+NL LOC HOLD: Pretty is not safe. Pretty is a reading.
 
 ## Field Note
 
-Card teaches that beauty can be route information and route deception.
+NL LOC HOLD: Card teaches that beauty can be route information and route deception.
 
 <!-- In-Game Wiki; generated from P293_LANTERN_DRIFT_CODEX_CARD/nl_NL. -->

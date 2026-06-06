@@ -7,31 +7,34 @@ poi_tags: poi.graffiti_mask;poi.pressure_arrow
 biome_tags: biome.scrap_canyon;biome.marauder_route
 locale: id_ID
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Marauder Graffiti Masks"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Marauder Graffiti Masks
 
-Marauder Graffiti Masks define non-corporate wayfinding on HECTON-8: practical masks disguised as vandalism.
+ID LOC HOLD: Marauder Graffiti Masks define non-corporate wayfinding on HECTON-8: practical masks disguised as vandalism.
 
 ## Scanner
 
-The paint is a route mask: slash count marks noise discipline, black rings mark carrier-ping danger, and broken arrows mark pressure drift.
+ID LOC HOLD: The paint is a route mask: slash count marks noise discipline, black rings mark carrier-ping danger, and broken arrows mark pressure drift.
 
 ## Terminal
 
-MASK LEGEND: three slashes mean silent route until pump wake. Black ring means do not answer carrier pings inside the canyon.
+ID LOC HOLD: MASK LEGEND: three slashes mean silent route until pump wake. Black ring means do not answer carrier pings inside the canyon.
 
 ## Audio
 
-They made a language that looks like vandalism to the company.
+ID LOC HOLD: They made a language that looks like vandalism to the company.
 
 ## Field Note
 
-Bad paint. Good map.
+ID LOC HOLD: Bad paint. Good map.
 
 <!-- External Site; generated from P053_MARAUDER_GRAFFITI_MASKS/id_ID. -->

@@ -7,31 +7,34 @@ poi_tags: poi.sensor_tagged_fauna_loop;poi.old_tag_new_growth
 biome_tags: biome.atlas;biome.fauna
 locale: pt_BR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "PT LOC HOLD: Sensor-Tagged Fauna Feedback Loop"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Sensor-Tagged Fauna Feedback Loop
+# PT LOC HOLD: Sensor-Tagged Fauna Feedback Loop
 
-Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.
+PT LOC HOLD: Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.
 
 ## Scanner
 
-Old colony tag under new growth. Behavior trace resembles survey sweep.
+PT LOC HOLD: Old colony tag under new growth. Behavior trace resembles survey sweep.
 
 ## Terminal
 
-FAUNA LOOP: Atlas reads tagged movement as environmental state. Animal migration becomes low-resolution map feedback and repair priority evidence.
+PT LOC HOLD: FAUNA LOOP: Atlas reads tagged movement as environmental state. Animal migration becomes low-resolution map feedback and repair priority evidence.
 
 ## Audio
 
-It is not hunting you. It may still report you.
+PT LOC HOLD: It is not hunting you. It may still report you.
 
 ## Field Note
 
-Scanner returns remain environmental evidence: tag, migration, repair priority, and no explicit predator command.
+PT LOC HOLD: Scanner returns remain environmental evidence: tag, migration, repair priority, and no explicit predator command.
 
 <!-- In-Game Wiki; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/pt_BR. -->

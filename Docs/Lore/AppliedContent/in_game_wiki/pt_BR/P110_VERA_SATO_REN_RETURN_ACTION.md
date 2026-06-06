@@ -7,31 +7,34 @@ poi_tags: poi.recovery_compliance_signature;poi.return_action_notice
 biome_tags: biome.carrier_link;biome.abyssal_machine_field
 locale: pt_BR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Vera Sato-Ren Return Action"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Vera Sato-Ren Return Action
 
-Vera Sato-Ren is the 2190 Recovery Compliance Office signature. She represents the living Deep Reach pressure cell: payload first, rescue if useful, silence if affordable. Her messages should feel procedural, delayed and legally dangerous.
+PT LOC HOLD: Vera Sato-Ren is the 2190 Recovery Compliance Office signature. She represents the living Deep Reach pressure cell: payload first, rescue if useful, silence if affordable. Her messages should feel procedural, delayed and legally dangerous.
 
 ## Scanner
 
-Return-action packet. V. Sato-Ren wants recovery before rescue.
+PT LOC HOLD: Return-action packet. V. Sato-Ren wants recovery before rescue.
 
 ## Terminal
 
-SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.
+PT LOC HOLD: SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.
 
 ## Audio
 
-She does not need to threaten you. The window already does.
+PT LOC HOLD: She does not need to threaten you. The window already does.
 
 ## Field Note
 
-Present Deep Reach should arrive as leverage, not a villain monologue.
+PT LOC HOLD: Present Deep Reach should arrive as leverage, not a villain monologue.
 
 <!-- In-Game Wiki; generated from P110_VERA_SATO_REN_RETURN_ACTION/pt_BR. -->

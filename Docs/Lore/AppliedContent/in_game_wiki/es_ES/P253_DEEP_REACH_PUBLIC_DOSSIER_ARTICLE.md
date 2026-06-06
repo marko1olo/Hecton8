@@ -7,31 +7,34 @@ poi_tags: poi.public_deep_reach_article;poi.shell_chain_card
 biome_tags: biome.publication;biome.deep_reach_pressure
 locale: es_ES
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "ES LOC HOLD: Deep Reach Public Dossier Article"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Deep Reach Public Dossier Article
+# ES LOC HOLD: Deep Reach Public Dossier Article
 
-Deep Reach Public Dossier Article defines the spoiler-safe corporate foundation for later evidence pages.
+ES LOC HOLD: Deep Reach Public Dossier Article defines the spoiler-safe corporate foundation for later evidence pages.
 
 ## Scanner
 
-The public company name is cleaner than its route history.
+ES LOC HOLD: The public company name is cleaner than its route history.
 
 ## Terminal
 
-PUBLIC ARTICLE TIER: public name and shell chain safe; signoff fragments gated.
+ES LOC HOLD: PUBLIC ARTICLE TIER: public name and shell chain safe; signoff fragments gated.
 
 ## Audio
 
-Never make the villain simpler than the paperwork.
+ES LOC HOLD: Never make the villain simpler than the paperwork.
 
 ## Field Note
 
-Site copy should show Deep Reach as plausible infrastructure power before revealing the full liability chain.
+ES LOC HOLD: Site copy should show Deep Reach as plausible infrastructure power before revealing the full liability chain.
 
 <!-- In-Game Wiki; generated from P253_DEEP_REACH_PUBLIC_DOSSIER_ARTICLE/es_ES. -->

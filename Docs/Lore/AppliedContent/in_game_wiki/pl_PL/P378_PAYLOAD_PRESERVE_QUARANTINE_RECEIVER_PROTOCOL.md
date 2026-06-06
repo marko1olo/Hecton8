@@ -7,31 +7,34 @@ poi_tags: poi.preserve_quarantine_socket;poi.ocean_machine_custody_mark
 biome_tags: biome.atlas_basin;biome.factory_temple
 locale: pl_PL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "PL LOC HOLD: Payload Preserve Quarantine Receiver Protocol"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Payload Preserve Quarantine Receiver Protocol
+# PL LOC HOLD: Payload Preserve Quarantine Receiver Protocol
 
-The preserve route protects the ocean-machine ecology from direct corporate reclamation, but quarantine can become another form of custody.
+PL LOC HOLD: The preserve route protects the ocean-machine ecology from direct corporate reclamation, but quarantine can become another form of custody.
 
 ## Scanner
 
-Preserve route. No clean owner. No clean release.
+PL LOC HOLD: Preserve route. No clean owner. No clean release.
 
 ## Terminal
 
-PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.
+PL LOC HOLD: PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.
 
 ## Audio
 
-Keeping it alive does not mean keeping it free.
+PL LOC HOLD: Keeping it alive does not mean keeping it free.
 
 ## Field Note
 
-Receiver record: preservation blocks direct corporate transfer while risking quarantine as another custody system.
+PL LOC HOLD: Receiver record: preservation blocks direct corporate transfer while risking quarantine as another custody system.
 
 <!-- In-Game Wiki; generated from P378_PAYLOAD_PRESERVE_QUARANTINE_RECEIVER_PROTOCOL/pl_PL. -->

@@ -7,31 +7,34 @@ poi_tags: poi.pressure_ceramic_tile;poi.deep_reach_kiln
 biome_tags: biome.industrial_shelf;biome.vent_forge
 locale: he_IL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Deep Reach Pressure Ceramics"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Deep Reach Pressure Ceramics
 
-Deep Reach Pressure Ceramics separates corporate engineering from pure evil. The company made working materials and then used that competence to justify lethal priorities.
+HE LOC HOLD: Deep Reach Pressure Ceramics separates corporate engineering from pure evil. The company made working materials and then used that competence to justify lethal priorities.
 
 ## Scanner
 
-Amplified resource. Human process made local minerals hold pressure better and fail meaner.
+HE LOC HOLD: Amplified resource. Human process made local minerals hold pressure better and fail meaner.
 
 ## Terminal
 
-RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.
+HE LOC HOLD: RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.
 
 ## Audio
 
-The company was good at building things. That is part of the crime.
+HE LOC HOLD: The company was good at building things. That is part of the crime.
 
 ## Field Note
 
-Deep Reach did create value. That is why the lie is tempting.
+HE LOC HOLD: Deep Reach did create value. That is why the lie is tempting.
 
 <!-- External Site; generated from P118_DEEP_REACH_PRESSURE_CERAMICS/he_IL. -->

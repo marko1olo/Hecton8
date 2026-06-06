@@ -7,31 +7,34 @@ poi_tags: poi.brine_pump_cathedral;poi.density_ladder_window
 biome_tags: biome.brine_canyon;biome.pump_station
 locale: id_ID
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "ID LOC HOLD: Brine Canyon Pump Cathedral POI Kit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Brine Canyon Pump Cathedral POI Kit
+# ID LOC HOLD: Brine Canyon Pump Cathedral POI Kit
 
-The brine pump cathedral is an example of HECTON-8's design rule: machines are navigation, survival and evidence at once.
+ID LOC HOLD: The brine pump cathedral is an example of HECTON-8's design rule: machines are navigation, survival and evidence at once.
 
 ## Scanner
 
-POI kit: pump cathedral reads brine density and old evacuation timing in the same room.
+ID LOC HOLD: POI kit: pump cathedral reads brine density and old evacuation timing in the same room.
 
 ## Terminal
 
-PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.
+ID LOC HOLD: PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.
 
 ## Audio
 
-The cathedral was built to move water. It kept records better than people did.
+ID LOC HOLD: The cathedral was built to move water. It kept records better than people did.
 
 ## Field Note
 
-POI evidence kit: Brine Canyon Pump Cathedral turns mid-depth industrial scale into the liability chain's physical landmark.
+ID LOC HOLD: POI evidence kit: Brine Canyon Pump Cathedral turns mid-depth industrial scale into the liability chain's physical landmark.
 
 <!-- External Site; generated from P388_BRINE_CANYON_PUMP_CATHEDRAL_POI_KIT/id_ID. -->

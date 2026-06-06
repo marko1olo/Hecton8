@@ -7,31 +7,34 @@ poi_tags: poi.worker_dossier_transcript;poi.pump_chief_voice_note
 biome_tags: biome.colony_infrastructure;biome.codex
 locale: uk_UA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "UK LOC HOLD: Worker Dossier Audio Transcript Seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Worker Dossier Audio Transcript Seed
+# UK LOC HOLD: Worker Dossier Audio Transcript Seed
 
-Worker transcripts make the colony human through procedure, fatigue, jokes and competence.
+UK LOC HOLD: Worker transcripts make the colony human through procedure, fatigue, jokes and competence.
 
 ## Scanner
 
-Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.
+UK LOC HOLD: Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.
 
 ## Terminal
 
-TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.
+UK LOC HOLD: TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.
 
 ## Audio
 
-Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.
+UK LOC HOLD: Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.
 
 ## Field Note
 
-Use for VO fragments, dossier pages and prop evidence.
+UK LOC HOLD: Use for VO fragments, dossier pages and prop evidence.
 
 <!-- In-Game Wiki; generated from P438_WORKER_DOSSIER_AUDIO_TRANSCRIPT_SEED/uk_UA. -->

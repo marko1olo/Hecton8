@@ -7,31 +7,34 @@ poi_tags: poi.ren_okoye_density_slate;poi.brine_route_pinboard
 biome_tags: biome.brine_canyon;biome.density_ladder
 locale: he_IL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "HE LOC HOLD: Ren Okoye/Brine Map"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Ren Okoye/Brine Map
+# HE LOC HOLD: Ren Okoye/Brine Map
 
-Ren Okoye's dossier explains why brine traversal belongs to worker knowledge. Density ladders, pinboards and pressure stamps turn a hostile fluid layer into an imperfect route network.
+HE LOC HOLD: Ren Okoye's dossier explains why brine traversal belongs to worker knowledge. Density ladders, pinboards and pressure stamps turn a hostile fluid layer into an imperfect route network.
 
 ## Scanner
 
-Dossier: Ren Okoye. Slate and pinboard show brine as a road.
+HE LOC HOLD: Dossier: Ren Okoye. Slate and pinboard show brine as a road.
 
 ## Terminal
 
-REN OKOYE/BRINE MAP. Safe currents moved faster than permits; legal routes lagged water.
+HE LOC HOLD: REN OKOYE/BRINE MAP. Safe currents moved faster than permits; legal routes lagged water.
 
 ## Audio
 
-Okoye drew roads that moved while management argued about permission.
+HE LOC HOLD: Okoye drew roads that moved while management argued about permission.
 
 ## Field Note
 
-Brine approach evidence: scanner-first cartography turns salt gradients, route marks, and worker traces into Ren Okoye's record.
+HE LOC HOLD: Brine approach evidence: scanner-first cartography turns salt gradients, route marks, and worker traces into Ren Okoye's record.
 
 <!-- In-Game Wiki; generated from P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER/he_IL. -->

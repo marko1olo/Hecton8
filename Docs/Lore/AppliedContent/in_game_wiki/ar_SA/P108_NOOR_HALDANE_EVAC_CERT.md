@@ -7,31 +7,34 @@ poi_tags: poi.evac_cert_hold;poi.quarantine_release_panel
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: ar_SA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Noor Haldane Evac Cert"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Noor Haldane Evac Cert
 
-Noor Haldane is the legal/certification voice behind evacuation holds. She does not need to hate workers. She only needs to make extraction wait for quarantine, carrier custody and external review while water, pressure and oxygen keep moving.
+AR LOC HOLD: Noor Haldane is the legal/certification voice behind evacuation holds. She does not need to hate workers. She only needs to make extraction wait for quarantine, carrier custody and external review while water, pressure and oxygen keep moving.
 
 ## Scanner
 
-Certification hold. N. Haldane kept the route legal while the route died.
+AR LOC HOLD: Certification hold. N. Haldane kept the route legal while the route died.
 
 ## Terminal
 
-HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.
+AR LOC HOLD: HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.
 
 ## Audio
 
-The door was not locked by fear. It was locked by compliance.
+AR LOC HOLD: The door was not locked by fear. It was locked by compliance.
 
 ## Field Note
 
-This is the paper signature players should hate.
+AR LOC HOLD: This is the paper signature players should hate.
 
 <!-- In-Game Wiki; generated from P108_NOOR_HALDANE_EVAC_CERT/ar_SA. -->

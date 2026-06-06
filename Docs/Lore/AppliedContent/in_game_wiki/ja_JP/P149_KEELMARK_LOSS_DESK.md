@@ -7,31 +7,34 @@ poi_tags: poi.keelmark_loss_desk_stamp;poi.unrecovered_body_category
 biome_tags: biome.black_keel_orbit;biome.shallow_annex
 locale: ja_JP
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Keelmark Loss Desk"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Keelmark Loss Desk
 
-Keelmark Loss Desk makes the cover-up procedural. Bodies vanish into accounting before they vanish into the ocean.
+JP LOC HOLD: Keelmark Loss Desk makes the cover-up procedural. Bodies vanish into accounting before they vanish into the ocean.
 
 ## Scanner
 
-Insurance did not hide the dead. It renamed them until nobody had to recover them.
+JP LOC HOLD: Insurance did not hide the dead. It renamed them until nobody had to recover them.
 
 ## Terminal
 
-LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.
+JP LOC HOLD: LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.
 
 ## Audio
 
-The ledger is dry because the room was not.
+JP LOC HOLD: The ledger is dry because the room was not.
 
 ## Field Note
 
-A loss category is a grave with better stationery.
+JP LOC HOLD: A loss category is a grave with better stationery.
 
 <!-- In-Game Wiki; generated from P149_KEELMARK_LOSS_DESK/ja_JP. -->

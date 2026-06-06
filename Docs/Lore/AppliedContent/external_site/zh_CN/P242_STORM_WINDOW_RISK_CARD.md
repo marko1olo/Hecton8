@@ -7,31 +7,34 @@ poi_tags: poi.aegir_window_timer;poi.storm_clause_card
 biome_tags: biome.aegir_orbital_pressure;biome.surface_storm
 locale: zh_CN
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "CN LOC HOLD: Storm Window Risk Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Storm Window Risk Card
+# CN LOC HOLD: Storm Window Risk Card
 
-Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows.
+CN LOC HOLD: Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows.
 
 ## Scanner
 
-The storm card marks what the carrier can hear and what it will pretend not to hear.
+CN LOC HOLD: The storm card marks what the carrier can hear and what it will pretend not to hear.
 
 ## Terminal
 
-WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.
+CN LOC HOLD: WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.
 
 ## Audio
 
-You signed for the cheap sky.
+CN LOC HOLD: You signed for the cheap sky.
 
 ## Field Note
 
-Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.
+CN LOC HOLD: Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.
 
 <!-- External Site; generated from P242_STORM_WINDOW_RISK_CARD/zh_CN. -->

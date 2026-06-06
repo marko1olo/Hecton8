@@ -7,31 +7,34 @@ poi_tags: poi.shell_clamp_cluster;poi.reef_clamp_metal_edge
 biome_tags: biome.photic_shelf;biome.cable_reef
 locale: nl_NL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "NL LOC HOLD: Shell Clamp Reef"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Shell Clamp Reef
+# NL LOC HOLD: Shell Clamp Reef
 
-Shell Clamp Reef shows the first boundary blur: native organisms colonize metal before Atlas turns that habit into repair logic.
+NL LOC HOLD: Shell Clamp Reef shows the first boundary blur: native organisms colonize metal before Atlas turns that habit into repair logic.
 
 ## Scanner
 
-Shell clamps bind to rock, cable and capsule plating; the shallow reef already accepts machinery as habitat.
+NL LOC HOLD: Shell clamps bind to rock, cable and capsule plating; the shallow reef already accepts machinery as habitat.
 
 ## Terminal
 
-REEF NOTE: shell clamp adhesion rises near worn cable jackets and exposed pressure-glass seams.
+NL LOC HOLD: REEF NOTE: shell clamp adhesion rises near worn cable jackets and exposed pressure-glass seams.
 
 ## Audio
 
-The reef has learned the shape of bolts.
+NL LOC HOLD: The reef has learned the shape of bolts.
 
 ## Field Note
 
-Clamp reef: route marker, harvestable shell, early proof that metal is not alien to the ecology anymore.
+NL LOC HOLD: Clamp reef: route marker, harvestable shell, early proof that metal is not alien to the ecology anymore.
 
 <!-- In-Game Wiki; generated from P224_SHELL_CLAMP_REEF/nl_NL. -->

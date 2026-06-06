@@ -7,31 +7,34 @@ poi_tags: poi.stack_limit_table_draft;poi.containment_case_label
 biome_tags: biome.resource_tables;biome.claim_admin
 locale: de_DE
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "DE LOC HOLD: Stack Limit Value Draft Rows"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Stack Limit Value Draft Rows
+# DE LOC HOLD: Stack Limit Value Draft Rows
 
-Inventory pressure is part of the fiction. Critical samples should be few, heavy in custody, and hard to mix across pressure or contamination class.
+DE LOC HOLD: Inventory pressure is part of the fiction. Critical samples should be few, heavy in custody, and hard to mix across pressure or contamination class.
 
 ## Scanner
 
-Table draft: stack limits must bind vessel type, pressure rating, contamination stage and lien mass.
+DE LOC HOLD: Table draft: stack limits must bind vessel type, pressure rating, contamination stage and lien mass.
 
 ## Terminal
 
-STACK DRAFT: scrap can compress; sealed samples cannot. Pressure vessels, certified cases and carrier mass windows own the row.
+DE LOC HOLD: STACK DRAFT: scrap can compress; sealed samples cannot. Pressure vessels, certified cases and carrier mass windows own the row.
 
 ## Audio
 
-Black Keel accounting: a gram outside custody can weigh like a tonne inside the claim.
+DE LOC HOLD: Black Keel accounting: a gram outside custody can weigh like a tonne inside the claim.
 
 ## Field Note
 
-Draft bands: loose scrap can stack high; rated seals stack by kit; brine lots stack by sealed jar; blue debt stacks by pressure case and custody chain only.
+DE LOC HOLD: Draft bands: loose scrap can stack high; rated seals stack by kit; brine lots stack by sealed jar; blue debt stacks by pressure case and custody chain only.
 
 <!-- In-Game Wiki; generated from P442_STACK_LIMIT_VALUE_DRAFT_ROWS/de_DE. -->

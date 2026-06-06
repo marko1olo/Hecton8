@@ -7,31 +7,34 @@ poi_tags: poi.preserve_quarantine_socket;poi.ocean_machine_custody_mark
 biome_tags: biome.atlas_basin;biome.factory_temple
 locale: ko_KR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "KO LOC HOLD: Payload Preserve Quarantine Receiver Protocol"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Payload Preserve Quarantine Receiver Protocol
+# KO LOC HOLD: Payload Preserve Quarantine Receiver Protocol
 
-The strongest HECTON-8 endings should save something real while leaving visible damage, delay or uncertainty.
+KO LOC HOLD: The strongest HECTON-8 endings should save something real while leaving visible damage, delay or uncertainty.
 
 ## Scanner
 
-Preserve route. No clean owner. No clean release.
+KO LOC HOLD: Preserve route. No clean owner. No clean release.
 
 ## Terminal
 
-PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.
+KO LOC HOLD: PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.
 
 ## Audio
 
-Keeping it alive does not mean keeping it free.
+KO LOC HOLD: Keeping it alive does not mean keeping it free.
 
 ## Field Note
 
-Receiver record: preservation blocks direct corporate transfer while risking quarantine as another custody system.
+KO LOC HOLD: Receiver record: preservation blocks direct corporate transfer while risking quarantine as another custody system.
 
 <!-- External Site; generated from P378_PAYLOAD_PRESERVE_QUARANTINE_RECEIVER_PROTOCOL/ko_KR. -->

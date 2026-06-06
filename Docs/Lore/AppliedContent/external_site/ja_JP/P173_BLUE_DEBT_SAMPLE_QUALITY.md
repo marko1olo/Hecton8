@@ -7,31 +7,34 @@ poi_tags: poi.blue_debt_quality_meter;poi.pressure_glass_casket
 biome_tags: biome.brine_canyon;biome.atlas_basin
 locale: ja_JP
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "JA LOC HOLD: Blue Debt Sample Quality"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Blue Debt Sample Quality
+# JA LOC HOLD: Blue Debt Sample Quality
 
-Blue Debt Sample Quality defines payout and evidence classes.
+JA LOC HOLD: Blue Debt Sample Quality defines payout and evidence classes.
 
 ## Scanner
 
-Blue debt quality is value, risk and evidence in one number.
+JA LOC HOLD: Blue debt quality is value, risk and evidence in one number.
 
 ## Terminal
 
-QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.
+JA LOC HOLD: QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.
 
 ## Audio
 
-The more it is worth, the less it is only loot.
+JA LOC HOLD: The more it is worth, the less it is only loot.
 
 ## Field Note
 
-Quality should affect payout, containment and ending pressure.
+JA LOC HOLD: Quality should affect payout, containment and ending pressure.
 
 <!-- External Site; generated from P173_BLUE_DEBT_SAMPLE_QUALITY/ja_JP. -->

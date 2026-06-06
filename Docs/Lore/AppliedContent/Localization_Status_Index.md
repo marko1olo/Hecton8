@@ -10,20 +10,20 @@ Status meanings:
 
 Locale rows:
 - `en_US`: source_authority=464, draft_machine_or_llm=0, draft_marker_rows=0, packet_rows=464, exported_pages=878, direction=ltr
-- `ru_RU`: source_authority=0, draft_machine_or_llm=464, draft_marker_rows=202, packet_rows=464, exported_pages=878, direction=ltr
-- `ja_JP`: source_authority=0, draft_machine_or_llm=464, draft_marker_rows=420, packet_rows=464, exported_pages=878, direction=ltr
-- `zh_CN`: source_authority=0, draft_machine_or_llm=464, draft_marker_rows=420, packet_rows=464, exported_pages=878, direction=ltr
-- `fr_FR`: source_authority=0, draft_machine_or_llm=464, draft_marker_rows=415, packet_rows=464, exported_pages=878, direction=ltr
-- `es_ES`: source_authority=0, draft_machine_or_llm=464, draft_marker_rows=415, packet_rows=464, exported_pages=878, direction=ltr
-- `de_DE`: source_authority=0, draft_machine_or_llm=464, draft_marker_rows=415, packet_rows=464, exported_pages=878, direction=ltr
-- `pl_PL`: source_authority=0, draft_machine_or_llm=464, draft_marker_rows=415, packet_rows=464, exported_pages=878, direction=ltr
-- `uk_UA`: source_authority=0, draft_machine_or_llm=464, draft_marker_rows=415, packet_rows=464, exported_pages=878, direction=ltr
-- `ar_SA`: source_authority=0, draft_machine_or_llm=464, draft_marker_rows=415, packet_rows=464, exported_pages=878, direction=rtl
-- `id_ID`: source_authority=0, draft_machine_or_llm=464, draft_marker_rows=420, packet_rows=464, exported_pages=878, direction=ltr
-- `ko_KR`: source_authority=0, draft_machine_or_llm=464, draft_marker_rows=415, packet_rows=464, exported_pages=878, direction=ltr
-- `he_IL`: source_authority=0, draft_machine_or_llm=464, draft_marker_rows=415, packet_rows=464, exported_pages=878, direction=rtl
-- `pt_BR`: source_authority=0, draft_machine_or_llm=464, draft_marker_rows=415, packet_rows=464, exported_pages=878, direction=ltr
-- `nl_NL`: source_authority=0, draft_machine_or_llm=464, draft_marker_rows=420, packet_rows=464, exported_pages=878, direction=ltr
+- `ru_RU`: source_authority=0, draft_machine_or_llm=464, draft_marker_rows=0, packet_rows=464, exported_pages=878, direction=ltr
+- `ja_JP`: source_authority=0, draft_machine_or_llm=464, draft_marker_rows=0, packet_rows=464, exported_pages=878, direction=ltr
+- `zh_CN`: source_authority=0, draft_machine_or_llm=464, draft_marker_rows=0, packet_rows=464, exported_pages=878, direction=ltr
+- `fr_FR`: source_authority=0, draft_machine_or_llm=464, draft_marker_rows=0, packet_rows=464, exported_pages=878, direction=ltr
+- `es_ES`: source_authority=0, draft_machine_or_llm=464, draft_marker_rows=0, packet_rows=464, exported_pages=878, direction=ltr
+- `de_DE`: source_authority=0, draft_machine_or_llm=464, draft_marker_rows=0, packet_rows=464, exported_pages=878, direction=ltr
+- `pl_PL`: source_authority=0, draft_machine_or_llm=464, draft_marker_rows=0, packet_rows=464, exported_pages=878, direction=ltr
+- `uk_UA`: source_authority=0, draft_machine_or_llm=464, draft_marker_rows=0, packet_rows=464, exported_pages=878, direction=ltr
+- `ar_SA`: source_authority=0, draft_machine_or_llm=464, draft_marker_rows=0, packet_rows=464, exported_pages=878, direction=rtl
+- `id_ID`: source_authority=0, draft_machine_or_llm=464, draft_marker_rows=5, packet_rows=464, exported_pages=878, direction=ltr
+- `ko_KR`: source_authority=0, draft_machine_or_llm=464, draft_marker_rows=0, packet_rows=464, exported_pages=878, direction=ltr
+- `he_IL`: source_authority=0, draft_machine_or_llm=464, draft_marker_rows=0, packet_rows=464, exported_pages=878, direction=rtl
+- `pt_BR`: source_authority=0, draft_machine_or_llm=464, draft_marker_rows=0, packet_rows=464, exported_pages=878, direction=ltr
+- `nl_NL`: source_authority=0, draft_machine_or_llm=464, draft_marker_rows=5, packet_rows=464, exported_pages=878, direction=ltr
 
 Operational rule: do not encode native-review state inside player-visible prose.
 Use `flags`/frontmatter/status index for routing, QA and publication gates.

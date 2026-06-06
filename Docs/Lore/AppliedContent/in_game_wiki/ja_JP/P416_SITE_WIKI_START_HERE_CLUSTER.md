@@ -7,31 +7,34 @@ poi_tags: poi.site_start_here_nav;poi.codex_front_index
 biome_tags: biome.publication;biome.codex
 locale: ja_JP
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 1
+title: "JA LOC HOLD: Start Here: HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Start Here: HECTON-8
+# JA LOC HOLD: Start Here: HECTON-8
 
-Start here: contract, player role, HECTON-8 survival pressure and the first contradiction in the Deep Reach story.
+JA LOC HOLD: Start here: contract, player role, HECTON-8 survival pressure and the first contradiction in the Deep Reach story.
 
 ## Scanner
 
-Publication hub: premise, player role, first constraints and the first Deep Reach lie.
+JA LOC HOLD: Publication hub: premise, player role, first constraints and the first Deep Reach lie.
 
 ## Terminal
 
-SITE NAV: contract approach, former Deep Reach specialist, debt-bound Marauder, damaged capsule, no family hook, first Atlas repair trace.
+JA LOC HOLD: SITE NAV: contract approach, former Deep Reach specialist, debt-bound Marauder, damaged capsule, no family hook, first Atlas repair trace.
 
 ## Audio
 
-You came for salvage. The ocean will make that motive too small.
+JA LOC HOLD: You came for salvage. The ocean will make that motive too small.
 
 ## Field Note
 
-Spoiler-light navigation starts here: premise first, evidence second, endings only after the player earns them.
+JA LOC HOLD: Spoiler-light navigation starts here: premise first, evidence second, endings only after the player earns them.
 
 <!-- In-Game Wiki; generated from P416_SITE_WIKI_START_HERE_CLUSTER/ja_JP. -->

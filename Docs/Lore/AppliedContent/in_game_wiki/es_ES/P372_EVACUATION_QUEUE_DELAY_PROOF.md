@@ -7,31 +7,34 @@ poi_tags: poi.evacuation_queue_clock;poi.manual_witness_slot
 biome_tags: biome.colony;biome.safe_module
 locale: es_ES
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "ES LOC HOLD: Evacuation Queue Delay Proof"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Evacuation Queue Delay Proof
+# ES LOC HOLD: Evacuation Queue Delay Proof
 
-Evacuation proof should be physical: clocks, sealed witness fields, delayed gates and rooms that drowned while authorization remained pending.
+ES LOC HOLD: Evacuation proof should be physical: clocks, sealed witness fields, delayed gates and rooms that drowned while authorization remained pending.
 
 ## Scanner
 
-Queue clock stopped before route collapse. Delay, then water.
+ES LOC HOLD: Queue clock stopped before route collapse. Delay, then water.
 
 ## Terminal
 
-EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.
+ES LOC HOLD: EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.
 
 ## Audio
 
-They did not fail to save everyone. They waited until saving anyone became harder.
+ES LOC HOLD: They did not fail to save everyone. They waited until saving anyone became harder.
 
 ## Field Note
 
-Use in drowned evacuation corridors and triage rooms.
+ES LOC HOLD: Use in drowned evacuation corridors and triage rooms.
 
 <!-- In-Game Wiki; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/es_ES. -->

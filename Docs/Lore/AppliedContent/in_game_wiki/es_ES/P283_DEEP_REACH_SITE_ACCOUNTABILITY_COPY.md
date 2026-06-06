@@ -7,31 +7,34 @@ poi_tags: poi.deep_reach_public_dossier_box;poi.liability_timeline_teaser
 biome_tags: biome.publication;biome.deep_reach
 locale: es_ES
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "ES LOC HOLD: Deep Reach Site Accountability Copy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Deep Reach Site Accountability Copy
+# ES LOC HOLD: Deep Reach Site Accountability Copy
 
-Deep Reach Site Accountability Copy keeps the public article honest without flattening the cause.
+ES LOC HOLD: Deep Reach Site Accountability Copy keeps the public article honest without flattening the cause.
 
 ## Scanner
 
-Deep Reach copy: not cartoon villains; culpable weighting under real physics.
+ES LOC HOLD: Deep Reach copy: not cartoon villains; culpable weighting under real physics.
 
 ## Terminal
 
-PUBLIC DOSSIER LOCK: say culpable weighting; do not say omnipotent conspiracy.
+ES LOC HOLD: PUBLIC DOSSIER LOCK: say culpable weighting; do not say omnipotent conspiracy.
 
 ## Audio
 
-They did not order the water to rise. They made the exit wait.
+ES LOC HOLD: They did not order the water to rise. They made the exit wait.
 
 ## Field Note
 
-Use the public lie as contrast: real tide, real failure, missing weighting layer, missing delayed rescue chain.
+ES LOC HOLD: Use the public lie as contrast: real tide, real failure, missing weighting layer, missing delayed rescue chain.
 
 <!-- In-Game Wiki; generated from P283_DEEP_REACH_SITE_ACCOUNTABILITY_COPY/es_ES. -->

@@ -7,31 +7,34 @@ poi_tags: poi.material_payout_record;poi.keelmark_receipt
 biome_tags: biome.ending;biome.contract
 locale: zh_CN
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "CN LOC HOLD: Material Payout Record"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Material Payout Record
+# CN LOC HOLD: Material Payout Record
 
-Material Payout Record defines the bitter successful salvage ending.
+CN LOC HOLD: Material Payout Record defines the bitter successful salvage ending.
 
 ## Scanner
 
-Paid. Not cleared.
+CN LOC HOLD: Paid. Not cleared.
 
 ## Terminal
 
-ENDING RECORD: material payout accepted; public truth absent; claim custody closed.
+CN LOC HOLD: ENDING RECORD: material payout accepted; public truth absent; claim custody closed.
 
 ## Audio
 
-The receipt is clean because it ignores the room.
+CN LOC HOLD: The receipt is clean because it ignores the room.
 
 ## Field Note
 
-Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.
+CN LOC HOLD: Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.
 
 <!-- In-Game Wiki; generated from P271_MATERIAL_PAYOUT_RECORD/zh_CN. -->

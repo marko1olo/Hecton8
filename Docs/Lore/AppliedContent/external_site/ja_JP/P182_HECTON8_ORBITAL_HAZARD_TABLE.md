@@ -7,31 +7,34 @@ poi_tags: poi.eclipse_window_chart;poi.radiation_shutter_clock
 biome_tags: biome.black_keel_orbit;biome.upper_atmosphere
 locale: ja_JP
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "HECTON-8 Orbital Hazard Table"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # HECTON-8 Orbital Hazard Table
 
-HECTON-8 Orbital Hazard Table turns orbital mechanics into extraction pressure.
+JP LOC HOLD: HECTON-8 Orbital Hazard Table turns orbital mechanics into extraction pressure.
 
 ## Scanner
 
-HECTON-8 extraction is limited by eclipse, radiation, relay shutter and ice-scatter windows.
+JP LOC HOLD: HECTON-8 extraction is limited by eclipse, radiation, relay shutter and ice-scatter windows.
 
 ## Terminal
 
-ORBITAL HAZARD TABLE: eclipse blackout, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows must be solved before ascent.
+JP LOC HOLD: ORBITAL HAZARD TABLE: eclipse blackout, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows must be solved before ascent.
 
 ## Audio
 
-The sky is not empty. It is a machine with bad timing.
+JP LOC HOLD: The sky is not empty. It is a machine with bad timing.
 
 ## Field Note
 
-This is not a convenient rescue delay; it is the physical timetable that makes escape engineering matter.
+JP LOC HOLD: This is not a convenient rescue delay; it is the physical timetable that makes escape engineering matter.
 
 <!-- External Site; generated from P182_HECTON8_ORBITAL_HAZARD_TABLE/ja_JP. -->

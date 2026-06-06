@@ -7,31 +7,34 @@ poi_tags: poi.shallow_annex_p63;poi.first_bilge_room
 biome_tags: biome.photic_shelf;biome.shallow_annex
 locale: he_IL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "HE LOC HOLD: Photic Shelf Survival Act"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Photic Shelf Survival Act
+# HE LOC HOLD: Photic Shelf Survival Act
 
-The shallows are deliberately vivid. HECTON-8 is not a dark void; the darkness comes from pressure, failure and depth.
+HE LOC HOLD: The shallows are deliberately vivid. HECTON-8 is not a dark void; the darkness comes from pressure, failure and depth.
 
 ## Scanner
 
-Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
+HE LOC HOLD: Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
 
 ## Terminal
 
-SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
+HE LOC HOLD: SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
 
 ## Audio
 
-The shallow water is not safe. It is only readable.
+HE LOC HOLD: The shallow water is not safe. It is only readable.
 
 ## Field Note
 
-Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
+HE LOC HOLD: Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
 
 <!-- External Site; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/he_IL. -->

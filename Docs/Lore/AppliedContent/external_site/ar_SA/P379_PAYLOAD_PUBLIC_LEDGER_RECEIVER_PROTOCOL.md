@@ -7,31 +7,34 @@ poi_tags: poi.public_ledger_uplink;poi.witness_hash_stack
 biome_tags: biome.atlas_basin;biome.claim_route
 locale: ar_SA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "AR LOC HOLD: Payload Public Ledger Receiver Protocol"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Payload Public Ledger Receiver Protocol
+# AR LOC HOLD: Payload Public Ledger Receiver Protocol
 
-Public truth in HECTON-8 is not a clean win. It breaks silence, but the player loses control over who uses the evidence.
+AR LOC HOLD: Public truth in HECTON-8 is not a clean win. It breaks silence, but the player loses control over who uses the evidence.
 
 ## Scanner
 
-Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.
+AR LOC HOLD: Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.
 
 ## Terminal
 
-PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.
+AR LOC HOLD: PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.
 
 ## Audio
 
-Once it leaves, it is no longer your truth. That is the point and the cost.
+AR LOC HOLD: Once it leaves, it is no longer your truth. That is the point and the cost.
 
 ## Field Note
 
-Receiver record: public ledger release moves proof outside Deep Reach custody and outside player control.
+AR LOC HOLD: Receiver record: public ledger release moves proof outside Deep Reach custody and outside player control.
 
 <!-- External Site; generated from P379_PAYLOAD_PUBLIC_LEDGER_RECEIVER_PROTOCOL/ar_SA. -->

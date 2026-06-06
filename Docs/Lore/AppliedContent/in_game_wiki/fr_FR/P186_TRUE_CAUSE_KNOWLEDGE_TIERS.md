@@ -7,31 +7,34 @@ poi_tags: poi.knowledge_tier_matrix;poi.risk_margin_stamp
 biome_tags: biome.claim_admin;biome.worker_archive
 locale: fr_FR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "True Cause Knowledge Tiers"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # True Cause Knowledge Tiers
 
-Deep Reach did not need one mastermind. The disaster became fatal through distributed categories and delayed authority.
+FR LOC HOLD: Deep Reach did not need one mastermind. The disaster became fatal through distributed categories and delayed authority.
 
 ## Scanner
 
-True-cause knowledge was tiered across risk, Atlas weighting, evacuation law, insurance and recovery offices.
+FR LOC HOLD: True-cause knowledge was tiered across risk, Atlas weighting, evacuation law, insurance and recovery offices.
 
 ## Terminal
 
-KNOWLEDGE TIERS: field staff saw tide anomalies; risk office accepted tail margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth.
+FR LOC HOLD: KNOWLEDGE TIERS: field staff saw tide anomalies; risk office accepted tail margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth.
 
 ## Audio
 
-No one wrote murder. They wrote columns until rescue lost.
+FR LOC HOLD: No one wrote murder. They wrote columns until rescue lost.
 
 ## Field Note
 
-This keeps Deep Reach guilty without making every worker omniscient or every executive a cartoon villain.
+FR LOC HOLD: This keeps Deep Reach guilty without making every worker omniscient or every executive a cartoon villain.
 
 <!-- In-Game Wiki; generated from P186_TRUE_CAUSE_KNOWLEDGE_TIERS/fr_FR. -->

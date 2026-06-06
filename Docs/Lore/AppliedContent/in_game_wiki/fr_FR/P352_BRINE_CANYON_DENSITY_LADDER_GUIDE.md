@@ -7,31 +7,34 @@ poi_tags: poi.brine_density_slate;poi.current_shelf_marker
 biome_tags: biome.brine;biome.geology
 locale: fr_FR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "FR LOC HOLD: Brine Canyon Density Ladder Guide"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Brine Canyon Density Ladder Guide
+# FR LOC HOLD: Brine Canyon Density Ladder Guide
 
-Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.
+FR LOC HOLD: Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.
 
 ## Scanner
 
-Brine canyon ladder detected. Density layers turn depth into route planning.
+FR LOC HOLD: Brine canyon ladder detected. Density layers turn depth into route planning.
 
 ## Terminal
 
-FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.
+FR LOC HOLD: FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.
 
 ## Audio
 
-A canyon is a staircase if your hull can pay for each step.
+FR LOC HOLD: A canyon is a staircase if your hull can pay for each step.
 
 ## Field Note
 
-Use for scanner tutorials and resource route articles.
+FR LOC HOLD: Use for scanner tutorials and resource route articles.
 
 <!-- In-Game Wiki; generated from P352_BRINE_CANYON_DENSITY_LADDER_GUIDE/fr_FR. -->

@@ -7,31 +7,34 @@ poi_tags: poi.biofilm_cable_skin;poi.green_copper_sheen
 biome_tags: biome.cable_reef;biome.industrial_shelf
 locale: uk_UA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "UA LOC HOLD: Conductive Biofilm Cable Skin"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Conductive Biofilm Cable Skin
+# UA LOC HOLD: Conductive Biofilm Cable Skin
 
-Conductive Biofilm Cable Skin makes Atlas' repair network concrete. The ocean does not become a mind; biology becomes an electrical, chemical and acoustic maintenance surface that a broken industrial AI can misuse.
+UA LOC HOLD: Conductive Biofilm Cable Skin makes Atlas' repair network concrete. The ocean does not become a mind; biology becomes an electrical, chemical and acoustic maintenance surface that a broken industrial AI can misuse.
 
 ## Scanner
 
-Wet biofilm on cable jackets carries weak charge, slows corrosion and confuses old Deep Reach diagnostics.
+UA LOC HOLD: Wet biofilm on cable jackets carries weak charge, slows corrosion and confuses old Deep Reach diagnostics.
 
 ## Terminal
 
-ATLAS TRACE: biofilm conductivity below command threshold, above diagnostic-noise threshold. Treat as maintenance medium.
+UA LOC HOLD: ATLAS TRACE: biofilm conductivity below command threshold, above diagnostic-noise threshold. Treat as maintenance medium.
 
 ## Audio
 
-The cable did not heal. Something learned to live where the insulation failed.
+UA LOC HOLD: The cable did not heal. Something learned to live where the insulation failed.
 
 ## Field Note
 
-This is not infection magic. It is a living conductive skin that Atlas can abuse as a repair surface.
+UA LOC HOLD: This is not infection magic. It is a living conductive skin that Atlas can abuse as a repair surface.
 
 <!-- External Site; generated from P231_CONDUCTIVE_BIOFILM_CABLE_SKIN/uk_UA. -->

@@ -7,31 +7,34 @@ poi_tags: poi.hatch_seal;poi.airlock_frame
 biome_tags: biome.drowned_colony;biome.service_corridor
 locale: ja_JP
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Hatch Seal Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Hatch Seal Ledger
 
-Hatch Seal Ledger turns doors into narrative machines. Each seal stores pressure, timing and route consequences instead of acting as a simple locked gate.
+JP LOC HOLD: Hatch Seal Ledger turns doors into narrative machines. Each seal stores pressure, timing and route consequences instead of acting as a simple locked gate.
 
 ## Scanner
 
-The hatch keeps a ledger of every bad closure: pressure cuts, manual overrides and people who closed the wrong side.
+JP LOC HOLD: The hatch keeps a ledger of every bad closure: pressure cuts, manual overrides and people who closed the wrong side.
 
 ## Terminal
 
-Seal ledger: gasket deformation exceeds tolerance. Manual closure accepted under evacuation override. Return-side access marked conditional.
+JP LOC HOLD: Seal ledger: gasket deformation exceeds tolerance. Manual closure accepted under evacuation override. Return-side access marked conditional.
 
 ## Audio
 
-The hatch remembers who stayed on which side.
+JP LOC HOLD: The hatch remembers who stayed on which side.
 
 ## Field Note
 
-A sealed hatch is not safety. It is a decision with a timestamp.
+JP LOC HOLD: A sealed hatch is not safety. It is a decision with a timestamp.
 
 <!-- In-Game Wiki; generated from P047_HATCH_SEAL_LEDGER/ja_JP. -->

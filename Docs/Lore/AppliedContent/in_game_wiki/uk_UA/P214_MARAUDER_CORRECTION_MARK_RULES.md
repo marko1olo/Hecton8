@@ -7,31 +7,34 @@ poi_tags: poi.marauder_correction_mark;poi.claim_note_overlay
 biome_tags: biome.claim_cache;biome.worker_locker
 locale: uk_UA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Marauder Correction Mark Rules"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Marauder Correction Mark Rules
 
-Marauder Correction Mark Rules make replay evidence feel touched by other claim workers without breaking canon.
+UA LOC HOLD: Marauder Correction Mark Rules make replay evidence feel touched by other claim workers without breaking canon.
 
 ## Scanner
 
-A correction mark can rescue a name or contaminate a claim.
+UA LOC HOLD: A correction mark can rescue a name or contaminate a claim.
 
 ## Terminal
 
-CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.
+UA LOC HOLD: CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.
 
 ## Audio
 
-Somebody came before you and still failed to leave clean.
+UA LOC HOLD: Somebody came before you and still failed to leave clean.
 
 ## Field Note
 
-Marks: preserve name, challenge category, warn route, price sample, hide witness, mark debt. Keep handwriting functional.
+UA LOC HOLD: Marks: preserve name, challenge category, warn route, price sample, hide witness, mark debt. Keep handwriting functional.
 
 <!-- In-Game Wiki; generated from P214_MARAUDER_CORRECTION_MARK_RULES/uk_UA. -->

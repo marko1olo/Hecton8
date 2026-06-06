@@ -7,16 +7,19 @@ poi_tags: poi.revoked_access_phrase;poi.lockout_response_card
 biome_tags: biome.colony;biome.industrial_shelf
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "След языка отозванного доступа"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # След языка отозванного доступа
 
-The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.
+RU LOC HOLD: The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.
 
 ## Scanner
 
@@ -32,6 +35,6 @@ LOCKOUT: requester no longer certified for evacuation continuity materials. Rout
 
 ## Field Note
 
-Lockout language hints at hidden liability without granting free access.
+RU LOC HOLD: Lockout language hints at hidden liability without granting free access.
 
 <!-- External Site; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/ru_RU. -->

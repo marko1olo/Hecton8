@@ -7,31 +7,34 @@ poi_tags: poi.photic_mat_scan_patch;poi.oxygen_color_sample
 biome_tags: biome.photic_shelf;biome.ecology
 locale: zh_CN
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "ZH LOC HOLD: Photic Mat Codex Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Photic Mat Codex Card
+# ZH LOC HOLD: Photic Mat Codex Card
 
-Photic Mat Codex Card defines the first living system as beauty, oxygen and route risk.
+ZH LOC HOLD: Photic Mat Codex Card defines the first living system as beauty, oxygen and route risk.
 
 ## Scanner
 
-Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.
+ZH LOC HOLD: Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.
 
 ## Terminal
 
-SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.
+ZH LOC HOLD: SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.
 
 ## Audio
 
-Light here is work, not comfort.
+ZH LOC HOLD: Light here is work, not comfort.
 
 ## Field Note
 
-Codex card should be bright, useful and slightly unstable; not horror-only.
+ZH LOC HOLD: Codex card should be bright, useful and slightly unstable; not horror-only.
 
 <!-- In-Game Wiki; generated from P291_PHOTIC_MAT_CODEX_CARD/zh_CN. -->

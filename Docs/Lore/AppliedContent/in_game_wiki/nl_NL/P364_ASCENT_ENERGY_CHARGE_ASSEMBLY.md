@@ -7,31 +7,34 @@ poi_tags: poi.ascent_charge_cradle;poi.vent_forge_heat_cell
 biome_tags: biome.brine_canyon;biome.abyssal_machine_field
 locale: nl_NL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "NL LOC HOLD: Ascent Energy Charge Assembly"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Ascent Energy Charge Assembly
+# NL LOC HOLD: Ascent Energy Charge Assembly
 
-The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.
+NL LOC HOLD: The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.
 
 ## Scanner
 
-Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.
+NL LOC HOLD: Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.
 
 ## Terminal
 
-ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.
+NL LOC HOLD: ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.
 
 ## Audio
 
-Every gram here is either escape, evidence, or money. You do not get all three.
+NL LOC HOLD: Every gram here is either escape, evidence, or money. You do not get all three.
 
 ## Field Note
 
-The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout.
+NL LOC HOLD: The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout.
 
 <!-- In-Game Wiki; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/nl_NL. -->

@@ -7,31 +7,34 @@ poi_tags: poi.brine_canyon_pump_cathedral;poi.sensor_margin_room
 biome_tags: biome.brine_canyon;biome.industrial_shelf
 locale: nl_NL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "NL LOC HOLD: Brine Canyon Liability Act"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Brine Canyon Liability Act
+# NL LOC HOLD: Brine Canyon Liability Act
 
-Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.
+NL LOC HOLD: Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.
 
 ## Scanner
 
-Act gate: brine canyon. Density, damaged clocks and accepted margins become evidence.
+NL LOC HOLD: Act gate: brine canyon. Density, damaged clocks and accepted margins become evidence.
 
 ## Terminal
 
-LIABILITY ACT: match margin logs, evacuation delay and route damage. The flood was real; the priority weighting was criminal.
+NL LOC HOLD: LIABILITY ACT: match margin logs, evacuation delay and route damage. The flood was real; the priority weighting was criminal.
 
 ## Audio
 
-The ocean did not lie. The timetable did.
+NL LOC HOLD: The ocean did not lie. The timetable did.
 
 ## Field Note
 
-Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
+NL LOC HOLD: Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
 
 <!-- External Site; generated from P383_BRINE_CANYON_LIABILITY_ACT/nl_NL. -->

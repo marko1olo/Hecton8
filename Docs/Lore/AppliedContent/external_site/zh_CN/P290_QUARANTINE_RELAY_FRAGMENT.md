@@ -7,31 +7,34 @@ poi_tags: poi.quarantine_relay_fragment;poi.stale_air_counter
 biome_tags: biome.quarantine;biome.relay
 locale: zh_CN
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "ZH LOC HOLD: Quarantine Relay Fragment"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Quarantine Relay Fragment
+# ZH LOC HOLD: Quarantine Relay Fragment
 
-HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there.
+ZH LOC HOLD: HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there.
 
 ## Scanner
 
-Relay fragment approves extraction and denies clean release in the same packet.
+ZH LOC HOLD: Relay fragment approves extraction and denies clean release in the same packet.
 
 ## Terminal
 
-RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.
+ZH LOC HOLD: RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.
 
 ## Audio
 
-You are out of the water. You are not out of custody.
+ZH LOC HOLD: You are out of the water. You are not out of custody.
 
 ## Field Note
 
-Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.
+ZH LOC HOLD: Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.
 
 <!-- External Site; generated from P290_QUARANTINE_RELAY_FRAGMENT/zh_CN. -->

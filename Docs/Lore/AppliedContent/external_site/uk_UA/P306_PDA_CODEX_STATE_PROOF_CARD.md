@@ -7,31 +7,34 @@ poi_tags: poi.pda_codex_state_card;poi.unlock_tier_strip
 biome_tags: biome.ui;biome.dossier
 locale: uk_UA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "UK LOC HOLD: PDA Evidence State"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# PDA Evidence State
+# UK LOC HOLD: PDA Evidence State
 
-HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.
+UK LOC HOLD: HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.
 
 ## Scanner
 
-Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.
+UK LOC HOLD: Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.
 
 ## Terminal
 
-PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.
+UK LOC HOLD: PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.
 
 ## Audio
 
-The PDA does not explain the world first. It waits for a receipt.
+UK LOC HOLD: The PDA does not explain the world first. It waits for a receipt.
 
 ## Field Note
 
-Bind codex rows to baked packet hashes and device-tested layout before release.
+UK LOC HOLD: Bind codex rows to baked packet hashes and device-tested layout before release.
 
 <!-- External Site; generated from P306_PDA_CODEX_STATE_PROOF_CARD/uk_UA. -->

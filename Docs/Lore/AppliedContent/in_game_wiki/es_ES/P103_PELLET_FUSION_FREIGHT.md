@@ -7,31 +7,34 @@ poi_tags: poi.freight_drive_plate;poi.seed_ship_manifest
 biome_tags: biome.carrier_link;biome.relay_shadow
 locale: es_ES
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Pellet-Fusion Freight"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Pellet-Fusion Freight
 
-Heavy interstellar travel is possible but punishing. Pellet-beam assisted fusion, external staging, long coasts and braking infrastructure let Atlas-class seed payloads and later colony freight reach Aegir without FTL. The same logistics make rescue slow and politically conditional.
+ES LOC HOLD: Heavy interstellar travel is possible but punishing. Pellet-beam assisted fusion, external staging, long coasts and braking infrastructure let Atlas-class seed payloads and later colony freight reach Aegir without FTL. The same logistics make rescue slow and politically conditional.
 
 ## Scanner
 
-Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.
+ES LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.
 
 ## Terminal
 
-FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.
+ES LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.
 
 ## Audio
 
-A heavy ship is not a miracle. It is a mortgage with engines.
+ES LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.
 
 ## Field Note
 
-Heavy transit should feel industrial and old, not heroic.
+ES LOC HOLD: Heavy transit should feel industrial and old, not heroic.
 
 <!-- In-Game Wiki; generated from P103_PELLET_FUSION_FREIGHT/es_ES. -->

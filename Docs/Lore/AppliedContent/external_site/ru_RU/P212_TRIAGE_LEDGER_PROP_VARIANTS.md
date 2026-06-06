@@ -7,16 +7,19 @@ poi_tags: poi.triage_ledger_sheet;poi.med_lock_delay
 biome_tags: biome.med_lock;biome.worker_locker
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Варианты triage ledger props"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Варианты triage ledger props
 
-Triage Ledger Prop Variants keep medical evidence procedural: pressure injury, route denial, equipment state, certification delay, and witness gap.
+RU LOC HOLD: Triage Ledger Prop Variants keep medical evidence procedural: pressure injury, route denial, equipment state, certification delay, and witness gap.
 
 ## Scanner
 
@@ -28,7 +31,7 @@ TRIAGE PROP RULE: каждая ledger entry связывает injury с pressur
 
 ## Audio
 
-Pain is not proof until the route bears the mark.
+RU LOC HOLD: Pain is not proof until the route bears the mark.
 
 ## Field Note
 

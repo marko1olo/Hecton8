@@ -7,31 +7,34 @@ poi_tags: poi.public_premise_card;poi.starting_contract_excerpt
 biome_tags: biome.publication;biome.shallows
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "RU LOC HOLD: Marauder Starting Claim"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Marauder Starting Claim
+# RU LOC HOLD: Marauder Starting Claim
 
-The opening record frames the player as a professional under pressure, not a tourist and not a family avenger. Old Deep Reach history matters because the procedures on HECTON-8 are familiar before they become evidence.
+RU LOC HOLD: The opening record frames the player as a professional under pressure, not a tourist and not a family avenger. Old Deep Reach history matters because the procedures on HECTON-8 are familiar before they become evidence.
 
 ## Scanner
 
-Public claim record. The first route identifies a debt-bound Marauder with old Deep Reach field experience and a Black Keel salvage window.
+RU LOC HOLD: Public claim record. The first route identifies a debt-bound Marauder with old Deep Reach field experience and a Black Keel salvage window.
 
 ## Terminal
 
-PUBLIC ARCHIVE NODE // STARTING CLAIM. Contractor history: former Deep Reach field-systems specialist. Current status: Marauder lien pressure. Route: Black Keel recovery claim, P-63 descent.
+RU LOC HOLD: PUBLIC ARCHIVE NODE // STARTING CLAIM. Contractor history: former Deep Reach field-systems specialist. Current status: Marauder lien pressure. Route: Black Keel recovery claim, P-63 descent.
 
 ## Audio
 
-You are returning to paperwork you know too well.
+RU LOC HOLD: You are returning to paperwork you know too well.
 
 ## Field Note
 
-Marauder note: the contract knows your past. That does not make it honest.
+RU LOC HOLD: Marauder note: the contract knows your past. That does not make it honest.
 
 <!-- In-Game Wiki; generated from P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE/ru_RU. -->

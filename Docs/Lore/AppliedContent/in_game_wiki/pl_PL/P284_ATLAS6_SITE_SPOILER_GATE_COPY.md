@@ -7,31 +7,34 @@ poi_tags: poi.atlas_spoiler_gate_card;poi.factory_temple_blur_caption
 biome_tags: biome.publication;biome.atlas
 locale: pl_PL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "PL LOC HOLD: Atlas6 Site Spoiler Gate Copy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Atlas6 Site Spoiler Gate Copy
+# PL LOC HOLD: Atlas6 Site Spoiler Gate Copy
 
-Atlas-6 Site Spoiler Gate Copy defines publication warning text for deep Atlas material.
+PL LOC HOLD: Atlas-6 Site Spoiler Gate Copy defines publication warning text for deep Atlas material.
 
 ## Scanner
 
-Atlas public text stops at failed governor unless spoiler gate opens.
+PL LOC HOLD: Atlas public text stops at failed governor unless spoiler gate opens.
 
 ## Terminal
 
-SPOILER GATE: Atlas basin consequences require explicit reader opt-in.
+PL LOC HOLD: SPOILER GATE: Atlas basin consequences require explicit reader opt-in.
 
 ## Audio
 
-Past this line, the machine is not only a machine.
+PL LOC HOLD: Past this line, the machine is not only a machine.
 
 ## Field Note
 
-Gate label should name categories: factory-temple, repair ecology, ending payloads, worker evidence.
+PL LOC HOLD: Gate label should name categories: factory-temple, repair ecology, ending payloads, worker evidence.
 
 <!-- In-Game Wiki; generated from P284_ATLAS6_SITE_SPOILER_GATE_COPY/pl_PL. -->

@@ -7,31 +7,34 @@ poi_tags: poi.no_power_carryover_notice;poi.route_warning_card
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: nl_NL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Dossier Knowledge Not Power"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Dossier Knowledge Not Power
 
-Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous.
+NL LOC HOLD: Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous.
 
 ## Scanner
 
-No inherited oxygen, guns, hull, or magic shortcuts.
+NL LOC HOLD: No inherited oxygen, guns, hull, or magic shortcuts.
 
 ## Terminal
 
-META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.
+NL LOC HOLD: META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.
 
 ## Audio
 
-Memory does not reinforce a cracked hull.
+NL LOC HOLD: Memory does not reinforce a cracked hull.
 
 ## Field Note
 
-The player can become wiser. The ocean should not become smaller.
+NL LOC HOLD: The player can become wiser. The ocean should not become smaller.
 
 <!-- External Site; generated from P140_DOSSIER_KNOWLEDGE_NOT_POWER/nl_NL. -->

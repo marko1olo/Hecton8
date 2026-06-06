@@ -7,31 +7,34 @@ poi_tags: poi.public_archive_gate;poi.packet_seal
 biome_tags: biome.publication;biome.codex
 locale: ar_SA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "AR LOC HOLD: بوابة حجب الحرق"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# بوابة حجب الحرق
+# AR LOC HOLD: بوابة حجب الحرق
 
-يمكن لصفحات HECTON-8 العامة تسمية العمل من دون تسليم الدليل. الطبقة المفتوحة تقدم سياقا آمنا؛ الأختام وطوابع المسار والمسوح وقطع الطرفيات ووسوم العمال وسجلات الصندوق الأسود تفتح ادعاءات أقوى لاحقا.
+AR LOC HOLD: يمكن لصفحات HECTON-8 العامة تسمية العمل من دون تسليم الدليل. الطبقة المفتوحة تقدم سياقا آمنا؛ الأختام وطوابع المسار والمسوح وقطع الطرفيات ووسوم العمال وسجلات الصندوق الأسود تفتح ادعاءات أقوى لاحقا.
 
 ## Scanner
 
-بوابة الأرشيف العام // مستوى حرق 0/1. سياق عام فقط. الأدلة العميقة تحتاج حيازة مستعادة قبل توسيع الكودكس.
+AR LOC HOLD: بوابة الأرشيف العام // مستوى حرق 0/1. سياق عام فقط. الأدلة العميقة تحتاج حيازة مستعادة قبل توسيع الكودكس.
 
 ## Terminal
 
-مرشح PUBLIC/WIKI // قبل الدليل يسمح بذكر المكان وضغط المسار ولغة الحادث العامة والمؤسسات المعروفة وبداية salvage. الأدلة العميقة تبقى محجوبة.
+AR LOC HOLD: مرشح PUBLIC/WIKI // قبل الدليل يسمح بذكر المكان وضغط المسار ولغة الحادث العامة والمؤسسات المعروفة وبداية salvage. الأدلة العميقة تبقى محجوبة.
 
 ## Audio
 
-ترحيل Black Keel: النص العام يسمي القمر. الإثبات يحتاج ختما. أحضر الختم.
+AR LOC HOLD: ترحيل Black Keel: النص العام يسمي القمر. الإثبات يحتاج ختما. أحضر الختم.
 
 ## Field Note
 
-الصفحة العامة تخبرك أين تغوص. لا تخبرك من دفع كي يبقى الباب مغلقا.
+AR LOC HOLD: الصفحة العامة تخبرك أين تغوص. لا تخبرك من دفع كي يبقى الباب مغلقا.
 
 <!-- External Site; generated from P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE/ar_SA. -->

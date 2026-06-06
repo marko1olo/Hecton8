@@ -7,31 +7,34 @@ poi_tags: poi.public_article_tier_card;poi.site_spoiler_gate
 biome_tags: biome.dossier_archive;biome.claim_admin
 locale: nl_NL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "NL LOC HOLD: Public Article Tier Rules"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Public Article Tier Rules
+# NL LOC HOLD: Public Article Tier Rules
 
-Public article tiers define what can be said openly about pressure, route cost, old lies, and Atlas-basin payload truth.
+NL LOC HOLD: Public article tiers define what can be said openly about pressure, route cost, old lies, and Atlas-basin payload truth.
 
 ## Scanner
 
-Public copy can name pressure, route cost and old lies; it must gate Atlas-basin payload truth.
+NL LOC HOLD: Public copy can name pressure, route cost and old lies; it must gate Atlas-basin payload truth.
 
 ## Terminal
 
-ARTICLE TIERS: T0 public premise, T1 early tools and routes, T2 corporate evidence, T3 Atlas-basin consequences, T4 sealed implementation records.
+NL LOC HOLD: ARTICLE TIERS: T0 public premise, T1 early tools and routes, T2 corporate evidence, T3 Atlas-basin consequences, T4 sealed implementation records.
 
 ## Audio
 
-Market the wound. Do not sell the autopsy before the player earns it.
+NL LOC HOLD: Market the wound. Do not sell the autopsy before the player earns it.
 
 ## Field Note
 
-Article tiers separate public setting, early systems, mid-depth evidence, spoiler-gated endings, and sealed table records.
+NL LOC HOLD: Article tiers separate public setting, early systems, mid-depth evidence, spoiler-gated endings, and sealed table records.
 
 <!-- External Site; generated from P216_PUBLIC_SITE_ARTICLE_TIER_RULES/nl_NL. -->

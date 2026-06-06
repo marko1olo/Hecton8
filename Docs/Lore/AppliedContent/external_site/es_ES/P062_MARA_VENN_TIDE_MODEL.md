@@ -7,31 +7,34 @@ poi_tags: poi.tide_model_terminal;poi.glacier_warning
 biome_tags: biome.tide_gauge;biome.glacier_break
 locale: es_ES
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Mara Venn Tide Model"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Mara Venn Tide Model
 
-Mara Venn Tide Model is the colony evidence thread for geophysical warning: a modeler sees tail risk, Deep Reach downgrades it, and the later public story pretends the system had no readable warning.
+ES LOC HOLD: Mara Venn Tide Model is the colony evidence thread for geophysical warning: a modeler sees tail risk, Deep Reach downgrades it, and the later public story pretends the system had no readable warning.
 
 ## Scanner
 
-Mara Venn did not predict murder. She predicted the tide margin Deep Reach decided to rename improbable.
+ES LOC HOLD: Mara Venn did not predict murder. She predicted the tide margin Deep Reach decided to rename improbable.
 
 ## Terminal
 
-Venn, M. Tail-risk revision submitted. Cryosphere shear model exceeds evacuation capacity under Aegir spring geometry. Review note: downgrade to monitor until asset continuity budget clears.
+ES LOC HOLD: Venn, M. Tail-risk revision submitted. Cryosphere shear model exceeds evacuation capacity under Aegir spring geometry. Review note: downgrade to monitor until asset continuity budget clears.
 
 ## Audio
 
-She was wrong only in the way every ignored model is wrong: it happened with names inside it.
+ES LOC HOLD: She was wrong only in the way every ignored model is wrong: it happened with names inside it.
 
 ## Field Note
 
-A warning is not prophecy after procurement deletes the expensive part.
+ES LOC HOLD: A warning is not prophecy after procurement deletes the expensive part.
 
 <!-- External Site; generated from P062_MARA_VENN_TIDE_MODEL/es_ES. -->

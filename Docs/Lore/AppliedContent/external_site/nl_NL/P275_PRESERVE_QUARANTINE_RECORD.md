@@ -7,31 +7,34 @@ poi_tags: poi.preserve_quarantine_record;poi.ecology_hold_order
 biome_tags: biome.ending;biome.quarantine
 locale: nl_NL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "NL LOC HOLD: Preserve Quarantine Record"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Preserve Quarantine Record
+# NL LOC HOLD: Preserve Quarantine Record
 
-Preserve Quarantine Record explains HECTON-8's refusal of clean endings.
+NL LOC HOLD: Preserve Quarantine Record explains HECTON-8's refusal of clean endings.
 
 ## Scanner
 
-Payload withheld. Consequence deferred.
+NL LOC HOLD: Payload withheld. Consequence deferred.
 
 ## Terminal
 
-ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.
+NL LOC HOLD: ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.
 
 ## Audio
 
-Leaving something alive is not the same as saving it.
+NL LOC HOLD: Leaving something alive is not the same as saving it.
 
 ## Field Note
 
-Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.
+NL LOC HOLD: Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.
 
 <!-- External Site; generated from P275_PRESERVE_QUARANTINE_RECORD/nl_NL. -->

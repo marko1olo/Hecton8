@@ -7,31 +7,34 @@ poi_tags: poi.p63_work_order_card;poi.manual_pump_handle
 biome_tags: biome.first_hour;biome.work_order
 locale: pl_PL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "PL LOC HOLD: P-63 Pump Room Work Order"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# P-63 Pump Room Work Order
+# PL LOC HOLD: P-63 Pump Room Work Order
 
-P-63 shows HECTON-8 at small scale: water in the room, one tool in hand, and a return route that has to be marked before it is trusted.
+PL LOC HOLD: P-63 shows HECTON-8 at small scale: water in the room, one tool in hand, and a return route that has to be marked before it is trusted.
 
 ## Scanner
 
-Work order lists pump, seal, cut, pinger and gasket in pressure order.
+PL LOC HOLD: Work order lists pump, seal, cut, pinger and gasket in pressure order.
 
 ## Terminal
 
-WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.
+PL LOC HOLD: WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.
 
 ## Audio
 
-Pump first. Seal second. If it sings, stop cutting.
+PL LOC HOLD: Pump first. Seal second. If it sings, stop cutting.
 
 ## Field Note
 
-Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.
+PL LOC HOLD: Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.
 
 <!-- External Site; generated from P287_P63_PUMP_ROOM_WORK_ORDER/pl_PL. -->

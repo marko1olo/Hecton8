@@ -7,31 +7,34 @@ poi_tags: poi.ending_record_layout;poi.receiver_badge_set
 biome_tags: biome.codex;biome.spoiler_gate
 locale: id_ID
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "ID LOC HOLD: Dossier Ending Record Layout Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Dossier Ending Record Layout Rule
+# ID LOC HOLD: Dossier Ending Record Layout Rule
 
-Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.
+ID LOC HOLD: Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.
 
 ## Scanner
 
-Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.
+ID LOC HOLD: Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.
 
 ## Terminal
 
-ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.
+ID LOC HOLD: ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.
 
 ## Audio
 
-The record does not congratulate you. It itemizes what changed hands.
+ID LOC HOLD: The record does not congratulate you. It itemizes what changed hands.
 
 ## Field Note
 
-Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression.
+ID LOC HOLD: Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression.
 
 <!-- In-Game Wiki; generated from P434_DOSSIER_ENDING_RECORD_LAYOUT_RULE/id_ID. -->

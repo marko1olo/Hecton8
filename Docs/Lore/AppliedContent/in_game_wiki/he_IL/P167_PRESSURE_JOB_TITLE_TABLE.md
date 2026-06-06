@@ -7,31 +7,34 @@ poi_tags: poi.job_title_board;poi.pressure_cert_stamp
 biome_tags: biome.industrial_shelf;biome.brine_canyon
 locale: he_IL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "HE LOC HOLD: Pressure Job Title Table"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Pressure Job Title Table
+# HE LOC HOLD: Pressure Job Title Table
 
-The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.
+HE LOC HOLD: The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.
 
 ## Scanner
 
-Job titles should explain what kept the colony alive.
+HE LOC HOLD: Job titles should explain what kept the colony alive.
 
 ## Terminal
 
-JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.
+HE LOC HOLD: JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.
 
 ## Audio
 
-Nobody died as Employee 438. They died doing a job.
+HE LOC HOLD: Nobody died as Employee 438. They died doing a job.
 
 ## Field Note
 
-Every title should imply a tool, route or failure.
+HE LOC HOLD: Every title should imply a tool, route or failure.
 
 <!-- In-Game Wiki; generated from P167_PRESSURE_JOB_TITLE_TABLE/he_IL. -->

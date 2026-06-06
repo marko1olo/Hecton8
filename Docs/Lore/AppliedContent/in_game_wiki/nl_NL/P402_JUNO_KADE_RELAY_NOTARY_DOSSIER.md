@@ -7,31 +7,34 @@ poi_tags: poi.juno_kade_notary_seal;poi.relay_witness_tray
 biome_tags: biome.cable_reef;biome.relay_yard
 locale: nl_NL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "NL LOC HOLD: Juno Kade/Relay"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Juno Kade/Relay
+# NL LOC HOLD: Juno Kade/Relay
 
-Juno Kade's dossier ties HECTON-8 law to physical relay objects. The seal, tray and packet ladder show how testimony survived when messages took too long to rescue anyone.
+NL LOC HOLD: Juno Kade's dossier ties HECTON-8 law to physical relay objects. The seal, tray and packet ladder show how testimony survived when messages took too long to rescue anyone.
 
 ## Scanner
 
-Dossier: Juno Kade. Seal, packet tray and witness tape agree.
+NL LOC HOLD: Dossier: Juno Kade. Seal, packet tray and witness tape agree.
 
 ## Terminal
 
-JUNO KADE/RELAY. Stamped witness trays after each comm window; custody stayed evidence.
+NL LOC HOLD: JUNO KADE/RELAY. Stamped witness trays after each comm window; custody stayed evidence.
 
 ## Audio
 
-Kade certified facts that would arrive late and still have to matter.
+NL LOC HOLD: Kade certified facts that would arrive late and still have to matter.
 
 ## Field Note
 
-Relay-yard objects and law-of-distance records should stay paired: seal, tray, packet ladder, and the late fact that still matters.
+NL LOC HOLD: Relay-yard objects and law-of-distance records should stay paired: seal, tray, packet ladder, and the late fact that still matters.
 
 <!-- In-Game Wiki; generated from P402_JUNO_KADE_RELAY_NOTARY_DOSSIER/nl_NL. -->

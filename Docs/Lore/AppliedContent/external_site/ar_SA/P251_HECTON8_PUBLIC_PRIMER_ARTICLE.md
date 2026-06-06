@@ -7,31 +7,34 @@ poi_tags: poi.public_hecton8_article;poi.site_primer_card
 biome_tags: biome.publication;biome.hecton8_atlas
 locale: ar_SA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "AR LOC HOLD: HECTON-8 Public Primer Article"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# HECTON-8 Public Primer Article
+# AR LOC HOLD: HECTON-8 Public Primer Article
 
-HECTON-8 is a drowned industrial ocean moon in the Aegir system. Its shallow shelves are bright and alive; its deep basins carry the remains of Deep Reach infrastructure, colony failure and Atlas-6's damaged maintenance logic.
+AR LOC HOLD: HECTON-8 is a drowned industrial ocean moon in the Aegir system. Its shallow shelves are bright and alive; its deep basins carry the remains of Deep Reach infrastructure, colony failure and Atlas-6's damaged maintenance logic.
 
 ## Scanner
 
-A public primer is allowed to be beautiful. It is not allowed to lie.
+AR LOC HOLD: A public primer is allowed to be beautiful. It is not allowed to lie.
 
 ## Terminal
 
-PUBLIC PRIMER: spoiler-safe summary approved: ocean moon, dead colony, salvage return, no final payload route.
+AR LOC HOLD: PUBLIC PRIMER: spoiler-safe summary approved: ocean moon, dead colony, salvage return, no final payload route.
 
 ## Audio
 
-First sell the ocean. Then earn the crime.
+AR LOC HOLD: First sell the ocean. Then earn the crime.
 
 ## Field Note
 
-The first public record sells the ocean, then earns the crime: HECTON-8 is beautiful before it becomes incriminating.
+AR LOC HOLD: The first public record sells the ocean, then earns the crime: HECTON-8 is beautiful before it becomes incriminating.
 
 <!-- External Site; generated from P251_HECTON8_PUBLIC_PRIMER_ARTICLE/ar_SA. -->

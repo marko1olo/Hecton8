@@ -7,31 +7,34 @@ poi_tags: poi.partial_return_lien_notice;poi.same_seed_return_stamp
 biome_tags: biome.ending;biome.replay
 locale: zh_CN
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "ZH LOC HOLD: Partial Return Lien Extension"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Partial Return Lien Extension
+# ZH LOC HOLD: Partial Return Lien Extension
 
-Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.
+ZH LOC HOLD: Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.
 
 ## Scanner
 
-Return authorized under lien extension. Equipment not carried forward.
+ZH LOC HOLD: Return authorized under lien extension. Equipment not carried forward.
 
 ## Terminal
 
-PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.
+ZH LOC HOLD: PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.
 
 ## Audio
 
-The route remembers what you proved. The ocean does not owe you your tools.
+ZH LOC HOLD: The route remembers what you proved. The ocean does not owe you your tools.
 
 ## Field Note
 
-Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment.
+ZH LOC HOLD: Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment.
 
 <!-- In-Game Wiki; generated from P337_PARTIAL_RETURN_LIEN_EXTENSION/zh_CN. -->

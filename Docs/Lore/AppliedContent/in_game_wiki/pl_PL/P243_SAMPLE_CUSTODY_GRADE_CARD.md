@@ -7,31 +7,34 @@ poi_tags: poi.sample_custody_tag;poi.blue_debt_case
 biome_tags: biome.resource_custody;biome.claim_admin
 locale: pl_PL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "PL LOC HOLD: Sample Custody Grade Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Sample Custody Grade Card
+# PL LOC HOLD: Sample Custody Grade Card
 
-Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.
+PL LOC HOLD: Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.
 
 ## Scanner
 
-The label decides whether the sample is cargo, evidence or debt.
+PL LOC HOLD: The label decides whether the sample is cargo, evidence or debt.
 
 ## Terminal
 
-CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.
+PL LOC HOLD: CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.
 
 ## Audio
 
-Do not call it loot on a recorded line.
+PL LOC HOLD: Do not call it loot on a recorded line.
 
 ## Field Note
 
-Blue debt is valuable because it is unstable, certified and owned before it is touched.
+PL LOC HOLD: Blue debt is valuable because it is unstable, certified and owned before it is touched.
 
 <!-- In-Game Wiki; generated from P243_SAMPLE_CUSTODY_GRADE_CARD/pl_PL. -->

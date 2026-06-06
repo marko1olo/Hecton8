@@ -7,31 +7,34 @@ poi_tags: poi.blue_debt_public_card;poi.resource_warning_caption
 biome_tags: biome.publication;biome.resource
 locale: ko_KR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "KO LOC HOLD: Blue Debt Site Resource Copy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Blue Debt Site Resource Copy
+# KO LOC HOLD: Blue Debt Site Resource Copy
 
-Marauders call it blue debt because a viable sample creates value and liability in the same object. It must be kept under pressure, certified by custody and read as evidence before it becomes money.
+KO LOC HOLD: Marauders call it blue debt because a viable sample creates value and liability in the same object. It must be kept under pressure, certified by custody and read as evidence before it becomes money.
 
 ## Scanner
 
-Blue debt public copy must mention containment and custody, not miracle ore.
+KO LOC HOLD: Blue debt public copy must mention containment and custody, not miracle ore.
 
 ## Terminal
 
-PUBLIC RESOURCE LOCK: value requires pressure history, containment and receiver custody.
+KO LOC HOLD: PUBLIC RESOURCE LOCK: value requires pressure history, containment and receiver custody.
 
 ## Audio
 
-The sample is not rich until someone can keep it alive.
+KO LOC HOLD: The sample is not rich until someone can keep it alive.
 
 ## Field Note
 
-Use resource copy for site cards, sample images, merch-safe public wiki and non-spoiler economy context.
+KO LOC HOLD: Use resource copy for site cards, sample images, merch-safe public wiki and non-spoiler economy context.
 
 <!-- External Site; generated from P285_BLUE_DEBT_SITE_RESOURCE_COPY/ko_KR. -->

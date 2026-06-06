@@ -7,31 +7,34 @@ poi_tags: poi.canteen_water_ledger;poi.meal_token_board
 biome_tags: biome.colony;biome.safe_module
 locale: id_ID
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "ID LOC HOLD: Canteen Water Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Canteen Water Ledger
+# ID LOC HOLD: Canteen Water Ledger
 
-HECTON-8 makes catastrophe believable through ordinary systems under pressure: water ledgers, canteen tokens and shift accountability.
+ID LOC HOLD: HECTON-8 makes catastrophe believable through ordinary systems under pressure: water ledgers, canteen tokens and shift accountability.
 
 ## Scanner
 
-Water ledger recovered. Drinkable water was assigned like tool custody.
+ID LOC HOLD: Water ledger recovered. Drinkable water was assigned like tool custody.
 
 ## Terminal
 
-CANTEEN LEDGER: six missing tokens; two medical overrides; one pump-room correction; ration dispute routed to shift lead after tone 2.
+ID LOC HOLD: CANTEEN LEDGER: six missing tokens; two medical overrides; one pump-room correction; ration dispute routed to shift lead after tone 2.
 
 ## Audio
 
-The last argument was about water tokens.
+ID LOC HOLD: The last argument was about water tokens.
 
 ## Field Note
 
-Six missing tokens, two medical overrides, one pump-room correction. The argument in the margin is about cups, not the end of the world.
+ID LOC HOLD: Six missing tokens, two medical overrides, one pump-room correction. The argument in the margin is about cups, not the end of the world.
 
 <!-- External Site; generated from P357_CANTEEN_WATER_LEDGER/id_ID. -->

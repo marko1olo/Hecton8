@@ -7,16 +7,19 @@ poi_tags: poi.packet_notary_seal;poi.relay_delay_stamp
 biome_tags: biome.relay_spine;biome.claim_admin
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Подписи Packet Notary Interface"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Подписи Packet Notary Interface
 
-Packet Notary Interface signatures turn interstellar delay into legal evidence: relay time, hash witness, custody owner, and price.
+RU LOC HOLD: Packet Notary Interface signatures turn interstellar delay into legal evidence: relay time, hash witness, custody owner, and price.
 
 ## Scanner
 

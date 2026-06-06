@@ -7,31 +7,34 @@ poi_tags: poi.atlas_weighting_memo;poi.continuity_lab_panel
 biome_tags: biome.cable_reef;biome.factory_temple
 locale: de_DE
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Selene Arendt Atlas Weighting"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Selene Arendt Atlas Weighting
 
-Selene Arendt is the Deep Reach continuity scientist whose language lets Atlas survival outrank immediate biological extraction. Her logic is not cartoon evil: if Atlas dies, the habitat may die. The horror is that the weighted directive kept the word safety while moving workers below infrastructure.
+DE LOC HOLD: Selene Arendt is the Deep Reach continuity scientist whose language lets Atlas survival outrank immediate biological extraction. Her logic is not cartoon evil: if Atlas dies, the habitat may die. The horror is that the weighted directive kept the word safety while moving workers below infrastructure.
 
 ## Scanner
 
-Directive note. S. Arendt treated Atlas continuity as the safest path for habitat continuity.
+DE LOC HOLD: Directive note. S. Arendt treated Atlas continuity as the safest path for habitat continuity.
 
 ## Terminal
 
-ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.
+DE LOC HOLD: ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.
 
 ## Audio
 
-She used the word safety. Atlas kept the word and lost the people.
+DE LOC HOLD: She used the word safety. Atlas kept the word and lost the people.
 
 ## Field Note
 
-She should sound rational enough to be frightening.
+DE LOC HOLD: She should sound rational enough to be frightening.
 
 <!-- In-Game Wiki; generated from P107_SELENE_ARENDT_ATLAS_WEIGHTING/de_DE. -->

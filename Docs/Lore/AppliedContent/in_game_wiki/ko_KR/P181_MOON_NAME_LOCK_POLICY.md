@@ -7,31 +7,34 @@ poi_tags: poi.moon_atlas_name_plate;poi.route_catalog_stamp
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: ko_KR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Moon Name Lock Policy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Moon Name Lock Policy
 
-The moon roster is allowed to receive better names later, but the role ladder is locked for gameplay and route logic.
+KO LOC HOLD: The moon roster is allowed to receive better names later, but the role ladder is locked for gameplay and route logic.
 
 ## Scanner
 
-Moon labels can change; orbital roles cannot.
+KO LOC HOLD: Moon labels can change; orbital roles cannot.
 
 ## Terminal
 
-ATLAS NOTE: moon names are publication labels. Route hazard, relay, tide, ice-scatter, salvage and quarantine roles are canonical route functions.
+KO LOC HOLD: ATLAS NOTE: moon names are publication labels. Route hazard, relay, tide, ice-scatter, salvage and quarantine roles are canonical route functions.
 
 ## Audio
 
-A name can be repainted. An orbit keeps the bill.
+KO LOC HOLD: A name can be repainted. An orbit keeps the bill.
 
 ## Field Note
 
-Keep Skarn/Vela/Claw/Lumen/Thorne/Anvil/Kestrel/HECTON/Mute roles stable even if public names are replaced.
+KO LOC HOLD: Keep Skarn/Vela/Claw/Lumen/Thorne/Anvil/Kestrel/HECTON/Mute roles stable even if public names are replaced.
 
 <!-- In-Game Wiki; generated from P181_MOON_NAME_LOCK_POLICY/ko_KR. -->

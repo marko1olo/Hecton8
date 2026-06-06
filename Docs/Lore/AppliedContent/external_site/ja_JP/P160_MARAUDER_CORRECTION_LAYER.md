@@ -7,31 +7,34 @@ poi_tags: poi.marauder_correction_note;poi.crossed_corporate_label
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: ja_JP
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Marauder Correction Layer"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Marauder Correction Layer
 
-Marauder Correction Layer is the tone bridge between Deep Reach procedure and player agency.
+JP LOC HOLD: Marauder Correction Layer is the tone bridge between Deep Reach procedure and player agency.
 
 ## Scanner
 
-Marauders turn corporate language back into survival facts.
+JP LOC HOLD: Marauders turn corporate language back into survival facts.
 
 ## Terminal
 
-CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.
+JP LOC HOLD: CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.
 
 ## Audio
 
-A good note does not sound clever. It keeps someone alive.
+JP LOC HOLD: A good note does not sound clever. It keeps someone alive.
 
 ## Field Note
 
-The player should feel old Deep Reach language being translated into body count.
+JP LOC HOLD: The player should feel old Deep Reach language being translated into body count.
 
 <!-- External Site; generated from P160_MARAUDER_CORRECTION_LAYER/ja_JP. -->

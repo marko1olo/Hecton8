@@ -7,16 +7,19 @@ poi_tags: poi.anchor_name_sheet_a;poi.locker_name_strip
 biome_tags: biome.worker_locker;biome.p63_shallows
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Anchor Worker Name Set A"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Anchor Worker Name Set A
 
-Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects.
+RU LOC HOLD: Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects.
 
 ## Scanner
 

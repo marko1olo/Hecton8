@@ -7,31 +7,34 @@ poi_tags: poi.brine_vane_forest;poi.density_leaf_wall
 biome_tags: biome.brine_canyon;biome.density_layer
 locale: ko_KR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "KO LOC HOLD: Brine Vane Forests"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Brine Vane Forests
+# KO LOC HOLD: Brine Vane Forests
 
-Brine Vane Forests define HECTON-8's canyon ecology. These membrane-like growths mark density boundaries, route hazards and the chemical economy that makes the moon's deep ocean feel engineered by pressure.
+KO LOC HOLD: Brine Vane Forests define HECTON-8's canyon ecology. These membrane-like growths mark density boundaries, route hazards and the chemical economy that makes the moon's deep ocean feel engineered by pressure.
 
 ## Scanner
 
-Flat brine vanes grow along density boundaries and show where water becomes a wall.
+KO LOC HOLD: Flat brine vanes grow along density boundaries and show where water becomes a wall.
 
 ## Terminal
 
-CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.
+KO LOC HOLD: CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.
 
 ## Audio
 
-The canyon has leaves because it has pressure gradients.
+KO LOC HOLD: The canyon has leaves because it has pressure gradients.
 
 ## Field Note
 
-Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.
+KO LOC HOLD: Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.
 
 <!-- External Site; generated from P226_BRINE_VANE_FORESTS/ko_KR. -->

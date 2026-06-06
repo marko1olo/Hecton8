@@ -7,31 +7,34 @@ poi_tags: poi.seed_invariant_chart;poi.route_generation_note
 biome_tags: biome.photic_shelf;biome.brine_canyon
 locale: he_IL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Seed Geology Invariants"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Seed Geology Invariants
 
-Seed Geology Invariants protects HECTON-8's lore from procedural chaos while still allowing long replays with different routes, evidence order, ecology and resource exposure.
+HE LOC HOLD: Seed Geology Invariants protects HECTON-8's lore from procedural chaos while still allowing long replays with different routes, evidence order, ecology and resource exposure.
 
 ## Scanner
 
-Procedural note. The route changes; the moon does not forget its laws.
+HE LOC HOLD: Procedural note. The route changes; the moon does not forget its laws.
 
 ## Terminal
 
-SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.
+HE LOC HOLD: SEED RULE: topology, POI order, resource exposure, fauna pressure and safe pockets may vary. Canon anchors, depth bands, Great Tide logic and Atlas basin relation remain invariant.
 
 ## Audio
 
-New seed, same moon. Different wound.
+HE LOC HOLD: New seed, same moon. Different wound.
 
 ## Field Note
 
-Replayability must move evidence and geography, not rewrite physics every seed.
+HE LOC HOLD: Replayability must move evidence and geography, not rewrite physics every seed.
 
 <!-- External Site; generated from P094_SEED_GEOLOGY_INVARIANTS/he_IL. -->

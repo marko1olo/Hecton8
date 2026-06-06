@@ -7,31 +7,34 @@ poi_tags: poi.capsule_blackbox_audio;poi.flooded_avionics_bus
 biome_tags: biome.first_hour;biome.capsule
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "RU LOC HOLD: Capsule Blackbox Audio 01"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Capsule Blackbox Audio 01
+# RU LOC HOLD: Capsule Blackbox Audio 01
 
-The capsule blackbox proves the opening blocker. The descent survived by spending hardware that would have made ascent possible.
+RU LOC HOLD: The capsule blackbox proves the opening blocker. The descent survived by spending hardware that would have made ascent possible.
 
 ## Scanner
 
-Blackbox fragment: survival burn spent the ascent sleeve.
+RU LOC HOLD: Blackbox fragment: survival burn spent the ascent sleeve.
 
 ## Terminal
 
-BLACKBOX EXTRACT 01 / SURVIVAL BURN: COMPLETE / ASCENT SLEEVE: SPENT / RECOVERY RING: NO-LOCK / BUOY: UNRELIABLE.
+RU LOC HOLD: BLACKBOX EXTRACT 01 / SURVIVAL BURN: COMPLETE / ASCENT SLEEVE: SPENT / RECOVERY RING: NO-LOCK / BUOY: UNRELIABLE.
 
 ## Audio
 
-Burn spent. Ring no-lock. Do not request ascent.
+RU LOC HOLD: Burn spent. Ring no-lock. Do not request ascent.
 
 ## Field Note
 
-Crush-frame cracked at lower ring. Avionics bay smells of warm salt. Recovery ring reports no-lock; buoy repeats a dead ascent request.
+RU LOC HOLD: Crush-frame cracked at lower ring. Avionics bay smells of warm salt. Recovery ring reports no-lock; buoy repeats a dead ascent request.
 
 <!-- In-Game Wiki; generated from P286_CAPSULE_BLACKBOX_AUDIO_01/ru_RU. -->

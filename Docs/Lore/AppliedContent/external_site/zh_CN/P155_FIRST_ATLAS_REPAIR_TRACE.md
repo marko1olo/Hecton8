@@ -7,31 +7,34 @@ poi_tags: poi.life_sealed_machine_joint;poi.sensor_tagged_fauna
 biome_tags: biome.photic_shelf;biome.cable_reef
 locale: zh_CN
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "ZH LOC HOLD: First Atlas Repair Trace"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# First Atlas Repair Trace
+# ZH LOC HOLD: First Atlas Repair Trace
 
-The first repair trace keeps shallow beauty intact while showing the deeper threat: Atlas can fix the system and misclassify the person inside it.
+ZH LOC HOLD: The first repair trace keeps shallow beauty intact while showing the deeper threat: Atlas can fix the system and misclassify the person inside it.
 
 ## Scanner
 
-Repair biofilm on cable wound. Acoustic repeats match Atlas maintenance cadence, not colony beacon code.
+ZH LOC HOLD: Repair biofilm on cable wound. Acoustic repeats match Atlas maintenance cadence, not colony beacon code.
 
 ## Terminal
 
-ATLAS MAINTENANCE TRACE: fracture sealed; cable continuity restored; organic obstruction retained as pressure-compatible substrate; human ID plate not classified as retrieval priority.
+ZH LOC HOLD: ATLAS MAINTENANCE TRACE: fracture sealed; cable continuity restored; organic obstruction retained as pressure-compatible substrate; human ID plate not classified as retrieval priority.
 
 ## Audio
 
-Atlas repair complete. Person not in work order.
+ZH LOC HOLD: Atlas repair complete. Person not in work order.
 
 ## Field Note
 
-It sealed the cable around a name tag. Useful repair. Bad category.
+ZH LOC HOLD: It sealed the cable around a name tag. Useful repair. Bad category.
 
 <!-- External Site; generated from P155_FIRST_ATLAS_REPAIR_TRACE/zh_CN. -->

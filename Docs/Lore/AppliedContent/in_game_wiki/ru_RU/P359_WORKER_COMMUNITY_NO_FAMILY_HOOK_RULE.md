@@ -7,31 +7,34 @@ poi_tags: poi.story_boundary_card;poi.former_deep_reach_record
 biome_tags: biome.colony;biome.contract
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "RU LOC HOLD: Worker Community Notice"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Worker Community Notice
+# RU LOC HOLD: Worker Community Notice
 
-Worker community notices keep colony stakes grounded in labor, proximity and obligation. The dead matter through work evidence, not a rescue-family premise.
+RU LOC HOLD: Worker community notices keep colony stakes grounded in labor, proximity and obligation. The dead matter through work evidence, not a rescue-family premise.
 
 ## Scanner
 
-Notice board fragment. It records work contacts, not bloodline drama.
+RU LOC HOLD: Notice board fragment. It records work contacts, not bloodline drama.
 
 ## Terminal
 
-COMMUNITY NOTICE: emergency contact updates due before pump tone 3. Route leads sign work-contact columns. Personal calls queue behind relay traffic.
+RU LOC HOLD: COMMUNITY NOTICE: emergency contact updates due before pump tone 3. Route leads sign work-contact columns. Personal calls queue behind relay traffic.
 
 ## Audio
 
-They built a roster, not a legend.
+RU LOC HOLD: They built a roster, not a legend.
 
 ## Field Note
 
-NOTICE BOARD: swap shifts through crew lead. Mark bunk row, route, meal token and work contact. Personal calls wait for relay window.
+RU LOC HOLD: NOTICE BOARD: swap shifts through crew lead. Mark bunk row, route, meal token and work contact. Personal calls wait for relay window.
 
 <!-- In-Game Wiki; generated from P359_WORKER_COMMUNITY_NO_FAMILY_HOOK_RULE/ru_RU. -->

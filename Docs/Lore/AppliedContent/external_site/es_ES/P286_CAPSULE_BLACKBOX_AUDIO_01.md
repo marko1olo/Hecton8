@@ -7,31 +7,34 @@ poi_tags: poi.capsule_blackbox_audio;poi.flooded_avionics_bus
 biome_tags: biome.first_hour;biome.capsule
 locale: es_ES
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "ES LOC HOLD: Capsule Blackbox Audio 01"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Capsule Blackbox Audio 01
+# ES LOC HOLD: Capsule Blackbox Audio 01
 
-The first recovered blackbox makes survival a debt: the capsule bought one landing by burning the part meant to take it back.
+ES LOC HOLD: The first recovered blackbox makes survival a debt: the capsule bought one landing by burning the part meant to take it back.
 
 ## Scanner
 
-Blackbox fragment: survival burn spent the ascent sleeve.
+ES LOC HOLD: Blackbox fragment: survival burn spent the ascent sleeve.
 
 ## Terminal
 
-BLACKBOX EXTRACT 01 / SURVIVAL BURN: COMPLETE / ASCENT SLEEVE: SPENT / RECOVERY RING: NO-LOCK / BUOY: UNRELIABLE.
+ES LOC HOLD: BLACKBOX EXTRACT 01 / SURVIVAL BURN: COMPLETE / ASCENT SLEEVE: SPENT / RECOVERY RING: NO-LOCK / BUOY: UNRELIABLE.
 
 ## Audio
 
-Burn spent. Ring no-lock. Do not request ascent.
+ES LOC HOLD: Burn spent. Ring no-lock. Do not request ascent.
 
 ## Field Note
 
-Crush-frame cracked at lower ring. Avionics bay smells of warm salt. Recovery ring reports no-lock; buoy repeats a dead ascent request.
+ES LOC HOLD: Crush-frame cracked at lower ring. Avionics bay smells of warm salt. Recovery ring reports no-lock; buoy repeats a dead ascent request.
 
 <!-- External Site; generated from P286_CAPSULE_BLACKBOX_AUDIO_01/es_ES. -->

@@ -7,31 +7,34 @@ poi_tags: poi.coordinate_capture_record;poi.deep_reach_receiver_stamp
 biome_tags: biome.ending;biome.deep_reach
 locale: uk_UA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "UK LOC HOLD: Corporate Coordinate Capture Record"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Corporate Coordinate Capture Record
+# UK LOC HOLD: Corporate Coordinate Capture Record
 
-Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.
+UK LOC HOLD: Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.
 
 ## Scanner
 
-Coordinate payload accepted. Deep Reach receiver priority confirmed.
+UK LOC HOLD: Coordinate payload accepted. Deep Reach receiver priority confirmed.
 
 ## Terminal
 
-COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.
+UK LOC HOLD: COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.
 
 ## Audio
 
-You opened the door from the inside.
+UK LOC HOLD: You opened the door from the inside.
 
 ## Field Note
 
-Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach.
+UK LOC HOLD: Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach.
 
 <!-- In-Game Wiki; generated from P339_CORPORATE_COORDINATE_CAPTURE_RECORD/uk_UA. -->

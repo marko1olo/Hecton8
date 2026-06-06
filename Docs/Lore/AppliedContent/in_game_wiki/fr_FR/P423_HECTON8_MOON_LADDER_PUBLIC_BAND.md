@@ -7,31 +7,34 @@ poi_tags: poi.moon_ladder_public_band;poi.hecton8_mid_orbit_card
 biome_tags: biome.aegir_system;biome.publication
 locale: fr_FR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "FR LOC HOLD: HECTON-8 Moon Ladder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# HECTON-8 Moon Ladder
+# FR LOC HOLD: HECTON-8 Moon Ladder
 
-The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.
+FR LOC HOLD: The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8.
 
 ## Scanner
 
-Moon ladder: HECTON-8 is one claim, not the whole Aegir system.
+FR LOC HOLD: Moon ladder: HECTON-8 is one claim, not the whole Aegir system.
 
 ## Terminal
 
-MOON LADDER. Public role labels only; exact orbital elements stay table-owned.
+FR LOC HOLD: MOON LADDER. Public role labels only; exact orbital elements stay table-owned.
 
 ## Audio
 
-Other moons are not side quests. They are why the route has teeth.
+FR LOC HOLD: Other moons are not side quests. They are why the route has teeth.
 
 ## Field Note
 
-Moon ladder record: public maps can show Aegir scale without promising playable moons.
+FR LOC HOLD: Moon ladder record: public maps can show Aegir scale without promising playable moons.
 
 <!-- In-Game Wiki; generated from P423_HECTON8_MOON_LADDER_PUBLIC_BAND/fr_FR. -->

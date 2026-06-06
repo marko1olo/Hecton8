@@ -7,31 +7,34 @@ poi_tags: poi.factory_temple_entry_fragment;poi.living_iron_threshold
 biome_tags: biome.factory_temple;biome.atlas
 locale: pl_PL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "PL LOC HOLD: Factory Temple Entry Fragment"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Factory Temple Entry Fragment
+# PL LOC HOLD: Factory Temple Entry Fragment
 
-Factory-Temple Entry Fragment defines the final-zone visual grammar.
+PL LOC HOLD: Factory-Temple Entry Fragment defines the final-zone visual grammar.
 
 ## Scanner
 
-Entry fragment: alloy, shell sealant, human tool, active repair pulse.
+PL LOC HOLD: Entry fragment: alloy, shell sealant, human tool, active repair pulse.
 
 ## Terminal
 
-ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.
+PL LOC HOLD: ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.
 
 ## Audio
 
-This is not a room. This is a habit.
+PL LOC HOLD: This is not a room. This is a habit.
 
 ## Field Note
 
-Visual rule: temple only because industry and tissue have become ritual through repetition.
+PL LOC HOLD: Visual rule: temple only because industry and tissue have become ritual through repetition.
 
 <!-- In-Game Wiki; generated from P298_FACTORY_TEMPLE_ENTRY_FRAGMENT/pl_PL. -->

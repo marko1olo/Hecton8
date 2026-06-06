@@ -7,31 +7,34 @@ poi_tags: poi.ending_record_card;poi.public_ledger_stamp
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: pl_PL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Ending Record Presentation"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Ending Record Presentation
 
-Ending Record Presentation defines the dossier-facing shape of outcomes.
+PL LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes.
 
 ## Scanner
 
-An ending record is evidence, not a trophy shelf.
+PL LOC HOLD: An ending record is evidence, not a trophy shelf.
 
 ## Terminal
 
-ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.
+PL LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.
 
 ## Audio
 
-The ending is not over. It is filed.
+PL LOC HOLD: The ending is not over. It is filed.
 
 ## Field Note
 
-Show who received the payload and what it cost.
+PL LOC HOLD: Show who received the payload and what it cost.
 
 <!-- External Site; generated from P178_ENDING_RECORD_PRESENTATION/pl_PL. -->

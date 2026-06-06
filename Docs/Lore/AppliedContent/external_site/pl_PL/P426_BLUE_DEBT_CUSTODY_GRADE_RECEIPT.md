@@ -7,31 +7,34 @@ poi_tags: poi.blue_debt_receipt;poi.custody_grade_tag
 biome_tags: biome.brine_canyon;biome.claim_admin
 locale: pl_PL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "PL LOC HOLD: Blue Debt Custody Grade Receipt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Blue Debt Custody Grade Receipt
+# PL LOC HOLD: Blue Debt Custody Grade Receipt
 
-HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.
+PL LOC HOLD: HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.
 
 ## Scanner
 
-Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.
+PL LOC HOLD: Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.
 
 ## Terminal
 
-SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.
+PL LOC HOLD: SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.
 
 ## Audio
 
-The expensive part is not the mineral. It is proving where it has been.
+PL LOC HOLD: The expensive part is not the mineral. It is proving where it has been.
 
 ## Field Note
 
-Use for scanner receipt, contract payout tease and resource wiki.
+PL LOC HOLD: Use for scanner receipt, contract payout tease and resource wiki.
 
 <!-- External Site; generated from P426_BLUE_DEBT_CUSTODY_GRADE_RECEIPT/pl_PL. -->

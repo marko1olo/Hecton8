@@ -7,31 +7,34 @@ poi_tags: poi.ran_aegir_route_plate;poi.longrange_catalog_stamp
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: es_ES
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "ES LOC HOLD: Ran-Aegir Distance Model"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Ran-Aegir Distance Model
+# ES LOC HOLD: Ran-Aegir Distance Model
 
-The Ran-Aegir distance model sets the scale: reachable by infrastructure, unreachable by sympathy.
+ES LOC HOLD: The Ran-Aegir distance model sets the scale: reachable by infrastructure, unreachable by sympathy.
 
 ## Scanner
 
-Aegir is close enough to be reachable by 2190, far enough that help is history.
+ES LOC HOLD: Aegir is close enough to be reachable by 2190, far enough that help is history.
 
 ## Terminal
 
-ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.
+ES LOC HOLD: ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.
 
 ## Audio
 
-Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.
+ES LOC HOLD: Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.
 
 ## Field Note
 
-Use approximate route numbers as pressure, not as a decorative star chart.
+ES LOC HOLD: Use approximate route numbers as pressure, not as a decorative star chart.
 
 <!-- External Site; generated from P141_RAN_AEGIR_DISTANCE_MODEL/es_ES. -->

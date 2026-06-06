@@ -7,31 +7,34 @@ poi_tags: poi.public_aegir_article;poi.moon_ladder_plate
 biome_tags: biome.publication;biome.aegir_orbital_pressure
 locale: id_ID
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "ID LOC HOLD: Aegir System Public Primer Article"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Aegir System Public Primer Article
+# ID LOC HOLD: Aegir System Public Primer Article
 
-Aegir System Public Primer Article gives the public-facing astronomy frame for the moon ladder and route windows.
+ID LOC HOLD: Aegir System Public Primer Article gives the public-facing astronomy frame for the moon ladder and route windows.
 
 ## Scanner
 
-Aegir is not backdrop. It is a timetable with gravity.
+ID LOC HOLD: Aegir is not backdrop. It is a timetable with gravity.
 
 ## Terminal
 
-PUBLIC ARTICLE TIER: moon labels are safe; exact route payload consequences are gated.
+ID LOC HOLD: PUBLIC ARTICLE TIER: moon labels are safe; exact route payload consequences are gated.
 
 ## Audio
 
-The sky is a system, not a ceiling.
+ID LOC HOLD: The sky is a system, not a ceiling.
 
 ## Field Note
 
-Public Aegir text should explain why HECTON-8 is far, valuable and inconvenient.
+ID LOC HOLD: Public Aegir text should explain why HECTON-8 is far, valuable and inconvenient.
 
 <!-- In-Game Wiki; generated from P252_AEGIR_SYSTEM_PUBLIC_PRIMER_ARTICLE/id_ID. -->

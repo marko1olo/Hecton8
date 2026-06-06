@@ -7,16 +7,19 @@ poi_tags: poi.marauder_dossier_terminal;poi.ending_record_spool
 biome_tags: biome.carrier_link;biome.drowned_admin
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Marauder Dossier Persistence"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Marauder Dossier Persistence
 
-The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power.
+RU LOC HOLD: The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power.
 
 ## Scanner
 
@@ -32,6 +35,6 @@ DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, 
 
 ## Field Note
 
-The dossier remembers evidence and warnings; it does not make pressure forgiving.
+RU LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.
 
 <!-- External Site; generated from P099_MARAUDER_DOSSIER_PERSISTENCE/ru_RU. -->

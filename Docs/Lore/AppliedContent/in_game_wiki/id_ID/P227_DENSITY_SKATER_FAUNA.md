@@ -7,31 +7,34 @@ poi_tags: poi.density_skater_trace;poi.brine_surface_ripple
 biome_tags: biome.brine_canyon;biome.density_layer
 locale: id_ID
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "ID LOC HOLD: Density Skater Fauna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Density Skater Fauna
+# ID LOC HOLD: Density Skater Fauna
 
-Density Skater Fauna are mid-depth creatures built around real density-layer behavior rather than fantasy levitation.
+ID LOC HOLD: Density Skater Fauna are mid-depth creatures built around real density-layer behavior rather than fantasy levitation.
 
 ## Scanner
 
-Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.
+ID LOC HOLD: Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.
 
 ## Terminal
 
-FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.
+ID LOC HOLD: FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.
 
 ## Audio
 
-Something is walking on the water inside the water.
+ID LOC HOLD: Something is walking on the water inside the water.
 
 ## Field Note
 
-Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.
+ID LOC HOLD: Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.
 
 <!-- In-Game Wiki; generated from P227_DENSITY_SKATER_FAUNA/id_ID. -->

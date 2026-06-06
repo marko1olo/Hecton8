@@ -7,14 +7,17 @@ poi_tags: poi.worker_dossier_transcript;poi.pump_chief_voice_note
 biome_tags: biome.colony_infrastructure;biome.codex
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "RU LOC HOLD: Аудиотранскрипт рабочего досье"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Аудиотранскрипт рабочего досье
+# RU LOC HOLD: Аудиотранскрипт рабочего досье
 
 Мертвая колония читается как рабочее место, сломанное физикой и политикой, а не как реквизит мелодрамы.
 

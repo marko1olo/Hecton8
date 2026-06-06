@@ -7,16 +7,19 @@ poi_tags: poi.site_start_here_nav;poi.codex_front_index
 biome_tags: biome.publication;biome.codex
 locale: pt_BR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 1
+title: "PT LOC HOLD: Start Here: HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Start Here: HECTON-8
+# PT LOC HOLD: Start Here: HECTON-8
 
-The first public record of HECTON-8 is not a distress call. It is a contract. The Black Keel carrier logs the moon as a recoverable ocean claim, Deep Reach describes the loss as a storm-and-collapse event, and the old colony appears in the paperwork as a field of damaged assets, sealed compartments and uncertain data.
+PT LOC HOLD: The first public record of HECTON-8 is not a distress call. It is a contract. The Black Keel carrier logs the moon as a recoverable ocean claim, Deep Reach describes the loss as a storm-and-collapse event, and the old colony appears in the paperwork as a field of damaged assets, sealed compartments and uncertain data.
 
 That language is the first wrong thing. HECTON-8 was a working colony built around pressure systems, brine routes, relay yards, vent-forge machinery and ocean-floor extraction. Its people lived by shift boards, seal ratings, water rations and acoustic return windows. The catastrophe did not erase them at once. It left traces in places where nobody writing the public report expected a witness: a pump board with names still assigned, a quarantine door that stayed locked too long, a maintenance route held open after the evacuation math had already failed.
 

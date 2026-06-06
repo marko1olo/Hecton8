@@ -7,31 +7,34 @@ poi_tags: poi.atlas_severance_key;poi.continuity_cut_warning
 biome_tags: biome.atlas_basin;biome.factory_temple
 locale: es_ES
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Final Question Severance Mercy Theft"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Final Question Severance Mercy Theft
 
-Final Question Severance Mercy Theft defines the shutdown ethical axis.
+ES LOC HOLD: Final Question Severance Mercy Theft defines the shutdown ethical axis.
 
 ## Scanner
 
-Severing Atlas is not a simple shutdown button.
+ES LOC HOLD: Severing Atlas is not a simple shutdown button.
 
 ## Terminal
 
-SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.
+ES LOC HOLD: SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.
 
 ## Audio
 
-A clean switch would be merciful. You do not get one.
+ES LOC HOLD: A clean switch would be merciful. You do not get one.
 
 ## Field Note
 
-The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.
+ES LOC HOLD: The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.
 
 <!-- External Site; generated from P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT/es_ES. -->

@@ -7,31 +7,34 @@ poi_tags: poi.quarantine_hold_notice;poi.orbital_air_counter
 biome_tags: biome.black_keel_orbit;biome.photic_shelf
 locale: fr_FR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Quarantine Hold Stale Air"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Quarantine Hold Stale Air
 
-Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.
+FR LOC HOLD: Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.
 
 ## Scanner
 
-You are alive, sealed, and still not free.
+FR LOC HOLD: You are alive, sealed, and still not free.
 
 ## Terminal
 
-QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.
+FR LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.
 
 ## Audio
 
-The hatch opens only to another closed hatch.
+FR LOC HOLD: The hatch opens only to another closed hatch.
 
 ## Field Note
 
-This is the bureaucratic version of drowning.
+FR LOC HOLD: This is the bureaucratic version of drowning.
 
 <!-- In-Game Wiki; generated from P134_QUARANTINE_HOLD_STALE_AIR/fr_FR. -->

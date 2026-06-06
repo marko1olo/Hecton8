@@ -7,31 +7,34 @@ poi_tags: poi.brine_density_slate;poi.current_shelf_marker
 biome_tags: biome.brine;biome.geology
 locale: pl_PL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "PL LOC HOLD: Brine Canyon Density Ladder Guide"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Brine Canyon Density Ladder Guide
+# PL LOC HOLD: Brine Canyon Density Ladder Guide
 
-HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.
+PL LOC HOLD: HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.
 
 ## Scanner
 
-Brine canyon ladder detected. Density layers turn depth into route planning.
+PL LOC HOLD: Brine canyon ladder detected. Density layers turn depth into route planning.
 
 ## Terminal
 
-FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.
+PL LOC HOLD: FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.
 
 ## Audio
 
-A canyon is a staircase if your hull can pay for each step.
+PL LOC HOLD: A canyon is a staircase if your hull can pay for each step.
 
 ## Field Note
 
-Use for scanner tutorials and resource route articles.
+PL LOC HOLD: Use for scanner tutorials and resource route articles.
 
 <!-- External Site; generated from P352_BRINE_CANYON_DENSITY_LADDER_GUIDE/pl_PL. -->

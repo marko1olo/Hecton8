@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir Transfer Windows"
+title: "ES LOC HOLD: Aegir Transfer Windows"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Aegir Transfer Windows
+# ES LOC HOLD: Aegir Transfer Windows
 
-Aegir distance turns communication, descent and recovery into separate problems. A message can arrive while the carrier is out of position; a carrier can wait while weather shutters close; a legal claim can open while the ocean below remains physically unreachable.
+ES LOC HOLD: Aegir distance turns communication, descent and recovery into separate problems. A message can arrive while the carrier is out of position; a carrier can wait while weather shutters close; a legal claim can open while the ocean below remains physically unreachable.
 
 ## Scanner
 
-Route archive. Aegir traffic moves through light delay, transfer mass, relay custody, weather shutters and Black Keel claim timing.
+ES LOC HOLD: Route archive. Aegir traffic moves through light delay, transfer mass, relay custody, weather shutters and Black Keel claim timing.
 
 ## Terminal
 
-PUBLIC ARCHIVE NODE // AEGIR ROUTE LIMITS. No FTL channel is recorded. Recovery depends on relay packet age, carrier position, storm plumes, descent mass and custody handshake.
+ES LOC HOLD: PUBLIC ARCHIVE NODE // AEGIR ROUTE LIMITS. No FTL channel is recorded. Recovery depends on relay packet age, carrier position, storm plumes, descent mass and custody handshake.
 
 ## Audio
 
-The sky is a schedule. It can be beautiful and still refuse to move for you.
+ES LOC HOLD: The sky is a schedule. It can be beautiful and still refuse to move for you.
 
 ## Field Note
 
-Marauder note: read Aegir like weather and paperwork at once. A clear sky can still mean the route is closed.
+ES LOC HOLD: Marauder note: read Aegir like weather and paperwork at once. A clear sky can still mean the route is closed.
 
 <!-- In-Game Wiki; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/es_ES. -->

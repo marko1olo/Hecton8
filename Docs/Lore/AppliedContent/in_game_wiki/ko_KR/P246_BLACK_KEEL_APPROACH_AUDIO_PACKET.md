@@ -7,31 +7,34 @@ poi_tags: poi.black_keel_approach_log;poi.tender_audio_buffer
 biome_tags: biome.carrier_interface;biome.claim_admin
 locale: ko_KR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "KO LOC HOLD: Black Keel Approach Packet"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Black Keel Approach Packet
+# KO LOC HOLD: Black Keel Approach Packet
 
-Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.
+KO LOC HOLD: Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.
 
 ## Scanner
 
-Approach buffer recovered. Contract active; rescue reserve conditional.
+KO LOC HOLD: Approach buffer recovered. Contract active; rescue reserve conditional.
 
 ## Terminal
 
-BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.
+KO LOC HOLD: BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.
 
 ## Audio
 
-Black Keel tender to claimant. Descent window billed. Return window conditional.
+KO LOC HOLD: Black Keel tender to claimant. Descent window billed. Return window conditional.
 
 ## Field Note
 
-Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.
+KO LOC HOLD: Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.
 
 <!-- In-Game Wiki; generated from P246_BLACK_KEEL_APPROACH_AUDIO_PACKET/ko_KR. -->

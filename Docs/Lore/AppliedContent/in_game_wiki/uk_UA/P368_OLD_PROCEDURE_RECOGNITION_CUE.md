@@ -7,31 +7,34 @@ poi_tags: poi.old_evacuation_procedure;poi.route_safe_stamp
 biome_tags: biome.colony;biome.brine_canyon
 locale: uk_UA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "UK LOC HOLD: Old Procedure Recognition Cue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Old Procedure Recognition Cue
+# UK LOC HOLD: Old Procedure Recognition Cue
 
-The player's personal stake grows when familiar safety procedure appears inverted: a worker-protection form became a liability shield.
+UK LOC HOLD: The player's personal stake grows when familiar safety procedure appears inverted: a worker-protection form became a liability shield.
 
 ## Scanner
 
-Procedure line familiar. Worker count and route-safe stamp do not agree.
+UK LOC HOLD: Procedure line familiar. Worker count and route-safe stamp do not agree.
 
 ## Terminal
 
-EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.
+UK LOC HOLD: EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.
 
 ## Audio
 
-You know this form. It was supposed to protect people from exactly this.
+UK LOC HOLD: You know this form. It was supposed to protect people from exactly this.
 
 ## Field Note
 
-Use where room evidence contradicts a clean procedural label.
+UK LOC HOLD: Use where room evidence contradicts a clean procedural label.
 
 <!-- In-Game Wiki; generated from P368_OLD_PROCEDURE_RECOGNITION_CUE/uk_UA. -->

@@ -7,31 +7,34 @@ poi_tags: poi.public_report_packet;poi.quarantine_redaction
 biome_tags: biome.public_archive;biome.relay_archive
 locale: nl_NL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "False Public Report Packet"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # False Public Report Packet
 
-False Public Report Packet states the Deep Reach public version and the hidden omissions.
+NL LOC HOLD: False Public Report Packet states the Deep Reach public version and the hidden omissions.
 
 ## Scanner
 
-The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.
+NL LOC HOLD: The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.
 
 ## Terminal
 
-PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.
+NL LOC HOLD: PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.
 
 ## Audio
 
-They did not fake the storm. They buried the choice.
+NL LOC HOLD: They did not fake the storm. They buried the choice.
 
 ## Field Note
 
-The strongest lie is mostly true. It removes weighting, margin and delay.
+NL LOC HOLD: The strongest lie is mostly true. It removes weighting, margin and delay.
 
 <!-- External Site; generated from P190_FALSE_PUBLIC_REPORT_PACKET/nl_NL. -->

@@ -7,31 +7,34 @@ poi_tags: poi.black_keel_contract_board;poi.bathydrop_manifest
 biome_tags: biome.orbit_transfer;biome.shallows
 locale: pl_PL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "PL LOC HOLD: Contract Approach Act Gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Contract Approach Act Gate
+# PL LOC HOLD: Contract Approach Act Gate
 
-The opening act should frame HECTON-8 as professional salvage before the truth becomes personal. The player is not a tourist and not a family avenger.
+PL LOC HOLD: The opening act should frame HECTON-8 as professional salvage before the truth becomes personal. The player is not a tourist and not a family avenger.
 
 ## Scanner
 
-Act gate: contract accepted. Lien pressure and old Deep Reach procedure are already visible.
+PL LOC HOLD: Act gate: contract accepted. Lien pressure and old Deep Reach procedure are already visible.
 
 ## Terminal
 
-CAMPAIGN ACT CONTRACT: Black Keel accepts claim transfer, lien exposure and bathydrop timing. Recovery is conditional.
+PL LOC HOLD: CAMPAIGN ACT CONTRACT: Black Keel accepts claim transfer, lien exposure and bathydrop timing. Recovery is conditional.
 
 ## Audio
 
-You came for work. The paperwork already knows you worked for Deep Reach.
+PL LOC HOLD: You came for work. The paperwork already knows you worked for Deep Reach.
 
 ## Field Note
 
-Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears.
+PL LOC HOLD: Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears.
 
 <!-- In-Game Wiki; generated from P381_CONTRACT_APPROACH_ACT_GATE/pl_PL. -->

@@ -7,14 +7,17 @@ poi_tags: poi.atlas_repair_trace_transcript;poi.conductive_biofilm_caption
 biome_tags: biome.atlas_repair_network;biome.deep_ecology
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "RU LOC HOLD: Транскрипт ремонтного следа Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Транскрипт ремонтного следа Atlas
+# RU LOC HOLD: Транскрипт ремонтного следа Atlas
 
 Аудио Atlas пугает тем, что считает жизнь, металл и воду одной поврежденной сервисной поверхностью.
 

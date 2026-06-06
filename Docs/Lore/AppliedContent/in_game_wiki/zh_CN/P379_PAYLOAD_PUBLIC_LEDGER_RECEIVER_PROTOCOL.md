@@ -7,31 +7,34 @@ poi_tags: poi.public_ledger_uplink;poi.witness_hash_stack
 biome_tags: biome.atlas_basin;biome.claim_route
 locale: zh_CN
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "ZH LOC HOLD: Payload Public Ledger Receiver Protocol"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Payload Public Ledger Receiver Protocol
+# ZH LOC HOLD: Payload Public Ledger Receiver Protocol
 
-The public ledger route exposes proof through delayed external custody. It can stop erasure while creating new political and corporate pressure.
+ZH LOC HOLD: The public ledger route exposes proof through delayed external custody. It can stop erasure while creating new political and corporate pressure.
 
 ## Scanner
 
-Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.
+ZH LOC HOLD: Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.
 
 ## Terminal
 
-PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.
+ZH LOC HOLD: PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.
 
 ## Audio
 
-Once it leaves, it is no longer your truth. That is the point and the cost.
+ZH LOC HOLD: Once it leaves, it is no longer your truth. That is the point and the cost.
 
 ## Field Note
 
-Receiver record: public ledger release moves proof outside Deep Reach custody and outside player control.
+ZH LOC HOLD: Receiver record: public ledger release moves proof outside Deep Reach custody and outside player control.
 
 <!-- In-Game Wiki; generated from P379_PAYLOAD_PUBLIC_LEDGER_RECEIVER_PROTOCOL/zh_CN. -->

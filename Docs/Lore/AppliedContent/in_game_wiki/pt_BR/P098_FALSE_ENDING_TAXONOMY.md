@@ -7,31 +7,34 @@ poi_tags: poi.false_ending_board;poi.material_exit_choice
 biome_tags: biome.payload_gantry;biome.carrier_link
 locale: pt_BR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "False Ending Taxonomy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # False Ending Taxonomy
 
-HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.
+PT-BR LOC HOLD: HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.
 
 ## Scanner
 
-Ending board. Some exits are real enough to count and wrong enough to hurt.
+PT-BR LOC HOLD: Ending board. Some exits are real enough to count and wrong enough to hurt.
 
 ## Terminal
 
-ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.
+PT-BR LOC HOLD: ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.
 
 ## Audio
 
-Leaving is not the same as finishing.
+PT-BR LOC HOLD: Leaving is not the same as finishing.
 
 ## Field Note
 
-False ending must not be a trick. It must be a valid bad bargain.
+PT-BR LOC HOLD: False ending must not be a trick. It must be a valid bad bargain.
 
 <!-- In-Game Wiki; generated from P098_FALSE_ENDING_TAXONOMY/pt_BR. -->

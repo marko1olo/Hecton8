@@ -7,31 +7,34 @@ poi_tags: poi.vent_anchor_colony;poi.hot_sulfide_rib
 biome_tags: biome.thermal_vent;biome.brine_canyon
 locale: nl_NL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "NL LOC HOLD: Vent Anchor Colonies"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Vent Anchor Colonies
+# NL LOC HOLD: Vent Anchor Colonies
 
-Vent Anchor Colonies connect HECTON-8 ecology to crafting routes without turning resources into magic ore.
+NL LOC HOLD: Vent Anchor Colonies connect HECTON-8 ecology to crafting routes without turning resources into magic ore.
 
 ## Scanner
 
-Colony ribs lock to thermal vents, trapping sulfides and feeding the material routes needed for deep-rated repairs.
+NL LOC HOLD: Colony ribs lock to thermal vents, trapping sulfides and feeding the material routes needed for deep-rated repairs.
 
 ## Terminal
 
-RESOURCE NOTE: vent anchor colonies increase sealant and pressure-ceramic probability. Thermal exposure remains lethal.
+NL LOC HOLD: RESOURCE NOTE: vent anchor colonies increase sealant and pressure-ceramic probability. Thermal exposure remains lethal.
 
 ## Audio
 
-Every good repair part is sitting in water that wants to cook you.
+NL LOC HOLD: Every good repair part is sitting in water that wants to cook you.
 
 ## Field Note
 
-Vent anchor: resource sign, temperature hazard, biology shelter and first clue that forge chemistry is alive around the edges.
+NL LOC HOLD: Vent anchor: resource sign, temperature hazard, biology shelter and first clue that forge chemistry is alive around the edges.
 
 <!-- In-Game Wiki; generated from P228_VENT_ANCHOR_COLONIES/nl_NL. -->

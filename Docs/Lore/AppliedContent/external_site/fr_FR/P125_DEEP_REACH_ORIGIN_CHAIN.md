@@ -7,31 +7,34 @@ poi_tags: poi.deep_reach_old_charter;poi.centauri_shell_mark
 biome_tags: biome.relay_archive;biome.industrial_shelf
 locale: fr_FR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Deep Reach Origin Chain"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Deep Reach Origin Chain
 
-Deep Reach Origin Chain anchors the corporation in older human expansion, keeping Aegir as one of its worst projects rather than its birthplace.
+FR LOC HOLD: Deep Reach Origin Chain anchors the corporation in older human expansion, keeping Aegir as one of its worst projects rather than its birthplace.
 
 ## Scanner
 
-Old company. New disaster. Same charter language.
+FR LOC HOLD: Old company. New disaster. Same charter language.
 
 ## Terminal
 
-CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.
+FR LOC HOLD: CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.
 
 ## Audio
 
-They brought the empire in filing cabinets.
+FR LOC HOLD: They brought the empire in filing cabinets.
 
 ## Field Note
 
-Deep Reach did not grow up on Aegir. It arrived with paperwork already old.
+FR LOC HOLD: Deep Reach did not grow up on Aegir. It arrived with paperwork already old.
 
 <!-- External Site; generated from P125_DEEP_REACH_ORIGIN_CHAIN/fr_FR. -->

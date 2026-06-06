@@ -7,31 +7,34 @@ poi_tags: poi.beneficiary_clause_redaction;poi.priority_channel_stamp
 biome_tags: biome.contract;biome.deep_reach
 locale: es_ES
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "ES LOC HOLD: Masked Deep Reach Beneficiary Clause"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Masked Deep Reach Beneficiary Clause
+# ES LOC HOLD: Masked Deep Reach Beneficiary Clause
 
-Deep Reach's modern role is not omnipotent control. It is paperwork with teeth: proxy ownership, recovery clauses and legal pressure around an old flooded disaster.
+ES LOC HOLD: Deep Reach's modern role is not omnipotent control. It is paperwork with teeth: proxy ownership, recovery clauses and legal pressure around an old flooded disaster.
 
 ## Scanner
 
-Contract clause redacted. Beneficiary chain routes through proxy loss desk.
+ES LOC HOLD: Contract clause redacted. Beneficiary chain routes through proxy loss desk.
 
 ## Terminal
 
-BENEFICIARY TRACE: Deep Reach is absent from the visible hire sheet and present in the priority recovery channel. Proxy holder masks liability while preserving coordinate access.
+ES LOC HOLD: BENEFICIARY TRACE: Deep Reach is absent from the visible hire sheet and present in the priority recovery channel. Proxy holder masks liability while preserving coordinate access.
 
 ## Audio
 
-If the name is missing but the channel opens first, the owner is still in the room.
+ES LOC HOLD: If the name is missing but the channel opens first, the owner is still in the room.
 
 ## Field Note
 
-Do not write this as a villain monologue. Show the clause and let the player infer the pressure.
+ES LOC HOLD: Do not write this as a villain monologue. Show the clause and let the player infer the pressure.
 
 <!-- External Site; generated from P322_MASKED_DEEP_REACH_BENEFICIARY_CLAUSE/es_ES. -->

@@ -7,31 +7,34 @@ poi_tags: poi.professional_guilt_note;poi.old_signature_match
 biome_tags: biome.colony;biome.atlas_basin
 locale: fr_FR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "FR LOC HOLD: Professional Guilt To Personal Stake"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Professional Guilt To Personal Stake
+# FR LOC HOLD: Professional Guilt To Personal Stake
 
-The protagonist's arc is professional interest becoming personal responsibility. This keeps the story adult, technical and free of forced family melodrama.
+FR LOC HOLD: The protagonist's arc is professional interest becoming personal responsibility. This keeps the story adult, technical and free of forced family melodrama.
 
 ## Scanner
 
-Signature match. The form language is old. The names are new.
+FR LOC HOLD: Signature match. The form language is old. The names are new.
 
 ## Terminal
 
-DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.
+FR LOC HOLD: DOSSIER NOTE: personal stake confirmed by procedure recognition, recovered worker evidence, and contract receiver conflict. No family relation required.
 
 ## Audio
 
-You came for a contract. You stayed because you understood the paperwork.
+FR LOC HOLD: You came for a contract. You stayed because you understood the paperwork.
 
 ## Field Note
 
-Use near late dossier and final payload route.
+FR LOC HOLD: Use near late dossier and final payload route.
 
 <!-- In-Game Wiki; generated from P370_PROFESSIONAL_GUILT_TO_PERSONAL_STAKE/fr_FR. -->

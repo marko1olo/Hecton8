@@ -7,31 +7,34 @@ poi_tags: poi.worker_job_card_stack;poi.flooded_id_clip
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: ar_SA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Worker Job Cards"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Worker Job Cards
 
-Worker Job Cards turn names into evidence objects.
+AR LOC HOLD: Worker Job Cards turn names into evidence objects.
 
 ## Scanner
 
-A job card is a face the budget could read.
+AR LOC HOLD: A job card is a face the budget could read.
 
 ## Terminal
 
-JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.
+AR LOC HOLD: JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.
 
 ## Audio
 
-A name without a task becomes a shrine. A task makes it evidence.
+AR LOC HOLD: A name without a task becomes a shrine. A task makes it evidence.
 
 ## Field Note
 
-Make names useful before making them tragic.
+AR LOC HOLD: Make names useful before making them tragic.
 
 <!-- External Site; generated from P157_WORKER_JOB_CARDS/ar_SA. -->

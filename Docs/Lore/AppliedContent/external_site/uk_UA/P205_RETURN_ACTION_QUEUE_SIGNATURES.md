@@ -7,31 +7,34 @@ poi_tags: poi.return_action_queue;poi.payload_first_stamp
 biome_tags: biome.claim_admin;biome.black_keel
 locale: uk_UA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Return Action Queue Signatures"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Return Action Queue Signatures
 
-Return Action Queue signatures keep Deep Reach pressure alive in the present through delayed packets, carrier clauses, and payload-first recovery.
+UA LOC HOLD: Return Action Queue signatures keep Deep Reach pressure alive in the present through delayed packets, carrier clauses, and payload-first recovery.
 
 ## Scanner
 
-The old crime has a live queue.
+UA LOC HOLD: The old crime has a live queue.
 
 ## Terminal
 
-SIGNATURE SEED: Amara Keene, Return Action Queue. Function: prioritizes payload custody before contractor rescue during live Aegir windows.
+UA LOC HOLD: SIGNATURE SEED: Amara Keene, Return Action Queue. Function: prioritizes payload custody before contractor rescue during live Aegir windows.
 
 ## Audio
 
-They are not ghosts. They are delayed paperwork with engines.
+UA LOC HOLD: They are not ghosts. They are delayed paperwork with engines.
 
 ## Field Note
 
-Return Action signatures mark delayed packets, carrier clauses, payload bargains, and present-tense pressure from Deep Reach.
+UA LOC HOLD: Return Action signatures mark delayed packets, carrier clauses, payload bargains, and present-tense pressure from Deep Reach.
 
 <!-- External Site; generated from P205_RETURN_ACTION_QUEUE_SIGNATURES/uk_UA. -->

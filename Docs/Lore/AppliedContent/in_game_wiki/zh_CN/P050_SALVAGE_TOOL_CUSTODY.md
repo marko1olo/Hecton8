@@ -7,31 +7,34 @@ poi_tags: poi.tool_custody;poi.salvage_locker
 biome_tags: biome.drowned_colony;biome.deep_colony
 locale: zh_CN
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Salvage Tool Custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Salvage Tool Custody
 
-Salvage Tool Custody connects minute-to-minute tool use to the ending economy. Cutting a path, repairing a line and taking a sample all become claim evidence.
+CN LOC HOLD: Salvage Tool Custody connects minute-to-minute tool use to the ending economy. Cutting a path, repairing a line and taking a sample all become claim evidence.
 
 ## Scanner
 
-The tool records custody: who cut, who repaired, what sample left the room and which claim owned the work afterward.
+CN LOC HOLD: The tool records custody: who cut, who repaired, what sample left the room and which claim owned the work afterward.
 
 ## Terminal
 
-Custody log: cutter use accepted under salvage claim. Sample rights attached. Evidence export conflicts with material payout route.
+CN LOC HOLD: Custody log: cutter use accepted under salvage claim. Sample rights attached. Evidence export conflicts with material payout route.
 
 ## Audio
 
-Every useful cut leaves paperwork behind.
+CN LOC HOLD: Every useful cut leaves paperwork behind.
 
 ## Field Note
 
-The tool is not neutral. It writes a receipt every time it helps.
+CN LOC HOLD: The tool is not neutral. It writes a receipt every time it helps.
 
 <!-- In-Game Wiki; generated from P050_SALVAGE_TOOL_CUSTODY/zh_CN. -->

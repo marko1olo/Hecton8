@@ -7,31 +7,34 @@ poi_tags: poi.ran_probe_archive;poi.pellet_lane_log
 biome_tags: biome.orbit;biome.archive
 locale: fr_FR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "FR LOC HOLD: Needleprobe Precursor Program"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Needleprobe Precursor Program
+# FR LOC HOLD: Needleprobe Precursor Program
 
-HECTON-8 sits in a no-FTL future. First contact with the Aegir route came through long-duration survey hardware, not instant travel.
+FR LOC HOLD: HECTON-8 sits in a no-FTL future. First contact with the Aegir route came through long-duration survey hardware, not instant travel.
 
 ## Scanner
 
-Long-baseline probe archive. Human survey reached Aegir before crewed freight did.
+FR LOC HOLD: Long-baseline probe archive. Human survey reached Aegir before crewed freight did.
 
 ## Terminal
 
-RAN ARCHIVE: Aegir was mapped by needleprobes, pellet-lane telemetry and delayed relay pings. Deep Reach bought confidence before any crew saw HECTON-8 with human eyes.
+FR LOC HOLD: RAN ARCHIVE: Aegir was mapped by needleprobes, pellet-lane telemetry and delayed relay pings. Deep Reach bought confidence before any crew saw HECTON-8 with human eyes.
 
 ## Audio
 
-Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.
+FR LOC HOLD: Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.
 
 ## Field Note
 
-Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived.
+FR LOC HOLD: Probe archives should be read as route evidence: old telemetry, delayed pings, and risk models made Aegir known before crews arrived.
 
 <!-- External Site; generated from P341_NEEDLEPROBE_PRECURSOR_PROGRAM/fr_FR. -->

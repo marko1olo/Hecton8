@@ -7,31 +7,34 @@ poi_tags: poi.failure_threshold_chart;poi.cracked_sample_case
 biome_tags: biome.brine_canyon;biome.abyssal_machine_field
 locale: de_DE
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Pressure Failure Thresholds"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Pressure Failure Thresholds
 
-Pressure failure thresholds make salvage decisions physical and visible instead of abstract inventory math.
+DE LOC HOLD: Pressure failure thresholds make salvage decisions physical and visible instead of abstract inventory math.
 
 ## Scanner
 
-A good sample can become a hazard by crossing the wrong pressure line.
+DE LOC HOLD: A good sample can become a hazard by crossing the wrong pressure line.
 
 ## Terminal
 
-THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.
+DE LOC HOLD: THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.
 
 ## Audio
 
-Pressure does not care that the label was almost right.
+DE LOC HOLD: Pressure does not care that the label was almost right.
 
 ## Field Note
 
-Failure thresholds should be readable before they punish.
+DE LOC HOLD: Failure thresholds should be readable before they punish.
 
 <!-- In-Game Wiki; generated from P172_PRESSURE_FAILURE_THRESHOLDS/de_DE. -->

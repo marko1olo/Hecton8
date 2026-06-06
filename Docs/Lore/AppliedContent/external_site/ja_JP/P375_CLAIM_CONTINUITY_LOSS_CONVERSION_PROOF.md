@@ -7,31 +7,34 @@ poi_tags: poi.claim_loss_conversion;poi.keelmark_loss_desk_stamp
 biome_tags: biome.claim_route;biome.safe_module
 locale: ja_JP
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "JA LOC HOLD: Claim Continuity Loss Conversion Proof"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Claim Continuity Loss Conversion Proof
+# JA LOC HOLD: Claim Continuity Loss Conversion Proof
 
-The Deep Reach lie is not one memo. It is a chain from physical disaster to evacuation delay to insurance conversion.
+JA LOC HOLD: The Deep Reach lie is not one memo. It is a chain from physical disaster to evacuation delay to insurance conversion.
 
 ## Scanner
 
-Loss conversion stamp. The ledger survived better than the people.
+JA LOC HOLD: Loss conversion stamp. The ledger survived better than the people.
 
 ## Terminal
 
-KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim continuity retained pending material and proof custody.
+JA LOC HOLD: KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim continuity retained pending material and proof custody.
 
 ## Audio
 
-This is where dead workers became a clean column.
+JA LOC HOLD: This is where dead workers became a clean column.
 
 ## Field Note
 
-Final proof stands between the public ledger and the payload receiver: one preserves the dead, the other controls the claim.
+JP LOC HOLD: Final proof stands between the public ledger and the payload receiver: one preserves the dead, the other controls the claim.
 
 <!-- External Site; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/ja_JP. -->

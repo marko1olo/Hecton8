@@ -7,31 +7,34 @@ poi_tags: poi.moon_role_ledger;poi.relay_lane_card
 biome_tags: biome.claim_admin;biome.relay_archive
 locale: pl_PL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Aegir Moon Ledger Role Table"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Aegir Moon Ledger Role Table
 
-Aegir Moon Ledger Role Table summarizes the moon ladder around HECTON-8.
+PL LOC HOLD: Aegir Moon Ledger Role Table summarizes the moon ladder around HECTON-8.
 
 ## Scanner
 
-Aegir moons are not decoration; each public moon label carries a route or salvage role.
+PL LOC HOLD: Aegir moons are not decoration; each public moon label carries a route or salvage role.
 
 ## Terminal
 
-LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumors, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.
+PL LOC HOLD: LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumors, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.
 
 ## Audio
 
-The system has more bodies than stories. Good. Use them as pressure.
+PL LOC HOLD: The system has more bodies than stories. Good. Use them as pressure.
 
 ## Field Note
 
-Use other moons to make HECTON-8 feel embedded in a working system, not isolated fantasy geography.
+PL LOC HOLD: Use other moons to make HECTON-8 feel embedded in a working system, not isolated fantasy geography.
 
 <!-- External Site; generated from P183_AEGIR_MOON_LEDGER_ROLE_TABLE/pl_PL. -->

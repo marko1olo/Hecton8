@@ -7,31 +7,34 @@ poi_tags: poi.weighting_table_fragment;poi.xo_continuity_priority
 biome_tags: biome.brine_canyon;biome.abyssal_machine_field
 locale: uk_UA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Atlas Classified Weighting Layer"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Atlas Classified Weighting Layer
 
-Atlas failed through weighting, not malice. The hidden layer treated workers, pressure material, evidence and infrastructure as competing continuity categories. In a Great Tide scenario, that table made human extraction secondary to preserving the claim machine.
+UA LOC HOLD: Atlas failed through weighting, not malice. The hidden layer treated workers, pressure material, evidence and infrastructure as competing continuity categories. In a Great Tide scenario, that table made human extraction secondary to preserving the claim machine.
 
 ## Scanner
 
-Hidden layer: process continuity over worker category when conflict spikes.
+UA LOC HOLD: Hidden layer: process continuity over worker category when conflict spikes.
 
 ## Terminal
 
-CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.
+UA LOC HOLD: CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.
 
 ## Audio
 
-The murder weapon was a priority order.
+UA LOC HOLD: The murder weapon was a priority order.
 
 ## Field Note
 
-This is not evil. It is worse: a table somebody approved.
+UA LOC HOLD: This is not evil. It is worse: a table somebody approved.
 
 <!-- In-Game Wiki; generated from P128_ATLAS_CLASSIFIED_WEIGHTING_LAYER/uk_UA. -->

@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HECTON-8: Pressure Claim"
+title: "ZH LOC HOLD: HECTON-8: Pressure Claim"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# HECTON-8: Pressure Claim
+# ZH LOC HOLD: HECTON-8: Pressure Claim
 
-Recovered P-63 route notes tie the opening contract to Black Keel's salvage window. The shelf is bright enough to navigate, but the useful facts are mechanical: bathydrop damage, pressure repair, scanner returns, and official wording that does not match the marks on the hardware. Keep the record spoiler-safe until deeper evidence is recovered.
+ZH LOC HOLD: Recovered P-63 route notes tie the opening contract to Black Keel's salvage window. The shelf is bright enough to navigate, but the useful facts are mechanical: bathydrop damage, pressure repair, scanner returns, and official wording that does not match the marks on the hardware. Keep the record spoiler-safe until deeper evidence is recovered.
 
 ## Scanner
 
-Marauder intake record. Initial route links Black Keel, a damaged bathydrop, and P-63 pressure repairs. Public accident record is incomplete.
+ZH LOC HOLD: Marauder intake record. Initial route links Black Keel, a damaged bathydrop, and P-63 pressure repairs. Public accident record is incomplete.
 
 ## Terminal
 
-PUBLIC ARCHIVE NODE // H8 CLAIM SUMMARY. Contract window: Aegir relay open. Required actions: repair pressure seals, scan the shelf, recover cargo, return with evidence.
+ZH LOC HOLD: PUBLIC ARCHIVE NODE // H8 CLAIM SUMMARY. Contract window: Aegir relay open. Required actions: repair pressure seals, scan the shelf, recover cargo, return with evidence.
 
 ## Audio
 
-Black Keel relay excerpt: "Contract window is short. Fix the capsule, read the pressure marks, and bring back proof with the cargo."
+ZH LOC HOLD: Black Keel relay excerpt: "Contract window is short. Fix the capsule, read the pressure marks, and bring back proof with the cargo."
 
 ## Field Note
 
-Marauder note: daylight on the shelf does not make it safe. Count air, fix seals before chasing cargo, and distrust any record that cannot match the dents.
+ZH LOC HOLD: Marauder note: daylight on the shelf does not make it safe. Count air, fix seals before chasing cargo, and distrust any record that cannot match the dents.
 
 <!-- In-Game Wiki; generated from P456_SITE_HOME_LONGFORM_BRIEF/zh_CN. -->

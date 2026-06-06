@@ -7,31 +7,34 @@ poi_tags: poi.local_window_band_table;poi.carrier_phase_clock
 biome_tags: biome.black_keel_orbit;biome.upper_atmosphere
 locale: es_ES
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "ES LOC HOLD: Aegir Window Bands"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Aegir Window Bands
+# ES LOC HOLD: Aegir Window Bands
 
-Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.
+ES LOC HOLD: Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.
 
 ## Scanner
 
-Local band: ascent waits on hours-to-days windows, not instant rescue.
+ES LOC HOLD: Local band: ascent waits on hours-to-days windows, not instant rescue.
 
 ## Terminal
 
-WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.
+ES LOC HOLD: WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.
 
 ## Audio
 
-The carrier can hear you and still be in the wrong sky.
+ES LOC HOLD: The carrier can hear you and still be in the wrong sky.
 
 ## Field Note
 
-Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints.
+ES LOC HOLD: Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints.
 
 <!-- External Site; generated from P422_AEGIR_LOCAL_WINDOW_BAND_TABLE/es_ES. -->

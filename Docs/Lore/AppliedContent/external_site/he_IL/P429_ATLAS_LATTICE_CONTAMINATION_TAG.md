@@ -7,31 +7,34 @@ poi_tags: poi.atlas_lattice_tag;poi.contaminated_sample_case
 biome_tags: biome.atlas_repair_network;biome.deep_ecology
 locale: he_IL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "HE LOC HOLD: Atlas Lattice Contamination Tag"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Atlas Lattice Contamination Tag
+# HE LOC HOLD: Atlas Lattice Contamination Tag
 
-The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.
+HE LOC HOLD: The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.
 
 ## Scanner
 
-Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.
+HE LOC HOLD: Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.
 
 ## Terminal
 
-TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.
+HE LOC HOLD: TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.
 
 ## Audio
 
-If Atlas touched it, the receipt is also a warning label.
+HE LOC HOLD: If Atlas touched it, the receipt is also a warning label.
 
 ## Field Note
 
-Use for contaminated sample scanner, ecology wiki and ending payload flags.
+HE LOC HOLD: Use for contaminated sample scanner, ecology wiki and ending payload flags.
 
 <!-- External Site; generated from P429_ATLAS_LATTICE_CONTAMINATION_TAG/he_IL. -->

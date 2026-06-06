@@ -7,31 +7,34 @@ poi_tags: poi.crew_rotation_manifest;poi.torpor_rack_cert
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: uk_UA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Human Crew Rotation Transit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Human Crew Rotation Transit
 
-Human Crew Rotation Transit is the human side of no-FTL: labor becomes route debt.
+UA LOC HOLD: Human Crew Rotation Transit is the human side of no-FTL: labor becomes route debt.
 
 ## Scanner
 
-Humans do not commute to Aegir. They spend years being cargo with opinions.
+UA LOC HOLD: Humans do not commute to Aegir. They spend years being cargo with opinions.
 
 ## Terminal
 
-CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.
+UA LOC HOLD: CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.
 
 ## Audio
 
-By the time home asks where you are, the room has already flooded.
+UA LOC HOLD: By the time home asks where you are, the room has already flooded.
 
 ## Field Note
 
-A frontier worker sells time before they sell labor.
+UA LOC HOLD: A frontier worker sells time before they sell labor.
 
 <!-- External Site; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/uk_UA. -->

@@ -7,31 +7,34 @@ poi_tags: poi.cable_reef_relay_yard;poi.biofilm_cable_skin
 biome_tags: biome.cable_reef;biome.industrial_shelf
 locale: he_IL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "HE LOC HOLD: Cable Reef Relay Yard POI Kit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Cable Reef Relay Yard POI Kit
+# HE LOC HOLD: Cable Reef Relay Yard POI Kit
 
-Cable reefs make the game's biomechanical horror functional. The player needs what they are afraid to touch.
+HE LOC HOLD: Cable reefs make the game's biomechanical horror functional. The player needs what they are afraid to touch.
 
 ## Scanner
 
-POI kit: relay cable is alive enough to conduct and wrong enough to misroute.
+HE LOC HOLD: POI kit: relay cable is alive enough to conduct and wrong enough to misroute.
 
 ## Terminal
 
-RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.
+HE LOC HOLD: RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.
 
 ## Audio
 
-Do not strip all growth. Some of it is carrying your signal.
+HE LOC HOLD: Do not strip all growth. Some of it is carrying your signal.
 
 ## Field Note
 
-POI evidence kit: Cable Reef Relay Yard links route repair, relay components, scanner stages, and visible industrial reef damage.
+HE LOC HOLD: POI evidence kit: Cable Reef Relay Yard links route repair, relay components, scanner stages, and visible industrial reef damage.
 
 <!-- External Site; generated from P387_CABLE_REEF_RELAY_YARD_POI_KIT/he_IL. -->

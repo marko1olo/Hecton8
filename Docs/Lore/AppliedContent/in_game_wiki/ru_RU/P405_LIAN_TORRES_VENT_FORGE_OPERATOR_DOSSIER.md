@@ -7,31 +7,34 @@ poi_tags: poi.lian_torres_forge_glove;poi.anneal_timer_card
 biome_tags: biome.vent_forge;biome.abyssal_machine_field
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "RU LOC HOLD: Lian Torres/Vent Forge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Lian Torres/Vent Forge
+# RU LOC HOLD: Lian Torres/Vent Forge
 
-Lian Torres' dossier turns pressure glass into labor evidence. The glove, timer and reject tray show that HECTON-8 resources were worked by people before they became salvage categories.
+RU LOC HOLD: Lian Torres' dossier turns pressure glass into labor evidence. The glove, timer and reject tray show that HECTON-8 resources were worked by people before they became salvage categories.
 
 ## Scanner
 
-Dossier: Lian Torres. Glove, timer and reject tray match.
+RU LOC HOLD: Dossier: Lian Torres. Glove, timer and reject tray match.
 
 ## Terminal
 
-LIAN TORRES/VENT FORGE. Reject trays logged pressure history and the price of each seal.
+RU LOC HOLD: LIAN TORRES/VENT FORGE. Reject trays logged pressure history and the price of each seal.
 
 ## Audio
 
-Torres knew which failures could still teach the next seal to hold.
+RU LOC HOLD: Torres knew which failures could still teach the next seal to hold.
 
 ## Field Note
 
-Place in vent forge or pressure-glass salvage chains.
+RU LOC HOLD: Place in vent forge or pressure-glass salvage chains.
 
 <!-- In-Game Wiki; generated from P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER/ru_RU. -->

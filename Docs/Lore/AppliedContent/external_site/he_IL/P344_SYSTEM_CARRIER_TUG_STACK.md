@@ -7,31 +7,34 @@ poi_tags: poi.black_keel_stack_spec;poi.claim_pool_tug_record
 biome_tags: biome.orbit;biome.contract
 locale: he_IL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "HE LOC HOLD: System Carrier Tug Stack"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# System Carrier Tug Stack
+# HE LOC HOLD: System Carrier Tug Stack
 
-HECTON-8's ship fantasy is not a private yacht. It is rented industrial salvage hardware tied to contracts and delayed orbital windows.
+HE LOC HOLD: HECTON-8's ship fantasy is not a private yacht. It is rented industrial salvage hardware tied to contracts and delayed orbital windows.
 
 ## Scanner
 
-Carrier stack record. Black Keel moves salvage by tugs, timers and custody locks.
+HE LOC HOLD: Carrier stack record. Black Keel moves salvage by tugs, timers and custody locks.
 
 ## Terminal
 
-BLACK KEEL SPEC: the carrier is a claim-pool salvage platform. It can hold orbit, receive cargo, recycle debt and deploy capsules. It cannot solve a broken moon insertion chain by itself.
+HE LOC HOLD: BLACK KEEL SPEC: the carrier is a claim-pool salvage platform. It can hold orbit, receive cargo, recycle debt and deploy capsules. It cannot solve a broken moon insertion chain by itself.
 
 ## Audio
 
-The carrier is not your home. It is a machine that knows who owns your debt.
+HE LOC HOLD: The carrier is not your home. It is a machine that knows who owns your debt.
 
 ## Field Note
 
-Carrier ownership record: Black Keel is industrial custody hardware, not a personal rescue ship.
+HE LOC HOLD: Carrier ownership record: Black Keel is industrial custody hardware, not a personal rescue ship.
 
 <!-- External Site; generated from P344_SYSTEM_CARRIER_TUG_STACK/he_IL. -->

@@ -7,31 +7,34 @@ poi_tags: poi.codex_unlock_tier_card;poi.packet_unlock_gate
 biome_tags: biome.dossier_archive;biome.p63_shallows
 locale: zh_CN
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "CN LOC HOLD: PDA Unlock Tier Rules"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# PDA Unlock Tier Rules
+# CN LOC HOLD: PDA Unlock Tier Rules
 
-PDA unlock tiers follow evidence order: hint, fragment, proof, synthesis, and ending record.
+CN LOC HOLD: PDA unlock tiers follow evidence order: hint, fragment, proof, synthesis, and ending record.
 
 ## Scanner
 
-The PDA should explain only what the player has physically earned.
+CN LOC HOLD: The PDA should explain only what the player has physically earned.
 
 ## Terminal
 
-PDA TIERS: hint -> fragment -> proof -> synthesis -> ending record. Do not reveal route truth before the object is found.
+CN LOC HOLD: PDA TIERS: hint -> fragment -> proof -> synthesis -> ending record. Do not reveal route truth before the object is found.
 
 ## Audio
 
-The codex is a receipt, not a teacher.
+CN LOC HOLD: The codex is a receipt, not a teacher.
 
 ## Field Note
 
-Unlock tiers: scan hint, field note, terminal proof, route-card synthesis, ending record.
+CN LOC HOLD: Unlock tiers: scan hint, field note, terminal proof, route-card synthesis, ending record.
 
 <!-- External Site; generated from P217_IN_GAME_WIKI_UNLOCK_TIER_RULES/zh_CN. -->

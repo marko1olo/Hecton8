@@ -7,31 +7,34 @@ poi_tags: poi.contract_field_label_card;poi.lien_severity_plate
 biome_tags: biome.ui;biome.contract
 locale: ko_KR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "KR LOC HOLD: Contract Card Field Labels"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Contract Card Field Labels
+# KR LOC HOLD: Contract Card Field Labels
 
-Contract Card Field Labels define the minimum readable pressure fields for salvage claim selection.
+KR LOC HOLD: Contract Card Field Labels define the minimum readable pressure fields for salvage claim selection.
 
 ## Scanner
 
-Hide a clause and the UI becomes the lie.
+KR LOC HOLD: Hide a clause and the UI becomes the lie.
 
 ## Terminal
 
-CONTRACT LABELS: short, physical, comparable, no flavor paragraph.
+KR LOC HOLD: CONTRACT LABELS: short, physical, comparable, no flavor paragraph.
 
 ## Audio
 
-A clean contract is dangerous if it is incomplete.
+KR LOC HOLD: A clean contract is dangerous if it is incomplete.
 
 ## Field Note
 
-Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.
+KR LOC HOLD: Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.
 
 <!-- In-Game Wiki; generated from P267_CONTRACT_CARD_FIELD_LABELS/ko_KR. -->

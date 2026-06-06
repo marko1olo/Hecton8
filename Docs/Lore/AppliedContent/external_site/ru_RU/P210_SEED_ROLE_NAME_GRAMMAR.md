@@ -7,16 +7,19 @@ poi_tags: poi.seed_role_name_card;poi.proc_roster_rule
 biome_tags: biome.worker_locker;biome.dossier_archive
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Грамматика seed-role имен"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Грамматика seed-role имен
 
-Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant.
+RU LOC HOLD: Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant.
 
 ## Scanner
 

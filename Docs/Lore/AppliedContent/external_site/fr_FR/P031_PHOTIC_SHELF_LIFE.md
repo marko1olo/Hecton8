@@ -7,11 +7,14 @@ poi_tags: poi.shallow_biome_scan;poi.drop_shelter_window
 biome_tags: biome.crash_shelf;biome.photic_shelf
 locale: fr_FR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Vie du plateau photique"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Vie du plateau photique
@@ -24,7 +27,7 @@ La biologie du plateau peu profond est vive, sonore et peu altérée. La lune n'
 
 ## Terminal
 
-SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.
+FR LOC HOLD: SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.
 
 ## Audio
 

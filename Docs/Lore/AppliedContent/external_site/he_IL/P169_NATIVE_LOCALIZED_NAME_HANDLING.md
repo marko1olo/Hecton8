@@ -7,31 +7,34 @@ poi_tags: poi.localized_name_policy;poi.rtl_name_strip
 biome_tags: biome.claim_admin;biome.shallow_annex
 locale: he_IL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Native Localized Name Handling"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Native Localized Name Handling
 
-Native Localized Name Handling defines localization-safe colony naming.
+HE LOC HOLD: Native Localized Name Handling defines localization-safe colony naming.
 
 ## Scanner
 
-Worker names need localization policy before they become UI bugs.
+HE LOC HOLD: Worker names need localization policy before they become UI bugs.
 
 ## Terminal
 
-NAME LOC: personal names remain authored/baked per locale. Job titles, departments and route permissions localize. RTL/CJK layouts need pre-baked short forms and fallback-safe name strips.
+HE LOC HOLD: NAME LOC: personal names remain authored/baked per locale. Job titles, departments and route permissions localize. RTL/CJK layouts need pre-baked short forms and fallback-safe name strips.
 
 ## Audio
 
-A name that breaks the UI is not respect. It is another erasure.
+HE LOC HOLD: A name that breaks the UI is not respect. It is another erasure.
 
 ## Field Note
 
-No live name translation. Preserve identity through baked strings.
+HE LOC HOLD: No live name translation. Preserve identity through baked strings.
 
 <!-- External Site; generated from P169_NATIVE_LOCALIZED_NAME_HANDLING/he_IL. -->

@@ -7,31 +7,34 @@ poi_tags: poi.deep_reach_clause_stamp;poi.recovery_compliance_packet
 biome_tags: biome.deep_reach_pressure;biome.claim_admin
 locale: de_DE
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "DE LOC HOLD: Deep Reach Clause Weight Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Deep Reach Clause Weight Card
+# DE LOC HOLD: Deep Reach Clause Weight Card
 
-Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio.
+DE LOC HOLD: Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio.
 
 ## Scanner
 
-The clause is not a message. It is a hand on the airlock.
+DE LOC HOLD: The clause is not a message. It is a hand on the airlock.
 
 ## Terminal
 
-CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.
+DE LOC HOLD: CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.
 
 ## Audio
 
-They do not need to answer you if the clause already did.
+DE LOC HOLD: They do not need to answer you if the clause already did.
 
 ## Field Note
 
-Recovery Compliance can be quiet for hours and still shape every route through contract language.
+DE LOC HOLD: Recovery Compliance can be quiet for hours and still shape every route through contract language.
 
 <!-- External Site; generated from P245_DEEP_REACH_CLAUSE_WEIGHT_CARD/de_DE. -->

@@ -7,31 +7,34 @@ poi_tags: poi.black_keel_approach_transcript;poi.opening_caption_card
 biome_tags: biome.first_hour;biome.black_keel_orbit
 locale: pl_PL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "PL LOC HOLD: Black Keel Approach Transcript Seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Black Keel Approach Transcript Seed
+# PL LOC HOLD: Black Keel Approach Transcript Seed
 
-The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.
+PL LOC HOLD: The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.
 
 ## Scanner
 
-Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.
+PL LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.
 
 ## Terminal
 
-TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.
+PL LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.
 
 ## Audio
 
-Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.
+PL LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.
 
 ## Field Note
 
-Use for VO script, caption article and first-hour trailer-safe excerpt.
+PL LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt.
 
 <!-- External Site; generated from P436_BLACK_KEEL_APPROACH_TRANSCRIPT_SEED/pl_PL. -->

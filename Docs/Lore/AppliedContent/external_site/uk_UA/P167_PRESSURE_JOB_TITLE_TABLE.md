@@ -7,31 +7,34 @@ poi_tags: poi.job_title_board;poi.pressure_cert_stamp
 biome_tags: biome.industrial_shelf;biome.brine_canyon
 locale: uk_UA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "UK LOC HOLD: Pressure Job Title Table"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Pressure Job Title Table
+# UK LOC HOLD: Pressure Job Title Table
 
-Pressure job titles give the colony a stable labor vocabulary: pump chief, brine cartographer, vent-forge operator, relay notary, and the roles that make evidence physical.
+UK LOC HOLD: Pressure job titles give the colony a stable labor vocabulary: pump chief, brine cartographer, vent-forge operator, relay notary, and the roles that make evidence physical.
 
 ## Scanner
 
-Job titles should explain what kept the colony alive.
+UK LOC HOLD: Job titles should explain what kept the colony alive.
 
 ## Terminal
 
-JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.
+UK LOC HOLD: JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.
 
 ## Audio
 
-Nobody died as Employee 438. They died doing a job.
+UK LOC HOLD: Nobody died as Employee 438. They died doing a job.
 
 ## Field Note
 
-Every title should imply a tool, route or failure.
+UK LOC HOLD: Every title should imply a tool, route or failure.
 
 <!-- External Site; generated from P167_PRESSURE_JOB_TITLE_TABLE/uk_UA. -->

@@ -7,31 +7,34 @@ poi_tags: poi.native_language_backlog;poi.locale_review_stamp
 biome_tags: biome.dossier_archive;biome.localization
 locale: ja_JP
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "JP LOC HOLD: Native Language Release Rules"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Native Language Release Rules
+# JP LOC HOLD: Native Language Release Rules
 
-Native Language Release Rules make every language a shipping artifact, not a machine-translated afterthought.
+JP LOC HOLD: Native Language Release Rules make every language a shipping artifact, not a machine-translated afterthought.
 
 ## Scanner
 
-Draft rows are coverage. Native review is the release boundary.
+JP LOC HOLD: Draft rows are coverage. Native review is the release boundary.
 
 ## Terminal
 
-LANGUAGE RELEASE: locale owner, native reviewer, script direction, font atlas, subtitle proof, baked text rows, and publication status. Live translation is rejected.
+JP LOC HOLD: LANGUAGE RELEASE: locale owner, native reviewer, script direction, font atlas, subtitle proof, baked text rows, and publication status. Live translation is rejected.
 
 ## Audio
 
-Coverage is not quality. Bake it, read it, prove it.
+JP LOC HOLD: Coverage is not quality. Bake it, read it, prove it.
 
 ## Field Note
 
-Every locale needs owner, direction proof, font proof, subtitle proof, baked text proof, and publication status before release.
+JP LOC HOLD: Every locale needs owner, direction proof, font proof, subtitle proof, baked text proof, and publication status before release.
 
 <!-- In-Game Wiki; generated from P220_NATIVE_LANGUAGE_BACKLOG_RULES/ja_JP. -->

@@ -7,31 +7,34 @@ poi_tags: poi.public_ledger_node;poi.civic_law_cache
 biome_tags: biome.admin_spine;biome.relay_spine
 locale: es_ES
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Tau Ceti Public Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Tau Ceti Public Ledger
 
-Tau Ceti Public Ledger is the hard-sci-fi version of accountability: real public institutions exist, but distance turns justice into an afterimage unless the player preserves evidence correctly.
+ES LOC HOLD: Tau Ceti Public Ledger is the hard-sci-fi version of accountability: real public institutions exist, but distance turns justice into an afterimage unless the player preserves evidence correctly.
 
 ## Scanner
 
-Tau Ceti civic ledger fragment. Public enough to scare Deep Reach, too delayed to save the colony.
+ES LOC HOLD: Tau Ceti civic ledger fragment. Public enough to scare Deep Reach, too delayed to save the colony.
 
 ## Terminal
 
-TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.
+ES LOC HOLD: TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.
 
 ## Audio
 
-A court can be honest and useless when light itself is late.
+ES LOC HOLD: A court can be honest and useless when light itself is late.
 
 ## Field Note
 
-Oversight can arrive clean and late. Late is still dead.
+ES LOC HOLD: Oversight can arrive clean and late. Late is still dead.
 
 <!-- External Site; generated from P074_TAU_CETI_PUBLIC_LEDGER/es_ES. -->

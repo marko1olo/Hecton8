@@ -7,16 +7,19 @@ poi_tags: poi.failure_threshold_chart;poi.cracked_sample_case
 biome_tags: biome.brine_canyon;biome.abyssal_machine_field
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Пороги отказа под давлением"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Пороги отказа под давлением
 
-Pressure failure thresholds define when containment, crafting, and salvage cross from useful sample into fracture, bloom, drift, or contamination.
+RU LOC HOLD: Pressure failure thresholds define when containment, crafting, and salvage cross from useful sample into fracture, bloom, drift, or contamination.
 
 ## Scanner
 

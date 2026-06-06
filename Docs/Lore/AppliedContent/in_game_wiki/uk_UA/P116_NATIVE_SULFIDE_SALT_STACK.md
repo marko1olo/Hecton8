@@ -7,31 +7,34 @@ poi_tags: poi.sulfide_wall_sample;poi.salt_crust_shelf
 biome_tags: biome.brine_canyon;biome.vent_forge
 locale: uk_UA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Native Sulfide Salt Stack"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Native Sulfide Salt Stack
 
-Native sulfide salts are baseline HECTON-8 geology. They support batteries, ceramics, conductor cleaning and corrosive hazards. They should appear before blue debt so the player learns that the moon has real chemistry, not only corporate horror material.
+UA LOC HOLD: Native sulfide salts are baseline HECTON-8 geology. They support batteries, ceramics, conductor cleaning and corrosive hazards. They should appear before blue debt so the player learns that the moon has real chemistry, not only corporate horror material.
 
 ## Scanner
 
-Natural resource. Useful, corrosive, older than Deep Reach.
+UA LOC HOLD: Natural resource. Useful, corrosive, older than Deep Reach.
 
 ## Terminal
 
-RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.
+UA LOC HOLD: RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.
 
 ## Audio
 
-The moon was valuable before anyone taught it to be monstrous.
+UA LOC HOLD: The moon was valuable before anyone taught it to be monstrous.
 
 ## Field Note
 
-Not every resource should be spooky. Some are just geology that can still kill you.
+UA LOC HOLD: Not every resource should be spooky. Some are just geology that can still kill you.
 
 <!-- In-Game Wiki; generated from P116_NATIVE_SULFIDE_SALT_STACK/uk_UA. -->
