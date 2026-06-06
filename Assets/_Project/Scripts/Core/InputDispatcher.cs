@@ -1940,7 +1940,8 @@ namespace Hecton8.Core
             }
 
             Interlocked.Exchange(ref _inputReplayWritePending, 1);
-            signal.Set();
+            if (!SignalInputReplayWriterNoThrow(signal))
+                Interlocked.Exchange(ref _inputReplayWritePending, 0);
         }
 
         private void EnsureInputReplayWriterCold()
@@ -1998,8 +1999,7 @@ namespace Hecton8.Core
                 Interlocked.Exchange(ref _inputReplayStopRequested, 1);
                 Interlocked.Exchange(ref _inputReplayWritePending, 0);
                 _inputReplayThread = null;
-                _inputReplaySignal?.Dispose();
-                _inputReplaySignal = null;
+                DisposeInputReplaySignalNoThrow();
                 ReleaseInputReplayMap();
             }
 #endif
@@ -2015,12 +2015,10 @@ namespace Hecton8.Core
         {
             Interlocked.Exchange(ref _inputReplayStopRequested, 1);
             AutoResetEvent signal = _inputReplaySignal;
-            signal?.Set();
+            SignalInputReplayWriterNoThrow(signal);
 
             Thread thread = _inputReplayThread;
-            bool stopped = true;
-            if (thread != null && thread.IsAlive)
-                stopped = thread.Join(2000);
+            bool stopped = TryJoinInputReplayThreadNoThrow(thread);
 
             if (!stopped)
             {
@@ -2029,10 +2027,61 @@ namespace Hecton8.Core
             }
 
             _inputReplayThread = null;
-            _inputReplaySignal?.Dispose();
-            _inputReplaySignal = null;
+            DisposeInputReplaySignalNoThrow();
             Interlocked.Exchange(ref _inputReplayWritePending, 0);
             ReleaseInputReplayMap();
+        }
+
+        private static bool SignalInputReplayWriterNoThrow(AutoResetEvent signal)
+        {
+            if (signal == null)
+                return false;
+
+            try
+            {
+                signal.Set();
+                return true;
+            }
+            catch (Exception)
+            {
+                CrashTelemetryBuffer.ReportBlackBoxExportFailure();
+                return false;
+            }
+        }
+
+        private static bool TryJoinInputReplayThreadNoThrow(Thread thread)
+        {
+            if (thread == null || !thread.IsAlive)
+                return true;
+
+            try
+            {
+                return thread.Join(2000);
+            }
+            catch (Exception)
+            {
+                CrashTelemetryBuffer.ReportBlackBoxExportFailure();
+                return false;
+            }
+        }
+
+        private void DisposeInputReplaySignalNoThrow()
+        {
+            if (_inputReplaySignal == null)
+                return;
+
+            try
+            {
+                _inputReplaySignal.Dispose();
+            }
+            catch (Exception)
+            {
+                CrashTelemetryBuffer.ReportBlackBoxExportFailure();
+            }
+            finally
+            {
+                _inputReplaySignal = null;
+            }
         }
 
         private void ReleaseInputReplayMap()
@@ -2041,18 +2090,43 @@ namespace Hecton8.Core
 #if HECTON8_MMF_AVAILABLE
             if (_inputReplayPointer != null)
             {
-                if (_inputReplayAccessor != null)
-                    _inputReplayAccessor.SafeMemoryMappedViewHandle.ReleasePointer();
-                _inputReplayPointer = null;
+                try
+                {
+                    if (_inputReplayAccessor != null)
+                        _inputReplayAccessor.SafeMemoryMappedViewHandle.ReleasePointer();
+                }
+                catch (Exception)
+                {
+                    CrashTelemetryBuffer.ReportBlackBoxExportFailure();
+                }
+                finally
+                {
+                    _inputReplayPointer = null;
+                }
             }
 
-            _inputReplayAccessor?.Dispose();
+            DisposeInputReplayResourceNoThrow(_inputReplayAccessor);
             _inputReplayAccessor = null;
-            _inputReplayMappedFile?.Dispose();
+            DisposeInputReplayResourceNoThrow(_inputReplayMappedFile);
             _inputReplayMappedFile = null;
 #endif
-            _inputReplayStream?.Dispose();
+            DisposeInputReplayResourceNoThrow(_inputReplayStream);
             _inputReplayStream = null;
+        }
+
+        private static void DisposeInputReplayResourceNoThrow(IDisposable resource)
+        {
+            if (resource == null)
+                return;
+
+            try
+            {
+                resource.Dispose();
+            }
+            catch (Exception)
+            {
+                CrashTelemetryBuffer.ReportBlackBoxExportFailure();
+            }
         }
 
         private void WriteInputReplayHeader()
@@ -2089,7 +2163,11 @@ namespace Hecton8.Core
                         if (!TryAcquireInputReplaySnapshotGate())
                         {
                             Interlocked.Exchange(ref _inputReplayWritePending, 1);
-                            signal.Set();
+                            if (!SignalInputReplayWriterNoThrow(signal))
+                            {
+                                Interlocked.Exchange(ref _inputReplayWritePending, 0);
+                                Interlocked.Exchange(ref _inputReplayStopRequested, 1);
+                            }
                             Thread.Yield();
                             continue;
                         }

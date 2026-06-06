@@ -773,6 +773,9 @@ namespace Hecton8.Core
                 return;
 
             Initialize();
+            if (_initialized == 0)
+                return;
+
             RegisterInputHook();
             TryRegisterHotSwapListener();
             TryRegisterLateFrameTickable();
@@ -780,6 +783,9 @@ namespace Hecton8.Core
 
         private void Start()
         {
+            if (_initialized == 0)
+                return;
+
             TryRegisterLateFrameTickable();
         }
 
@@ -947,25 +953,39 @@ namespace Hecton8.Core
                 return;
             }
 
-            _sources = AllocateNativeArray<NativeAllocationSnapshotSource>(MaxSnapshotSources, nameof(_sources), NativeArrayOptions.UninitializedMemory);
-            _snapshotScratch = AllocateNativeArray<byte>(SnapshotScratchBytes, nameof(_snapshotScratch), NativeArrayOptions.UninitializedMemory);
-            _sourceHashes = AllocateNativeArray<ReplaySourceHash>(MaxSnapshotSources, nameof(_sourceHashes), NativeArrayOptions.ClearMemory);
-            _inputJournal = AllocateNativeArray<DodReplayInputEvent>(InputJournalCapacity, nameof(_inputJournal), NativeArrayOptions.ClearMemory);
-            _jobProfiles = AllocateNativeArray<DodReplayJobProfileRecord>(SidecarCapacity, nameof(_jobProfiles), NativeArrayOptions.ClearMemory);
-            _panicRecords = AllocateNativeArray<DodReplayBurstPanicRecord>(SidecarCapacity, nameof(_panicRecords), NativeArrayOptions.ClearMemory);
-            _panicPayloadBytes = AllocateNativeArray<byte>(PanicPayloadCapacity * PanicPayloadStrideBytes, nameof(_panicPayloadBytes), NativeArrayOptions.ClearMemory);
-            _aupDriftRecords = AllocateNativeArray<DodReplayAupDriftRecord>(SidecarCapacity, nameof(_aupDriftRecords), NativeArrayOptions.ClearMemory);
-            _aupDriftStates = AllocateNativeArray<AupDriftState>(AupTrackedSubjectCapacity, nameof(_aupDriftStates), NativeArrayOptions.ClearMemory);
-            _ghostRecords = AllocateNativeArray<DodReplayEntityGhostRecord>(GhostCapacity, nameof(_ghostRecords), NativeArrayOptions.ClearMemory);
-            _logisticFlowRecords = AllocateNativeArray<DodReplayLogisticFlowRecord>(SidecarCapacity, nameof(_logisticFlowRecords), NativeArrayOptions.ClearMemory);
-            _atmosphereRecords = AllocateNativeArray<DodReplayAtmosphereCellRecord>(SidecarCapacity, nameof(_atmosphereRecords), NativeArrayOptions.ClearMemory);
-            _vramRecords = AllocateNativeArray<DodReplayVramAllocationRecord>(SidecarCapacity, nameof(_vramRecords), NativeArrayOptions.ClearMemory);
-            _physicsSmokeRecords = AllocateNativeArray<DodReplayPhysicsSmokeRecord>(SidecarCapacity, nameof(_physicsSmokeRecords), NativeArrayOptions.ClearMemory);
+            try
+            {
+                _sources = AllocateNativeArray<NativeAllocationSnapshotSource>(MaxSnapshotSources, nameof(_sources), NativeArrayOptions.UninitializedMemory);
+                _snapshotScratch = AllocateNativeArray<byte>(SnapshotScratchBytes, nameof(_snapshotScratch), NativeArrayOptions.UninitializedMemory);
+                _sourceHashes = AllocateNativeArray<ReplaySourceHash>(MaxSnapshotSources, nameof(_sourceHashes), NativeArrayOptions.ClearMemory);
+                _inputJournal = AllocateNativeArray<DodReplayInputEvent>(InputJournalCapacity, nameof(_inputJournal), NativeArrayOptions.ClearMemory);
+                _jobProfiles = AllocateNativeArray<DodReplayJobProfileRecord>(SidecarCapacity, nameof(_jobProfiles), NativeArrayOptions.ClearMemory);
+                _panicRecords = AllocateNativeArray<DodReplayBurstPanicRecord>(SidecarCapacity, nameof(_panicRecords), NativeArrayOptions.ClearMemory);
+                _panicPayloadBytes = AllocateNativeArray<byte>(PanicPayloadCapacity * PanicPayloadStrideBytes, nameof(_panicPayloadBytes), NativeArrayOptions.ClearMemory);
+                _aupDriftRecords = AllocateNativeArray<DodReplayAupDriftRecord>(SidecarCapacity, nameof(_aupDriftRecords), NativeArrayOptions.ClearMemory);
+                _aupDriftStates = AllocateNativeArray<AupDriftState>(AupTrackedSubjectCapacity, nameof(_aupDriftStates), NativeArrayOptions.ClearMemory);
+                _ghostRecords = AllocateNativeArray<DodReplayEntityGhostRecord>(GhostCapacity, nameof(_ghostRecords), NativeArrayOptions.ClearMemory);
+                _logisticFlowRecords = AllocateNativeArray<DodReplayLogisticFlowRecord>(SidecarCapacity, nameof(_logisticFlowRecords), NativeArrayOptions.ClearMemory);
+                _atmosphereRecords = AllocateNativeArray<DodReplayAtmosphereCellRecord>(SidecarCapacity, nameof(_atmosphereRecords), NativeArrayOptions.ClearMemory);
+                _vramRecords = AllocateNativeArray<DodReplayVramAllocationRecord>(SidecarCapacity, nameof(_vramRecords), NativeArrayOptions.ClearMemory);
+                _physicsSmokeRecords = AllocateNativeArray<DodReplayPhysicsSmokeRecord>(SidecarCapacity, nameof(_physicsSmokeRecords), NativeArrayOptions.ClearMemory);
 
-            _writerSignal = new AutoResetEvent(false); // COLD ALLOC: AutoResetEvent[1] - SPSC writer wake signal - owner: DodReplayRecorder
-            InitializeReplayFile();
-            StartWriterThread();
-            _initialized = 1;
+                _writerSignal = new AutoResetEvent(false); // COLD ALLOC: AutoResetEvent[1] - SPSC writer wake signal - owner: DodReplayRecorder
+                InitializeReplayFile();
+                if (!StartWriterThread())
+                {
+                    ShutdownAllocatedReplayStateAfterInitializeFailure();
+                    enabled = false;
+                    return;
+                }
+
+                _initialized = 1;
+            }
+            catch (Exception)
+            {
+                ShutdownAllocatedReplayStateAfterInitializeFailure();
+                enabled = false;
+            }
         }
 
         private static NativeArray<T> AllocateNativeArray<T>(int length, string label, NativeArrayOptions options)
@@ -999,7 +1019,7 @@ namespace Hecton8.Core
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled || _initialized == 0)
                 return;
 
             if (_registeredLateFrame != 0)
@@ -1013,7 +1033,7 @@ namespace Hecton8.Core
 
         private void TryRegisterHotSwapListener()
         {
-            if (_registeredHotSwap != 0 || !Application.isPlaying)
+            if (_registeredHotSwap != 0 || !Application.isPlaying || _initialized == 0)
                 return;
 
             _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this) ? 1 : 0;
@@ -1031,6 +1051,9 @@ namespace Hecton8.Core
         private void TryRegisterLateFrameTickable()
         {
             if (_registeredLateFrame != 0)
+                return;
+
+            if (_initialized == 0)
                 return;
 
             if (!Application.isPlaying)
@@ -1456,7 +1479,12 @@ namespace Hecton8.Core
                 if (stagedBytes > 0)
                 {
                     Volatile.Write(ref _pendingWriteBytes, stagedBytes);
-                    _writerSignal.Set();
+                    if (!SignalWriterNoThrow())
+                    {
+                        Volatile.Write(ref _pendingWriteBytes, 0);
+                        Volatile.Write(ref _writeInProgress, 0);
+                        captured = false;
+                    }
                 }
                 else
                 {
@@ -1739,33 +1767,61 @@ namespace Hecton8.Core
                 _replayStream.SetLength(ReplayFileCapacityBytes);
         }
 
-        private void StartWriterThread()
+        private bool StartWriterThread()
         {
-            _writerThread = new Thread(WriterLoop)
+            try
             {
-                IsBackground = true,
-                Name = "H8.DODReplayWriter",
-                Priority = HectonThreadPriorityPolicy.Resolve(HectonThreadRole.BackgroundIo)
-            };
-            _writerThread.Start();
+                Volatile.Write(ref _writerShouldStop, 0);
+                Thread writerThread = new Thread(WriterLoop)
+                {
+                    IsBackground = true,
+                    Name = "H8.DODReplayWriter",
+                    Priority = HectonThreadPriorityPolicy.Resolve(HectonThreadRole.BackgroundIo)
+                };
+                _writerThread = writerThread;
+                writerThread.Start();
+                return true;
+            }
+            catch (Exception)
+            {
+                Volatile.Write(ref _writerShouldStop, 1);
+                Volatile.Write(ref _writeInProgress, 0);
+                _writerThread = null;
+                return false;
+            }
         }
 
         private void WriterLoop()
         {
-            while (Volatile.Read(ref _writerShouldStop) == 0)
+            try
             {
-                _writerSignal.WaitOne();
-                if (Volatile.Read(ref _writerShouldStop) != 0)
-                    return;
-
-                int byteCount = Volatile.Read(ref _pendingWriteBytes);
-                if (byteCount <= 0)
+                while (Volatile.Read(ref _writerShouldStop) == 0)
                 {
-                    Volatile.Write(ref _writeInProgress, 0);
-                    continue;
-                }
+                    AutoResetEvent signal = _writerSignal;
+                    if (signal == null)
+                        return;
 
-                WritePendingScratch(byteCount);
+                    signal.WaitOne();
+                    if (Volatile.Read(ref _writerShouldStop) != 0)
+                        return;
+
+                    int byteCount = Volatile.Read(ref _pendingWriteBytes);
+                    if (byteCount <= 0)
+                    {
+                        Volatile.Write(ref _writeInProgress, 0);
+                        continue;
+                    }
+
+                    WritePendingScratch(byteCount);
+                }
+            }
+            catch (Exception)
+            {
+                Volatile.Write(ref _writerShouldStop, 1);
+            }
+            finally
+            {
+                Volatile.Write(ref _writeInProgress, 0);
             }
         }
 
@@ -1804,16 +1860,61 @@ namespace Hecton8.Core
         private void StopWriterThread()
         {
             Volatile.Write(ref _writerShouldStop, 1);
-            _writerSignal?.Set();
+            SignalWriterNoThrow();
 
-            if (_writerThread != null && _writerThread.IsAlive)
-                _writerThread.Join(250);
+            TryJoinWriterNoThrow(_writerThread);
 
             _writerThread = null;
+            DisposeWriterSignalNoThrow();
+        }
 
-            if (_writerSignal != null)
+        private bool SignalWriterNoThrow()
+        {
+            AutoResetEvent signal = _writerSignal;
+            if (signal == null)
+                return false;
+
+            try
+            {
+                signal.Set();
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        private bool TryJoinWriterNoThrow(Thread thread)
+        {
+            if (thread == null || !thread.IsAlive)
+                return true;
+
+            try
+            {
+                thread.Join(250);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        private void DisposeWriterSignalNoThrow()
+        {
+            if (_writerSignal == null)
+                return;
+
+            try
             {
                 _writerSignal.Dispose();
+            }
+            catch (Exception)
+            {
+            }
+            finally
+            {
                 _writerSignal = null;
             }
         }
@@ -1841,8 +1942,27 @@ namespace Hecton8.Core
 
         private void DisposeReplayFile()
         {
-            _replayStream?.Dispose();
-            _replayStream = null;
+            try
+            {
+                _replayStream?.Dispose();
+            }
+            catch (Exception)
+            {
+            }
+            finally
+            {
+                _replayStream = null;
+            }
+        }
+
+        private void ShutdownAllocatedReplayStateAfterInitializeFailure()
+        {
+            StopWriterThread();
+            DisposeReplayFile();
+            DisposeNativeBuffers();
+            if (ReferenceEquals(_activeRecorder, this))
+                _activeRecorder = null;
+            Volatile.Write(ref _initialized, 0);
         }
 
         private void DisposeNativeBuffers()
@@ -1869,9 +1989,25 @@ namespace Hecton8.Core
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            catch (Exception)
+            {
+            }
+
+            try
+            {
+                array.Dispose();
+            }
+            catch (Exception)
+            {
+            }
+            finally
+            {
+                array = default;
+            }
         }
 
         private sealed class DodReplayNativeBufferSet

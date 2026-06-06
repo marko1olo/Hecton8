@@ -15,6 +15,7 @@ namespace Hecton8.Tests.Editor
         private const string ReplayValidatorPath = "Assets/_Project/Scripts/Physics/KCC/Editor/ReplayDeterminismValidator1626.cs";
         private const string GlobalDataVaultPath = "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs";
         private const string H8MemoryPath = "Assets/_Project/Scripts/Core/Memory/H8Memory.cs";
+        private const string DodReplayRecorderPath = "Assets/_Project/Scripts/Core/DodReplayRecorder.cs";
 
         [Test]
         public void ReplayDtosRemainUnmanagedExplicitAndEightByteAligned()
@@ -104,12 +105,15 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("finally", stageBody);
             StringAssert.Contains("TryAcquireInputReplaySnapshotGate()", stageBody);
             StringAssert.Contains("ReleaseInputReplaySnapshotGate()", stageBody);
+            StringAssert.Contains("SignalInputReplayWriterNoThrow(signal)", stageBody);
+            StringAssert.Contains("Interlocked.Exchange(ref _inputReplayWritePending, 0)", stageBody);
 
             string writerBody = ExtractMethodBody(inputDispatcher, "InputReplayWriterLoop");
             StringAssert.Contains("TryAcquireInputReplaySnapshotGate()", writerBody);
             StringAssert.Contains("ReleaseInputReplaySnapshotGate()", writerBody);
             StringAssert.Contains("accessor?.Flush()", writerBody);
             StringAssert.Contains("finally", writerBody);
+            StringAssert.Contains("SignalInputReplayWriterNoThrow(signal)", writerBody);
             int writerAcquire = writerBody.IndexOf("TryAcquireInputReplaySnapshotGate()", StringComparison.Ordinal);
             int writerFlush = writerBody.IndexOf("accessor?.Flush()", StringComparison.Ordinal);
             int writerRelease = writerBody.IndexOf("ReleaseInputReplaySnapshotGate()", StringComparison.Ordinal);
@@ -124,6 +128,45 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("if (_inputReplayPointer != null)", releaseMapBody);
             StringAssert.Contains("if (_inputReplayAccessor != null)", releaseMapBody);
             StringAssert.Contains("_inputReplayPointer = null", releaseMapBody);
+        }
+
+        [Test]
+        public void InputReplayWriterLifecycleUsesNoThrowCleanupHelpers()
+        {
+            string inputDispatcher = File.ReadAllText(InputDispatcherPath);
+            string ensureBody = ExtractMethodBody(inputDispatcher, "EnsureInputReplayWriterCold");
+            string stopBody = ExtractMethodBody(inputDispatcher, "StopInputReplayWriter");
+            string releaseMapBody = ExtractMethodBody(inputDispatcher, "ReleaseInputReplayMap");
+            string signalBody = ExtractMethodBody(inputDispatcher, "SignalInputReplayWriterNoThrow");
+            string joinBody = ExtractMethodBody(inputDispatcher, "TryJoinInputReplayThreadNoThrow");
+            string disposeSignalBody = ExtractMethodBody(inputDispatcher, "DisposeInputReplaySignalNoThrow");
+            string disposeResourceBody = ExtractMethodBody(inputDispatcher, "DisposeInputReplayResourceNoThrow");
+
+            StringAssert.Contains("DisposeInputReplaySignalNoThrow();", ensureBody);
+            StringAssert.Contains("SignalInputReplayWriterNoThrow(signal);", stopBody);
+            StringAssert.Contains("TryJoinInputReplayThreadNoThrow(thread);", stopBody);
+            StringAssert.Contains("DisposeInputReplaySignalNoThrow();", stopBody);
+            Assert.AreEqual(0, CountToken(inputDispatcher, "_inputReplaySignal?.Dispose();"));
+            Assert.AreEqual(0, CountToken(inputDispatcher, "signal?.Set();"));
+            Assert.AreEqual(1, CountToken(inputDispatcher, "signal.Set();"));
+            Assert.AreEqual(1, CountToken(inputDispatcher, "thread.Join(2000);"));
+
+            StringAssert.Contains("catch (Exception)", signalBody);
+            StringAssert.Contains("CrashTelemetryBuffer.ReportBlackBoxExportFailure();", signalBody);
+            StringAssert.Contains("catch (Exception)", joinBody);
+            StringAssert.Contains("CrashTelemetryBuffer.ReportBlackBoxExportFailure();", joinBody);
+            StringAssert.Contains("_inputReplaySignal.Dispose();", disposeSignalBody);
+            StringAssert.Contains("catch (Exception)", disposeSignalBody);
+            StringAssert.Contains("_inputReplaySignal = null;", disposeSignalBody);
+
+            StringAssert.Contains("SafeMemoryMappedViewHandle.ReleasePointer()", releaseMapBody);
+            StringAssert.Contains("catch (Exception)", releaseMapBody);
+            StringAssert.Contains("finally", releaseMapBody);
+            StringAssert.Contains("DisposeInputReplayResourceNoThrow(_inputReplayAccessor);", releaseMapBody);
+            StringAssert.Contains("DisposeInputReplayResourceNoThrow(_inputReplayMappedFile);", releaseMapBody);
+            StringAssert.Contains("DisposeInputReplayResourceNoThrow(_inputReplayStream);", releaseMapBody);
+            StringAssert.Contains("resource.Dispose();", disposeResourceBody);
+            StringAssert.Contains("catch (Exception)", disposeResourceBody);
         }
 
         [Test]
@@ -248,6 +291,88 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("ClearVaultBuffer(ref _inputReplaySnapshotHandle)", clearFrameBody);
             StringAssert.Contains("ClearVaultBuffer(ref _inputReplayFrameHandle)", clearFrameBody);
             StringAssert.Contains("ClearVaultBuffer(ref _inputReplayTelemetryHandle)", clearFrameBody);
+        }
+
+        [Test]
+        public void DodReplayRecorderWriterLifecycleFailsClosed()
+        {
+            string recorder = File.ReadAllText(DodReplayRecorderPath);
+            string onEnableBody = ExtractMethodBody(recorder, "OnEnable");
+            string startUnityBody = ExtractMethodBody(recorder, "Start");
+            string hotSwapBody = ExtractMethodBody(recorder, "OnGlobalRegistryServiceReplaced");
+            string registerHotSwapBody = ExtractMethodBody(recorder, "TryRegisterHotSwapListener");
+            string registerLateFrameBody = ExtractMethodBody(recorder, "TryRegisterLateFrameTickable");
+            string initializeBody = ExtractMethodBody(recorder, "Initialize");
+            string captureBody = ExtractMethodBody(recorder, "CaptureSnapshot");
+            string startBody = ExtractMethodBody(recorder, "StartWriterThread");
+            string loopBody = ExtractMethodBody(recorder, "WriterLoop");
+            string stopBody = ExtractMethodBody(recorder, "StopWriterThread");
+            string signalBody = ExtractMethodBody(recorder, "SignalWriterNoThrow");
+            string joinBody = ExtractMethodBody(recorder, "TryJoinWriterNoThrow");
+            string disposeSignalBody = ExtractMethodBody(recorder, "DisposeWriterSignalNoThrow");
+            string disposeReplayBody = ExtractMethodBody(recorder, "DisposeReplayFile");
+            string initializeFailureBody = ExtractMethodBody(recorder, "ShutdownAllocatedReplayStateAfterInitializeFailure");
+            string disposeNativeArrayBody = ExtractMethodBody(recorder, "DisposeNativeArray");
+
+            StringAssert.Contains("try", initializeBody);
+            StringAssert.Contains("if (!StartWriterThread())", initializeBody);
+            StringAssert.Contains("ShutdownAllocatedReplayStateAfterInitializeFailure();", initializeBody);
+            StringAssert.Contains("enabled = false;", initializeBody);
+
+            StringAssert.Contains("if (_initialized == 0)", onEnableBody);
+            Assert.Greater(onEnableBody.IndexOf("RegisterInputHook();", StringComparison.Ordinal), onEnableBody.IndexOf("if (_initialized == 0)", StringComparison.Ordinal));
+            StringAssert.Contains("if (_initialized == 0)", startUnityBody);
+            StringAssert.Contains("_initialized == 0", hotSwapBody);
+            StringAssert.Contains("_initialized == 0", registerHotSwapBody);
+            StringAssert.Contains("if (_initialized == 0)", registerLateFrameBody);
+
+            int signalFailureIndex = captureBody.IndexOf("if (!SignalWriterNoThrow())", StringComparison.Ordinal);
+            Assert.GreaterOrEqual(signalFailureIndex, 0);
+            Assert.Greater(captureBody.IndexOf("Volatile.Write(ref _pendingWriteBytes, 0);", signalFailureIndex, StringComparison.Ordinal), signalFailureIndex);
+            Assert.Greater(captureBody.IndexOf("Volatile.Write(ref _writeInProgress, 0);", signalFailureIndex, StringComparison.Ordinal), signalFailureIndex);
+            Assert.Greater(captureBody.IndexOf("captured = false;", signalFailureIndex, StringComparison.Ordinal), signalFailureIndex);
+
+            StringAssert.Contains("writerThread.Start();", startBody);
+            StringAssert.Contains("return true;", startBody);
+            StringAssert.Contains("return false;", startBody);
+            StringAssert.Contains("Volatile.Write(ref _writerShouldStop, 1);", startBody);
+            StringAssert.Contains("Volatile.Write(ref _writeInProgress, 0);", startBody);
+
+            StringAssert.Contains("try", loopBody);
+            StringAssert.Contains("finally", loopBody);
+            StringAssert.Contains("Volatile.Write(ref _writeInProgress, 0);", loopBody);
+            StringAssert.Contains("Volatile.Write(ref _writerShouldStop, 1);", loopBody);
+            StringAssert.Contains("signal.WaitOne();", loopBody);
+
+            StringAssert.Contains("SignalWriterNoThrow();", stopBody);
+            StringAssert.Contains("TryJoinWriterNoThrow(_writerThread);", stopBody);
+            StringAssert.Contains("DisposeWriterSignalNoThrow();", stopBody);
+            Assert.AreEqual(0, CountToken(recorder, "_writerSignal.Set();"));
+            Assert.AreEqual(1, CountToken(recorder, "_writerSignal.Dispose();"));
+            Assert.AreEqual(1, CountToken(recorder, "thread.Join(250);"));
+
+            StringAssert.Contains("signal.Set();", signalBody);
+            StringAssert.Contains("catch (Exception)", signalBody);
+            StringAssert.Contains("thread.Join(250);", joinBody);
+            StringAssert.Contains("catch (Exception)", joinBody);
+            StringAssert.Contains("_writerSignal.Dispose();", disposeSignalBody);
+            StringAssert.Contains("catch (Exception)", disposeSignalBody);
+            StringAssert.Contains("_writerSignal = null;", disposeSignalBody);
+            StringAssert.Contains("_replayStream?.Dispose();", disposeReplayBody);
+            StringAssert.Contains("catch (Exception)", disposeReplayBody);
+            StringAssert.Contains("_replayStream = null;", disposeReplayBody);
+            StringAssert.Contains("StopWriterThread();", initializeFailureBody);
+            StringAssert.Contains("DisposeReplayFile();", initializeFailureBody);
+            StringAssert.Contains("DisposeNativeBuffers();", initializeFailureBody);
+            StringAssert.Contains("ReferenceEquals(_activeRecorder, this)", initializeFailureBody);
+            StringAssert.Contains("_activeRecorder = null;", initializeFailureBody);
+            StringAssert.Contains("Volatile.Write(ref _initialized, 0);", initializeFailureBody);
+
+            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array);", disposeNativeArrayBody);
+            StringAssert.Contains("array.Dispose();", disposeNativeArrayBody);
+            Assert.GreaterOrEqual(CountToken(disposeNativeArrayBody, "catch (Exception)"), 2);
+            StringAssert.Contains("finally", disposeNativeArrayBody);
+            StringAssert.Contains("array = default;", disposeNativeArrayBody);
         }
 
         private static void AssertHotBodyClean(string body)
