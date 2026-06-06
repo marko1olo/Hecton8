@@ -237,17 +237,22 @@ namespace Hecton8.Core
     {
         public const int ShinobuBlackboxHighFrameCount = 300;
         public const int ShinobuBlackboxFrameStrideBytes = BlackboxFrameStrideBytes;
+        public const int ShinobuBlackboxSourceCapacity = BlackboxMaxSourceCount;
+        public const int ShinobuBlackboxSourcePayloadBytes = BlackboxSourceStrideBytes;
         public const int ShinobuBlackboxMainThreadWatchdogLane = 0;
         public const uint ShinobuBlackboxSourceFlagFloatScan = BlackboxSourceFlagFloatScan;
         internal const uint BlackboxEmergencyFlushHash = 0x454D464Cu; // EMFL
 
         private const int BlackboxHeaderPrefixBytes = 16;
         private const int BlackboxDumpHeaderBytes = 1024;
+        private const int BlackboxDumpMetadataUIntCapacity = (BlackboxDumpHeaderBytes - BlackboxHeaderPrefixBytes) / 4;
         private const int BlackboxCacheLineBytes = 64;
         private const int BlackboxHashHistoryCount = 100;
         private const int BlackboxHashHistoryBytes = BlackboxHashHistoryCount * 4;
         private const int BlackboxMaxSourceCount = 50;
         private const int BlackboxSourceStrideBytes = 64;
+        private const int BlackboxDumpSourceDescriptorMetadataIndex = 32;
+        private const int BlackboxDumpSourceDescriptorUIntStride = 4;
         private const int BlackboxEventCapacity = 4096;
         private const int BlackboxEventMask = BlackboxEventCapacity - 1;
         private const int BlackboxLoggingMaskCapacity = 64;
@@ -264,7 +269,7 @@ namespace Hecton8.Core
         private const string BlackboxWatchdogThreadName = "H8.BlackboxWatchdog";
         private const string BlackboxDumpRelativePath = "Docs/AgentLogs/Dump_GLOBAL_TELEMETRY_BUS.bin";
         private const uint BlackboxDumpMagic = 0x4838444Du; // H8DM
-        private const uint BlackboxDumpVersion = 1u;
+        private const uint BlackboxDumpVersion = 2u;
         private const uint BlackboxNanFatalHash = 0x4E414E21u; // NAN!
         private const uint BlackboxAupJitterFatalHash = 0x41555021u; // AUP!
         private const uint BlackboxWatchdogFatalHash = 0x57444721u; // WDG!
@@ -450,7 +455,8 @@ namespace Hecton8.Core
 
             lock (_blackboxGate)
             {
-                int count = math.min(_blackboxSourceCount, BlackboxMaxSourceCount);
+                int sourceCapacity = math.min(BlackboxMaxSourceCount, sources.Length);
+                int count = math.min(math.max(0, _blackboxSourceCount), sourceCapacity);
                 for (int i = 0; i < count; i++)
                 {
                     BlackboxSourceSlot existing = sources[i];
@@ -465,7 +471,7 @@ namespace Hecton8.Core
                     return true;
                 }
 
-                if (count >= BlackboxMaxSourceCount)
+                if (count >= sourceCapacity)
                     return false;
 
                 BlackboxSourceSlot sourceSlot = default;
@@ -490,7 +496,8 @@ namespace Hecton8.Core
 
             lock (_blackboxGate)
             {
-                int count = math.min(_blackboxSourceCount, BlackboxMaxSourceCount);
+                int sourceCapacity = math.min(BlackboxMaxSourceCount, sources.Length);
+                int count = math.min(math.max(0, _blackboxSourceCount), sourceCapacity);
                 for (int i = 0; i < count; i++)
                 {
                     if (sources[i].SourceHash != sourceHash)
@@ -1051,7 +1058,8 @@ namespace Hecton8.Core
         {
             bool nonFinite = false;
             bool hasSources = TryReadBlackboxBuffer(in _blackboxSourcesHandle, out NativeArray<BlackboxSourceSlot>.ReadOnly sources);
-            int sourceCount = hasSources ? math.min(_blackboxSourceCount, BlackboxMaxSourceCount) : 0;
+            int sourceCapacity = hasSources ? math.min(BlackboxMaxSourceCount, sources.Length) : 0;
+            int sourceCount = hasSources ? math.min(math.max(0, _blackboxSourceCount), sourceCapacity) : 0;
             for (int i = 0; i < BlackboxMaxSourceCount; i++)
             {
                 byte* target = destination + (i * BlackboxSourceStrideBytes);
@@ -1309,11 +1317,43 @@ namespace Hecton8.Core
                 metadata[16] = unchecked((uint)BlackboxCacheLineBytes);
                 metadata[17] = unchecked((uint)BlackboxHeaderPadBytes);
                 metadata[18] = unchecked((uint)BlackboxHashHistoryPadBytes);
+                metadata[19] = unchecked((uint)BlackboxDumpSourceDescriptorMetadataIndex);
+                metadata[20] = unchecked((uint)BlackboxDumpSourceDescriptorUIntStride);
+                metadata[21] = unchecked((uint)BlackboxMaxSourceCount);
+                WriteBlackboxDumpSourceDescriptorMetadata(metadata);
                 return payloadBytes + BlackboxDumpHeaderBytes;
             }
             catch (Exception)
             {
                 return 0;
+            }
+        }
+
+        private static unsafe void WriteBlackboxDumpSourceDescriptorMetadata(uint* metadata)
+        {
+            if (metadata == null ||
+                !TryReadBlackboxBuffer(in _blackboxSourcesHandle, out NativeArray<BlackboxSourceSlot>.ReadOnly sources))
+            {
+                return;
+            }
+
+            int descriptorCapacity = math.min(
+                math.min(BlackboxMaxSourceCount, sources.Length),
+                math.max(
+                    0,
+                    (BlackboxDumpMetadataUIntCapacity - BlackboxDumpSourceDescriptorMetadataIndex) /
+                    BlackboxDumpSourceDescriptorUIntStride));
+            int sourceCount = math.min(
+                math.max(0, Volatile.Read(ref _blackboxSourceCount)),
+                descriptorCapacity);
+            for (int i = 0; i < sourceCount; i++)
+            {
+                BlackboxSourceSlot source = sources[i];
+                int cursor = BlackboxDumpSourceDescriptorMetadataIndex + (i * BlackboxDumpSourceDescriptorUIntStride);
+                metadata[cursor] = source.SourceHash;
+                metadata[cursor + 1] = source.Flags;
+                metadata[cursor + 2] = unchecked((uint)source.PayloadBytes);
+                metadata[cursor + 3] = unchecked((uint)i);
             }
         }
 
@@ -1690,6 +1730,51 @@ namespace Hecton8.Core
             [FieldOffset(56)] private ulong _pad4;
         }
 
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
+        public struct BlackboxEditorSourcePayload
+        {
+            [FieldOffset(0)] public ulong Payload0;
+            [FieldOffset(8)] public ulong Payload1;
+            [FieldOffset(16)] public ulong Payload2;
+            [FieldOffset(24)] public ulong Payload3;
+            [FieldOffset(32)] public ulong Payload4;
+            [FieldOffset(40)] public ulong Payload5;
+            [FieldOffset(48)] public ulong Payload6;
+            [FieldOffset(56)] public ulong Payload7;
+
+            public uint Word0 => unchecked((uint)Payload0);
+            public uint Word1 => unchecked((uint)(Payload0 >> 32));
+            public uint Word2 => unchecked((uint)Payload1);
+            public uint Word3 => unchecked((uint)(Payload1 >> 32));
+            public uint Word4 => unchecked((uint)Payload2);
+            public uint Word5 => unchecked((uint)(Payload2 >> 32));
+            public uint Word6 => unchecked((uint)Payload3);
+            public uint Word7 => unchecked((uint)(Payload3 >> 32));
+            public uint Word8 => unchecked((uint)Payload4);
+            public uint Word9 => unchecked((uint)(Payload4 >> 32));
+            public uint Word10 => unchecked((uint)Payload5);
+            public uint Word11 => unchecked((uint)(Payload5 >> 32));
+            public uint Word12 => unchecked((uint)Payload6);
+            public uint Word13 => unchecked((uint)(Payload6 >> 32));
+            public uint Word14 => unchecked((uint)Payload7);
+            public uint Word15 => unchecked((uint)(Payload7 >> 32));
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
+        public struct BlackboxEditorSourceDescriptor
+        {
+            [FieldOffset(0)] public uint SourceHash;
+            [FieldOffset(4)] public uint Flags;
+            [FieldOffset(8)] public int PayloadBytes;
+            [FieldOffset(12)] public int Slot;
+            [FieldOffset(16)] private ulong _pad0;
+            [FieldOffset(24)] private ulong _pad1;
+            [FieldOffset(32)] private ulong _pad2;
+            [FieldOffset(40)] private ulong _pad3;
+            [FieldOffset(48)] private ulong _pad4;
+            [FieldOffset(56)] private ulong _pad5;
+        }
+
         public static unsafe int CopyBlackboxEditorFrames(BlackboxEditorFrame[] destination)
         {
             if (destination == null ||
@@ -1726,6 +1811,74 @@ namespace Hecton8.Core
                 frame.ImpactPosition = new Vector3(origin.ImpactPosition.x, origin.ImpactPosition.y, origin.ImpactPosition.z);
                 frame.Slot = slot;
                 destination[i] = frame;
+            }
+
+            return copyCount;
+        }
+
+        public static unsafe int CopyNewestBlackboxEditorSourcePayloads(BlackboxEditorSourcePayload[] destination)
+        {
+            if (destination == null ||
+                destination.Length <= 0 ||
+                !TryReadBlackboxBuffer(in _blackboxBytesHandle, out NativeArray<byte>.ReadOnly bytes))
+            {
+                return 0;
+            }
+
+            if (!TryReadBlackboxFrameBounds(out int validFrames, out int activeFrames, out int writeIndex))
+                return 0;
+
+            int sourceCount = math.min(math.max(0, Volatile.Read(ref _blackboxSourceCount)), BlackboxMaxSourceCount);
+            int copyCount = math.min(sourceCount, destination.Length);
+            if (copyCount <= 0)
+                return 0;
+
+            int newestSlot;
+            if (validFrames >= activeFrames)
+            {
+                newestSlot = writeIndex - 1;
+                if (newestSlot < 0)
+                    newestSlot = activeFrames - 1;
+            }
+            else
+            {
+                newestSlot = validFrames - 1;
+            }
+
+            byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(bytes);
+            byte* framePtr = basePtr + (newestSlot * BlackboxFrameStrideBytes);
+            byte* payloadBase = framePtr + BlackboxSourcePayloadOffsetBytes;
+            for (int i = 0; i < copyCount; i++)
+            {
+                destination[i] = UnsafeUtility.ReadArrayElement<BlackboxEditorSourcePayload>(
+                    payloadBase + (i * BlackboxSourceStrideBytes),
+                    0);
+            }
+
+            return copyCount;
+        }
+
+        public static int CopyBlackboxEditorSourceDescriptors(BlackboxEditorSourceDescriptor[] destination)
+        {
+            if (destination == null ||
+                destination.Length <= 0 ||
+                !TryReadBlackboxBuffer(in _blackboxSourcesHandle, out NativeArray<BlackboxSourceSlot>.ReadOnly sources))
+            {
+                return 0;
+            }
+
+            int sourceCapacity = math.min(BlackboxMaxSourceCount, sources.Length);
+            int sourceCount = math.min(math.max(0, Volatile.Read(ref _blackboxSourceCount)), sourceCapacity);
+            int copyCount = math.min(sourceCount, destination.Length);
+            for (int i = 0; i < copyCount; i++)
+            {
+                BlackboxSourceSlot source = sources[i];
+                BlackboxEditorSourceDescriptor descriptor = default;
+                descriptor.SourceHash = source.SourceHash;
+                descriptor.Flags = source.Flags;
+                descriptor.PayloadBytes = source.PayloadBytes;
+                descriptor.Slot = i;
+                destination[i] = descriptor;
             }
 
             return copyCount;

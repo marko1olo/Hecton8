@@ -190,6 +190,17 @@ namespace Hecton8.Core
             AssertOffset(survivalDeath, "LowestEnergyNormalized", 32);
             AssertOffset(survivalDeath, "LowestIntegrityNormalized", 36);
             AssertOffset(survivalDeath, "Cause", 40);
+
+            string survivalBlackbox = GameplayLayoutNamespace + "SurvivalBlackboxSnapshot";
+            AssertSize(survivalBlackbox, 64);
+            AssertOffset(survivalBlackbox, "SourceHash", 0);
+            AssertOffset(survivalBlackbox, "FrameIndex", 4);
+            AssertOffset(survivalBlackbox, "PlayerEntityHash", 8);
+            AssertOffset(survivalBlackbox, "Oxygen01", 12);
+            AssertOffset(survivalBlackbox, "PressureAtm", 24);
+            AssertOffset(survivalBlackbox, "DecompressionRisk01", 48);
+            AssertOffset(survivalBlackbox, "StatusMask", 56);
+            AssertOffset(survivalBlackbox, "Flags", 60);
         }
 
         private static void VerifyWorldScatterLayouts()

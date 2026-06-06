@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Runtime.InteropServices;
 using Hecton8.Core;
 using UnityEditor;
 using UnityEngine;
@@ -14,20 +15,29 @@ namespace Hecton8.EditorTools
     {
         private const int FramePreviewCount = 300;
         private const int EventPreviewCount = 128;
+        private const int SourcePreviewCount = GlobalTelemetryBus.ShinobuBlackboxSourceCapacity;
         private const int VisibleFrameRows = 48;
         private const int VisibleEventRows = 32;
+        private const int VisibleSourceRows = SourcePreviewCount;
         private const double RefreshIntervalSeconds = 0.25d;
         private const string WindowTitle = "Blackbox X-Ray";
         private const string FlagsCsvRelativePath = "Docs/Tasks/telemetry_flags.csv";
         private const string DictionaryCsvRelativePath = "Docs/Tasks/telemetry_hash_dictionary.csv";
         private const string FlagsMissingStatus = "telemetry_flags.csv not found";
         private const string DictionaryMissingStatus = "telemetry_hash_dictionary.csv not found";
+        private const uint SurvivalSourceHash = 0x53555256u; // SURV
+        private const int SurvivalDeathCauseShift = 24;
 
         private readonly GlobalTelemetryBus.BlackboxEditorFrame[] _frames = new GlobalTelemetryBus.BlackboxEditorFrame[FramePreviewCount];
         private readonly TelemetryEventDTO[] _events = new TelemetryEventDTO[EventPreviewCount];
+        private readonly GlobalTelemetryBus.BlackboxEditorSourcePayload[] _sources =
+            new GlobalTelemetryBus.BlackboxEditorSourcePayload[SourcePreviewCount];
+        private readonly GlobalTelemetryBus.BlackboxEditorSourceDescriptor[] _sourceDescriptors =
+            new GlobalTelemetryBus.BlackboxEditorSourceDescriptor[SourcePreviewCount];
         private readonly Dictionary<uint, string> _eventNames = new Dictionary<uint, string>(256);
         private readonly Label[] _frameLabels = new Label[VisibleFrameRows];
         private readonly Label[] _eventLabels = new Label[VisibleEventRows];
+        private readonly Label[] _sourceLabels = new Label[VisibleSourceRows];
 
         private Label _statusLabel;
         private Label _flagsStatusLabel;
@@ -40,6 +50,8 @@ namespace Hecton8.EditorTools
         private double _nextRefreshTime;
         private int _frameCount;
         private int _eventCount;
+        private int _sourceCount;
+        private int _sourceDescriptorCount;
 
         [MenuItem("Hecton8/Forensics/Blackbox X-Ray Viewer")]
         private static void Open()
@@ -96,6 +108,21 @@ namespace Hecton8.EditorTools
             _dictionaryStatusLabel = new Label();
             rootVisualElement.Add(_dictionaryStatusLabel);
 
+            Label sourceHeader = new Label("Newest source payloads");
+            sourceHeader.style.marginTop = 8f;
+            sourceHeader.style.unityFontStyleAndWeight = FontStyle.Bold;
+            rootVisualElement.Add(sourceHeader);
+
+            ScrollView sourceScroll = new ScrollView();
+            sourceScroll.style.height = 160f;
+            rootVisualElement.Add(sourceScroll);
+            for (int i = 0; i < _sourceLabels.Length; i++)
+            {
+                Label label = new Label();
+                sourceScroll.Add(label);
+                _sourceLabels[i] = label;
+            }
+
             Label eventHeader = new Label("TelemetryEventDTO stream");
             eventHeader.style.marginTop = 8f;
             eventHeader.style.unityFontStyleAndWeight = FontStyle.Bold;
@@ -146,6 +173,8 @@ namespace Hecton8.EditorTools
 
             _frameCount = GlobalTelemetryBus.CopyBlackboxEditorFrames(_frames);
             _eventCount = GlobalTelemetryBus.CopyBlackboxEditorEvents(_events);
+            _sourceCount = GlobalTelemetryBus.CopyNewestBlackboxEditorSourcePayloads(_sources);
+            _sourceDescriptorCount = GlobalTelemetryBus.CopyBlackboxEditorSourceDescriptors(_sourceDescriptors);
 
             if (_statusLabel != null)
             {
@@ -156,10 +185,15 @@ namespace Hecton8.EditorTools
                     GlobalTelemetryBus.BlackboxActiveFrameCount.ToString(CultureInfo.InvariantCulture),
                     " events ",
                     _eventCount.ToString(CultureInfo.InvariantCulture),
+                    " sources ",
+                    _sourceCount.ToString(CultureInfo.InvariantCulture),
+                    "/",
+                    _sourceDescriptorCount.ToString(CultureInfo.InvariantCulture),
                     " fatal ",
                     GlobalTelemetryBus.IsCatastrophicFailure ? "1" : "0");
             }
 
+            SyncSourceRows();
             SyncEventRows();
             SyncFrameRows();
             SceneView.RepaintAll();
@@ -231,6 +265,29 @@ namespace Hecton8.EditorTools
                 _dictionaryStatusLabel.text = string.Concat("telemetry_hash_dictionary.csv rows ", _eventNames.Count.ToString(CultureInfo.InvariantCulture));
         }
 
+        private void SyncSourceRows()
+        {
+            int rowCount = Math.Max(_sourceCount, _sourceDescriptorCount);
+            for (int i = 0; i < _sourceLabels.Length; i++)
+            {
+                Label label = _sourceLabels[i];
+                if (label == null)
+                    continue;
+
+                if (i >= rowCount)
+                {
+                    label.text = string.Empty;
+                    continue;
+                }
+
+                GlobalTelemetryBus.BlackboxEditorSourcePayload payload =
+                    i < _sourceCount ? _sources[i] : default;
+                GlobalTelemetryBus.BlackboxEditorSourceDescriptor descriptor =
+                    i < _sourceDescriptorCount ? _sourceDescriptors[i] : default;
+                label.text = FormatSourcePayload(i, descriptor, payload);
+            }
+        }
+
         private void SyncEventRows()
         {
             int start = Math.Max(0, _eventCount - _eventLabels.Length);
@@ -259,6 +316,89 @@ namespace Hecton8.EditorTools
                     entry.ScalarValue.ToString("0.###", CultureInfo.InvariantCulture),
                     " entity 0x",
                     entry.EntityId.ToString("X8", CultureInfo.InvariantCulture));
+            }
+        }
+
+        private static string FormatSourcePayload(
+            int slot,
+            GlobalTelemetryBus.BlackboxEditorSourceDescriptor descriptor,
+            GlobalTelemetryBus.BlackboxEditorSourcePayload payload)
+        {
+            uint sourceHash = descriptor.SourceHash != 0u ? descriptor.SourceHash : payload.Word0;
+            if (sourceHash == SurvivalSourceHash)
+            {
+                uint flags = payload.Word15;
+                return string.Concat(
+                    "slot ",
+                    slot.ToString(CultureInfo.InvariantCulture),
+                    " SURV frame ",
+                    payload.Word1.ToString(CultureInfo.InvariantCulture),
+                    " player 0x",
+                    payload.Word2.ToString("X8", CultureInfo.InvariantCulture),
+                    " o2 ",
+                    UIntBitsToFloat(payload.Word3).ToString("0.000", CultureInfo.InvariantCulture),
+                    " integrity ",
+                    UIntBitsToFloat(payload.Word4).ToString("0.000", CultureInfo.InvariantCulture),
+                    " depth ",
+                    UIntBitsToFloat(payload.Word5).ToString("0.0", CultureInfo.InvariantCulture),
+                    " atm ",
+                    UIntBitsToFloat(payload.Word6).ToString("0.00", CultureInfo.InvariantCulture),
+                    " deco ",
+                    UIntBitsToFloat(payload.Word12).ToString("0.000", CultureInfo.InvariantCulture),
+                    " status 0x",
+                    payload.Word14.ToString("X8", CultureInfo.InvariantCulture),
+                    " death ",
+                    ResolveSurvivalDeathCauseLabel(flags),
+                    " flags 0x",
+                    flags.ToString("X8", CultureInfo.InvariantCulture),
+                    " srcFlags 0x",
+                    descriptor.Flags.ToString("X8", CultureInfo.InvariantCulture));
+            }
+
+            return string.Concat(
+                "slot ",
+                slot.ToString(CultureInfo.InvariantCulture),
+                " src 0x",
+                sourceHash.ToString("X8", CultureInfo.InvariantCulture),
+                " bytes ",
+                descriptor.PayloadBytes.ToString(CultureInfo.InvariantCulture),
+                " srcFlags 0x",
+                descriptor.Flags.ToString("X8", CultureInfo.InvariantCulture),
+                " payload0 0x",
+                payload.Word0.ToString("X8", CultureInfo.InvariantCulture),
+                " w1 0x",
+                payload.Word1.ToString("X8", CultureInfo.InvariantCulture),
+                " w2 0x",
+                payload.Word2.ToString("X8", CultureInfo.InvariantCulture),
+                " w3 0x",
+                payload.Word3.ToString("X8", CultureInfo.InvariantCulture),
+                " flags 0x",
+                payload.Word15.ToString("X8", CultureInfo.InvariantCulture));
+        }
+
+        private static string ResolveSurvivalDeathCauseLabel(uint flags)
+        {
+            uint cause = (flags >> SurvivalDeathCauseShift) & 0xFFu;
+            switch (cause)
+            {
+                case 0u:
+                    return "none";
+                case 1u:
+                    return "oxygen";
+                case 2u:
+                    return "pressure";
+                case 3u:
+                    return "thermal";
+                case 4u:
+                    return "radiation";
+                case 5u:
+                    return "starvation";
+                case 6u:
+                    return "dehydration";
+                case 7u:
+                    return "integrity";
+                default:
+                    return cause.ToString(CultureInfo.InvariantCulture);
             }
         }
 
@@ -364,6 +504,13 @@ namespace Hecton8.EditorTools
                 ")");
         }
 
+        private static float UIntBitsToFloat(uint bits)
+        {
+            UIntFloatUnion union = default;
+            union.UIntValue = bits;
+            return union.FloatValue;
+        }
+
         private void DrawSceneGizmos(SceneView sceneView)
         {
             if (_frameCount <= 0)
@@ -395,6 +542,13 @@ namespace Hecton8.EditorTools
                    !float.IsInfinity(value.y) &&
                    !float.IsNaN(value.z) &&
                    !float.IsInfinity(value.z);
+        }
+
+        [StructLayout(LayoutKind.Explicit)]
+        private struct UIntFloatUnion
+        {
+            [FieldOffset(0)] public uint UIntValue;
+            [FieldOffset(0)] public float FloatValue;
         }
     }
 }

@@ -33,6 +33,8 @@ TelemetryAnomalySignal|SystemHash:0,AnomalyHash:4,Scalar:8,Frame:12,Severity:16,
 CrashTelemetrySignal|SystemHash:0,ReasonHash:4,Frame:8,ExitCode:12,NativeAllocationCount:16,NativeTrackedBytesMb:20,Severity:24,Flags:25,_padTail0:26,_padTail1:28,_padTail2:32,_padTail3:40,_padTail4:48,_padTail5:56
 CoreFluidCompartmentTelemetryDTO|NodeHash:0,CurrentWaterM3:4,MaxVolumeM3:8,Fill01:12,IngressRateM3PerSecond:16,Flags:20,Frame:24,CompartmentIndex:28,Reserved0:30,_pad0:32,_pad1:40,_pad2:48,_pad3:56
 BlackboxEditorFrame|FrameNumber:0,FatalHash:4,LastEventHash:8,ImpactPosition:12,Slot:24,_pad0:28,_pad1:32,_pad2:40,_pad3:48,_pad4:56
+BlackboxEditorSourcePayload|Payload0:0,Payload1:8,Payload2:16,Payload3:24,Payload4:32,Payload5:40,Payload6:48,Payload7:56
+BlackboxEditorSourceDescriptor|SourceHash:0,Flags:4,PayloadBytes:8,Slot:12,_pad0:16,_pad1:24,_pad2:32,_pad3:40,_pad4:48,_pad5:56
 TelemetryLoggingMaskDTO|SystemHash:0,Mask:4,Version:8,_pad0:12,_pad1:16,_pad2:24,_pad3:32,_pad4:40,_pad5:48,_pad6:56
 BlackboxSourceSlot|SourcePtr:0,SourceHash:8,Flags:12,PayloadBytes:16,_pad0:20,_pad1:24,_pad2:32,_pad3:40,_pad4:48,_pad5:56
 ScalabilityTelemetryEntry|Timestamp:0,RawFrameMs:8,SmoothedFrameMs:12,GlobalQualityWeight:16,VramPressure:20,Flags:24,_pad0:28,_pad1:32,_pad2:33,_pad3:34,_pad4:35,_pad5:36,_pad6:37,_pad7:38,_pad8:39,_pad9:40,_pad10:41,_pad11:42,_pad12:43,_pad13:44,_pad14:45,_pad15:46,_pad16:47,_pad17:48,_pad18:49,_pad19:50,_pad20:51,_pad21:52,_pad22:53,_pad23:54,_pad24:55,_pad25:56,_pad26:57,_pad27:58,_pad28:59,_pad29:60,_pad30:61,_pad31:62,_pad32:63

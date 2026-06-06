@@ -176,6 +176,28 @@ namespace Hecton8.Gameplay
         [FieldOffset(20)] public uint _pad0;
     }
 
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    internal struct SurvivalBlackboxSnapshot
+    {
+        [FieldOffset(0)] public uint SourceHash;
+        [FieldOffset(4)] public uint FrameIndex;
+        [FieldOffset(8)] public uint PlayerEntityHash;
+        [FieldOffset(12)] public float Oxygen01;
+        [FieldOffset(16)] public float Integrity01;
+        [FieldOffset(20)] public float DepthMeters;
+        [FieldOffset(24)] public float PressureAtm;
+        [FieldOffset(28)] public float SafeDepthMeters;
+        [FieldOffset(32)] public float OverpressureMeters;
+        [FieldOffset(36)] public float PressureExposureSeverity01;
+        [FieldOffset(40)] public float NitrogenLoad01;
+        [FieldOffset(44)] public float NitrogenNarcosis01;
+        [FieldOffset(48)] public float DecompressionRisk01;
+        [FieldOffset(52)] public float InternalTemperatureCelsius;
+        [FieldOffset(56)] public uint StatusMask;
+        [FieldOffset(60)] public uint Flags;
+    }
+
     internal struct SurvivalDatabaseColumnMap
     {
         public int StableId;
@@ -354,7 +376,9 @@ namespace Hecton8.Gameplay
         private VaultGenerationHandle<float> _survivalDatabaseVolumeLitersHandle;
         private VaultGenerationHandle<float> _survivalDatabaseEnergyDensityMegajoulesPerKilogramHandle;
         private VaultGenerationHandle<int> _survivalDatabaseBaseDurabilityHandle;
+        private NativeArray<SurvivalBlackboxSnapshot> _survivalBlackboxSnapshot;
         private int _survivalDatabaseItemCount;
+        private int _survivalBlackboxSourceSlot = -1;
         private float _oxygenGraceTimer;
         private float _oxygenGraceVisionBlur01;
         private bool _oxygenGraceActive;
@@ -440,6 +464,20 @@ namespace Hecton8.Gameplay
         private const float OverpressureSeveritySafeDepthScale = 0.35f;
         private const int SurvivalDatabaseRowCapacity = 256;
         private const int SurvivalDatabaseColumnCapacity = 16;
+        private const int SurvivalBlackboxSnapshotCapacity = 1;
+        private const int SurvivalBlackboxSnapshotSizeBytes = 64;
+        private const uint SurvivalBlackboxSourceHash = 0x53555256u; // SURV
+        private const uint SurvivalBlackboxFlagAlive = 1u << 0;
+        private const uint SurvivalBlackboxFlagUnderwater = 1u << 1;
+        private const uint SurvivalBlackboxFlagBeyondSafeDepth = 1u << 2;
+        private const uint SurvivalBlackboxFlagOxygenGrace = 1u << 3;
+        private const uint SurvivalBlackboxFlagBends = 1u << 4;
+        private const uint SurvivalBlackboxFlagFreshPhysiology = 1u << 5;
+        private const uint SurvivalBlackboxFlagNarcosis = 1u << 6;
+        private const uint SurvivalBlackboxFlagToxicity = 1u << 7;
+        private const uint SurvivalBlackboxFlagThermalStress = 1u << 8;
+        private const uint SurvivalBlackboxFlagHasStats = 1u << 9;
+        private const int SurvivalBlackboxDeathCauseShift = 24;
         private const string NativeMemoryOwner = nameof(HectonSurvivalSystem);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private static readonly int _MembraneTissueHashId = LocHash.Compute("Data_MembraneTissue");
@@ -610,6 +648,7 @@ namespace Hecton8.Gameplay
             RefreshSurvivalIdentityCold();
             TryRegisterHotSwapListener();
             TryRegisterTickOwners();
+            EnsureSurvivalBlackboxSnapshot();
             _slowTickDt = 0.1f;
 
             RegisterBloodScentSignal();
@@ -625,6 +664,7 @@ namespace Hecton8.Gameplay
             ResetOxygenGraceState();
             TryWriteMetabolicOxygenStateToVault(ResolveRealOxygen01(oxygen), 0f, 0, out _);
             ResetThermalState();
+            DisposeSurvivalBlackboxSnapshot();
         }
 
         private void OnDestroy()
@@ -636,6 +676,7 @@ namespace Hecton8.Gameplay
                 TryUnregisterHotSwapListener();
             }
 
+            DisposeSurvivalBlackboxSnapshot();
             DisposeInjectedSurvivalDatabase();
         }
 
@@ -941,6 +982,7 @@ namespace Hecton8.Gameplay
             PublishHeadlessUIState();
             PublishDirty();
             CheckLethalConditions();
+            WriteSurvivalBlackboxSnapshot();
         }
 
         // ---------------------------------------------------------
@@ -2532,6 +2574,110 @@ namespace Hecton8.Gameplay
             _survivalDatabaseEnergyDensityMegajoulesPerKilogramHandle = default;
             _survivalDatabaseBaseDurabilityHandle = default;
             _survivalDatabaseItemCount = 0;
+        }
+
+        private unsafe void EnsureSurvivalBlackboxSnapshot()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (!_survivalBlackboxSnapshot.IsCreated)
+            {
+                _survivalBlackboxSnapshot = H8Memory.Allocate<SurvivalBlackboxSnapshot>(
+                    SurvivalBlackboxSnapshotCapacity,
+                    SystemID.GameplayPlayer,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SurvivalBlackboxSnapshot>[1] - survival physiology blackbox source payload - owner: HectonSurvivalSystem
+            }
+
+            if (!_survivalBlackboxSnapshot.IsCreated)
+                return;
+
+            void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_survivalBlackboxSnapshot);
+            if (GlobalTelemetryBus.TryRegisterBlackboxSource(
+                    SurvivalBlackboxSourceHash,
+                    sourcePtr,
+                    SurvivalBlackboxSnapshotSizeBytes,
+                    GlobalTelemetryBus.ShinobuBlackboxSourceFlagFloatScan,
+                    out int slot))
+            {
+                _survivalBlackboxSourceSlot = slot;
+                _survivalBlackboxSnapshot[0] = BuildSurvivalBlackboxSnapshot();
+            }
+        }
+
+        private void DisposeSurvivalBlackboxSnapshot()
+        {
+            if (_survivalBlackboxSourceSlot >= 0)
+            {
+                GlobalTelemetryBus.UnregisterBlackboxSource(SurvivalBlackboxSourceHash);
+                _survivalBlackboxSourceSlot = -1;
+            }
+
+            H8Memory.Release(ref _survivalBlackboxSnapshot, SystemID.GameplayPlayer);
+        }
+
+        private void WriteSurvivalBlackboxSnapshot()
+        {
+            if (!_survivalBlackboxSnapshot.IsCreated || _survivalBlackboxSourceSlot < 0)
+                EnsureSurvivalBlackboxSnapshot();
+
+            if (!_survivalBlackboxSnapshot.IsCreated)
+                return;
+
+            _survivalBlackboxSnapshot[0] = BuildSurvivalBlackboxSnapshot();
+        }
+
+        private SurvivalBlackboxSnapshot BuildSurvivalBlackboxSnapshot()
+        {
+            SurvivalBlackboxSnapshot snapshot = default;
+            snapshot.SourceHash = SurvivalBlackboxSourceHash;
+            snapshot.FrameIndex = SystemDispatcher.CurrentFrameId;
+            snapshot.PlayerEntityHash = ResolvePlayerEntityHash();
+            snapshot.Oxygen01 = SafeSaturate(stats != null ? OxygenNormalized : 0f);
+            snapshot.Integrity01 = SafeSaturate(stats != null ? IntegrityNormalized : 0f);
+            snapshot.DepthMeters = SafeNonNegative(depth);
+            snapshot.PressureAtm = math.max(1f, SafeNonNegative(pressure));
+            snapshot.SafeDepthMeters = SafeNonNegative(stats != null ? ResolveEffectiveSafeDepthMeters() : 0f);
+            snapshot.OverpressureMeters = SafeNonNegative(stats != null ? OverpressureMeters : 0f);
+            snapshot.PressureExposureSeverity01 = SafeSaturate(PressureExposureSeverity01);
+            snapshot.NitrogenLoad01 = SafeSaturate(NitrogenLoad01);
+            snapshot.NitrogenNarcosis01 = SafeSaturate(_nitrogenNarcosis01);
+            snapshot.DecompressionRisk01 = SafeSaturate(_decompressionRisk01);
+            snapshot.InternalTemperatureCelsius = math.select(
+                DefaultInternalTemperatureCelsius,
+                _internalTemperature,
+                math.isfinite(_internalTemperature));
+            snapshot.StatusMask = _statusMask;
+            snapshot.Flags = BuildSurvivalBlackboxFlags();
+            return snapshot;
+        }
+
+        private uint BuildSurvivalBlackboxFlags()
+        {
+            uint flags = 0u;
+            flags |= math.select(0u, SurvivalBlackboxFlagAlive, alive);
+            flags |= math.select(0u, SurvivalBlackboxFlagUnderwater, IsPlayerUnderwater());
+            flags |= math.select(0u, SurvivalBlackboxFlagBeyondSafeDepth, stats != null && IsBeyondSafeDepth);
+            flags |= math.select(0u, SurvivalBlackboxFlagOxygenGrace, _oxygenGraceActive);
+            flags |= math.select(0u, SurvivalBlackboxFlagBends, _physiologyBendsActive);
+            flags |= math.select(0u, SurvivalBlackboxFlagFreshPhysiology, _hasCachedShinobuPhysiologySignal);
+            flags |= math.select(0u, SurvivalBlackboxFlagNarcosis, _nitrogenNarcosis01 > 0.0001f);
+            flags |= math.select(0u, SurvivalBlackboxFlagToxicity, _toxicity01 > 0.0001f);
+            flags |= math.select(0u, SurvivalBlackboxFlagThermalStress, _thermalStressMode != ThermalStressMode.None);
+            flags |= math.select(0u, SurvivalBlackboxFlagHasStats, stats != null);
+            flags |= (((uint)_lastDeathCause) & 0xFFu) << SurvivalBlackboxDeathCauseShift;
+            return flags;
+        }
+
+        private static float SafeSaturate(float value)
+        {
+            return math.saturate(math.select(0f, value, math.isfinite(value)));
+        }
+
+        private static float SafeNonNegative(float value)
+        {
+            return math.max(0f, math.select(0f, value, math.isfinite(value)));
         }
 
         private bool TryPrepareInjectedSurvivalDatabaseBuffers(int requiredLength)
