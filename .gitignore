@@ -193,3 +193,11 @@ ignore.conf
 !Assets/Plugins/Android/mainTemplate.gradle
 .gradle/
 local.properties
+
+# ============================================================================
+# HECTON-8 disposable/generated cleanup
+# ============================================================================
+Docs/AgentLogs/
+Docs/Reports/MetricCharts_Backups/
+Docs/GeneratedAssets/**/Rejected/
+mega_rs109*.py
