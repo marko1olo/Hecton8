@@ -28,6 +28,9 @@ namespace Hecton8.SaveSystem
         [FieldOffset(12)] public uint MessageHash;
         [FieldOffset(16)] public int MessageSlot;
         [FieldOffset(20)] public SaveEventType Type;
+        [FieldOffset(21)] public byte _pad0;
+        [FieldOffset(22)] public byte _pad1;
+        [FieldOffset(23)] public byte _pad2;
     }
 
     public interface ISaveEventListener

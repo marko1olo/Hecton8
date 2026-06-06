@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Gameplay;
 using Hecton8.SaveSystem;
@@ -24,6 +25,25 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(12, (int)Marshal.OffsetOf<SaveEventPayload>(nameof(SaveEventPayload.MessageHash)));
             Assert.AreEqual(16, (int)Marshal.OffsetOf<SaveEventPayload>(nameof(SaveEventPayload.MessageSlot)));
             Assert.AreEqual(20, (int)Marshal.OffsetOf<SaveEventPayload>(nameof(SaveEventPayload.Type)));
+            Assert.AreEqual(21, (int)Marshal.OffsetOf<SaveEventPayload>(nameof(SaveEventPayload._pad0)));
+            Assert.AreEqual(22, (int)Marshal.OffsetOf<SaveEventPayload>(nameof(SaveEventPayload._pad1)));
+            Assert.AreEqual(23, (int)Marshal.OffsetOf<SaveEventPayload>(nameof(SaveEventPayload._pad2)));
+        }
+
+        [Test]
+        public void SaveManagerWfcDirtySignalDrain_UsesOwnerScratchInsteadOfLargeStackalloc()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/SaveManager.cs"));
+
+            StringAssert.Contains("private readonly ulong[] _wfcDirtySectorScratch", source);
+            StringAssert.Contains("private readonly ushort[] _wfcDirtyCellIndexScratch", source);
+            StringAssert.Contains("private readonly byte[] _wfcDirtyCellFlagScratch", source);
+            StringAssert.Contains("_wfcDirtySectorScratch.AsSpan(0, signals.Length)", source);
+            Assert.IsFalse(source.Contains("stackalloc ulong[MaxWfcDirtySectorStackEntries]"));
+            Assert.IsFalse(source.Contains("stackalloc ushort[MaxWfcDirtySectorStackEntries]"));
+            Assert.IsFalse(source.Contains("stackalloc byte[MaxWfcDirtySectorStackEntries]"));
         }
 
         [Test]

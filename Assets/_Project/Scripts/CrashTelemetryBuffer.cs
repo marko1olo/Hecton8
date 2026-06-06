@@ -51,6 +51,7 @@ namespace Hecton8.Core
         private const uint LiveTelemetryMagic = 0x4D4C4554u; // "TELM"
         private const uint LiveTelemetryVersion = 2u;
         private const ulong BinaryMagic = 0x00384E4F54434548ul; // "HECTON8\0" in little-endian byte order.
+        private const string CrashDumpRelativePath = "Docs/AgentLogs/Dump_CRASH_TELEMETRY_BUFFER.bin";
         private const int ProfilerRecorderHandleScratchCapacity = 256;
         private const int BlackBoxExportFailureCounterMax = 1024;
         private const int BlackBoxExportDroppedCounterMax = 1024;
@@ -3075,7 +3076,7 @@ namespace Hecton8.Core
                         return;
 
                     Volatile.Write(ref _pendingExportBytes, exportBytes);
-                    exportQueued = CommitPreparedExportInMemory();
+                    exportQueued = CommitPreparedExportToDump();
                     if (!exportQueued)
                         ClearPendingExportState();
                 }
@@ -3113,7 +3114,7 @@ namespace Hecton8.Core
 
                 Volatile.Write(ref _pendingExportBytes, exportBytes);
                 GlobalTelemetryBus.RequestEmergencyFlushAsync();
-                exportQueued = CommitPreparedExportInMemory();
+                exportQueued = CommitPreparedExportToDump();
             }
             catch (Exception)
             {
@@ -3226,7 +3227,7 @@ namespace Hecton8.Core
             }
         }
 
-        private bool CommitPreparedExportInMemory()
+        private bool CommitPreparedExportToDump()
         {
             bool hadPendingExport =
                 Volatile.Read(ref _pendingExportBytes) > 0 ||
@@ -3235,6 +3236,12 @@ namespace Hecton8.Core
             if (!hadPendingExport || exportBytes <= 0)
                 return false;
 
+            if (!TryWritePreparedExport(exportBytes))
+            {
+                RecordBlackBoxExportFailure();
+                return false;
+            }
+
             int exportFrame = Volatile.Read(ref _pendingExportFrame);
             if (exportFrame >= 0)
                 Volatile.Write(ref _lastExportFrame, exportFrame);
@@ -3242,6 +3249,30 @@ namespace Hecton8.Core
             ClearPendingExportState();
             Volatile.Write(ref _exportState, ExportStateIdle);
             return true;
+        }
+
+        private bool TryWritePreparedExport(int exportBytes)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || exportBytes <= CrashExportHeaderSizeBytes || !_exportScratch.HasHandle)
+                return false;
+
+            VaultGenerationHandle<byte> scratchHandle = _exportScratch.Handle;
+            if (!vault.TryReadOnlyHandle(in scratchHandle, out NativeArray<byte>.ReadOnly exportScratch) ||
+                !exportScratch.IsCreated)
+            {
+                return false;
+            }
+
+            int safeBytes = math.min(exportBytes, exportScratch.Length);
+            if (safeBytes <= CrashExportHeaderSizeBytes)
+                return false;
+
+            unsafe
+            {
+                ReadOnlySpan<byte> payload = new ReadOnlySpan<byte>(exportScratch.GetUnsafeReadOnlyPtr(), safeBytes);
+                return NativeFaultDumpWriter.TryWriteAll(CrashDumpRelativePath, payload, safeBytes);
+            }
         }
 
         private int GetCrashSafeExportFrame()

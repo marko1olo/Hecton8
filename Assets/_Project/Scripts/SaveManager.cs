@@ -173,6 +173,12 @@ namespace Hecton8.SaveSystem
         private readonly SaveBinaryStorage.IndexedSectorEntryInfo[] _indexedSectorDirectoryScratch = new SaveBinaryStorage.IndexedSectorEntryInfo[128];
         // COLD ALLOC: List<SaveSlotInfo>[8] - instance-owned metadata projection scratch - owner: SaveManager
         private readonly SaveSlotInfo[] _saveSlotInfoScratch = new SaveSlotInfo[SaveSlotScratchCapacity];
+        // COLD ALLOC: ulong[256] - WFC dirty-sector Tick scratch capped to fixed signal storm budget - owner: SaveManager
+        private readonly ulong[] _wfcDirtySectorScratch = new ulong[MaxWfcDirtySectorStackEntries];
+        // COLD ALLOC: ushort[256] - WFC dirty-cell index Tick scratch capped to fixed signal storm budget - owner: SaveManager
+        private readonly ushort[] _wfcDirtyCellIndexScratch = new ushort[MaxWfcDirtySectorStackEntries];
+        // COLD ALLOC: byte[256] - WFC dirty-cell flag Tick scratch capped to fixed signal storm budget - owner: SaveManager
+        private readonly byte[] _wfcDirtyCellFlagScratch = new byte[MaxWfcDirtySectorStackEntries];
         // COLD ALLOC: SaveManagerNativeBufferSet[1] - native save buffer owner indirection - owner: SaveManager
         private SaveManagerNativeBufferSet _nativeBuffers = new SaveManagerNativeBufferSet();
 
@@ -1953,9 +1959,9 @@ namespace Hecton8.SaveSystem
                 return;
             }
 
-            Span<ulong> dirtySectors = stackalloc ulong[signals.Length];
-            Span<ushort> dirtyCellIndices = stackalloc ushort[signals.Length];
-            Span<byte> dirtyCellFlags = stackalloc byte[signals.Length];
+            Span<ulong> dirtySectors = _wfcDirtySectorScratch.AsSpan(0, signals.Length);
+            Span<ushort> dirtyCellIndices = _wfcDirtyCellIndexScratch.AsSpan(0, signals.Length);
+            Span<byte> dirtyCellFlags = _wfcDirtyCellFlagScratch.AsSpan(0, signals.Length);
             int dirtySectorCount = 0;
 
             for (int i = 0; i < signals.Length; i++)
@@ -2095,9 +2101,9 @@ namespace Hecton8.SaveSystem
 
         private void DrainWfcOutpostStateChangedSignalsStorm(ReadOnlySpan<WfcOutpostStateChangedSignal> signals)
         {
-            Span<ulong> dirtySectors = stackalloc ulong[MaxWfcDirtySectorStackEntries];
-            Span<ushort> dirtyCellIndices = stackalloc ushort[MaxWfcDirtySectorStackEntries];
-            Span<byte> dirtyCellFlags = stackalloc byte[MaxWfcDirtySectorStackEntries];
+            Span<ulong> dirtySectors = _wfcDirtySectorScratch.AsSpan(0, MaxWfcDirtySectorStackEntries);
+            Span<ushort> dirtyCellIndices = _wfcDirtyCellIndexScratch.AsSpan(0, MaxWfcDirtySectorStackEntries);
+            Span<byte> dirtyCellFlags = _wfcDirtyCellFlagScratch.AsSpan(0, MaxWfcDirtySectorStackEntries);
             int dirtySectorCount = 0;
             bool sectorOverflow = false;
             uint overflowFrame = 0u;
