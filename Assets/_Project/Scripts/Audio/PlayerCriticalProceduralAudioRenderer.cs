@@ -7614,7 +7614,7 @@ namespace Hecton8.Audio
             else
                 _prologueTransitionRingHandle = default;
             _ = ResolveVaultBuffer(vault, ref _audioSynthesisTelemetryRingHandle, PlayerCriticalAudioSynthesisTelemetryRingBufferId, AudioSynthesisTelemetryCapacity, NativeArrayOptions.ClearMemory);
-            if (!AreVaultBackedAudioBuffersCreated())
+            if (!AreVaultBackedAudioBuffersCreated(vault))
             {
                 ClearVaultBackedAudioBufferAliases(clearSabine: true);
                 return false;
@@ -8166,7 +8166,16 @@ namespace Hecton8.Audio
         private bool IsReadOnlyVaultBufferCreated<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId, int requiredLength)
             where T : struct
         {
-            IDataVault vault = _dataVault;
+            return IsReadOnlyVaultBufferCreated(_dataVault, in handle, expectedBufferId, requiredLength);
+        }
+
+        private static bool IsReadOnlyVaultBufferCreated<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
+            int requiredLength)
+            where T : struct
+        {
             return vault != null &&
                    IsPlayerCriticalVaultHandle(in handle, expectedBufferId) &&
                    vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly buffer) &&
@@ -8174,27 +8183,27 @@ namespace Hecton8.Audio
                    buffer.Length >= math.max(1, requiredLength);
         }
 
-        private bool AreGranularVoiceBuffersCreated()
+        private bool AreGranularVoiceBuffersCreated(IDataVault vault)
         {
-            return IsReadOnlyVaultBufferCreated(in _metallicGrainBankHandle, BufferID.PlayerCriticalMetallicGrainBank, MetallicGrainBankCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _granularVoiceActiveHandle, BufferID.PlayerCriticalGranularVoiceActive, GranularVoiceCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _granularVoiceElapsedHandle, BufferID.PlayerCriticalGranularVoiceElapsed, GranularVoiceCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _granularVoiceLengthHandle, BufferID.PlayerCriticalGranularVoiceLength, GranularVoiceCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _granularVoiceStartHandle, BufferID.PlayerCriticalGranularVoiceStart, GranularVoiceCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _granularVoiceSeedHandle, BufferID.PlayerCriticalGranularVoiceSeed, GranularVoiceCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _granularVoiceCursorHandle, BufferID.PlayerCriticalGranularVoiceCursor, GranularVoiceCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _granularVoicePlaybackRateHandle, BufferID.PlayerCriticalGranularVoicePlaybackRate, GranularVoiceCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _granularVoiceGainHandle, BufferID.PlayerCriticalGranularVoiceGain, GranularVoiceCapacity);
+            return IsReadOnlyVaultBufferCreated(vault, in _metallicGrainBankHandle, BufferID.PlayerCriticalMetallicGrainBank, MetallicGrainBankCapacity) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _granularVoiceActiveHandle, BufferID.PlayerCriticalGranularVoiceActive, GranularVoiceCapacity) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _granularVoiceElapsedHandle, BufferID.PlayerCriticalGranularVoiceElapsed, GranularVoiceCapacity) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _granularVoiceLengthHandle, BufferID.PlayerCriticalGranularVoiceLength, GranularVoiceCapacity) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _granularVoiceStartHandle, BufferID.PlayerCriticalGranularVoiceStart, GranularVoiceCapacity) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _granularVoiceSeedHandle, BufferID.PlayerCriticalGranularVoiceSeed, GranularVoiceCapacity) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _granularVoiceCursorHandle, BufferID.PlayerCriticalGranularVoiceCursor, GranularVoiceCapacity) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _granularVoicePlaybackRateHandle, BufferID.PlayerCriticalGranularVoicePlaybackRate, GranularVoiceCapacity) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _granularVoiceGainHandle, BufferID.PlayerCriticalGranularVoiceGain, GranularVoiceCapacity);
         }
 
-        private bool AreBinauralFilterBuffersCreated()
+        private bool AreBinauralFilterBuffersCreated(IDataVault vault)
         {
-            return IsReadOnlyVaultBufferCreated(in _binauralDelayRingHandle, BufferID.PlayerCriticalBinauralDelayRing, BinauralDelayCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _binauralShadowHistoryHandle, BufferID.PlayerCriticalBinauralShadowHistory, BinauralOutputChannels) &&
-                   IsReadOnlyVaultBufferCreated(in _lowPassInputHistory1Handle, BufferID.PlayerCriticalLowPassInputHistory1, 1) &&
-                   IsReadOnlyVaultBufferCreated(in _lowPassInputHistory2Handle, BufferID.PlayerCriticalLowPassInputHistory2, 1) &&
-                   IsReadOnlyVaultBufferCreated(in _lowPassOutputHistory1Handle, BufferID.PlayerCriticalLowPassOutputHistory1, 1) &&
-                   IsReadOnlyVaultBufferCreated(in _lowPassOutputHistory2Handle, BufferID.PlayerCriticalLowPassOutputHistory2, 1);
+            return IsReadOnlyVaultBufferCreated(vault, in _binauralDelayRingHandle, BufferID.PlayerCriticalBinauralDelayRing, BinauralDelayCapacity) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _binauralShadowHistoryHandle, BufferID.PlayerCriticalBinauralShadowHistory, BinauralOutputChannels) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _lowPassInputHistory1Handle, BufferID.PlayerCriticalLowPassInputHistory1, 1) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _lowPassInputHistory2Handle, BufferID.PlayerCriticalLowPassInputHistory2, 1) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _lowPassOutputHistory1Handle, BufferID.PlayerCriticalLowPassOutputHistory1, 1) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _lowPassOutputHistory2Handle, BufferID.PlayerCriticalLowPassOutputHistory2, 1);
         }
 
         private static bool HasBinauralFilterBuffers(ref BinauralFilterVaultViews views)
@@ -8213,12 +8222,12 @@ namespace Hecton8.Audio
                    views.LowPassOutputHistory2.Length > 0;
         }
 
-        private bool AreReverbBuffersCreated()
+        private bool AreReverbBuffersCreated(IDataVault vault)
         {
-            return IsReadOnlyVaultBufferCreated(in _sabineReverbDelayHandle, BufferID.PlayerCriticalSabineReverbDelay, SabineReverbDelayCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _caveConvolutionImpulseHandle, BufferID.PlayerCriticalCaveConvolutionImpulse, CaveConvolutionImpulseLength) &&
-                   IsReadOnlyVaultBufferCreated(in _caveConvolutionDelayHandle, BufferID.PlayerCriticalCaveConvolutionDelay, CaveConvolutionDelayCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _interiorFdnDelayHandle, BufferID.PlayerCriticalInteriorFdnDelay, InteriorFdnDelayCapacity);
+            return IsReadOnlyVaultBufferCreated(vault, in _sabineReverbDelayHandle, BufferID.PlayerCriticalSabineReverbDelay, SabineReverbDelayCapacity) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _caveConvolutionImpulseHandle, BufferID.PlayerCriticalCaveConvolutionImpulse, CaveConvolutionImpulseLength) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _caveConvolutionDelayHandle, BufferID.PlayerCriticalCaveConvolutionDelay, CaveConvolutionDelayCapacity) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _interiorFdnDelayHandle, BufferID.PlayerCriticalInteriorFdnDelay, InteriorFdnDelayCapacity);
         }
 
         private static bool HasReverbBuffers(ref ReverbVaultViews views)
@@ -8233,10 +8242,10 @@ namespace Hecton8.Audio
                    views.InteriorFdnDelay.Length >= InteriorFdnDelayCapacity;
         }
 
-        private bool AreTransientDelayBuffersCreated()
+        private bool AreTransientDelayBuffersCreated(IDataVault vault)
         {
-            return IsReadOnlyVaultBufferCreated(in _impactClangDelayHandle, BufferID.PlayerCriticalImpactClangDelay, ImpactClangDelayCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _thrusterCombDelayHandle, BufferID.PlayerCriticalThrusterCombDelay, ThrusterCombDelayCapacity);
+            return IsReadOnlyVaultBufferCreated(vault, in _impactClangDelayHandle, BufferID.PlayerCriticalImpactClangDelay, ImpactClangDelayCapacity) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _thrusterCombDelayHandle, BufferID.PlayerCriticalThrusterCombDelay, ThrusterCombDelayCapacity);
         }
 
         private static bool HasTransientDelayBuffers(ref TransientDelayVaultViews views)
@@ -8247,18 +8256,18 @@ namespace Hecton8.Audio
                    views.ThrusterCombDelay.Length >= ThrusterCombDelayCapacity;
         }
 
-        private bool AreFrameScratchBuffersCreated(int frameCount)
+        private bool AreFrameScratchBuffersCreated(IDataVault vault, int frameCount)
         {
             int safeFrameCount = math.max(1, frameCount);
-            return IsReadOnlyVaultBufferCreated(in _hullScratchHandle, BufferID.PlayerCriticalHullScratch, safeFrameCount) &&
-                   IsReadOnlyVaultBufferCreated(in _sonarScratchHandle, BufferID.PlayerCriticalSonarScratch, safeFrameCount) &&
-                   IsReadOnlyVaultBufferCreated(in _impactEchoScratchHandle, BufferID.PlayerCriticalImpactEchoScratch, safeFrameCount) &&
-                   IsReadOnlyVaultBufferCreated(in _thrusterScratchHandle, BufferID.PlayerCriticalThrusterScratch, safeFrameCount) &&
-                   IsReadOnlyVaultBufferCreated(in _heartbeatScratchHandle, BufferID.PlayerCriticalHeartbeatScratch, safeFrameCount) &&
-                   IsReadOnlyVaultBufferCreated(in _heartbeatDuckScratchHandle, BufferID.PlayerCriticalHeartbeatDuckScratch, safeFrameCount) &&
-                   IsReadOnlyVaultBufferCreated(in _bubbleScratchHandle, BufferID.PlayerCriticalBubbleScratch, safeFrameCount) &&
-                   IsReadOnlyVaultBufferCreated(in _mixScratchHandle, BufferID.PlayerCriticalMixScratch, safeFrameCount) &&
-                   IsReadOnlyVaultBufferCreated(in _stereoMixScratchHandle, BufferID.PlayerCriticalStereoMixScratch, safeFrameCount * BinauralOutputChannels);
+            return IsReadOnlyVaultBufferCreated(vault, in _hullScratchHandle, BufferID.PlayerCriticalHullScratch, safeFrameCount) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _sonarScratchHandle, BufferID.PlayerCriticalSonarScratch, safeFrameCount) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _impactEchoScratchHandle, BufferID.PlayerCriticalImpactEchoScratch, safeFrameCount) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _thrusterScratchHandle, BufferID.PlayerCriticalThrusterScratch, safeFrameCount) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _heartbeatScratchHandle, BufferID.PlayerCriticalHeartbeatScratch, safeFrameCount) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _heartbeatDuckScratchHandle, BufferID.PlayerCriticalHeartbeatDuckScratch, safeFrameCount) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _bubbleScratchHandle, BufferID.PlayerCriticalBubbleScratch, safeFrameCount) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _mixScratchHandle, BufferID.PlayerCriticalMixScratch, safeFrameCount) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _stereoMixScratchHandle, BufferID.PlayerCriticalStereoMixScratch, safeFrameCount * BinauralOutputChannels);
         }
 
         private static bool HasFrameScratchBuffers(ref FrameScratchVaultViews views, int frameCount)
@@ -8276,31 +8285,31 @@ namespace Hecton8.Audio
                    views.StereoMixScratch.Length >= safeFrameCount * BinauralOutputChannels;
         }
 
-        private bool AreSonarTapBuffersCreated()
+        private bool AreSonarTapBuffersCreated(IDataVault vault)
         {
-            return IsReadOnlyVaultBufferCreated(in _pendingSonarEchoTapsAHandle, BufferID.PlayerCriticalPendingSonarEchoTapsA, SonarEchoTapCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _pendingSonarEchoTapsBHandle, BufferID.PlayerCriticalPendingSonarEchoTapsB, SonarEchoTapCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _workerSonarEchoTapsHandle, BufferID.PlayerCriticalWorkerSonarEchoTaps, SonarEchoTapCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _sonarEchoTapUploadRingHandle, PlayerCriticalSonarEchoTapUploadRingBufferId, SonarEchoTapCapacity);
+            return IsReadOnlyVaultBufferCreated(vault, in _pendingSonarEchoTapsAHandle, BufferID.PlayerCriticalPendingSonarEchoTapsA, SonarEchoTapCapacity) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _pendingSonarEchoTapsBHandle, BufferID.PlayerCriticalPendingSonarEchoTapsB, SonarEchoTapCapacity) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _workerSonarEchoTapsHandle, BufferID.PlayerCriticalWorkerSonarEchoTaps, SonarEchoTapCapacity) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _sonarEchoTapUploadRingHandle, PlayerCriticalSonarEchoTapUploadRingBufferId, SonarEchoTapCapacity);
         }
 
-        private bool AreSonarDspBuffersCreated()
+        private bool AreSonarDspBuffersCreated(IDataVault vault)
         {
-            return IsReadOnlyVaultBufferCreated(in _sonarEchoDelayHandle, BufferID.PlayerCriticalSonarEchoDelay, SonarEchoDelayCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _sonarEchoReadCursorsHandle, BufferID.PlayerCriticalSonarEchoReadCursors, SonarEchoTapCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _sonarEchoFilterInput1Handle, BufferID.PlayerCriticalSonarEchoFilterInput1, SonarEchoTapCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _sonarEchoFilterInput2Handle, BufferID.PlayerCriticalSonarEchoFilterInput2, SonarEchoTapCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _sonarEchoFilterOutput1Handle, BufferID.PlayerCriticalSonarEchoFilterOutput1, SonarEchoTapCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _sonarEchoFilterOutput2Handle, BufferID.PlayerCriticalSonarEchoFilterOutput2, SonarEchoTapCapacity);
+            return IsReadOnlyVaultBufferCreated(vault, in _sonarEchoDelayHandle, BufferID.PlayerCriticalSonarEchoDelay, SonarEchoDelayCapacity) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _sonarEchoReadCursorsHandle, BufferID.PlayerCriticalSonarEchoReadCursors, SonarEchoTapCapacity) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _sonarEchoFilterInput1Handle, BufferID.PlayerCriticalSonarEchoFilterInput1, SonarEchoTapCapacity) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _sonarEchoFilterInput2Handle, BufferID.PlayerCriticalSonarEchoFilterInput2, SonarEchoTapCapacity) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _sonarEchoFilterOutput1Handle, BufferID.PlayerCriticalSonarEchoFilterOutput1, SonarEchoTapCapacity) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _sonarEchoFilterOutput2Handle, BufferID.PlayerCriticalSonarEchoFilterOutput2, SonarEchoTapCapacity);
         }
 
-        private bool AreSonarSpatialBuffersCreated()
+        private bool AreSonarSpatialBuffersCreated(IDataVault vault)
         {
-            return IsReadOnlyVaultBufferCreated(in _sonarEchoCompositeCandidatesAHandle, BufferID.PlayerCriticalSonarEchoCompositeCandidatesA, SonarEchoCompositeCandidateCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _sonarEchoCompositeCandidatesBHandle, BufferID.PlayerCriticalSonarEchoCompositeCandidatesB, SonarEchoCompositeCandidateCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _sonarEchoCompositeGroupsHandle, BufferID.PlayerCriticalSonarEchoCompositeGroups, SonarEchoCompositeGroupCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _sonarEchoCompositeGroupCountNativeHandle, BufferID.PlayerCriticalSonarEchoCompositeGroupCount, 1) &&
-                   IsReadOnlyVaultBufferCreated(in _sonarEcholocationHitsHandle, BufferID.PlayerCriticalSonarEcholocationHits, SonarEchoTapCapacity);
+            return IsReadOnlyVaultBufferCreated(vault, in _sonarEchoCompositeCandidatesAHandle, BufferID.PlayerCriticalSonarEchoCompositeCandidatesA, SonarEchoCompositeCandidateCapacity) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _sonarEchoCompositeCandidatesBHandle, BufferID.PlayerCriticalSonarEchoCompositeCandidatesB, SonarEchoCompositeCandidateCapacity) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _sonarEchoCompositeGroupsHandle, BufferID.PlayerCriticalSonarEchoCompositeGroups, SonarEchoCompositeGroupCapacity) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _sonarEchoCompositeGroupCountNativeHandle, BufferID.PlayerCriticalSonarEchoCompositeGroupCount, 1) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _sonarEcholocationHitsHandle, BufferID.PlayerCriticalSonarEcholocationHits, SonarEchoTapCapacity);
         }
 
         private bool TryReadSonarHitView(out NativeArray<AcousticEcholocationRayHit>.ReadOnly hits)
@@ -8314,20 +8323,20 @@ namespace Hecton8.Audio
                    hits.Length >= SonarEchoTapCapacity;
         }
 
-        private bool AreVaultBackedAudioBuffersCreated()
+        private bool AreVaultBackedAudioBuffersCreated(IDataVault vault)
         {
-            return AreFrameScratchBuffersCreated(1) &&
-                   AreSonarDspBuffersCreated() &&
-                   AreSonarTapBuffersCreated() &&
-                   AreSonarSpatialBuffersCreated() &&
-                   AreTransientDelayBuffersCreated() &&
-                   AreReverbBuffersCreated() &&
-                   AreBinauralFilterBuffersCreated() &&
-                   AreGranularVoiceBuffersCreated() &&
-                   IsReadOnlyVaultBufferCreated(in _granularTelemetryRingHandle, BufferID.PlayerCriticalGranularTelemetryRing, GranularTelemetryCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _prologueTransitionTelemetryRingHandle, BufferID.PlayerCriticalPrologueTransitionTelemetryRing, PrologueTransitionTelemetryCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _prologueTransitionRingHandle, PlayerCriticalPrologueTransitionRingBufferId, PrologueTransitionQueueCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _audioSynthesisTelemetryRingHandle, PlayerCriticalAudioSynthesisTelemetryRingBufferId, AudioSynthesisTelemetryCapacity);
+            return AreFrameScratchBuffersCreated(vault, 1) &&
+                   AreSonarDspBuffersCreated(vault) &&
+                   AreSonarTapBuffersCreated(vault) &&
+                   AreSonarSpatialBuffersCreated(vault) &&
+                   AreTransientDelayBuffersCreated(vault) &&
+                   AreReverbBuffersCreated(vault) &&
+                   AreBinauralFilterBuffersCreated(vault) &&
+                   AreGranularVoiceBuffersCreated(vault) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _granularTelemetryRingHandle, BufferID.PlayerCriticalGranularTelemetryRing, GranularTelemetryCapacity) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _prologueTransitionTelemetryRingHandle, BufferID.PlayerCriticalPrologueTransitionTelemetryRing, PrologueTransitionTelemetryCapacity) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _prologueTransitionRingHandle, PlayerCriticalPrologueTransitionRingBufferId, PrologueTransitionQueueCapacity) &&
+                   IsReadOnlyVaultBufferCreated(vault, in _audioSynthesisTelemetryRingHandle, PlayerCriticalAudioSynthesisTelemetryRingBufferId, AudioSynthesisTelemetryCapacity);
         }
 
         private void ClearVaultBackedAudioBuffers()

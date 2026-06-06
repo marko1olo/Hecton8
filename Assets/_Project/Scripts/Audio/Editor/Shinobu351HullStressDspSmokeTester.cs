@@ -69,6 +69,9 @@ namespace Hecton8.Audio.Editor
             AppendCheck("renderer builds deterministic procedural metal PCM bank", renderer.Contains("PlayerCriticalMetallicGrainBank.Generate"), ref passedCount, ref failedCount, checks);
             AppendCheck("renderer structural voice mixer is granular", renderer.Contains("RenderStructuralGranularVoices("), ref passedCount, ref failedCount, checks);
             AppendCheck("renderer requests granular Vault memory as uninitialized", renderer.Contains("NativeArrayOptions.UninitializedMemory"), ref passedCount, ref failedCount, checks);
+            AppendCheck("renderer validates Vault-backed buffers through allocation Vault", renderer.Contains("AreVaultBackedAudioBuffersCreated(vault)"), ref passedCount, ref failedCount, checks);
+            AppendCheck("renderer exposes explicit-Vault read-only buffer validation", ContainsAll(renderer, "private static bool IsReadOnlyVaultBufferCreated<T>", "IDataVault vault,"), ref passedCount, ref failedCount, checks);
+            AppendCheck("renderer validates every creation group through allocation Vault", ContainsAll(renderer, "AreFrameScratchBuffersCreated(vault, 1)", "AreSonarDspBuffersCreated(vault)", "AreSonarTapBuffersCreated(vault)", "AreSonarSpatialBuffersCreated(vault)", "AreTransientDelayBuffersCreated(vault)", "AreReverbBuffersCreated(vault)", "AreBinauralFilterBuffersCreated(vault)", "AreGranularVoiceBuffersCreated(vault)"), ref passedCount, ref failedCount, checks);
             AppendCheck("renderer exposes SHINOBU_351 forensic dump path", renderer.Contains("Dump_SHINOBU_351.bin"), ref passedCount, ref failedCount, checks);
 
             AppendCheck("kernel declares 64-byte explicit GranularVoiceDTO", ContainsAll(kernel, "public struct GranularVoiceDTO", "[StructLayout(LayoutKind.Explicit, Size = 64)]"), ref passedCount, ref failedCount, checks);
