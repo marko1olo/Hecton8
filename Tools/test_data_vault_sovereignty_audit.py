@@ -6,6 +6,10 @@ from pathlib import Path
 
 
 TOOLS_ROOT = Path(__file__).resolve().parent
+REPO_ROOT = TOOLS_ROOT.parent
+TEST_TEMP_ROOT = REPO_ROOT / ".tmp" / "data_vault_sovereignty_audit_tests"
+TEST_TEMP_ROOT.mkdir(parents=True, exist_ok=True)
+tempfile.tempdir = str(TEST_TEMP_ROOT)
 if str(TOOLS_ROOT) not in sys.path:
     sys.path.insert(0, str(TOOLS_ROOT))
 
