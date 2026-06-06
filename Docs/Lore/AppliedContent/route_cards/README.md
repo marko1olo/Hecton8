@@ -12,6 +12,7 @@ This README is not the current route-card inventory. Treat local route-card coun
 
 - `RS001_RS003_route_cards.csv`: historical first-wave route-card layer for the first 15 packets.
 - `RS###*_route_cards.csv`: release-set route-card CSV pattern for later waves. The directory currently extends beyond RS001-RS003; use folder inventory and scoped audit output for current coverage.
+- `drafts/`: packet/backlog route notes that are not current AppliedLore runtime source. Files here may keep legacy columns or future packet IDs; they are intentionally outside the `*_route_cards.csv` audit glob until converted to the runtime schema and backed by `applied_lore_packets.csv`.
 
 ## Runtime Rule
 

@@ -7,31 +7,34 @@ poi_tags: poi.black_keel_transfer_band;poi.carrier_custody_orbit
 biome_tags: biome.black_keel_orbit;biome.claim_admin
 locale: he_IL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "HE LOC HOLD: Black Keel Transfer Band"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Black Keel Transfer Band
+# HE LOC HOLD: Black Keel Transfer Band
 
-The carrier's orbit explains why contact, payload pickup and human extraction are different problems.
+HE LOC HOLD: The carrier's orbit explains why contact, payload pickup and human extraction are different problems.
 
 ## Scanner
 
-Carrier band: Black Keel loiters high, not above HECTON-8.
+HE LOC HOLD: Carrier band: Black Keel loiters high, not above HECTON-8.
 
 ## Terminal
 
-CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.
+HE LOC HOLD: CARRIER ORBIT. High custody lane; descent mass is limited and weather-gated.
 
 ## Audio
 
-It is not parked above you. It is waiting where insurance allows it to wait.
+HE LOC HOLD: It is not parked above you. It is waiting where insurance allows it to wait.
 
 ## Field Note
 
-Carrier orbit record: Black Keel can receive payloads before it can retrieve people; that gap drives partial-exit logic.
+HE LOC HOLD: Carrier orbit record: Black Keel can receive payloads before it can retrieve people; that gap drives partial-exit logic.
 
 <!-- In-Game Wiki; generated from P424_BLACK_KEEL_TRANSFER_ORBIT_BAND/he_IL. -->

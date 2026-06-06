@@ -7,16 +7,19 @@ poi_tags: poi.codex_unlock_tier_card;poi.packet_unlock_gate
 biome_tags: biome.dossier_archive;biome.p63_shallows
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "RU LOC HOLD: PDA Unlock Tier Rules"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# PDA Unlock Tier Rules
+# RU LOC HOLD: PDA Unlock Tier Rules
 
-PDA unlock tiers follow evidence order: hint, fragment, proof, synthesis, and ending record.
+RU LOC HOLD: PDA unlock tiers follow evidence order: hint, fragment, proof, synthesis, and ending record.
 
 ## Scanner
 

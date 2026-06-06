@@ -7,31 +7,34 @@ poi_tags: poi.atlas_severance_key;poi.factory_temple_cutline
 biome_tags: biome.atlas_basin;biome.factory_temple
 locale: pt_BR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "PT LOC HOLD: Payload Sever Atlas Receiver Protocol"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Payload Sever Atlas Receiver Protocol
+# PT LOC HOLD: Payload Sever Atlas Receiver Protocol
 
-Atlas severance must remain morally unstable. It may stop damaged repair logic, destroy emergent ecology, deny Deep Reach or erase a witness.
+PT LOC HOLD: Atlas severance must remain morally unstable. It may stop damaged repair logic, destroy emergent ecology, deny Deep Reach or erase a witness.
 
 ## Scanner
 
-Severance route armed. The target is not a boss; it is a damaged continuity system.
+PT LOC HOLD: Severance route armed. The target is not a boss; it is a damaged continuity system.
 
 ## Terminal
 
-PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.
+PT LOC HOLD: PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.
 
 ## Audio
 
-If this is mercy, it still leaves a body.
+PT LOC HOLD: If this is mercy, it still leaves a body.
 
 ## Field Note
 
-Receiver record: severance changes Atlas, but the evidence can read as mercy, theft, murder, or liberation.
+PT LOC HOLD: Receiver record: severance changes Atlas, but the evidence can read as mercy, theft, murder, or liberation.
 
 <!-- In-Game Wiki; generated from P377_PAYLOAD_SEVER_ATLAS_RECEIVER_PROTOCOL/pt_BR. -->

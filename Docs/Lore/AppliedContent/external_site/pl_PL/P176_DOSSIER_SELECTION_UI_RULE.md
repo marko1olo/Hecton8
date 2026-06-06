@@ -7,31 +7,34 @@ poi_tags: poi.dossier_selection_panel;poi.contract_seed_terminal
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: pl_PL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Dossier Selection UI Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Dossier Selection UI Rule
 
-Dossier Selection UI Rule defines how replay knowledge appears to players.
+PL LOC HOLD: Dossier Selection UI Rule defines how replay knowledge appears to players.
 
 ## Scanner
 
-Dossier UI should choose risk, not inherited power.
+PL LOC HOLD: Dossier UI should choose risk, not inherited power.
 
 ## Terminal
 
-DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.
+PL LOC HOLD: DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.
 
 ## Audio
 
-You keep suspicion, not a stronger body.
+PL LOC HOLD: You keep suspicion, not a stronger body.
 
 ## Field Note
 
-No permanent gear advantage in dossier selection.
+PL LOC HOLD: No permanent gear advantage in dossier selection.
 
 <!-- External Site; generated from P176_DOSSIER_SELECTION_UI_RULE/pl_PL. -->

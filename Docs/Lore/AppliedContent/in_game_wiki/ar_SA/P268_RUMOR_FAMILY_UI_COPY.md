@@ -7,31 +7,34 @@ poi_tags: poi.rumor_family_card;poi.dead_claim_note
 biome_tags: biome.ui;biome.replay
 locale: ar_SA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "AR LOC HOLD: Rumor Family Ui Copy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Rumor Family Ui Copy
+# AR LOC HOLD: Rumor Family Ui Copy
 
-Rumor Family UI Copy keeps dossier hints useful without flattening exploration.
+AR LOC HOLD: Rumor Family UI Copy keeps dossier hints useful without flattening exploration.
 
 ## Scanner
 
-A rumor is a warning, not a map.
+AR LOC HOLD: A rumor is a warning, not a map.
 
 ## Terminal
 
-RUMOR COPY: one noun, one pressure, no spoiler coordinate.
+AR LOC HOLD: RUMOR COPY: one noun, one pressure, no spoiler coordinate.
 
 ## Audio
 
-Listen for the kind of trouble, not the address.
+AR LOC HOLD: Listen for the kind of trouble, not the address.
 
 ## Field Note
 
-Suggested labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.
+AR LOC HOLD: Suggested labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.
 
 <!-- In-Game Wiki; generated from P268_RUMOR_FAMILY_UI_COPY/ar_SA. -->

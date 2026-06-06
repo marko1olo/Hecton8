@@ -7,31 +7,34 @@ poi_tags: poi.mara_venn_pump_badge;poi.pump_cadence_board
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: nl_NL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "NL LOC HOLD: Mara Venn/Pump Chief"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Mara Venn/Pump Chief
+# NL LOC HOLD: Mara Venn/Pump Chief
 
-Mara Venn is one of HECTON-8's worker anchors: a pump chief remembered through procedure, not melodrama.
+NL LOC HOLD: Mara Venn is one of HECTON-8's worker anchors: a pump chief remembered through procedure, not melodrama.
 
 ## Scanner
 
-Dossier: Mara Venn. Pump rhythm and water ledger agree.
+NL LOC HOLD: Dossier: Mara Venn. Pump rhythm and water ledger agree.
 
 ## Terminal
 
-MARA VENN/PUMPS. Held bypass; water stayed a machine load, not scenery.
+NL LOC HOLD: MARA VENN/PUMPS. Held bypass; water stayed a machine load, not scenery.
 
 ## Audio
 
-Venn did not leave a speech. She left the pump rhythm everyone else used to breathe.
+NL LOC HOLD: Venn did not leave a speech. She left the pump rhythm everyone else used to breathe.
 
 ## Field Note
 
-Pump-room evidence cluster: badge, cadence board, ledger correction, and polished bypass handle keep Mara Venn procedural, not melodramatic.
+NL LOC HOLD: Pump-room evidence cluster: badge, cadence board, ledger correction, and polished bypass handle keep Mara Venn procedural, not melodramatic.
 
 <!-- External Site; generated from P401_MARA_VENN_PUMP_CHIEF_DOSSIER/nl_NL. -->

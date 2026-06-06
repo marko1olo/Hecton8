@@ -7,11 +7,14 @@ poi_tags: poi.revoked_field_systems_record;poi.evacuations_infrastructure_badge
 biome_tags: biome.safe_module;biome.colony
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Запись полевого системного специалиста"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Запись полевого системного специалиста
@@ -32,6 +35,6 @@ PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certificat
 
 ## Field Note
 
-The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible.
+RU LOC HOLD: The dossier starts with infrastructure work, revoked clearance, and enough route knowledge to make the contract credible.
 
 <!-- In-Game Wiki; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/ru_RU. -->

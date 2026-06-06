@@ -7,31 +7,34 @@ poi_tags: poi.shallow_annex_p63_pump;poi.manual_bilge_kit
 biome_tags: biome.shallow_annex;biome.photic_shelf
 locale: id_ID
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "ID LOC HOLD: Shallow Annex P-63 Pump Room"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Shallow Annex P-63 Pump Room
+# ID LOC HOLD: Shallow Annex P-63 Pump Room
 
-Shallow Annex P-63 gives the first safe pocket without making HECTON-8 small: a pump, a cold seal, a gauge and a bright shelf outside.
+ID LOC HOLD: Shallow Annex P-63 gives the first safe pocket without making HECTON-8 small: a pump, a cold seal, a gauge and a bright shelf outside.
 
 ## Scanner
 
-P-63 pump room. Manual sump pressure is holding by less than a service margin.
+ID LOC HOLD: P-63 pump room. Manual sump pressure is holding by less than a service margin.
 
 ## Terminal
 
-WORK ORDER P-63 / SHALLOW ANNEX: hand-pump sump to 0.3 m; seat cold seal on seam C; cut fused locker latch only after gauge steadies; do not trust green lamp until return pinger answers.
+ID LOC HOLD: WORK ORDER P-63 / SHALLOW ANNEX: hand-pump sump to 0.3 m; seat cold seal on seam C; cut fused locker latch only after gauge steadies; do not trust green lamp until return pinger answers.
 
 ## Audio
 
-Pump first. Seal second. Cutter only after the gauge stops drifting.
+ID LOC HOLD: Pump first. Seal second. Cutter only after the gauge stops drifting.
 
 ## Field Note
 
-The pump handle is polished where frightened hands kept using it. Dry floor starts at the chalk line.
+ID LOC HOLD: The pump handle is polished where frightened hands kept using it. Dry floor starts at the chalk line.
 
 <!-- External Site; generated from P153_SHALLOW_ANNEX_P63_PUMP_ROOM/id_ID. -->

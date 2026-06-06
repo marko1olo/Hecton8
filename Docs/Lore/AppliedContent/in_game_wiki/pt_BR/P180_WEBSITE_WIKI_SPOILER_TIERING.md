@@ -7,31 +7,34 @@ poi_tags: poi.spoiler_tier_index;poi.public_wiki_gate
 biome_tags: biome.relay_archive;biome.claim_admin
 locale: pt_BR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "PT LOC HOLD: Public Spoiler Tiering Protocol"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Public Spoiler Tiering Protocol
+# PT LOC HOLD: Public Spoiler Tiering Protocol
 
-Spoiler tiering keeps public records readable without flattening the player's evidence journey.
+PT LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.
 
 ## Scanner
 
-Public records need pressure doors like field evidence does.
+PT LOC HOLD: Public records need pressure doors like field evidence does.
 
 ## Terminal
 
-SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.
+PT LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.
 
 ## Audio
 
-A public archive can ruin a case if it has no pressure doors.
+PT LOC HOLD: A public archive can ruin a case if it has no pressure doors.
 
 ## Field Note
 
-Split what sells the world from what solves the crime.
+PT LOC HOLD: Split what sells the world from what solves the crime.
 
 <!-- In-Game Wiki; generated from P180_WEBSITE_WIKI_SPOILER_TIERING/pt_BR. -->

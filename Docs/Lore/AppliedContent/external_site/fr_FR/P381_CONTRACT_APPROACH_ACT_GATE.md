@@ -7,31 +7,34 @@ poi_tags: poi.black_keel_contract_board;poi.bathydrop_manifest
 biome_tags: biome.orbit_transfer;biome.shallows
 locale: fr_FR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "FR LOC HOLD: Contract Approach Act Gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Contract Approach Act Gate
+# FR LOC HOLD: Contract Approach Act Gate
 
-HECTON-8 starts with contract pressure, debt and old corporate procedure. The horror begins as work, not prophecy.
+FR LOC HOLD: HECTON-8 starts with contract pressure, debt and old corporate procedure. The horror begins as work, not prophecy.
 
 ## Scanner
 
-Act gate: contract accepted. Lien pressure and old Deep Reach procedure are already visible.
+FR LOC HOLD: Act gate: contract accepted. Lien pressure and old Deep Reach procedure are already visible.
 
 ## Terminal
 
-CAMPAIGN ACT CONTRACT: Black Keel accepts claim transfer, lien exposure and bathydrop timing. Recovery is conditional.
+FR LOC HOLD: CAMPAIGN ACT CONTRACT: Black Keel accepts claim transfer, lien exposure and bathydrop timing. Recovery is conditional.
 
 ## Audio
 
-You came for work. The paperwork already knows you worked for Deep Reach.
+FR LOC HOLD: You came for work. The paperwork already knows you worked for Deep Reach.
 
 ## Field Note
 
-Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears.
+FR LOC HOLD: Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears.
 
 <!-- External Site; generated from P381_CONTRACT_APPROACH_ACT_GATE/fr_FR. -->

@@ -7,31 +7,34 @@ poi_tags: poi.quarantine_review_clock;poi.biological_pressure_hold
 biome_tags: biome.colony;biome.abyssal_machine_field
 locale: uk_UA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "UK LOC HOLD: Quarantine Release Delay Proof"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Quarantine Release Delay Proof
+# UK LOC HOLD: Quarantine Release Delay Proof
 
-HECTON-8 keeps corporate guilt specific: quarantine and insurance language delay aid while preserving claim continuity.
+UK LOC HOLD: HECTON-8 keeps corporate guilt specific: quarantine and insurance language delay aid while preserving claim continuity.
 
 ## Scanner
 
-Quarantine hold plate. The word protection appears only after the exit route is locked.
+UK LOC HOLD: Quarantine hold plate. The word protection appears only after the exit route is locked.
 
 ## Terminal
 
-RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.
+UK LOC HOLD: RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.
 
 ## Audio
 
-Quarantine can save a body. It can also make a body wait until it becomes paperwork.
+UK LOC HOLD: Quarantine can save a body. It can also make a body wait until it becomes paperwork.
 
 ## Field Note
 
-Use where player may confuse rescue with custody.
+UK LOC HOLD: Use where player may confuse rescue with custody.
 
 <!-- External Site; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/uk_UA. -->

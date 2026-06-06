@@ -7,31 +7,34 @@ poi_tags: poi.public_aegir_article;poi.moon_ladder_plate
 biome_tags: biome.publication;biome.aegir_orbital_pressure
 locale: ja_JP
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "JP LOC HOLD: Aegir System Public Primer Article"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Aegir System Public Primer Article
+# JP LOC HOLD: Aegir System Public Primer Article
 
-Aegir is the host system around HECTON-8. Its moon ladder, radiation windows, tides and relay geometry shape every descent, rescue delay and salvage bargain.
+JP LOC HOLD: Aegir is the host system around HECTON-8. Its moon ladder, radiation windows, tides and relay geometry shape every descent, rescue delay and salvage bargain.
 
 ## Scanner
 
-Aegir is not backdrop. It is a timetable with gravity.
+JP LOC HOLD: Aegir is not backdrop. It is a timetable with gravity.
 
 ## Terminal
 
-PUBLIC ARTICLE TIER: moon labels are safe; exact route payload consequences are gated.
+JP LOC HOLD: PUBLIC ARTICLE TIER: moon labels are safe; exact route payload consequences are gated.
 
 ## Audio
 
-The sky is a system, not a ceiling.
+JP LOC HOLD: The sky is a system, not a ceiling.
 
 ## Field Note
 
-Public Aegir text should explain why HECTON-8 is far, valuable and inconvenient.
+JP LOC HOLD: Public Aegir text should explain why HECTON-8 is far, valuable and inconvenient.
 
 <!-- External Site; generated from P252_AEGIR_SYSTEM_PUBLIC_PRIMER_ARTICLE/ja_JP. -->

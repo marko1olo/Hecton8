@@ -7,31 +7,34 @@ poi_tags: poi.stack_limit_schema_card;poi.pressure_vessel_rack
 biome_tags: biome.inventory;biome.resource_custody
 locale: nl_NL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "NL LOC HOLD: Stack Limit Data Boundary"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Stack Limit Data Boundary
+# NL LOC HOLD: Stack Limit Data Boundary
 
-Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.
+NL LOC HOLD: Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.
 
 ## Scanner
 
-Stack boundary: vessel class and contamination stage beat icon count.
+NL LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.
 
 ## Terminal
 
-STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.
+NL LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.
 
 ## Audio
 
-A crate is not a pressure vessel.
+NL LOC HOLD: A crate is not a pressure vessel.
 
 ## Field Note
 
-Stack limits stay table-owned and stable for save identity.
+NL LOC HOLD: Stack limits stay table-owned and stable for save identity.
 
 <!-- External Site; generated from P302_STACK_LIMIT_ROW_CONTRACT/nl_NL. -->

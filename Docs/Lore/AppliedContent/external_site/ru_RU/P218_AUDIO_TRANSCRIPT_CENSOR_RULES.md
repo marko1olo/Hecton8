@@ -7,16 +7,19 @@ poi_tags: poi.audio_censor_strip;poi.subtitle_damage_band
 biome_tags: biome.dossier_archive;biome.relay_spine
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Правила audio transcript censor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Правила audio transcript censor
 
-Audio Transcript Censor Rules balance damaged recordings, redacted names, readable warnings, and localization clarity.
+RU LOC HOLD: Audio Transcript Censor Rules balance damaged recordings, redacted names, readable warnings, and localization clarity.
 
 ## Scanner
 
@@ -32,6 +35,6 @@ Static может скрыть имя. Он не может скрыть тре�
 
 ## Field Note
 
-Diegetic censor marks can hide missing route facts; critical accessibility text stays readable.
+RU LOC HOLD: Diegetic censor marks can hide missing route facts; critical accessibility text stays readable.
 
 <!-- External Site; generated from P218_AUDIO_TRANSCRIPT_CENSOR_RULES/ru_RU. -->

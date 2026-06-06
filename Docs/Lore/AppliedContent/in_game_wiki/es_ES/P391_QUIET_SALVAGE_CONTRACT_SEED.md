@@ -7,31 +7,34 @@ poi_tags: poi.quiet_salvage_contract;poi.low_storm_window_note
 biome_tags: biome.contract_layer;biome.shallows
 locale: es_ES
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "ES LOC HOLD: Quiet Salvage Contract Seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Quiet Salvage Contract Seed
+# ES LOC HOLD: Quiet Salvage Contract Seed
 
-Quiet salvage is a replay seed for players who want slower discovery. It should still carry moral cost through custody clauses.
+ES LOC HOLD: Quiet salvage is a replay seed for players who want slower discovery. It should still carry moral cost through custody clauses.
 
 ## Scanner
 
-Contract seed: quiet salvage. Fewer early hazards, cleaner payout, dirtier custody.
+ES LOC HOLD: Contract seed: quiet salvage. Fewer early hazards, cleaner payout, dirtier custody.
 
 ## Terminal
 
-SEED QUIET: reduced storm risk, reduced early hostility, increased claim-custody restriction and evidence ambiguity.
+ES LOC HOLD: SEED QUIET: reduced storm risk, reduced early hostility, increased claim-custody restriction and evidence ambiguity.
 
 ## Audio
 
-Low storm windows are never free. They are bought somewhere else.
+ES LOC HOLD: Low storm windows are never free. They are bought somewhere else.
 
 ## Field Note
 
-Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise.
+ES LOC HOLD: Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise.
 
 <!-- In-Game Wiki; generated from P391_QUIET_SALVAGE_CONTRACT_SEED/es_ES. -->

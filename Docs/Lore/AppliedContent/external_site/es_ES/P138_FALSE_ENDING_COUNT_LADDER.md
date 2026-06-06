@@ -7,31 +7,34 @@ poi_tags: poi.ending_family_board;poi.partial_result_stamp
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: es_ES
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "False Ending Count Ladder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # False Ending Count Ladder
 
-False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center.
+ES LOC HOLD: False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center.
 
 ## Scanner
 
-Four major false families before the deep Atlas resolutions.
+ES LOC HOLD: Four major false families before the deep Atlas resolutions.
 
 ## Terminal
 
-ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.
+ES LOC HOLD: ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.
 
 ## Audio
 
-The dossier can mark many exits before it marks an answer.
+ES LOC HOLD: The dossier can mark many exits before it marks an answer.
 
 ## Field Note
 
-Enough endings to reward playstyles. Not so many that the truth becomes noise.
+ES LOC HOLD: Enough endings to reward playstyles. Not so many that the truth becomes noise.
 
 <!-- External Site; generated from P138_FALSE_ENDING_COUNT_LADDER/es_ES. -->

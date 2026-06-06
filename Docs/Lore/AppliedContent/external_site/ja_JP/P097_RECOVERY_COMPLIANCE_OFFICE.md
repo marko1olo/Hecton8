@@ -7,31 +7,34 @@ poi_tags: poi.recovery_compliance_packet;poi.proxy_authority_window
 biome_tags: biome.drowned_admin;biome.carrier_link
 locale: ja_JP
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Recovery Compliance Office"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Recovery Compliance Office
 
-Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow.
+JP LOC HOLD: Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow.
 
 ## Scanner
 
-Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.
+JP LOC HOLD: Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.
 
 ## Terminal
 
-RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.
+JP LOC HOLD: RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.
 
 ## Audio
 
-They are late enough to be legal and current enough to be dangerous.
+JP LOC HOLD: They are late enough to be legal and current enough to be dangerous.
 
 ## Field Note
 
-A living faction makes pressure current without turning the whole corporation into a single shouting villain.
+JP LOC HOLD: A living faction makes pressure current without turning the whole corporation into a single shouting villain.
 
 <!-- External Site; generated from P097_RECOVERY_COMPLIANCE_OFFICE/ja_JP. -->

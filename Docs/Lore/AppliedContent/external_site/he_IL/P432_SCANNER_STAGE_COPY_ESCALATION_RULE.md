@@ -7,31 +7,34 @@ poi_tags: poi.scanner_stage_rule;poi.scan_stage_badge
 biome_tags: biome.scanner_ui;biome.deep_ecology
 locale: he_IL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "HE LOC HOLD: Scanner Stage Copy Escalation Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Scanner Stage Copy Escalation Rule
+# HE LOC HOLD: Scanner Stage Copy Escalation Rule
 
-HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.
+HE LOC HOLD: HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.
 
 ## Scanner
 
-Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.
+HE LOC HOLD: Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.
 
 ## Terminal
 
-SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.
+HE LOC HOLD: SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.
 
 ## Audio
 
-A scanner should get scared slowly and for reasons.
+HE LOC HOLD: A scanner should get scared slowly and for reasons.
 
 ## Field Note
 
-Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition.
+HE LOC HOLD: Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition.
 
 <!-- External Site; generated from P432_SCANNER_STAGE_COPY_ESCALATION_RULE/he_IL. -->

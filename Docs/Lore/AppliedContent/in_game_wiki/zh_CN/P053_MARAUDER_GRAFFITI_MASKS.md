@@ -7,31 +7,34 @@ poi_tags: poi.graffiti_mask;poi.pressure_arrow
 biome_tags: biome.scrap_canyon;biome.marauder_route
 locale: zh_CN
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Marauder Graffiti Masks"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Marauder Graffiti Masks
 
-Marauder Graffiti Masks make scavenger markings usable evidence. The marks encode route safety, comms discipline, pressure drift and corporate signal traps.
+CN LOC HOLD: Marauder Graffiti Masks make scavenger markings usable evidence. The marks encode route safety, comms discipline, pressure drift and corporate signal traps.
 
 ## Scanner
 
-The paint is a route mask: slash count marks noise discipline, black rings mark carrier-ping danger, and broken arrows mark pressure drift.
+CN LOC HOLD: The paint is a route mask: slash count marks noise discipline, black rings mark carrier-ping danger, and broken arrows mark pressure drift.
 
 ## Terminal
 
-MASK LEGEND: three slashes mean silent route until pump wake. Black ring means do not answer carrier pings inside the canyon.
+CN LOC HOLD: MASK LEGEND: three slashes mean silent route until pump wake. Black ring means do not answer carrier pings inside the canyon.
 
 ## Audio
 
-They made a language that looks like vandalism to the company.
+CN LOC HOLD: They made a language that looks like vandalism to the company.
 
 ## Field Note
 
-Bad paint. Good map.
+CN LOC HOLD: Bad paint. Good map.
 
 <!-- In-Game Wiki; generated from P053_MARAUDER_GRAFFITI_MASKS/zh_CN. -->

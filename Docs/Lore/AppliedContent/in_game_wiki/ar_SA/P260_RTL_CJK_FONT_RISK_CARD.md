@@ -7,31 +7,34 @@ poi_tags: poi.font_risk_card;poi.rtl_layout_sample
 biome_tags: biome.localization;biome.ui
 locale: ar_SA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "AR LOC HOLD: RTL And CJK Font Risk Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# RTL And CJK Font Risk Card
+# AR LOC HOLD: RTL And CJK Font Risk Card
 
-RTL And CJK Font Risk Card records localization production hazards for Arabic, Hebrew, CJK and dense UI languages.
+AR LOC HOLD: RTL And CJK Font Risk Card records localization production hazards for Arabic, Hebrew, CJK and dense UI languages.
 
 ## Scanner
 
-A text box is also a pressure vessel.
+AR LOC HOLD: A text box is also a pressure vessel.
 
 ## Terminal
 
-FONT RISK: validate RTL flow, CJK wrapping, Arabic/Hebrew shaping, fallback glyphs and terminal width.
+AR LOC HOLD: FONT RISK: validate RTL flow, CJK wrapping, Arabic/Hebrew shaping, fallback glyphs and terminal width.
 
 ## Audio
 
-The wrong font can erase the witness.
+AR LOC HOLD: The wrong font can erase the witness.
 
 ## Field Note
 
-RTL and CJK passes must prove font coverage, line length, numeric labels, spoiler gates and terminal monospace equivalents.
+AR LOC HOLD: RTL and CJK passes must prove font coverage, line length, numeric labels, spoiler gates and terminal monospace equivalents.
 
 <!-- In-Game Wiki; generated from P260_RTL_CJK_FONT_RISK_CARD/ar_SA. -->

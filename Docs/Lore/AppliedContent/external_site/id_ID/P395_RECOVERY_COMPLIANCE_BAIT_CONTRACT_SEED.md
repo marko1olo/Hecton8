@@ -7,31 +7,34 @@ poi_tags: poi.recovery_compliance_bait_contract;poi.masked_receiver_clause
 biome_tags: biome.contract_layer;biome.atlas_basin
 locale: id_ID
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "ID LOC HOLD: Recovery Compliance Bait Contract Seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Recovery Compliance Bait Contract Seed
+# ID LOC HOLD: Recovery Compliance Bait Contract Seed
 
-A late replay seed can reveal how corporate cleanup pressure starts before the player ever reaches Atlas.
+ID LOC HOLD: A late replay seed can reveal how corporate cleanup pressure starts before the player ever reaches Atlas.
 
 ## Scanner
 
-Contract seed: Recovery Compliance bait. High payout, high receiver contamination.
+ID LOC HOLD: Contract seed: Recovery Compliance bait. High payout, high receiver contamination.
 
 ## Terminal
 
-SEED BAIT: Recovery Compliance receiver implied, coordinate demand hidden, payout raised, withholding route becomes harder.
+ID LOC HOLD: SEED BAIT: Recovery Compliance receiver implied, coordinate demand hidden, payout raised, withholding route becomes harder.
 
 ## Audio
 
-Some contracts are not offers. They are envelopes with your name already on the return line.
+ID LOC HOLD: Some contracts are not offers. They are envelopes with your name already on the return line.
 
 ## Field Note
 
-Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap.
+ID LOC HOLD: Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap.
 
 <!-- External Site; generated from P395_RECOVERY_COMPLIANCE_BAIT_CONTRACT_SEED/id_ID. -->

@@ -7,31 +7,34 @@ poi_tags: poi.localized_name_policy;poi.rtl_name_strip
 biome_tags: biome.claim_admin;biome.shallow_annex
 locale: pt_BR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Native Localized Name Handling"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Native Localized Name Handling
 
-Native name handling keeps the worker-evidence layer compatible with multilingual in-game wiki, site pages, lockers and terminals.
+PT LOC HOLD: Native name handling keeps the worker-evidence layer compatible with multilingual in-game wiki, site pages, lockers and terminals.
 
 ## Scanner
 
-Worker names need localization policy before they become UI bugs.
+PT LOC HOLD: Worker names need localization policy before they become UI bugs.
 
 ## Terminal
 
-NAME LOC: personal names remain authored/baked per locale. Job titles, departments and route permissions localize. RTL/CJK layouts need pre-baked short forms and fallback-safe name strips.
+PT LOC HOLD: NAME LOC: personal names remain authored/baked per locale. Job titles, departments and route permissions localize. RTL/CJK layouts need pre-baked short forms and fallback-safe name strips.
 
 ## Audio
 
-A name that breaks the UI is not respect. It is another erasure.
+PT LOC HOLD: A name that breaks the UI is not respect. It is another erasure.
 
 ## Field Note
 
-No live name translation. Preserve identity through baked strings.
+PT LOC HOLD: No live name translation. Preserve identity through baked strings.
 
 <!-- In-Game Wiki; generated from P169_NATIVE_LOCALIZED_NAME_HANDLING/pt_BR. -->

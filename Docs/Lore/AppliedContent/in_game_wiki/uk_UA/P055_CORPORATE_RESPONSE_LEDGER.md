@@ -7,31 +7,34 @@ poi_tags: poi.response_ledger;poi.liability_seal
 biome_tags: biome.corporate_wreck;biome.return_route
 locale: uk_UA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Corporate Response Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Corporate Response Ledger
 
-Corporate Response Ledger makes the carrier answer visible without making it benevolent. Automated replies protect assets before people.
+UK LOC HOLD: Corporate Response Ledger makes the carrier answer visible without making it benevolent. Automated replies protect assets before people.
 
 ## Scanner
 
-Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.
+UK LOC HOLD: Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.
 
 ## Terminal
 
-RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.
+UK LOC HOLD: RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.
 
 ## Audio
 
-The reply was automatic. The rescue was conditional.
+UK LOC HOLD: The reply was automatic. The rescue was conditional.
 
 ## Field Note
 
-Immediate response is not immediate rescue.
+UK LOC HOLD: Immediate response is not immediate rescue.
 
 <!-- In-Game Wiki; generated from P055_CORPORATE_RESPONSE_LEDGER/uk_UA. -->

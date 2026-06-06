@@ -7,31 +7,34 @@ poi_tags: poi.art_release_gate_card;poi.image_brief_lock
 biome_tags: biome.dossier_archive;biome.external_publication
 locale: pl_PL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "PL LOC HOLD: Evidence Image Release Rules"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Evidence Image Release Rules
+# PL LOC HOLD: Evidence Image Release Rules
 
-Public imagery should sell beauty and evidence together: real ocean, readable object, pressure state, and no generic sci-fi decoration.
+PL LOC HOLD: Public imagery should sell beauty and evidence together: real ocean, readable object, pressure state, and no generic sci-fi decoration.
 
 ## Scanner
 
-An image earns release only when it shows evidence object, route, tool, creature sign, or pressure state.
+PL LOC HOLD: An image earns release only when it shows evidence object, route, tool, creature sign, or pressure state.
 
 ## Terminal
 
-IMAGE GATE: no decorative generic sci-fi. Image must expose route, tool, ledger, pressure state, creature evidence, or public-safe moon and ship context.
+PL LOC HOLD: IMAGE GATE: no decorative generic sci-fi. Image must expose route, tool, ledger, pressure state, creature evidence, or public-safe moon and ship context.
 
 ## Audio
 
-Pretty is not a proof artifact.
+PL LOC HOLD: Pretty is not a proof artifact.
 
 ## Field Note
 
-Every image brief needs spoiler tier, primary evidence object, scalable presentation note, and crop-safe text boundary.
+PL LOC HOLD: Every image brief needs spoiler tier, primary evidence object, scalable presentation note, and crop-safe text boundary.
 
 <!-- External Site; generated from P219_ART_BRIEF_RELEASE_GATE_RULES/pl_PL. -->

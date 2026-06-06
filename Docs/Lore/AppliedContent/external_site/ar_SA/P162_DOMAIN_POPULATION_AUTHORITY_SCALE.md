@@ -7,31 +7,34 @@ poi_tags: poi.domain_census_stub;poi.authority_scale_ledger
 biome_tags: biome.relay_archive;biome.claim_admin
 locale: ar_SA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "AR LOC HOLD: Population And Authority Scale"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Population And Authority Scale
+# AR LOC HOLD: Population And Authority Scale
 
-Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat.
+AR LOC HOLD: Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat.
 
 ## Scanner
 
-Population scale is background. Authority pressure is what the player feels.
+AR LOC HOLD: Population scale is background. Authority pressure is what the player feels.
 
 ## Terminal
 
-AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.
+AR LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.
 
 ## Audio
 
-The largest domain is not the nearest hand.
+AR LOC HOLD: The largest domain is not the nearest hand.
 
 ## Field Note
 
-Do not turn the setting into census space opera.
+AR LOC HOLD: Do not turn the setting into census space opera.
 
 <!-- External Site; generated from P162_DOMAIN_POPULATION_AUTHORITY_SCALE/ar_SA. -->

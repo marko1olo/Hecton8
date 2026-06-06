@@ -7,31 +7,34 @@ poi_tags: poi.dossier_ending_record_card;poi.receiver_authority_badge
 biome_tags: biome.dossier;biome.ending
 locale: de_DE
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "DE LOC HOLD: Dossier Ending Record"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Dossier Ending Record
+# DE LOC HOLD: Dossier Ending Record
 
-The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.
+DE LOC HOLD: The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.
 
 ## Scanner
 
-Dossier record: route warnings, unresolved costs, receiver authority, ending trace.
+DE LOC HOLD: Dossier record: route warnings, unresolved costs, receiver authority, ending trace.
 
 ## Terminal
 
-The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.
+DE LOC HOLD: The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.
 
 ## Audio
 
-Knowledge survives the route. Equipment does not.
+DE LOC HOLD: Knowledge survives the route. Equipment does not.
 
 ## Field Note
 
-Keep dossier persistence limited to knowledge records, route warnings, and ending evidence.
+DE LOC HOLD: Keep dossier persistence limited to knowledge records, route warnings, and ending evidence.
 
 <!-- External Site; generated from P309_DOSSIER_ENDING_RECORD_PROOF_CARD/de_DE. -->

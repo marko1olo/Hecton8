@@ -7,31 +7,34 @@ poi_tags: poi.worker_job_card_stack;poi.flooded_id_clip
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: ko_KR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Worker Job Cards"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Worker Job Cards
 
-Worker job cards let wiki, terminals and scanner fragments humanize the colony while staying functional for gameplay routes.
+KO LOC HOLD: Worker job cards let wiki, terminals and scanner fragments humanize the colony while staying functional for gameplay routes.
 
 ## Scanner
 
-A job card is a face the budget could read.
+KO LOC HOLD: A job card is a face the budget could read.
 
 ## Terminal
 
-JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.
+KO LOC HOLD: JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.
 
 ## Audio
 
-A name without a task becomes a shrine. A task makes it evidence.
+KO LOC HOLD: A name without a task becomes a shrine. A task makes it evidence.
 
 ## Field Note
 
-Make names useful before making them tragic.
+KO LOC HOLD: Make names useful before making them tragic.
 
 <!-- In-Game Wiki; generated from P157_WORKER_JOB_CARDS/ko_KR. -->

@@ -7,31 +7,34 @@ poi_tags: poi.factory_temple_entry_fragment;poi.living_iron_threshold
 biome_tags: biome.factory_temple;biome.atlas
 locale: pt_BR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "PT LOC HOLD: Factory Temple Entry Fragment"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Factory Temple Entry Fragment
+# PT LOC HOLD: Factory Temple Entry Fragment
 
-At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument.
+PT LOC HOLD: At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument.
 
 ## Scanner
 
-Entry fragment: alloy, shell sealant, human tool, active repair pulse.
+PT LOC HOLD: Entry fragment: alloy, shell sealant, human tool, active repair pulse.
 
 ## Terminal
 
-ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.
+PT LOC HOLD: ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.
 
 ## Audio
 
-This is not a room. This is a habit.
+PT LOC HOLD: This is not a room. This is a habit.
 
 ## Field Note
 
-Visual rule: temple only because industry and tissue have become ritual through repetition.
+PT LOC HOLD: Visual rule: temple only because industry and tissue have become ritual through repetition.
 
 <!-- External Site; generated from P298_FACTORY_TEMPLE_ENTRY_FRAGMENT/pt_BR. -->

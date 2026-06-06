@@ -7,31 +7,34 @@ poi_tags: poi.pressure_glass_vein;poi.blue_debt_casket
 biome_tags: biome.deep_abyss;biome.thermal_fields
 locale: ko_KR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Pressure Glass Formation"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Pressure Glass Formation
 
-Pressure Glass Formation turns Xenon-Omega into hard-sci-fi material ecology instead of magic ore. It is a pressure-made substrate tied to Atlas, containment and computation.
+KO LOC HOLD: Pressure Glass Formation turns Xenon-Omega into hard-sci-fi material ecology instead of magic ore. It is a pressure-made substrate tied to Atlas, containment and computation.
 
 ## Scanner
 
-Blue debt lattice. Noble gas, brine, mineral defects and pressure history locked into one expensive mistake.
+KO LOC HOLD: Blue debt lattice. Noble gas, brine, mineral defects and pressure history locked into one expensive mistake.
 
 ## Terminal
 
-XO CONTINUITY SUBSTRATE: xenon-rich clathrate/defect lattice stabilized by brine chemistry, thermal cycling and biological catalyst residue. Depressurization risk: signal drift, fracture and contamination bloom.
+KO LOC HOLD: XO CONTINUITY SUBSTRATE: xenon-rich clathrate/defect lattice stabilized by brine chemistry, thermal cycling and biological catalyst residue. Depressurization risk: signal drift, fracture and contamination bloom.
 
 ## Audio
 
-This is why they came back. Not gold. A machine-readable scar.
+KO LOC HOLD: This is why they came back. Not gold. A machine-readable scar.
 
 ## Field Note
 
-It is not ore. It is a process that remembers where it was made.
+KO LOC HOLD: It is not ore. It is a process that remembers where it was made.
 
 <!-- External Site; generated from P082_PRESSURE_GLASS_FORMATION/ko_KR. -->

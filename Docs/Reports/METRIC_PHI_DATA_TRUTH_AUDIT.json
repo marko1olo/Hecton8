@@ -4,18 +4,6 @@
     {
       "agentId": "SHINOBU_358",
       "arm64Violations": 0,
-      "executionTimeMs": 2.598,
-      "filesScanned": 1,
-      "performanceRegressionWarning": false,
-      "propertyViolations": 0,
-      "schemaMismatches": 0,
-      "status": "FAIL",
-      "structsValidated": 5,
-      "tool": "h8bin_validator"
-    },
-    {
-      "agentId": "SHINOBU_358",
-      "arm64Violations": 0,
       "executionTimeMs": 4.064,
       "filesScanned": 1,
       "performanceRegressionWarning": false,
@@ -3560,6 +3548,18 @@
       "propertyViolations": 0,
       "schemaMismatches": 0,
       "executionTimeMs": 2015.231,
+      "performanceRegressionWarning": true
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "PASS",
+      "filesScanned": 1,
+      "structsValidated": 35,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 7819.2,
       "performanceRegressionWarning": true
     }
   ]

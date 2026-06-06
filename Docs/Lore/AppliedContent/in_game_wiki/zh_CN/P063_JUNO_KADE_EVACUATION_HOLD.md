@@ -7,31 +7,34 @@ poi_tags: poi.evacuation_console;poi.route_hold_board
 biome_tags: biome.evacuated_station;biome.drowned_colony
 locale: zh_CN
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Juno Kade Evacuation Hold"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Juno Kade Evacuation Hold
 
-Juno Kade represents the human evacuation failure. Her record shows the people trying to leave were blocked by authorization, quarantine and priority language while the Great Tide was already becoming irreversible.
+CN LOC HOLD: Juno Kade represents the human evacuation failure. Her record shows the people trying to leave were blocked by authorization, quarantine and priority language while the Great Tide was already becoming irreversible.
 
 ## Scanner
 
-Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.
+CN LOC HOLD: Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.
 
 ## Terminal
 
-KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.
+CN LOC HOLD: KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.
 
 ## Audio
 
-She kept counting people after the system started counting rooms.
+CN LOC HOLD: She kept counting people after the system started counting rooms.
 
 ## Field Note
 
-An evacuation marshal can move people. She cannot move a clause that owns the door.
+CN LOC HOLD: An evacuation marshal can move people. She cannot move a clause that owns the door.
 
 <!-- In-Game Wiki; generated from P063_JUNO_KADE_EVACUATION_HOLD/zh_CN. -->

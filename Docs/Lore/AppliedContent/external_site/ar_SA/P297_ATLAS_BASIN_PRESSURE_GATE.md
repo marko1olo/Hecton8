@@ -7,31 +7,34 @@ poi_tags: poi.atlas_basin_pressure_gate;poi.service_grade_override
 biome_tags: biome.atlas_basin;biome.pressure_gate
 locale: ar_SA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "AR LOC HOLD: Atlas Basin Pressure Gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Atlas Basin Pressure Gate
+# AR LOC HOLD: Atlas Basin Pressure Gate
 
-The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity.
+AR LOC HOLD: The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity.
 
 ## Scanner
 
-Basin gate requires pressure proof and authority response.
+AR LOC HOLD: Basin gate requires pressure proof and authority response.
 
 ## Terminal
 
-ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.
+AR LOC HOLD: ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.
 
 ## Audio
 
-It knows the old key. It does not know you.
+AR LOC HOLD: It knows the old key. It does not know you.
 
 ## Field Note
 
-Final threshold should read like a service gate to a living factory, not a fantasy portal.
+AR LOC HOLD: Final threshold should read like a service gate to a living factory, not a fantasy portal.
 
 <!-- External Site; generated from P297_ATLAS_BASIN_PRESSURE_GATE/ar_SA. -->

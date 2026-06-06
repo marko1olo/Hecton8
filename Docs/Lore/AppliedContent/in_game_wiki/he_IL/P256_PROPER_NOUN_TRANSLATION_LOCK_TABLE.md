@@ -7,31 +7,34 @@ poi_tags: poi.localization_glossary_card;poi.name_lock_sheet
 biome_tags: biome.publication;biome.localization
 locale: he_IL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "HE LOC HOLD: Proper Noun Translation Lock Table"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Proper Noun Translation Lock Table
+# HE LOC HOLD: Proper Noun Translation Lock Table
 
-Proper Noun Translation Lock Table protects setting identity, save references and dossier continuity across languages.
+HE LOC HOLD: Proper Noun Translation Lock Table protects setting identity, save references and dossier continuity across languages.
 
 ## Scanner
 
-A name lock is not flavor. It is save identity protection.
+HE LOC HOLD: A name lock is not flavor. It is save identity protection.
 
 ## Terminal
 
-LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.
+HE LOC HOLD: LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.
 
 ## Audio
 
-A translated name can become a different witness.
+HE LOC HOLD: A translated name can become a different witness.
 
 ## Field Note
 
-Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.
+HE LOC HOLD: Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.
 
 <!-- In-Game Wiki; generated from P256_PROPER_NOUN_TRANSLATION_LOCK_TABLE/he_IL. -->

@@ -7,16 +7,19 @@ poi_tags: poi.asset_silence_board;poi.redaction_vote_card
 biome_tags: biome.claim_admin;biome.worker_locker
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Подписи Asset Silence Board"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Подписи Asset Silence Board
 
-Asset Silence Board signatures let the player trace how bureaucracy converts people into missing load categories.
+RU LOC HOLD: Asset Silence Board signatures let the player trace how bureaucracy converts people into missing load categories.
 
 ## Scanner
 

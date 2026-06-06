@@ -7,31 +7,34 @@ poi_tags: poi.site_aegir_art_brief;poi.orbital_window_caption
 biome_tags: biome.publication;biome.aegir
 locale: uk_UA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "UA LOC HOLD: Aegir System Art Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Aegir System Art Rule
+# UA LOC HOLD: Aegir System Art Rule
 
-Aegir System Art Rule makes orbital mechanics visible in public material.
+UA LOC HOLD: Aegir System Art Rule makes orbital mechanics visible in public material.
 
 ## Scanner
 
-Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.
+UA LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.
 
 ## Terminal
 
-PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.
+UK LOC HOLD: PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.
 
 ## Audio
 
-The sky is a timetable.
+UK LOC HOLD: The sky is a timetable.
 
 ## Field Note
 
-No brown dwarf, no Solar System framing, no FTL implication.
+UK LOC HOLD: No brown dwarf, no Solar System framing, no FTL implication.
 
 <!-- In-Game Wiki; generated from P312_SITE_AEGIR_SYSTEM_ART_COMPOSITION_LOCK/uk_UA. -->

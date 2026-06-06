@@ -7,31 +7,34 @@ poi_tags: poi.acoustic_filter_organ;poi.relay_flesh_resonator
 biome_tags: biome.atlas;biome.comms
 locale: ko_KR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "KO LOC HOLD: Acoustic Filter Organ Relay"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Acoustic Filter Organ Relay
+# KO LOC HOLD: Acoustic Filter Organ Relay
 
-HECTON-8's biomechanical horror stays functional: animals can become relay surfaces because sound is the only route through pressure, water and broken metal.
+KO LOC HOLD: HECTON-8's biomechanical horror stays functional: animals can become relay surfaces because sound is the only route through pressure, water and broken metal.
 
 ## Scanner
 
-Organ resonance matches damaged relay cadence. Echo useful, not safe.
+KO LOC HOLD: Organ resonance matches damaged relay cadence. Echo useful, not safe.
 
 ## Terminal
 
-ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.
+KO LOC HOLD: ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.
 
 ## Audio
 
-If it answers like equipment, treat it like equipment that can bleed.
+KO LOC HOLD: If it answers like equipment, treat it like equipment that can bleed.
 
 ## Field Note
 
-Use with sonar, scanner and route-warning UI.
+KO LOC HOLD: Use with sonar, scanner and route-warning UI.
 
 <!-- External Site; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/ko_KR. -->

@@ -7,31 +7,34 @@ poi_tags: poi.black_keel_approach_log;poi.tender_audio_buffer
 biome_tags: biome.carrier_interface;biome.claim_admin
 locale: de_DE
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "DE LOC HOLD: Black Keel Approach Packet"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Black Keel Approach Packet
+# DE LOC HOLD: Black Keel Approach Packet
 
-Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person.
+DE LOC HOLD: Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person.
 
 ## Scanner
 
-Approach buffer recovered. Contract active; rescue reserve conditional.
+DE LOC HOLD: Approach buffer recovered. Contract active; rescue reserve conditional.
 
 ## Terminal
 
-BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.
+DE LOC HOLD: BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.
 
 ## Audio
 
-Black Keel tender to claimant. Descent window billed. Return window conditional.
+DE LOC HOLD: Black Keel tender to claimant. Descent window billed. Return window conditional.
 
 ## Field Note
 
-Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.
+DE LOC HOLD: Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.
 
 <!-- External Site; generated from P246_BLACK_KEEL_APPROACH_AUDIO_PACKET/de_DE. -->

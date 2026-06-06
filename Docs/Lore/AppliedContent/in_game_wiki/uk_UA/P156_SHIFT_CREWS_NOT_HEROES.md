@@ -7,31 +7,34 @@ poi_tags: poi.shift_roster_wall;poi.crew_rotation_tags
 biome_tags: biome.industrial_shelf;biome.shallow_annex
 locale: uk_UA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Shift Crews Not Heroes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Shift Crews Not Heroes
 
-HECTON-8 should show the colony as people with jobs, fatigue, habits and small procedural failures. No family-revenge hook is needed.
+UA LOC HOLD: HECTON-8 should show the colony as people with jobs, fatigue, habits and small procedural failures. No family-revenge hook is needed.
 
 ## Scanner
 
-The colony becomes human through schedules, not speeches.
+UA LOC HOLD: The colony becomes human through schedules, not speeches.
 
 ## Terminal
 
-COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.
+UA LOC HOLD: COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.
 
 ## Audio
 
-They were not symbols. They were late for shift.
+UA LOC HOLD: They were not symbols. They were late for shift.
 
 ## Field Note
 
-People are more believable as workers than as memorial statues.
+UA LOC HOLD: People are more believable as workers than as memorial statues.
 
 <!-- In-Game Wiki; generated from P156_SHIFT_CREWS_NOT_HEROES/uk_UA. -->

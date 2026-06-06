@@ -7,31 +7,34 @@ poi_tags: poi.revoked_access_phrase;poi.lockout_response_card
 biome_tags: biome.colony;biome.industrial_shelf
 locale: he_IL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "HE LOC HOLD: Revoked Access Language Trace"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Revoked Access Language Trace
+# HE LOC HOLD: Revoked Access Language Trace
 
-Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.
+HE LOC HOLD: Revoked access records do two jobs: they deny entry and expose the liability language former staff still recognize.
 
 ## Scanner
 
-Access trace matches old Deep Reach phrasing. Denial is written as maintenance.
+HE LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.
 
 ## Terminal
 
-LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.
+HE LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.
 
 ## Audio
 
-That is not security. That is a memo pretending to be a door.
+HE LOC HOLD: That is not security. That is a memo pretending to be a door.
 
 ## Field Note
 
-Lockout language hints at hidden liability without granting free access.
+HE LOC HOLD: Lockout language hints at hidden liability without granting free access.
 
 <!-- In-Game Wiki; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/he_IL. -->

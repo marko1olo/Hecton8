@@ -7,31 +7,34 @@ poi_tags: poi.risk_weight_card;poi.lien_multiplier_plate
 biome_tags: biome.black_keel_orbit;biome.claim_admin
 locale: zh_CN
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Risk Weight Contract Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Risk Weight Contract Card
 
-Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.
+CN LOC HOLD: Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.
 
 ## Scanner
 
-Risk should be continuous pressure, not a binary difficulty switch.
+CN LOC HOLD: Risk should be continuous pressure, not a binary difficulty switch.
 
 ## Terminal
 
-RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.
+CN LOC HOLD: RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.
 
 ## Audio
 
-The contract changes the cost, not the crime.
+CN LOC HOLD: The contract changes the cost, not the crime.
 
 ## Field Note
 
-Use weights that alter contract conditions, not canon truth.
+CN LOC HOLD: Use weights that alter contract conditions, not canon truth.
 
 <!-- In-Game Wiki; generated from P177_RISK_WEIGHT_CONTRACT_CARD/zh_CN. -->

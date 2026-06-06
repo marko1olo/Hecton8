@@ -7,31 +7,34 @@ poi_tags: poi.marauder_correction_note;poi.bad_claim_margin
 biome_tags: biome.marauder;biome.evidence
 locale: ar_SA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "AR LOC HOLD: Marauder Correction Note Sample"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Marauder Correction Note Sample
+# AR LOC HOLD: Marauder Correction Note Sample
 
-Marauder correction notes preserve suspicion without handing over certainty. They point toward physical contradictions the room must prove.
+AR LOC HOLD: Marauder correction notes preserve suspicion without handing over certainty. They point toward physical contradictions the room must prove.
 
 ## Scanner
 
-Marauder correction note rejects accident wording and points to authorization delay.
+AR LOC HOLD: Marauder correction note rejects accident wording and points to authorization delay.
 
 ## Terminal
 
-MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.
+AR LOC HOLD: MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.
 
 ## Audio
 
-Someone else smelled the paperwork rot.
+AR LOC HOLD: Someone else smelled the paperwork rot.
 
 ## Field Note
 
-NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.
+AR LOC HOLD: NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.
 
 <!-- In-Game Wiki; generated from P289_MARAUDER_CORRECTION_NOTE_SAMPLE/ar_SA. -->

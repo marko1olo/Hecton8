@@ -7,31 +7,34 @@ poi_tags: poi.abyssal_machine_field;poi.biofilm_relay_wall
 biome_tags: biome.abyssal_machine_field;biome.cable_reef
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "RU LOC HOLD: Abyssal Machine Field Repair Act"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Abyssal Machine Field Repair Act
+# RU LOC HOLD: Abyssal Machine Field Repair Act
 
-HECTON-8's late midgame is not just deeper water. It is infrastructure that has learned to use life as repair surface.
+RU LOC HOLD: HECTON-8's late midgame is not just deeper water. It is infrastructure that has learned to use life as repair surface.
 
 ## Scanner
 
-Act gate: abyssal machine field. Atlas repair ecology becomes the route, not only the threat.
+RU LOC HOLD: Act gate: abyssal machine field. Atlas repair ecology becomes the route, not only the threat.
 
 ## Terminal
 
-REPAIR ACT: conductive film, acoustic organs and service basins can restore route hardware while corrupting ownership categories.
+RU LOC HOLD: REPAIR ACT: conductive film, acoustic organs and service basins can restore route hardware while corrupting ownership categories.
 
 ## Audio
 
-It fixed the wall before it decided what the wall was.
+RU LOC HOLD: It fixed the wall before it decided what the wall was.
 
 ## Field Note
 
-Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure.
+RU LOC HOLD: Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure.
 
 <!-- External Site; generated from P384_ABYSSAL_MACHINE_FIELD_REPAIR_ACT/ru_RU. -->

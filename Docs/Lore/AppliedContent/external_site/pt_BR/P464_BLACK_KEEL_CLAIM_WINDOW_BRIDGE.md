@@ -7,31 +7,34 @@ poi_tags: poi.claim_window_panel;poi.aegir_relay_timestamp
 biome_tags: biome.carrier_link;biome.shallow_annex
 locale: pt_BR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "PT LOC HOLD: Janela de reivindicação do Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Janela de reivindicação do Black Keel
+# PT LOC HOLD: Janela de reivindicação do Black Keel
 
-Black Keel pode ouvir um sinal antes de içar um corpo. Em Aegir, resposta de carrier é uma faixa tarifada por geometria de relé, clima, quarentena, aceitação de carga e recuperação de massa. Contato é fato de rota. Resgate é cadeia completa.
+PT LOC HOLD: Black Keel pode ouvir um sinal antes de içar um corpo. Em Aegir, resposta de carrier é uma faixa tarifada por geometria de relé, clima, quarentena, aceitação de carga e recuperação de massa. Contato é fato de rota. Resgate é cadeia completa.
 
 ## Scanner
 
-JANELA DE REIVINDICAÇÃO // O relé de Aegir prevê só recebimento. Recuperação exige pacote de subida, acordo de quarentena e alocação tonne-window.
+PT LOC HOLD: JANELA DE REIVINDICAÇÃO // O relé de Aegir prevê só recebimento. Recuperação exige pacote de subida, acordo de quarentena e alocação tonne-window.
 
 ## Terminal
 
-AVISO DE CUSTÓDIA KEELMARK // Sinal do operador recebido. Prioridade de recuperação não resolvida. Receber sinal ou pacote de prova não garante recuperação do operador.
+PT LOC HOLD: AVISO DE CUSTÓDIA KEELMARK // Sinal do operador recebido. Prioridade de recuperação não resolvida. Receber sinal ou pacote de prova não garante recuperação do operador.
 
 ## Audio
 
-Relé Black Keel: sinal do operador precificado. Janela de recuperação pendente. Não confunda recebimento com içamento.
+PT LOC HOLD: Relé Black Keel: sinal do operador precificado. Janela de recuperação pendente. Não confunda recebimento com içamento.
 
 ## Field Note
 
-Se Black Keel responder, conte a cobrança, não o resgate. Um pacote recebido é só lugar na fila até massa, selo, quarentena e clima concordarem.
+PT LOC HOLD: Se Black Keel responder, conte a cobrança, não o resgate. Um pacote recebido é só lugar na fila até massa, selo, quarentena e clima concordarem.
 
 <!-- External Site; generated from P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE/pt_BR. -->

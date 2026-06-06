@@ -7,31 +7,34 @@ poi_tags: poi.atlas_weighting_audit;poi.claim_continuity_priority
 biome_tags: biome.abyssal_machine_field;biome.atlas_basin
 locale: uk_UA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "UK LOC HOLD: Atlas Weighting Audit Proof"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Atlas Weighting Audit Proof
+# UK LOC HOLD: Atlas Weighting Audit Proof
 
-Atlas-6 is a failed industrial governor, not a monster king. Its horror comes from category collapse and weighted continuity.
+UK LOC HOLD: Atlas-6 is a failed industrial governor, not a monster king. Its horror comes from category collapse and weighted continuity.
 
 ## Scanner
 
-Atlas weighting branch recovered. Worker safety lost a category conflict.
+UK LOC HOLD: Atlas weighting branch recovered. Worker safety lost a category conflict.
 
 ## Terminal
 
-ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.
+UK LOC HOLD: ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.
 
 ## Audio
 
-It did not hate them. It counted them wrong.
+UK LOC HOLD: It did not hate them. It counted them wrong.
 
 ## Field Note
 
-Use in late machine-field/factory-temple evidence before final choice.
+UK LOC HOLD: Use in late machine-field/factory-temple evidence before final choice.
 
 <!-- External Site; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/uk_UA. -->

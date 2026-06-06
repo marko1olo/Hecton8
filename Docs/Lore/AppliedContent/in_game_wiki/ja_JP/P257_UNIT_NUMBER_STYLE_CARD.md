@@ -7,31 +7,34 @@ poi_tags: poi.unit_style_card;poi.depth_label_sample
 biome_tags: biome.localization;biome.hard_scifi_ui
 locale: ja_JP
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "JP LOC HOLD: Unit And Number Style Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Unit And Number Style Card
+# JP LOC HOLD: Unit And Number Style Card
 
-Unit And Number Style Card keeps HECTON-8's hard-sci-fi interface consistent across languages.
+JP LOC HOLD: Unit And Number Style Card keeps HECTON-8's hard-sci-fi interface consistent across languages.
 
 ## Scanner
 
-A unit label can kill clarity if it becomes prose.
+JP LOC HOLD: A unit label can kill clarity if it becomes prose.
 
 ## Terminal
 
-UNIT STYLE: preserve numeric value, localize label, avoid ornamental unit rewrites.
+JP LOC HOLD: UNIT STYLE: preserve numeric value, localize label, avoid ornamental unit rewrites.
 
 ## Audio
 
-Depth is not atmosphere. Do not decorate it.
+JP LOC HOLD: Depth is not atmosphere. Do not decorate it.
 
 ## Field Note
 
-Keep depth in meters, route time in days/years where authored, debt as tonne-window equivalent, and pressure grades as service labels.
+JP LOC HOLD: Keep depth in meters, route time in days/years where authored, debt as tonne-window equivalent, and pressure grades as service labels.
 
 <!-- In-Game Wiki; generated from P257_UNIT_NUMBER_STYLE_CARD/ja_JP. -->

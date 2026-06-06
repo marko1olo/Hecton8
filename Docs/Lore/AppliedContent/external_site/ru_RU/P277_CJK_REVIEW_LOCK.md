@@ -7,31 +7,34 @@ poi_tags: poi.cjk_review_card;poi.cjk_wrap_sample
 biome_tags: biome.localization;biome.cjk
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "RU LOC HOLD: CJK Font And Width Contract"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# CJK Font And Width Contract
+# RU LOC HOLD: CJK Font And Width Contract
 
-CJK publication must survive actual panels and subtitles, including dense characters beside Latin names, route numbers, and pressure units.
+RU LOC HOLD: CJK publication must survive actual panels and subtitles, including dense characters beside Latin names, route numbers, and pressure units.
 
 ## Scanner
 
-A missing glyph can erase an alarm.
+RU LOC HOLD: A missing glyph can erase an alarm.
 
 ## Terminal
 
-CJK copy must fit PDA, scanner, terminal, subtitle, and web surfaces without hiding numbers or names.
+RU LOC HOLD: CJK copy must fit PDA, scanner, terminal, subtitle, and web surfaces without hiding numbers or names.
 
 ## Audio
 
-Short text can still fail when the grid is wrong.
+RU LOC HOLD: Short text can still fail when the grid is wrong.
 
 ## Field Note
 
-Check glyph coverage, line wrapping, mixed Latin names, meter and tonne-window labels, terminal monospace alternatives, and article length.
+RU LOC HOLD: Check glyph coverage, line wrapping, mixed Latin names, meter and tonne-window labels, terminal monospace alternatives, and article length.
 
 <!-- External Site; generated from P277_CJK_REVIEW_LOCK/ru_RU. -->

@@ -7,31 +7,34 @@ poi_tags: poi.partial_return_record;poi.quarantine_reentry_order
 biome_tags: biome.ending;biome.replay
 locale: fr_FR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "FR LOC HOLD: Partial Return Record"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Partial Return Record
+# FR LOC HOLD: Partial Return Record
 
-Partial Return Record defines the non-final escape that can pull the player back into the same world.
+FR LOC HOLD: Partial Return Record defines the non-final escape that can pull the player back into the same world.
 
 ## Scanner
 
-Extraction granted. Claim unresolved.
+FR LOC HOLD: Extraction granted. Claim unresolved.
 
 ## Terminal
 
-ENDING RECORD: partial return; same seed eligible for reentry under extended custody.
+FR LOC HOLD: ENDING RECORD: partial return; same seed eligible for reentry under extended custody.
 
 ## Audio
 
-Out is not away.
+FR LOC HOLD: Out is not away.
 
 ## Field Note
 
-Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.
+FR LOC HOLD: Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.
 
 <!-- In-Game Wiki; generated from P272_PARTIAL_RETURN_RECORD/fr_FR. -->

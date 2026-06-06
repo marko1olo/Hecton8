@@ -7,31 +7,34 @@ poi_tags: poi.art_release_gate_card;poi.image_brief_lock
 biome_tags: biome.dossier_archive;biome.external_publication
 locale: ar_SA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "AR LOC HOLD: Evidence Image Release Rules"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Evidence Image Release Rules
+# AR LOC HOLD: Evidence Image Release Rules
 
-Evidence Image Release Rules keep imagery tied to route, tool, ledger, pressure state, creature evidence, moon, or ship context.
+AR LOC HOLD: Evidence Image Release Rules keep imagery tied to route, tool, ledger, pressure state, creature evidence, moon, or ship context.
 
 ## Scanner
 
-An image earns release only when it shows evidence object, route, tool, creature sign, or pressure state.
+AR LOC HOLD: An image earns release only when it shows evidence object, route, tool, creature sign, or pressure state.
 
 ## Terminal
 
-IMAGE GATE: no decorative generic sci-fi. Image must expose route, tool, ledger, pressure state, creature evidence, or public-safe moon and ship context.
+AR LOC HOLD: IMAGE GATE: no decorative generic sci-fi. Image must expose route, tool, ledger, pressure state, creature evidence, or public-safe moon and ship context.
 
 ## Audio
 
-Pretty is not a proof artifact.
+AR LOC HOLD: Pretty is not a proof artifact.
 
 ## Field Note
 
-Every image brief needs spoiler tier, primary evidence object, scalable presentation note, and crop-safe text boundary.
+AR LOC HOLD: Every image brief needs spoiler tier, primary evidence object, scalable presentation note, and crop-safe text boundary.
 
 <!-- In-Game Wiki; generated from P219_ART_BRIEF_RELEASE_GATE_RULES/ar_SA. -->

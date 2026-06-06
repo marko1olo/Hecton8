@@ -7,31 +7,34 @@ poi_tags: poi.probe_map_stamp;poi.beam_sail_archive
 biome_tags: biome.relay_shadow;biome.moon_ladder
 locale: he_IL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Beam-Sail Probe Era"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Beam-Sail Probe Era
 
-Beam-Sail Probe Era is the first layer of Aegir history. It keeps the setting plausible: fast information-gathering probes, slower heavy industry, and human settlement arriving after machine-made confidence had already become corporate policy.
+HE LOC HOLD: Beam-Sail Probe Era is the first layer of Aegir history. It keeps the setting plausible: fast information-gathering probes, slower heavy industry, and human settlement arriving after machine-made confidence had already become corporate policy.
 
 ## Scanner
 
-Survey reel. The first Aegir maps were thrown outward as light cargo, not crewed promise.
+HE LOC HOLD: Survey reel. The first Aegir maps were thrown outward as light cargo, not crewed promise.
 
 ## Terminal
 
-SURVEY LINEAGE: beamed sail packets mapped Ran/Aegir before freight routes were safe for living cargo. Confidence decayed before colony buildout.
+HE LOC HOLD: SURVEY LINEAGE: beamed sail packets mapped Ran/Aegir before freight routes were safe for living cargo. Confidence decayed before colony buildout.
 
 ## Audio
 
-The first human thing here was not a person. It was a receipt from a beam station.
+HE LOC HOLD: The first human thing here was not a person. It was a receipt from a beam station.
 
 ## Field Note
 
-Keep early expansion thin: probes see first, machines prepare second, humans arrive when debt says yes.
+HE LOC HOLD: Keep early expansion thin: probes see first, machines prepare second, humans arrive when debt says yes.
 
 <!-- External Site; generated from P102_BEAM_SAIL_PROBE_ERA/he_IL. -->

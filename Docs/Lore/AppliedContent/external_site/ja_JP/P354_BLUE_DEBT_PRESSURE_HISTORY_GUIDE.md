@@ -7,31 +7,34 @@ poi_tags: poi.blue_debt_sample;poi.xenon_omega_ledger
 biome_tags: biome.resource;biome.deep
 locale: ja_JP
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "JA LOC HOLD: Blue Debt Pressure History Guide"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Blue Debt Pressure History Guide
+# JA LOC HOLD: Blue Debt Pressure History Guide
 
-Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.
+JA LOC HOLD: Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.
 
 ## Scanner
 
-Blue debt sample tagged. Pressure history matters more than surface color.
+JA LOC HOLD: Blue debt sample tagged. Pressure history matters more than surface color.
 
 ## Terminal
 
-MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.
+JA LOC HOLD: MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.
 
 ## Audio
 
-Blue debt is what people call it after the invoice arrives.
+JA LOC HOLD: Blue debt is what people call it after the invoice arrives.
 
 ## Field Note
 
-Use for resource glossary and Deep Reach motive articles.
+JA LOC HOLD: Use for resource glossary and Deep Reach motive articles.
 
 <!-- External Site; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/ja_JP. -->

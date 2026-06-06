@@ -7,11 +7,14 @@ poi_tags: poi.audio_censor_strip;poi.subtitle_damage_band
 biome_tags: biome.dossier_archive;biome.relay_spine
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Правила audio transcript censor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Правила audio transcript censor
@@ -32,6 +35,6 @@ Static может скрыть имя. Он не может скрыть тре�
 
 ## Field Note
 
-Diegetic censor marks can hide missing route facts; critical accessibility text stays readable.
+RU LOC HOLD: Diegetic censor marks can hide missing route facts; critical accessibility text stays readable.
 
 <!-- In-Game Wiki; generated from P218_AUDIO_TRANSCRIPT_CENSOR_RULES/ru_RU. -->

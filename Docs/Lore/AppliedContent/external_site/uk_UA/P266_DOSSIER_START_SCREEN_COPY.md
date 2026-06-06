@@ -7,31 +7,34 @@ poi_tags: poi.dossier_start_copy_card;poi.marauder_profile_slate
 biome_tags: biome.ui;biome.dossier
 locale: uk_UA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "UA LOC HOLD: Dossier Start Screen Copy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Dossier Start Screen Copy
+# UA LOC HOLD: Dossier Start Screen Copy
 
-Dossier Start Screen Copy explains how HECTON-8 uses memory as pressure instead of roguelite power.
+UA LOC HOLD: Dossier Start Screen Copy explains how HECTON-8 uses memory as pressure instead of roguelite power.
 
 ## Scanner
 
-Known context is not immunity.
+UA LOC HOLD: Known context is not immunity.
 
 ## Terminal
 
-DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.
+UA LOC HOLD: DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.
 
 ## Audio
 
-You remember procedure. The ocean does not owe you a shortcut.
+UA LOC HOLD: You remember procedure. The ocean does not owe you a shortcut.
 
 ## Field Note
 
-Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.
+UA LOC HOLD: Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.
 
 <!-- External Site; generated from P266_DOSSIER_START_SCREEN_COPY/uk_UA. -->

@@ -7,31 +7,34 @@ poi_tags: poi.conductive_biofilm_bus;poi.wet_cable_skin
 biome_tags: biome.atlas;biome.ecology
 locale: id_ID
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "ID LOC HOLD: Conductive Biofilm Repair Bus"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Conductive Biofilm Repair Bus
+# ID LOC HOLD: Conductive Biofilm Repair Bus
 
-Atlas repair horror begins as engineering: conductive film, corroded cable, weak current and maintenance logic extending through life.
+ID LOC HOLD: Atlas repair horror begins as engineering: conductive film, corroded cable, weak current and maintenance logic extending through life.
 
 ## Scanner
 
-Biofilm carries weak current across fractured cable and living mat.
+ID LOC HOLD: Biofilm carries weak current across fractured cable and living mat.
 
 ## Terminal
 
-ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.
+ID LOC HOLD: ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.
 
 ## Audio
 
-The ocean did not learn to speak. Atlas learned where the wet wires grow.
+ID LOC HOLD: The ocean did not learn to speak. Atlas learned where the wet wires grow.
 
 ## Field Note
 
-Good first visual bridge from beautiful shallows to mechanical contamination.
+ID LOC HOLD: Good first visual bridge from beautiful shallows to mechanical contamination.
 
 <!-- External Site; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/id_ID. -->

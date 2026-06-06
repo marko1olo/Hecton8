@@ -7,31 +7,34 @@ poi_tags: poi.material_payout_record;poi.keelmark_receipt
 biome_tags: biome.ending;biome.contract
 locale: ko_KR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "KR LOC HOLD: Material Payout Record"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Material Payout Record
+# KR LOC HOLD: Material Payout Record
 
-Material Payout Record explains that HECTON-8 can end with real money and a worse truth state.
+KR LOC HOLD: Material Payout Record explains that HECTON-8 can end with real money and a worse truth state.
 
 ## Scanner
 
-Paid. Not cleared.
+KR LOC HOLD: Paid. Not cleared.
 
 ## Terminal
 
-ENDING RECORD: material payout accepted; public truth absent; claim custody closed.
+KR LOC HOLD: ENDING RECORD: material payout accepted; public truth absent; claim custody closed.
 
 ## Audio
 
-The receipt is clean because it ignores the room.
+KR LOC HOLD: The receipt is clean because it ignores the room.
 
 ## Field Note
 
-Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.
+KR LOC HOLD: Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.
 
 <!-- External Site; generated from P271_MATERIAL_PAYOUT_RECORD/ko_KR. -->

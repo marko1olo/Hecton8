@@ -7,31 +7,34 @@ poi_tags: poi.vent_anchor_colony;poi.hot_sulfide_rib
 biome_tags: biome.thermal_vent;biome.brine_canyon
 locale: ar_SA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "AR LOC HOLD: Vent Anchor Colonies"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Vent Anchor Colonies
+# AR LOC HOLD: Vent Anchor Colonies
 
-Vent Anchor Colonies explain why deep exploration is mechanically necessary. They turn thermal vents into resource engines, biological shelters and pressure hazards, giving the player a reason to move down instead of simply repairing upward.
+AR LOC HOLD: Vent Anchor Colonies explain why deep exploration is mechanically necessary. They turn thermal vents into resource engines, biological shelters and pressure hazards, giving the player a reason to move down instead of simply repairing upward.
 
 ## Scanner
 
-Colony ribs lock to thermal vents, trapping sulfides and feeding the material routes needed for deep-rated repairs.
+AR LOC HOLD: Colony ribs lock to thermal vents, trapping sulfides and feeding the material routes needed for deep-rated repairs.
 
 ## Terminal
 
-RESOURCE NOTE: vent anchor colonies increase sealant and pressure-ceramic probability. Thermal exposure remains lethal.
+AR LOC HOLD: RESOURCE NOTE: vent anchor colonies increase sealant and pressure-ceramic probability. Thermal exposure remains lethal.
 
 ## Audio
 
-Every good repair part is sitting in water that wants to cook you.
+AR LOC HOLD: Every good repair part is sitting in water that wants to cook you.
 
 ## Field Note
 
-Vent anchor: resource sign, temperature hazard, biology shelter and first clue that forge chemistry is alive around the edges.
+AR LOC HOLD: Vent anchor: resource sign, temperature hazard, biology shelter and first clue that forge chemistry is alive around the edges.
 
 <!-- External Site; generated from P228_VENT_ANCHOR_COLONIES/ar_SA. -->

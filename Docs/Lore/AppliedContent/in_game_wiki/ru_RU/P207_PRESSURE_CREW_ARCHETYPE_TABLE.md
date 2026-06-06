@@ -7,11 +7,14 @@ poi_tags: poi.pressure_crew_board;poi.crew_color_strips
 biome_tags: biome.worker_locker;biome.industrial_shelf
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Таблица pressure crew archetypes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Таблица pressure crew archetypes
@@ -32,6 +35,6 @@ CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure 
 
 ## Field Note
 
-Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.
+RU LOC HOLD: Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.
 
 <!-- In-Game Wiki; generated from P207_PRESSURE_CREW_ARCHETYPE_TABLE/ru_RU. -->

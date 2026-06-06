@@ -7,31 +7,34 @@ poi_tags: poi.colony_worker_nav_cluster;poi.worker_dossier_index
 biome_tags: biome.publication;biome.colony_evidence
 locale: es_ES
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 1
+title: "ES LOC HOLD: Colonia y trabajadores"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Colonia y trabajadores
+# ES LOC HOLD: Colonia y trabajadores
 
-Índice de trabajadores recuperado: libros de agua, bandejas de testigo relay, sellos de ruta brine, etiquetas triage y rechazos vent-forge conservan nombres por trabajo.
+ES LOC HOLD: Índice de trabajadores recuperado: libros de agua, bandejas de testigo relay, sellos de ruta brine, etiquetas triage y rechazos vent-forge conservan nombres por trabajo.
 
 ## Scanner
 
-WORKER INDEX // Cinco registros nominales ligados a ruta. pump, relay, brine, triage, forge. Conservar tag chain antes de retirar hardware.
+ES LOC HOLD: WORKER INDEX // Cinco registros nominales ligados a ruta. pump, relay, brine, triage, forge. Conservar tag chain antes de retirar hardware.
 
 ## Terminal
 
-KEELMARK LOSS DESK: conservar name tags ligados a route, claim, custody o pressure work.
+ES LOC HOLD: KEELMARK LOSS DESK: conservar name tags ligados a route, claim, custody o pressure work.
 
 ## Audio
 
-Mara Venn, pump chief: si la pump canta limpio, regístralo. Si deja de cantar, corre hacia arriba.
+ES LOC HOLD: Mara Venn, pump chief: si la pump canta limpio, regístralo. Si deja de cantar, corre hacia arriba.
 
 ## Field Note
 
-No familia. Trabajo. Un nombre en una pump card explica por qué una puerta siguió abierta.
+ES LOC HOLD: No familia. Trabajo. Un nombre en una pump card explica por qué una puerta siguió abierta.
 
 <!-- In-Game Wiki; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/es_ES. -->

@@ -7,31 +7,34 @@ poi_tags: poi.high_custody_sample_card;poi.blue_debt_case
 biome_tags: biome.brine_canyon;biome.abyssal_machine_field
 locale: ja_JP
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "JA LOC HOLD: High Custody Sample Contract Seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# High Custody Sample Contract Seed
+# JA LOC HOLD: High Custody Sample Contract Seed
 
-High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.
+JA LOC HOLD: High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.
 
 ## Scanner
 
-Contract seed: high custody sample. Blue debt pays more and burdens every route choice.
+JA LOC HOLD: Contract seed: high custody sample. Blue debt pays more and burdens every route choice.
 
 ## Terminal
 
-SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay and Deep Reach receiver pressure.
+JA LOC HOLD: SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay and Deep Reach receiver pressure.
 
 ## Audio
 
-A sample can weigh more after it enters the ledger.
+JA LOC HOLD: A sample can weigh more after it enters the ledger.
 
 ## Field Note
 
-Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation.
+JA LOC HOLD: Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation.
 
 <!-- In-Game Wiki; generated from P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED/ja_JP. -->

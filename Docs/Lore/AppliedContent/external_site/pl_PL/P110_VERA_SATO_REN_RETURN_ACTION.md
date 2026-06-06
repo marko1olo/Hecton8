@@ -7,31 +7,34 @@ poi_tags: poi.recovery_compliance_signature;poi.return_action_notice
 biome_tags: biome.carrier_link;biome.abyssal_machine_field
 locale: pl_PL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Vera Sato-Ren Return Action"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Vera Sato-Ren Return Action
 
-Vera Sato-Ren Return Action gives the present campaign an active Deep Reach face without breaking hard-sci-fi delay. She acts through packets, clauses, carrier custody and recovery windows.
+PL LOC HOLD: Vera Sato-Ren Return Action gives the present campaign an active Deep Reach face without breaking hard-sci-fi delay. She acts through packets, clauses, carrier custody and recovery windows.
 
 ## Scanner
 
-Return-action packet. V. Sato-Ren wants recovery before rescue.
+PL LOC HOLD: Return-action packet. V. Sato-Ren wants recovery before rescue.
 
 ## Terminal
 
-SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.
+PL LOC HOLD: SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.
 
 ## Audio
 
-She does not need to threaten you. The window already does.
+PL LOC HOLD: She does not need to threaten you. The window already does.
 
 ## Field Note
 
-Present Deep Reach should arrive as leverage, not a villain monologue.
+PL LOC HOLD: Present Deep Reach should arrive as leverage, not a villain monologue.
 
 <!-- External Site; generated from P110_VERA_SATO_REN_RETURN_ACTION/pl_PL. -->

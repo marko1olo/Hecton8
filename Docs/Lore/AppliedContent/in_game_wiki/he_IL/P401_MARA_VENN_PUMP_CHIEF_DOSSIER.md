@@ -7,31 +7,34 @@ poi_tags: poi.mara_venn_pump_badge;poi.pump_cadence_board
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: he_IL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "HE LOC HOLD: Mara Venn/Pump Chief"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Mara Venn/Pump Chief
+# HE LOC HOLD: Mara Venn/Pump Chief
 
-Mara Venn anchors the colony's practical humanity. Her evidence chain is a badge, a cadence board, a corrected water ledger and a bypass handle polished by repeated use.
+HE LOC HOLD: Mara Venn anchors the colony's practical humanity. Her evidence chain is a badge, a cadence board, a corrected water ledger and a bypass handle polished by repeated use.
 
 ## Scanner
 
-Dossier: Mara Venn. Pump rhythm and water ledger agree.
+HE LOC HOLD: Dossier: Mara Venn. Pump rhythm and water ledger agree.
 
 ## Terminal
 
-MARA VENN/PUMPS. Held bypass; water stayed a machine load, not scenery.
+HE LOC HOLD: MARA VENN/PUMPS. Held bypass; water stayed a machine load, not scenery.
 
 ## Audio
 
-Venn did not leave a speech. She left the pump rhythm everyone else used to breathe.
+HE LOC HOLD: Venn did not leave a speech. She left the pump rhythm everyone else used to breathe.
 
 ## Field Note
 
-Pump-room evidence cluster: badge, cadence board, ledger correction, and polished bypass handle keep Mara Venn procedural, not melodramatic.
+HE LOC HOLD: Pump-room evidence cluster: badge, cadence board, ledger correction, and polished bypass handle keep Mara Venn procedural, not melodramatic.
 
 <!-- In-Game Wiki; generated from P401_MARA_VENN_PUMP_CHIEF_DOSSIER/he_IL. -->

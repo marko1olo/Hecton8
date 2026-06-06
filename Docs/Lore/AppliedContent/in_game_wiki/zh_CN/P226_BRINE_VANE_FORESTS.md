@@ -7,31 +7,34 @@ poi_tags: poi.brine_vane_forest;poi.density_leaf_wall
 biome_tags: biome.brine_canyon;biome.density_layer
 locale: zh_CN
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "CN LOC HOLD: Brine Vane Forests"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Brine Vane Forests
+# CN LOC HOLD: Brine Vane Forests
 
-Brine Vane Forests turn density physics into readable world structure for mid-depth exploration.
+CN LOC HOLD: Brine Vane Forests turn density physics into readable world structure for mid-depth exploration.
 
 ## Scanner
 
-Flat brine vanes grow along density boundaries and show where water becomes a wall.
+CN LOC HOLD: Flat brine vanes grow along density boundaries and show where water becomes a wall.
 
 ## Terminal
 
-CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.
+CN LOC HOLD: CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.
 
 ## Audio
 
-The canyon has leaves because it has pressure gradients.
+CN LOC HOLD: The canyon has leaves because it has pressure gradients.
 
 ## Field Note
 
-Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.
+CN LOC HOLD: Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.
 
 <!-- In-Game Wiki; generated from P226_BRINE_VANE_FORESTS/zh_CN. -->

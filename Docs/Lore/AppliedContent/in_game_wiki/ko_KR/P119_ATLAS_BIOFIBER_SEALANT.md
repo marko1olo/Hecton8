@@ -7,31 +7,34 @@ poi_tags: poi.biofiber_seam;poi.living_patch_growth
 biome_tags: biome.cable_reef;biome.repair_ecology
 locale: ko_KR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Atlas Biofiber Sealant"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Atlas Biofiber Sealant
 
-Atlas biofiber sealant is useful and wrong. It grows from repair ecology where biology, cable jackets, wound tissue and sealant categories overlap. It can repair flexible seams and survival gear, but it may carry sensor echoes and living maintenance behavior.
+KO LOC HOLD: Atlas biofiber sealant is useful and wrong. It grows from repair ecology where biology, cable jackets, wound tissue and sealant categories overlap. It can repair flexible seams and survival gear, but it may carry sensor echoes and living maintenance behavior.
 
 ## Scanner
 
-Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.
+KO LOC HOLD: Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.
 
 ## Terminal
 
-RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.
+KO LOC HOLD: RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.
 
 ## Audio
 
-It seals the leak because Atlas thinks the leak is wounded.
+KO LOC HOLD: It seals the leak because Atlas thinks the leak is wounded.
 
 ## Field Note
 
-Useful body horror: the player wants it and distrusts it.
+KO LOC HOLD: Useful body horror: the player wants it and distrusts it.
 
 <!-- In-Game Wiki; generated from P119_ATLAS_BIOFIBER_SEALANT/ko_KR. -->

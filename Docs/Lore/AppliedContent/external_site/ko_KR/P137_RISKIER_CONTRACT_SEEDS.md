@@ -7,31 +7,34 @@ poi_tags: poi.high_risk_contract_board;poi.storm_window_selector
 biome_tags: biome.black_keel_orbit;biome.photic_shelf
 locale: ko_KR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Riskier Contract Seeds"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Riskier Contract Seeds
 
-Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands.
+KO LOC HOLD: Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands.
 
 ## Scanner
 
-You can choose a worse contract, not a stronger body.
+KO LOC HOLD: You can choose a worse contract, not a stronger body.
 
 ## Terminal
 
-CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.
+KO LOC HOLD: CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.
 
 ## Audio
 
-The board pays more when it expects less of you to return.
+KO LOC HOLD: The board pays more when it expects less of you to return.
 
 ## Field Note
 
-Replay should ask for greed, courage or stupidity, not grind.
+KO LOC HOLD: Replay should ask for greed, courage or stupidity, not grind.
 
 <!-- External Site; generated from P137_RISKIER_CONTRACT_SEEDS/ko_KR. -->

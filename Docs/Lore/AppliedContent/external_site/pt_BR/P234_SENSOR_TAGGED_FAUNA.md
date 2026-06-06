@@ -7,31 +7,34 @@ poi_tags: poi.sensor_tagged_fauna;poi.biometal_eye_node
 biome_tags: biome.cable_reef;biome.abyssal_machine_field
 locale: pt_BR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "PT LOC HOLD: Sensor-Tagged Fauna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Sensor-Tagged Fauna
+# PT LOC HOLD: Sensor-Tagged Fauna
 
-Sensor-Tagged Fauna keeps HECTON-8's biomechanical layer grounded. Old biometal monitoring tags become shell sockets, scars and signal ghosts, giving creatures industrial history without turning them into simple puppets.
+PT LOC HOLD: Sensor-Tagged Fauna keeps HECTON-8's biomechanical layer grounded. Old biometal monitoring tags become shell sockets, scars and signal ghosts, giving creatures industrial history without turning them into simple puppets.
 
 ## Scanner
 
-Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.
+PT LOC HOLD: Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.
 
 ## Terminal
 
-TAG NOTE: signal continuity weak, biological integration high, command response unreliable.
+PT LOC HOLD: TAG NOTE: signal continuity weak, biological integration high, command response unreliable.
 
 ## Audio
 
-The animal is not a drone. The drone is an old wound inside the animal.
+PT LOC HOLD: The animal is not a drone. The drone is an old wound inside the animal.
 
 ## Field Note
 
-Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.
+PT LOC HOLD: Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.
 
 <!-- External Site; generated from P234_SENSOR_TAGGED_FAUNA/pt_BR. -->

@@ -7,31 +7,34 @@ poi_tags: poi.pressure_forge;poi.clamp_ring_jig
 biome_tags: biome.deep_fabrication;biome.machine_trench
 locale: pl_PL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Oskar Neumann Pressure Forge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Oskar Neumann Pressure Forge
 
-Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key.
+PL LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key.
 
 ## Scanner
 
-Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.
+PL LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.
 
 ## Terminal
 
-NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.
+PL LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.
 
 ## Audio
 
-A launch is just a pressure door that moves upward. Build it like one.
+PL LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.
 
 ## Field Note
 
-The exit needs craft, not courage.
+PL LOC HOLD: The exit needs craft, not courage.
 
 <!-- External Site; generated from P067_OSKAR_NEUMANN_PRESSURE_FORGE/pl_PL. -->

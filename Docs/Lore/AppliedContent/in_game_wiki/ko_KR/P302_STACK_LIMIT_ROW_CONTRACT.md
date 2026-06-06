@@ -7,31 +7,34 @@ poi_tags: poi.stack_limit_schema_card;poi.pressure_vessel_rack
 biome_tags: biome.inventory;biome.resource_custody
 locale: ko_KR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "KO LOC HOLD: Stack Limit Data Boundary"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Stack Limit Data Boundary
+# KO LOC HOLD: Stack Limit Data Boundary
 
-Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.
+KO LOC HOLD: Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.
 
 ## Scanner
 
-Stack boundary: vessel class and contamination stage beat icon count.
+KO LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.
 
 ## Terminal
 
-STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.
+KO LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.
 
 ## Audio
 
-A crate is not a pressure vessel.
+KO LOC HOLD: A crate is not a pressure vessel.
 
 ## Field Note
 
-Stack limits stay table-owned and stable for save identity.
+KO LOC HOLD: Stack limits stay table-owned and stable for save identity.
 
 <!-- In-Game Wiki; generated from P302_STACK_LIMIT_ROW_CONTRACT/ko_KR. -->

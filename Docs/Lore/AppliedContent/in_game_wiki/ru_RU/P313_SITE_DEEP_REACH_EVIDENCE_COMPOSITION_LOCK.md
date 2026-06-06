@@ -7,20 +7,23 @@ poi_tags: poi.site_deep_reach_evidence_pair;poi.sanitized_memo_image
 biome_tags: biome.publication;biome.deep_reach
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "RU LOC HOLD: Deep Reach Evidence Composition Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Deep Reach Evidence Composition Rule
+# RU LOC HOLD: Deep Reach Evidence Composition Rule
 
-Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.
+RU LOC HOLD: Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.
 
 ## Scanner
 
-Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.
+RU LOC HOLD: Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.
 
 ## Terminal
 

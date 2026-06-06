@@ -7,31 +7,34 @@ poi_tags: poi.capsule_diagnostic_screen;poi.flooded_ascent_bus
 biome_tags: biome.first_hour_capsule;biome.surface_storm
 locale: zh_CN
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "ZH LOC HOLD: Drop Capsule Diagnostic Readout"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Drop Capsule Diagnostic Readout
+# ZH LOC HOLD: Drop Capsule Diagnostic Readout
 
-The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.
+ZH LOC HOLD: The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.
 
 ## Scanner
 
-Capsule diagnostic still polls failed ascent hardware.
+ZH LOC HOLD: Capsule diagnostic still polls failed ascent hardware.
 
 ## Terminal
 
-BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.
+ZH LOC HOLD: BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.
 
 ## Audio
 
-Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.
+ZH LOC HOLD: Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.
 
 ## Field Note
 
-Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.
+ZH LOC HOLD: Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.
 
 <!-- In-Game Wiki; generated from P247_DROP_CAPSULE_DIAGNOSTIC_READOUT/zh_CN. -->

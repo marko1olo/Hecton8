@@ -7,31 +7,34 @@ poi_tags: poi.ascent_mass_invoice;poi.blue_debt_sale_receipt
 biome_tags: biome.black_keel_orbit;biome.photic_shelf
 locale: he_IL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Material Exit Bitter Credits"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Material Exit Bitter Credits
 
-Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid.
+HE LOC HOLD: Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid.
 
 ## Scanner
 
-You can leave richer and still fail the place.
+HE LOC HOLD: You can leave richer and still fail the place.
 
 ## Terminal
 
-MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.
+HE LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.
 
 ## Audio
 
-The invoice clears before the names do.
+HE LOC HOLD: The invoice clears before the names do.
 
 ## Field Note
 
-This ending should be real credits, not a fake game over.
+HE LOC HOLD: This ending should be real credits, not a fake game over.
 
 <!-- External Site; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/he_IL. -->

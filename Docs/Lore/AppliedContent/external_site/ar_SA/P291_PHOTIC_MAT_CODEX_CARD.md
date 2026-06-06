@@ -7,31 +7,34 @@ poi_tags: poi.photic_mat_scan_patch;poi.oxygen_color_sample
 biome_tags: biome.photic_shelf;biome.ecology
 locale: ar_SA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "AR LOC HOLD: Photic Mat Codex Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Photic Mat Codex Card
+# AR LOC HOLD: Photic Mat Codex Card
 
-The photic shelf is bright because life is doing work under pressure, not because HECTON-8 is safe.
+AR LOC HOLD: The photic shelf is bright because life is doing work under pressure, not because HECTON-8 is safe.
 
 ## Scanner
 
-Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.
+AR LOC HOLD: Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.
 
 ## Terminal
 
-SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.
+AR LOC HOLD: SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.
 
 ## Audio
 
-Light here is work, not comfort.
+AR LOC HOLD: Light here is work, not comfort.
 
 ## Field Note
 
-Codex card should be bright, useful and slightly unstable; not horror-only.
+AR LOC HOLD: Codex card should be bright, useful and slightly unstable; not horror-only.
 
 <!-- External Site; generated from P291_PHOTIC_MAT_CODEX_CARD/ar_SA. -->

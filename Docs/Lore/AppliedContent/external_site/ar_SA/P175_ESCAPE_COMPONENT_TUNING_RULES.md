@@ -7,31 +7,34 @@ poi_tags: poi.escape_component_rating;poi.ascent_cradle_manifest
 biome_tags: biome.industrial_shelf;biome.atlas_basin
 locale: ar_SA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Escape Component Tuning Rules"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Escape Component Tuning Rules
 
-Escape Component Tuning Rules gives crafting and endings a single route grammar.
+AR LOC HOLD: Escape Component Tuning Rules gives crafting and endings a single route grammar.
 
 ## Scanner
 
-Escape parts should force depth and evidence, not grind.
+AR LOC HOLD: Escape parts should force depth and evidence, not grind.
 
 ## Terminal
 
-ESCAPE RULES: relay spine proves contact, clamp rings prove pressure rating, guidance core proves timing, ascent charge proves energy, legal handshake decides who answers, evidence payload changes consequence.
+AR LOC HOLD: ESCAPE RULES: relay spine proves contact, clamp rings prove pressure rating, guidance core proves timing, ascent charge proves energy, legal handshake decides who answers, evidence payload changes consequence.
 
 ## Audio
 
-Leaving is not one craft. It is a chain of proofs.
+AR LOC HOLD: Leaving is not one craft. It is a chain of proofs.
 
 ## Field Note
 
-Every ascent component must have a physical and legal reason.
+AR LOC HOLD: Every ascent component must have a physical and legal reason.
 
 <!-- External Site; generated from P175_ESCAPE_COMPONENT_TUNING_RULES/ar_SA. -->

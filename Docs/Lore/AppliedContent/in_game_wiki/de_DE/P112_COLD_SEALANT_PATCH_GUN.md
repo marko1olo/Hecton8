@@ -7,31 +7,34 @@ poi_tags: poi.patch_gun_locker;poi.hull_pinhole_leak
 biome_tags: biome.crash_shelf;biome.shallow_annex
 locale: de_DE
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Cold Sealant Patch Gun"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Cold Sealant Patch Gun
 
-The cold sealant patch gun is the second opening tool. It fixes small leaks, stabilizes the capsule and teaches limits. The player learns that every repair has a rating, and HECTON-8 punishes repairs used outside that rating.
+DE LOC HOLD: The cold sealant patch gun is the second opening tool. It fixes small leaks, stabilizes the capsule and teaches limits. The player learns that every repair has a rating, and HECTON-8 punishes repairs used outside that rating.
 
 ## Scanner
 
-Patch gun. Rated for pinholes, not miracles.
+DE LOC HOLD: Patch gun. Rated for pinholes, not miracles.
 
 ## Terminal
 
-PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.
+DE LOC HOLD: PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.
 
 ## Audio
 
-A patch is not safety. It is a countdown that looks solid.
+DE LOC HOLD: A patch is not safety. It is a countdown that looks solid.
 
 ## Field Note
 
-Sealant repairs should buy time, not erase pressure.
+DE LOC HOLD: Sealant repairs should buy time, not erase pressure.
 
 <!-- In-Game Wiki; generated from P112_COLD_SEALANT_PATCH_GUN/de_DE. -->

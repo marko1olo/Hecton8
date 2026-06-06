@@ -7,31 +7,34 @@ poi_tags: poi.public_moon_article_gate;poi.spoiler_boundary_stamp
 biome_tags: biome.public_archive;biome.relay_archive
 locale: id_ID
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Moon Route Article Spoiler Boundary"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Moon Route Article Spoiler Boundary
 
-Moon Route Article Spoiler Boundary defines safe public wiki coverage for Aegir moons.
+ID LOC HOLD: Moon Route Article Spoiler Boundary defines safe public wiki coverage for Aegir moons.
 
 ## Scanner
 
-Moon articles can explain hazards and route roles, not final Atlas payload consequences.
+ID LOC HOLD: Moon articles can explain hazards and route roles, not final Atlas payload consequences.
 
 ## Terminal
 
-SPOILER RULE: public moon pages may reveal names, hazards, route windows, salvage economy and HECTON-8 public disaster. Atlas-basin payload effects require spoiler gates.
+ID LOC HOLD: SPOILER RULE: public moon pages may reveal names, hazards, route windows, salvage economy and HECTON-8 public disaster. Atlas-basin payload effects require spoiler gates.
 
 ## Audio
 
-Publish the sky. Redact the bottom.
+ID LOC HOLD: Publish the sky. Redact the bottom.
 
 ## Field Note
 
-Aegir articles should make the setting feel large without solving the last act for the player.
+ID LOC HOLD: Aegir articles should make the setting feel large without solving the last act for the player.
 
 <!-- External Site; generated from P185_MOON_ROUTE_ARTICLE_SPOILER_BOUNDARY/id_ID. -->

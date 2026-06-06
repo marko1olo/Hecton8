@@ -7,31 +7,34 @@ poi_tags: poi.lantern_drift_scan;poi.false_safe_light
 biome_tags: biome.photic_shelf;biome.light
 locale: ko_KR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "KO LOC HOLD: Lantern Drift Codex Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Lantern Drift Codex Card
+# KO LOC HOLD: Lantern Drift Codex Card
 
-The shallow ocean's light can guide or mislead; HECTON-8 makes beauty part of navigation, not a postcard.
+KO LOC HOLD: The shallow ocean's light can guide or mislead; HECTON-8 makes beauty part of navigation, not a postcard.
 
 ## Scanner
 
-Lantern drift: useful light. Verify current, charge and residue before following.
+KO LOC HOLD: Lantern drift: useful light. Verify current, charge and residue before following.
 
 ## Terminal
 
-SPECIMEN: lantern drift. Storm charge raises false-positive route glow.
+KO LOC HOLD: SPECIMEN: lantern drift. Storm charge raises false-positive route glow.
 
 ## Audio
 
-Pretty is not safe. Pretty is a reading.
+KO LOC HOLD: Pretty is not safe. Pretty is a reading.
 
 ## Field Note
 
-Card teaches that beauty can be route information and route deception.
+KO LOC HOLD: Card teaches that beauty can be route information and route deception.
 
 <!-- External Site; generated from P293_LANTERN_DRIFT_CODEX_CARD/ko_KR. -->

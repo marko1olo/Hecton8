@@ -7,31 +7,34 @@ poi_tags: poi.relay_mast;poi.signal_buffer
 biome_tags: biome.storm_shelf;biome.surface_relay
 locale: es_ES
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Light-Delay Authority"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Light-Delay Authority
 
-Light-Delay Authority fixes HECTON-8 communication canon: no FTL, no ansible, no instant rescue. The player reads relay timing as route pressure.
+ES LOC HOLD: Light-Delay Authority fixes HECTON-8 communication canon: no FTL, no ansible, no instant rescue. The player reads relay timing as route pressure.
 
 ## Scanner
 
-No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.
+ES LOC HOLD: No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.
 
 ## Terminal
 
-COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.
+ES LOC HOLD: COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.
 
 ## Audio
 
-Nobody ignored the call fast enough. Distance did it first.
+ES LOC HOLD: Nobody ignored the call fast enough. Distance did it first.
 
 ## Field Note
 
-Physics is the first censor. Priority only decides which late answer leaves first.
+ES LOC HOLD: Physics is the first censor. Priority only decides which late answer leaves first.
 
 <!-- In-Game Wiki; generated from P051_LIGHT_DELAY_AUTHORITY/es_ES. -->

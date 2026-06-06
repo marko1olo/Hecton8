@@ -7,31 +7,34 @@ poi_tags: poi.old_law_plate;poi.sol_cert_seal
 biome_tags: biome.drowned_admin;biome.contract_archive
 locale: nl_NL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Sol Core Authority"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Sol Core Authority
 
-Sol Core is the legal and financial root of human expansion, not the player origin and not a rescue button. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.
+NL LOC HOLD: Sol Core is the legal and financial root of human expansion, not the player origin and not a rescue button. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.
 
 ## Scanner
 
-Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.
+NL LOC HOLD: Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.
 
 ## Terminal
 
-SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.
+NL LOC HOLD: SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.
 
 ## Audio
 
-The seal came from Earth space. The rescue clause did not.
+NL LOC HOLD: The seal came from Earth space. The rescue clause did not.
 
 ## Field Note
 
-Sol is not home here. It is the oldest signature on the document that can still ruin you.
+NL LOC HOLD: Sol is not home here. It is the oldest signature on the document that can still ruin you.
 
 <!-- In-Game Wiki; generated from P071_SOL_CORE_AUTHORITY/nl_NL. -->

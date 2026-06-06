@@ -7,31 +7,34 @@ poi_tags: poi.return_vector_marker;poi.black_keel_reentry_slot
 biome_tags: biome.black_keel_orbit;biome.photic_shelf
 locale: pl_PL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Partial Exit Same-Seed Return"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Partial Exit Same-Seed Return
 
-Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed.
+PL LOC HOLD: Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed.
 
 ## Scanner
 
-Extraction possible. Closure not included.
+PL LOC HOLD: Extraction possible. Closure not included.
 
 ## Terminal
 
-PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.
+PL LOC HOLD: PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.
 
 ## Audio
 
-You left the pressure. You did not leave the contract.
+PL LOC HOLD: You left the pressure. You did not leave the contract.
 
 ## Field Note
 
-Let the player breathe, then make the same ocean still be there.
+PL LOC HOLD: Let the player breathe, then make the same ocean still be there.
 
 <!-- External Site; generated from P132_PARTIAL_EXIT_SAME_SEED_RETURN/pl_PL. -->

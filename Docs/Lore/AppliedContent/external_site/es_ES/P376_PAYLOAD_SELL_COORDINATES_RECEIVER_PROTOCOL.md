@@ -7,31 +7,34 @@ poi_tags: poi.coordinate_sale_socket;poi.xo_proof_vault
 biome_tags: biome.atlas_basin;biome.factory_temple
 locale: es_ES
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "ES LOC HOLD: Payload Sell Coordinates Receiver Protocol"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Payload Sell Coordinates Receiver Protocol
+# ES LOC HOLD: Payload Sell Coordinates Receiver Protocol
 
-One HECTON-8 ending sells the crime scene back to its maker. It is materially successful and morally compromised.
+ES LOC HOLD: One HECTON-8 ending sells the crime scene back to its maker. It is materially successful and morally compromised.
 
 ## Scanner
 
-Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.
+ES LOC HOLD: Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.
 
 ## Terminal
 
-PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.
+ES LOC HOLD: PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.
 
 ## Audio
 
-This is the cleanest way out if you stop reading after the amount.
+ES LOC HOLD: This is the cleanest way out if you stop reading after the amount.
 
 ## Field Note
 
-Receiver record: material recovery pays out by handing Deep Reach the basin vector and leaving worker truth contested.
+ES LOC HOLD: Receiver record: material recovery pays out by handing Deep Reach the basin vector and leaving worker truth contested.
 
 <!-- External Site; generated from P376_PAYLOAD_SELL_COORDINATES_RECEIVER_PROTOCOL/es_ES. -->

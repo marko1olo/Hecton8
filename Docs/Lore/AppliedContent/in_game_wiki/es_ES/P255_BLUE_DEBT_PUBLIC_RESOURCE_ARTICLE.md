@@ -7,31 +7,34 @@ poi_tags: poi.public_blue_debt_article;poi.sample_case_site_card
 biome_tags: biome.publication;biome.resource_custody
 locale: es_ES
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "ES LOC HOLD: Blue Debt Public Resource Article"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Blue Debt Public Resource Article
+# ES LOC HOLD: Blue Debt Public Resource Article
 
-Blue Debt Public Resource Article explains the strategic resource as hard-sci-fi pressure substrate, not magic loot.
+ES LOC HOLD: Blue Debt Public Resource Article explains the strategic resource as hard-sci-fi pressure substrate, not magic loot.
 
 ## Scanner
 
-The public name sounds like slang because the official name is built to hide liability.
+ES LOC HOLD: The public name sounds like slang because the official name is built to hide liability.
 
 ## Terminal
 
-PUBLIC ARTICLE TIER: sample behavior safe; exact recipe economics gated to gameplay tables.
+ES LOC HOLD: PUBLIC ARTICLE TIER: sample behavior safe; exact recipe economics gated to gameplay tables.
 
 ## Audio
 
-Ore is what people call it when they want to forget the paperwork.
+ES LOC HOLD: Ore is what people call it when they want to forget the paperwork.
 
 ## Field Note
 
-Blue debt text should keep the resource grounded in pressure chemistry, computation and custody.
+ES LOC HOLD: Blue debt text should keep the resource grounded in pressure chemistry, computation and custody.
 
 <!-- In-Game Wiki; generated from P255_BLUE_DEBT_PUBLIC_RESOURCE_ARTICLE/es_ES. -->

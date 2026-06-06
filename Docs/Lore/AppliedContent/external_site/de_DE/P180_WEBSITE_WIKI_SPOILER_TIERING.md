@@ -7,31 +7,34 @@ poi_tags: poi.spoiler_tier_index;poi.public_wiki_gate
 biome_tags: biome.relay_archive;biome.claim_admin
 locale: de_DE
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "DE LOC HOLD: Public Spoiler Tiering Protocol"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Public Spoiler Tiering Protocol
+# DE LOC HOLD: Public Spoiler Tiering Protocol
 
-Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth.
+DE LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth.
 
 ## Scanner
 
-Public records need pressure doors like field evidence does.
+DE LOC HOLD: Public records need pressure doors like field evidence does.
 
 ## Terminal
 
-SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.
+DE LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.
 
 ## Audio
 
-A public archive can ruin a case if it has no pressure doors.
+DE LOC HOLD: A public archive can ruin a case if it has no pressure doors.
 
 ## Field Note
 
-Split what sells the world from what solves the crime.
+DE LOC HOLD: Split what sells the world from what solves the crime.
 
 <!-- External Site; generated from P180_WEBSITE_WIKI_SPOILER_TIERING/de_DE. -->

@@ -7,31 +7,34 @@ poi_tags: poi.pda_evidence_tier_rule;poi.codex_filter_label
 biome_tags: biome.codex;biome.ui_rules
 locale: ar_SA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "AR LOC HOLD: PDA Evidence Tier Label Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# PDA Evidence Tier Label Rule
+# AR LOC HOLD: PDA Evidence Tier Label Rule
 
-In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.
+AR LOC HOLD: In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.
 
 ## Scanner
 
-Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.
+AR LOC HOLD: Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.
 
 ## Terminal
 
-PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.
+AR LOC HOLD: PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.
 
 ## Audio
 
-The PDA should tell you how strong the proof is, not what to feel.
+AR LOC HOLD: The PDA should tell you how strong the proof is, not what to feel.
 
 ## Field Note
 
-PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe.
+AR LOC HOLD: PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe.
 
 <!-- External Site; generated from P431_PDA_EVIDENCE_TIER_LABEL_RULE/ar_SA. -->

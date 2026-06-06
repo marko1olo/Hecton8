@@ -7,31 +7,34 @@ poi_tags: poi.shift_seed_card;poi.crew_route_seed
 biome_tags: biome.industrial_shelf;biome.brine_canyon
 locale: pl_PL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Shift Crew Story Seeds"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Shift Crew Story Seeds
 
-Shift Crew Story Seeds turns worker evidence into replay-safe content.
+PL LOC HOLD: Shift Crew Story Seeds turns worker evidence into replay-safe content.
 
 ## Scanner
 
-Microstories should change route evidence, not canon truth.
+PL LOC HOLD: Microstories should change route evidence, not canon truth.
 
 ## Terminal
 
-SHIFT SEEDS: each seed can vary roster order, job pairings, locker contents, denial slips and Marauder annotations while keeping the Great Tide and Deep Reach guilt stable.
+PL LOC HOLD: SHIFT SEEDS: each seed can vary roster order, job pairings, locker contents, denial slips and Marauder annotations while keeping the Great Tide and Deep Reach guilt stable.
 
 ## Audio
 
-A different locker can hurt the same truth again.
+PL LOC HOLD: A different locker can hurt the same truth again.
 
 ## Field Note
 
-Seed variety is for order, names and objects, not contradiction.
+PL LOC HOLD: Seed variety is for order, names and objects, not contradiction.
 
 <!-- External Site; generated from P170_SHIFT_CREW_STORY_SEEDS/pl_PL. -->

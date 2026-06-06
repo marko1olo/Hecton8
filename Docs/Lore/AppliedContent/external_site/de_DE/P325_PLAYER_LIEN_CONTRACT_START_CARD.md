@@ -7,31 +7,34 @@ poi_tags: poi.player_lien_start_card;poi.contract_risk_field
 biome_tags: biome.first_hour;biome.contract
 locale: de_DE
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "DE LOC HOLD: Player Lien Contract Start Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Player Lien Contract Start Card
+# DE LOC HOLD: Player Lien Contract Start Card
 
-The HECTON-8 protagonist is not an outsider tourist. They are a compromised professional returning through salvage work to a disaster their old employer failed to contain.
+DE LOC HOLD: The HECTON-8 protagonist is not an outsider tourist. They are a compromised professional returning through salvage work to a disaster their old employer failed to contain.
 
 ## Scanner
 
-Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.
+DE LOC HOLD: Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.
 
 ## Terminal
 
-CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.
+DE LOC HOLD: CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.
 
 ## Audio
 
-You came for work. The file remembered you before you remembered it.
+DE LOC HOLD: You came for work. The file remembered you before you remembered it.
 
 ## Field Note
 
-No lost-relative hook. Keep motive professional-to-personal.
+DE LOC HOLD: No lost-relative hook. Keep motive professional-to-personal.
 
 <!-- External Site; generated from P325_PLAYER_LIEN_CONTRACT_START_CARD/de_DE. -->

@@ -66,6 +66,11 @@ PUBLICATION_INDEX_HEADERS = (
     "biome_tags",
     "page_path",
     "title",
+    "source_voice",
+    "spoiler_tier",
+    "spoiler_warning",
+    "packet_json_path",
+    "status_bucket",
 )
 PUBLICATION_CLUSTER_INDEX_HEADERS = (
     "surface",

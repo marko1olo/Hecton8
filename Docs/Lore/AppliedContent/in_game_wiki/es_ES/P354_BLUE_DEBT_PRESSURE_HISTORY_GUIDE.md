@@ -7,31 +7,34 @@ poi_tags: poi.blue_debt_sample;poi.xenon_omega_ledger
 biome_tags: biome.resource;biome.deep
 locale: es_ES
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "ES LOC HOLD: Blue Debt Pressure History Guide"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Blue Debt Pressure History Guide
+# ES LOC HOLD: Blue Debt Pressure History Guide
 
-Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.
+ES LOC HOLD: Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.
 
 ## Scanner
 
-Blue debt sample tagged. Pressure history matters more than surface color.
+ES LOC HOLD: Blue debt sample tagged. Pressure history matters more than surface color.
 
 ## Terminal
 
-MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.
+ES LOC HOLD: MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.
 
 ## Audio
 
-Blue debt is what people call it after the invoice arrives.
+ES LOC HOLD: Blue debt is what people call it after the invoice arrives.
 
 ## Field Note
 
-Use for resource glossary and Deep Reach motive articles.
+ES LOC HOLD: Use for resource glossary and Deep Reach motive articles.
 
 <!-- In-Game Wiki; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/es_ES. -->

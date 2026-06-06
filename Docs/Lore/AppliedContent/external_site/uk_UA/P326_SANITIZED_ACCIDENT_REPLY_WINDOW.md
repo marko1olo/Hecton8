@@ -7,31 +7,34 @@ poi_tags: poi.sanitized_reply_packet;poi.deep_reach_window_clock
 biome_tags: biome.first_hour;biome.deep_reach
 locale: uk_UA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "UK LOC HOLD: Sanitized Accident Reply Window"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Sanitized Accident Reply Window
+# UK LOC HOLD: Sanitized Accident Reply Window
 
-Deep Reach lies through procedure first. The contradiction is not a villain speech; it is a public report colliding with wet machinery and names.
+UK LOC HOLD: Deep Reach lies through procedure first. The contradiction is not a villain speech; it is a public report colliding with wet machinery and names.
 
 ## Scanner
 
-Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.
+UK LOC HOLD: Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.
 
 ## Terminal
 
-DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.
+UK LOC HOLD: DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.
 
 ## Audio
 
-They answered the room you were supposed to find, not the room you are standing in.
+UK LOC HOLD: They answered the room you were supposed to find, not the room you are standing in.
 
 ## Field Note
 
-Place after first physical contradiction, not before.
+UK LOC HOLD: Place after first physical contradiction, not before.
 
 <!-- External Site; generated from P326_SANITIZED_ACCIDENT_REPLY_WINDOW/uk_UA. -->

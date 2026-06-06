@@ -7,31 +7,34 @@ poi_tags: poi.ephemeris_handoff_rule;poi.celestial_table_boundary
 biome_tags: biome.authoring;biome.aegir_system
 locale: ar_SA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "AR LOC HOLD: Ephemeris Data Boundary Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Ephemeris Data Boundary Rule
+# AR LOC HOLD: Ephemeris Data Boundary Rule
 
-This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.
+AR LOC HOLD: This rule keeps hard-sci-fi lore useful without freezing simulation constants in narrative prose.
 
 ## Scanner
 
-Data boundary: prose owns bands; final orbital numbers stay table-owned.
+AR LOC HOLD: Data boundary: prose owns bands; final orbital numbers stay table-owned.
 
 ## Terminal
 
-DATA BOUNDARY: prose may state roles, hazards, and bands. Exact orbital values stay out.
+AR LOC HOLD: DATA BOUNDARY: prose may state roles, hazards, and bands. Exact orbital values stay out.
 
 ## Audio
 
-Numbers are allowed when the table owns them.
+AR LOC HOLD: Numbers are allowed when the table owns them.
 
 ## Field Note
 
-Ephemeris records explain route logic while exact constants remain table-owned data.
+AR LOC HOLD: Ephemeris records explain route logic while exact constants remain table-owned data.
 
 <!-- In-Game Wiki; generated from P425_PUBLIC_EPHEMERIS_TABLE_HANDOFF_RULE/ar_SA. -->

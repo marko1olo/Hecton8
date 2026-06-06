@@ -7,31 +7,34 @@ poi_tags: poi.carrier_autonomy_table;poi.no_surface_drop_stamp
 biome_tags: biome.orbit;biome.hardware
 locale: de_DE
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "DE LOC HOLD: Salvage Carrier Autonomy Limits"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Salvage Carrier Autonomy Limits
+# DE LOC HOLD: Salvage Carrier Autonomy Limits
 
-Salvage Carrier Autonomy Limits define Black Keel as believable infrastructure. It is competent, useful and dangerous, but not a magic rescue AI.
+DE LOC HOLD: Salvage Carrier Autonomy Limits define Black Keel as believable infrastructure. It is competent, useful and dangerous, but not a magic rescue AI.
 
 ## Scanner
 
-Carrier autonomy table: claim processing, ballast drop, pings. No deep rescue authority.
+DE LOC HOLD: Carrier autonomy table: claim processing, ballast drop, pings. No deep rescue authority.
 
 ## Terminal
 
-AUTONOMY LIMIT: Black Keel may schedule recovery, reject contaminated mass, sell claim telemetry and drop low-risk supplies. It may not authorize crewed descent or deep-rated rescue without insured receiver approval.
+DE LOC HOLD: AUTONOMY LIMIT: Black Keel may schedule recovery, reject contaminated mass, sell claim telemetry and drop low-risk supplies. It may not authorize crewed descent or deep-rated rescue without insured receiver approval.
 
 ## Audio
 
-Autonomous does not mean free. It means the debt can move without asking you.
+DE LOC HOLD: Autonomous does not mean free. It means the debt can move without asking you.
 
 ## Field Note
 
-Keep this out of combat barks; it belongs in carrier status and contract UI.
+DE LOC HOLD: Keep this out of combat barks; it belongs in carrier status and contract UI.
 
 <!-- In-Game Wiki; generated from P324_SALVAGE_CARRIER_AUTONOMY_LIMITS/de_DE. -->

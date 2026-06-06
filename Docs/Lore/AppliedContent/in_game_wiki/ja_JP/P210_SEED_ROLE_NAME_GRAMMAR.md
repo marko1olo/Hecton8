@@ -7,31 +7,34 @@ poi_tags: poi.seed_role_name_card;poi.proc_roster_rule
 biome_tags: biome.worker_locker;biome.dossier_archive
 locale: ja_JP
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Seed Role Name Grammar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Seed Role Name Grammar
 
-Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.
+JP LOC HOLD: Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.
 
 ## Scanner
 
-A seed can move a worker's evidence order, not turn them into disposable text.
+JP LOC HOLD: A seed can move a worker's evidence order, not turn them into disposable text.
 
 ## Terminal
 
-SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.
+JP LOC HOLD: SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.
 
 ## Audio
 
-Random is not authorship. Bind the name to a job.
+JP LOC HOLD: Random is not authorship. Bind the name to a job.
 
 ## Field Note
 
-Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.
+JP LOC HOLD: Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.
 
 <!-- In-Game Wiki; generated from P210_SEED_ROLE_NAME_GRAMMAR/ja_JP. -->

@@ -7,31 +7,34 @@ poi_tags: poi.acoustic_pinger_spool;poi.return_line_anchor
 biome_tags: biome.photic_shelf;biome.shallow_annex
 locale: ko_KR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Acoustic Pinger Line"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Acoustic Pinger Line
 
-Acoustic Pinger Line turns HECTON-8 exploration into procedure. It is both tool and tone: a small sound against a large ocean.
+KO LOC HOLD: Acoustic Pinger Line turns HECTON-8 exploration into procedure. It is both tool and tone: a small sound against a large ocean.
 
 ## Scanner
 
-Pinger spool. The first map is a sound you can still find when light fails.
+KO LOC HOLD: Pinger spool. The first map is a sound you can still find when light fails.
 
 ## Terminal
 
-RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.
+KO LOC HOLD: RETURN LINE: anchor pinger before crossing turbidity, brine shimmer or flooded service elbow. Carrier handshake requires later relay spine.
 
 ## Audio
 
-When the light is gone, follow the sound you had the discipline to place.
+KO LOC HOLD: When the light is gone, follow the sound you had the discipline to place.
 
 ## Field Note
 
-Navigation should become physical early.
+KO LOC HOLD: Navigation should become physical early.
 
 <!-- External Site; generated from P114_ACOUSTIC_PINGER_LINE/ko_KR. -->

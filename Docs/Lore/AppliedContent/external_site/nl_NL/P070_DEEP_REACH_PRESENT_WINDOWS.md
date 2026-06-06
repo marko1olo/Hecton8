@@ -7,31 +7,34 @@ poi_tags: poi.live_window_queue;poi.proxy_ai_notice
 biome_tags: biome.relay_spine;biome.surface_relay
 locale: nl_NL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Deep Reach Present Windows"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Deep Reach Present Windows
 
-Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure.
+NL LOC HOLD: Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure.
 
 ## Scanner
 
-Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.
+NL LOC HOLD: Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.
 
 ## Terminal
 
-LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.
+NL LOC HOLD: LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.
 
 ## Audio
 
-When they finally speak, they ask for the thing that proves they should not have it.
+NL LOC HOLD: When they finally speak, they ask for the thing that proves they should not have it.
 
 ## Field Note
 
-Their voice is delayed. Their leverage is already here.
+NL LOC HOLD: Their voice is delayed. Their leverage is already here.
 
 <!-- External Site; generated from P070_DEEP_REACH_PRESENT_WINDOWS/nl_NL. -->

@@ -7,31 +7,34 @@ poi_tags: poi.tariff_plate;poi.claim_terminal
 biome_tags: biome.corporate_wreck;biome.salvage_route
 locale: ar_SA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Black Keel Tariff Table"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Black Keel Tariff Table
 
-Black Keel Tariff Table defines the carrier economy around HECTON-8 rescue calls: billing class can outrank human urgency.
+AR LOC HOLD: Black Keel Tariff Table defines the carrier economy around HECTON-8 rescue calls: billing class can outrank human urgency.
 
 ## Scanner
 
-The tariff plate prices distress, samples, custody seals and oxygen separately; survival is not the fastest billing class.
+AR LOC HOLD: The tariff plate prices distress, samples, custody seals and oxygen separately; survival is not the fastest billing class.
 
 ## Terminal
 
-TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers.
+AR LOC HOLD: TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers.
 
 ## Audio
 
-The table has a price for rescue and a discount for evidence.
+AR LOC HOLD: The table has a price for rescue and a discount for evidence.
 
 ## Field Note
 
-A rescue request and a sample manifest do not enter the same queue.
+AR LOC HOLD: A rescue request and a sample manifest do not enter the same queue.
 
 <!-- External Site; generated from P052_BLACK_KEEL_TARIFF_TABLE/ar_SA. -->

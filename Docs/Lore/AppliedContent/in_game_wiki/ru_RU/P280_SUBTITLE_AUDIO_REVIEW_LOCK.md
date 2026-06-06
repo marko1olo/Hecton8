@@ -7,31 +7,34 @@ poi_tags: poi.subtitle_audio_review_card;poi.audio_source_label_sheet
 biome_tags: biome.localization;biome.audio
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "RU LOC HOLD: Subtitle And Audio Timing Contract"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Subtitle And Audio Timing Contract
+# RU LOC HOLD: Subtitle And Audio Timing Contract
 
-Localized subtitles and audio must preserve source, timing, warning priority, and readable line length while avoiding omniscient threat spoilers.
+RU LOC HOLD: Localized subtitles and audio must preserve source, timing, warning priority, and readable line length while avoiding omniscient threat spoilers.
 
 ## Scanner
 
-A caption can spoil more than a voice.
+RU LOC HOLD: A caption can spoil more than a voice.
 
 ## Terminal
 
-Survival warnings take priority over flavor. No threat line appears without a sensor, voice, or visible source.
+RU LOC HOLD: Survival warnings take priority over flavor. No threat line appears without a sensor, voice, or visible source.
 
 ## Audio
 
-If the player cannot act on it, keep it quiet.
+RU LOC HOLD: If the player cannot act on it, keep it quiet.
 
 ## Field Note
 
-Check source labels, line length, alarm priority, sensor justification, censor tier, and audio timing.
+RU LOC HOLD: Check source labels, line length, alarm priority, sensor justification, censor tier, and audio timing.
 
 <!-- In-Game Wiki; generated from P280_SUBTITLE_AUDIO_REVIEW_LOCK/ru_RU. -->

@@ -7,31 +7,34 @@ poi_tags: poi.site_aegir_map_caption;poi.moon_ladder_public_label
 biome_tags: biome.publication;biome.aegir
 locale: id_ID
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "ID LOC HOLD: Aegir Site System Map Copy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Aegir Site System Map Copy
+# ID LOC HOLD: Aegir Site System Map Copy
 
-Aegir is not a backdrop. Its moons, relay shutters, radiation weather and ice-grain traffic turn rescue into a schedule problem before anyone chooses to help.
+ID LOC HOLD: Aegir is not a backdrop. Its moons, relay shutters, radiation weather and ice-grain traffic turn rescue into a schedule problem before anyone chooses to help.
 
 ## Scanner
 
-Aegir map copy must read as timing pressure, not astronomy wallpaper.
+ID LOC HOLD: Aegir map copy must read as timing pressure, not astronomy wallpaper.
 
 ## Terminal
 
-PUBLIC MAP LOCK: every moon label must imply a route cost or signal constraint.
+ID LOC HOLD: PUBLIC MAP LOCK: every moon label must imply a route cost or signal constraint.
 
 ## Audio
 
-The map is not where you are. It is when help can afford to exist.
+ID LOC HOLD: The map is not where you are. It is when help can afford to exist.
 
 ## Field Note
 
-Use short map labels: relay shutter, radiation surge, ice-grain scatter, guidance lag, claim orbit.
+ID LOC HOLD: Use short map labels: relay shutter, radiation surge, ice-grain scatter, guidance lag, claim orbit.
 
 <!-- External Site; generated from P282_AEGIR_SITE_SYSTEM_MAP_COPY/id_ID. -->

@@ -7,31 +7,34 @@ poi_tags: poi.centauri_hardware_stamp;poi.compact_audit_tag
 biome_tags: biome.wreck_claim;biome.route_depot
 locale: nl_NL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Centauri Compact Legitimacy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Centauri Compact Legitimacy
 
-Centauri Compact Legitimacy keeps the wider setting grounded: human expansion already works in some places, which makes Aegir less heroic and more corrupt.
+NL LOC HOLD: Centauri Compact Legitimacy keeps the wider setting grounded: human expansion already works in some places, which makes Aegir less heroic and more corrupt.
 
 ## Scanner
 
-Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.
+NL LOC HOLD: Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.
 
 ## Terminal
 
-CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.
+NL LOC HOLD: CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.
 
 ## Audio
 
-First legitimacy became old metal under a newer lie.
+NL LOC HOLD: First legitimacy became old metal under a newer lie.
 
 ## Field Note
 
-The Compact made distant claims respectable. Respectability is not rescue.
+NL LOC HOLD: The Compact made distant claims respectable. Respectability is not rescue.
 
 <!-- External Site; generated from P072_CENTAURI_COMPACT_LEGITIMACY/nl_NL. -->

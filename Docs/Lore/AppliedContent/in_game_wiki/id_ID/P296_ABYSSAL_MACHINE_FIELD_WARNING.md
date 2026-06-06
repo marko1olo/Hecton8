@@ -7,31 +7,34 @@ poi_tags: poi.abyssal_machine_field_warning;poi.filter_body_shadow
 biome_tags: biome.abyssal_machine_field;biome.warning
 locale: id_ID
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "ID LOC HOLD: Abyssal Machine Field Warning"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Abyssal Machine Field Warning
+# ID LOC HOLD: Abyssal Machine Field Warning
 
-Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.
+ID LOC HOLD: Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.
 
 ## Scanner
 
-Machine field warning: silt motion does not match current.
+ID LOC HOLD: Machine field warning: silt motion does not match current.
 
 ## Terminal
 
-ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.
+ID LOC HOLD: ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.
 
 ## Audio
 
-The floor is not still.
+ID LOC HOLD: The floor is not still.
 
 ## Field Note
 
-Late-game warning should be quiet and objective, not boss buildup.
+ID LOC HOLD: Late-game warning should be quiet and objective, not boss buildup.
 
 <!-- In-Game Wiki; generated from P296_ABYSSAL_MACHINE_FIELD_WARNING/id_ID. -->

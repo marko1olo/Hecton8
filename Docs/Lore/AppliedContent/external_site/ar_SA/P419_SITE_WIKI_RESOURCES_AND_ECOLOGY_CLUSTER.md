@@ -7,16 +7,19 @@ poi_tags: poi.resource_ecology_nav_cluster;poi.fauna_encounter_index
 biome_tags: biome.publication;biome.ecology
 locale: ar_SA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 1
+title: "AR LOC HOLD: Resources and Ecology"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Resources and Ecology
+# AR LOC HOLD: Resources and Ecology
 
-The useful matter of HECTON-8 is rarely clean. It comes out of pressure seams, brine traps, vent heat, dead machinery and living tissue that has learned to grow around metal. A sample can be mineral, biological, industrial and legal evidence at the same time.
+AR LOC HOLD: The useful matter of HECTON-8 is rarely clean. It comes out of pressure seams, brine traps, vent heat, dead machinery and living tissue that has learned to grow around metal. A sample can be mineral, biological, industrial and legal evidence at the same time.
 
 Blue debt is the best known example. The name began as salvage slang for pressure-formed value that carried unpaid risk with it. A blue debt sample records the conditions that made it: depth, heat, contamination, extraction method and contact with Atlas-altered lattice. Two pieces with the same shine may not have the same custody value. One is a payout. Another is proof.
 

@@ -7,31 +7,34 @@ poi_tags: poi.noble_gas_bubble_trap;poi.brine_pocket_vent
 biome_tags: biome.brine_canyon;biome.vent_forge
 locale: nl_NL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Noble Gas Brine Pockets"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Noble Gas Brine Pockets
 
-Noble Gas Brine Pockets explain the hard-sci-fi root of Xenon-Omega: rare pressure chemistry that only becomes strategic material through containment and industrial process.
+NL LOC HOLD: Noble Gas Brine Pockets explain the hard-sci-fi root of Xenon-Omega: rare pressure chemistry that only becomes strategic material through containment and industrial process.
 
 ## Scanner
 
-Natural-to-process resource. Valuable only if pressure history survives extraction.
+NL LOC HOLD: Natural-to-process resource. Valuable only if pressure history survives extraction.
 
 ## Terminal
 
-RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.
+NL LOC HOLD: RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.
 
 ## Audio
 
-Open it wrong and the fortune becomes weather.
+NL LOC HOLD: Open it wrong and the fortune becomes weather.
 
 ## Field Note
 
-This is where Xenon-Omega begins as chemistry, not magic.
+NL LOC HOLD: This is where Xenon-Omega begins as chemistry, not magic.
 
 <!-- External Site; generated from P117_NOBLE_GAS_BRINE_POCKETS/nl_NL. -->

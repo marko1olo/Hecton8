@@ -7,31 +7,34 @@ poi_tags: poi.dossier_start_copy_card;poi.marauder_profile_slate
 biome_tags: biome.ui;biome.dossier
 locale: zh_CN
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "CN LOC HOLD: Dossier Start Screen Copy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Dossier Start Screen Copy
+# CN LOC HOLD: Dossier Start Screen Copy
 
-Dossier Start Screen Copy defines the main profile language for replay setup.
+CN LOC HOLD: Dossier Start Screen Copy defines the main profile language for replay setup.
 
 ## Scanner
 
-Known context is not immunity.
+CN LOC HOLD: Known context is not immunity.
 
 ## Terminal
 
-DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.
+CN LOC HOLD: DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.
 
 ## Audio
 
-You remember procedure. The ocean does not owe you a shortcut.
+CN LOC HOLD: You remember procedure. The ocean does not owe you a shortcut.
 
 ## Field Note
 
-Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.
+CN LOC HOLD: Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.
 
 <!-- In-Game Wiki; generated from P266_DOSSIER_START_SCREEN_COPY/zh_CN. -->

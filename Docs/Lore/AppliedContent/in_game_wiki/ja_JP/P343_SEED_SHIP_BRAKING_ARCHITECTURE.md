@@ -7,31 +7,34 @@ poi_tags: poi.seed_ship_archive;poi.braking_debris_marker
 biome_tags: biome.archive;biome.colony
 locale: ja_JP
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "JA LOC HOLD: Seed Ship Braking Architecture"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Seed Ship Braking Architecture
+# JA LOC HOLD: Seed Ship Braking Architecture
 
-Seed ships explain why Aegir had infrastructure before it had a stable human community. Arrival was a staged industrial process.
+JA LOC HOLD: Seed ships explain why Aegir had infrastructure before it had a stable human community. Arrival was a staged industrial process.
 
 ## Scanner
 
-Seed ship archive. Arrival depended on braking mass, not faith in the destination.
+JA LOC HOLD: Seed ship archive. Arrival depended on braking mass, not faith in the destination.
 
 ## Terminal
 
-COLONY LOG: early Aegir hardware arrived as seed cargo, reactor shells, printers, water chemistry rigs and braking debris. The first human phase inherited what survived deceleration.
+JA LOC HOLD: COLONY LOG: early Aegir hardware arrived as seed cargo, reactor shells, printers, water chemistry rigs and braking debris. The first human phase inherited what survived deceleration.
 
 ## Audio
 
-The colony started as cargo that managed to stop.
+JA LOC HOLD: The colony started as cargo that managed to stop.
 
 ## Field Note
 
-Settlement timeline record: seed cargo, braking debris, assembly phases, and delayed crews explain how infrastructure preceded community.
+JA LOC HOLD: Settlement timeline record: seed cargo, braking debris, assembly phases, and delayed crews explain how infrastructure preceded community.
 
 <!-- In-Game Wiki; generated from P343_SEED_SHIP_BRAKING_ARCHITECTURE/ja_JP. -->

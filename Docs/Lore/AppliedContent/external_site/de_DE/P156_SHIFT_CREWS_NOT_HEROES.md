@@ -7,31 +7,34 @@ poi_tags: poi.shift_roster_wall;poi.crew_rotation_tags
 biome_tags: biome.industrial_shelf;biome.shallow_annex
 locale: de_DE
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Shift Crews Not Heroes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Shift Crews Not Heroes
 
-Shift Crews Not Heroes is the writing rule for humanizing the drowned colony.
+DE LOC HOLD: Shift Crews Not Heroes is the writing rule for humanizing the drowned colony.
 
 ## Scanner
 
-The colony becomes human through schedules, not speeches.
+DE LOC HOLD: The colony becomes human through schedules, not speeches.
 
 ## Terminal
 
-COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.
+DE LOC HOLD: COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.
 
 ## Audio
 
-They were not symbols. They were late for shift.
+DE LOC HOLD: They were not symbols. They were late for shift.
 
 ## Field Note
 
-People are more believable as workers than as memorial statues.
+DE LOC HOLD: People are more believable as workers than as memorial statues.
 
 <!-- External Site; generated from P156_SHIFT_CREWS_NOT_HEROES/de_DE. -->

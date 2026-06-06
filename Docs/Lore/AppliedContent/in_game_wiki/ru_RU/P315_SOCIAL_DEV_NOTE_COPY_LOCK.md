@@ -7,16 +7,19 @@ poi_tags: poi.social_dev_note_card;poi.caption_asset_match_label
 biome_tags: biome.publication;biome.copy
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "RU LOC HOLD: Public Note Copy Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Public Note Copy Rule
+# RU LOC HOLD: Public Note Copy Rule
 
-Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.
+RU LOC HOLD: Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.
 
 ## Scanner
 
@@ -24,7 +27,7 @@ Public note lock: one concrete build fact, no fake hype.
 
 ## Terminal
 
-PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.
+RU LOC HOLD: PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.
 
 ## Audio
 
@@ -32,6 +35,6 @@ PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported d
 
 ## Field Note
 
-Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out.
+RU LOC HOLD: Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out.
 
 <!-- In-Game Wiki; generated from P315_SOCIAL_DEV_NOTE_COPY_LOCK/ru_RU. -->

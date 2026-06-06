@@ -7,16 +7,19 @@ poi_tags: poi.tau_ceti_packet_notary;poi.relay_leak_window
 biome_tags: biome.relay_archive;biome.industrial_shelf
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Маршрут утечки в public ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Маршрут утечки в public ledger
 
-The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood.
+RU LOC HOLD: The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood.
 
 ## Scanner
 

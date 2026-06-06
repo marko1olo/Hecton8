@@ -7,31 +7,34 @@ poi_tags: poi.coordinate_demand_packet;poi.payload_receiver_toggle
 biome_tags: biome.deep_reach;biome.contract
 locale: ko_KR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "KO LOC HOLD: Recovery Compliance Coordinate Demand"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Recovery Compliance Coordinate Demand
+# KO LOC HOLD: Recovery Compliance Coordinate Demand
 
-Deep Reach's current objective is to regain HECTON-8 as resource, evidence and control surface. The player becomes useful because they can send coordinates.
+KO LOC HOLD: Deep Reach's current objective is to regain HECTON-8 as resource, evidence and control surface. The player becomes useful because they can send coordinates.
 
 ## Scanner
 
-Compliance packet: coordinates requested before medical recovery language.
+KO LOC HOLD: Compliance packet: coordinates requested before medical recovery language.
 
 ## Terminal
 
-RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.
+KO LOC HOLD: RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.
 
 ## Audio
 
-They can say rescue without meaning rescue.
+KO LOC HOLD: They can say rescue without meaning rescue.
 
 ## Field Note
 
-Use near payload authority decisions and receiver selection.
+KO LOC HOLD: Use near payload authority decisions and receiver selection.
 
 <!-- External Site; generated from P328_RECOVERY_COMPLIANCE_COORDINATE_DEMAND/ko_KR. -->

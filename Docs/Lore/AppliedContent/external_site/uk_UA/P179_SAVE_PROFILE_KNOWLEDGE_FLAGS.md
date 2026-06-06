@@ -7,31 +7,34 @@ poi_tags: poi.knowledge_flag_manifest;poi.save_profile_stamp
 biome_tags: biome.black_keel_orbit;biome.claim_admin
 locale: uk_UA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Save Profile Knowledge Flags"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Save Profile Knowledge Flags
 
-Save Profile Knowledge Flags defines persistence-safe replay memory.
+UA LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory.
 
 ## Scanner
 
-Save persistence should remember knowledge categories, not hot inventory.
+UA LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.
 
 ## Terminal
 
-SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.
+UA LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.
 
 ## Audio
 
-Memory is allowed. Power is not.
+UA LOC HOLD: Memory is allowed. Power is not.
 
 ## Field Note
 
-Knowledge flags must not change truth ownership or DTO layout.
+UA LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.
 
 <!-- External Site; generated from P179_SAVE_PROFILE_KNOWLEDGE_FLAGS/uk_UA. -->

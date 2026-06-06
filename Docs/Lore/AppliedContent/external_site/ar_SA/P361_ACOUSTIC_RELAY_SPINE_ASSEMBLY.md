@@ -7,31 +7,34 @@ poi_tags: poi.acoustic_relay_spine;poi.pinger_line_spool
 biome_tags: biome.shallow_shelf;biome.industrial_shelf
 locale: ar_SA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "AR LOC HOLD: Acoustic Relay Spine Assembly"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Acoustic Relay Spine Assembly
+# AR LOC HOLD: Acoustic Relay Spine Assembly
 
-HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.
+AR LOC HOLD: HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.
 
 ## Scanner
 
-Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.
+AR LOC HOLD: Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.
 
 ## Terminal
 
-ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.
+AR LOC HOLD: ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.
 
 ## Audio
 
-If Black Keel hears this, it hears a pressure code, not a voice.
+AR LOC HOLD: If Black Keel hears this, it hears a pressure code, not a voice.
 
 ## Field Note
 
-Place on broken mast or pinger-line evidence near capsule/P-63 routes.
+AR LOC HOLD: Place on broken mast or pinger-line evidence near capsule/P-63 routes.
 
 <!-- External Site; generated from P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY/ar_SA. -->

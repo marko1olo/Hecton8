@@ -7,31 +7,34 @@ poi_tags: poi.locker_prop_variant_set;poi.tool_wear_strip
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: pt_BR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Locker Prop Variants"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Locker Prop Variants
 
-Locker variants let procedural placement carry human texture without custom cutscenes.
+PT LOC HOLD: Locker variants let procedural placement carry human texture without custom cutscenes.
 
 ## Scanner
 
-A locker should say what a worker touched before the flood.
+PT LOC HOLD: A locker should say what a worker touched before the flood.
 
 ## Terminal
 
-LOCKER VARIANTS: pressure tape, worn gasket, tool crib token, meal-credit strip, shift sticker, route chalk, medlock denial slip, and Marauder correction note.
+PT LOC HOLD: LOCKER VARIANTS: pressure tape, worn gasket, tool crib token, meal-credit strip, shift sticker, route chalk, medlock denial slip, and Marauder correction note.
 
 ## Audio
 
-The best memorial is a tool still dirty from the last shift.
+PT LOC HOLD: The best memorial is a tool still dirty from the last shift.
 
 ## Field Note
 
-Avoid sentimental clutter. Use work marks.
+PT LOC HOLD: Avoid sentimental clutter. Use work marks.
 
 <!-- In-Game Wiki; generated from P168_LOCKER_PROP_VARIANTS/pt_BR. -->

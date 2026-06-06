@@ -7,11 +7,14 @@ poi_tags: poi.ascent_charge_cradle;poi.vent_forge_heat_cell
 biome_tags: biome.brine_canyon;biome.abyssal_machine_field
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Сборка энергетического заряда ascent"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Сборка энергетического заряда ascent
@@ -32,6 +35,6 @@ ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp.
 
 ## Field Note
 
-The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout.
+RU LOC HOLD: The vent-forge route turns every charge decision into a split between escape reliability, evidence value, and blue-debt payout.
 
 <!-- External Site; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/ru_RU. -->

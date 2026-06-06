@@ -7,31 +7,34 @@ poi_tags: poi.old_evacuation_procedure;poi.route_safe_stamp
 biome_tags: biome.colony;biome.brine_canyon
 locale: es_ES
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "ES LOC HOLD: Old Procedure Recognition Cue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Old Procedure Recognition Cue
+# ES LOC HOLD: Old Procedure Recognition Cue
 
-HECTON-8 makes character motive procedural. The player cares because they understand how safety language was weaponized.
+ES LOC HOLD: HECTON-8 makes character motive procedural. The player cares because they understand how safety language was weaponized.
 
 ## Scanner
 
-Procedure line familiar. Worker count and route-safe stamp do not agree.
+ES LOC HOLD: Procedure line familiar. Worker count and route-safe stamp do not agree.
 
 ## Terminal
 
-EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.
+ES LOC HOLD: EVAC NOTE: route certified under degraded-count protocol. Manual witness required. Witness field sealed by continuity office.
 
 ## Audio
 
-You know this form. It was supposed to protect people from exactly this.
+ES LOC HOLD: You know this form. It was supposed to protect people from exactly this.
 
 ## Field Note
 
-Use where room evidence contradicts a clean procedural label.
+ES LOC HOLD: Use where room evidence contradicts a clean procedural label.
 
 <!-- External Site; generated from P368_OLD_PROCEDURE_RECOGNITION_CUE/es_ES. -->

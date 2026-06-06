@@ -7,31 +7,34 @@ poi_tags: poi.payload_authority_last_check;poi.receiver_split_panel
 biome_tags: biome.final_payload;biome.dossier
 locale: he_IL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "HE LOC HOLD: Payload Authority Last Check"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Payload Authority Last Check
+# HE LOC HOLD: Payload Authority Last Check
 
-HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it.
+HE LOC HOLD: HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it.
 
 ## Scanner
 
-Payload check: receiver changes meaning, not only reward.
+HE LOC HOLD: Payload check: receiver changes meaning, not only reward.
 
 ## Terminal
 
-PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.
+HE LOC HOLD: PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.
 
 ## Audio
 
-What leaves will own what remains.
+HE LOC HOLD: What leaves will own what remains.
 
 ## Field Note
 
-Use immediately before irreversible ending route selection.
+HE LOC HOLD: Use immediately before irreversible ending route selection.
 
 <!-- External Site; generated from P299_PAYLOAD_AUTHORITY_LAST_CHECK/he_IL. -->

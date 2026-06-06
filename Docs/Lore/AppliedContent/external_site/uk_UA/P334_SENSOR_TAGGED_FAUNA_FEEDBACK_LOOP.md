@@ -7,31 +7,34 @@ poi_tags: poi.sensor_tagged_fauna_loop;poi.old_tag_new_growth
 biome_tags: biome.atlas;biome.fauna
 locale: uk_UA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "UK LOC HOLD: Sensor-Tagged Fauna Feedback Loop"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Sensor-Tagged Fauna Feedback Loop
+# UK LOC HOLD: Sensor-Tagged Fauna Feedback Loop
 
-The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.
+UK LOC HOLD: The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.
 
 ## Scanner
 
-Old colony tag under new growth. Behavior trace resembles survey sweep.
+UK LOC HOLD: Old colony tag under new growth. Behavior trace resembles survey sweep.
 
 ## Terminal
 
-FAUNA LOOP: Atlas reads tagged movement as environmental state. Animal migration becomes low-resolution map feedback and repair priority evidence.
+UK LOC HOLD: FAUNA LOOP: Atlas reads tagged movement as environmental state. Animal migration becomes low-resolution map feedback and repair priority evidence.
 
 ## Audio
 
-It is not hunting you. It may still report you.
+UK LOC HOLD: It is not hunting you. It may still report you.
 
 ## Field Note
 
-Scanner returns remain environmental evidence: tag, migration, repair priority, and no explicit predator command.
+UA LOC HOLD: Scanner returns remain environmental evidence: tag, migration, repair priority, and no explicit predator command.
 
 <!-- External Site; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/uk_UA. -->

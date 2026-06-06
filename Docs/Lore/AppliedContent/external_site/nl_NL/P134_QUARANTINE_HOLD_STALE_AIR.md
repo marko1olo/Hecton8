@@ -7,31 +7,34 @@ poi_tags: poi.quarantine_hold_notice;poi.orbital_air_counter
 biome_tags: biome.black_keel_orbit;biome.photic_shelf
 locale: nl_NL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Quarantine Hold Stale Air"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Quarantine Hold Stale Air
 
-Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory.
+NL LOC HOLD: Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory.
 
 ## Scanner
 
-You are alive, sealed, and still not free.
+NL LOC HOLD: You are alive, sealed, and still not free.
 
 ## Terminal
 
-QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.
+NL LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.
 
 ## Audio
 
-The hatch opens only to another closed hatch.
+NL LOC HOLD: The hatch opens only to another closed hatch.
 
 ## Field Note
 
-This is the bureaucratic version of drowning.
+NL LOC HOLD: This is the bureaucratic version of drowning.
 
 <!-- External Site; generated from P134_QUARANTINE_HOLD_STALE_AIR/nl_NL. -->

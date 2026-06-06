@@ -7,31 +7,34 @@ poi_tags: poi.ru_review_card;poi.cyrillic_width_sample
 biome_tags: biome.localization;biome.review
 locale: id_ID
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "ID LOC HOLD: Russian Operational Voice Contract"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Russian Operational Voice Contract
+# ID LOC HOLD: Russian Operational Voice Contract
 
-Russian text has to keep HECTON-8's dry operational voice: direct warnings, exact terms, readable units, and no decorative horror.
+ID LOC HOLD: Russian text has to keep HECTON-8's dry operational voice: direct warnings, exact terms, readable units, and no decorative horror.
 
 ## Scanner
 
-Cyrillic width is solvable. Tone drift is the real risk.
+ID LOC HOLD: Cyrillic width is solvable. Tone drift is the real risk.
 
 ## Terminal
 
-Russian copy keeps procedure, pressure, debt, and evidence intact. No melodrama, no softened liability.
+ID LOC HOLD: Russian copy keeps procedure, pressure, debt, and evidence intact. No melodrama, no softened liability.
 
 ## Audio
 
-The machine should sound useful before it sounds beautiful.
+ID LOC HOLD: The machine should sound useful before it sounds beautiful.
 
 ## Field Note
 
-Protect terse terminal language, stable proper nouns, corporate and legal terms, unit clarity, and short survival text.
+ID LOC HOLD: Protect terse terminal language, stable proper nouns, corporate and legal terms, unit clarity, and short survival text.
 
 <!-- In-Game Wiki; generated from P276_RU_NATIVE_REVIEW_LOCK/id_ID. -->

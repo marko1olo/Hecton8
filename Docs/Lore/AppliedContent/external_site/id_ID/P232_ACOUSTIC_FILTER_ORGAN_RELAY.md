@@ -7,31 +7,34 @@ poi_tags: poi.acoustic_filter_organ;poi.relay_gill_wall
 biome_tags: biome.cable_reef;biome.brine_canyon
 locale: id_ID
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "ID LOC HOLD: Acoustic Filter Organ Relay"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Acoustic Filter Organ Relay
+# ID LOC HOLD: Acoustic Filter Organ Relay
 
-Acoustic Filter Organ Relay is the bridge between HECTON-8's sonar gameplay and Atlas' biomechanical horror. Damaged infrastructure recruits living acoustic filters, turning sound into repair, misdirection and evidence.
+ID LOC HOLD: Acoustic Filter Organ Relay is the bridge between HECTON-8's sonar gameplay and Atlas' biomechanical horror. Damaged infrastructure recruits living acoustic filters, turning sound into repair, misdirection and evidence.
 
 ## Scanner
 
-Gill-like organs around relay pipes damp noise, pass narrow pulses and make sonar lie in repeatable ways.
+ID LOC HOLD: Gill-like organs around relay pipes damp noise, pass narrow pulses and make sonar lie in repeatable ways.
 
 ## Terminal
 
-RELAY NOTE: biological baffle can pass pinger-class pulses while rejecting broad pump noise.
+ID LOC HOLD: RELAY NOTE: biological baffle can pass pinger-class pulses while rejecting broad pump noise.
 
 ## Audio
 
-The room is listening with meat and pipe.
+ID LOC HOLD: The room is listening with meat and pipe.
 
 ## Field Note
 
-Atlas does not need language here. It needs filters, pulses and living baffles.
+ID LOC HOLD: Atlas does not need language here. It needs filters, pulses and living baffles.
 
 <!-- External Site; generated from P232_ACOUSTIC_FILTER_ORGAN_RELAY/id_ID. -->

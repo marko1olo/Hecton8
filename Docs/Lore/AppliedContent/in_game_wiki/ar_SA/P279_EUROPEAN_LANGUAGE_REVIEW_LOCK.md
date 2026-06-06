@@ -7,31 +7,34 @@ poi_tags: poi.european_review_card;poi.expansion_width_sample
 biome_tags: biome.localization;biome.eu_languages
 locale: ar_SA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "AR LOC HOLD: European Text Expansion Contract"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# European Text Expansion Contract
+# AR LOC HOLD: European Text Expansion Contract
 
-Dense Latin-script languages can expand labels and paragraphs; the interface must keep contract cards comparable and warnings readable under pressure.
+AR LOC HOLD: Dense Latin-script languages can expand labels and paragraphs; the interface must keep contract cards comparable and warnings readable under pressure.
 
 ## Scanner
 
-A longer word is acceptable. A hidden field is not.
+AR LOC HOLD: A longer word is acceptable. A hidden field is not.
 
 ## Terminal
 
-Expanded copy may shorten for fit, but it must not hide lien, custody, return penalty, or survival warning text.
+AR LOC HOLD: Expanded copy may shorten for fit, but it must not hide lien, custody, return penalty, or survival warning text.
 
 ## Audio
 
-The clipped field is the field the player stops trusting.
+AR LOC HOLD: The clipped field is the field the player stops trusting.
 
 ## Field Note
 
-Check contract labels, tooltip fallback, unit abbreviations, legal terms, and public-site paragraph expansion.
+AR LOC HOLD: Check contract labels, tooltip fallback, unit abbreviations, legal terms, and public-site paragraph expansion.
 
 <!-- In-Game Wiki; generated from P279_EUROPEAN_LANGUAGE_REVIEW_LOCK/ar_SA. -->

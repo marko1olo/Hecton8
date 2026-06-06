@@ -7,31 +7,34 @@ poi_tags: poi.dossier_ending_record_card;poi.receiver_authority_badge
 biome_tags: biome.dossier;biome.ending
 locale: uk_UA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "UK LOC HOLD: Dossier Ending Record"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Dossier Ending Record
+# UK LOC HOLD: Dossier Ending Record
 
-Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.
+UK LOC HOLD: Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.
 
 ## Scanner
 
-Dossier record: route warnings, unresolved costs, receiver authority, ending trace.
+UK LOC HOLD: Dossier record: route warnings, unresolved costs, receiver authority, ending trace.
 
 ## Terminal
 
-The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.
+UK LOC HOLD: The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.
 
 ## Audio
 
-Knowledge survives the route. Equipment does not.
+UK LOC HOLD: Knowledge survives the route. Equipment does not.
 
 ## Field Note
 
-Keep dossier persistence limited to knowledge records, route warnings, and ending evidence.
+UK LOC HOLD: Keep dossier persistence limited to knowledge records, route warnings, and ending evidence.
 
 <!-- In-Game Wiki; generated from P309_DOSSIER_ENDING_RECORD_PROOF_CARD/uk_UA. -->

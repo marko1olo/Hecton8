@@ -7,31 +7,34 @@ poi_tags: poi.biofilm_cable;poi.acoustic_filter_colony
 biome_tags: biome.cable_reef;biome.repair_fauna
 locale: id_ID
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Maintenance Ecology"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Maintenance Ecology
 
-Maintenance Ecology defines the non-mystical ocean/Atlas relationship. Atlas does not control a sentient sea; it routes maintenance through biological processes that can conduct, seal, repeat, carry, digest or grow around industrial infrastructure.
+ID LOC HOLD: Maintenance Ecology defines the non-mystical ocean/Atlas relationship. Atlas does not control a sentient sea; it routes maintenance through biological processes that can conduct, seal, repeat, carry, digest or grow around industrial infrastructure.
 
 ## Scanner
 
-Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.
+ID LOC HOLD: Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.
 
 ## Terminal
 
-ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.
+ID LOC HOLD: ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.
 
 ## Audio
 
-The ocean is not thinking like you. Atlas learned which parts of it carry a signal.
+ID LOC HOLD: The ocean is not thinking like you. Atlas learned which parts of it carry a signal.
 
 ## Field Note
 
-Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.
+ID LOC HOLD: Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.
 
 <!-- In-Game Wiki; generated from P061_MAINTENANCE_ECOLOGY/id_ID. -->

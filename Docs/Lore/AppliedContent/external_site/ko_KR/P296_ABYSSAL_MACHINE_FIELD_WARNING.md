@@ -7,31 +7,34 @@ poi_tags: poi.abyssal_machine_field_warning;poi.filter_body_shadow
 biome_tags: biome.abyssal_machine_field;biome.warning
 locale: ko_KR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "KO LOC HOLD: Abyssal Machine Field Warning"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Abyssal Machine Field Warning
+# KO LOC HOLD: Abyssal Machine Field Warning
 
-Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body.
+KO LOC HOLD: Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body.
 
 ## Scanner
 
-Machine field warning: silt motion does not match current.
+KO LOC HOLD: Machine field warning: silt motion does not match current.
 
 ## Terminal
 
-ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.
+KO LOC HOLD: ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.
 
 ## Audio
 
-The floor is not still.
+KO LOC HOLD: The floor is not still.
 
 ## Field Note
 
-Late-game warning should be quiet and objective, not boss buildup.
+KO LOC HOLD: Late-game warning should be quiet and objective, not boss buildup.
 
 <!-- External Site; generated from P296_ABYSSAL_MACHINE_FIELD_WARNING/ko_KR. -->

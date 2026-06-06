@@ -7,31 +7,34 @@ poi_tags: poi.shallow_annex_p63;poi.p63_collar_leak
 biome_tags: biome.photic_shelf;resource.fiberkelp
 locale: id_ID
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "ID LOC HOLD: Perbaikan PressureSeal Pertama"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Perbaikan PressureSeal Pertama
+# ID LOC HOLD: Perbaikan PressureSeal Pertama
 
-Catatan perbaikan P-63 ditemukan. FiberKelp dapat diolah menjadi FiberMesh sebagai lapisan pembawa PressureSeal sementara. Segel itu memperlambat bocor lokal, tetapi bukan sertifikasi naik.
+ID LOC HOLD: Catatan perbaikan P-63 ditemukan. FiberKelp dapat diolah menjadi FiberMesh sebagai lapisan pembawa PressureSeal sementara. Segel itu memperlambat bocor lokal, tetapi bukan sertifikasi naik.
 
 ## Scanner
 
-TARGET PRESSURESEAL // Kebocoran collar P-63. Pembawa FiberMesh cocok. Stabilisasi lokal saja; sertifikasi naik ditolak.
+ID LOC HOLD: TARGET PRESSURESEAL // Kebocoran collar P-63. Pembawa FiberMesh cocok. Stabilisasi lokal saja; sertifikasi naik ditolak.
 
 ## Terminal
 
-CATATAN TOLERANSI DEEP REACH P-63 // Tunda penggantian collar. Terapkan pembawa segel lunak yang disetujui jika bocor masih dalam ambang layanan lokal.
+ID LOC HOLD: CATATAN TOLERANSI DEEP REACH P-63 // Tunda penggantian collar. Terapkan pembawa segel lunak yang disetujui jika bocor masih dalam ambang layanan lokal.
 
 ## Audio
 
-Relay Black Keel: tambalan P-63 terbaca aman lokal, bukan aman naik. Ambil segel, simpan serialnya.
+ID LOC HOLD: Relay Black Keel: tambalan P-63 terbaca aman lokal, bukan aman naik. Ambil segel, simpan serialnya.
 
 ## Field Note
 
-Air terang di luar. Collar basah di dalam. Deep Reach menyebutnya nominal karena kata itu lebih murah daripada clamp ring.
+ID LOC HOLD: Air terang di luar. Collar basah di dalam. Deep Reach menyebutnya nominal karena kata itu lebih murah daripada clamp ring.
 
 <!-- In-Game Wiki; generated from P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE/id_ID. -->

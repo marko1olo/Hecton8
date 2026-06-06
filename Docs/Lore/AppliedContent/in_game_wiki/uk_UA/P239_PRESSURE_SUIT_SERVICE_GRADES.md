@@ -7,31 +7,34 @@ poi_tags: poi.pressure_suit_grade_tag;poi.old_service_stamp
 biome_tags: biome.p63_shallows;biome.brine_canyon
 locale: uk_UA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "UA LOC HOLD: Pressure Suit Service Grades"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Pressure Suit Service Grades
+# UA LOC HOLD: Pressure Suit Service Grades
 
-Pressure Suit Service Grades ground player progression in maintenance standards and depth certification.
+UA LOC HOLD: Pressure Suit Service Grades ground player progression in maintenance standards and depth certification.
 
 ## Scanner
 
-Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.
+UA LOC HOLD: Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.
 
 ## Terminal
 
-SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
+UA LOC HOLD: SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
 
 ## Audio
 
-The suit does not make you brave. It only fails later.
+UA LOC HOLD: The suit does not make you brave. It only fails later.
 
 ## Field Note
 
-A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.
+UA LOC HOLD: A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.
 
 <!-- In-Game Wiki; generated from P239_PRESSURE_SUIT_SERVICE_GRADES/uk_UA. -->

@@ -7,31 +7,34 @@ poi_tags: poi.claim_hook_terminal;poi.carrier_tariff
 biome_tags: biome.claim_pool;biome.surface_relay
 locale: pt_BR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Black Keel Claim Hooks"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Black Keel Claim Hooks
 
-Black Keel is the player delivery and recovery problem. Publicly it is Aegir claim-pool infrastructure. Legally it is debt and insurance custody. Hidden hooks let Deep Reach prioritize payloads, quarantine, route certificates and old claim law before human extraction.
+PT-BR LOC HOLD: Black Keel is the player delivery and recovery problem. Publicly it is Aegir claim-pool infrastructure. Legally it is debt and insurance custody. Hidden hooks let Deep Reach prioritize payloads, quarantine, route certificates and old claim law before human extraction.
 
 ## Scanner
 
-Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.
+PT-BR LOC HOLD: Black Keel is claim-pool hardware on the manifest and Deep Reach leverage in the clauses.
 
 ## Terminal
 
-CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.
+PT-BR LOC HOLD: CARRIER CUSTODY: operator recovery allowed after payload triage, quarantine gate, route certificate and liability clearance. Deep Reach priority seal retained in inactive clauses.
 
 ## Audio
 
-It can hear you. It just has to price the answer first.
+PT-BR LOC HOLD: It can hear you. It just has to price the answer first.
 
 ## Field Note
 
-The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.
+PT-BR LOC HOLD: The ship is not evil. It is leased to a contract that knows how to be evil without sounding alive.
 
 <!-- In-Game Wiki; generated from P058_BLACK_KEEL_CLAIM_HOOKS/pt_BR. -->

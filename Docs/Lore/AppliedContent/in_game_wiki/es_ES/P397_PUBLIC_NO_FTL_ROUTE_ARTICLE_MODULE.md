@@ -7,31 +7,34 @@ poi_tags: poi.public_transit_diagram;poi.no_ftl_article_panel
 biome_tags: biome.publication;biome.human_space
 locale: es_ES
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "ES LOC HOLD: No-FTL Route Delay"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# No-FTL Route Delay
+# ES LOC HOLD: No-FTL Route Delay
 
-Distance is a survival pressure in the Aegir route. Law, debt and delayed packets can reach the player long before a carrier, tender or replacement part can arrive.
+ES LOC HOLD: Distance is a survival pressure in the Aegir route. Law, debt and delayed packets can reach the player long before a carrier, tender or replacement part can arrive.
 
 ## Scanner
 
-Transit record. Aegir traffic depends on probes, beam lanes, pellet freight, braking mass, packet age and legal delay.
+ES LOC HOLD: Transit record. Aegir traffic depends on probes, beam lanes, pellet freight, braking mass, packet age and legal delay.
 
 ## Terminal
 
-PUBLIC ARCHIVE NODE // TRANSIT LIMIT. FTL absent. Ansible absent. Rescue route requires physical transfer, relay custody, braking architecture and a live mass window.
+ES LOC HOLD: PUBLIC ARCHIVE NODE // TRANSIT LIMIT. FTL absent. Ansible absent. Rescue route requires physical transfer, relay custody, braking architecture and a live mass window.
 
 ## Audio
 
-Help can be legally present and physically years away.
+ES LOC HOLD: Help can be legally present and physically years away.
 
 ## Field Note
 
-Marauder note: when the relay answers, ask how old the answer is.
+ES LOC HOLD: Marauder note: when the relay answers, ask how old the answer is.
 
 <!-- In-Game Wiki; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/es_ES. -->

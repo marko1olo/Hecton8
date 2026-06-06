@@ -7,31 +7,34 @@ poi_tags: poi.atlas_spoiler_gate_card;poi.factory_temple_blur_caption
 biome_tags: biome.publication;biome.atlas
 locale: ko_KR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "KO LOC HOLD: Atlas6 Site Spoiler Gate Copy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Atlas6 Site Spoiler Gate Copy
+# KO LOC HOLD: Atlas6 Site Spoiler Gate Copy
 
-Spoiler gate: the open article covers Atlas-6 as industrial governor and failed infrastructure. Continue only if you accept discussion of the repair ecology, final payloads and bottom-factory truth.
+KO LOC HOLD: Spoiler gate: the open article covers Atlas-6 as industrial governor and failed infrastructure. Continue only if you accept discussion of the repair ecology, final payloads and bottom-factory truth.
 
 ## Scanner
 
-Atlas public text stops at failed governor unless spoiler gate opens.
+KO LOC HOLD: Atlas public text stops at failed governor unless spoiler gate opens.
 
 ## Terminal
 
-SPOILER GATE: Atlas basin consequences require explicit reader opt-in.
+KO LOC HOLD: SPOILER GATE: Atlas basin consequences require explicit reader opt-in.
 
 ## Audio
 
-Past this line, the machine is not only a machine.
+KO LOC HOLD: Past this line, the machine is not only a machine.
 
 ## Field Note
 
-Gate label should name categories: factory-temple, repair ecology, ending payloads, worker evidence.
+KO LOC HOLD: Gate label should name categories: factory-temple, repair ecology, ending payloads, worker evidence.
 
 <!-- External Site; generated from P284_ATLAS6_SITE_SPOILER_GATE_COPY/ko_KR. -->

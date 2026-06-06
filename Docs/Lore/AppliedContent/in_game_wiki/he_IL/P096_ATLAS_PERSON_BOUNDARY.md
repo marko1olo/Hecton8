@@ -7,31 +7,34 @@ poi_tags: poi.atlas_recognition_fault;poi.old_credential_echo
 biome_tags: biome.factory_temple;biome.atlas_basin
 locale: he_IL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Atlas Person Boundary"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Atlas Person Boundary
 
-Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.
+HE LOC HOLD: Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.
 
 ## Scanner
 
-Recognition fault. Atlas sees your access pattern before it sees a person.
+HE LOC HOLD: Recognition fault. Atlas sees your access pattern before it sees a person.
 
 ## Terminal
 
-ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.
+HE LOC HOLD: ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.
 
 ## Audio
 
-It knows how you work. That is not the same as knowing you.
+HE LOC HOLD: It knows how you work. That is not the same as knowing you.
 
 ## Field Note
 
-Do not make Atlas human. Let it become intimate by being wrong precisely.
+HE LOC HOLD: Do not make Atlas human. Let it become intimate by being wrong precisely.
 
 <!-- In-Game Wiki; generated from P096_ATLAS_PERSON_BOUNDARY/he_IL. -->

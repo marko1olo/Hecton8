@@ -7,31 +7,34 @@ poi_tags: poi.sonar_pinger_float;poi.route_beacon_line
 biome_tags: biome.photic_shelf;biome.brine_canyon
 locale: es_ES
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "ES LOC HOLD: Sonar Pinger Route Beacons"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Sonar Pinger Route Beacons
+# ES LOC HOLD: Sonar Pinger Route Beacons
 
-Sonar Pinger Route Beacons make early equipment stay relevant across exploration, salvage, creature telegraphing and false exits.
+ES LOC HOLD: Sonar Pinger Route Beacons make early equipment stay relevant across exploration, salvage, creature telegraphing and false exits.
 
 ## Scanner
 
-A pinger float marks return geometry, exposes false echoes and can draw both rescue attention and unwanted life.
+ES LOC HOLD: A pinger float marks return geometry, exposes false echoes and can draw both rescue attention and unwanted life.
 
 ## Terminal
 
-PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.
+ES LOC HOLD: PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.
 
 ## Audio
 
-One ping is a promise. Two pings are a bill.
+ES LOC HOLD: One ping is a promise. Two pings are a bill.
 
 ## Field Note
 
-The pinger is the first honest tool: it tells distance, debt, route loss and creature risk through sound.
+ES LOC HOLD: The pinger is the first honest tool: it tells distance, debt, route loss and creature risk through sound.
 
 <!-- In-Game Wiki; generated from P240_SONAR_PINGER_ROUTE_BEACONS/es_ES. -->

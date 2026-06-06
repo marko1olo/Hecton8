@@ -7,31 +7,34 @@ poi_tags: poi.atlas_basin_gate;poi.payload_authority_socket
 biome_tags: biome.atlas_basin;biome.factory_temple
 locale: ar_SA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "AR LOC HOLD: Atlas Basin Payload Act"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Atlas Basin Payload Act
+# AR LOC HOLD: Atlas Basin Payload Act
 
-The Atlas basin act ends through payload authority. A clean victory is forbidden because every receiver changes the crime scene.
+AR LOC HOLD: The Atlas basin act ends through payload authority. A clean victory is forbidden because every receiver changes the crime scene.
 
 ## Scanner
 
-Act gate: Atlas basin. Every ending is a receiver and custody decision.
+AR LOC HOLD: Act gate: Atlas basin. Every ending is a receiver and custody decision.
 
 ## Terminal
 
-PAYLOAD ACT: route, receiver, proof hash, ecology state, lien and survival clarity must be resolved or intentionally refused.
+AR LOC HOLD: PAYLOAD ACT: route, receiver, proof hash, ecology state, lien and survival clarity must be resolved or intentionally refused.
 
 ## Audio
 
-The last question is not what happened. It is who you send it to.
+AR LOC HOLD: The last question is not what happened. It is who you send it to.
 
 ## Field Note
 
-Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged.
+AR LOC HOLD: Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged.
 
 <!-- In-Game Wiki; generated from P385_ATLAS_BASIN_PAYLOAD_ACT/ar_SA. -->

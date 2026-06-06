@@ -7,31 +7,34 @@ poi_tags: poi.public_hecton8_article;poi.site_primer_card
 biome_tags: biome.publication;biome.hecton8_atlas
 locale: he_IL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "HE LOC HOLD: HECTON-8 Public Primer Article"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# HECTON-8 Public Primer Article
+# HE LOC HOLD: HECTON-8 Public Primer Article
 
-The public primer establishes the spoiler-safe foundation: ocean moon, dead colony, salvage return, bright shallows, and deeper industrial evidence without final payload spoilers.
+HE LOC HOLD: The public primer establishes the spoiler-safe foundation: ocean moon, dead colony, salvage return, bright shallows, and deeper industrial evidence without final payload spoilers.
 
 ## Scanner
 
-A public primer is allowed to be beautiful. It is not allowed to lie.
+HE LOC HOLD: A public primer is allowed to be beautiful. It is not allowed to lie.
 
 ## Terminal
 
-PUBLIC PRIMER: spoiler-safe summary approved: ocean moon, dead colony, salvage return, no final payload route.
+HE LOC HOLD: PUBLIC PRIMER: spoiler-safe summary approved: ocean moon, dead colony, salvage return, no final payload route.
 
 ## Audio
 
-First sell the ocean. Then earn the crime.
+HE LOC HOLD: First sell the ocean. Then earn the crime.
 
 ## Field Note
 
-The first public record sells the ocean, then earns the crime: HECTON-8 is beautiful before it becomes incriminating.
+HE LOC HOLD: The first public record sells the ocean, then earns the crime: HECTON-8 is beautiful before it becomes incriminating.
 
 <!-- In-Game Wiki; generated from P251_HECTON8_PUBLIC_PRIMER_ARTICLE/he_IL. -->

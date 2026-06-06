@@ -7,16 +7,19 @@ poi_tags: poi.audio_fragment_tag;poi.hydrophone_log_strip
 biome_tags: biome.relay_spine;biome.worker_locker
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Правила audio fragments"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Правила audio fragments
 
-Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues.
+RU LOC HOLD: Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues.
 
 ## Scanner
 
@@ -32,6 +35,6 @@ AUDIO RULE: без free-floating monologues. Voice принадлежит hydrop
 
 ## Field Note
 
-Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.
+RU LOC HOLD: Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.
 
 <!-- External Site; generated from P215_AUDIO_FRAGMENT_PROP_RULES/ru_RU. -->

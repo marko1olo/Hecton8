@@ -11,7 +11,7 @@
         "Docs/Lore/AppliedContent/release_sets/RS109_CANON_LOCALIZATION_EXPANSION_20260606_manifest.json",
         "Docs/Lore/AppliedContent/localization_backlog/RS109_15_LOCALE_ROWS_20260606.csv",
         "Docs/Lore/AppliedContent/localization_backlog/RS109_TERMINOLOGY_LOCK_TABLE_20260606.csv",
-        "Docs/Lore/AppliedContent/route_cards/RS109_route_cards.csv"
+        "Docs/Lore/AppliedContent/route_cards/drafts/RS109_route_cards.csv"
     ],
     "packet_ids": [
         "P402_DROP_CAPSULE_FIRST_FAULT",

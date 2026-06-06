@@ -7,11 +7,14 @@ poi_tags: poi.triage_ledger_sheet;poi.med_lock_delay
 biome_tags: biome.med_lock;biome.worker_locker
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Варианты triage ledger props"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Варианты triage ledger props
@@ -28,7 +31,7 @@ TRIAGE PROP RULE: каждая ledger entry связывает injury с pressur
 
 ## Audio
 
-Pain is not proof until the route bears the mark.
+RU LOC HOLD: Pain is not proof until the route bears the mark.
 
 ## Field Note
 

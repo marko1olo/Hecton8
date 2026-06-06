@@ -7,11 +7,14 @@ poi_tags: poi.shallow_biome_scan;poi.drop_shelter_window
 biome_tags: biome.crash_shelf;biome.photic_shelf
 locale: uk_UA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Життя світлового шельфу"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Життя світлового шельфу
@@ -24,7 +27,7 @@ localization_flags: 1
 
 ## Terminal
 
-SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.
+UA LOC HOLD: SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.
 
 ## Audio
 

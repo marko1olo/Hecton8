@@ -7,31 +7,34 @@ poi_tags: poi.recovery_compliance_bait_contract;poi.masked_receiver_clause
 biome_tags: biome.contract_layer;biome.atlas_basin
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "RU LOC HOLD: Recovery Compliance Bait Contract Seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Recovery Compliance Bait Contract Seed
+# RU LOC HOLD: Recovery Compliance Bait Contract Seed
 
-Recovery Compliance bait runs make Deep Reach present from the beginning without turning them into a constant radio villain.
+RU LOC HOLD: Recovery Compliance bait runs make Deep Reach present from the beginning without turning them into a constant radio villain.
 
 ## Scanner
 
-Contract seed: Recovery Compliance bait. High payout, high receiver contamination.
+RU LOC HOLD: Contract seed: Recovery Compliance bait. High payout, high receiver contamination.
 
 ## Terminal
 
-SEED BAIT: Recovery Compliance receiver implied, coordinate demand hidden, payout raised, withholding route becomes harder.
+RU LOC HOLD: SEED BAIT: Recovery Compliance receiver implied, coordinate demand hidden, payout raised, withholding route becomes harder.
 
 ## Audio
 
-Some contracts are not offers. They are envelopes with your name already on the return line.
+RU LOC HOLD: Some contracts are not offers. They are envelopes with your name already on the return line.
 
 ## Field Note
 
-Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap.
+RU LOC HOLD: Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap.
 
 <!-- In-Game Wiki; generated from P395_RECOVERY_COMPLIANCE_BAIT_CONTRACT_SEED/ru_RU. -->

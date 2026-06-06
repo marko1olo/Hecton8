@@ -7,31 +7,34 @@ poi_tags: poi.acoustic_relay_spine;poi.pinger_line_spool
 biome_tags: biome.shallow_shelf;biome.industrial_shelf
 locale: es_ES
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "ES LOC HOLD: Acoustic Relay Spine Assembly"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Acoustic Relay Spine Assembly
+# ES LOC HOLD: Acoustic Relay Spine Assembly
 
-The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.
+ES LOC HOLD: The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.
 
 ## Scanner
 
-Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.
+ES LOC HOLD: Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.
 
 ## Terminal
 
-ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.
+ES LOC HOLD: ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.
 
 ## Audio
 
-If Black Keel hears this, it hears a pressure code, not a voice.
+ES LOC HOLD: If Black Keel hears this, it hears a pressure code, not a voice.
 
 ## Field Note
 
-Place on broken mast or pinger-line evidence near capsule/P-63 routes.
+ES LOC HOLD: Place on broken mast or pinger-line evidence near capsule/P-63 routes.
 
 <!-- In-Game Wiki; generated from P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY/es_ES. -->

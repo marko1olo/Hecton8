@@ -7,31 +7,34 @@ poi_tags: poi.loss_conversion_table;poi.keelmark_adjuster_log
 biome_tags: biome.industrial_shelf;biome.brine_canyon
 locale: nl_NL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Marek Ibarra Loss Conversion"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Marek Ibarra Loss Conversion
 
-Marek Ibarra Loss Conversion shows Deep Reach's post-disaster laundering path: insurance language, unresolved status and body-ledger ambiguity replacing public accountability.
+NL LOC HOLD: Marek Ibarra Loss Conversion shows Deep Reach's post-disaster laundering path: insurance language, unresolved status and body-ledger ambiguity replacing public accountability.
 
 ## Scanner
 
-Adjuster table. M. Ibarra converted missing workers into unresolved load classes.
+NL LOC HOLD: Adjuster table. M. Ibarra converted missing workers into unresolved load classes.
 
 ## Terminal
 
-IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.
+NL LOC HOLD: IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.
 
 ## Audio
 
-A missing person became a pending category. That was cheaper.
+NL LOC HOLD: A missing person became a pending category. That was cheaper.
 
 ## Field Note
 
-Insurance language should feel colder than gunfire.
+NL LOC HOLD: Insurance language should feel colder than gunfire.
 
 <!-- External Site; generated from P109_MAREK_IBARRA_LOSS_CONVERSION/nl_NL. -->

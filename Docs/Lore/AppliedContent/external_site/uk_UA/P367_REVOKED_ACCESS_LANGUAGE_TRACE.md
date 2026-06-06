@@ -7,31 +7,34 @@ poi_tags: poi.revoked_access_phrase;poi.lockout_response_card
 biome_tags: biome.colony;biome.industrial_shelf
 locale: uk_UA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "UK LOC HOLD: Revoked Access Language Trace"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Revoked Access Language Trace
+# UK LOC HOLD: Revoked Access Language Trace
 
-The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.
+UA LOC HOLD: The protagonist's former Deep Reach procedure language acts as both clue and barrier: old systems deny access while revealing how the route was buried.
 
 ## Scanner
 
-Access trace matches old Deep Reach phrasing. Denial is written as maintenance.
+UK LOC HOLD: Access trace matches old Deep Reach phrasing. Denial is written as maintenance.
 
 ## Terminal
 
-LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.
+UK LOC HOLD: LOCKOUT: requester no longer certified for evacuation continuity materials. Route terms remain visible because the system assumes former staff know them.
 
 ## Audio
 
-That is not security. That is a memo pretending to be a door.
+UK LOC HOLD: That is not security. That is a memo pretending to be a door.
 
 ## Field Note
 
-Lockout language hints at hidden liability without granting free access.
+UA LOC HOLD: Lockout language hints at hidden liability without granting free access.
 
 <!-- External Site; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/uk_UA. -->

@@ -7,31 +7,34 @@ poi_tags: poi.marauder_dossier_terminal;poi.rumor_family_tag
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: de_DE
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Dossier Rumor Unlocks"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Dossier Rumor Unlocks
 
-The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.
+DE LOC HOLD: The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.
 
 ## Scanner
 
-Replay memory: rumor, warning, contract context. Not power.
+DE LOC HOLD: Replay memory: rumor, warning, contract context. Not power.
 
 ## Terminal
 
-DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.
+DE LOC HOLD: DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.
 
 ## Audio
 
-Your file remembers what your hands cannot carry.
+DE LOC HOLD: Your file remembers what your hands cannot carry.
 
 ## Field Note
 
-Knowledge can persist without making the next run easier in a boring way.
+DE LOC HOLD: Knowledge can persist without making the next run easier in a boring way.
 
 <!-- In-Game Wiki; generated from P136_DOSSIER_RUMOR_UNLOCKS/de_DE. -->

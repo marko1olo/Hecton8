@@ -7,31 +7,34 @@ poi_tags: poi.local_window_band_table;poi.carrier_phase_clock
 biome_tags: biome.black_keel_orbit;biome.upper_atmosphere
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "RU LOC HOLD: Aegir Window Bands"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Aegir Window Bands
+# RU LOC HOLD: Aegir Window Bands
 
-Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.
+RU LOC HOLD: Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.
 
 ## Scanner
 
-Local band: ascent waits on hours-to-days windows, not instant rescue.
+RU LOC HOLD: Local band: ascent waits on hours-to-days windows, not instant rescue.
 
 ## Terminal
 
-WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.
+RU LOC HOLD: WINDOW BAND. Shutter, eclipse, relay, storm, carrier phase and legal handshake must align.
 
 ## Audio
 
-The carrier can hear you and still be in the wrong sky.
+RU LOC HOLD: The carrier can hear you and still be in the wrong sky.
 
 ## Field Note
 
-Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints.
+RU LOC HOLD: Window band record: Black Keel timing, local orbit labels, and spoiler-light system pages share the same transfer constraints.
 
 <!-- In-Game Wiki; generated from P422_AEGIR_LOCAL_WINDOW_BAND_TABLE/ru_RU. -->

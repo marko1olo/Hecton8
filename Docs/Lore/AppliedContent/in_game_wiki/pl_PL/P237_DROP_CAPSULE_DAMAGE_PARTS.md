@@ -7,31 +7,34 @@ poi_tags: poi.drop_capsule_ascent_sleeve;poi.guidance_gimbal_scar
 biome_tags: biome.crash_shelf;biome.p63_shallows
 locale: pl_PL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "PL LOC HOLD: Drop Capsule Damage Parts"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Drop Capsule Damage Parts
+# PL LOC HOLD: Drop Capsule Damage Parts
 
-Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.
+PL LOC HOLD: Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.
 
 ## Scanner
 
-Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.
+PL LOC HOLD: Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.
 
 ## Terminal
 
-DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
+PL LOC HOLD: DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.
 
 ## Audio
 
-It landed well enough to strand you properly.
+PL LOC HOLD: It landed well enough to strand you properly.
 
 ## Field Note
 
-The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.
+PL LOC HOLD: The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.
 
 <!-- In-Game Wiki; generated from P237_DROP_CAPSULE_DAMAGE_PARTS/pl_PL. -->

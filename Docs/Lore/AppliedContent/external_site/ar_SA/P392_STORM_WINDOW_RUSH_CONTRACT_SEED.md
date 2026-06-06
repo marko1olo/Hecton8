@@ -7,31 +7,34 @@ poi_tags: poi.storm_window_rush_card;poi.orbital_timing_warning
 biome_tags: biome.contract_layer;biome.storm_window
 locale: ar_SA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "AR LOC HOLD: Storm Window Rush Contract Seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Storm Window Rush Contract Seed
+# AR LOC HOLD: Storm Window Rush Contract Seed
 
-A HECTON-8 replay seed can make the same moon feel different by changing orbital and weather pressure.
+AR LOC HOLD: A HECTON-8 replay seed can make the same moon feel different by changing orbital and weather pressure.
 
 ## Scanner
 
-Contract seed: rush window. Faster claim, harsher timing and less tolerance for repair mistakes.
+AR LOC HOLD: Contract seed: rush window. Faster claim, harsher timing and less tolerance for repair mistakes.
 
 ## Terminal
 
-SEED RUSH: storm window compressed, orbital relay shutter hostile, payout ceiling raised, repair slack reduced.
+AR LOC HOLD: SEED RUSH: storm window compressed, orbital relay shutter hostile, payout ceiling raised, repair slack reduced.
 
 ## Audio
 
-This contract pays because it hates waiting.
+AR LOC HOLD: This contract pays because it hates waiting.
 
 ## Field Note
 
-Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour.
+AR LOC HOLD: Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour.
 
 <!-- External Site; generated from P392_STORM_WINDOW_RUSH_CONTRACT_SEED/ar_SA. -->

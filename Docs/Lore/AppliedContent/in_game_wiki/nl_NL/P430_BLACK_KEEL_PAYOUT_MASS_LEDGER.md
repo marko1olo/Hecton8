@@ -7,31 +7,34 @@ poi_tags: poi.black_keel_mass_ledger;poi.payout_conversion_note
 biome_tags: biome.claim_admin;biome.black_keel_orbit
 locale: nl_NL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "NL LOC HOLD: Black Keel Payout Mass Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Black Keel Payout Mass Ledger
+# NL LOC HOLD: Black Keel Payout Mass Ledger
 
-The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.
+NL LOC HOLD: The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.
 
 ## Scanner
 
-Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.
+NL LOC HOLD: Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.
 
 ## Terminal
 
-LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.
+NL LOC HOLD: LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.
 
 ## Audio
 
-The ledger can pay you and still steal the story.
+NL LOC HOLD: The ledger can pay you and still steal the story.
 
 ## Field Note
 
-Use for contract board, false exit records and spoiler-gated ending pages.
+NL LOC HOLD: Use for contract board, false exit records and spoiler-gated ending pages.
 
 <!-- In-Game Wiki; generated from P430_BLACK_KEEL_PAYOUT_MASS_LEDGER/nl_NL. -->

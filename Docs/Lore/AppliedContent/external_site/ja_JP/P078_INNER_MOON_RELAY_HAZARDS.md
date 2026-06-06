@@ -7,31 +7,34 @@ poi_tags: poi.radiation_shutter;poi.inner_relay_dead_zone
 biome_tags: biome.orbital_window;biome.drowned_comms
 locale: ja_JP
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Inner Moon Relay Hazards"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Inner Moon Relay Hazards
 
-Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage.
+JP LOC HOLD: Inner Moon Relay Hazards preserves hard-sci-fi tension: lost contact can be real orbital weather and still become corporate leverage.
 
 ## Scanner
 
-Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.
+JP LOC HOLD: Inner-moon relay shutter log. Aegir does not jam you on purpose; the sky has bad timing.
 
 ## Terminal
 
-INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.
+JP LOC HOLD: INNER LADDER NOTICE: Skarn passage raises charged-particle noise. Vela ice-shed window degrades optical relay. Kestrel occultation blocks carrier handshake for 11.8 hours.
 
 ## Audio
 
-The orbital model is innocent. The clause written around it is not.
+JP LOC HOLD: The orbital model is innocent. The clause written around it is not.
 
 ## Field Note
 
-Radiation and eclipse can look like conspiracy until the contract uses them.
+JP LOC HOLD: Radiation and eclipse can look like conspiracy until the contract uses them.
 
 <!-- External Site; generated from P078_INNER_MOON_RELAY_HAZARDS/ja_JP. -->

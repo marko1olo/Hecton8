@@ -7,31 +7,34 @@ poi_tags: poi.ending_spoiler_nav_cluster;poi.payload_receiver_index
 biome_tags: biome.publication;biome.spoiler_gate
 locale: zh_CN
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 2
+title: "ZH LOC HOLD: Endings and Payload Custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Endings and Payload Custody
+# ZH LOC HOLD: Endings and Payload Custody
 
-Ending dossier hub: custody, evidence, Atlas' future and the price of leaving.
+ZH LOC HOLD: Ending dossier hub: custody, evidence, Atlas' future and the price of leaving.
 
 ## Scanner
 
-Spoiler hub: payload receivers, false exits, custody, public truth, Atlas continuity and after-action records.
+ZH LOC HOLD: Spoiler hub: payload receivers, false exits, custody, public truth, Atlas continuity and after-action records.
 
 ## Terminal
 
-SITE NAV: hide final payload pages behind spoiler gates. Organize by receiver and proof ownership.
+ZH LOC HOLD: SITE NAV: hide final payload pages behind spoiler gates. Organize by receiver and proof ownership.
 
 ## Audio
 
-The ending is who owns the proof afterward.
+ZH LOC HOLD: The ending is who owns the proof afterward.
 
 ## Field Note
 
-Navigation cluster record: endings stay spoiler-gated and organized by receiver and custody consequence, not moral labels.
+ZH LOC HOLD: Navigation cluster record: endings stay spoiler-gated and organized by receiver and custody consequence, not moral labels.
 
 <!-- In-Game Wiki; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/zh_CN. -->

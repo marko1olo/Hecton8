@@ -7,31 +7,34 @@ poi_tags: poi.acoustic_filter_organ;poi.relay_gill_wall
 biome_tags: biome.cable_reef;biome.brine_canyon
 locale: pt_BR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "PT LOC HOLD: Acoustic Filter Organ Relay"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Acoustic Filter Organ Relay
+# PT LOC HOLD: Acoustic Filter Organ Relay
 
-Acoustic Filter Organ Relay defines Atlas' sound-based maintenance layer: organism as baffle, relay and diagnostic distortion.
+PT LOC HOLD: Acoustic Filter Organ Relay defines Atlas' sound-based maintenance layer: organism as baffle, relay and diagnostic distortion.
 
 ## Scanner
 
-Gill-like organs around relay pipes damp noise, pass narrow pulses and make sonar lie in repeatable ways.
+PT LOC HOLD: Gill-like organs around relay pipes damp noise, pass narrow pulses and make sonar lie in repeatable ways.
 
 ## Terminal
 
-RELAY NOTE: biological baffle can pass pinger-class pulses while rejecting broad pump noise.
+PT LOC HOLD: RELAY NOTE: biological baffle can pass pinger-class pulses while rejecting broad pump noise.
 
 ## Audio
 
-The room is listening with meat and pipe.
+PT LOC HOLD: The room is listening with meat and pipe.
 
 ## Field Note
 
-Atlas does not need language here. It needs filters, pulses and living baffles.
+PT LOC HOLD: Atlas does not need language here. It needs filters, pulses and living baffles.
 
 <!-- In-Game Wiki; generated from P232_ACOUSTIC_FILTER_ORGAN_RELAY/pt_BR. -->

@@ -7,31 +7,34 @@ poi_tags: poi.quarantine_review_clock;poi.biological_pressure_hold
 biome_tags: biome.colony;biome.abyssal_machine_field
 locale: pt_BR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "PT LOC HOLD: Quarantine Release Delay Proof"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Quarantine Release Delay Proof
+# PT LOC HOLD: Quarantine Release Delay Proof
 
-Quarantine is not automatically villainy. The proof is timing: protection language appears after rescue windows and evidence custody become inconvenient.
+PT LOC HOLD: Quarantine is not automatically villainy. The proof is timing: protection language appears after rescue windows and evidence custody become inconvenient.
 
 ## Scanner
 
-Quarantine hold plate. The word protection appears only after the exit route is locked.
+PT LOC HOLD: Quarantine hold plate. The word protection appears only after the exit route is locked.
 
 ## Terminal
 
-RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.
+PT LOC HOLD: RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.
 
 ## Audio
 
-Quarantine can save a body. It can also make a body wait until it becomes paperwork.
+PT LOC HOLD: Quarantine can save a body. It can also make a body wait until it becomes paperwork.
 
 ## Field Note
 
-Use where player may confuse rescue with custody.
+PT LOC HOLD: Use where player may confuse rescue with custody.
 
 <!-- In-Game Wiki; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/pt_BR. -->

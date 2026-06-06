@@ -7,31 +7,34 @@ poi_tags: poi.ending_record_transcript;poi.after_action_dossier
 biome_tags: biome.spoiler_gate;biome.codex
 locale: ja_JP
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "JA LOC HOLD: Ending Record Transcript Seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Ending Record Transcript Seed
+# JA LOC HOLD: Ending Record Transcript Seed
 
-Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.
+JA LOC HOLD: Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.
 
 ## Scanner
 
-Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.
+JA LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.
 
 ## Terminal
 
-AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.
+JA LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.
 
 ## Audio
 
-Dossier entry: claim closed for accounting. Truth status unresolved by design.
+JA LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.
 
 ## Field Note
 
-Use for ending dossier, spoiler pages and final VO captions.
+JA LOC HOLD: Use for ending dossier, spoiler pages and final VO captions.
 
 <!-- In-Game Wiki; generated from P440_ENDING_RECORD_TRANSCRIPT_SEED/ja_JP. -->

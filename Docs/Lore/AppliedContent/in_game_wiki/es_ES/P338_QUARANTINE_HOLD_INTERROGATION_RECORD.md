@@ -7,31 +7,34 @@ poi_tags: poi.quarantine_hold_record;poi.biological_custody_tag
 biome_tags: biome.ending;biome.quarantine
 locale: es_ES
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "ES LOC HOLD: Quarantine Hold Interrogation Record"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Quarantine Hold Interrogation Record
+# ES LOC HOLD: Quarantine Hold Interrogation Record
 
-Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.
+ES LOC HOLD: Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.
 
 ## Scanner
 
-Recovered biological claimant held pending contamination and evidence custody review.
+ES LOC HOLD: Recovered biological claimant held pending contamination and evidence custody review.
 
 ## Terminal
 
-QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.
+ES LOC HOLD: QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.
 
 ## Audio
 
-They saved the body first because the body knew the route.
+ES LOC HOLD: They saved the body first because the body knew the route.
 
 ## Field Note
 
-Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom.
+ES LOC HOLD: Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom.
 
 <!-- In-Game Wiki; generated from P338_QUARANTINE_HOLD_INTERROGATION_RECORD/es_ES. -->

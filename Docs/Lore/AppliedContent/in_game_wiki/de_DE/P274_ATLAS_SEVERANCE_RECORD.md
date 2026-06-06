@@ -7,31 +7,34 @@ poi_tags: poi.atlas_severance_record;poi.factory_temple_cut_log
 biome_tags: biome.ending;biome.atlas
 locale: de_DE
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "DE LOC HOLD: Atlas Severance Record"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Atlas Severance Record
+# DE LOC HOLD: Atlas Severance Record
 
-Atlas Severance Record defines shutdown as a morally split ending route.
+DE LOC HOLD: Atlas Severance Record defines shutdown as a morally split ending route.
 
 ## Scanner
 
-Continuity cut. Damage not contained.
+DE LOC HOLD: Continuity cut. Damage not contained.
 
 ## Terminal
 
-ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.
+DE LOC HOLD: ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.
 
 ## Audio
 
-Stopping the machine does not sort what it had become.
+DE LOC HOLD: Stopping the machine does not sort what it had become.
 
 ## Field Note
 
-Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.
+DE LOC HOLD: Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.
 
 <!-- In-Game Wiki; generated from P274_ATLAS_SEVERANCE_RECORD/de_DE. -->

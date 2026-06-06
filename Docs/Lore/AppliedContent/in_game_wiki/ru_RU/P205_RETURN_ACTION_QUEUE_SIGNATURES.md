@@ -7,11 +7,14 @@ poi_tags: poi.return_action_queue;poi.payload_first_stamp
 biome_tags: biome.claim_admin;biome.black_keel
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Подписи Return Action Queue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Подписи Return Action Queue
@@ -32,6 +35,6 @@ SIGNATURE SEED: Amara Keene, Return Action Queue. Функция: ставит p
 
 ## Field Note
 
-Return Action signatures mark delayed packets, carrier clauses, payload bargains, and present-tense pressure from Deep Reach.
+RU LOC HOLD: Return Action signatures mark delayed packets, carrier clauses, payload bargains, and present-tense pressure from Deep Reach.
 
 <!-- In-Game Wiki; generated from P205_RETURN_ACTION_QUEUE_SIGNATURES/ru_RU. -->

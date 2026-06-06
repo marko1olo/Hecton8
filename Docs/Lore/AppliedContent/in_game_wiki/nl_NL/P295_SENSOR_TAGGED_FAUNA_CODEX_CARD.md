@@ -7,31 +7,34 @@ poi_tags: poi.sensor_tagged_fauna_scan;poi.biometal_tag_growth
 biome_tags: biome.atlas_repair;biome.fauna
 locale: nl_NL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "NL LOC HOLD: Sensor Tagged Fauna Codex Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Sensor Tagged Fauna Codex Card
+# NL LOC HOLD: Sensor Tagged Fauna Codex Card
 
-Sensor-Tagged Fauna Codex Card clarifies Atlas repair ecology without making the ocean a mind.
+NL LOC HOLD: Sensor-Tagged Fauna Codex Card clarifies Atlas repair ecology without making the ocean a mind.
 
 ## Scanner
 
-Sensor-tagged fauna: living carrier, old tag, partial Atlas route echo.
+NL LOC HOLD: Sensor-tagged fauna: living carrier, old tag, partial Atlas route echo.
 
 ## Terminal
 
-SPECIMEN: biometal tag growth detected. Animal movement overlaps maintenance route.
+NL LOC HOLD: SPECIMEN: biometal tag growth detected. Animal movement overlaps maintenance route.
 
 ## Audio
 
-It is not obeying. It is being used.
+NL LOC HOLD: It is not obeying. It is being used.
 
 ## Field Note
 
-Do not write as possession. It is damaged maintenance using animal movement.
+NL LOC HOLD: Do not write as possession. It is damaged maintenance using animal movement.
 
 <!-- In-Game Wiki; generated from P295_SENSOR_TAGGED_FAUNA_CODEX_CARD/nl_NL. -->

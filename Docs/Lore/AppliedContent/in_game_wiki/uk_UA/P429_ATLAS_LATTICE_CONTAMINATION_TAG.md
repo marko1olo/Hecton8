@@ -7,31 +7,34 @@ poi_tags: poi.atlas_lattice_tag;poi.contaminated_sample_case
 biome_tags: biome.atlas_repair_network;biome.deep_ecology
 locale: uk_UA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "UK LOC HOLD: Atlas Lattice Contamination Tag"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Atlas Lattice Contamination Tag
+# UK LOC HOLD: Atlas Lattice Contamination Tag
 
-Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.
+UK LOC HOLD: Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.
 
 ## Scanner
 
-Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.
+UK LOC HOLD: Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.
 
 ## Terminal
 
-TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.
+UK LOC HOLD: TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.
 
 ## Audio
 
-If Atlas touched it, the receipt is also a warning label.
+UK LOC HOLD: If Atlas touched it, the receipt is also a warning label.
 
 ## Field Note
 
-Use for contaminated sample scanner, ecology wiki and ending payload flags.
+UK LOC HOLD: Use for contaminated sample scanner, ecology wiki and ending payload flags.
 
 <!-- In-Game Wiki; generated from P429_ATLAS_LATTICE_CONTAMINATION_TAG/uk_UA. -->

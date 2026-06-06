@@ -7,31 +7,34 @@ poi_tags: poi.atlas_public_plaque;poi.habitat_continuity_poster
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: ja_JP
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Atlas Public Front"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Atlas Public Front
 
-Atlas was not publicly introduced as a secret monster. Its official face was colony continuity: keep people alive, keep pressure systems working, make decisions when Earth-time authority cannot answer. That believable front makes the later weighting layer more damaging.
+JP LOC HOLD: Atlas was not publicly introduced as a secret monster. Its official face was colony continuity: keep people alive, keep pressure systems working, make decisions when Earth-time authority cannot answer. That believable front makes the later weighting layer more damaging.
 
 ## Scanner
 
-Public Atlas: habitat continuity, worker safety, delayed governance.
+JP LOC HOLD: Public Atlas: habitat continuity, worker safety, delayed governance.
 
 ## Terminal
 
-PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.
+JP LOC HOLD: PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.
 
 ## Audio
 
-A guardian is easier to sell than a claim machine.
+JP LOC HOLD: A guardian is easier to sell than a claim machine.
 
 ## Field Note
 
-The lie works because the front was partly true.
+JP LOC HOLD: The lie works because the front was partly true.
 
 <!-- In-Game Wiki; generated from P126_ATLAS_PUBLIC_FRONT/ja_JP. -->

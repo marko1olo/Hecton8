@@ -7,31 +7,34 @@ poi_tags: poi.evidence_first_charter;poi.packet_notary_cache
 biome_tags: biome.contract_layer;biome.evidence_route
 locale: es_ES
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "ES LOC HOLD: Evidence First Charter Contract Seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Evidence First Charter Contract Seed
+# ES LOC HOLD: Evidence First Charter Contract Seed
 
-Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.
+ES LOC HOLD: Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.
 
 ## Scanner
 
-Contract seed: evidence first. Lower payout, stronger custody and more dangerous route decisions.
+ES LOC HOLD: Contract seed: evidence first. Lower payout, stronger custody and more dangerous route decisions.
 
 ## Terminal
 
-SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation conflict raised, Deep Reach hostility probable.
+ES LOC HOLD: SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation conflict raised, Deep Reach hostility probable.
 
 ## Audio
 
-Truth has a lower listed value until someone tries to bury it.
+ES LOC HOLD: Truth has a lower listed value until someone tries to bury it.
 
 ## Field Note
 
-Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
+ES LOC HOLD: Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
 
 <!-- In-Game Wiki; generated from P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED/es_ES. -->

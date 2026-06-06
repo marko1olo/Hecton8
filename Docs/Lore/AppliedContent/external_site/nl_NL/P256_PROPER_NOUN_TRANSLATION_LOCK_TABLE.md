@@ -7,31 +7,34 @@ poi_tags: poi.localization_glossary_card;poi.name_lock_sheet
 biome_tags: biome.publication;biome.localization
 locale: nl_NL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "NL LOC HOLD: Proper Noun Translation Lock Table"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Proper Noun Translation Lock Table
+# NL LOC HOLD: Proper Noun Translation Lock Table
 
-Proper Noun Translation Lock Table defines which HECTON-8 terms remain stable across localization. Names, IDs and claim brands preserve identity; surrounding explanations carry the local language.
+NL LOC HOLD: Proper Noun Translation Lock Table defines which HECTON-8 terms remain stable across localization. Names, IDs and claim brands preserve identity; surrounding explanations carry the local language.
 
 ## Scanner
 
-A name lock is not flavor. It is save identity protection.
+NL LOC HOLD: A name lock is not flavor. It is save identity protection.
 
 ## Terminal
 
-LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.
+NL LOC HOLD: LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.
 
 ## Audio
 
-A translated name can become a different witness.
+NL LOC HOLD: A translated name can become a different witness.
 
 ## Field Note
 
-Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.
+NL LOC HOLD: Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.
 
 <!-- External Site; generated from P256_PROPER_NOUN_TRANSLATION_LOCK_TABLE/nl_NL. -->

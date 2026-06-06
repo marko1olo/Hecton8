@@ -7,31 +7,34 @@ poi_tags: poi.anchor_name_sheet_a;poi.locker_name_strip
 biome_tags: biome.worker_locker;biome.p63_shallows
 locale: he_IL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Anchor Worker Name Set A"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Anchor Worker Name Set A
 
-Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.
+HE LOC HOLD: Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.
 
 ## Scanner
 
-Anchor names should reappear through work, not personal exposition.
+HE LOC HOLD: Anchor names should reappear through work, not personal exposition.
 
 ## Terminal
 
-ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.
+HE LOC HOLD: ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.
 
 ## Audio
 
-Do not mourn the name until the tool tells you why.
+HE LOC HOLD: Do not mourn the name until the tool tells you why.
 
 ## Field Note
 
-Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.
+HE LOC HOLD: Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.
 
 <!-- In-Game Wiki; generated from P208_ANCHOR_WORKER_NAME_SET_A/he_IL. -->

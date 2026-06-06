@@ -7,31 +7,34 @@ poi_tags: poi.deep_reach_sanitized_transcript;poi.legal_delay_caption
 biome_tags: biome.deep_reach_archive;biome.claim_admin
 locale: zh_CN
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "ZH LOC HOLD: Deep Reach Sanitized Packet Transcript Seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Deep Reach Sanitized Packet Transcript Seed
+# ZH LOC HOLD: Deep Reach Sanitized Packet Transcript Seed
 
-Deep Reach's public lie is built from true fragments arranged to hide liability.
+ZH LOC HOLD: Deep Reach's public lie is built from true fragments arranged to hide liability.
 
 ## Scanner
 
-Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.
+ZH LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.
 
 ## Terminal
 
-TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.
+ZH LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.
 
 ## Audio
 
-Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.
+ZH LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.
 
 ## Field Note
 
-Use for terminal packet body, VO captions and public article sidebars.
+ZH LOC HOLD: Use for terminal packet body, VO captions and public article sidebars.
 
 <!-- External Site; generated from P437_DEEP_REACH_SANITIZED_PACKET_TRANSCRIPT_SEED/zh_CN. -->

@@ -7,31 +7,34 @@ poi_tags: poi.marauder_correction_note;poi.bad_claim_margin
 biome_tags: biome.marauder;biome.evidence
 locale: uk_UA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "UK LOC HOLD: Marauder Correction Note Sample"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Marauder Correction Note Sample
+# UK LOC HOLD: Marauder Correction Note Sample
 
-Marauder notes let the world argue with official records. The best ones keep doubt useful and answers unpaid.
+UK LOC HOLD: Marauder notes let the world argue with official records. The best ones keep doubt useful and answers unpaid.
 
 ## Scanner
 
-Marauder correction note rejects accident wording and points to authorization delay.
+UK LOC HOLD: Marauder correction note rejects accident wording and points to authorization delay.
 
 ## Terminal
 
-MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.
+UK LOC HOLD: MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.
 
 ## Audio
 
-Someone else smelled the paperwork rot.
+UK LOC HOLD: Someone else smelled the paperwork rot.
 
 ## Field Note
 
-NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.
+UK LOC HOLD: NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.
 
 <!-- External Site; generated from P289_MARAUDER_CORRECTION_NOTE_SAMPLE/uk_UA. -->

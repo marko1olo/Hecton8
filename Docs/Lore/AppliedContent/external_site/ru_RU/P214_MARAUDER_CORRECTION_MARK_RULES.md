@@ -7,16 +7,19 @@ poi_tags: poi.marauder_correction_mark;poi.claim_note_overlay
 biome_tags: biome.claim_cache;biome.worker_locker
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Правила Marauder correction marks"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Правила Marauder correction marks
 
-Marauder Correction Mark Rules keep salvage notes functional: preserve name, challenge category, warn route, price sample, hide witness, or mark debt.
+RU LOC HOLD: Marauder Correction Mark Rules keep salvage notes functional: preserve name, challenge category, warn route, price sample, hide witness, or mark debt.
 
 ## Scanner
 

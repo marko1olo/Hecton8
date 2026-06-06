@@ -7,31 +7,34 @@ poi_tags: poi.live_window_queue;poi.proxy_ai_notice
 biome_tags: biome.relay_spine;biome.surface_relay
 locale: nl_NL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Deep Reach Present Windows"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Deep Reach Present Windows
 
-Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.
+NL LOC HOLD: Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.
 
 ## Scanner
 
-Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.
+NL LOC HOLD: Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.
 
 ## Terminal
 
-LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.
+NL LOC HOLD: LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.
 
 ## Audio
 
-When they finally speak, they ask for the thing that proves they should not have it.
+NL LOC HOLD: When they finally speak, they ask for the thing that proves they should not have it.
 
 ## Field Note
 
-Their voice is delayed. Their leverage is already here.
+NL LOC HOLD: Their voice is delayed. Their leverage is already here.
 
 <!-- In-Game Wiki; generated from P070_DEEP_REACH_PRESENT_WINDOWS/nl_NL. -->

@@ -7,31 +7,34 @@ poi_tags: poi.public_atlas_article;poi.spoiler_gate_plate
 biome_tags: biome.publication;biome.atlas_maintenance
 locale: ar_SA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "AR LOC HOLD: Atlas-6 Spoiler-Gated Article"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Atlas-6 Spoiler-Gated Article
+# AR LOC HOLD: Atlas-6 Spoiler-Gated Article
 
-Atlas-6 Spoiler-Gated Article keeps the final machine-ocean truth out of public pages until discovery or ending records permit it.
+AR LOC HOLD: Atlas-6 Spoiler-Gated Article keeps the final machine-ocean truth out of public pages until discovery or ending records permit it.
 
 ## Scanner
 
-This page should not open before the player has chosen what Atlas is allowed to mean.
+AR LOC HOLD: This page should not open before the player has chosen what Atlas is allowed to mean.
 
 ## Terminal
 
-PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.
+AR LOC HOLD: PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.
 
 ## Audio
 
-Do not explain the bottom before the player has heard it breathe.
+AR LOC HOLD: Do not explain the bottom before the player has heard it breathe.
 
 ## Field Note
 
-Atlas public text must stay gated until the game has earned the broken guardian question.
+AR LOC HOLD: Atlas public text must stay gated until the game has earned the broken guardian question.
 
 <!-- In-Game Wiki; generated from P254_ATLAS6_SPOILER_GATED_ARTICLE/ar_SA. -->

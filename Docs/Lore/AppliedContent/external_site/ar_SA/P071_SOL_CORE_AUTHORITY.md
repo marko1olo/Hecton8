@@ -7,31 +7,34 @@ poi_tags: poi.old_law_plate;poi.sol_cert_seal
 biome_tags: biome.drowned_admin;biome.contract_archive
 locale: ar_SA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Sol Core Authority"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Sol Core Authority
 
-Sol Core Authority explains why HECTON-8 can be remote and still legally owned. In HECTON-8, old civilization arrives as paperwork, standards and debt before it arrives as help.
+AR LOC HOLD: Sol Core Authority explains why HECTON-8 can be remote and still legally owned. In HECTON-8, old civilization arrives as paperwork, standards and debt before it arrives as help.
 
 ## Scanner
 
-Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.
+AR LOC HOLD: Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.
 
 ## Terminal
 
-SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.
+AR LOC HOLD: SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.
 
 ## Audio
 
-The seal came from Earth space. The rescue clause did not.
+AR LOC HOLD: The seal came from Earth space. The rescue clause did not.
 
 ## Field Note
 
-Sol is not home here. It is the oldest signature on the document that can still ruin you.
+AR LOC HOLD: Sol is not home here. It is the oldest signature on the document that can still ruin you.
 
 <!-- External Site; generated from P071_SOL_CORE_AUTHORITY/ar_SA. -->

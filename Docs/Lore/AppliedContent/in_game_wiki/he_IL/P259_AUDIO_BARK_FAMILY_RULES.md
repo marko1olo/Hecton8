@@ -7,31 +7,34 @@ poi_tags: poi.audio_bark_style_card;poi.voice_family_board
 biome_tags: biome.localization;biome.audio
 locale: he_IL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "HE LOC HOLD: Audio Bark Family Rules"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Audio Bark Family Rules
+# HE LOC HOLD: Audio Bark Family Rules
 
-Audio Bark Family Rules define how HECTON-8 uses sparse voice without flattening loneliness.
+HE LOC HOLD: Audio Bark Family Rules define how HECTON-8 uses sparse voice without flattening loneliness.
 
 ## Scanner
 
-Silence is part of the audio system.
+HE LOC HOLD: Silence is part of the audio system.
 
 ## Terminal
 
-AUDIO FAMILY: maximum signal, minimum companionship. Every bark must change pressure, route or evidence read.
+HE LOC HOLD: AUDIO FAMILY: maximum signal, minimum companionship. Every bark must change pressure, route or evidence read.
 
 ## Audio
 
-If it does not change what the player knows, cut it.
+HE LOC HOLD: If it does not change what the player knows, cut it.
 
 ## Field Note
 
-Families: Black Keel clipped/legal, Deep Reach sanitized/compliance, Marauder practical, Atlas wrong-category maintenance.
+HE LOC HOLD: Families: Black Keel clipped/legal, Deep Reach sanitized/compliance, Marauder practical, Atlas wrong-category maintenance.
 
 <!-- In-Game Wiki; generated from P259_AUDIO_BARK_FAMILY_RULES/he_IL. -->

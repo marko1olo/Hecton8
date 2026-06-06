@@ -7,31 +7,34 @@ poi_tags: poi.atlas_service_basin;poi.factory_temple_threshold
 biome_tags: biome.atlas_basin;biome.factory_temple
 locale: id_ID
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "ID LOC HOLD: Atlas Service Basin POI Kit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Atlas Service Basin POI Kit
+# ID LOC HOLD: Atlas Service Basin POI Kit
 
-The Atlas service basin should ground the final zone in engineering. The horror is classification failure at industrial scale.
+ID LOC HOLD: The Atlas service basin should ground the final zone in engineering. The horror is classification failure at industrial scale.
 
 ## Scanner
 
-POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.
+ID LOC HOLD: POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.
 
 ## Terminal
 
-SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.
+ID LOC HOLD: SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.
 
 ## Audio
 
-It did not build a temple. It forgot the difference between temple and workshop.
+ID LOC HOLD: It did not build a temple. It forgot the difference between temple and workshop.
 
 ## Field Note
 
-POI evidence kit: Atlas Service Basin anchors final-depth repair, spoiler-gated art, and payload receiver decisions.
+ID LOC HOLD: POI evidence kit: Atlas Service Basin anchors final-depth repair, spoiler-gated art, and payload receiver decisions.
 
 <!-- In-Game Wiki; generated from P390_ATLAS_SERVICE_BASIN_POI_KIT/id_ID. -->

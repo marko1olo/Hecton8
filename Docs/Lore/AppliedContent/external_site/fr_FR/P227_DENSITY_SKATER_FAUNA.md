@@ -7,31 +7,34 @@ poi_tags: poi.density_skater_trace;poi.brine_surface_ripple
 biome_tags: biome.brine_canyon;biome.density_layer
 locale: fr_FR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "FR LOC HOLD: Density Skater Fauna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Density Skater Fauna
+# FR LOC HOLD: Density Skater Fauna
 
-Density Skater Fauna show HECTON-8's hard-sci-fi creature logic. They do not break physics; they exploit brine interfaces, pressure layers and sonar blind spots as habitat and hunting routes.
+FR LOC HOLD: Density Skater Fauna show HECTON-8's hard-sci-fi creature logic. They do not break physics; they exploit brine interfaces, pressure layers and sonar blind spots as habitat and hunting routes.
 
 ## Scanner
 
-Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.
+FR LOC HOLD: Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.
 
 ## Terminal
 
-FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.
+FR LOC HOLD: FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.
 
 ## Audio
 
-Something is walking on the water inside the water.
+FR LOC HOLD: Something is walking on the water inside the water.
 
 ## Field Note
 
-Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.
+FR LOC HOLD: Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.
 
 <!-- External Site; generated from P227_DENSITY_SKATER_FAUNA/fr_FR. -->

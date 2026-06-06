@@ -7,31 +7,34 @@ poi_tags: poi.beneficiary_clause_redaction;poi.priority_channel_stamp
 biome_tags: biome.contract;biome.deep_reach
 locale: zh_CN
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "ZH LOC HOLD: Masked Deep Reach Beneficiary Clause"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Masked Deep Reach Beneficiary Clause
+# ZH LOC HOLD: Masked Deep Reach Beneficiary Clause
 
-Masked Deep Reach Beneficiary Clause keeps the conspiracy grounded. Deep Reach is not a magical puppeteer; it is a contract pressure layer using shell custody, insurance priority and recovery compliance.
+ZH LOC HOLD: Masked Deep Reach Beneficiary Clause keeps the conspiracy grounded. Deep Reach is not a magical puppeteer; it is a contract pressure layer using shell custody, insurance priority and recovery compliance.
 
 ## Scanner
 
-Contract clause redacted. Beneficiary chain routes through proxy loss desk.
+ZH LOC HOLD: Contract clause redacted. Beneficiary chain routes through proxy loss desk.
 
 ## Terminal
 
-BENEFICIARY TRACE: Deep Reach is absent from the visible hire sheet and present in the priority recovery channel. Proxy holder masks liability while preserving coordinate access.
+ZH LOC HOLD: BENEFICIARY TRACE: Deep Reach is absent from the visible hire sheet and present in the priority recovery channel. Proxy holder masks liability while preserving coordinate access.
 
 ## Audio
 
-If the name is missing but the channel opens first, the owner is still in the room.
+ZH LOC HOLD: If the name is missing but the channel opens first, the owner is still in the room.
 
 ## Field Note
 
-Do not write this as a villain monologue. Show the clause and let the player infer the pressure.
+ZH LOC HOLD: Do not write this as a villain monologue. Show the clause and let the player infer the pressure.
 
 <!-- In-Game Wiki; generated from P322_MASKED_DEEP_REACH_BENEFICIARY_CLAUSE/zh_CN. -->

@@ -7,31 +7,34 @@ poi_tags: poi.lantern_drift_light_lane;poi.false_safe_bloom
 biome_tags: biome.photic_shelf;biome.low_visibility
 locale: id_ID
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "ID LOC HOLD: Lantern Drift False-Safe Encounter Grammar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Lantern Drift False-Safe Encounter Grammar
+# ID LOC HOLD: Lantern Drift False-Safe Encounter Grammar
 
-Lantern-drift encounters keep shallow beauty unstable. The same bloom can help navigation, hide signal corruption or show that larger fauna have moved.
+ID LOC HOLD: Lantern-drift encounters keep shallow beauty unstable. The same bloom can help navigation, hide signal corruption or show that larger fauna have moved.
 
 ## Scanner
 
-Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.
+ID LOC HOLD: Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.
 
 ## Terminal
 
-FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.
+ID LOC HOLD: FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.
 
 ## Audio
 
-Light is not mercy. It is data your suit has not learned to separate.
+ID LOC HOLD: Light is not mercy. It is data your suit has not learned to separate.
 
 ## Field Note
 
-Use for scanner ambiguity and low-visibility pathing.
+ID LOC HOLD: Use for scanner ambiguity and low-visibility pathing.
 
 <!-- In-Game Wiki; generated from P413_LANTERN_DRIFT_FALSE_SAFE_ENCOUNTER_GRAMMAR/id_ID. -->

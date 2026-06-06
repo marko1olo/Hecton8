@@ -7,31 +7,34 @@ poi_tags: poi.localization_overflow_rule;poi.rtl_cjk_review_badge
 biome_tags: biome.localization;biome.ui_rules
 locale: nl_NL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "NL LOC HOLD: Localized Overflow Presentation Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Localized Overflow Presentation Rule
+# NL LOC HOLD: Localized Overflow Presentation Rule
 
-Localization is authored data. The UI absorbs length and directionality without changing content identity.
+NL LOC HOLD: Localization is authored data. The UI absorbs length and directionality without changing content identity.
 
 ## Scanner
 
-Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.
+NL LOC HOLD: Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.
 
 ## Terminal
 
-OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.
+NL LOC HOLD: OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.
 
 ## Audio
 
-A language can take more room. It cannot take a different truth.
+NL LOC HOLD: A language can take more room. It cannot take a different truth.
 
 ## Field Note
 
-Localization layout records keep long or directional text from changing packet truth.
+NL LOC HOLD: Localization layout records keep long or directional text from changing packet truth.
 
 <!-- External Site; generated from P435_LOCALIZED_OVERFLOW_PRESENTATION_RULE/nl_NL. -->

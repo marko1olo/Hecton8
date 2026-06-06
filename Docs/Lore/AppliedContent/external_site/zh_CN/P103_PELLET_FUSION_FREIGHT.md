@@ -7,31 +7,34 @@ poi_tags: poi.freight_drive_plate;poi.seed_ship_manifest
 biome_tags: biome.carrier_link;biome.relay_shadow
 locale: zh_CN
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Pellet-Fusion Freight"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Pellet-Fusion Freight
 
-Pellet-Fusion Freight defines the industrial ship history behind HECTON-8. The route is plausible because machines and heavy cargo moved through staged infrastructure; it remains cruel because every kilogram, braking window and survivor seat is accounted for.
+CN LOC HOLD: Pellet-Fusion Freight defines the industrial ship history behind HECTON-8. The route is plausible because machines and heavy cargo moved through staged infrastructure; it remains cruel because every kilogram, braking window and survivor seat is accounted for.
 
 ## Scanner
 
-Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.
+CN LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.
 
 ## Terminal
 
-FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.
+CN LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.
 
 ## Audio
 
-A heavy ship is not a miracle. It is a mortgage with engines.
+CN LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.
 
 ## Field Note
 
-Heavy transit should feel industrial and old, not heroic.
+CN LOC HOLD: Heavy transit should feel industrial and old, not heroic.
 
 <!-- External Site; generated from P103_PELLET_FUSION_FREIGHT/zh_CN. -->

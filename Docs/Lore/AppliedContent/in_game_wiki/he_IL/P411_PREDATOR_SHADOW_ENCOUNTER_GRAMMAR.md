@@ -7,31 +7,34 @@ poi_tags: poi.predator_shadow_sonar_gap;poi.cut_fish_path
 biome_tags: biome.photic_shelf;biome.shelf_drop
 locale: he_IL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "HE LOC HOLD: Predator Shadow Encounter Grammar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Predator Shadow Encounter Grammar
+# HE LOC HOLD: Predator Shadow Encounter Grammar
 
-Predator-shadow encounters make fear of depth readable. The animal is not a boss; it is a moving condition that changes oxygen spending, route choice and scan confidence.
+HE LOC HOLD: Predator-shadow encounters make fear of depth readable. The animal is not a boss; it is a moving condition that changes oxygen spending, route choice and scan confidence.
 
 ## Scanner
 
-Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.
+HE LOC HOLD: Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.
 
 ## Terminal
 
-FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.
+HE LOC HOLD: FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.
 
 ## Audio
 
-The safest sign is not seeing the thing. It is watching everything else stop.
+HE LOC HOLD: The safest sign is not seeing the thing. It is watching everything else stop.
 
 ## Field Note
 
-Use for AI/spawn design notes and scanner cards.
+HE LOC HOLD: Use for AI/spawn design notes and scanner cards.
 
 <!-- In-Game Wiki; generated from P411_PREDATOR_SHADOW_ENCOUNTER_GRAMMAR/he_IL. -->

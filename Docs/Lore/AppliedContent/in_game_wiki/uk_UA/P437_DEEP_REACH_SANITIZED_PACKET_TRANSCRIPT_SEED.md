@@ -7,31 +7,34 @@ poi_tags: poi.deep_reach_sanitized_transcript;poi.legal_delay_caption
 biome_tags: biome.deep_reach_archive;biome.claim_admin
 locale: uk_UA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "UK LOC HOLD: Deep Reach Sanitized Packet Transcript Seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Deep Reach Sanitized Packet Transcript Seed
+# UK LOC HOLD: Deep Reach Sanitized Packet Transcript Seed
 
-Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.
+UK LOC HOLD: Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.
 
 ## Scanner
 
-Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.
+UK LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.
 
 ## Terminal
 
-TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.
+UK LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.
 
 ## Audio
 
-Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.
+UK LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.
 
 ## Field Note
 
-Use for terminal packet body, VO captions and public article sidebars.
+UK LOC HOLD: Use for terminal packet body, VO captions and public article sidebars.
 
 <!-- In-Game Wiki; generated from P437_DEEP_REACH_SANITIZED_PACKET_TRANSCRIPT_SEED/uk_UA. -->

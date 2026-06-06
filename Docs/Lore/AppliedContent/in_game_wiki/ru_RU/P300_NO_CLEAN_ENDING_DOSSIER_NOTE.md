@@ -7,11 +7,14 @@ poi_tags: poi.no_clean_ending_dossier_note;poi.outcome_hash_board
 biome_tags: biome.ending;biome.dossier
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Dossier note: нет чистой концовки"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Dossier note: нет чистой концовки
@@ -32,6 +35,6 @@ DOSSIER RECORD: outcome stored. Clean closure not available under current eviden
 
 ## Field Note
 
-The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.
+RU LOC HOLD: The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.
 
 <!-- In-Game Wiki; generated from P300_NO_CLEAN_ENDING_DOSSIER_NOTE/ru_RU. -->

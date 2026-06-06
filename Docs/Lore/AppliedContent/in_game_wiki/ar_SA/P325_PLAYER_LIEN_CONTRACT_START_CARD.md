@@ -7,31 +7,34 @@ poi_tags: poi.player_lien_start_card;poi.contract_risk_field
 biome_tags: biome.first_hour;biome.contract
 locale: ar_SA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "AR LOC HOLD: Player Lien Contract Start Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Player Lien Contract Start Card
+# AR LOC HOLD: Player Lien Contract Start Card
 
-Player Lien Contract Start Card locks the protagonist as a former Deep Reach professional turned marauder. The motive begins practical and becomes personal through evidence, not family revenge.
+AR LOC HOLD: Player Lien Contract Start Card locks the protagonist as a former Deep Reach professional turned marauder. The motive begins practical and becomes personal through evidence, not family revenge.
 
 ## Scanner
 
-Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.
+AR LOC HOLD: Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.
 
 ## Terminal
 
-CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.
+AR LOC HOLD: CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.
 
 ## Audio
 
-You came for work. The file remembered you before you remembered it.
+AR LOC HOLD: You came for work. The file remembered you before you remembered it.
 
 ## Field Note
 
-No lost-relative hook. Keep motive professional-to-personal.
+AR LOC HOLD: No lost-relative hook. Keep motive professional-to-personal.
 
 <!-- In-Game Wiki; generated from P325_PLAYER_LIEN_CONTRACT_START_CARD/ar_SA. -->

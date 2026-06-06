@@ -7,31 +7,34 @@ poi_tags: poi.resource_yield_schema_card;poi.sample_pressure_label
 biome_tags: biome.authoring;biome.resource
 locale: pt_BR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "PT LOC HOLD: Resource Yield Data Boundary"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Resource Yield Data Boundary
+# PT LOC HOLD: Resource Yield Data Boundary
 
-Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.
+PT LOC HOLD: Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.
 
 ## Scanner
 
-Yield boundary: resource class, pressure band, custody grade, depletion rule.
+PT LOC HOLD: Yield boundary: resource class, pressure band, custody grade, depletion rule.
 
 ## Terminal
 
-RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.
+PT LOC HOLD: RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.
 
 ## Audio
 
-A sample without pressure history is not a value.
+PT LOC HOLD: A sample without pressure history is not a value.
 
 ## Field Note
 
-Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree.
+PT LOC HOLD: Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree.
 
 <!-- External Site; generated from P301_RESOURCE_YIELD_ROW_CONTRACT/pt_BR. -->

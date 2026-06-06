@@ -7,31 +7,34 @@ poi_tags: poi.recovery_compliance_packet;poi.proxy_authority_window
 biome_tags: biome.drowned_admin;biome.carrier_link
 locale: id_ID
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Recovery Compliance Office"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Recovery Compliance Office
 
-The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.
+ID LOC HOLD: The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.
 
 ## Scanner
 
-Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.
+ID LOC HOLD: Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.
 
 ## Terminal
 
-RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.
+ID LOC HOLD: RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.
 
 ## Audio
 
-They are late enough to be legal and current enough to be dangerous.
+ID LOC HOLD: They are late enough to be legal and current enough to be dangerous.
 
 ## Field Note
 
-A living faction makes pressure current without turning the whole corporation into a single shouting villain.
+ID LOC HOLD: A living faction makes pressure current without turning the whole corporation into a single shouting villain.
 
 <!-- In-Game Wiki; generated from P097_RECOVERY_COMPLIANCE_OFFICE/id_ID. -->

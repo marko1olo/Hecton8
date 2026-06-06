@@ -7,31 +7,34 @@ poi_tags: poi.relay_packet_delay_meter;poi.legal_reply_timestamp
 biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: zh_CN
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Relay Message Lag"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Relay Message Lag
 
-Relay lag explains why Deep Reach can threaten the player without talking live. Contract machines, notaries and carrier clauses arrive before compassion.
+CN LOC HOLD: Relay lag explains why Deep Reach can threaten the player without talking live. Contract machines, notaries and carrier clauses arrive before compassion.
 
 ## Scanner
 
-A message can be legally binding and still arrive too late to save air.
+CN LOC HOLD: A message can be legally binding and still arrive too late to save air.
 
 ## Terminal
 
-RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.
+CN LOC HOLD: RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.
 
 ## Audio
 
-The reply is late. The lien is current.
+CN LOC HOLD: The reply is late. The lien is current.
 
 ## Field Note
 
-No ansible means truth moves as freight.
+CN LOC HOLD: No ansible means truth moves as freight.
 
 <!-- In-Game Wiki; generated from P145_RELAY_MESSAGE_LAG/zh_CN. -->

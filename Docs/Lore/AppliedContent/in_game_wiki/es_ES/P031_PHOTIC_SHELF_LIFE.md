@@ -7,11 +7,14 @@ poi_tags: poi.shallow_biome_scan;poi.drop_shelter_window
 biome_tags: biome.crash_shelf;biome.photic_shelf
 locale: es_ES
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Vida de la plataforma fótica"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Vida de la plataforma fótica
@@ -24,7 +27,7 @@ La biología somera es brillante, ruidosa y casi intacta. La luna no está muert
 
 ## Terminal
 
-SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.
+ES LOC HOLD: SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.
 
 ## Audio
 

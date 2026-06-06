@@ -7,31 +7,34 @@ poi_tags: poi.locker_name_strip;poi.marauder_preserved_label
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "RU LOC HOLD: Locker Name Protocol"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Locker Name Protocol
+# RU LOC HOLD: Locker Name Protocol
 
-Locker Name Protocol is personal evidence without melodrama.
+RU LOC HOLD: Locker Name Protocol is personal evidence without melodrama.
 
 ## Scanner
 
-A locker is personal without needing a family plot.
+RU LOC HOLD: A locker is personal without needing a family plot.
 
 ## Terminal
 
-LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.
+RU LOC HOLD: LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.
 
 ## Audio
 
-The company deleted the employee. The rust kept the label.
+RU LOC HOLD: The company deleted the employee. The rust kept the label.
 
 ## Field Note
 
-The smallest human trace should survive corporate cleanup.
+RU LOC HOLD: The smallest human trace should survive corporate cleanup.
 
 <!-- External Site; generated from P158_LOCKER_NAME_PROTOCOL/ru_RU. -->

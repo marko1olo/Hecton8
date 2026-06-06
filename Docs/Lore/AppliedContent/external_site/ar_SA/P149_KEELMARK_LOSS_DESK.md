@@ -7,31 +7,34 @@ poi_tags: poi.keelmark_loss_desk_stamp;poi.unrecovered_body_category
 biome_tags: biome.black_keel_orbit;biome.shallow_annex
 locale: ar_SA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Keelmark Loss Desk"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
 # Keelmark Loss Desk
 
-Keelmark Loss Desk gives the false endings and Black Keel debt a corporate owner.
+AR LOC HOLD: Keelmark Loss Desk gives the false endings and Black Keel debt a corporate owner.
 
 ## Scanner
 
-Insurance did not hide the dead. It renamed them until nobody had to recover them.
+AR LOC HOLD: Insurance did not hide the dead. It renamed them until nobody had to recover them.
 
 ## Terminal
 
-LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.
+AR LOC HOLD: LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.
 
 ## Audio
 
-The ledger is dry because the room was not.
+AR LOC HOLD: The ledger is dry because the room was not.
 
 ## Field Note
 
-A loss category is a grave with better stationery.
+AR LOC HOLD: A loss category is a grave with better stationery.
 
 <!-- External Site; generated from P149_KEELMARK_LOSS_DESK/ar_SA. -->

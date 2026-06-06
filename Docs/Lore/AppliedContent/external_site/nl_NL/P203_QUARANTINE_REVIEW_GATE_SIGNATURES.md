@@ -7,31 +7,34 @@ poi_tags: poi.quarantine_review_gate;poi.evacuate_hold_card
 biome_tags: biome.industrial_shelf;biome.med_lock
 locale: nl_NL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "NL LOC HOLD: Quarantine Hold Signatures"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Quarantine Hold Signatures
+# NL LOC HOLD: Quarantine Hold Signatures
 
-Quarantine Hold signatures show how safety language helped convert HECTON-8 into an unrecovered claim.
+NL LOC HOLD: Quarantine Hold signatures show how safety language helped convert HECTON-8 into an unrecovered claim.
 
 ## Scanner
 
-The hold does not need malice. It needs one unresolved hazard field.
+NL LOC HOLD: The hold does not need malice. It needs one unresolved hazard field.
 
 ## Terminal
 
-SIGNATURE SEED: Ikenna Sor, Quarantine Hold Desk. Function: holds extraction pending pressure-biology certification and external review.
+NL LOC HOLD: SIGNATURE SEED: Ikenna Sor, Quarantine Hold Desk. Function: holds extraction pending pressure-biology certification and external review.
 
 ## Audio
 
-Pending review is still a locked door.
+NL LOC HOLD: Pending review is still a locked door.
 
 ## Field Note
 
-Quarantine hold signatures belong beside broken evacuation hardware or locked survivor routes.
+NL LOC HOLD: Quarantine hold signatures belong beside broken evacuation hardware or locked survivor routes.
 
 <!-- External Site; generated from P203_QUARANTINE_REVIEW_GATE_SIGNATURES/nl_NL. -->

@@ -7,31 +7,34 @@ poi_tags: poi.packet_seal;poi.black_keel_window
 biome_tags: biome.publication;biome.codex
 locale: de_DE
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "DE LOC HOLD: Paketverwahrung"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Paketverwahrung
+# DE LOC HOLD: Paketverwahrung
 
-Paketsiegel geborgen. Black Keel kann Fracht empfangen, aber Beweis braucht Quelle, Siegel, Zeugenhash, Relaismarke, Empfängerbahn und Schadenszustand. Verwahrungstags vor dem Ausschlachten sichern.
+DE LOC HOLD: Paketsiegel geborgen. Black Keel kann Fracht empfangen, aber Beweis braucht Quelle, Siegel, Zeugenhash, Relaismarke, Empfängerbahn und Schadenszustand. Verwahrungstags vor dem Ausschlachten sichern.
 
 ## Scanner
 
-PAKETSIEGEL // Zeugenhash-Streifen beschädigt, aber lesbar. Vor dem Bergungsschnitt sichern. Ungesiegelte Beweise werden Anspruchsmaterial.
+DE LOC HOLD: PAKETSIEGEL // Zeugenhash-Streifen beschädigt, aber lesbar. Vor dem Bergungsschnitt sichern. Ungesiegelte Beweise werden Anspruchsmaterial.
 
 ## Terminal
 
-KEELMARK PAKETNOTAR // Siegelplatte, Zeugenhash, Routenstempel und Steckertag vor Transfer sichern. Ungestempeltes Material kann als Anspruchsverlust laufen.
+DE LOC HOLD: KEELMARK PAKETNOTAR // Siegelplatte, Zeugenhash, Routenstempel und Steckertag vor Transfer sichern. Ungestempeltes Material kann als Anspruchsverlust laufen.
 
 ## Audio
 
-Black-Keel-Relais: Fracht ist Masse. Beweis ist Verwahrung. Bring beides, sonst berechnet das Fenster die Differenz.
+DE LOC HOLD: Black-Keel-Relais: Fracht ist Masse. Beweis ist Verwahrung. Bring beides, sonst berechnet das Fenster die Differenz.
 
 ## Field Note
 
-Erst siegeln, dann schneiden. Eine saubere Probe mit gebrochenem Tag gehört dem, der das Ledger besitzt.
+DE LOC HOLD: Erst siegeln, dann schneiden. Eine saubere Probe mit gebrochenem Tag gehört dem, der das Ledger besitzt.
 
 <!-- In-Game Wiki; generated from P461_PACKET_CUSTODY_BRIDGE/de_DE. -->

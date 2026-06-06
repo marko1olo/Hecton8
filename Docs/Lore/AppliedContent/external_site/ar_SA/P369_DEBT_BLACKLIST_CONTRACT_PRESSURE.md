@@ -7,31 +7,34 @@ poi_tags: poi.blacklist_notice;poi.lien_adjustment_card
 biome_tags: biome.safe_module;biome.claim_route
 locale: ar_SA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "AR LOC HOLD: Debt Blacklist Contract Pressure"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 1
+localization_flags: 0
 ---
 
-# Debt Blacklist Contract Pressure
+# AR LOC HOLD: Debt Blacklist Contract Pressure
 
-HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.
+AR LOC HOLD: HECTON-8 frames its protagonist through frontier economics: debt, blacklists, claim pools and old corporate access.
 
 ## Scanner
 
-Lien notice. Refusal would keep the player legal, hungry, and grounded.
+AR LOC HOLD: Lien notice. Refusal would keep the player legal, hungry, and grounded.
 
 ## Terminal
 
-CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.
+AR LOC HOLD: CLAIM ACCEPTANCE: debt window open. Blacklist relief conditional on recoverable mass, custody proof, and receiver compliance.
 
 ## Audio
 
-This was not kidnapping. It was the kind of choice the frontier sells as freedom.
+AR LOC HOLD: This was not kidnapping. It was the kind of choice the frontier sells as freedom.
 
 ## Field Note
 
-The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded.
+AR LOC HOLD: The lien is pressure, not arithmetic: recoverable mass, custody proof, and compliance decide whether the player gets ungrounded.
 
 <!-- External Site; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/ar_SA. -->
