@@ -330,7 +330,7 @@ namespace Hecton8.Core.Scheduling
 
             bool admitted = true;
             bool pendingBlackbox = false;
-            bool pendingBlackboxAdmitted = false;
+            byte pendingBlackboxFlags = 0;
             JobAdmissionLane pendingBlackboxLane = JobAdmissionLane.Lane0_Critical;
             uint pendingBlackboxJobHash = 0u;
             float pendingBlackboxEstimatedCostMs = 0f;
@@ -389,7 +389,7 @@ namespace Hecton8.Core.Scheduling
                     admitted = false;
                     pendingDenied = true;
                     pendingBlackbox = true;
-                    pendingBlackboxAdmitted = false;
+                    pendingBlackboxFlags = (byte)(JobAdmissionTelemetryFlags.Denied | JobAdmissionTelemetryFlags.AupBarrier);
                     pendingBlackboxLane = normalizedLane;
                     pendingBlackboxJobHash = jobHash;
                     pendingBlackboxEstimatedCostMs = estimatedCostMs;
@@ -400,7 +400,7 @@ namespace Hecton8.Core.Scheduling
                     admitted = false;
                     pendingDenied = true;
                     pendingBlackbox = true;
-                    pendingBlackboxAdmitted = false;
+                    pendingBlackboxFlags = (byte)(JobAdmissionTelemetryFlags.Denied | JobAdmissionTelemetryFlags.KillSwitch);
                     pendingBlackboxLane = normalizedLane;
                     pendingBlackboxJobHash = jobHash;
                     pendingBlackboxEstimatedCostMs = estimatedCostMs;
@@ -421,7 +421,7 @@ namespace Hecton8.Core.Scheduling
                         ref pendingNonFiniteJobHash,
                         ref pendingNonFiniteValue);
                     pendingBlackbox = true;
-                    pendingBlackboxAdmitted = true;
+                    pendingBlackboxFlags = JobAdmissionTelemetryFlags.Admitted;
                     pendingBlackboxLane = normalizedLane;
                     pendingBlackboxJobHash = jobHash;
                     pendingBlackboxEstimatedCostMs = estimatedCostMs;
@@ -431,7 +431,7 @@ namespace Hecton8.Core.Scheduling
                 {
                     laneBudgetsMs[laneIndex] = budget - estimatedCostMs;
                     pendingBlackbox = true;
-                    pendingBlackboxAdmitted = true;
+                    pendingBlackboxFlags = JobAdmissionTelemetryFlags.Admitted;
                     pendingBlackboxLane = normalizedLane;
                     pendingBlackboxJobHash = jobHash;
                     pendingBlackboxEstimatedCostMs = estimatedCostMs;
@@ -442,7 +442,7 @@ namespace Hecton8.Core.Scheduling
                     admitted = false;
                     pendingDenied = true;
                     pendingBlackbox = true;
-                    pendingBlackboxAdmitted = false;
+                    pendingBlackboxFlags = (byte)(JobAdmissionTelemetryFlags.Denied | JobAdmissionTelemetryFlags.InsufficientBudget);
                     pendingBlackboxLane = normalizedLane;
                     pendingBlackboxJobHash = jobHash;
                     pendingBlackboxEstimatedCostMs = estimatedCostMs;
@@ -454,22 +454,23 @@ namespace Hecton8.Core.Scheduling
                 ReleaseWriteView(in _laneBudgetsMsHandle);
             }
 
-            if (pendingBlackbox)
+            if (pendingDenied)
+            {
+                ReportDenied(
+                    pendingBlackboxLane,
+                    pendingBlackboxJobHash,
+                    pendingBlackboxEstimatedCostMs,
+                    pendingBlackboxRemainingBudgetMs,
+                    pendingBlackboxFlags);
+            }
+            else if (pendingBlackbox)
+            {
                 WriteBlackbox(
                     pendingBlackboxLane,
                     pendingBlackboxJobHash,
                     pendingBlackboxEstimatedCostMs,
                     pendingBlackboxRemainingBudgetMs,
-                    pendingBlackboxAdmitted);
-
-            if (pendingDenied)
-            {
-                _telemetrySink?.ReportAdmissionDenied(
-                    pendingBlackboxLane,
-                    pendingBlackboxJobHash,
-                    ClampCostTelemetryMilliseconds(pendingBlackboxEstimatedCostMs),
-                    ClampLaneBudgetMilliseconds(pendingBlackboxLane, pendingBlackboxRemainingBudgetMs),
-                    _criticalDebtFrameCount);
+                    pendingBlackboxFlags);
             }
 
             if (pendingNonFinite)
@@ -977,18 +978,19 @@ namespace Hecton8.Core.Scheduling
             }
         }
 
-        private void ReportDenied(JobAdmissionLane lane, uint jobHash, float estimatedCostMs, float remainingBudgetMs)
+        private void ReportDenied(JobAdmissionLane lane, uint jobHash, float estimatedCostMs, float remainingBudgetMs, byte flags)
         {
             float safeEstimatedCostMs = ClampCostTelemetryMilliseconds(estimatedCostMs);
             float safeRemainingBudgetMs = ClampLaneBudgetMilliseconds(lane, remainingBudgetMs);
-            WriteBlackbox(lane, jobHash, safeEstimatedCostMs, safeRemainingBudgetMs, admitted: false);
-            _telemetrySink?.ReportAdmissionDenied(lane, jobHash, safeEstimatedCostMs, safeRemainingBudgetMs, _criticalDebtFrameCount);
+            byte safeFlags = (byte)(flags | JobAdmissionTelemetryFlags.Denied);
+            WriteBlackbox(lane, jobHash, safeEstimatedCostMs, safeRemainingBudgetMs, safeFlags);
+            _telemetrySink?.ReportAdmissionDenied(lane, jobHash, safeEstimatedCostMs, safeRemainingBudgetMs, _criticalDebtFrameCount, safeFlags);
         }
 
         private void ReportNonFinite(JobAdmissionLane lane, uint jobHash, float value)
         {
             float safeValue = ClampCostTelemetryMilliseconds(value);
-            WriteBlackbox(lane, jobHash, safeValue, 0f, admitted: false);
+            WriteBlackbox(lane, jobHash, safeValue, 0f, (byte)(JobAdmissionTelemetryFlags.Denied | JobAdmissionTelemetryFlags.NonFinite));
             DumpFaultStateToTelemetry();
             _telemetrySink?.ReportNonFiniteAdmissionState(lane, jobHash, safeValue, _criticalDebtFrameCount);
         }
@@ -1044,7 +1046,7 @@ namespace Hecton8.Core.Scheduling
             }
         }
 
-        private void WriteBlackbox(JobAdmissionLane lane, uint jobHash, float estimatedCostMs, float remainingBudgetMs, bool admitted)
+        private void WriteBlackbox(JobAdmissionLane lane, uint jobHash, float estimatedCostMs, float remainingBudgetMs, byte flags)
         {
             IDataVault vault = _dataVault;
             if (vault == null || _blackboxHandle.BufferID == 0u)
@@ -1070,10 +1072,10 @@ namespace Hecton8.Core.Scheduling
                 entry.RemainingBudgetMs = ClampLaneBudgetMilliseconds(laneIndex, remainingBudgetMs);
                 entry.CriticalDebtFrames = _criticalDebtFrameCount;
                 entry.Lane = (byte)laneIndex;
-                entry.Flags = admitted ? (byte)1 : (byte)0;
+                entry.Flags = flags;
                 entry.KillSwitchMask = _systemKillSwitchMask;
                 entry.Reserved = 0;
-                entry.StateHash = ComputeBlackboxHash(jobHash, estimatedCostMs, remainingBudgetMs, admitted);
+                entry.StateHash = ComputeBlackboxHash(jobHash, estimatedCostMs, remainingBudgetMs, flags);
                 blackbox[slot] = entry;
             }
             finally
@@ -1114,7 +1116,7 @@ namespace Hecton8.Core.Scheduling
             return math.clamp(milliseconds, floor, AdmissionCostClampMs);
         }
 
-        private uint ComputeBlackboxHash(uint jobHash, float estimatedCostMs, float remainingBudgetMs, bool admitted)
+        private uint ComputeBlackboxHash(uint jobHash, float estimatedCostMs, float remainingBudgetMs, byte flags)
         {
             unchecked
             {
@@ -1125,7 +1127,7 @@ namespace Hecton8.Core.Scheduling
                 hash = (hash ^ math.asuint(math.isfinite(remainingBudgetMs) ? remainingBudgetMs : 0f)) * 16777619u;
                 hash = (hash ^ (uint)_criticalDebtFrameCount) * 16777619u;
                 hash = (hash ^ _systemKillSwitchMask) * 16777619u;
-                hash = (hash ^ (admitted ? 1u : 0u)) * 16777619u;
+                hash = (hash ^ (uint)flags) * 16777619u;
                 return hash;
             }
         }

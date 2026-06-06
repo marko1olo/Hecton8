@@ -1458,22 +1458,54 @@ namespace Hecton8.Core
 
         private static void RunBlackboxWatchdogThread()
         {
-            while (Volatile.Read(ref _blackboxWatchdogStopRequested) == 0)
+            try
             {
-                Thread.Sleep(BlackboxWatchdogProbeMilliseconds);
-                if (Volatile.Read(ref _blackboxWatchdogStopRequested) != 0)
-                    return;
-
-                if (ProbeBlackboxWatchdog())
+                while (Volatile.Read(ref _blackboxWatchdogStopRequested) == 0)
                 {
-                    SetCatastrophicFailure(BlackboxWatchdogFatalHash);
-                    TryWriteBlackboxDumpFromBackground(BlackboxWatchdogFatalHash);
-#if !UNITY_EDITOR
-                    Process.GetCurrentProcess().Kill();
-#endif
-                    return;
+                    Thread.Sleep(BlackboxWatchdogProbeMilliseconds);
+                    if (Volatile.Read(ref _blackboxWatchdogStopRequested) != 0)
+                        return;
+
+                    if (ProbeBlackboxWatchdog())
+                    {
+                        HandleBlackboxWatchdogFatalStall();
+                        return;
+                    }
                 }
             }
+            catch (Exception)
+            {
+                Volatile.Write(ref _blackboxWatchdogStopRequested, 1);
+            }
+        }
+
+        private static void HandleBlackboxWatchdogFatalStall()
+        {
+            try
+            {
+                SetCatastrophicFailure(BlackboxWatchdogFatalHash);
+            }
+            catch (Exception)
+            {
+            }
+
+            try
+            {
+                TryWriteBlackboxDumpFromBackground(BlackboxWatchdogFatalHash);
+            }
+            catch (Exception)
+            {
+            }
+
+#if !UNITY_EDITOR
+            try
+            {
+                Process.GetCurrentProcess().Kill();
+            }
+            catch (Exception)
+            {
+            }
+#endif
         }
 
         private static unsafe bool ProbeBlackboxWatchdog()

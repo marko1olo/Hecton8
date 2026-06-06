@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics;
 using System.Threading;
 
@@ -31,15 +32,24 @@ namespace Hecton8.Core
                 if (Volatile.Read(ref _running) != 0)
                     return;
 
-                Volatile.Write(ref _lastPingTimestamp, Stopwatch.GetTimestamp());
-                Volatile.Write(ref _running, 1);
-                _thread = new Thread(Run) // COLD ALLOC: Thread[1] - background main-thread heartbeat monitor - owner: BlackBoxHeartbeatThread
+                try
                 {
-                    IsBackground = true,
-                    Name = ThreadName,
-                    Priority = HectonThreadPriorityPolicy.Resolve(HectonThreadRole.Heartbeat)
-                };
-                _thread.Start();
+                    Volatile.Write(ref _lastPingTimestamp, Stopwatch.GetTimestamp());
+                    Volatile.Write(ref _running, 1);
+                    Thread thread = new Thread(Run) // COLD ALLOC: Thread[1] - background main-thread heartbeat monitor - owner: BlackBoxHeartbeatThread
+                    {
+                        IsBackground = true,
+                        Name = ThreadName,
+                        Priority = HectonThreadPriorityPolicy.Resolve(HectonThreadRole.Heartbeat)
+                    };
+                    _thread = thread;
+                    thread.Start();
+                }
+                catch (Exception)
+                {
+                    Volatile.Write(ref _running, 0);
+                    _thread = null;
+                }
             }
         }
 
@@ -56,8 +66,14 @@ namespace Hecton8.Core
                 _thread = null;
             }
 
-            if (thread != null && thread.IsAlive)
-                thread.Join(StopJoinMilliseconds);
+            try
+            {
+                if (thread != null && thread.IsAlive)
+                    thread.Join(StopJoinMilliseconds);
+            }
+            catch (Exception)
+            {
+            }
         }
 
         /// <summary>
@@ -70,25 +86,50 @@ namespace Hecton8.Core
 
         private static void Run()
         {
-            while (Volatile.Read(ref _running) != 0)
+            try
             {
-                Thread.Sleep(ProbeSleepMilliseconds);
+                while (Volatile.Read(ref _running) != 0)
+                {
+                    Thread.Sleep(ProbeSleepMilliseconds);
 
-                long lastPing = Volatile.Read(ref _lastPingTimestamp);
-                if (lastPing <= 0L)
-                    continue;
+                    long lastPing = Volatile.Read(ref _lastPingTimestamp);
+                    if (lastPing <= 0L)
+                        continue;
 
-                long elapsedMilliseconds = (long)((Stopwatch.GetTimestamp() - lastPing) * _stopwatchTicksToMilliseconds);
-                if (elapsedMilliseconds < StallMilliseconds)
-                    continue;
+                    long elapsedMilliseconds = (long)((Stopwatch.GetTimestamp() - lastPing) * _stopwatchTicksToMilliseconds);
+                    if (elapsedMilliseconds < StallMilliseconds)
+                        continue;
 
-                Volatile.Write(ref _running, 0);
-                GlobalTelemetryBus.TryEmergencyFlushFromBackground();
-#if !UNITY_EDITOR
-                Process.GetCurrentProcess().Kill();
-#endif
-                return;
+                    Volatile.Write(ref _running, 0);
+                    FlushAndTerminateAfterStall();
+                    return;
+                }
             }
+            catch (Exception)
+            {
+                Volatile.Write(ref _running, 0);
+            }
+        }
+
+        private static void FlushAndTerminateAfterStall()
+        {
+            try
+            {
+                GlobalTelemetryBus.TryEmergencyFlushFromBackground();
+            }
+            catch (Exception)
+            {
+            }
+
+#if !UNITY_EDITOR
+            try
+            {
+                Process.GetCurrentProcess().Kill();
+            }
+            catch (Exception)
+            {
+            }
+#endif
         }
     }
 }

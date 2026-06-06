@@ -226,6 +226,22 @@ namespace Hecton8.Core.Memory.Editor
                 BufferID.HazardExposureJobResult);
         }
 
+        [Test]
+        public static void HazardRuntimeBuffers_UseDistinctMutationGuardBits()
+        {
+            AssertDistinctMutationGuardBits(
+                BufferID.HazardZoneVolumes,
+                BufferID.HazardZoneVolumeIds,
+                BufferID.HazardZoneSpatialHandles,
+                BufferID.HazardZoneCurveLutSamples,
+                BufferID.HazardZoneJobVolumes,
+                BufferID.HazardZoneCandidateVolumeFlags,
+                BufferID.HazardZoneSpatialQueryHandles,
+                BufferID.HazardZoneTelemetryRing,
+                BufferID.HazardZoneTelemetryCursor,
+                BufferID.HazardExposureJobResult);
+        }
+
         private static void AssertDistinctActiveWriteLockBits(params BufferID[] bufferIds)
         {
             uint seen = 0u;
@@ -234,6 +250,18 @@ namespace Hecton8.Core.Memory.Editor
                 int bit = unchecked((int)bufferIds[i]) & 31;
                 uint mask = 1u << bit;
                 Assert.AreEqual(0u, seen & mask, $"{bufferIds[i]} aliases active write-lock bit {bit}");
+                seen |= mask;
+            }
+        }
+
+        private static void AssertDistinctMutationGuardBits(params BufferID[] bufferIds)
+        {
+            ulong seen = 0UL;
+            for (int i = 0; i < bufferIds.Length; i++)
+            {
+                int bit = unchecked((int)bufferIds[i]) & 63;
+                ulong mask = 1UL << bit;
+                Assert.AreEqual(0UL, seen & mask, $"{bufferIds[i]} aliases mutation guard bit {bit}");
                 seen |= mask;
             }
         }

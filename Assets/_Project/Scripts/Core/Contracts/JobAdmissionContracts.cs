@@ -54,12 +54,36 @@ namespace Hecton8.Core.Contracts
     }
 
     /// <summary>
+    /// ABI-stable reason bits shared by job-admission blackboxes, CPU starvation signals, and crash telemetry.
+    /// </summary>
+    public static class JobAdmissionTelemetryFlags
+    {
+        /// <summary>Admission succeeded.</summary>
+        public const byte Admitted = 1 << 0;
+
+        /// <summary>Admission was denied.</summary>
+        public const byte Denied = 1 << 1;
+
+        /// <summary>Admission was denied by the AUP pre-shift barrier.</summary>
+        public const byte AupBarrier = 1 << 2;
+
+        /// <summary>Admission was denied by a system kill-switch.</summary>
+        public const byte KillSwitch = 1 << 3;
+
+        /// <summary>Admission was denied because the lane budget was insufficient.</summary>
+        public const byte InsufficientBudget = 1 << 4;
+
+        /// <summary>Admission state contained a non-finite value.</summary>
+        public const byte NonFinite = 1 << 5;
+    }
+
+    /// <summary>
     /// Lightweight admission telemetry sink implemented by Core. Scheduling remains isolated from Core runtime types.
     /// </summary>
     public interface IJobAdmissionTelemetrySink
     {
         /// <summary>Reports a denied low-priority job admission.</summary>
-        void ReportAdmissionDenied(JobAdmissionLane lane, uint jobHash, float estimatedCostMs, float remainingBudgetMs, int criticalDebtFrames);
+        void ReportAdmissionDenied(JobAdmissionLane lane, uint jobHash, float estimatedCostMs, float remainingBudgetMs, int criticalDebtFrames, byte reasonFlags);
 
         /// <summary>Reports finite lane state for black-box retention.</summary>
         void ReportLaneState(JobAdmissionLane lane, float budgetMs, float refillMs, int criticalDebtFrames, uint killSwitchMask);

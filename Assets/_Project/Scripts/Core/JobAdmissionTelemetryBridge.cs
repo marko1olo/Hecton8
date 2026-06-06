@@ -11,12 +11,11 @@ namespace Hecton8.Core
     internal sealed class JobAdmissionTelemetryBridge : IJobAdmissionTelemetrySink
     {
         private static int s_x001JobAdmissionTelemetryBridgeSignalPushDropCount;
-        private const byte StarvedFlag = 1;
-        private const byte NonFiniteFlag = 2;
 
         /// <inheritdoc />
-        public void ReportAdmissionDenied(JobAdmissionLane lane, uint jobHash, float estimatedCostMs, float remainingBudgetMs, int criticalDebtFrames)
+        public void ReportAdmissionDenied(JobAdmissionLane lane, uint jobHash, float estimatedCostMs, float remainingBudgetMs, int criticalDebtFrames, byte reasonFlags)
         {
+            byte safeFlags = (byte)(reasonFlags | JobAdmissionTelemetryFlags.Denied);
             CpuStarvationSignal signal = new CpuStarvationSignal
             {
                 JobHash = jobHash,
@@ -25,7 +24,7 @@ namespace Hecton8.Core
                 RemainingBudgetMs = math.isfinite(remainingBudgetMs) ? remainingBudgetMs : 0f,
                 CriticalDebtFrames = criticalDebtFrames,
                 Lane = (byte)lane,
-                Flags = StarvedFlag
+                Flags = safeFlags
             };
 
             SignalBus<CpuStarvationSignal>.TryPushTracked(in signal, ref s_x001JobAdmissionTelemetryBridgeSignalPushDropCount);
@@ -71,7 +70,7 @@ namespace Hecton8.Core
                 RemainingBudgetMs = 0f,
                 CriticalDebtFrames = criticalDebtFrames,
                 Lane = (byte)lane,
-                Flags = NonFiniteFlag
+                Flags = (byte)(JobAdmissionTelemetryFlags.Denied | JobAdmissionTelemetryFlags.NonFinite)
             };
 
             SignalBus<CpuStarvationSignal>.TryPushTracked(in signal, ref s_x001JobAdmissionTelemetryBridgeSignalPushDropCount);
