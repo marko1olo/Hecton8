@@ -783,7 +783,13 @@ namespace Hecton8.SaveSystem
             SaveDataPlayerSurvivalSanitizer.SanitizePlayerKinematicState(ref data.playerKinematicState);
             data.playerKinematicState.ApplyTo(ref data.playerStats);
             SaveDataPlayerSurvivalSanitizer.SanitizePlayerStats(ref data.playerStats);
-            SaveDataInventorySanitizer.SanitizeInventoryShadow(ref data.inventoryShadow, in data.inventory);
+            int inventoryShadowPayloadLength = SaveDataInventorySanitizer.ResolveInventoryShadowPayloadLength(data);
+            SaveDataInventorySanitizer.SanitizeInventoryShadow(
+                ref data.inventoryShadow,
+                in data.inventory,
+                inventoryShadowPayloadLength,
+                data.inventoryShadowPayloadHash,
+                inventoryShadowPayloadLength > 0);
             data.construction.habitatFloodStateCount = floodStateCount;
             return true;
         }

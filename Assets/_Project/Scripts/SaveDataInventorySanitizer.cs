@@ -74,17 +74,6 @@ namespace Hecton8.SaveSystem
             return changed;
         }
 
-        internal static bool SanitizeInventoryShadow(ref InventoryShadowDTO shadow, in InventoryDTO inventory)
-        {
-            bool hasShadowPayload = (shadow.flags & InventoryShadowDTO.FlagHasPayload) != 0;
-            return SanitizeInventoryShadow(
-                ref shadow,
-                in inventory,
-                shadow.payloadLength,
-                shadow.payloadHash,
-                hasShadowPayload);
-        }
-
         internal static bool SanitizeInventory(ref InventoryDTO value)
         {
             bool changed = false;

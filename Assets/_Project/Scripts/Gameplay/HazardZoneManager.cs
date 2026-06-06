@@ -10,12 +10,14 @@ using Hecton8.World;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
 {
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct HazardVolumeData
     {
@@ -34,6 +36,7 @@ namespace Hecton8.Gameplay
         [FieldOffset(56)] private ulong _pad1;
     }
 
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Explicit, Size = 128)]
     internal struct HazardExposureJobResult
     {
@@ -969,6 +972,9 @@ namespace Hecton8.Gameplay
         private void AllocateNativeState()
         {
             if (_volumes.IsCreated)
+                return;
+
+            if (!AreHazardRuntimeLayoutsValid())
                 return;
 
             IDataVault vault = _dataVault;
@@ -2093,6 +2099,13 @@ namespace Hecton8.Gameplay
         private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
         {
             return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        private static bool AreHazardRuntimeLayoutsValid()
+        {
+            return UnsafeUtility.SizeOf<HazardVolumeData>() == 64 &&
+                   UnsafeUtility.SizeOf<HazardExposureJobResult>() == 128 &&
+                   UnsafeUtility.SizeOf<HazardZoneTelemetryEntry>() == TelemetryEntrySizeBytes;
         }
 
         private bool TryBuildVehicleQueryBounds(out float3 halfExtents, out AbsoluteUniversePosition centerAup)
