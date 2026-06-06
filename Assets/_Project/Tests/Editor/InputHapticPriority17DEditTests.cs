@@ -56,6 +56,27 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void HapticSynthesisWriteLocks_ReleaseThroughAcquiredVault()
+        {
+            string source = ReadProjectFile("Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs");
+
+            StringAssert.Contains("out IDataVault lockVault", source);
+            StringAssert.Contains("IDataVault vault = lockVault;", source);
+            StringAssert.Contains("private static void ReleaseInputWriteBuffer<T>(IDataVault vault", source);
+            StringAssert.Contains("out IDataVault telemetryVault", source);
+            StringAssert.Contains("ReleaseInputWriteBuffer(telemetryVault,", source);
+            StringAssert.Contains("out IDataVault profilesVault", source);
+            StringAssert.Contains("ReleaseInputWriteBuffer(profilesVault,", source);
+            StringAssert.Contains("out IDataVault tuningVault", source);
+            StringAssert.Contains("ReleaseInputWriteBuffer(tuningVault,", source);
+            StringAssert.Contains("out IDataVault finalPulseVault", source);
+            StringAssert.Contains("ReleaseInputWriteBuffer(finalPulseVault,", source);
+            StringAssert.Contains("out IDataVault writeVault", source);
+            StringAssert.Contains("ReleaseInputWriteBuffer(writeVault,", source);
+            StringAssert.DoesNotContain("ReleaseInputWriteBuffer(BufferID.ShinobuHapticSynthesis", source);
+        }
+
+        [Test]
         public void HapticPulsePriorityBits_DoNotBleedFromSourceHashes()
         {
             string signal = ReadProjectFile("Assets/_Project/Scripts/Core/Contracts/Signals/HapticPulseSignal.cs");

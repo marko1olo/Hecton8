@@ -260,7 +260,8 @@ namespace Hecton8.Core
                     BufferID.ShinobuHapticSynthesisTelemetryRing,
                     in _hapticSynthesisTelemetryRingHandle,
                     HapticSynthesisMath.TelemetryCapacity,
-                    out NativeArray<HapticTelemetryEntry> telemetryRing))
+                    out NativeArray<HapticTelemetryEntry> telemetryRing,
+                    out IDataVault telemetryVault))
             {
                 return;
             }
@@ -272,7 +273,7 @@ namespace Hecton8.Core
             }
             finally
             {
-                ReleaseInputWriteBuffer(BufferID.ShinobuHapticSynthesisTelemetryRing, in _hapticSynthesisTelemetryRingHandle);
+                ReleaseInputWriteBuffer(telemetryVault, BufferID.ShinobuHapticSynthesisTelemetryRing, in _hapticSynthesisTelemetryRingHandle);
             }
 
             if (!TryReadHapticInputBuffer(BufferID.ShinobuHapticSynthesisFinalPulse, in _hapticSynthesisFinalPulseHandle, 1, out NativeArray<HapticPulseSignal>.ReadOnly finalPulse))
@@ -729,7 +730,8 @@ namespace Hecton8.Core
                     BufferID.ShinobuHapticSynthesisProfileTable,
                     in _hapticSynthesisProfilesHandle,
                     HapticSynthesisMath.ProfileCapacity,
-                    out NativeArray<HapticProfileDTO> profiles))
+                    out NativeArray<HapticProfileDTO> profiles,
+                    out IDataVault profilesVault))
             {
                 return 0;
             }
@@ -740,7 +742,7 @@ namespace Hecton8.Core
             }
             finally
             {
-                ReleaseInputWriteBuffer(BufferID.ShinobuHapticSynthesisProfileTable, in _hapticSynthesisProfilesHandle);
+                ReleaseInputWriteBuffer(profilesVault, BufferID.ShinobuHapticSynthesisProfileTable, in _hapticSynthesisProfilesHandle);
             }
         }
 
@@ -795,7 +797,8 @@ namespace Hecton8.Core
                     BufferID.ShinobuHapticSynthesisTelemetryRing,
                     in _hapticSynthesisTelemetryRingHandle,
                     HapticSynthesisMath.TelemetryCapacity,
-                    out NativeArray<HapticTelemetryEntry> telemetryRing))
+                    out NativeArray<HapticTelemetryEntry> telemetryRing,
+                    out IDataVault telemetryVault))
             {
                 return;
             }
@@ -819,7 +822,7 @@ namespace Hecton8.Core
             }
             finally
             {
-                ReleaseInputWriteBuffer(BufferID.ShinobuHapticSynthesisTelemetryRing, in _hapticSynthesisTelemetryRingHandle);
+                ReleaseInputWriteBuffer(telemetryVault, BufferID.ShinobuHapticSynthesisTelemetryRing, in _hapticSynthesisTelemetryRingHandle);
             }
         }
 
@@ -892,13 +895,30 @@ namespace Hecton8.Core
             int requiredLength,
             out NativeArray<T> buffer) where T : struct
         {
+            return TryAcquireInputWriteBuffer(expectedBufferId, in handle, requiredLength, out buffer, out _);
+        }
+
+        private bool TryAcquireInputWriteBuffer<T>(
+            BufferID expectedBufferId,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer,
+            out IDataVault lockVault) where T : struct
+        {
             buffer = default;
-            IDataVault vault = _dataVault;
+            lockVault = _dataVault;
+            IDataVault vault = lockVault;
             if (vault == null || !IsHapticSynthesisHandle(in handle, expectedBufferId))
+            {
+                lockVault = null;
                 return false;
+            }
 
             if (!vault.TryAcquireWriteLock(in handle, SystemID.CoreDeterminism, out buffer))
+            {
+                lockVault = null;
                 return false;
+            }
 
             bool handedOff = false;
             try
@@ -915,13 +935,18 @@ namespace Hecton8.Core
                 {
                     vault.ReleaseWriteLock(in handle, SystemID.CoreDeterminism);
                     buffer = default;
+                    lockVault = null;
                 }
             }
         }
 
         private void ReleaseInputWriteBuffer<T>(BufferID expectedBufferId, in VaultGenerationHandle<T> handle) where T : struct
         {
-            IDataVault vault = _dataVault;
+            ReleaseInputWriteBuffer(_dataVault, expectedBufferId, in handle);
+        }
+
+        private static void ReleaseInputWriteBuffer<T>(IDataVault vault, BufferID expectedBufferId, in VaultGenerationHandle<T> handle) where T : struct
+        {
             if (vault != null && IsHapticSynthesisHandle(in handle, expectedBufferId))
                 vault.ReleaseWriteLock(in handle, SystemID.CoreDeterminism);
         }
@@ -931,7 +956,7 @@ namespace Hecton8.Core
             in VaultGenerationHandle<T> handle,
             int requiredLength) where T : struct
         {
-            if (!TryAcquireInputWriteBuffer(expectedBufferId, in handle, requiredLength, out NativeArray<T> buffer))
+            if (!TryAcquireInputWriteBuffer(expectedBufferId, in handle, requiredLength, out NativeArray<T> buffer, out IDataVault writeVault))
                 return false;
 
             try
@@ -942,7 +967,7 @@ namespace Hecton8.Core
             }
             finally
             {
-                ReleaseInputWriteBuffer(expectedBufferId, in handle);
+                ReleaseInputWriteBuffer(writeVault, expectedBufferId, in handle);
             }
 
             return true;
@@ -954,7 +979,8 @@ namespace Hecton8.Core
                     BufferID.ShinobuHapticSynthesisProfileTable,
                     in _hapticSynthesisProfilesHandle,
                     HapticSynthesisMath.ProfileCapacity,
-                    out NativeArray<HapticProfileDTO> profiles))
+                    out NativeArray<HapticProfileDTO> profiles,
+                    out IDataVault profilesVault))
             {
                 return 0;
             }
@@ -965,7 +991,7 @@ namespace Hecton8.Core
             }
             finally
             {
-                ReleaseInputWriteBuffer(BufferID.ShinobuHapticSynthesisProfileTable, in _hapticSynthesisProfilesHandle);
+                ReleaseInputWriteBuffer(profilesVault, BufferID.ShinobuHapticSynthesisProfileTable, in _hapticSynthesisProfilesHandle);
             }
         }
 
@@ -975,7 +1001,8 @@ namespace Hecton8.Core
                     BufferID.ShinobuHapticSynthesisTuning,
                     in _hapticSynthesisTuningHandle,
                     1,
-                    out NativeArray<HapticTuningDTO> tuningBuffer))
+                    out NativeArray<HapticTuningDTO> tuningBuffer,
+                    out IDataVault tuningVault))
             {
                 return false;
             }
@@ -986,7 +1013,7 @@ namespace Hecton8.Core
             }
             finally
             {
-                ReleaseInputWriteBuffer(BufferID.ShinobuHapticSynthesisTuning, in _hapticSynthesisTuningHandle);
+                ReleaseInputWriteBuffer(tuningVault, BufferID.ShinobuHapticSynthesisTuning, in _hapticSynthesisTuningHandle);
             }
 
             return true;
@@ -998,7 +1025,8 @@ namespace Hecton8.Core
                     BufferID.ShinobuHapticSynthesisFinalPulse,
                     in _hapticSynthesisFinalPulseHandle,
                     1,
-                    out NativeArray<HapticPulseSignal> finalPulse))
+                    out NativeArray<HapticPulseSignal> finalPulse,
+                    out IDataVault finalPulseVault))
             {
                 return false;
             }
@@ -1009,7 +1037,7 @@ namespace Hecton8.Core
             }
             finally
             {
-                ReleaseInputWriteBuffer(BufferID.ShinobuHapticSynthesisFinalPulse, in _hapticSynthesisFinalPulseHandle);
+                ReleaseInputWriteBuffer(finalPulseVault, BufferID.ShinobuHapticSynthesisFinalPulse, in _hapticSynthesisFinalPulseHandle);
             }
 
             return true;
