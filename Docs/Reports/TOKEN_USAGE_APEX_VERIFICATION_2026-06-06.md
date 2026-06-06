@@ -1,6 +1,6 @@
 ﻿# Token Usage Apex Verification 2026-06-06
 
-Generated Samara: `2026-06-06T11:47:16.462616+04:00`
+Generated Samara: `2026-06-06T15:15:28.864060+04:00`
 Evidence class: `STATIC_SOURCE_AND_STATIC_DOC_CPU_THROTTLE_NO_COMPILE`
 
 ## Verdict
@@ -19,28 +19,28 @@ Evidence class: `STATIC_SOURCE_AND_STATIC_DOC_CPU_THROTTLE_NO_COMPILE`
 
 | Metric | Value |
 |---|---:|
-| total_tokens | 138546616477 |
-| input_tokens | 138063786512 |
-| cached_input_tokens | 132756527360 |
-| output_tokens | 481796365 |
-| reasoning_output_tokens | 147451139 |
-| sessions_with_usage | 3608 |
-| gpt_5_5_standard_api_equivalent_usd | 107368.45039 |
-| delta_total_tokens | 2110729747 |
-| tokens_per_hour | 158533006.67123663 |
-| tokens_per_second | 44036.94629756573 |
-| gpt_5_5_standard_usd_per_hour | 130.1481701843761 |
+| total_tokens | 138912242896 |
+| input_tokens | 138427944497 |
+| cached_input_tokens | 133102804608 |
+| output_tokens | 483264799 |
+| reasoning_output_tokens | 147905141 |
+| sessions_with_usage | 3635 |
+| gpt_5_5_standard_api_equivalent_usd | 107675.04571899999 |
+| delta_total_tokens | 365626419 |
+| tokens_per_hour | 137091361.37707222 |
+| tokens_per_second | 38080.933715853396 |
+| gpt_5_5_standard_usd_per_hour | 114.9576968738132 |
 
 ## Pricing Sensitivity
 
 | Metric | Value |
 |---|---:|
 | long_context_trigger_input_tokens | 272000 |
-| gpt_5_5_long_context_upper_bound_usd | 207509.95530499998 |
-| gpt_5_5_long_context_upper_bound_delta_usd | 100141.50491499998 |
-| gpt_5_5_long_context_regional_10pct_upper_bound_usd | 228260.9508355 |
-| gpt_5_5_regional_10pct_usd | 118105.29542900002 |
-| gpt_5_5_regional_10pct_delta_usd | 10736.845039000022 |
+| gpt_5_5_long_context_upper_bound_usd | 208101.119453 |
+| gpt_5_5_long_context_upper_bound_delta_usd | 100426.073734 |
+| gpt_5_5_long_context_regional_10pct_upper_bound_usd | 228911.2313983 |
+| gpt_5_5_regional_10pct_usd | 118442.5502909 |
+| gpt_5_5_regional_10pct_delta_usd | 10767.504571900019 |
 | post_cutoff_long_context_event_count | 0 |
 | post_cutoff_long_context_event_surcharge_delta_usd | 0.0 |
 | post_cutoff_long_context_event_evidence_class | LOCAL_JSONL_DELTA_LOWER_BOUND_NOT_PROVIDER_INVOICE_CLASSIFICATION |
@@ -59,10 +59,10 @@ Evidence class: `STATIC_SOURCE_AND_STATIC_DOC_CPU_THROTTLE_NO_COMPILE`
 
 | Path | SHA-256 | Bytes |
 |---|---|---:|
-| `Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-06-06.json` | `ee6f1c6ca20636ea69124ee06a884887627e2e0e642ad0653079295d89dc18e0` | 565704 |
-| `Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-06-06.md` | `5e46df84594d436879a6da597d0b4a7f97d501e7ddb7ff2b5e6e1127aa158bef` | 3224 |
-| `Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-06-06.json` | `788e8d7c050d04363c139a7b4663c577a109cb7afe70132c371b40ff20b1daed` | 149117 |
-| `Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-06-06.md` | `925fba83006a1c8e9c141991f1517d0dc0555545c6e7ceb45fb6ca217bbf6f44` | 29080 |
+| `Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-06-06.json` | `45d00b9f6c6374fd9e047be26eee1b91777424f0d55074219667afd8bf17c252` | 565665 |
+| `Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-06-06.md` | `f8be665e29fb08882ea8131a2e3dd92a0d3a94b9efcd689058fd50363bf9b246` | 3214 |
+| `Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-06-06.json` | `61af91c59a2537e841d95899ae73569318856214aaa32dc48060ffa00279eabe` | 150235 |
+| `Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-06-06.md` | `77b1a7e4e9d233dfe19c334dc002306da1613b57136a67297ab2f6a557171502` | 29080 |
 | `Tools/CodexTokenUsageAudit_20260525.py` | `dae45fcd7cb69f19ff5677ae8b01535f31a43a61cf6108c81f65204e460126de` | 1568 lines |
 | `Tools/CodexTokenUsageFastRefresh_20260528.py` | `6169f6f3b5a8155d50f1261aec5f0abd26744831e1c419f784bd2f110c31f5fd` | 582 lines |
 | `Tools/ProjectMetricsDashboard_20260528.py` | `9fb5a0ed25888dacc7f111b7a2dc9ac4ad9611e8cef4882600cdb6150128947a` | 892 lines |

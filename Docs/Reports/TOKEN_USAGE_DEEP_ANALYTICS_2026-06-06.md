@@ -1,26 +1,26 @@
 ﻿# Token Usage Deep Analytics 2026-06-06
 
-Generated Samara: `2026-06-06T12:48:34.159121+04:00`
+Generated Samara: `2026-06-06T15:13:17.919293+04:00`
 Evidence class: STATIC_LOCAL_JSONL_REPORT_DERIVED. This is not provider invoice proof.
 
 ## Headline
 
 | Metric | Value |
 |---|---:|
-| Total tokens | 138,546,616,477 |
-| Input tokens | 138,063,786,512 |
-| Cached input tokens | 132,756,527,360 |
-| Output tokens | 481,796,365 |
-| Reasoning output tokens | 147,451,139 |
-| GPT-5.5 standard API-equivalent | $107,368.45 |
+| Total tokens | 138,912,242,896 |
+| Input tokens | 138,427,944,497 |
+| Cached input tokens | 133,102,804,608 |
+| Output tokens | 483,264,799 |
+| Reasoning output tokens | 147,905,141 |
+| GPT-5.5 standard API-equivalent | $107,675.05 |
 | 1h buckets | 120 |
-| 4h buckets | 30 |
-| 12h buckets | 10 |
+| 4h buckets | 31 |
+| 12h buckets | 11 |
 | 1d buckets | 65 |
 | Deep chart count | 602 |
-| Current tokens/day forecast lane | 3,804,792,160 |
-| 7d average tokens/day lane | 2,146,219,456 |
-| 30d average tokens/day lane | 3,795,340,932 |
+| Current tokens/day forecast lane | 3,290,192,673 |
+| 7d average tokens/day lane | 2,198,451,801 |
+| 30d average tokens/day lane | 3,807,528,479 |
 
 ## Smoothing Contract
 

@@ -1,28 +1,28 @@
 ﻿# Project Metrics Dashboard 2026-06-06
 
-Generated Samara: `2026-06-06T11:46:52.076080+04:00`
+Generated Samara: `2026-06-06T14:27:12.645727+04:00`
 Evidence class: static local Codex JSONL, git history, and filesystem scan. Token cost is API-equivalent, not invoice proof.
 
 ## Headline
 
 | Metric | Value |
 |---|---:|
-| Total tokens | 138,546,616,477 |
-| Input tokens | 138,063,786,512 |
-| Cached input tokens | 132,756,527,360 |
-| Output tokens | 481,796,365 |
-| Reasoning output tokens | 147,451,139 |
-| Sessions with usage | 3,608 |
-| GPT-5.5 standard API-equivalent total | $107,368.45 |
-| GPT-5.5 long-context sensitivity upper bound | $207,509.96 |
-| GPT-5.5 long-context + regional upper bound | $228,260.95 |
-| GPT-5.5 regional +10% sensitivity | $118,105.30 |
+| Total tokens | 138,912,242,896 |
+| Input tokens | 138,427,944,497 |
+| Cached input tokens | 133,102,804,608 |
+| Output tokens | 483,264,799 |
+| Reasoning output tokens | 147,905,141 |
+| Sessions with usage | 3,635 |
+| GPT-5.5 standard API-equivalent total | $107,675.05 |
+| GPT-5.5 long-context sensitivity upper bound | $208,101.12 |
+| GPT-5.5 long-context + regional upper bound | $228,911.23 |
+| GPT-5.5 regional +10% sensitivity | $118,442.55 |
 | Post-cutoff detected long-context delta events (lower-bound) | 0 |
 | Post-cutoff detected long-context surcharge delta (lower-bound) | $0.00 |
 | Post-cutoff long-context evidence class | `LOCAL_JSONL_DELTA_LOWER_BOUND_NOT_PROVIDER_INVOICE_CLASSIFICATION` |
-| Tokens/hour since previous snapshot | 158,533,006 |
-| GPT-5.5 standard USD/hour since previous snapshot | $130.15 |
-| Primary C# LOC/hour since previous snapshot | 406.79 |
+| Tokens/hour since previous snapshot | 137,091,361 |
+| GPT-5.5 standard USD/hour since previous snapshot | $114.96 |
+| Primary C# LOC/hour since previous snapshot | 122.61 |
 | Long-range chart windows | 7d, 14d, 30d, 60d, 90d |
 | Chart count | 112 |
 

@@ -1,6 +1,6 @@
 {
   "schema": "hecton8.project_metrics_dashboard.v2",
-  "generated_at_samara": "2026-06-06T11:46:52.063859+04:00",
+  "generated_at_samara": "2026-06-06T14:27:12.637320+04:00",
   "token_report": "Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-06-06.json",
   "dashboard_markdown": "Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-06-06.md",
   "chart_count": 112,
@@ -686,19 +686,19 @@
     }
   ],
   "token_headline": {
-    "total_tokens": 138546616477,
-    "sessions_with_usage": 3608,
-    "gpt_5_5_standard_cost_usd": 107368.45039,
+    "total_tokens": 138912242896,
+    "sessions_with_usage": 3635,
+    "gpt_5_5_standard_cost_usd": 107675.04571899999,
     "pricing_context_rules": {
       "base_rate_note": "GPT-5.5 base API-equivalent uses input $5.00, cached input $0.50, output $30.00 per 1M tokens.",
       "long_context_trigger_input_tokens": 272000,
       "long_context_surcharge_note": "Official pricing applies 2x input and 1.5x output when prompts exceed 272K input tokens. Local Codex JSONL does not expose provider-side per-request context classification, so this report adds an upper-bound sensitivity instead of pretending exact surcharge billing.",
       "regional_uplift_note": "Some regions can add about 10 percent. Local JSONL does not expose billing region, so this is a sensitivity row only.",
-      "gpt_5_5_long_context_upper_bound_usd": 207509.95530499998,
-      "gpt_5_5_long_context_upper_bound_delta_usd": 100141.50491499998,
-      "gpt_5_5_regional_10pct_usd": 118105.29542900002,
-      "gpt_5_5_regional_10pct_delta_usd": 10736.845039000022,
-      "gpt_5_5_long_context_regional_10pct_upper_bound_usd": 228260.9508355,
+      "gpt_5_5_long_context_upper_bound_usd": 208101.119453,
+      "gpt_5_5_long_context_upper_bound_delta_usd": 100426.073734,
+      "gpt_5_5_regional_10pct_usd": 118442.5502909,
+      "gpt_5_5_regional_10pct_delta_usd": 10767.504571900019,
+      "gpt_5_5_long_context_regional_10pct_upper_bound_usd": 228911.2313983,
       "post_cutoff_long_context_event_rule": "Lower-bound detector for post-cutoff positive delta events whose delta input_tokens exceeds 272000. Provider-side exact long-context classification remains unavailable in local JSONL; zero detected events is not proof of zero all-time surcharge.",
       "post_cutoff_long_context_event_evidence_class": "LOCAL_JSONL_DELTA_LOWER_BOUND_NOT_PROVIDER_INVOICE_CLASSIFICATION",
       "post_cutoff_long_context_event_count": 0,
@@ -711,95 +711,95 @@
       },
       "post_cutoff_long_context_event_base_usd": 0.0,
       "post_cutoff_long_context_event_surcharge_delta_usd": 0.0,
-      "post_cutoff_base_delta_cost_usd": 1732.810221
+      "post_cutoff_base_delta_cost_usd": 306.595329
     },
     "velocity": {
-      "total_tokens_per_hour": 158533006.67123663,
-      "total_tokens_per_day": 3804792160.109679,
-      "total_tokens_per_minute": 2642216.777853944,
-      "total_tokens_per_second": 44036.94629756573,
-      "input_tokens_per_hour": 157907722.45884103,
-      "cached_input_tokens_per_hour": 150699770.7737105,
-      "uncached_input_tokens_per_hour": 7207951.685130543,
-      "output_tokens_per_hour": 625284.2123955872,
-      "reasoning_output_tokens_per_hour": 184642.79678685675,
-      "sessions_with_usage_per_hour": 14.721197420809542,
-      "jsonl_files_per_hour": 14.796305570915713,
-      "primary_code_lines_per_hour": 406.78574097502286,
-      "primary_code_lines_per_day": 9762.857783400548,
-      "primary_code_characters_per_hour": 19542.840225025306,
-      "primary_code_characters_per_day": 469028.16540060734,
-      "tokens_per_net_primary_code_line": 389721.14974150667,
-      "input_tokens_per_net_primary_code_line": 388184.0156942393,
-      "output_tokens_per_net_primary_code_line": 1537.134047267356,
-      "reasoning_tokens_per_net_primary_code_line": 453.9067577548006,
-      "tokens_per_1k_net_primary_code_chars": 8112076.077264831,
-      "output_tokens_per_1k_net_primary_code_chars": 31995.564881858292,
-      "gpt_5_5_standard_usd_per_hour": 130.1481701843761,
-      "gpt_5_5_standard_usd_per_day": 3123.5560844250267,
-      "gpt_5_5_priority_usd_per_hour": 325.3704254609375,
-      "gpt_5_3_codex_standard_usd_per_hour": 47.74035430791549,
-      "gpt_5_5_standard_usd_per_net_primary_code_line": 0.31994280299113864,
-      "gpt_5_5_standard_usd_per_1k_net_primary_code_chars": 6.659634356408272
+      "total_tokens_per_hour": 137091361.37707222,
+      "total_tokens_per_day": 3290192673.049733,
+      "total_tokens_per_minute": 2284856.0229512034,
+      "total_tokens_per_second": 38080.933715853396,
+      "input_tokens_per_hour": 136540773.11076757,
+      "cached_input_tokens_per_hour": 129836403.70425764,
+      "uncached_input_tokens_per_hour": 6704369.406509943,
+      "output_tokens_per_hour": 550588.2663046285,
+      "reasoning_output_tokens_per_hour": 170227.72155836347,
+      "sessions_with_usage_per_hour": 10.123630473160501,
+      "jsonl_files_per_hour": 10.123630473160501,
+      "primary_code_lines_per_hour": 122.60841350827718,
+      "primary_code_lines_per_day": 2942.6019241986523,
+      "primary_code_characters_per_hour": 12368.451793264647,
+      "primary_code_characters_per_day": 296842.8430383515,
+      "tokens_per_net_primary_code_line": 1118123.605504587,
+      "input_tokens_per_net_primary_code_line": 1113632.9816513762,
+      "output_tokens_per_net_primary_code_line": 4490.623853211009,
+      "reasoning_tokens_per_net_primary_code_line": 1388.3853211009175,
+      "tokens_per_1k_net_primary_code_chars": 11083954.86100585,
+      "output_tokens_per_1k_net_primary_code_chars": 44515.53642343954,
+      "gpt_5_5_standard_usd_per_hour": 114.9576968738132,
+      "gpt_5_5_standard_usd_per_day": 2758.9847249715167,
+      "gpt_5_5_priority_usd_per_hour": 287.3942421845521,
+      "gpt_5_3_codex_standard_usd_per_hour": 42.16225283790584,
+      "gpt_5_5_standard_usd_per_net_primary_code_line": 0.9376003944953788,
+      "gpt_5_5_standard_usd_per_1k_net_primary_code_chars": 9.29442898717643
     }
   },
   "project_metrics": {
     "extension_by_files": [
       {
         "extension": ".md",
-        "files": 15672,
-        "bytes": 41613262,
-        "lines": 845376,
-        "avg_bytes_per_file": 2655.2617406840222,
-        "avg_lines_per_file": 53.94180704441041
+        "files": 15899,
+        "bytes": 47550407,
+        "lines": 897399,
+        "avg_bytes_per_file": 2990.7797345745016,
+        "avg_lines_per_file": 56.443738599911946
       },
       {
         "extension": ".meta",
-        "files": 15623,
-        "bytes": 7937767,
-        "lines": 341499,
-        "avg_bytes_per_file": 508.0821225116815,
-        "avg_lines_per_file": 21.858733917941496
+        "files": 15640,
+        "bytes": 7938589,
+        "lines": 341524,
+        "avg_bytes_per_file": 507.5824168797954,
+        "avg_lines_per_file": 21.836572890025575
       },
       {
         "extension": ".cs",
-        "files": 5299,
-        "bytes": 114788892,
-        "lines": 2637479,
-        "avg_bytes_per_file": 21662.368748820532,
-        "avg_lines_per_file": 497.73145876580486
+        "files": 5313,
+        "bytes": 114830361,
+        "lines": 2637992,
+        "avg_bytes_per_file": 21613.092603049125,
+        "avg_lines_per_file": 496.5164690382082
+      },
+      {
+        "extension": ".png",
+        "files": 3975,
+        "bytes": 1954278393,
+        "lines": 0,
+        "avg_bytes_per_file": 491642.3630188679,
+        "avg_lines_per_file": 0.0
       },
       {
         "extension": ".asset",
         "files": 3063,
-        "bytes": 811832773,
+        "bytes": 811832889,
         "lines": 1176215,
-        "avg_bytes_per_file": 265044.9797584068,
+        "avg_bytes_per_file": 265045.01762977475,
         "avg_lines_per_file": 384.007508978126
       },
       {
-        "extension": ".png",
-        "files": 2544,
-        "bytes": 1832586031,
-        "lines": 0,
-        "avg_bytes_per_file": 720356.1442610063,
-        "avg_lines_per_file": 0.0
+        "extension": ".json",
+        "files": 1127,
+        "bytes": 56753006,
+        "lines": 993420,
+        "avg_bytes_per_file": 50357.5918367347,
+        "avg_lines_per_file": 881.4729370008873
       },
       {
         "extension": ".mat",
         "files": 1110,
-        "bytes": 2518088,
+        "bytes": 2518427,
         "lines": 0,
-        "avg_bytes_per_file": 2268.547747747748,
+        "avg_bytes_per_file": 2268.853153153153,
         "avg_lines_per_file": 0.0
-      },
-      {
-        "extension": ".json",
-        "files": 1053,
-        "bytes": 52900758,
-        "lines": 941501,
-        "avg_bytes_per_file": 50238.13675213675,
-        "avg_lines_per_file": 894.1130104463438
       },
       {
         "extension": ".prefab",
@@ -811,19 +811,19 @@
       },
       {
         "extension": ".csv",
-        "files": 806,
-        "bytes": 104939005,
+        "files": 829,
+        "bytes": 106537070,
         "lines": 0,
-        "avg_bytes_per_file": 130197.27667493797,
+        "avg_bytes_per_file": 128512.75030156816,
         "avg_lines_per_file": 0.0
       },
       {
         "extension": ".txt",
-        "files": 720,
-        "bytes": 5960812,
-        "lines": 90359,
-        "avg_bytes_per_file": 8278.905555555555,
-        "avg_lines_per_file": 125.49861111111112
+        "files": 722,
+        "bytes": 6026673,
+        "lines": 90865,
+        "avg_bytes_per_file": 8347.192520775623,
+        "avg_lines_per_file": 125.85180055401662
       },
       {
         "extension": ".shader",
@@ -835,11 +835,11 @@
       },
       {
         "extension": ".py",
-        "files": 327,
-        "bytes": 6486399,
-        "lines": 144113,
-        "avg_bytes_per_file": 19836.08256880734,
-        "avg_lines_per_file": 440.71253822629967
+        "files": 345,
+        "bytes": 6740055,
+        "lines": 148365,
+        "avg_bytes_per_file": 19536.391304347828,
+        "avg_lines_per_file": 430.04347826086956
       },
       {
         "extension": ".fbx",
@@ -890,20 +890,20 @@
         "avg_lines_per_file": 0.0
       },
       {
+        "extension": ".sha256",
+        "files": 83,
+        "bytes": 8459,
+        "lines": 0,
+        "avg_bytes_per_file": 101.91566265060241,
+        "avg_lines_per_file": 0.0
+      },
+      {
         "extension": ".compute",
         "files": 80,
         "bytes": 732208,
         "lines": 18332,
         "avg_bytes_per_file": 9152.6,
         "avg_lines_per_file": 229.15
-      },
-      {
-        "extension": ".sha256",
-        "files": 79,
-        "bytes": 7959,
-        "lines": 0,
-        "avg_bytes_per_file": 100.74683544303798,
-        "avg_lines_per_file": 0.0
       },
       {
         "extension": ".xml",
@@ -996,9 +996,9 @@
       {
         "extension": ".unity",
         "files": 22,
-        "bytes": 7004389,
+        "bytes": 7005777,
         "lines": 0,
-        "avg_bytes_per_file": 318381.3181818182,
+        "avg_bytes_per_file": 318444.4090909091,
         "avg_lines_per_file": 0.0
       },
       {
@@ -1015,6 +1015,14 @@
         "bytes": 48436,
         "lines": 0,
         "avg_bytes_per_file": 2549.2631578947367,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".pyc",
+        "files": 16,
+        "bytes": 617499,
+        "lines": 0,
+        "avg_bytes_per_file": 38593.6875,
         "avg_lines_per_file": 0.0
       },
       {
@@ -1048,14 +1056,6 @@
         "lines": 241,
         "avg_bytes_per_file": 1052.0,
         "avg_lines_per_file": 20.083333333333332
-      },
-      {
-        "extension": ".pyc",
-        "files": 12,
-        "bytes": 403992,
-        "lines": 0,
-        "avg_bytes_per_file": 33666.0,
-        "avg_lines_per_file": 0.0
       },
       {
         "extension": ".mdc",
@@ -1154,6 +1154,14 @@
         "avg_lines_per_file": 0.0
       },
       {
+        "extension": ".html",
+        "files": 5,
+        "bytes": 125979,
+        "lines": 2877,
+        "avg_bytes_per_file": 25195.8,
+        "avg_lines_per_file": 575.4
+      },
+      {
         "extension": ".vso",
         "files": 4,
         "bytes": 3888,
@@ -1176,14 +1184,6 @@
         "lines": 0,
         "avg_bytes_per_file": 11745415.25,
         "avg_lines_per_file": 0.0
-      },
-      {
-        "extension": ".html",
-        "files": 4,
-        "bytes": 89878,
-        "lines": 2477,
-        "avg_bytes_per_file": 22469.5,
-        "avg_lines_per_file": 619.25
       },
       {
         "extension": ".data",
@@ -1557,18 +1557,18 @@
     "extension_by_bytes": [
       {
         "extension": ".png",
-        "files": 2544,
-        "bytes": 1832586031,
+        "files": 3975,
+        "bytes": 1954278393,
         "lines": 0,
-        "avg_bytes_per_file": 720356.1442610063,
+        "avg_bytes_per_file": 491642.3630188679,
         "avg_lines_per_file": 0.0
       },
       {
         "extension": ".asset",
         "files": 3063,
-        "bytes": 811832773,
+        "bytes": 811832889,
         "lines": 1176215,
-        "avg_bytes_per_file": 265044.9797584068,
+        "avg_bytes_per_file": 265045.01762977475,
         "avg_lines_per_file": 384.007508978126
       },
       {
@@ -1597,11 +1597,11 @@
       },
       {
         "extension": ".cs",
-        "files": 5299,
-        "bytes": 114788892,
-        "lines": 2637479,
-        "avg_bytes_per_file": 21662.368748820532,
-        "avg_lines_per_file": 497.73145876580486
+        "files": 5313,
+        "bytes": 114830361,
+        "lines": 2637992,
+        "avg_bytes_per_file": 21613.092603049125,
+        "avg_lines_per_file": 496.5164690382082
       },
       {
         "extension": ".jpg",
@@ -1613,10 +1613,10 @@
       },
       {
         "extension": ".csv",
-        "files": 806,
-        "bytes": 104939005,
+        "files": 829,
+        "bytes": 106537070,
         "lines": 0,
-        "avg_bytes_per_file": 130197.27667493797,
+        "avg_bytes_per_file": 128512.75030156816,
         "avg_lines_per_file": 0.0
       },
       {
@@ -1637,11 +1637,19 @@
       },
       {
         "extension": ".json",
-        "files": 1053,
-        "bytes": 52900758,
-        "lines": 941501,
-        "avg_bytes_per_file": 50238.13675213675,
-        "avg_lines_per_file": 894.1130104463438
+        "files": 1127,
+        "bytes": 56753006,
+        "lines": 993420,
+        "avg_bytes_per_file": 50357.5918367347,
+        "avg_lines_per_file": 881.4729370008873
+      },
+      {
+        "extension": ".md",
+        "files": 15899,
+        "bytes": 47550407,
+        "lines": 897399,
+        "avg_bytes_per_file": 2990.7797345745016,
+        "avg_lines_per_file": 56.443738599911946
       },
       {
         "extension": ".zip",
@@ -1650,14 +1658,6 @@
         "lines": 0,
         "avg_bytes_per_file": 11745415.25,
         "avg_lines_per_file": 0.0
-      },
-      {
-        "extension": ".md",
-        "files": 15672,
-        "bytes": 41613262,
-        "lines": 845376,
-        "avg_bytes_per_file": 2655.2617406840222,
-        "avg_lines_per_file": 53.94180704441041
       },
       {
         "extension": ".gif",
@@ -1725,19 +1725,27 @@
       },
       {
         "extension": ".meta",
-        "files": 15623,
-        "bytes": 7937767,
-        "lines": 341499,
-        "avg_bytes_per_file": 508.0821225116815,
-        "avg_lines_per_file": 21.858733917941496
+        "files": 15640,
+        "bytes": 7938589,
+        "lines": 341524,
+        "avg_bytes_per_file": 507.5824168797954,
+        "avg_lines_per_file": 21.836572890025575
       },
       {
         "extension": ".unity",
         "files": 22,
-        "bytes": 7004389,
+        "bytes": 7005777,
         "lines": 0,
-        "avg_bytes_per_file": 318381.3181818182,
+        "avg_bytes_per_file": 318444.4090909091,
         "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".py",
+        "files": 345,
+        "bytes": 6740055,
+        "lines": 148365,
+        "avg_bytes_per_file": 19536.391304347828,
+        "avg_lines_per_file": 430.04347826086956
       },
       {
         "extension": ".bin",
@@ -1746,14 +1754,6 @@
         "lines": 0,
         "avg_bytes_per_file": 141483.95744680852,
         "avg_lines_per_file": 0.0
-      },
-      {
-        "extension": ".py",
-        "files": 327,
-        "bytes": 6486399,
-        "lines": 144113,
-        "avg_bytes_per_file": 19836.08256880734,
-        "avg_lines_per_file": 440.71253822629967
       },
       {
         "extension": ".shader",
@@ -1765,11 +1765,11 @@
       },
       {
         "extension": ".txt",
-        "files": 720,
-        "bytes": 5960812,
-        "lines": 90359,
-        "avg_bytes_per_file": 8278.905555555555,
-        "avg_lines_per_file": 125.49861111111112
+        "files": 722,
+        "bytes": 6026673,
+        "lines": 90865,
+        "avg_bytes_per_file": 8347.192520775623,
+        "avg_lines_per_file": 125.85180055401662
       },
       {
         "extension": ".h8bin",
@@ -1814,9 +1814,9 @@
       {
         "extension": ".mat",
         "files": 1110,
-        "bytes": 2518088,
+        "bytes": 2518427,
         "lines": 0,
-        "avg_bytes_per_file": 2268.547747747748,
+        "avg_bytes_per_file": 2268.853153153153,
         "avg_lines_per_file": 0.0
       },
       {
@@ -1900,6 +1900,14 @@
         "avg_lines_per_file": 229.15
       },
       {
+        "extension": ".pyc",
+        "files": 16,
+        "bytes": 617499,
+        "lines": 0,
+        "avg_bytes_per_file": 38593.6875,
+        "avg_lines_per_file": 0.0
+      },
+      {
         "extension": ".data",
         "files": 4,
         "bytes": 510523,
@@ -1921,14 +1929,6 @@
         "bytes": 440704,
         "lines": 0,
         "avg_bytes_per_file": 440704.0,
-        "avg_lines_per_file": 0.0
-      },
-      {
-        "extension": ".pyc",
-        "files": 12,
-        "bytes": 403992,
-        "lines": 0,
-        "avg_bytes_per_file": 33666.0,
         "avg_lines_per_file": 0.0
       },
       {
@@ -1997,11 +1997,11 @@
       },
       {
         "extension": ".html",
-        "files": 4,
-        "bytes": 89878,
-        "lines": 2477,
-        "avg_bytes_per_file": 22469.5,
-        "avg_lines_per_file": 619.25
+        "files": 5,
+        "bytes": 125979,
+        "lines": 2877,
+        "avg_bytes_per_file": 25195.8,
+        "avg_lines_per_file": 575.4
       },
       {
         "extension": ".anim",
@@ -2140,19 +2140,19 @@
         "avg_lines_per_file": 0.0
       },
       {
+        "extension": ".sha256",
+        "files": 83,
+        "bytes": 8459,
+        "lines": 0,
+        "avg_bytes_per_file": 101.91566265060241,
+        "avg_lines_per_file": 0.0
+      },
+      {
         "extension": ".shadervariants",
         "files": 9,
         "bytes": 7994,
         "lines": 0,
         "avg_bytes_per_file": 888.2222222222222,
-        "avg_lines_per_file": 0.0
-      },
-      {
-        "extension": ".sha256",
-        "files": 79,
-        "bytes": 7959,
-        "lines": 0,
-        "avg_bytes_per_file": 100.74683544303798,
         "avg_lines_per_file": 0.0
       },
       {
@@ -2367,35 +2367,35 @@
     "extension_by_lines": [
       {
         "extension": ".cs",
-        "files": 5299,
-        "bytes": 114788892,
-        "lines": 2637479,
-        "avg_bytes_per_file": 21662.368748820532,
-        "avg_lines_per_file": 497.73145876580486
+        "files": 5313,
+        "bytes": 114830361,
+        "lines": 2637992,
+        "avg_bytes_per_file": 21613.092603049125,
+        "avg_lines_per_file": 496.5164690382082
       },
       {
         "extension": ".asset",
         "files": 3063,
-        "bytes": 811832773,
+        "bytes": 811832889,
         "lines": 1176215,
-        "avg_bytes_per_file": 265044.9797584068,
+        "avg_bytes_per_file": 265045.01762977475,
         "avg_lines_per_file": 384.007508978126
       },
       {
         "extension": ".json",
-        "files": 1053,
-        "bytes": 52900758,
-        "lines": 941501,
-        "avg_bytes_per_file": 50238.13675213675,
-        "avg_lines_per_file": 894.1130104463438
+        "files": 1127,
+        "bytes": 56753006,
+        "lines": 993420,
+        "avg_bytes_per_file": 50357.5918367347,
+        "avg_lines_per_file": 881.4729370008873
       },
       {
         "extension": ".md",
-        "files": 15672,
-        "bytes": 41613262,
-        "lines": 845376,
-        "avg_bytes_per_file": 2655.2617406840222,
-        "avg_lines_per_file": 53.94180704441041
+        "files": 15899,
+        "bytes": 47550407,
+        "lines": 897399,
+        "avg_bytes_per_file": 2990.7797345745016,
+        "avg_lines_per_file": 56.443738599911946
       },
       {
         "extension": ".prefab",
@@ -2407,19 +2407,19 @@
       },
       {
         "extension": ".meta",
-        "files": 15623,
-        "bytes": 7937767,
-        "lines": 341499,
-        "avg_bytes_per_file": 508.0821225116815,
-        "avg_lines_per_file": 21.858733917941496
+        "files": 15640,
+        "bytes": 7938589,
+        "lines": 341524,
+        "avg_bytes_per_file": 507.5824168797954,
+        "avg_lines_per_file": 21.836572890025575
       },
       {
         "extension": ".py",
-        "files": 327,
-        "bytes": 6486399,
-        "lines": 144113,
-        "avg_bytes_per_file": 19836.08256880734,
-        "avg_lines_per_file": 440.71253822629967
+        "files": 345,
+        "bytes": 6740055,
+        "lines": 148365,
+        "avg_bytes_per_file": 19536.391304347828,
+        "avg_lines_per_file": 430.04347826086956
       },
       {
         "extension": ".shader",
@@ -2431,11 +2431,11 @@
       },
       {
         "extension": ".txt",
-        "files": 720,
-        "bytes": 5960812,
-        "lines": 90359,
-        "avg_bytes_per_file": 8278.905555555555,
-        "avg_lines_per_file": 125.49861111111112
+        "files": 722,
+        "bytes": 6026673,
+        "lines": 90865,
+        "avg_bytes_per_file": 8347.192520775623,
+        "avg_lines_per_file": 125.85180055401662
       },
       {
         "extension": ".xml",
@@ -2487,11 +2487,11 @@
       },
       {
         "extension": ".html",
-        "files": 4,
-        "bytes": 89878,
-        "lines": 2477,
-        "avg_bytes_per_file": 22469.5,
-        "avg_lines_per_file": 619.25
+        "files": 5,
+        "bytes": 125979,
+        "lines": 2877,
+        "avg_bytes_per_file": 25195.8,
+        "avg_lines_per_file": 575.4
       },
       {
         "extension": ".uxml",
@@ -2640,19 +2640,19 @@
         "avg_lines_per_file": 0.0
       },
       {
-        "extension": ".png",
-        "files": 2544,
-        "bytes": 1832586031,
-        "lines": 0,
-        "avg_bytes_per_file": 720356.1442610063,
-        "avg_lines_per_file": 0.0
-      },
-      {
         "extension": ".ttf",
         "files": 25,
         "bytes": 13846388,
         "lines": 0,
         "avg_bytes_per_file": 553855.52,
+        "avg_lines_per_file": 0.0
+      },
+      {
+        "extension": ".png",
+        "files": 3975,
+        "bytes": 1954278393,
+        "lines": 0,
+        "avg_bytes_per_file": 491642.3630188679,
         "avg_lines_per_file": 0.0
       },
       {
@@ -2698,17 +2698,17 @@
       {
         "extension": ".unity",
         "files": 22,
-        "bytes": 7004389,
+        "bytes": 7005777,
         "lines": 0,
-        "avg_bytes_per_file": 318381.3181818182,
+        "avg_bytes_per_file": 318444.4090909091,
         "avg_lines_per_file": 0.0
       },
       {
         "extension": ".asset",
         "files": 3063,
-        "bytes": 811832773,
+        "bytes": 811832889,
         "lines": 1176215,
-        "avg_bytes_per_file": 265044.9797584068,
+        "avg_bytes_per_file": 265045.01762977475,
         "avg_lines_per_file": 384.007508978126
       },
       {
@@ -2753,10 +2753,10 @@
       },
       {
         "extension": ".csv",
-        "files": 806,
-        "bytes": 104939005,
+        "files": 829,
+        "bytes": 106537070,
         "lines": 0,
-        "avg_bytes_per_file": 130197.27667493797,
+        "avg_bytes_per_file": 128512.75030156816,
         "avg_lines_per_file": 0.0
       },
       {
@@ -2833,11 +2833,11 @@
       },
       {
         "extension": ".json",
-        "files": 1053,
-        "bytes": 52900758,
-        "lines": 941501,
-        "avg_bytes_per_file": 50238.13675213675,
-        "avg_lines_per_file": 894.1130104463438
+        "files": 1127,
+        "bytes": 56753006,
+        "lines": 993420,
+        "avg_bytes_per_file": 50357.5918367347,
+        "avg_lines_per_file": 881.4729370008873
       },
       {
         "extension": ".bmp",
@@ -2864,19 +2864,19 @@
         "avg_lines_per_file": 0.0
       },
       {
+        "extension": ".pyc",
+        "files": 16,
+        "bytes": 617499,
+        "lines": 0,
+        "avg_bytes_per_file": 38593.6875,
+        "avg_lines_per_file": 0.0
+      },
+      {
         "extension": ".inputactions",
         "files": 2,
         "bytes": 69840,
         "lines": 0,
         "avg_bytes_per_file": 34920.0,
-        "avg_lines_per_file": 0.0
-      },
-      {
-        "extension": ".pyc",
-        "files": 12,
-        "bytes": 403992,
-        "lines": 0,
-        "avg_bytes_per_file": 33666.0,
         "avg_lines_per_file": 0.0
       },
       {
@@ -2896,6 +2896,14 @@
         "avg_lines_per_file": 0.0
       },
       {
+        "extension": ".html",
+        "files": 5,
+        "bytes": 125979,
+        "lines": 2877,
+        "avg_bytes_per_file": 25195.8,
+        "avg_lines_per_file": 575.4
+      },
+      {
         "extension": ".ps1",
         "files": 60,
         "bytes": 1484943,
@@ -2904,20 +2912,12 @@
         "avg_lines_per_file": 454.8333333333333
       },
       {
-        "extension": ".html",
-        "files": 4,
-        "bytes": 89878,
-        "lines": 2477,
-        "avg_bytes_per_file": 22469.5,
-        "avg_lines_per_file": 619.25
-      },
-      {
         "extension": ".cs",
-        "files": 5299,
-        "bytes": 114788892,
-        "lines": 2637479,
-        "avg_bytes_per_file": 21662.368748820532,
-        "avg_lines_per_file": 497.73145876580486
+        "files": 5313,
+        "bytes": 114830361,
+        "lines": 2637992,
+        "avg_bytes_per_file": 21613.092603049125,
+        "avg_lines_per_file": 496.5164690382082
       },
       {
         "extension": ".lib",
@@ -2929,11 +2929,11 @@
       },
       {
         "extension": ".py",
-        "files": 327,
-        "bytes": 6486399,
-        "lines": 144113,
-        "avg_bytes_per_file": 19836.08256880734,
-        "avg_lines_per_file": 440.71253822629967
+        "files": 345,
+        "bytes": 6740055,
+        "lines": 148365,
+        "avg_bytes_per_file": 19536.391304347828,
+        "avg_lines_per_file": 430.04347826086956
       },
       {
         "extension": ".cpp",
@@ -3001,11 +3001,11 @@
       },
       {
         "extension": ".txt",
-        "files": 720,
-        "bytes": 5960812,
-        "lines": 90359,
-        "avg_bytes_per_file": 8278.905555555555,
-        "avg_lines_per_file": 125.49861111111112
+        "files": 722,
+        "bytes": 6026673,
+        "lines": 90865,
+        "avg_bytes_per_file": 8347.192520775623,
+        "avg_lines_per_file": 125.85180055401662
       },
       {
         "extension": ".def",
@@ -3065,11 +3065,11 @@
       },
       {
         "extension": ".md",
-        "files": 15672,
-        "bytes": 41613262,
-        "lines": 845376,
-        "avg_bytes_per_file": 2655.2617406840222,
-        "avg_lines_per_file": 53.94180704441041
+        "files": 15899,
+        "bytes": 47550407,
+        "lines": 897399,
+        "avg_bytes_per_file": 2990.7797345745016,
+        "avg_lines_per_file": 56.443738599911946
       },
       {
         "extension": ".pso",
@@ -3082,9 +3082,9 @@
       {
         "extension": ".mat",
         "files": 1110,
-        "bytes": 2518088,
+        "bytes": 2518427,
         "lines": 0,
-        "avg_bytes_per_file": 2268.547747747748,
+        "avg_bytes_per_file": 2268.853153153153,
         "avg_lines_per_file": 0.0
       },
       {
@@ -3241,11 +3241,11 @@
       },
       {
         "extension": ".meta",
-        "files": 15623,
-        "bytes": 7937767,
-        "lines": 341499,
-        "avg_bytes_per_file": 508.0821225116815,
-        "avg_lines_per_file": 21.858733917941496
+        "files": 15640,
+        "bytes": 7938589,
+        "lines": 341524,
+        "avg_bytes_per_file": 507.5824168797954,
+        "avg_lines_per_file": 21.836572890025575
       },
       {
         "extension": ".bac",
@@ -3289,10 +3289,10 @@
       },
       {
         "extension": ".sha256",
-        "files": 79,
-        "bytes": 7959,
+        "files": 83,
+        "bytes": 8459,
         "lines": 0,
-        "avg_bytes_per_file": 100.74683544303798,
+        "avg_bytes_per_file": 101.91566265060241,
         "avg_lines_per_file": 0.0
       },
       {
@@ -3331,11 +3331,11 @@
     "extension_by_avg_lines_per_file": [
       {
         "extension": ".json",
-        "files": 1053,
-        "bytes": 52900758,
-        "lines": 941501,
-        "avg_bytes_per_file": 50238.13675213675,
-        "avg_lines_per_file": 894.1130104463438
+        "files": 1127,
+        "bytes": 56753006,
+        "lines": 993420,
+        "avg_bytes_per_file": 50357.5918367347,
+        "avg_lines_per_file": 881.4729370008873
       },
       {
         "extension": ".xml",
@@ -3347,19 +3347,19 @@
       },
       {
         "extension": ".html",
-        "files": 4,
-        "bytes": 89878,
-        "lines": 2477,
-        "avg_bytes_per_file": 22469.5,
-        "avg_lines_per_file": 619.25
+        "files": 5,
+        "bytes": 125979,
+        "lines": 2877,
+        "avg_bytes_per_file": 25195.8,
+        "avg_lines_per_file": 575.4
       },
       {
         "extension": ".cs",
-        "files": 5299,
-        "bytes": 114788892,
-        "lines": 2637479,
-        "avg_bytes_per_file": 21662.368748820532,
-        "avg_lines_per_file": 497.73145876580486
+        "files": 5313,
+        "bytes": 114830361,
+        "lines": 2637992,
+        "avg_bytes_per_file": 21613.092603049125,
+        "avg_lines_per_file": 496.5164690382082
       },
       {
         "extension": ".ps1",
@@ -3371,11 +3371,11 @@
       },
       {
         "extension": ".py",
-        "files": 327,
-        "bytes": 6486399,
-        "lines": 144113,
-        "avg_bytes_per_file": 19836.08256880734,
-        "avg_lines_per_file": 440.71253822629967
+        "files": 345,
+        "bytes": 6740055,
+        "lines": 148365,
+        "avg_bytes_per_file": 19536.391304347828,
+        "avg_lines_per_file": 430.04347826086956
       },
       {
         "extension": ".prefab",
@@ -3388,9 +3388,9 @@
       {
         "extension": ".asset",
         "files": 3063,
-        "bytes": 811832773,
+        "bytes": 811832889,
         "lines": 1176215,
-        "avg_bytes_per_file": 265044.9797584068,
+        "avg_bytes_per_file": 265045.01762977475,
         "avg_lines_per_file": 384.007508978126
       },
       {
@@ -3435,19 +3435,19 @@
       },
       {
         "extension": ".txt",
-        "files": 720,
-        "bytes": 5960812,
-        "lines": 90359,
-        "avg_bytes_per_file": 8278.905555555555,
-        "avg_lines_per_file": 125.49861111111112
+        "files": 722,
+        "bytes": 6026673,
+        "lines": 90865,
+        "avg_bytes_per_file": 8347.192520775623,
+        "avg_lines_per_file": 125.85180055401662
       },
       {
         "extension": ".md",
-        "files": 15672,
-        "bytes": 41613262,
-        "lines": 845376,
-        "avg_bytes_per_file": 2655.2617406840222,
-        "avg_lines_per_file": 53.94180704441041
+        "files": 15899,
+        "bytes": 47550407,
+        "lines": 897399,
+        "avg_bytes_per_file": 2990.7797345745016,
+        "avg_lines_per_file": 56.443738599911946
       },
       {
         "extension": ".bat",
@@ -3467,11 +3467,11 @@
       },
       {
         "extension": ".meta",
-        "files": 15623,
-        "bytes": 7937767,
-        "lines": 341499,
-        "avg_bytes_per_file": 508.0821225116815,
-        "avg_lines_per_file": 21.858733917941496
+        "files": 15640,
+        "bytes": 7938589,
+        "lines": 341524,
+        "avg_bytes_per_file": 507.5824168797954,
+        "avg_lines_per_file": 21.836572890025575
       },
       {
         "extension": ".uxml",
@@ -3485,11 +3485,11 @@
     "root_counts": [
       {
         "label": "Assets",
-        "files": 26558
+        "files": 26589
       },
       {
         "label": "Docs",
-        "files": 18889
+        "files": 20633
       },
       {
         "label": "Packages",
@@ -3497,7 +3497,7 @@
       },
       {
         "label": "Tools",
-        "files": 378
+        "files": 383
       },
       {
         "label": "MarketingAssets",
@@ -3509,7 +3509,7 @@
       },
       {
         "label": "Data",
-        "files": 220
+        "files": 242
       },
       {
         "label": ".agents-skills",
@@ -3612,6 +3612,14 @@
         "files": 1
       },
       {
+        "label": "advanced_lore_system.py",
+        "files": 1
+      },
+      {
+        "label": "advanced_lore_system_ru_RU.py",
+        "files": 1
+      },
+      {
         "label": "AGENTS.md",
         "files": 1
       },
@@ -3633,6 +3641,22 @@
       },
       {
         "label": "authoring.md",
+        "files": 1
+      },
+      {
+        "label": "author_deep_audio_logs.py",
+        "files": 1
+      },
+      {
+        "label": "author_deep_ecology_leviathan.py",
+        "files": 1
+      },
+      {
+        "label": "author_deep_marauder_notes.py",
+        "files": 1
+      },
+      {
+        "label": "author_system_ui_lore.py",
         "files": 1
       },
       {
@@ -3680,6 +3704,10 @@
         "files": 1
       },
       {
+        "label": "compile_lore_to_json.py",
+        "files": 1
+      },
+      {
         "label": "compute.md",
         "files": 1
       },
@@ -3716,6 +3744,10 @@
         "files": 1
       },
       {
+        "label": "Export_Localization_DB.py",
+        "files": 1
+      },
+      {
         "label": "gameplay.md",
         "files": 1
       },
@@ -3724,7 +3756,19 @@
         "files": 1
       },
       {
+        "label": "generate_lore.py",
+        "files": 1
+      },
+      {
         "label": "glitch_profiles.csv",
+        "files": 1
+      },
+      {
+        "label": "Grand_Library_Loc_Injector.py",
+        "files": 1
+      },
+      {
+        "label": "h8_lda_pipeline.py",
         "files": 1
       },
       {
@@ -3761,6 +3805,10 @@
       },
       {
         "label": "logistics.md",
+        "files": 1
+      },
+      {
+        "label": "Lore_Evidence_Graph_System.py",
         "files": 1
       },
       {
@@ -3913,6 +3961,10 @@
       },
       {
         "label": "vehicles.md",
+        "files": 1
+      },
+      {
+        "label": "verify_lore.py",
         "files": 1
       },
       {
@@ -4235,6 +4287,11 @@
         "extension": ".shader"
       },
       {
+        "path": "Docs/Lore/AppliedContent/compiled_lore_database.json",
+        "lines": 16126,
+        "extension": ".json"
+      },
+      {
         "path": "Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Pocket_Hazard.prefab",
         "lines": 16098,
         "extension": ".prefab"
@@ -4256,7 +4313,7 @@
       },
       {
         "path": "Docs/PROJECT_ROOT_BIBLES_COMBINED.md",
-        "lines": 14028,
+        "lines": 14070,
         "extension": ".md"
       },
       {
@@ -4325,13 +4382,13 @@
         "extension": ".json"
       },
       {
-        "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
-        "lines": 10608,
+        "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+        "lines": 10657,
         "extension": ".cs"
       },
       {
-        "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
-        "lines": 10600,
+        "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+        "lines": 10608,
         "extension": ".cs"
       },
       {
@@ -4341,33 +4398,28 @@
       },
       {
         "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
-        "lines": 10081,
+        "lines": 10239,
         "extension": ".cs"
+      },
+      {
+        "path": "Docs/Orchestration/ORCHESTRATOR_NIGHT_20260605.md",
+        "lines": 9990,
+        "extension": ".md"
       },
       {
         "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
         "lines": 9936,
         "extension": ".cs"
-      },
-      {
-        "path": "Assets/Plugins/Sirenix/Assemblies/Sirenix.Serialization.xml",
-        "lines": 9864,
-        "extension": ".xml"
-      },
-      {
-        "path": "Assets/Plugins/Sirenix/Assemblies/Sirenix.Utilities.Editor.xml",
-        "lines": 9764,
-        "extension": ".xml"
       }
     ],
     "doc_artifacts": [
       {
         "label": "Docs reports json",
-        "count": 546
+        "count": 549
       },
       {
         "label": "Docs reports md",
-        "count": 101
+        "count": 104
       },
       {
         "label": "Agent logs md",
@@ -5037,14 +5089,14 @@
       },
       {
         "period": "2026-06-06",
-        "commits": 15,
-        "insertions": 42842,
+        "commits": 17,
+        "insertions": 69991,
         "deletions": 23088689,
-        "files_changed": 11775,
-        "churn": 23131531,
-        "net_lines": -23045847,
-        "churn_per_commit": 1542102.0666666667,
-        "files_changed_per_commit": 785.0
+        "files_changed": 12501,
+        "churn": 23158680,
+        "net_lines": -23018698,
+        "churn_per_commit": 1362275.294117647,
+        "files_changed_per_commit": 735.3529411764706
       }
     ],
     "weekly": [
@@ -5149,14 +5201,14 @@
       },
       {
         "period": "2026-W23",
-        "commits": 60,
-        "insertions": 2140672,
+        "commits": 62,
+        "insertions": 2167821,
         "deletions": 23383501,
-        "files_changed": 55728,
-        "churn": 25524173,
-        "net_lines": -21242829,
-        "churn_per_commit": 425402.88333333336,
-        "files_changed_per_commit": 928.8
+        "files_changed": 56454,
+        "churn": 25551322,
+        "net_lines": -21215680,
+        "churn_per_commit": 412118.0967741936,
+        "files_changed_per_commit": 910.5483870967741
       }
     ],
     "weekday_hour_commit_heatmap": [
@@ -5303,7 +5355,7 @@
         0,
         1,
         8,
-        7,
+        9,
         0,
         2,
         8,
@@ -5487,7 +5539,7 @@
         0,
         6631,
         23094014,
-        221964,
+        249113,
         0,
         679611,
         1048,

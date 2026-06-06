@@ -1,14 +1,14 @@
 {
   "schema": "hecton8.token_usage_deep_analytics.v1",
-  "generated_at_samara": "2026-06-06T12:48:34.106690+04:00",
+  "generated_at_samara": "2026-06-06T15:13:17.903768+04:00",
   "evidence_class": "STATIC_LOCAL_JSONL_REPORT_DERIVED_NOT_PROVIDER_INVOICE_PROOF",
   "token_report": "Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-06-06.json",
   "chart_dir": "Docs/Reports/MetricChartsDeep/2026-06-06",
   "chart_count": 602,
   "bucket_counts": {
     "1h": 120,
-    "4h": 30,
-    "12h": 10,
+    "4h": 31,
+    "12h": 11,
     "1d": 65
   },
   "smoothing": {
@@ -30,39 +30,39 @@
     }
   },
   "forecast": {
-    "current_tokens_per_day": 3804792160.109679,
-    "current_cost_per_day": 3123.5560844250267,
-    "daily_token_avg_7": 2146219456.142857,
-    "daily_token_avg_30": 3795340932.1,
-    "daily_cost_avg_7": 1681.9081777142858,
-    "daily_cost_avg_30": 2936.025869466667,
+    "current_tokens_per_day": 3290192673.049733,
+    "current_cost_per_day": 2758.9847249715167,
+    "daily_token_avg_7": 2198451801.714286,
+    "daily_token_avg_30": 3807528479.4,
+    "daily_cost_avg_7": 1725.7075104285716,
+    "daily_cost_avg_30": 2946.2457137666665,
     "projections": [
       {
         "label": "24h",
-        "current_tokens": 3804792160.109679,
-        "avg_7d_tokens": 2146219456.142857,
-        "avg_30d_tokens": 3795340932.1,
-        "current_cost": 3123.5560844250267,
-        "avg_7d_cost": 1681.9081777142858,
-        "avg_30d_cost": 2936.025869466667
+        "current_tokens": 3290192673.049733,
+        "avg_7d_tokens": 2198451801.714286,
+        "avg_30d_tokens": 3807528479.4,
+        "current_cost": 2758.9847249715167,
+        "avg_7d_cost": 1725.7075104285716,
+        "avg_30d_cost": 2946.2457137666665
       },
       {
         "label": "7d",
-        "current_tokens": 26633545120.767754,
-        "avg_7d_tokens": 15023536193.0,
-        "avg_30d_tokens": 26567386524.7,
-        "current_cost": 21864.892590975185,
-        "avg_7d_cost": 11773.357244,
-        "avg_30d_cost": 20552.181086266668
+        "current_tokens": 23031348711.348133,
+        "avg_7d_tokens": 15389162612.0,
+        "avg_30d_tokens": 26652699355.8,
+        "current_cost": 19312.893074800617,
+        "avg_7d_cost": 12079.952573,
+        "avg_30d_cost": 20623.719996366664
       },
       {
         "label": "30d",
-        "current_tokens": 114143764803.29037,
-        "avg_7d_tokens": 64386583684.28571,
-        "avg_30d_tokens": 113860227963.0,
-        "current_cost": 93706.6825327508,
-        "avg_7d_cost": 50457.245331428574,
-        "avg_30d_cost": 88080.776084
+        "current_tokens": 98705780191.49199,
+        "avg_7d_tokens": 65953554051.42857,
+        "avg_30d_tokens": 114225854382.0,
+        "current_cost": 82769.5417491455,
+        "avg_7d_cost": 51771.22531285715,
+        "avg_30d_cost": 88387.371413
       }
     ]
   },
@@ -4283,18 +4283,18 @@
     }
   ],
   "totals": {
-    "input_tokens": 138063786512,
-    "cached_input_tokens": 132756527360,
-    "output_tokens": 481796365,
-    "reasoning_output_tokens": 147451139,
-    "total_tokens": 138546616477
+    "input_tokens": 138427944497,
+    "cached_input_tokens": 133102804608,
+    "output_tokens": 483264799,
+    "reasoning_output_tokens": 147905141,
+    "total_tokens": 138912242896
   },
   "primary_price_key": "gpt-5.5_standard_short_context_equivalent",
   "primary_price": {
-    "uncached_input_cost_usd": 26536.295759999997,
-    "cached_input_cost_usd": 66378.26368,
-    "output_cost_usd": 14453.890949999999,
-    "total_cost_usd": 107368.45039
+    "uncached_input_cost_usd": 26625.699445,
+    "cached_input_cost_usd": 66551.402304,
+    "output_cost_usd": 14497.94397,
+    "total_cost_usd": 107675.04571899999
   },
   "residual_risk": [
     "Local JSONL/report data is not provider invoice proof.",
