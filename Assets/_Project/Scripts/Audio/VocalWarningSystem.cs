@@ -310,6 +310,8 @@ namespace Hecton8.Audio
         private const uint PackedDirectionShift = 16;
         private const uint PackedDirectionMask = 0xFFFFu << (int)PackedDirectionShift;
         private const SystemID VaultOwner = SystemID.AudioVocalWarning;
+        private static readonly ulong VocalWarningTuningMutationGuardMask =
+            VocalWarningMutationGuardBit(VocalWarningTuningBufferId);
         private static readonly ulong VocalWarningFrameMutationGuardMask =
             VocalWarningMutationGuardBit(BufferID.AudioVocalWarningQueue) |
             VocalWarningMutationGuardBit(AlarmStateBufferId) |
@@ -320,7 +322,7 @@ namespace Hecton8.Audio
             VocalWarningMutationGuardBit(VocalWarningCurrentStateBufferId) |
             VocalWarningMutationGuardBit(VocalWarningDispatchBufferId) |
             VocalWarningMutationGuardBit(VocalWarningProfilesBufferId) |
-            VocalWarningMutationGuardBit(VocalWarningTuningBufferId) |
+            VocalWarningTuningMutationGuardMask |
             VocalWarningMutationGuardBit(BufferID.AudioVocalWarningTelemetry);
         private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_352_VWS.bin";
         private const string AgentTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_X_011.bin";
@@ -604,17 +606,14 @@ namespace Hecton8.Audio
 
         public unsafe bool EditorTryWriteTuning(in VocalWarningTuningDTO tuning)
         {
-            IDataVault vault = _dataVault;
             if (Volatile.Read(ref _nativeAllocated) == 0 ||
-                vault == null ||
-                !vault.TryAcquireWriteLock(in _tuningHandle, VaultOwner, out NativeArray<VocalWarningTuningDTO> tuningView))
+                !TryAcquireTuningMutationView(out NativeArray<VocalWarningTuningDTO> tuningView, out IDataVault guardVault))
+            {
                 return false;
+            }
 
             try
             {
-                if (!tuningView.IsCreated || tuningView.Length <= 0)
-                    return false;
-
                 void* pointer = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(tuningView);
                 ref VocalWarningTuningDTO target = ref UnsafeUtility.AsRef<VocalWarningTuningDTO>(pointer);
                 target = SanitizeTuning(tuning);
@@ -622,7 +621,7 @@ namespace Hecton8.Audio
             }
             finally
             {
-                vault.ReleaseWriteLock(in _tuningHandle, VaultOwner);
+                ReleaseVocalWarningMutationGuard(guardVault, VocalWarningTuningMutationGuardMask);
             }
         }
 
@@ -1033,6 +1032,49 @@ namespace Hecton8.Audio
             if (!success)
                 views = default;
             return success;
+        }
+
+        private bool TryAcquireTuningMutationView(out NativeArray<VocalWarningTuningDTO> tuningView, out IDataVault guardVault)
+        {
+            tuningView = default;
+            guardVault = _dataVault;
+            if (guardVault == null ||
+                !IsVocalWarningVaultHandle(in _tuningHandle, VocalWarningTuningBufferId) ||
+                guardVault.IsCompactionFenceActive ||
+                !guardVault.TryAcquireMutationGuard(VocalWarningTuningMutationGuardMask))
+            {
+                guardVault = null;
+                return false;
+            }
+
+            bool acquired = true;
+            try
+            {
+                if (guardVault.IsCompactionFenceActive ||
+                    !guardVault.TryResolveHandle(in _tuningHandle, out tuningView) ||
+                    !tuningView.IsCreated ||
+                    tuningView.Length <= 0)
+                {
+                    return false;
+                }
+
+                acquired = false;
+                return true;
+            }
+            finally
+            {
+                if (acquired)
+                {
+                    ReleaseVocalWarningMutationGuard(guardVault, VocalWarningTuningMutationGuardMask);
+                    tuningView = default;
+                    guardVault = null;
+                }
+            }
+        }
+
+        private static void ReleaseVocalWarningMutationGuard(IDataVault guardVault, ulong mutationGuardMask)
+        {
+            guardVault?.ReleaseMutationGuard(mutationGuardMask);
         }
 
         private void RefreshCachedServicesCold()

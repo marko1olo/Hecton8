@@ -37,6 +37,7 @@ namespace Hecton8.Audio.Editor
         private const string GlobalSignalsPath = "Assets/_Project/Scripts/Core/GlobalSignals.cs";
         private const string AcousticZonePath = "Assets/_Project/Scripts/AcousticZoneController.cs";
         private const string AudioLogEventsPath = "Assets/_Project/Scripts/AudioLog/AudioLogEvents.cs";
+        private const string AudioLogSystemPath = "Assets/_Project/Scripts/AudioLog/AudioLogSystem.cs";
         private const string PlayerPdaPath = "Assets/_Project/Scripts/PlayerPDA.cs";
         private const string PlayerStressVfxPath = "Assets/_Project/Scripts/Visor/PlayerStressVFX.cs";
         private const string DeepPsychosisPath = "Assets/_Project/Scripts/Audio/DeepPsychosisController.cs";
@@ -97,6 +98,7 @@ namespace Hecton8.Audio.Editor
             string globalSignals = ReadAssetText(GlobalSignalsPath, builder, ref failureCount);
             string acousticZone = ReadAssetText(AcousticZonePath, builder, ref failureCount);
             string audioLogEvents = ReadAssetText(AudioLogEventsPath, builder, ref failureCount);
+            string audioLogSystem = ReadAssetText(AudioLogSystemPath, builder, ref failureCount);
             string playerPda = ReadAssetText(PlayerPdaPath, builder, ref failureCount);
             string playerStressVfx = ReadAssetText(PlayerStressVfxPath, builder, ref failureCount);
             string deepPsychosis = ReadAssetText(DeepPsychosisPath, builder, ref failureCount);
@@ -517,6 +519,7 @@ namespace Hecton8.Audio.Editor
                 string musicResolveProfile = ExtractMethodBody(musicDirector, "private HectonMusicBiomeProfile ResolveProfile(");
                 string musicSoundscapeProfile = ExtractMethodBody(musicDirector, "private HectonMusicBiomeProfile ResolveSoundscapeTierProfile(");
                 string musicTickRoute = ExtractMethodBody(musicDirector, "private void RunMusicTick(");
+                string musicStingerFlush = ExtractMethodBody(musicDirector, "private void FlushPendingStingers()");
                 string musicDiscoveryStinger = ExtractMethodBody(musicDirector, "public void PlayDiscoveryStinger()");
                 string musicDangerStinger = ExtractMethodBody(musicDirector, "public void PlayDangerStinger()");
                 string musicRecoveryStinger = ExtractMethodBody(musicDirector, "public void PlayRecoveryStinger()");
@@ -611,6 +614,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(musicForegroundSpeechRefresh, "if (_lastForegroundSpeechDuckingRefreshFrame == frame)", "Foreground speech ducking refresh is cached per dispatcher frame", builder, ref failureCount);
                 AssertContains(musicForegroundSpeechRefresh, "_lastForegroundSpeechDuckingRefreshFrame = frame", "Foreground speech ducking cache records the refreshed dispatcher frame", builder, ref failureCount);
                 AssertContains(musicTickRoute, "RefreshForegroundSpeechMusicDucking();", "Music director refreshes speech ducking once from its tick route before stinger/scalar gates", builder, ref failureCount);
+                AssertContains(musicStingerFlush, "RefreshForegroundSpeechMusicDucking();", "Pending stinger flush refreshes cached speech foreground before reading the gate", builder, ref failureCount);
                 AssertContains(musicDiscoveryStinger, "RefreshForegroundSpeechMusicDucking();", "Discovery stinger refreshes cached speech foreground before reading the gate", builder, ref failureCount);
                 AssertContains(musicDangerStinger, "RefreshForegroundSpeechMusicDucking();", "Danger stinger refreshes cached speech foreground before reading the gate", builder, ref failureCount);
                 AssertContains(musicRecoveryStinger, "RefreshForegroundSpeechMusicDucking();", "Recovery stinger refreshes cached speech foreground before reading the gate", builder, ref failureCount);
@@ -770,9 +774,19 @@ namespace Hecton8.Audio.Editor
                 string vocalTick = ExtractMethodBody(vocalWarning, "public void Tick(float deltaTime)");
                 string vocalSlowTick = ExtractMethodBody(vocalWarning, "public void SlowTick()");
                 string vocalColdServices = ExtractMethodBody(vocalWarning, "private void RefreshCachedServicesCold()");
+                string vocalTuningWrite = ExtractMethodBody(vocalWarning, "public unsafe bool EditorTryWriteTuning(");
+                string vocalTuningAcquire = ExtractMethodBody(vocalWarning, "private bool TryAcquireTuningMutationView(");
                 AssertContains(vocalWarning, "ResolveGlobalQualityWeight01()", "Vocal warning system derives radio presentation from continuous global quality", builder, ref failureCount);
                 AssertContains(vocalWarning, "ResolveRadioDistortion01(ref views, nextId)", "Vocal warning system resolves radio degradation through the warning payload path", builder, ref failureCount);
+                AssertContains(vocalWarning, "VocalWarningTuningMutationGuardMask", "Vocal warning tuning buffer has a dedicated mutation guard", builder, ref failureCount);
+                AssertContains(vocalWarning, "return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);", "Vocal warning mutation guard uses DataVault active-lock lanes", builder, ref failureCount);
+                AssertContains(vocalTuningWrite, "TryAcquireTuningMutationView", "Vocal warning editor tuning writes acquire a guarded owner view", builder, ref failureCount);
+                AssertContains(vocalTuningWrite, "ReleaseVocalWarningMutationGuard", "Vocal warning editor tuning writes release mutation guard in finally", builder, ref failureCount);
+                AssertContains(vocalTuningAcquire, "TryAcquireMutationGuard(VocalWarningTuningMutationGuardMask)", "Vocal warning tuning view uses DataVault mutation guard", builder, ref failureCount);
+                AssertContains(vocalTuningAcquire, "TryResolveHandle(in _tuningHandle", "Vocal warning tuning view resolves the tuning handle after guard acquisition", builder, ref failureCount);
                 AssertNotContains(vocalWarning, "ConsumeScalabilitySignals();", "Vocal warning system no longer drains binary scalability changes", builder, ref failureCount);
+                AssertNotContains(vocalWarning, "TryAcquireWriteLock", "Vocal warning system avoids direct DataVault write locks", builder, ref failureCount);
+                AssertNotContains(vocalWarning, "ReleaseWriteLock", "Vocal warning system avoids direct DataVault write-lock release calls", builder, ref failureCount);
                 AssertNotContains(vocalWarning, "ReadOnlySpan<ScalabilityChangedEvent> signals = SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot();", "Vocal warning system avoids typed scalability snapshots for radio presentation", builder, ref failureCount);
                 AssertNotContains(vocalWarning, "IScalability" + "ChangedEventListener", "Vocal warning system has no legacy scalability listener interface", builder, ref failureCount);
                 AssertNotContains(vocalWarning, "Scalability" + "Events.Register(this)", "Vocal warning system does not register with the scalability listener registry", builder, ref failureCount);
@@ -1010,6 +1024,46 @@ namespace Hecton8.Audio.Editor
                 AssertContains(referenceSlotOverflow, "_lastReferenceSlotOverflowTelemetryFrame == frame", "Audio-log reference-slot overflow telemetry is frame-rate limited", builder, ref failureCount);
                 AssertContains(resetBody, "_droppedEventCount = 0", "Audio-log reset clears dropped-event counter", builder, ref failureCount);
                 AssertContains(resetBody, "_droppedReferenceSlotCount = 0", "Audio-log reset clears sidecar overflow counter", builder, ref failureCount);
+            }
+
+            if (audioLogSystem.Length > 0)
+            {
+                string audioLogSlowTick = ExtractMethodBody(audioLogSystem, "public void SlowTick()");
+                string audioLogQueueEnqueue = ExtractMethodBody(audioLogSystem, "private void EnqueuePlayback");
+                string audioLogQueueStart = ExtractMethodBody(audioLogSystem, "private void TryStartNextQueuedLog()");
+                string audioLogStop = ExtractMethodBody(audioLogSystem, "public void StopPlayback()");
+                string audioLogAcquire = ExtractMethodBody(audioLogSystem, "private bool TryAcquireVaultMutation");
+                string audioLogTelemetry = ExtractMethodBody(audioLogSystem, "private void RecordVaultTelemetry");
+                AssertContains(audioLogSystem, "public bool IsNarrativeQueueBlocked => _isPlaying || _atmosphericWarningActive || _queueCount > 0", "Audio-log runtime exposes queued narrative speech as foreground-blocking state", builder, ref failureCount);
+                AssertContains(audioLogStop, "bool hadPlayback = _isPlaying || stoppedLog != null || _pendingPlaybackDirty || _currentPlaybackBitCrushed", "Audio-log stop records active playback state before clearing pending speech", builder, ref failureCount);
+                AssertContains(audioLogStop, "ClearPlaybackQueue();", "Stopping audio-log playback clears pending queued speech so music does not remain ducked", builder, ref failureCount);
+                AssertContains(audioLogStop, "if (!hadPlayback)", "Audio-log stop clears queued speech before deciding whether to publish a stopped-playback event", builder, ref failureCount);
+                AssertContains(audioLogSlowTick, "if (!_isPlaying && !_atmosphericWarningActive && _queueCount > 0)", "Audio-log slow tick retries queued speech when a previous guarded queue drain could not start", builder, ref failureCount);
+                AssertContains(audioLogSlowTick, "TryStartNextQueuedLog();", "Audio-log slow tick owns idle queued-playback recovery", builder, ref failureCount);
+                AssertContains(audioLogQueueEnqueue, "TryAcquirePlaybackQueueMutationView", "Audio-log enqueue writes queue state through mutation-guarded vault views", builder, ref failureCount);
+                AssertContains(audioLogQueueEnqueue, "ReleaseVaultMutation", "Audio-log enqueue releases queue mutation guards in finally", builder, ref failureCount);
+                AssertContains(audioLogQueueStart, "TryAcquirePlaybackQueueMutationView", "Audio-log queue drain reads queued speech through mutation-guarded vault views", builder, ref failureCount);
+                AssertContains(audioLogQueueStart, "ReleaseVaultMutation", "Audio-log queue drain releases queue mutation guards before starting playback", builder, ref failureCount);
+                AssertContains(audioLogAcquire, "TryAcquireMutationGuard", "Audio-log vault mutation helper acquires mutation guards instead of write locks", builder, ref failureCount);
+                AssertContains(audioLogAcquire, "TryResolveHandle", "Audio-log vault mutation helper resolves owner views after guard acquisition", builder, ref failureCount);
+                AssertContains(audioLogTelemetry, "TryAcquireMutationGuard(TelemetryMutationGuardMask)", "Audio-log vault telemetry writes through a telemetry mutation guard", builder, ref failureCount);
+                AssertContains(audioLogTelemetry, "TryResolveHandle(in _telemetryRingHandle", "Audio-log vault telemetry resolves the telemetry ring under guard", builder, ref failureCount);
+                AssertNotContains(audioLogSystem, "TryAcquireWriteLock", "Audio-log runtime avoids direct DataVault write locks", builder, ref failureCount);
+                AssertNotContains(audioLogSystem, "ReleaseWriteLock", "Audio-log runtime avoids direct DataVault write-lock release calls", builder, ref failureCount);
+            }
+
+            if (adaptiveStemMixer.Length > 0)
+            {
+                string adaptiveRuleWrite = ExtractMethodBody(adaptiveStemMixer, "private bool TryWriteRuleForOwnerRoute(");
+                string adaptiveRuleAcquire = ExtractMethodBody(adaptiveStemMixer, "private bool TryAcquireRuleMutationView(");
+                AssertContains(adaptiveStemMixer, "AudioStemRulesMutationGuardMask", "Adaptive stem rule buffer has a dedicated mutation guard", builder, ref failureCount);
+                AssertContains(adaptiveRuleWrite, "TryAcquireRuleMutationView", "Adaptive stem editor rule writes acquire a guarded owner view", builder, ref failureCount);
+                AssertContains(adaptiveRuleWrite, "ReleaseAdaptiveStemMutationGuard", "Adaptive stem editor rule writes release mutation guard in finally", builder, ref failureCount);
+                AssertContains(adaptiveRuleAcquire, "TryAcquireMutationGuard(AudioStemRulesMutationGuardMask)", "Adaptive stem rule view uses DataVault mutation guard", builder, ref failureCount);
+                AssertContains(adaptiveRuleAcquire, "TryResolveHandle(in _rulesHandle", "Adaptive stem rule view resolves the rules handle after guard acquisition", builder, ref failureCount);
+                AssertContains(adaptiveStemMixer, "return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);", "Adaptive stem mutation guard uses DataVault active-lock lanes", builder, ref failureCount);
+                AssertNotContains(adaptiveStemMixer, "TryAcquireWriteLock", "Adaptive stem mixer avoids direct DataVault write locks", builder, ref failureCount);
+                AssertNotContains(adaptiveStemMixer, "ReleaseWriteLock", "Adaptive stem mixer avoids direct DataVault write-lock release calls", builder, ref failureCount);
             }
 
             if (ringBuffer.Length > 0)

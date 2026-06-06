@@ -198,6 +198,7 @@ namespace Hecton8.Audio
         private const ulong DefaultBossNarrativeMask = 1ul << 7;
         private static readonly bool ProceduralSynthOwnsStemTransport = true;
         private const SystemID VaultOwner = SystemID.AudioStemMixer;
+        private static readonly ulong AudioStemRulesMutationGuardMask = AdaptiveStemMutationGuardBit(BufferID.AudioStemRules);
 #if UNITY_EDITOR
         private const int CsvPollSlowTickInterval = 2;
         private const string CsvDefaultRelativePath = "Docs/Audio/audio_stem_rules.csv";
@@ -464,9 +465,7 @@ namespace Hecton8.Audio
 
         private bool TryWriteRuleForOwnerRoute(in AudioStemRuleDTO rule)
         {
-            IDataVault vault = _dataVault;
-            if (vault == null ||
-                !vault.TryAcquireWriteLock(in _rulesHandle, VaultOwner, out NativeArray<AudioStemRuleDTO> rules))
+            if (!TryAcquireRuleMutationView(out NativeArray<AudioStemRuleDTO> rules, out IDataVault guardVault))
             {
                 return false;
             }
@@ -481,7 +480,7 @@ namespace Hecton8.Audio
             }
             finally
             {
-                vault.ReleaseWriteLock(in _rulesHandle, VaultOwner);
+                ReleaseAdaptiveStemMutationGuard(guardVault, AudioStemRulesMutationGuardMask);
             }
         }
 
@@ -814,6 +813,54 @@ namespace Hecton8.Audio
             }
 
             return true;
+        }
+
+        private bool TryAcquireRuleMutationView(out NativeArray<AudioStemRuleDTO> rules, out IDataVault guardVault)
+        {
+            rules = default;
+            guardVault = _dataVault;
+            if (guardVault == null ||
+                !IsAdaptiveStemVaultHandle(in _rulesHandle, BufferID.AudioStemRules) ||
+                guardVault.IsCompactionFenceActive ||
+                !guardVault.TryAcquireMutationGuard(AudioStemRulesMutationGuardMask))
+            {
+                guardVault = null;
+                return false;
+            }
+
+            bool acquired = true;
+            try
+            {
+                if (guardVault.IsCompactionFenceActive ||
+                    !guardVault.TryResolveHandle(in _rulesHandle, out rules) ||
+                    !rules.IsCreated ||
+                    rules.Length <= 0)
+                {
+                    return false;
+                }
+
+                acquired = false;
+                return true;
+            }
+            finally
+            {
+                if (acquired)
+                {
+                    ReleaseAdaptiveStemMutationGuard(guardVault, AudioStemRulesMutationGuardMask);
+                    rules = default;
+                    guardVault = null;
+                }
+            }
+        }
+
+        private static void ReleaseAdaptiveStemMutationGuard(IDataVault guardVault, ulong mutationGuardMask)
+        {
+            guardVault?.ReleaseMutationGuard(mutationGuardMask);
+        }
+
+        private static ulong AdaptiveStemMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private void ConfigureSourcesCold()

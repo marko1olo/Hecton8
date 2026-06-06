@@ -917,6 +917,7 @@ namespace Hecton8.Audio
 
         private void FlushPendingStingers()
         {
+            RefreshForegroundSpeechMusicDucking();
             if (IsEmergencyBreathDominant() || IsForegroundSpeechActive())
             {
                 _pendingDiscoveryStinger = false;

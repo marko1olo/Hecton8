@@ -23,6 +23,7 @@ namespace Hecton8.Tests.Editor
         private const string SettingsManagerPath = "Assets/_Project/Scripts/UI/SettingsManager.cs";
         private const string ObjectPoolManagerPath = "Assets/_Project/Scripts/ObjectPoolManager.cs";
         private const string VocalBankRuntimePath = "Assets/_Project/Scripts/Audio/Synthesis/VocalBankPlaybackRuntime.cs";
+        private const string VocalWarningSystemPath = "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs";
         private const string SoundscapeSystemPath = "Assets/_Project/Scripts/World/SoundscapeSystem.cs";
         private const string AcousticZoneControllerPath = "Assets/_Project/Scripts/AcousticZoneController.cs";
         private const string AdaptiveStemMixerPath = "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs";
@@ -295,6 +296,7 @@ namespace Hecton8.Tests.Editor
             string publish = ExtractMethodBody(musicDirector, "private void PublishDynamicMusicScalars(");
             string stopPublish = ExtractMethodBody(musicDirector, "private void PublishProceduralMusicStopSignal()");
             string stinger = ExtractMethodBody(musicDirector, "private void InjectProceduralStinger(");
+            string stingerFlush = ExtractMethodBody(musicDirector, "private void FlushPendingStingers()");
             string discoveryStinger = ExtractMethodBody(musicDirector, "public void PlayDiscoveryStinger()");
             string dangerStinger = ExtractMethodBody(musicDirector, "public void PlayDangerStinger()");
             string recoveryStinger = ExtractMethodBody(musicDirector, "public void PlayRecoveryStinger()");
@@ -394,6 +396,7 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("PublishProceduralMusicStopSignal();", stop);
             StringAssert.Contains("signal.MusicActivity01 = math.saturate", musicDirector);
             StringAssert.Contains("if (IsEmergencyBreathDominant() || IsForegroundSpeechActive())", stinger);
+            StringAssert.Contains("RefreshForegroundSpeechMusicDucking();", stingerFlush);
             StringAssert.Contains("RefreshForegroundSpeechMusicDucking();", discoveryStinger);
             StringAssert.Contains("RefreshForegroundSpeechMusicDucking();", dangerStinger);
             StringAssert.Contains("RefreshForegroundSpeechMusicDucking();", recoveryStinger);
@@ -411,6 +414,7 @@ namespace Hecton8.Tests.Editor
             AssertTextBefore(overrideStart, "RefreshForegroundSpeechMusicDucking();", "bool emergencyBreathDominates = IsEmergencyBreathDominant();");
             AssertTextBefore(overrideStart, "bool emergencyBreathDominates = IsEmergencyBreathDominant();", "PushDynamicMusicSignal(");
             AssertTextBefore(overrideStart, "bool foregroundSpeechActive = IsForegroundSpeechActive();", "PushDynamicMusicSignal(");
+            AssertTextBefore(stingerFlush, "RefreshForegroundSpeechMusicDucking();", "IsForegroundSpeechActive()");
             AssertTextBefore(discoveryStinger, "RefreshForegroundSpeechMusicDucking();", "IsForegroundSpeechActive()");
             AssertTextBefore(dangerStinger, "RefreshForegroundSpeechMusicDucking();", "IsForegroundSpeechActive()");
             AssertTextBefore(recoveryStinger, "RefreshForegroundSpeechMusicDucking();", "IsForegroundSpeechActive()");
@@ -667,6 +671,8 @@ namespace Hecton8.Tests.Editor
             string adaptiveStem = Read(AdaptiveStemMixerPath);
             string apply = ExtractMethodBody(adaptiveStem, "private void ApplyMixFrameToUnityAudio(");
             string push = ExtractMethodBody(adaptiveStem, "private void PushDynamicMusicSignal(");
+            string ruleWrite = ExtractMethodBody(adaptiveStem, "private bool TryWriteRuleForOwnerRoute(");
+            string ruleAcquire = ExtractMethodBody(adaptiveStem, "private bool TryAcquireRuleMutationView(");
 
             StringAssert.Contains("ProceduralSynthOwnsStemTransport", apply);
             StringAssert.Contains("PushDynamicMusicSignal(tension, depthMeters, quality);", apply);
@@ -678,8 +684,17 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("signal.DamageImpulse01 = 0f", push);
             StringAssert.Contains("signal.MusicActivity01 = 0f", push);
             StringAssert.Contains("DynamicMusicScalarSignal.SourceAdaptiveStemHash", push);
+            StringAssert.Contains("AudioStemRulesMutationGuardMask", adaptiveStem);
+            StringAssert.Contains("TryAcquireRuleMutationView", ruleWrite);
+            StringAssert.Contains("ReleaseAdaptiveStemMutationGuard", ruleWrite);
+            StringAssert.Contains("TryAcquireMutationGuard(AudioStemRulesMutationGuardMask)", ruleAcquire);
+            StringAssert.Contains("TryResolveHandle(in _rulesHandle", ruleAcquire);
+            StringAssert.Contains("ReleaseAdaptiveStemMutationGuard", ruleAcquire);
+            StringAssert.Contains("return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);", adaptiveStem);
             Assert.That(apply.IndexOf("frame.IoPressure01", StringComparison.Ordinal), Is.LessThan(0));
             Assert.That(push.IndexOf("damageImpulse", StringComparison.OrdinalIgnoreCase), Is.LessThan(0));
+            Assert.That(adaptiveStem.IndexOf("TryAcquireWriteLock", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(adaptiveStem.IndexOf("ReleaseWriteLock", StringComparison.Ordinal), Is.LessThan(0));
         }
 
         [Test]
@@ -704,6 +719,23 @@ namespace Hecton8.Tests.Editor
             Assert.That(vocalRelease.IndexOf("TryAcquireAudioCallbackViews", StringComparison.Ordinal), Is.LessThan(0));
             Assert.That(vocalRelease.IndexOf("TryAcquireLockedView", StringComparison.Ordinal), Is.LessThan(0));
             Assert.That(vocalRelease.IndexOf("Stopwatch.GetTimestamp", StringComparison.Ordinal), Is.LessThan(0));
+        }
+
+        [Test]
+        public void VocalWarningTuningWritesUseMutationGuardNotWriteLock()
+        {
+            string vocalWarning = Read(VocalWarningSystemPath);
+            string tuningWrite = ExtractMethodBody(vocalWarning, "public unsafe bool EditorTryWriteTuning(");
+            string tuningAcquire = ExtractMethodBody(vocalWarning, "private bool TryAcquireTuningMutationView(");
+
+            StringAssert.Contains("VocalWarningTuningMutationGuardMask", vocalWarning);
+            StringAssert.Contains("TryAcquireTuningMutationView", tuningWrite);
+            StringAssert.Contains("ReleaseVocalWarningMutationGuard", tuningWrite);
+            StringAssert.Contains("TryAcquireMutationGuard(VocalWarningTuningMutationGuardMask)", tuningAcquire);
+            StringAssert.Contains("TryResolveHandle(in _tuningHandle", tuningAcquire);
+            StringAssert.Contains("ReleaseVocalWarningMutationGuard", tuningAcquire);
+            Assert.That(vocalWarning.IndexOf("TryAcquireWriteLock", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(vocalWarning.IndexOf("ReleaseWriteLock", StringComparison.Ordinal), Is.LessThan(0));
         }
 
         [Test]

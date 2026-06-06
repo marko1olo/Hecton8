@@ -224,11 +224,21 @@ namespace Hecton8.Tests.Editor
                 "_Project/Scripts/Audio/VocalWarningSystem.cs");
             string source = File.ReadAllText(sourcePath);
             string methodBody = ExtractMethodBody(source, "private bool TryResolveVwsOwnerViews");
+            string writeTuningBody = ExtractMethodBody(source, "public unsafe bool EditorTryWriteTuning");
+            string acquireTuningBody = ExtractMethodBody(source, "private bool TryAcquireTuningMutationView");
 
             StringAssert.Contains("TryResolveHandle", methodBody);
+            StringAssert.Contains("VocalWarningTuningMutationGuardMask", source);
+            StringAssert.Contains("TryAcquireTuningMutationView", writeTuningBody);
+            StringAssert.Contains("ReleaseVocalWarningMutationGuard", writeTuningBody);
+            StringAssert.Contains("TryAcquireMutationGuard(VocalWarningTuningMutationGuardMask)", acquireTuningBody);
+            StringAssert.Contains("TryResolveHandle(in _tuningHandle", acquireTuningBody);
+            StringAssert.Contains("return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);", source);
             StringAssert.DoesNotContain("TryAcquireWriteLock", methodBody);
             StringAssert.DoesNotContain("ReleaseWriteLock", methodBody);
             StringAssert.DoesNotContain("TryLockBuffer", methodBody);
+            StringAssert.DoesNotContain("TryAcquireWriteLock", source);
+            StringAssert.DoesNotContain("ReleaseWriteLock", source);
         }
 
         [Test]
@@ -240,10 +250,20 @@ namespace Hecton8.Tests.Editor
             string source = File.ReadAllText(sourcePath);
             string tickBody = ExtractMethodBody(source, "public void Tick(float deltaTime)");
             string ownerViewBody = ExtractMethodBody(source, "private bool TryResolveStemOwnerViews");
+            string ruleWriteBody = ExtractMethodBody(source, "private bool TryWriteRuleForOwnerRoute(");
+            string ruleAcquireBody = ExtractMethodBody(source, "private bool TryAcquireRuleMutationView(");
 
             StringAssert.Contains("TryResolveStemOwnerViews", tickBody);
+            StringAssert.Contains("AudioStemRulesMutationGuardMask", source);
+            StringAssert.Contains("TryAcquireRuleMutationView", ruleWriteBody);
+            StringAssert.Contains("ReleaseAdaptiveStemMutationGuard", ruleWriteBody);
+            StringAssert.Contains("TryAcquireMutationGuard(AudioStemRulesMutationGuardMask)", ruleAcquireBody);
+            StringAssert.Contains("TryResolveHandle(in _rulesHandle", ruleAcquireBody);
+            StringAssert.Contains("return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);", source);
             StringAssert.DoesNotContain("TryAcquireStemWriteViews", source);
             StringAssert.DoesNotContain("ReleaseStemWriteViews", source);
+            StringAssert.DoesNotContain("TryAcquireWriteLock", source);
+            StringAssert.DoesNotContain("ReleaseWriteLock", source);
             AssertOwnerViewUsesResolveHandleOnly(ownerViewBody);
         }
 
@@ -595,12 +615,17 @@ namespace Hecton8.Tests.Editor
                 Application.dataPath,
                 "_Project/Scripts/AudioLog/AudioLogSystem.cs");
             string source = File.ReadAllText(audioLogPath);
+            string slowTickBody = ExtractMethodBody(source, "public void SlowTick()");
             string lateFrameBody = ExtractMethodBody(source, "public void LateFrameTick()");
             string flushBody = ExtractMethodBody(source, "private void FlushPendingPlaybackVisualSync()");
             string enqueueBody = ExtractMethodBody(source, "private void EnqueuePlayback");
             string startNextBody = ExtractMethodBody(source, "private void TryStartNextQueuedLog()");
+            string stopBody = ExtractMethodBody(source, "public void StopPlayback()");
             string acquireBody = ExtractMethodBody(source, "private bool TryAcquireVaultMutation");
-            string encryptedAcquireBody = ExtractMethodBody(source, "private bool TryAcquireEncryptedFragmentMutation");
+            string encryptedClearBody = ExtractMethodBody(source, "private unsafe bool TryClearEncryptedFragmentBuffer");
+            string encryptedWriteBody = ExtractMethodBody(source, "private bool TryWriteEncryptedFragmentValue");
+            string encryptedPairBody = ExtractMethodBody(source, "private bool TryWriteEncryptedFragmentPair");
+            string encryptedPairAcquireBody = ExtractMethodBody(source, "private bool TryAcquireEncryptedFragmentMutationView");
             string telemetryBody = ExtractMethodBody(source, "private void RecordVaultTelemetry");
             string unregisterBody = ExtractMethodBody(source, "private void TryUnregisterLateFrame()");
 
@@ -610,30 +635,58 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("GlobalRegistry.Audio", flushBody);
             StringAssert.Contains("SystemDispatcher.UnregisterLateFrameTickableDirect", unregisterBody);
             StringAssert.DoesNotContain("GlobalRegistry.UnregisterLateFrameTickable", unregisterBody);
+            StringAssert.Contains("public bool IsNarrativeQueueBlocked => _isPlaying || _atmosphericWarningActive || _queueCount > 0", source);
+            StringAssert.Contains("bool hadPlayback = _isPlaying || stoppedLog != null || _pendingPlaybackDirty || _currentPlaybackBitCrushed", stopBody);
+            StringAssert.Contains("ClearPlaybackQueue();", stopBody);
+            Assert.Greater(stopBody.IndexOf("ClearPlaybackQueue();", StringComparison.Ordinal),
+                stopBody.IndexOf("bool hadPlayback", StringComparison.Ordinal));
+            Assert.Greater(stopBody.IndexOf("if (!hadPlayback)", StringComparison.Ordinal),
+                stopBody.IndexOf("ClearPlaybackQueue();", StringComparison.Ordinal));
+            StringAssert.Contains("if (!_isPlaying && !_atmosphericWarningActive && _queueCount > 0)", slowTickBody);
+            StringAssert.Contains("TryStartNextQueuedLog();", slowTickBody);
+            Assert.Greater(slowTickBody.IndexOf("if (!_isPlaying || _currentLog == null)", StringComparison.Ordinal),
+                slowTickBody.IndexOf("TryStartNextQueuedLog();", StringComparison.Ordinal));
             StringAssert.Contains("PlaybackQueueMutationGuardMask", source);
             StringAssert.Contains("EncryptedFragmentStateMutationGuardMask", source);
             StringAssert.Contains("TelemetryMutationGuardMask", source);
-            StringAssert.Contains("TryAcquireVaultMutation", enqueueBody);
+            StringAssert.Contains("TryAcquirePlaybackQueueMutationView", enqueueBody);
             StringAssert.Contains("ReleaseVaultMutation", enqueueBody);
-            StringAssert.Contains("TryAcquireVaultMutation", startNextBody);
+            StringAssert.Contains("TryAcquirePlaybackQueueMutationView", startNextBody);
             StringAssert.Contains("ReleaseVaultMutation", startNextBody);
             Assert.Greater(startNextBody.LastIndexOf("ReleaseVaultMutation", StringComparison.Ordinal),
-                startNextBody.IndexOf("TryAcquireVaultMutation", StringComparison.Ordinal));
+                startNextBody.IndexOf("TryAcquirePlaybackQueueMutationView", StringComparison.Ordinal));
             Assert.Greater(startNextBody.LastIndexOf("PlayLogByHash", StringComparison.Ordinal),
                 startNextBody.LastIndexOf("ReleaseVaultMutation", StringComparison.Ordinal));
             StringAssert.Contains("TryAcquireMutationGuard", acquireBody);
             StringAssert.Contains("TryResolveHandle", acquireBody);
-            StringAssert.Contains("ReleaseMutationGuard", acquireBody);
-            StringAssert.Contains("TryAcquireMutationGuard", encryptedAcquireBody);
-            StringAssert.Contains("TryResolveHandle", encryptedAcquireBody);
-            StringAssert.Contains("ReleaseMutationGuard", encryptedAcquireBody);
+            StringAssert.Contains("ReleaseVaultMutation", acquireBody);
+            StringAssert.Contains("guardVault?.ReleaseMutationGuard", source);
+            StringAssert.Contains("TryAcquireVaultMutation", encryptedClearBody);
+            StringAssert.Contains("EncryptedFragmentStateMutationGuardMask", encryptedClearBody);
+            StringAssert.Contains("ReleaseVaultMutation", encryptedClearBody);
+            StringAssert.Contains("TryAcquireVaultMutation", encryptedWriteBody);
+            StringAssert.Contains("EncryptedFragmentStateMutationGuardMask", encryptedWriteBody);
+            StringAssert.Contains("ReleaseVaultMutation", encryptedWriteBody);
+            StringAssert.Contains("TryAcquireEncryptedFragmentMutationView", encryptedPairBody);
+            StringAssert.Contains("recoveredBitBuffer[slot] = recoveredBits & EncryptedLogCompleteMask", encryptedPairBody);
+            StringAssert.Contains("hashes[slot] = logHash", encryptedPairBody);
+            Assert.Greater(encryptedPairBody.IndexOf("hashes[slot] = logHash", StringComparison.Ordinal),
+                encryptedPairBody.IndexOf("recoveredBitBuffer[slot] = recoveredBits", StringComparison.Ordinal));
+            StringAssert.Contains("ReleaseVaultMutation(guardVault, EncryptedFragmentStateMutationGuardMask)", encryptedPairBody);
+            StringAssert.Contains("TryAcquireMutationGuard(EncryptedFragmentStateMutationGuardMask)", encryptedPairAcquireBody);
+            StringAssert.Contains("TryResolveHandle(in _encryptedFragmentLogHashesHandle", encryptedPairAcquireBody);
+            StringAssert.Contains("TryResolveHandle(in _encryptedFragmentRecoveredBitsHandle", encryptedPairAcquireBody);
+            StringAssert.Contains("& 31", source);
             StringAssert.Contains("TryAcquireMutationGuard", telemetryBody);
             StringAssert.Contains("TryResolveHandle", telemetryBody);
-            StringAssert.Contains("ReleaseMutationGuard", telemetryBody);
+            StringAssert.Contains("ReleaseVaultMutation", telemetryBody);
             StringAssert.Contains("finally", enqueueBody);
             StringAssert.Contains("finally", startNextBody);
             StringAssert.Contains("finally", acquireBody);
-            StringAssert.Contains("finally", encryptedAcquireBody);
+            StringAssert.Contains("finally", encryptedClearBody);
+            StringAssert.Contains("finally", encryptedWriteBody);
+            StringAssert.Contains("finally", encryptedPairBody);
+            StringAssert.Contains("finally", encryptedPairAcquireBody);
             StringAssert.Contains("finally", telemetryBody);
         }
 

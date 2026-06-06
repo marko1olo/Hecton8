@@ -1045,38 +1045,48 @@ namespace Hecton8.Tests.Editor
             Assert.That(audioResolveIndex, Is.GreaterThan(audioRecordIndex));
             string audioRecord = audio.Substring(audioRecordIndex, audioResolveIndex - audioRecordIndex);
             Assert.That(audioRecord, Does.Not.Contain("cursorLocked"));
-            int audioCursorAcquire = audioRecord.IndexOf("TryAcquireWriteLock(in _telemetryCursorHandle", System.StringComparison.Ordinal);
-            int audioCursorRelease = audioRecord.IndexOf("ReleaseWriteLock(in _telemetryCursorHandle", System.StringComparison.Ordinal);
-            int audioRingAcquire = audioRecord.IndexOf("TryAcquireWriteLock(in _telemetryRingHandle", System.StringComparison.Ordinal);
-            Assert.That(audioCursorAcquire, Is.GreaterThanOrEqualTo(0));
-            Assert.That(audioCursorRelease, Is.GreaterThan(audioCursorAcquire));
-            Assert.That(audioRingAcquire, Is.GreaterThan(audioCursorRelease));
+            Assert.That(audioRecord, Does.Not.Contain("TryAcquireWriteLock"));
+            Assert.That(audioRecord, Does.Not.Contain("ReleaseWriteLock"));
+            Assert.That(audioRecord, Does.Contain("TryAcquireMutationGuard(TelemetryMutationGuardMask)"));
+            Assert.That(audioRecord, Does.Contain("TryResolveHandle(in _telemetryRingHandle"));
+            Assert.That(audioRecord, Does.Contain("ReleaseVaultMutation(vault, TelemetryMutationGuardMask)"));
 
             Assert.That(audio, Does.Not.Contain("TryAcquireEncryptedFragmentState"));
             Assert.That(audio, Does.Not.Contain("ReleaseEncryptedFragmentWriteLocks"));
-            int helperIndex = audio.IndexOf("private bool TryAcquireVaultWrite", System.StringComparison.Ordinal);
+            Assert.That(audio, Does.Not.Contain("TryAcquireVaultWrite"));
+            Assert.That(audio, Does.Not.Contain("ReleaseVaultWrite"));
+            int helperIndex = audio.IndexOf("private bool TryAcquireVaultMutation", System.StringComparison.Ordinal);
             int helperFinally = helperIndex >= 0
                 ? audio.IndexOf("finally", helperIndex, System.StringComparison.Ordinal)
                 : -1;
             int helperRelease = helperFinally >= 0
-                ? audio.IndexOf("vault.ReleaseWriteLock(in handle, OwnerSystemId);", helperFinally, System.StringComparison.Ordinal)
+                ? audio.IndexOf("ReleaseVaultMutation(guardVault, mutationGuardMask);", helperFinally, System.StringComparison.Ordinal)
                 : -1;
             Assert.That(helperIndex, Is.GreaterThanOrEqualTo(0));
             Assert.That(helperFinally, Is.GreaterThan(helperIndex));
             Assert.That(helperRelease, Is.GreaterThan(helperFinally));
+            Assert.That(audio, Does.Contain("guardVault.TryAcquireMutationGuard(mutationGuardMask)"));
+            Assert.That(audio, Does.Contain("!guardVault.TryResolveHandle(in handle, out buffer)"));
+            Assert.That(audio, Does.Contain("return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);"));
 
             int fragmentIndex = audio.IndexOf("private bool SetEncryptedFragmentBits", System.StringComparison.Ordinal);
             Assert.That(fragmentIndex, Is.GreaterThanOrEqualTo(0));
-            int fragmentHashAcquire = audio.IndexOf("TryAcquireVaultWrite(in _encryptedFragmentLogHashesHandle", fragmentIndex, System.StringComparison.Ordinal);
-            int fragmentHashRelease = fragmentHashAcquire >= 0
-                ? audio.IndexOf("ReleaseVaultWrite(in _encryptedFragmentLogHashesHandle", fragmentHashAcquire, System.StringComparison.Ordinal)
+            int pairWriteIndex = audio.IndexOf("private bool TryWriteEncryptedFragmentPair", fragmentIndex, System.StringComparison.Ordinal);
+            int pairAcquireIndex = audio.IndexOf("private bool TryAcquireEncryptedFragmentMutationView", pairWriteIndex, System.StringComparison.Ordinal);
+            Assert.That(pairWriteIndex, Is.GreaterThan(fragmentIndex));
+            Assert.That(pairAcquireIndex, Is.GreaterThan(pairWriteIndex));
+            string pairWrite = audio.Substring(pairWriteIndex, pairAcquireIndex - pairWriteIndex);
+            int fragmentBitsWrite = pairWrite.IndexOf("recoveredBitBuffer[slot] = recoveredBits & EncryptedLogCompleteMask;", System.StringComparison.Ordinal);
+            int fragmentHashWrite = fragmentBitsWrite >= 0
+                ? pairWrite.IndexOf("hashes[slot] = logHash;", fragmentBitsWrite, System.StringComparison.Ordinal)
                 : -1;
-            int fragmentBitsAcquire = fragmentHashRelease >= 0
-                ? audio.IndexOf("TryAcquireVaultWrite(in _encryptedFragmentRecoveredBitsHandle", fragmentHashRelease, System.StringComparison.Ordinal)
-                : -1;
-            Assert.That(fragmentHashAcquire, Is.GreaterThanOrEqualTo(0));
-            Assert.That(fragmentHashRelease, Is.GreaterThan(fragmentHashAcquire));
-            Assert.That(fragmentBitsAcquire, Is.GreaterThan(fragmentHashRelease));
+            Assert.That(fragmentBitsWrite, Is.GreaterThanOrEqualTo(0));
+            Assert.That(fragmentHashWrite, Is.GreaterThan(fragmentBitsWrite));
+            Assert.That(pairWrite, Does.Contain("TryAcquireEncryptedFragmentMutationView"));
+            Assert.That(pairWrite, Does.Contain("ReleaseVaultMutation(guardVault, EncryptedFragmentStateMutationGuardMask)"));
+            Assert.That(audio, Does.Contain("private unsafe bool TryClearEncryptedFragmentBuffer"));
+            Assert.That(audio, Does.Contain("private bool TryWriteEncryptedFragmentValue"));
+            Assert.That(audio, Does.Contain("EncryptedFragmentStateMutationGuardMask"));
         }
 
         [Test]

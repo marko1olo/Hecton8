@@ -167,16 +167,11 @@ namespace Hecton8.Audio.Editor
         private static void RequireWriteLockFlattening(string vwsText, string vocalRuntimeText)
         {
             Require(Count(vocalRuntimeText, "TryAcquireWriteLock") == 0, "Vocal DSP runtime must not acquire DataVault write locks.");
-            Require(Count(vwsText, "TryAcquireWriteLock") <= 1, "VWS holds more than one DataVault write-lock route.");
-            if (Count(vwsText, "TryAcquireWriteLock") == 1)
-            {
-                string body = ExtractMethodBody(vwsText, "public unsafe bool EditorTryWriteTuning(");
-                Require(body.IndexOf("try", StringComparison.Ordinal) >= 0 &&
-                        body.IndexOf("finally", StringComparison.Ordinal) >= 0 &&
-                        body.IndexOf("ReleaseWriteLock", StringComparison.Ordinal) >= 0,
-                    "VWS write lock is not released by try/finally.");
-            }
-
+            Require(Count(vwsText, "TryAcquireWriteLock") == 0, "VWS must not acquire DataVault write locks.");
+            Require(Count(vwsText, "ReleaseWriteLock") == 0, "VWS must not release DataVault write locks.");
+            Require(vwsText.IndexOf("VocalWarningTuningMutationGuardMask", StringComparison.Ordinal) >= 0, "VWS tuning guard mask missing.");
+            Require(vwsText.IndexOf("TryAcquireTuningMutationView", StringComparison.Ordinal) >= 0, "VWS tuning mutation view helper missing.");
+            Require(vwsText.IndexOf("ReleaseVocalWarningMutationGuard", StringComparison.Ordinal) >= 0, "VWS tuning mutation guard release missing.");
             Require(vocalRuntimeText.IndexOf("TryAcquireVocalMutationGuard", StringComparison.Ordinal) >= 0, "Vocal runtime guard scope missing.");
             Require(vocalRuntimeText.IndexOf("ReleaseVocalMutationGuard", StringComparison.Ordinal) >= 0, "Vocal runtime guard release missing.");
         }
