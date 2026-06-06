@@ -66,6 +66,7 @@ namespace Hecton8.SaveSystem
         public const float PlayerStatsNitrogenBuildUpHardCap = 160f;
         public const ushort InventoryDefaultQualityMilli = 1000;
         public const byte InventoryItemGeneticsSupportedFlagsMask = 0x0F;
+        public const int InventoryShadowPayloadMaxBytes = 16 * 1024;
 
         /// <summary>Tekuschaya versiya formata. Ispolzuetsya dlya migratsii.</summary>
         public const int CurrentVersion = HazardZoneRuntimePersistenceVersion; // v74: delayed hazard zone toxicity state.
@@ -410,11 +411,12 @@ namespace Hecton8.SaveSystem
         public void RefreshFirstHourDtoMirrors()
         {
             playerKinematicState = PlayerKinematicStateDTO.FromPlayerStats(in playerStats);
-            inventoryShadow = InventoryShadowDTO.FromInventory(
+            int inventoryShadowPayloadLength = SaveDataInventorySanitizer.ResolveInventoryShadowPayloadLength(this);
+            inventoryShadow = SaveDataInventorySanitizer.BuildInventoryShadow(
                 in inventory,
                 inventoryShadowPayloadLength,
                 inventoryShadowPayloadHash,
-                hasInventoryShadowPayload);
+                inventoryShadowPayloadLength > 0);
             construction.RefreshHabitatFloodStateMirrors();
         }
 

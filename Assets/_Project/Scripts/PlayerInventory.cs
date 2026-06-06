@@ -41,7 +41,7 @@ namespace Hecton8.Inventory
         private const ushort FlammableItemStateMask = ItemRuntimeStateFlags.Flammable;
         private const ushort BrokenItemStateMask = ItemRuntimeStateFlags.Broken;
         private const ushort DurabilityDecayEligibleMask = BiologicalItemStateMask | RustedItemStateMask | RadioactiveItemStateMask;
-        private const ushort DefaultQualityMilli = 1000;
+        private const ushort DefaultQualityMilli = SaveData.InventoryDefaultQualityMilli;
         internal const ushort DegradedQualityMilliThreshold = 250;
         private const byte DegradedDurabilityThreshold = DegradedQualityMilliThreshold / 10;
         private const float SlowTickIntervalSeconds = 0.5f;
@@ -83,14 +83,10 @@ namespace Hecton8.Inventory
         private const string SalinityCorrosionBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_SALINITY_CORROSION_SYSTEM.bin";
         private const string NativeMemoryOwner = nameof(PlayerInventory);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
-        private const int InventoryShadowBufferBytes = 16 * 1024;
+        private const int InventoryShadowBufferBytes = SaveData.InventoryShadowPayloadMaxBytes;
         private const uint Fnv1a32Offset = 2166136261u;
         private const uint Fnv1a32Prime = 16777619u;
-        private const byte ItemGeneticsSupportedFlagsMask = (byte)(
-            ItemGeneticFlags.Glow |
-            ItemGeneticFlags.Toxic |
-            ItemGeneticFlags.Edible |
-            ItemGeneticFlags.Harvestable);
+        private const byte ItemGeneticsSupportedFlagsMask = SaveData.InventoryItemGeneticsSupportedFlagsMask;
         private const ulong LegacyGlowGeneMask = (ulong)GeneticTraitProfile.GeneticTraitMask.Bioluminescent;
         private const ulong LegacyToxicGeneMask = (ulong)GeneticTraitProfile.GeneticTraitMask.Toxic;
         private const ulong LegacyEdibleGeneMask = (ulong)GeneticTraitProfile.GeneticTraitMask.Medicinal;

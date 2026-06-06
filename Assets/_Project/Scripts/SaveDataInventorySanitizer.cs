@@ -4,6 +4,87 @@ namespace Hecton8.SaveSystem
 {
     internal static class SaveDataInventorySanitizer
     {
+        internal static InventoryShadowDTO BuildInventoryShadow(
+            in InventoryDTO value,
+            int shadowPayloadLength,
+            uint shadowPayloadHash,
+            bool hasShadowPayload)
+        {
+            InventoryDTO sanitized = default;
+            sanitized.cellCount = math.clamp(value.cellCount, 0, ResolveExistingCellBound(in value));
+            sanitized.gridColumns = math.clamp(value.gridColumns, 0, InventoryDTO.MaxCells);
+            sanitized.gridRows = math.clamp(value.gridRows, 0, InventoryDTO.MaxCells);
+            sanitized.totalWeight = math.isfinite(value.totalWeight) ? math.max(0f, value.totalWeight) : 0f;
+            int safePayloadLength = ClampInventoryShadowPayloadLength(shadowPayloadLength);
+            bool safeHasPayload = hasShadowPayload &&
+                                  safePayloadLength > 0 &&
+                                  safePayloadLength == shadowPayloadLength;
+            return InventoryShadowDTO.FromInventory(
+                in sanitized,
+                safePayloadLength,
+                shadowPayloadHash,
+                safeHasPayload);
+        }
+
+        internal static int ResolveInventoryShadowPayloadLength(SaveData data)
+        {
+            if (data == null ||
+                !data.hasInventoryShadowPayload ||
+                data.inventoryShadowPayload == null ||
+                data.inventoryShadowPayloadLength <= 0)
+            {
+                return 0;
+            }
+
+            if (data.inventoryShadowPayloadLength > data.inventoryShadowPayload.Length ||
+                data.inventoryShadowPayloadLength > SaveData.InventoryShadowPayloadMaxBytes)
+            {
+                return 0;
+            }
+
+            return data.inventoryShadowPayloadLength;
+        }
+
+        internal static bool SanitizeInventoryShadow(
+            ref InventoryShadowDTO shadow,
+            in InventoryDTO inventory,
+            int shadowPayloadLength,
+            uint shadowPayloadHash,
+            bool hasShadowPayload)
+        {
+            InventoryShadowDTO safeShadow = BuildInventoryShadow(
+                in inventory,
+                shadowPayloadLength,
+                shadowPayloadHash,
+                hasShadowPayload);
+
+            bool changed = shadow.cellCount != safeShadow.cellCount ||
+                           shadow.payloadLength != safeShadow.payloadLength ||
+                           shadow.payloadHash != safeShadow.payloadHash ||
+                           shadow.gridColumns != safeShadow.gridColumns ||
+                           shadow.gridRows != safeShadow.gridRows ||
+                           !Approximately(shadow.totalWeight, safeShadow.totalWeight) ||
+                           shadow.flags != safeShadow.flags ||
+                           shadow.schemaVersion != safeShadow.schemaVersion ||
+                           shadow.reserved0 != safeShadow.reserved0;
+
+            if (changed)
+                shadow = safeShadow;
+
+            return changed;
+        }
+
+        internal static bool SanitizeInventoryShadow(ref InventoryShadowDTO shadow, in InventoryDTO inventory)
+        {
+            bool hasShadowPayload = (shadow.flags & InventoryShadowDTO.FlagHasPayload) != 0;
+            return SanitizeInventoryShadow(
+                ref shadow,
+                in inventory,
+                shadow.payloadLength,
+                shadow.payloadHash,
+                hasShadowPayload);
+        }
+
         internal static bool SanitizeInventory(ref InventoryDTO value)
         {
             bool changed = false;
@@ -113,6 +194,11 @@ namespace Hecton8.SaveSystem
                 return SaveData.InventoryDefaultQualityMilli;
 
             return (ushort)math.min((int)qualityMilli, SaveData.InventoryDefaultQualityMilli);
+        }
+
+        private static int ClampInventoryShadowPayloadLength(int value)
+        {
+            return math.clamp(value, 0, SaveData.InventoryShadowPayloadMaxBytes);
         }
 
         private static bool Approximately(float a, float b)

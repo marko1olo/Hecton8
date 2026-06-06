@@ -268,7 +268,9 @@ namespace Hecton8.SaveSystem
             changed |= EnsureHazardZoneRuntime(ref data.hazardZones, sourceVersion, steps);
             changed |= EnsureRadiationGrid(data, sourceVersion, steps);
             changed |= EnsurePlayerStatsAndKinematics(data, sourceVersion, steps);
-            changed |= EnsureInventory(ref data.inventory, steps);
+            bool inventoryChanged = EnsureInventory(ref data.inventory, steps);
+            changed |= inventoryChanged;
+            changed |= EnsureInventoryShadow(data, inventoryChanged, steps);
             changed |= EnsureWorldState(ref data.worldState, steps);
             changed |= EnsureProceduralWorldState(ref data.proceduralWorldState, steps);
             changed |= EnsureConstruction(ref data.construction, sourceVersion, steps);
@@ -510,6 +512,33 @@ namespace Hecton8.SaveSystem
             bool changed = SaveDataInventorySanitizer.SanitizeInventory(ref dto);
             if (changed)
                 steps.Add("inventory state repaired");
+
+            return changed;
+        }
+
+        private static bool EnsureInventoryShadow(SaveData data, bool discardTransientPayload, List<string> steps)
+        {
+            if (data == null)
+                return false;
+
+            if (discardTransientPayload)
+            {
+                data.inventoryShadowPayloadLength = 0;
+                data.inventoryShadowPayloadHash = 0u;
+                data.hasInventoryShadowPayload = false;
+            }
+
+            int inventoryShadowPayloadLength = discardTransientPayload
+                ? 0
+                : SaveDataInventorySanitizer.ResolveInventoryShadowPayloadLength(data);
+            bool changed = SaveDataInventorySanitizer.SanitizeInventoryShadow(
+                ref data.inventoryShadow,
+                in data.inventory,
+                inventoryShadowPayloadLength,
+                data.inventoryShadowPayloadHash,
+                inventoryShadowPayloadLength > 0);
+            if (changed)
+                steps.Add("inventory shadow repaired");
 
             return changed;
         }

@@ -1,7 +1,9 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using Hecton8.Core.Memory.Layout;
 using Hecton8.Gameplay;
+using Hecton8.Inventory;
 using Hecton8.SaveSystem;
 using NUnit.Framework;
 using Unity.Collections.LowLevel.Unsafe;
@@ -56,6 +58,71 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(0, UnsafeUtility.SizeOf<HazardZoneRuntimeDTO>() & 7);
             Assert.AreEqual(0, (int)Marshal.OffsetOf<HazardZoneRuntimeDTO>(nameof(HazardZoneRuntimeDTO.toxicityDose)));
             Assert.AreEqual(4, (int)Marshal.OffsetOf<HazardZoneRuntimeDTO>(nameof(HazardZoneRuntimeDTO.toxicityPulseAccumulatorSeconds)));
+        }
+
+        [Test]
+        public void HazardZoneTelemetryEntry_IsExplicitSixtyFourBytes()
+        {
+            StructLayoutAttribute layout = typeof(HazardZoneTelemetryEntry).StructLayoutAttribute;
+            Assert.IsNotNull(layout);
+            Assert.AreEqual(LayoutKind.Explicit, layout.Value);
+            Assert.IsTrue(Attribute.IsDefined(typeof(HazardZoneTelemetryEntry), typeof(BinaryBlittableSafeAttribute)));
+            Assert.AreEqual(64, UnsafeUtility.SizeOf<HazardZoneTelemetryEntry>());
+            Assert.AreEqual(0, UnsafeUtility.SizeOf<HazardZoneTelemetryEntry>() & 7);
+            Assert.AreEqual(0, (int)Marshal.OffsetOf<HazardZoneTelemetryEntry>(nameof(HazardZoneTelemetryEntry.PackedOwner)));
+            Assert.AreEqual(8, (int)Marshal.OffsetOf<HazardZoneTelemetryEntry>(nameof(HazardZoneTelemetryEntry.FrameIndex)));
+            Assert.AreEqual(12, (int)Marshal.OffsetOf<HazardZoneTelemetryEntry>(nameof(HazardZoneTelemetryEntry.Sequence)));
+            Assert.AreEqual(16, (int)Marshal.OffsetOf<HazardZoneTelemetryEntry>(nameof(HazardZoneTelemetryEntry.StateHash)));
+            Assert.AreEqual(20, (int)Marshal.OffsetOf<HazardZoneTelemetryEntry>(nameof(HazardZoneTelemetryEntry.Flags)));
+            Assert.AreEqual(24, (int)Marshal.OffsetOf<HazardZoneTelemetryEntry>(nameof(HazardZoneTelemetryEntry.ActiveZoneCount)));
+            Assert.AreEqual(28, (int)Marshal.OffsetOf<HazardZoneTelemetryEntry>(nameof(HazardZoneTelemetryEntry.PendingMutationCount)));
+            Assert.AreEqual(32, (int)Marshal.OffsetOf<HazardZoneTelemetryEntry>(nameof(HazardZoneTelemetryEntry.PublishedExposureMask)));
+            Assert.AreEqual(36, (int)Marshal.OffsetOf<HazardZoneTelemetryEntry>(nameof(HazardZoneTelemetryEntry.BufferGeneration)));
+            Assert.AreEqual(40, (int)Marshal.OffsetOf<HazardZoneTelemetryEntry>(nameof(HazardZoneTelemetryEntry.ToxicityDose)));
+            Assert.AreEqual(44, (int)Marshal.OffsetOf<HazardZoneTelemetryEntry>(nameof(HazardZoneTelemetryEntry.ToxicityPulseAccumulatorSeconds)));
+            Assert.AreEqual(48, (int)Marshal.OffsetOf<HazardZoneTelemetryEntry>(nameof(HazardZoneTelemetryEntry.PlayerToxicity)));
+            Assert.AreEqual(52, (int)Marshal.OffsetOf<HazardZoneTelemetryEntry>(nameof(HazardZoneTelemetryEntry.VehicleToxicity)));
+            Assert.AreEqual(56, (int)Marshal.OffsetOf<HazardZoneTelemetryEntry>(nameof(HazardZoneTelemetryEntry.PlayerRadiation)));
+            Assert.AreEqual(60, (int)Marshal.OffsetOf<HazardZoneTelemetryEntry>(nameof(HazardZoneTelemetryEntry.VehicleRadiation)));
+        }
+
+        [Test]
+        public void HazardVolumeData_IsExplicitSixtyFourBytes()
+        {
+            StructLayoutAttribute layout = typeof(HazardVolumeData).StructLayoutAttribute;
+            Assert.IsNotNull(layout);
+            Assert.AreEqual(LayoutKind.Explicit, layout.Value);
+            Assert.IsTrue(Attribute.IsDefined(typeof(HazardVolumeData), typeof(BinaryBlittableSafeAttribute)));
+            Assert.AreEqual(64, UnsafeUtility.SizeOf<HazardVolumeData>());
+            Assert.AreEqual(0, UnsafeUtility.SizeOf<HazardVolumeData>() & 7);
+            Assert.AreEqual(0, (int)Marshal.OffsetOf<HazardVolumeData>(nameof(HazardVolumeData.AbsoluteUniversePosition)));
+            Assert.AreEqual(24, (int)Marshal.OffsetOf<HazardVolumeData>(nameof(HazardVolumeData.Radius)));
+            Assert.AreEqual(28, (int)Marshal.OffsetOf<HazardVolumeData>(nameof(HazardVolumeData.InvRadius)));
+            Assert.AreEqual(32, (int)Marshal.OffsetOf<HazardVolumeData>(nameof(HazardVolumeData.InvRadiusSqr)));
+            Assert.AreEqual(36, (int)Marshal.OffsetOf<HazardVolumeData>(nameof(HazardVolumeData.Intensity)));
+            Assert.AreEqual(40, (int)Marshal.OffsetOf<HazardVolumeData>(nameof(HazardVolumeData.VisorGlitchBias)));
+            Assert.AreEqual(44, (int)Marshal.OffsetOf<HazardVolumeData>(nameof(HazardVolumeData.CurveLutOffset)));
+            Assert.AreEqual(48, (int)Marshal.OffsetOf<HazardVolumeData>(nameof(HazardVolumeData.Type)));
+            Assert.AreEqual(52, (int)Marshal.OffsetOf<HazardVolumeData>(nameof(HazardVolumeData.RequiresToxicMudBroadphase)));
+            Assert.AreEqual(53, (int)Marshal.OffsetOf<HazardVolumeData>(nameof(HazardVolumeData.PlayerToxicMudBroadphase)));
+            Assert.AreEqual(54, (int)Marshal.OffsetOf<HazardVolumeData>(nameof(HazardVolumeData.VehicleToxicMudBroadphase)));
+        }
+
+        [Test]
+        public void HazardExposureJobResult_IsExplicitOneHundredTwentyEightBytes()
+        {
+            StructLayoutAttribute layout = typeof(HazardExposureJobResult).StructLayoutAttribute;
+            Assert.IsNotNull(layout);
+            Assert.AreEqual(LayoutKind.Explicit, layout.Value);
+            Assert.IsTrue(Attribute.IsDefined(typeof(HazardExposureJobResult), typeof(BinaryBlittableSafeAttribute)));
+            Assert.AreEqual(128, UnsafeUtility.SizeOf<HazardExposureJobResult>());
+            Assert.AreEqual(0, UnsafeUtility.SizeOf<HazardExposureJobResult>() & 15);
+            Assert.AreEqual(0, (int)Marshal.OffsetOf<HazardExposureJobResult>(nameof(HazardExposureJobResult.PlayerRadiation)));
+            Assert.AreEqual(8, (int)Marshal.OffsetOf<HazardExposureJobResult>(nameof(HazardExposureJobResult.PlayerToxicity)));
+            Assert.AreEqual(32, (int)Marshal.OffsetOf<HazardExposureJobResult>(nameof(HazardExposureJobResult.VehicleRadiation)));
+            Assert.AreEqual(40, (int)Marshal.OffsetOf<HazardExposureJobResult>(nameof(HazardExposureJobResult.VehicleToxicity)));
+            Assert.AreEqual(64, (int)Marshal.OffsetOf<HazardExposureJobResult>(nameof(HazardExposureJobResult.PlayerExposureMask)));
+            Assert.AreEqual(65, (int)Marshal.OffsetOf<HazardExposureJobResult>(nameof(HazardExposureJobResult.VehicleExposureMask)));
         }
 
         [Test]
@@ -753,6 +820,15 @@ namespace Hecton8.Tests.Editor
         [Test]
         public void InventoryRuntime_WriteSanitizesMalformedInventoryState()
         {
+            Assert.AreEqual(
+                (byte)(
+                    PlayerInventory.ItemGeneticFlags.Glow |
+                    PlayerInventory.ItemGeneticFlags.Toxic |
+                    PlayerInventory.ItemGeneticFlags.Edible |
+                    PlayerInventory.ItemGeneticFlags.Harvestable),
+                SaveData.InventoryItemGeneticsSupportedFlagsMask);
+            Assert.AreEqual(1000, SaveData.InventoryDefaultQualityMilli);
+
             SaveData data = SaveData.CreateNew(0.0);
             data.inventory.EnsureCapacity();
             data.inventory.cellCount = 1;
@@ -797,7 +873,175 @@ namespace Hecton8.Tests.Editor
                 Assert.AreEqual(0, restored.inventory.gridColumns);
                 Assert.AreEqual(InventoryDTO.MaxCells, restored.inventory.gridRows);
                 Assert.AreEqual(InventoryDTO.MaxDurabilityRleBytes, restored.inventory.itemDurabilityRleLength);
+                Assert.AreEqual(1, restored.inventoryShadow.cellCount);
+                Assert.AreEqual(0, restored.inventoryShadow.payloadLength);
+                Assert.AreEqual(0u, restored.inventoryShadow.payloadHash);
+                Assert.AreEqual(0, restored.inventoryShadow.gridColumns);
+                Assert.AreEqual(InventoryDTO.MaxCells, restored.inventoryShadow.gridRows);
+                Assert.AreEqual(0f, restored.inventoryShadow.totalWeight);
+                Assert.AreEqual(0, restored.inventoryShadow.flags);
+                Assert.AreEqual(InventoryShadowDTO.SchemaVersion, restored.inventoryShadow.schemaVersion);
             }
+        }
+
+        [Test]
+        public void InventoryRuntime_WriteFallsBackFromOversizedShadowPayload()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.inventory.EnsureCapacity();
+            data.inventory.cellCount = 1;
+            data.inventory.itemHashIds[0] = 12345;
+            data.inventory.packedCellCoordinates[0] = InventoryDTO.PackCellCoordinate(4, 5);
+            data.inventory.stackCounts[0] = 2;
+            data.inventory.qualityMilli[0] = SaveData.InventoryDefaultQualityMilli;
+            data.inventory.gridColumns = 10;
+            data.inventory.gridRows = 8;
+
+            data.hasInventoryShadowPayload = true;
+            data.inventoryShadowPayload = new byte[SaveData.InventoryShadowPayloadMaxBytes + 1];
+            data.inventoryShadowPayloadLength = data.inventoryShadowPayload.Length;
+            data.inventoryShadowPayloadHash = 0xA5A5A5A5u;
+
+            byte[] payload = new byte[BinaryPayloadScratchBytes];
+            fixed (byte* payloadPtr = payload)
+            {
+                bool wrote = SaveBinaryPayloadCodec.TryWrite(
+                    data,
+                    payloadPtr,
+                    payload.Length,
+                    out int bytesWritten,
+                    out string writeError);
+
+                Assert.IsTrue(wrote, writeError);
+                Assert.Greater(bytesWritten, 0);
+
+                bool read = SaveBinaryPayloadCodec.TryRead(
+                    payloadPtr,
+                    bytesWritten,
+                    out SaveData restored,
+                    out int bytesRead,
+                    out string readError);
+
+                Assert.IsTrue(read, readError);
+                Assert.AreEqual(bytesWritten, bytesRead);
+                Assert.AreEqual(1, restored.inventory.cellCount);
+                Assert.AreEqual(12345, restored.inventory.itemHashIds[0]);
+                Assert.AreEqual(2, restored.inventory.stackCounts[0]);
+                Assert.AreEqual(0, restored.inventoryShadow.payloadLength);
+                Assert.AreEqual(0u, restored.inventoryShadow.payloadHash);
+                Assert.AreEqual(0, restored.inventoryShadow.flags);
+                Assert.AreEqual(1, restored.inventoryShadow.cellCount);
+                Assert.AreEqual(10, restored.inventoryShadow.gridColumns);
+                Assert.AreEqual(8, restored.inventoryShadow.gridRows);
+            }
+        }
+
+        [Test]
+        public void InventoryRuntime_WriteFallsBackFromTruncatedShadowPayload()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.inventory.EnsureCapacity();
+            data.inventory.cellCount = 1;
+            data.inventory.itemHashIds[0] = 67890;
+            data.inventory.packedCellCoordinates[0] = InventoryDTO.PackCellCoordinate(3, 4);
+            data.inventory.stackCounts[0] = 4;
+            data.inventory.qualityMilli[0] = SaveData.InventoryDefaultQualityMilli;
+            data.inventory.gridColumns = 9;
+            data.inventory.gridRows = 7;
+
+            data.hasInventoryShadowPayload = true;
+            data.inventoryShadowPayload = new byte[1];
+            data.inventoryShadowPayloadLength = SaveData.InventoryShadowPayloadMaxBytes;
+            data.inventoryShadowPayloadHash = 0xC0FFEEu;
+
+            byte[] payload = new byte[BinaryPayloadScratchBytes];
+            fixed (byte* payloadPtr = payload)
+            {
+                bool wrote = SaveBinaryPayloadCodec.TryWrite(
+                    data,
+                    payloadPtr,
+                    payload.Length,
+                    out int bytesWritten,
+                    out string writeError);
+
+                Assert.IsTrue(wrote, writeError);
+                Assert.Greater(bytesWritten, 0);
+
+                bool read = SaveBinaryPayloadCodec.TryRead(
+                    payloadPtr,
+                    bytesWritten,
+                    out SaveData restored,
+                    out int bytesRead,
+                    out string readError);
+
+                Assert.IsTrue(read, readError);
+                Assert.AreEqual(bytesWritten, bytesRead);
+                Assert.AreEqual(1, restored.inventory.cellCount);
+                Assert.AreEqual(67890, restored.inventory.itemHashIds[0]);
+                Assert.AreEqual(4, restored.inventory.stackCounts[0]);
+                Assert.AreEqual(0, restored.inventoryShadow.payloadLength);
+                Assert.AreEqual(0u, restored.inventoryShadow.payloadHash);
+                Assert.AreEqual(0, restored.inventoryShadow.flags);
+                Assert.AreEqual(1, restored.inventoryShadow.cellCount);
+                Assert.AreEqual(9, restored.inventoryShadow.gridColumns);
+                Assert.AreEqual(7, restored.inventoryShadow.gridRows);
+            }
+        }
+
+        [Test]
+        public void InventoryShadowPayloadBudget_CoversWorstCaseInventoryDto()
+        {
+            long worstCaseBytes =
+                sizeof(int) +
+                EncodedStructArrayBytes<int>(InventoryDTO.MaxCells) +
+                EncodedStructArrayBytes<uint>(InventoryDTO.MaxCells) +
+                EncodedStructArrayBytes<ushort>(InventoryDTO.MaxCells) +
+                EncodedStructArrayBytes<ushort>(InventoryDTO.MaxCells) +
+                EncodedStructArrayBytes<byte>(InventoryDTO.MaxCells) +
+                EncodedStructArrayBytes<ushort>(InventoryDTO.MaxCells) +
+                EncodedStructArrayBytes<uint>(InventoryDTO.MaxCells) +
+                EncodedStructArrayBytes<byte>(InventoryDTO.MaxDurabilityRleBytes) +
+                sizeof(float) +
+                sizeof(int) +
+                sizeof(int);
+
+            Assert.LessOrEqual(worstCaseBytes, SaveData.InventoryShadowPayloadMaxBytes);
+            Assert.AreEqual(16 * 1024, SaveData.InventoryShadowPayloadMaxBytes);
+        }
+
+        [Test]
+        public void InventoryShadowBuilder_DoesNotMutateInventoryArrays()
+        {
+            InventoryDTO inventory = default;
+            inventory.EnsureCapacity();
+            inventory.cellCount = 1;
+            inventory.itemHashIds[0] = 123;
+            inventory.packedCellCoordinates[0] = InventoryDTO.PackCellCoordinate(1, 1);
+            inventory.stackCounts[0] = 0;
+            inventory.qualityMilli[0] = 2000;
+            inventory.itemGeneticsWords[0] = 0xF0;
+            inventory.totalWeight = float.NaN;
+            inventory.gridColumns = -1;
+            inventory.gridRows = InventoryDTO.MaxCells + 1;
+
+            InventoryShadowDTO shadow = SaveDataInventorySanitizer.BuildInventoryShadow(
+                in inventory,
+                12,
+                0x12345678u,
+                true);
+
+            Assert.AreEqual(1, shadow.cellCount);
+            Assert.AreEqual(0f, shadow.totalWeight);
+            Assert.AreEqual(0, shadow.gridColumns);
+            Assert.AreEqual(InventoryDTO.MaxCells, shadow.gridRows);
+            Assert.AreEqual(12, shadow.payloadLength);
+            Assert.AreEqual(0x12345678u, shadow.payloadHash);
+            Assert.AreEqual(0, inventory.stackCounts[0]);
+            Assert.AreEqual(2000, inventory.qualityMilli[0]);
+            Assert.AreEqual(0xF0, inventory.itemGeneticsWords[0]);
+            Assert.IsTrue(float.IsNaN(inventory.totalWeight));
+            Assert.AreEqual(-1, inventory.gridColumns);
+            Assert.AreEqual(InventoryDTO.MaxCells + 1, inventory.gridRows);
         }
 
         [Test]
@@ -822,6 +1066,19 @@ namespace Hecton8.Tests.Editor
             data.inventory.totalWeight = float.NegativeInfinity;
             data.inventory.gridColumns = -1;
             data.inventory.gridRows = InventoryDTO.MaxCells + 1;
+            data.inventoryShadow.cellCount = 99;
+            data.inventoryShadow.payloadLength = int.MaxValue;
+            data.inventoryShadow.payloadHash = 0x12345678u;
+            data.inventoryShadow.gridColumns = 99;
+            data.inventoryShadow.gridRows = -99;
+            data.inventoryShadow.totalWeight = float.NaN;
+            data.inventoryShadow.flags = InventoryShadowDTO.FlagHasPayload;
+            data.inventoryShadow.schemaVersion = 0;
+            data.inventoryShadow.reserved0 = 123;
+            data.hasInventoryShadowPayload = true;
+            data.inventoryShadowPayload = new byte[1];
+            data.inventoryShadowPayloadLength = SaveData.InventoryShadowPayloadMaxBytes;
+            data.inventoryShadowPayloadHash = 0x87654321u;
 
             bool changed = SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary);
 
@@ -842,7 +1099,52 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(0f, data.inventory.totalWeight);
             Assert.AreEqual(0, data.inventory.gridColumns);
             Assert.AreEqual(InventoryDTO.MaxCells, data.inventory.gridRows);
+            Assert.AreEqual(2, data.inventoryShadow.cellCount);
+            Assert.AreEqual(0, data.inventoryShadow.payloadLength);
+            Assert.AreEqual(0u, data.inventoryShadow.payloadHash);
+            Assert.AreEqual(0, data.inventoryShadow.gridColumns);
+            Assert.AreEqual(InventoryDTO.MaxCells, data.inventoryShadow.gridRows);
+            Assert.AreEqual(0f, data.inventoryShadow.totalWeight);
+            Assert.AreEqual(0, data.inventoryShadow.flags);
+            Assert.AreEqual(InventoryShadowDTO.SchemaVersion, data.inventoryShadow.schemaVersion);
+            Assert.AreEqual(0, data.inventoryShadow.reserved0);
+            Assert.IsFalse(data.hasInventoryShadowPayload);
+            Assert.AreEqual(0, data.inventoryShadowPayloadLength);
+            Assert.AreEqual(0u, data.inventoryShadowPayloadHash);
             StringAssert.Contains("inventory state repaired", summary);
+            StringAssert.Contains("inventory shadow repaired", summary);
+        }
+
+        [Test]
+        public void InventoryRuntimeMigration_CurrentPreservesBoundedShadowPayloadMetadata()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.version = SaveData.CurrentVersion;
+            data.inventory.EnsureCapacity();
+            data.inventory.cellCount = 1;
+            data.inventory.itemHashIds[0] = 31337;
+            data.inventory.packedCellCoordinates[0] = InventoryDTO.PackCellCoordinate(1, 2);
+            data.inventory.stackCounts[0] = 2;
+            data.inventory.qualityMilli[0] = SaveData.InventoryDefaultQualityMilli;
+            data.inventory.gridColumns = 4;
+            data.inventory.gridRows = 3;
+            data.hasInventoryShadowPayload = true;
+            data.inventoryShadowPayload = new byte[64];
+            data.inventoryShadowPayloadLength = data.inventoryShadowPayload.Length;
+            data.inventoryShadowPayloadHash = 0xBADC0DEu;
+
+            bool changed = SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary);
+
+            Assert.IsTrue(changed, summary);
+            Assert.AreEqual(SaveData.CurrentVersion, originalVersion);
+            Assert.AreEqual(1, data.inventoryShadow.cellCount);
+            Assert.AreEqual(64, data.inventoryShadow.payloadLength);
+            Assert.AreEqual(0xBADC0DEu, data.inventoryShadow.payloadHash);
+            Assert.AreEqual(4, data.inventoryShadow.gridColumns);
+            Assert.AreEqual(3, data.inventoryShadow.gridRows);
+            Assert.AreEqual(InventoryShadowDTO.FlagHasPayload, data.inventoryShadow.flags);
+            Assert.AreEqual(InventoryShadowDTO.SchemaVersion, data.inventoryShadow.schemaVersion);
+            StringAssert.Contains("inventory shadow repaired", summary);
         }
 
         [Test]
@@ -1155,6 +1457,11 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(SaveData.HazardZoneToxicityDamageDoseThreshold * 0.5f, data.hazardZones.toxicityDose);
             Assert.AreEqual(0f, data.hazardZones.toxicityPulseAccumulatorSeconds);
             StringAssert.Contains("hazard zone toxicity state repaired", summary);
+        }
+
+        private static long EncodedStructArrayBytes<T>(int count) where T : unmanaged
+        {
+            return sizeof(int) + (long)Math.Clamp(count, 0, int.MaxValue) * UnsafeUtility.SizeOf<T>();
         }
 
         private static int CountLittleEndianFloatPair(byte[] payload, int bytesWritten, float first, float second)

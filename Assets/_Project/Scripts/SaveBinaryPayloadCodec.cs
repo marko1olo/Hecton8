@@ -703,12 +703,13 @@ namespace Hecton8.SaveSystem
                 ? PlayerKinematicStateDTO.FromPlayerStats(in data.playerStats)
                 : default;
             SaveDataPlayerSurvivalSanitizer.SanitizePlayerKinematicState(ref playerState);
+            int inventoryShadowPayloadLength = SaveDataInventorySanitizer.ResolveInventoryShadowPayloadLength(data);
             InventoryShadowDTO inventoryShadow = data != null
-                ? InventoryShadowDTO.FromInventory(
+                ? SaveDataInventorySanitizer.BuildInventoryShadow(
                     in data.inventory,
-                    data.inventoryShadowPayloadLength,
+                    inventoryShadowPayloadLength,
                     data.inventoryShadowPayloadHash,
-                    data.hasInventoryShadowPayload)
+                    inventoryShadowPayloadLength > 0)
                 : default;
             int floodCount = 0;
             ConstructionDTO construction = data != null ? data.construction : default;
@@ -782,6 +783,7 @@ namespace Hecton8.SaveSystem
             SaveDataPlayerSurvivalSanitizer.SanitizePlayerKinematicState(ref data.playerKinematicState);
             data.playerKinematicState.ApplyTo(ref data.playerStats);
             SaveDataPlayerSurvivalSanitizer.SanitizePlayerStats(ref data.playerStats);
+            SaveDataInventorySanitizer.SanitizeInventoryShadow(ref data.inventoryShadow, in data.inventory);
             data.construction.habitatFloodStateCount = floodStateCount;
             return true;
         }
@@ -1217,12 +1219,10 @@ namespace Hecton8.SaveSystem
 
         private static bool WriteInventory(ref BufferWriter writer, SaveData data)
         {
-            if (data != null &&
-                data.hasInventoryShadowPayload &&
-                data.inventoryShadowPayload != null &&
-                data.inventoryShadowPayloadLength > 0)
+            int inventoryShadowPayloadLength = SaveDataInventorySanitizer.ResolveInventoryShadowPayloadLength(data);
+            if (data != null && inventoryShadowPayloadLength > 0)
             {
-                return writer.WriteManagedBytes(data.inventoryShadowPayload, data.inventoryShadowPayloadLength);
+                return writer.WriteManagedBytes(data.inventoryShadowPayload, inventoryShadowPayloadLength);
             }
 
             return WriteInventory(ref writer, data != null ? data.inventory : default);
