@@ -42,10 +42,11 @@ namespace Hecton8.Core
         /// <summary>Resolves the vault-owned invalid-number ring before Burst jobs can request a writer.</summary>
         public static void Initialize()
         {
-            if (!OpenOrAcquireInvalidNumberBuffersForOwnerRoute())
+            IDataVault vault = _dataVault;
+            if (!OpenOrAcquireInvalidNumberBuffersForOwnerRoute(vault))
                 return;
 
-            if (!TryAcquireInvalidNumberCounterWriteBuffer(out NativeArray<InvalidNumberCounter64> invalidNumberCounters))
+            if (!TryAcquireInvalidNumberCounterWriteBuffer(vault, out NativeArray<InvalidNumberCounter64> invalidNumberCounters))
                 return;
 
             try
@@ -55,10 +56,10 @@ namespace Hecton8.Core
             }
             finally
             {
-                ReleaseInvalidNumberCounterWriteLock();
+                ReleaseInvalidNumberCounterWriteLock(vault);
             }
 
-            TryAcquireInvalidNumberMutationGuard(_dataVault);
+            TryAcquireInvalidNumberMutationGuard(vault);
         }
 
         /// <summary>Binds the bootstrap-owned DataVault used for invalid-number telemetry.</summary>
@@ -105,8 +106,10 @@ namespace Hecton8.Core
         /// <summary>Returns a Burst-safe writer for invalid-number error codes.</summary>
         public static InvalidNumberWriter AsParallelWriter()
         {
+            IDataVault vault = _dataVault;
             return _invalidNumberMutationGuardHeld &&
                 TryOpenExistingInvalidNumberBuffersForOwnerRoute(
+                    vault,
                     out NativeArray<int> invalidNumberCodes,
                     out NativeArray<InvalidNumberCounter64> invalidNumberCounters)
                 ? new InvalidNumberWriter(invalidNumberCodes, invalidNumberCounters)
@@ -163,11 +166,12 @@ namespace Hecton8.Core
             if (maxCodesToDrain <= 0)
                 return 0;
 
-            ReleaseInvalidNumberMutationGuardNoThrow(_dataVault);
-            if (!TryReadInvalidNumberCodes(out NativeArray<int>.ReadOnly invalidNumberCodes) ||
-                !TryAcquireInvalidNumberCounterWriteBuffer(out NativeArray<InvalidNumberCounter64> invalidNumberCounters))
+            IDataVault vault = _dataVault;
+            ReleaseInvalidNumberMutationGuardNoThrow(vault);
+            if (!TryReadInvalidNumberCodes(vault, out NativeArray<int>.ReadOnly invalidNumberCodes) ||
+                !TryAcquireInvalidNumberCounterWriteBuffer(vault, out NativeArray<InvalidNumberCounter64> invalidNumberCounters))
             {
-                TryAcquireInvalidNumberMutationGuard(_dataVault);
+                TryAcquireInvalidNumberMutationGuard(vault);
                 return 0;
             }
 
@@ -201,8 +205,8 @@ namespace Hecton8.Core
             }
             finally
             {
-                ReleaseInvalidNumberCounterWriteLock();
-                TryAcquireInvalidNumberMutationGuard(_dataVault);
+                ReleaseInvalidNumberCounterWriteLock(vault);
+                TryAcquireInvalidNumberMutationGuard(vault);
             }
 
             for (int i = 0; i < drainedCount; i++)
@@ -376,9 +380,8 @@ namespace Hecton8.Core
             return new float3(0f, 0f, value.z < 0f ? -1f : 1f);
         }
 
-        private static bool OpenOrAcquireInvalidNumberBuffersForOwnerRoute()
+        private static bool OpenOrAcquireInvalidNumberBuffersForOwnerRoute(IDataVault vault)
         {
-            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
@@ -402,7 +405,7 @@ namespace Hecton8.Core
                 return false;
             }
 
-            return TryOpenExistingInvalidNumberBuffersForOwnerRoute(out _, out _);
+            return TryOpenExistingInvalidNumberBuffersForOwnerRoute(vault, out _, out _);
         }
 
         private static bool OpenOrAcquireInvalidNumberHandleForOwnerRoute<T>(
@@ -431,10 +434,20 @@ namespace Hecton8.Core
             out NativeArray<int> invalidNumberCodes,
             out NativeArray<InvalidNumberCounter64> invalidNumberCounters)
         {
+            return TryOpenExistingInvalidNumberBuffersForOwnerRoute(
+                _dataVault,
+                out invalidNumberCodes,
+                out invalidNumberCounters);
+        }
+
+        private static bool TryOpenExistingInvalidNumberBuffersForOwnerRoute(
+            IDataVault vault,
+            out NativeArray<int> invalidNumberCodes,
+            out NativeArray<InvalidNumberCounter64> invalidNumberCounters)
+        {
             invalidNumberCodes = default;
             invalidNumberCounters = default;
 
-            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
@@ -481,8 +494,12 @@ namespace Hecton8.Core
 
         private static bool TryReadInvalidNumberCodes(out NativeArray<int>.ReadOnly invalidNumberCodes)
         {
+            return TryReadInvalidNumberCodes(_dataVault, out invalidNumberCodes);
+        }
+
+        private static bool TryReadInvalidNumberCodes(IDataVault vault, out NativeArray<int>.ReadOnly invalidNumberCodes)
+        {
             invalidNumberCodes = default;
-            IDataVault vault = _dataVault;
             return vault != null &&
                 IsVaultHandleCreated(in _invalidNumberCodesHandle) &&
                 vault.TryReadOnlyHandle(in _invalidNumberCodesHandle, out invalidNumberCodes) &&
@@ -492,8 +509,14 @@ namespace Hecton8.Core
         private static bool TryAcquireInvalidNumberCounterWriteBuffer(
             out NativeArray<InvalidNumberCounter64> invalidNumberCounters)
         {
+            return TryAcquireInvalidNumberCounterWriteBuffer(_dataVault, out invalidNumberCounters);
+        }
+
+        private static bool TryAcquireInvalidNumberCounterWriteBuffer(
+            IDataVault vault,
+            out NativeArray<InvalidNumberCounter64> invalidNumberCounters)
+        {
             invalidNumberCounters = default;
-            IDataVault vault = _dataVault;
             if (vault == null ||
                 !IsVaultHandleCreated(in _invalidNumberCounterHandle) ||
                 !vault.TryAcquireWriteLock(in _invalidNumberCounterHandle, VaultOwner, out invalidNumberCounters))
@@ -522,7 +545,11 @@ namespace Hecton8.Core
 
         private static void ReleaseInvalidNumberCounterWriteLock()
         {
-            IDataVault vault = _dataVault;
+            ReleaseInvalidNumberCounterWriteLock(_dataVault);
+        }
+
+        private static void ReleaseInvalidNumberCounterWriteLock(IDataVault vault)
+        {
             if (vault != null && IsVaultHandleCreated(in _invalidNumberCounterHandle))
                 vault.ReleaseWriteLock(in _invalidNumberCounterHandle, VaultOwner);
         }
