@@ -17,7 +17,7 @@ CSV companion: `Docs/AssetAudit/TEXTURE_FILE_TECHNICAL_PROPERTIES_20260605.csv`.
 - Missing `.meta` companions: `0`.
 - Extension counts: `exr`=1, `jpg`=36, `png`=103.
 - Class counts: `lighting_reflection_probe`=1, `sky_aegir_cloud`=15, `terrain_geology`=41, `texture_source`=72, `ui_sprite`=10, `water_contact`=1.
-- Flag counts: `HERO_SCALE_PIXELS`=12, `IMAGE_PROBE_UNSUPPORTED`=1, `SOURCE_GT8MB`=11, `STATIC_META_SRGB_RISK_FOR_NONCOLOR_NAME`=2, `STATIC_META_STREAMING_MIPS_OFF_WORLD_RISK`=81.
+- Flag counts: `HERO_SCALE_PIXELS`=12, `IMAGE_PROBE_UNSUPPORTED`=1, `SOURCE_GT8MB`=11, `STATIC_META_SRGB_RISK_FOR_NONCOLOR_NAME`=2, `STATIC_META_STREAMING_MIPS_OFF_WORLD_RISK`=37.
 
 ## Use
 
