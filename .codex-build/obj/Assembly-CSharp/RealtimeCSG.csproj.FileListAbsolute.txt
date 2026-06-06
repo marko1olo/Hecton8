@@ -1,8 +1,0 @@
-C:\hades\Hecton8\.codex-build\bin\Assembly-CSharp\RealtimeCSG.dll
-C:\hades\Hecton8\.codex-build\bin\Assembly-CSharp\RealtimeCSG.pdb
-C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\RealtimeCSG.csproj.AssemblyReference.cache
-C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\RealtimeCSG.GeneratedMSBuildEditorConfig.editorconfig
-C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\RealtimeCSG.csproj.CoreCompileInputs.cache
-C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\RealtimeCSG.sourcelink.json
-C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\RealtimeCSG.dll
-C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\RealtimeCSG.pdb

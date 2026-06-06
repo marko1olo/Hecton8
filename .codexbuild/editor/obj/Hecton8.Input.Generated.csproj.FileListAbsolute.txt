@@ -1,9 +1,0 @@
-c:\hades\Hecton8\Temp\bin\Debug\Hecton8.Input.Generated.deps.json
-c:\hades\Hecton8\Temp\bin\Debug\Hecton8.Input.Generated.dll
-c:\hades\Hecton8\Temp\bin\Debug\Hecton8.Input.Generated.pdb
-c:\hades\Hecton8\.codexbuild\editor\obj\Hecton8.Input.Generated.csproj.AssemblyReference.cache
-c:\hades\Hecton8\.codexbuild\editor\obj\Hecton8.Input.Generated.GeneratedMSBuildEditorConfig.editorconfig
-c:\hades\Hecton8\.codexbuild\editor\obj\Hecton8.Input.Generated.csproj.CoreCompileInputs.cache
-c:\hades\Hecton8\.codexbuild\editor\obj\Hecton8.Input.Generated.sourcelink.json
-c:\hades\Hecton8\.codexbuild\editor\obj\Hecton8.Input.Generated.dll
-c:\hades\Hecton8\.codexbuild\editor\obj\Hecton8.Input.Generated.pdb

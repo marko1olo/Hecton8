@@ -1,4 +1,0 @@
-VERIFY BABEL OK: records=32580 sources=45 bytes=1523984 alignment=16 endian=little hashCollisions=0
-HASH AUDIT OK: languageKeyPairs=32580 collisionResolutions=0
-
-EXIT=0 elapsed=7.249s

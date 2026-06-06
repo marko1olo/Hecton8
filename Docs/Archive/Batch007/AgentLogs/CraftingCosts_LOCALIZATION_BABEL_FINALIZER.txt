@@ -1,7 +1,0 @@
-CRAFTING COST VERIFY OK
-binary_bytes=6608 recipe_count=50 ingredient_count=171 tool_count=38
-alignment=16 endian=< payload_crc32=1212748311
-hash_pairs=175 collisions=0
-project_atlas=Data Monolith + Crafting Fast-Fail Validator
-
-EXIT=0 elapsed=5.084s

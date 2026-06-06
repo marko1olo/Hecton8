@@ -1,3 +1,0 @@
-CHECK OK: entries=2 blob=Data/Lore/Encyclopedia.h8bin manifest=Data/Lore/Encyclopedia.manifest.json compression=none/raw-utf8 alignment=16 endian=<
-
-EXIT=0 elapsed=8.846s

@@ -1,9 +1,0 @@
-C:\hades\Hecton8\.codexbuild\persistenceux_bin\ShapesRuntime.dll
-C:\hades\Hecton8\.codexbuild\persistenceux_bin\ShapesRuntime.pdb
-C:\hades\Hecton8\.codexbuild\persistenceux_obj\ShapesRuntime.csproj.AssemblyReference.cache
-C:\hades\Hecton8\.codexbuild\persistenceux_obj\ShapesRuntime.GeneratedMSBuildEditorConfig.editorconfig
-C:\hades\Hecton8\.codexbuild\persistenceux_obj\ShapesRuntime.csproj.CoreCompileInputs.cache
-C:\hades\Hecton8\.codexbuild\persistenceux_obj\ShapesRuntime.sourcelink.json
-C:\hades\Hecton8\.codexbuild\persistenceux_obj\ShapesRu.36DD35E8.Up2Date
-C:\hades\Hecton8\.codexbuild\persistenceux_obj\ShapesRuntime.dll
-C:\hades\Hecton8\.codexbuild\persistenceux_obj\ShapesRuntime.pdb

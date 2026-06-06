@@ -1,8 +1,0 @@
-C:\hades\Hecton8\.codexbuild\persistenceux_bin\Hecton8.Bootstrap.Contracts.dll
-C:\hades\Hecton8\.codexbuild\persistenceux_bin\Hecton8.Bootstrap.Contracts.pdb
-C:\hades\Hecton8\.codexbuild\persistenceux_obj\Hecton8.Bootstrap.Contracts.csproj.AssemblyReference.cache
-C:\hades\Hecton8\.codexbuild\persistenceux_obj\Hecton8.Bootstrap.Contracts.GeneratedMSBuildEditorConfig.editorconfig
-C:\hades\Hecton8\.codexbuild\persistenceux_obj\Hecton8.Bootstrap.Contracts.csproj.CoreCompileInputs.cache
-C:\hades\Hecton8\.codexbuild\persistenceux_obj\Hecton8.Bootstrap.Contracts.sourcelink.json
-C:\hades\Hecton8\.codexbuild\persistenceux_obj\Hecton8.Bootstrap.Contracts.dll
-C:\hades\Hecton8\.codexbuild\persistenceux_obj\Hecton8.Bootstrap.Contracts.pdb

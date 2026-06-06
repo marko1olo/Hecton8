@@ -1,9 +1,0 @@
-C:\hades\Hecton8\.codexbuild\erosion_bin\MapMagic.dll
-C:\hades\Hecton8\.codexbuild\erosion_bin\MapMagic.pdb
-C:\hades\Hecton8\.codexbuild\erosion_obj\MapMagic.csproj.AssemblyReference.cache
-C:\hades\Hecton8\.codexbuild\erosion_obj\MapMagic.GeneratedMSBuildEditorConfig.editorconfig
-C:\hades\Hecton8\.codexbuild\erosion_obj\MapMagic.csproj.CoreCompileInputs.cache
-C:\hades\Hecton8\.codexbuild\erosion_obj\MapMagic.sourcelink.json
-C:\hades\Hecton8\.codexbuild\erosion_obj\MapMagic.csproj.Up2Date
-C:\hades\Hecton8\.codexbuild\erosion_obj\MapMagic.dll
-C:\hades\Hecton8\.codexbuild\erosion_obj\MapMagic.pdb

@@ -1,9 +1,0 @@
-c:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.deps.json
-c:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
-c:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.pdb
-c:\hades\Hecton8\.codexbuild\editor\obj\Unity.RenderPipelines.Universal.Runtime.csproj.AssemblyReference.cache
-c:\hades\Hecton8\.codexbuild\editor\obj\Unity.RenderPipelines.Universal.Runtime.GeneratedMSBuildEditorConfig.editorconfig
-c:\hades\Hecton8\.codexbuild\editor\obj\Unity.RenderPipelines.Universal.Runtime.csproj.CoreCompileInputs.cache
-c:\hades\Hecton8\.codexbuild\editor\obj\Unity.RenderPipelines.Universal.Runtime.sourcelink.json
-c:\hades\Hecton8\.codexbuild\editor\obj\Unity.RenderPipelines.Universal.Runtime.dll
-c:\hades\Hecton8\.codexbuild\editor\obj\Unity.RenderPipelines.Universal.Runtime.pdb

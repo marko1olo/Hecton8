@@ -1,2 +1,0 @@
-CSC : warning CS2002: Source file 'C:\hades\Hecton8\Assets\_Project\Scripts\Core\Contracts\HectonSignalLaneContract.cs' specified multiple times [C:\hades\Hecton8\Hecton8.Core.csproj]
-CSC : error CS0016: Could not write to output file 'C:\hades\Hecton8\Temp\obj\Hecton8.Core\Hecton8.Core.sourcelink.json' -- 'Could not find file 'C:\hades\Hecton8\Temp\obj\Hecton8.Core\Hecton8.Core.sourcelink.json'.' [C:\hades\Hecton8\Hecton8.Core.csproj]

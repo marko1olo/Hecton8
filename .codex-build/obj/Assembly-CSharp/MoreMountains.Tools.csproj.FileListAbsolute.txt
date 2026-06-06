@@ -1,9 +1,0 @@
-C:\hades\Hecton8\.codex-build\bin\Assembly-CSharp\MoreMountains.Tools.dll
-C:\hades\Hecton8\.codex-build\bin\Assembly-CSharp\MoreMountains.Tools.pdb
-C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\MoreMountains.Tools.csproj.AssemblyReference.cache
-C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\MoreMountains.Tools.GeneratedMSBuildEditorConfig.editorconfig
-C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\MoreMountains.Tools.csproj.CoreCompileInputs.cache
-C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\MoreMountains.Tools.sourcelink.json
-C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\MoreMoun.E5A671CF.Up2Date
-C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\MoreMountains.Tools.dll
-C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\MoreMountains.Tools.pdb

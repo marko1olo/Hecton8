@@ -1,7 +1,0 @@
-C:\hades\Hecton8\Assets\_Project\Scripts\Core\CameraJuiceSignals.cs(2,20): error CS0234: The type or namespace name 'Generated' does not exist in the namespace 'Hecton8.Core' (are you missing an assembly reference?) [C:\hades\Hecton8\Hecton8.Core.csproj]
-
-Build FAILED.
-    0 Warning(s)
-    1 Error(s)
-
-Time Elapsed 00:00:19.20

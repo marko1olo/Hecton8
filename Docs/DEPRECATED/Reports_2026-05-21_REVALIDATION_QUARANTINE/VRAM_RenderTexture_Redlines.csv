@@ -1,2 +1,0 @@
-path,width,height,estimate_mib,color_format,depth_stencil_format,anti_aliasing,mipmap,random_write,flags,recommendation
-Assets/_Project/Art/TEXTURES/RT_HUD_Display.renderTexture,1280,720,7.031,8,94,1,0,0,RENDER_TEXTURE_DEPTH_STENCIL_PRESENT_STATIC_SUSPECT,Verify RT necessity in Unity; remove depth/MSAA/mips/random-write unless required and keep RT+Depth under 320 MiB.

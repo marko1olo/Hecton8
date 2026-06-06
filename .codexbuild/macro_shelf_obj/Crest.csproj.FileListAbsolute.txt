@@ -1,9 +1,0 @@
-C:\hades\Hecton8\.codexbuild\macro_shelf_bin\Crest.dll
-C:\hades\Hecton8\.codexbuild\macro_shelf_bin\Crest.pdb
-C:\hades\Hecton8\.codexbuild\macro_shelf_obj\Crest.csproj.AssemblyReference.cache
-C:\hades\Hecton8\.codexbuild\macro_shelf_obj\Crest.GeneratedMSBuildEditorConfig.editorconfig
-C:\hades\Hecton8\.codexbuild\macro_shelf_obj\Crest.csproj.CoreCompileInputs.cache
-C:\hades\Hecton8\.codexbuild\macro_shelf_obj\Crest.sourcelink.json
-C:\hades\Hecton8\.codexbuild\macro_shelf_obj\Crest.csproj.Up2Date
-C:\hades\Hecton8\.codexbuild\macro_shelf_obj\Crest.dll
-C:\hades\Hecton8\.codexbuild\macro_shelf_obj\Crest.pdb

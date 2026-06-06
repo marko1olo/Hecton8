@@ -1,8 +1,0 @@
-C:\hades\Hecton8\.codexbuild\macro_shelf_bin\Unity.RenderPipelines.Universal.Runtime.dll
-C:\hades\Hecton8\.codexbuild\macro_shelf_bin\Unity.RenderPipelines.Universal.Runtime.pdb
-C:\hades\Hecton8\.codexbuild\macro_shelf_obj\Unity.RenderPipelines.Universal.Runtime.csproj.AssemblyReference.cache
-C:\hades\Hecton8\.codexbuild\macro_shelf_obj\Unity.RenderPipelines.Universal.Runtime.GeneratedMSBuildEditorConfig.editorconfig
-C:\hades\Hecton8\.codexbuild\macro_shelf_obj\Unity.RenderPipelines.Universal.Runtime.csproj.CoreCompileInputs.cache
-C:\hades\Hecton8\.codexbuild\macro_shelf_obj\Unity.RenderPipelines.Universal.Runtime.sourcelink.json
-C:\hades\Hecton8\.codexbuild\macro_shelf_obj\Unity.RenderPipelines.Universal.Runtime.dll
-C:\hades\Hecton8\.codexbuild\macro_shelf_obj\Unity.RenderPipelines.Universal.Runtime.pdb

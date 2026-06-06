@@ -1,5 +1,0 @@
-  Determining projects to restore...
-  Restored C:\hades\Hecton8\Hecton8.Core.csproj (in 97 ms).
-EXIT_CODE=0
-MEASURED_RESTORE_ELAPSED=00:00:02.1713529
-MEASURED_RESTORE_ELAPSED_US=2171353

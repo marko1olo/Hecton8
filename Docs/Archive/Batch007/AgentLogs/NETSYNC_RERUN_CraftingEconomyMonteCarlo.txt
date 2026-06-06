@@ -1,5 +1,0 @@
-CRAFTING MONTE CARLO OK
-steps=1000000 profit_steps=0 seed=3366254365
-max_value_delta_milli_units=-1000 max_mass_delta_mg=-400000 max_energy_delta_mwh=-133000
-
-EXIT=0 elapsed=90.401s

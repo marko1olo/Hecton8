@@ -1,7 +1,0 @@
-﻿TextureCount=1527
-TextureStrictFormatViolations=134
-TextureVRAMCrimeCount=1126
-OversizedTextureCount=27
-NoMipWorldTextureCount=2
-TextureReadWriteCount=10
-UnknownDimensionCount=5

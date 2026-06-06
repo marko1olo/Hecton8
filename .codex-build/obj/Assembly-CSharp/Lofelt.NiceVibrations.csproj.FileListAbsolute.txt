@@ -1,8 +1,0 @@
-C:\hades\Hecton8\.codex-build\bin\Assembly-CSharp\Lofelt.NiceVibrations.dll
-C:\hades\Hecton8\.codex-build\bin\Assembly-CSharp\Lofelt.NiceVibrations.pdb
-C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\Lofelt.NiceVibrations.csproj.AssemblyReference.cache
-C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\Lofelt.NiceVibrations.GeneratedMSBuildEditorConfig.editorconfig
-C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\Lofelt.NiceVibrations.csproj.CoreCompileInputs.cache
-C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\Lofelt.NiceVibrations.sourcelink.json
-C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\Lofelt.NiceVibrations.dll
-C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\Lofelt.NiceVibrations.pdb

@@ -1,3 +1,0 @@
-MeshAssetsScanned=1549
-HighMeshAssetCount=4
-ReadableMeshAssetCount=1485

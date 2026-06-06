@@ -1,8 +1,0 @@
-C:\hades\Hecton8\.codexbuild\savepass2_bin\Den.Tools.dll
-C:\hades\Hecton8\.codexbuild\savepass2_bin\Den.Tools.pdb
-C:\hades\Hecton8\.codexbuild\savepass2_obj\Den.Tools.csproj.AssemblyReference.cache
-C:\hades\Hecton8\.codexbuild\savepass2_obj\Den.Tools.GeneratedMSBuildEditorConfig.editorconfig
-C:\hades\Hecton8\.codexbuild\savepass2_obj\Den.Tools.csproj.CoreCompileInputs.cache
-C:\hades\Hecton8\.codexbuild\savepass2_obj\Den.Tools.sourcelink.json
-C:\hades\Hecton8\.codexbuild\savepass2_obj\Den.Tools.dll
-C:\hades\Hecton8\.codexbuild\savepass2_obj\Den.Tools.pdb

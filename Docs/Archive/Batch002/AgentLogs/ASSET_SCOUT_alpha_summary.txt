@@ -1,2 +1,0 @@
-﻿TransparentMaterialCount=656
-Recommendation=Move eligible materials to Opaque+Dither or AlphaClip; keep true glass/water only with fill-rate proof

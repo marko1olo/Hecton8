@@ -1,3 +1,0 @@
-C:\hades\Hecton8\Docs\AgentLogs\Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh04.log:1:C:\hades\Hecton8\Assets\_Project\Scripts\HectonFluidEngine.cs(211,57): error CS0103: The name 'PrologueSignalSourceHashes' does not exist in the current context [C:\hades\Hecton8\Hecton8.Core.csproj]
-C:\hades\Hecton8\Docs\AgentLogs\Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh04.log:3:Build FAILED.
-C:\hades\Hecton8\Docs\AgentLogs\Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh04.log:5:C:\hades\Hecton8\Assets\_Project\Scripts\HectonFluidEngine.cs(211,57): error CS0103: The name 'PrologueSignalSourceHashes' does not exist in the current context [C:\hades\Hecton8\Hecton8.Core.csproj]

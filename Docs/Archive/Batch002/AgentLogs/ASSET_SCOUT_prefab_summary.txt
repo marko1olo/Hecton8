@@ -1,5 +1,0 @@
-PrefabsScanned=789
-PrefabRenderersScanned=2575
-HighMeshPrefabNoLODCount=1
-RendererOverheadCount=3
-StaticUv2MissingCount=0

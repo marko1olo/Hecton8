@@ -1,7 +1,0 @@
-METRIC_PHI_DATA_TRUTH_STATUS: DATA_TRUTH_FAILED
-checks=36 failed=1
-binary_files=37 unaligned=0
-struct_format_sites=158 endian_failures=0
-report=Docs/Reports/METRIC_PHI_DATA_TRUTH_AUDIT.json
-
-EXIT=2 elapsed=8.285s

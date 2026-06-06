@@ -1,9 +1,0 @@
-diff --git a/Assets/_Project/Scripts/FaunaRuntimeSmokeTester.cs.meta b/Assets/_Project/Scripts/FaunaRuntimeSmokeTester.cs.meta
-new file mode 100644
-index 00000000..067801f3
---- /dev/null
-+++ b/Assets/_Project/Scripts/FaunaRuntimeSmokeTester.cs.meta
-@@ -0,0 +1,2 @@
-+fileFormatVersion: 2
-+guid: e785db6faca555d499789b2249ba001e
-\ No newline at end of file

@@ -48,6 +48,7 @@
 /Assets/UniversalRenderPipelineGlobalSettings.asset
 /Assets/UniversalRenderPipelineGlobalSettings.asset.meta
 /playmode_metrics.json
+NativeAudio/**/[Bb]uild/
 *.log
 *.diff
 *.patch

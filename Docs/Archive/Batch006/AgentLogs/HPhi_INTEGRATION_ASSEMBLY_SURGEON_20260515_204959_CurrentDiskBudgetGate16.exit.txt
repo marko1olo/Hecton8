@@ -1,3 +1,0 @@
-EXIT=0
-ElapsedMicroseconds=162473647
-Json=Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_204959_CurrentDiskBudgetGate16.json

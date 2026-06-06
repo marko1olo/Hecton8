@@ -1,3 +1,0 @@
-TECH LORE VALIDATED: entries=100 source=Data\Lore\PdaTechnicalLogs.h8jsonl localization=Data\Localization\en_US.json
-
-EXIT=0 elapsed=10.705s

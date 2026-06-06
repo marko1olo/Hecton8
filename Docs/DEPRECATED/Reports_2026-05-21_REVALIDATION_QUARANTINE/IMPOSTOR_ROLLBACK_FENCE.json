@@ -1,7 +1,0 @@
-{
-  "agent": "SHINOBU_212",
-  "status": "STATIC_OK_PENDING_UNITY_MENU_RUN",
-  "state_ring_buffer_contains_hlod_impostor": false,
-  "presentation_excluded_tail_descriptors": true,
-  "decision": "HLOD impostor matrices remain presentation data and are not authoritative rollback leaves."
-}

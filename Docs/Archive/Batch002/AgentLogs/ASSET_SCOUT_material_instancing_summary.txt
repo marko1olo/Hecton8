@@ -1,3 +1,0 @@
-﻿RendererMaterialRuntimeCloneHits=0
-RendererMaterialScannerLiteralHits=6
-NonRendererMaterialReviewHits=142

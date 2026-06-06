@@ -1,3 +1,0 @@
-EXIT=1
-ElapsedMicroseconds=63588277
-Log=Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_194318_CurrentDisk29.log

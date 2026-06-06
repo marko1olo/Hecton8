@@ -1,9 +1,0 @@
-C:\hades\Hecton8\.codexbuild\savepass2_bin\GPUInstancer.dll
-C:\hades\Hecton8\.codexbuild\savepass2_bin\GPUInstancer.pdb
-C:\hades\Hecton8\.codexbuild\savepass2_obj\GPUInstancer.csproj.AssemblyReference.cache
-C:\hades\Hecton8\.codexbuild\savepass2_obj\GPUInstancer.GeneratedMSBuildEditorConfig.editorconfig
-C:\hades\Hecton8\.codexbuild\savepass2_obj\GPUInstancer.csproj.CoreCompileInputs.cache
-C:\hades\Hecton8\.codexbuild\savepass2_obj\GPUInstancer.sourcelink.json
-C:\hades\Hecton8\.codexbuild\savepass2_obj\GPUInsta.C5028AAD.Up2Date
-C:\hades\Hecton8\.codexbuild\savepass2_obj\GPUInstancer.dll
-C:\hades\Hecton8\.codexbuild\savepass2_obj\GPUInstancer.pdb

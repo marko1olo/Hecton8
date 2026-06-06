@@ -1,3 +1,0 @@
-SceneStaticMeshRenderersScanned=412
-SceneStaticRenderers=0
-SceneStaticUv2MissingCount=0

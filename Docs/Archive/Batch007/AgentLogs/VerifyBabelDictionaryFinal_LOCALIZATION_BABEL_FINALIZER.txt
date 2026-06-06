@@ -1,3 +1,0 @@
-BABEL VERIFIED sources=45 entries=32580 languages=17 bytes=1523984 word_count=170521 constants=12676 endian=< alignment=16 collisions_resolved=0
-
-EXIT=0 elapsed=120.163s

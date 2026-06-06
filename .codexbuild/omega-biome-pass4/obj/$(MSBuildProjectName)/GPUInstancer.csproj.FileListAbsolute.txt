@@ -1,9 +1,0 @@
-C:\hades\Hecton8\.codexbuild\omega-biome-pass4\bin\$(MSBuildProjectName)\GPUInstancer.dll
-C:\hades\Hecton8\.codexbuild\omega-biome-pass4\bin\$(MSBuildProjectName)\GPUInstancer.pdb
-C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\GPUInstancer.csproj.AssemblyReference.cache
-C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\GPUInstancer.GeneratedMSBuildEditorConfig.editorconfig
-C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\GPUInstancer.csproj.CoreCompileInputs.cache
-C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\GPUInstancer.sourcelink.json
-C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\GPUInsta.C5028AAD.Up2Date
-C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\GPUInstancer.dll
-C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\GPUInstancer.pdb
