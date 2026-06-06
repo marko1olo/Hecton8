@@ -2,6 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Hecton8.Core.Memory;
 using Hecton.Localization;
 using Unity.Burst;
 using Unity.Collections;
@@ -85,6 +86,7 @@ namespace Hecton8.Core
         private const int ExportRequestNone = 0;
         private const int ExportRequestPrepared = 1;
         private const int ExportRequestEmergency = 2;
+        private const SystemID NativeMemoryOwner = SystemID.CoreDiagnostics;
         public const float BytesToMegabytes = 0.000000953674f;
 
         private static NativeRingBuffer<TelemetryEvent> _ringBuffer;
@@ -138,6 +140,7 @@ namespace Hecton8.Core
 
         internal static void DisposeStaticState()
         {
+            H8Memory.UnregisterBeforeShutdownOwnerRelease(DisposeStaticState);
             DisposeBlackboxState();
             lock (_initGate)
             {
@@ -168,19 +171,8 @@ namespace Hecton8.Core
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            if (dependency.IsCompleted)
-            {
-                DispatcherJobFence.TryFinalizeCompleted(ref dependency);
-                array.Dispose();
-            }
-            else
-            {
-                JobHandle disposeHandle = array.Dispose(dependency);
-                ForceCompleteDisposeHandleInPostSimulationWindow(ref disposeHandle);
-            }
-
-            array = default;
+            JobHandle disposeHandle = H8Memory.Release(ref array, dependency, NativeMemoryOwner);
+            ForceCompleteDisposeHandleInPostSimulationWindow(ref disposeHandle);
         }
 
         private static void ForceCompleteDisposeHandleInPostSimulationWindow(ref JobHandle disposeHandle)
@@ -744,6 +736,7 @@ namespace Hecton8.Core
 
             lock (_initGate)
             {
+                H8Memory.RegisterBeforeShutdownOwnerRelease(DisposeStaticState);
                 if (!_ringBuffer.IsCreated)
                 {
                     _ringBuffer = new NativeRingBuffer<TelemetryEvent>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeRingBuffer<TelemetryEvent>[1024] — power-of-two black-box ring retaining the last 1000 telemetry frames — owner: GlobalTelemetryBus
@@ -759,23 +752,13 @@ namespace Hecton8.Core
                     _snapshotStartIndex = 0;
                     _snapshotTotalCount = 0;
                     _snapshotCopiedCount = 0;
-                    _snapshotBuffer = new NativeArray<TelemetryEvent>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<TelemetryEvent>[1024] — telemetry export snapshot staging buffer — owner: GlobalTelemetryBus
-                    NativeMemorySentinel.RegisterNativeArray(
-                        _snapshotBuffer,
-                        nameof(GlobalTelemetryBus),
-                        nameof(_snapshotBuffer),
-                        NativeAllocationLifetime.Session);
+                    _snapshotBuffer = H8Memory.Allocate<TelemetryEvent>(Capacity, NativeMemoryOwner, Allocator.Persistent, NativeArrayOptions.ClearMemory);
                 }
 
                 if (!_exportScratch.IsCreated)
                 {
                     int exportScratchBytes = (Capacity * UnsafeUtility.SizeOf<TelemetryEvent>()) + BinaryHeaderSizeBytes;
-                    _exportScratch = new NativeArray<byte>(exportScratchBytes, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[65552] — unmanaged binary telemetry export scratch — owner: GlobalTelemetryBus
-                    NativeMemorySentinel.RegisterNativeArray(
-                        _exportScratch,
-                        nameof(GlobalTelemetryBus),
-                        nameof(_exportScratch),
-                        NativeAllocationLifetime.Session);
+                    _exportScratch = H8Memory.Allocate<byte>(exportScratchBytes, NativeMemoryOwner, Allocator.Persistent, NativeArrayOptions.ClearMemory);
                 }
 
                 EnsureBlackboxInitialized();

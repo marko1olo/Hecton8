@@ -13,8 +13,10 @@ namespace Hecton8.Tests.Editor
         private const string InputDispatcherPath = "Assets/_Project/Scripts/Core/InputDispatcher.cs";
         private const string KccSmokePath = "Assets/_Project/Scripts/Physics/KCC/HectonKccRuntime_SmokeTest.cs";
         private const string ReplayValidatorPath = "Assets/_Project/Scripts/Physics/KCC/Editor/ReplayDeterminismValidator1626.cs";
+        private const string GlobalTelemetryBusPath = "Assets/_Project/Scripts/Core/GlobalTelemetryBus.cs";
         private const string GlobalDataVaultPath = "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs";
         private const string H8MemoryPath = "Assets/_Project/Scripts/Core/Memory/H8Memory.cs";
+        private const string NativeMemorySentinelPath = "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs";
         private const string DodReplayRecorderPath = "Assets/_Project/Scripts/Core/DodReplayRecorder.cs";
 
         [Test]
@@ -263,6 +265,50 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("public static void ThrowVaultInitializationFailed()", h8Memory);
             Assert.Greater(createBody.IndexOf("vault.AbortInitialize();", StringComparison.Ordinal), createBody.IndexOf("if (vault._initialized)", StringComparison.Ordinal));
             Assert.Greater(createBody.IndexOf("FatalMemoryException.ThrowVaultInitializationFailed();", StringComparison.Ordinal), createBody.IndexOf("vault.AbortInitialize();", StringComparison.Ordinal));
+        }
+
+        [Test]
+        public void DataVaultSidecarNativeContainers_AreTrackedByNativeMemorySentinel()
+        {
+            string vault = File.ReadAllText(GlobalDataVaultPath);
+            string sentinel = File.ReadAllText(NativeMemorySentinelPath);
+            string initializeBody = ExtractMethodBodyFromSignature(vault, "public void Initialize(");
+            string disposeBody = ExtractMethodBodyFromSignature(vault, "public void Dispose()");
+            string registerCoreBody = ExtractMethodBody(vault, "RegisterCoreSidecarSentinels");
+            string registerMacroBody = ExtractMethodBody(vault, "RegisterMacroDatabasePayloadCacheSentinels");
+            string refreshMacroBody = ExtractMethodBody(vault, "RefreshMacroDatabasePayloadCacheSentinels");
+            string unregisterBody = ExtractMethodBody(vault, "UnregisterNativeSidecarStorage");
+
+            StringAssert.Contains("RegisterNativeSidecarStorage();", initializeBody);
+            StringAssert.Contains("UnregisterNativeSidecarStorage();", disposeBody);
+            StringAssert.Contains("RegisterUnsafeHashMapInstance", sentinel);
+            StringAssert.Contains("RefreshUnsafeHashMap", sentinel);
+            StringAssert.Contains("RegisterUnsafeHashMapInstance", registerCoreBody);
+            StringAssert.Contains("RegisterNativeListInstance", registerCoreBody);
+            StringAssert.Contains("RegisterNativeParallelHashMapInstance", registerMacroBody);
+            StringAssert.Contains("RefreshNativeParallelHashMap", refreshMacroBody);
+            StringAssert.Contains("RefreshNativeList", refreshMacroBody);
+            StringAssert.Contains("NativeMemorySentinel.Unregister(_buffersSentinelId);", unregisterBody);
+            StringAssert.Contains("_buffersSentinelId = 0;", unregisterBody);
+            Assert.Less(
+                disposeBody.IndexOf("UnregisterNativeSidecarStorage();", StringComparison.Ordinal),
+                disposeBody.IndexOf("_buffers.Dispose();", StringComparison.Ordinal));
+        }
+
+        [Test]
+        public void GlobalTelemetryBus_UsesH8MemoryOwnerReleaseHook()
+        {
+            string bus = File.ReadAllText(GlobalTelemetryBusPath);
+            string ensureBody = ExtractMethodBody(bus, "EnsureInitialized");
+            string disposeBody = ExtractMethodBody(bus, "DisposeStaticState");
+            string disposeArrayBody = ExtractMethodBody(bus, "DisposeNativeArray");
+
+            StringAssert.Contains("H8Memory.RegisterBeforeShutdownOwnerRelease(DisposeStaticState);", ensureBody);
+            StringAssert.Contains("H8Memory.UnregisterBeforeShutdownOwnerRelease(DisposeStaticState);", disposeBody);
+            StringAssert.Contains("H8Memory.Allocate<TelemetryEvent>", ensureBody);
+            StringAssert.Contains("H8Memory.Allocate<byte>", ensureBody);
+            StringAssert.Contains("H8Memory.Release(ref array, dependency, NativeMemoryOwner)", disposeArrayBody);
+            Assert.IsFalse(bus.Contains("NativeMemorySentinel.RegisterNativeArray", StringComparison.Ordinal));
         }
 
         [Test]

@@ -350,6 +350,24 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers an unsafe hash map as a distinct pointerless instance. Caller must keep the returned id.
+        /// </summary>
+        public static int RegisterUnsafeHashMapInstance<TKey, TValue>(
+            UnsafeHashMap<TKey, TValue> map,
+            string owner,
+            string label,
+            NativeAllocationLifetime lifetime)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            if (!map.IsCreated)
+                return 0;
+
+            long bytes = EstimateNativeHashMapBytes<TKey, TValue>(map.Capacity);
+            return RegisterPointer(null, bytes, owner, label, lifetime, false);
+        }
+
+        /// <summary>
         /// Registers a native parallel hash map allocation by capacity. Unity does not expose stable hash map block pointers.
         /// </summary>
         public static int RegisterNativeParallelHashMap<TKey, TValue>(
@@ -457,6 +475,22 @@ namespace Hecton8.Core
         /// </summary>
         public static void RefreshNativeHashMap<TKey, TValue>(
             NativeHashMap<TKey, TValue> map,
+            string owner,
+            string label)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            if (!map.IsCreated)
+                return;
+
+            RefreshPointerlessBytes(owner, label, EstimateNativeHashMapBytes<TKey, TValue>(map.Capacity));
+        }
+
+        /// <summary>
+        /// Refreshes a tracked unsafe hash map allocation after an explicit capacity change.
+        /// </summary>
+        public static void RefreshUnsafeHashMap<TKey, TValue>(
+            UnsafeHashMap<TKey, TValue> map,
             string owner,
             string label)
             where TKey : unmanaged, IEquatable<TKey>

@@ -2,6 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
@@ -498,6 +499,7 @@ namespace Hecton8.Core.Memory
         private const int VaultThreadWriteLockSlotSizeBytes = 24;
         private const int MacroDatabasePayloadHandleSizeBytes = 40;
         private const int MacroDatabasePayloadCacheEntrySizeBytes = 48;
+        private const string NativeMemoryOwner = nameof(GlobalDataVault);
         [StructLayout(LayoutKind.Explicit, Size = 48)]
         private struct MacroDatabasePayloadCacheEntry
         {
@@ -520,6 +522,14 @@ namespace Hecton8.Core.Memory
         private NativeParallelHashMap<ulong, MacroDatabasePayloadCacheEntry> _macroDatabasePayloadCache;
         private NativeParallelHashMap<ulong, uint> _macroDatabasePayloadAccessTicks;
         private NativeList<ulong> _macroDatabasePayloadKeys;
+        private int _buffersSentinelId;
+        private int _metadataSentinelId;
+        private int _metadataGenerationByBufferIdSentinelId;
+        private int _keysSentinelId;
+        private int _blocksSentinelId;
+        private int _macroDatabasePayloadCacheSentinelId;
+        private int _macroDatabasePayloadAccessTicksSentinelId;
+        private int _macroDatabasePayloadKeysSentinelId;
         private void* _arenaBase;
         private long _arenaBytes;
         private long _arenaCapacityLimitBytes;
@@ -808,6 +818,7 @@ namespace Hecton8.Core.Memory
                 _macroDatabasePayloadCache = new NativeParallelHashMap<ulong, MacroDatabasePayloadCacheEntry>(safeCapacity, Allocator.Persistent);
                 _macroDatabasePayloadAccessTicks = new NativeParallelHashMap<ulong, uint>(safeCapacity, Allocator.Persistent);
                 _macroDatabasePayloadKeys = new NativeList<ulong>(safeCapacity, Allocator.Persistent);
+                RegisterNativeSidecarStorage();
                 if (!HasInitializedCriticalNativeStorage())
                 {
                     AbortInitialize();
@@ -3548,11 +3559,18 @@ namespace Hecton8.Core.Memory
 
             int safeCapacity = ResolveBufferCapacity(capacity);
             if (!_macroDatabasePayloadCache.IsCreated)
+            {
                 _macroDatabasePayloadCache = new NativeParallelHashMap<ulong, MacroDatabasePayloadCacheEntry>(safeCapacity, Allocator.Persistent);
+            }
             if (!_macroDatabasePayloadAccessTicks.IsCreated)
+            {
                 _macroDatabasePayloadAccessTicks = new NativeParallelHashMap<ulong, uint>(safeCapacity, Allocator.Persistent);
+            }
             if (!_macroDatabasePayloadKeys.IsCreated)
+            {
                 _macroDatabasePayloadKeys = new NativeList<ulong>(safeCapacity, Allocator.Persistent);
+            }
+            RegisterMacroDatabasePayloadCacheSentinels();
 
             if (_macroDatabasePayloadCache.Capacity < safeCapacity)
                 _macroDatabasePayloadCache.Capacity = safeCapacity;
@@ -3560,6 +3578,7 @@ namespace Hecton8.Core.Memory
                 _macroDatabasePayloadAccessTicks.Capacity = safeCapacity;
             if (_macroDatabasePayloadKeys.Capacity < safeCapacity)
                 _macroDatabasePayloadKeys.Capacity = safeCapacity;
+            RefreshMacroDatabasePayloadCacheSentinels();
 
             return _macroDatabasePayloadCache.Capacity >= safeCapacity &&
                    _macroDatabasePayloadAccessTicks.Capacity >= safeCapacity &&
@@ -3842,6 +3861,7 @@ namespace Hecton8.Core.Memory
             if (!_initialized)
                 return;
 
+            UnregisterNativeSidecarStorage();
             DisposeMacroDatabasePayloadCache();
 
             if (_blocks.IsCreated)
@@ -4010,6 +4030,126 @@ namespace Hecton8.Core.Memory
             _macroDatabasePayloadBytes = 0L;
             _macroDatabasePayloadEvictions = 0;
             _macroDatabaseCacheAccessClock = 0u;
+        }
+
+        private void RegisterNativeSidecarStorage()
+        {
+            RegisterCoreSidecarSentinels();
+            RegisterMacroDatabasePayloadCacheSentinels();
+        }
+
+        private void RegisterCoreSidecarSentinels()
+        {
+            if (_buffersSentinelId == 0)
+            {
+                _buffersSentinelId = NativeMemorySentinel.RegisterUnsafeHashMapInstance(
+                    _buffers,
+                    NativeMemoryOwner,
+                    nameof(_buffers),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (_metadataSentinelId == 0)
+            {
+                _metadataSentinelId = NativeMemorySentinel.RegisterUnsafeHashMapInstance(
+                    _metadata,
+                    NativeMemoryOwner,
+                    nameof(_metadata),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (_metadataGenerationByBufferIdSentinelId == 0)
+            {
+                _metadataGenerationByBufferIdSentinelId = NativeMemorySentinel.RegisterUnsafeHashMapInstance(
+                    _metadataGenerationByBufferId,
+                    NativeMemoryOwner,
+                    nameof(_metadataGenerationByBufferId),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (_keysSentinelId == 0)
+            {
+                _keysSentinelId = NativeMemorySentinel.RegisterNativeListInstance(
+                    _keys,
+                    NativeMemoryOwner,
+                    nameof(_keys),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (_blocksSentinelId == 0)
+            {
+                _blocksSentinelId = NativeMemorySentinel.RegisterNativeListInstance(
+                    _blocks,
+                    NativeMemoryOwner,
+                    nameof(_blocks),
+                    NativeAllocationLifetime.Session);
+            }
+        }
+
+        private void RegisterMacroDatabasePayloadCacheSentinels()
+        {
+            if (_macroDatabasePayloadCacheSentinelId == 0)
+            {
+                _macroDatabasePayloadCacheSentinelId = NativeMemorySentinel.RegisterNativeParallelHashMapInstance(
+                    _macroDatabasePayloadCache,
+                    NativeMemoryOwner,
+                    nameof(_macroDatabasePayloadCache),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (_macroDatabasePayloadAccessTicksSentinelId == 0)
+            {
+                _macroDatabasePayloadAccessTicksSentinelId = NativeMemorySentinel.RegisterNativeParallelHashMapInstance(
+                    _macroDatabasePayloadAccessTicks,
+                    NativeMemoryOwner,
+                    nameof(_macroDatabasePayloadAccessTicks),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (_macroDatabasePayloadKeysSentinelId == 0)
+            {
+                _macroDatabasePayloadKeysSentinelId = NativeMemorySentinel.RegisterNativeListInstance(
+                    _macroDatabasePayloadKeys,
+                    NativeMemoryOwner,
+                    nameof(_macroDatabasePayloadKeys),
+                    NativeAllocationLifetime.Session);
+            }
+        }
+
+        private void RefreshMacroDatabasePayloadCacheSentinels()
+        {
+            NativeMemorySentinel.RefreshNativeParallelHashMap(
+                _macroDatabasePayloadCache,
+                NativeMemoryOwner,
+                nameof(_macroDatabasePayloadCache));
+            NativeMemorySentinel.RefreshNativeParallelHashMap(
+                _macroDatabasePayloadAccessTicks,
+                NativeMemoryOwner,
+                nameof(_macroDatabasePayloadAccessTicks));
+            NativeMemorySentinel.RefreshNativeList(
+                _macroDatabasePayloadKeys,
+                NativeMemoryOwner,
+                nameof(_macroDatabasePayloadKeys));
+        }
+
+        private void UnregisterNativeSidecarStorage()
+        {
+            NativeMemorySentinel.Unregister(_macroDatabasePayloadKeysSentinelId);
+            NativeMemorySentinel.Unregister(_macroDatabasePayloadAccessTicksSentinelId);
+            NativeMemorySentinel.Unregister(_macroDatabasePayloadCacheSentinelId);
+            NativeMemorySentinel.Unregister(_blocksSentinelId);
+            NativeMemorySentinel.Unregister(_keysSentinelId);
+            NativeMemorySentinel.Unregister(_metadataGenerationByBufferIdSentinelId);
+            NativeMemorySentinel.Unregister(_metadataSentinelId);
+            NativeMemorySentinel.Unregister(_buffersSentinelId);
+            _macroDatabasePayloadKeysSentinelId = 0;
+            _macroDatabasePayloadAccessTicksSentinelId = 0;
+            _macroDatabasePayloadCacheSentinelId = 0;
+            _blocksSentinelId = 0;
+            _keysSentinelId = 0;
+            _metadataGenerationByBufferIdSentinelId = 0;
+            _metadataSentinelId = 0;
+            _buffersSentinelId = 0;
         }
 
         private void RemoveMacroDatabaseKey(ulong sectorHash)
