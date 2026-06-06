@@ -199,6 +199,16 @@ namespace Hecton8.Audio
         private static readonly bool ProceduralSynthOwnsStemTransport = true;
         private const SystemID VaultOwner = SystemID.AudioStemMixer;
         private static readonly ulong AudioStemRulesMutationGuardMask = AdaptiveStemMutationGuardBit(BufferID.AudioStemRules);
+        private static readonly ulong AudioStemFrameMutationGuardMask =
+            AdaptiveStemMutationGuardBit(BufferID.AudioStemState) |
+            AdaptiveStemMutationGuardBit(BufferID.AudioStemCommands) |
+            AdaptiveStemMutationGuardBit(BufferID.AudioStemMixFrame) |
+            AudioStemRulesMutationGuardMask |
+            AdaptiveStemMutationGuardBit(BufferID.AudioStemMockPredator) |
+            AdaptiveStemMutationGuardBit(BufferID.AudioStemMockDepth) |
+            AdaptiveStemMutationGuardBit(BufferID.AudioStemMockTension) |
+            AdaptiveStemMutationGuardBit(BufferID.AudioStemTelemetry) |
+            AdaptiveStemMutationGuardBit(BufferID.AudioStemTelemetryCursor);
 #if UNITY_EDITOR
         private const int CsvPollSlowTickInterval = 2;
         private const string CsvDefaultRelativePath = "Docs/Audio/audio_stem_rules.csv";
@@ -370,12 +380,19 @@ namespace Hecton8.Audio
             }
 
             DrainSignalInputs();
-            if (!TryResolveStemOwnerViews(out AdaptiveStemVaultViews views))
+            if (!TryAcquireStemFrameMutationView(out AdaptiveStemVaultViews views, out IDataVault guardVault))
                 return;
 
-            UpdateBeatAndBiomeState(ref views, safeDelta);
-            UpdateVaultRulesFromManagedState(ref views, safeDelta);
-            RunAudioKernels(ref views);
+            try
+            {
+                UpdateBeatAndBiomeState(ref views, safeDelta);
+                UpdateVaultRulesFromManagedState(ref views, safeDelta);
+                RunAudioKernels(ref views);
+            }
+            finally
+            {
+                ReleaseAdaptiveStemMutationGuard(guardVault, AudioStemFrameMutationGuardMask);
+            }
 
             if (Interlocked.Exchange(ref _telemetryDumpRequested, 0) != 0)
                 DumpTelemetryOnce();
@@ -647,21 +664,28 @@ namespace Hecton8.Audio
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
 
-            if (!TryResolveStemOwnerViews(out AdaptiveStemVaultViews views))
+            if (!TryAcquireStemFrameMutationView(out AdaptiveStemVaultViews views, out IDataVault guardVault))
             {
                 DisposeVaultStorage();
                 return;
             }
 
-            MemClearArray(views.StemState);
-            MemClearArray(views.StemCommands);
-            MemClearArray(views.MixFrame);
-            MemClearArray(views.Rules);
-            MemClearArray(views.MockPredator);
-            MemClearArray(views.MockDepth);
-            MemClearArray(views.MockTension);
-            MemClearArray(views.TelemetryRing);
-            MemClearArray(views.TelemetryCursor);
+            try
+            {
+                MemClearArray(views.StemState);
+                MemClearArray(views.StemCommands);
+                MemClearArray(views.MixFrame);
+                MemClearArray(views.Rules);
+                MemClearArray(views.MockPredator);
+                MemClearArray(views.MockDepth);
+                MemClearArray(views.MockTension);
+                MemClearArray(views.TelemetryRing);
+                MemClearArray(views.TelemetryCursor);
+            }
+            finally
+            {
+                ReleaseAdaptiveStemMutationGuard(guardVault, AudioStemFrameMutationGuardMask);
+            }
 
             TryRefreshScalabilityStateHandleCold();
             RefreshGlobalQualitySnapshotCold();
@@ -768,9 +792,15 @@ namespace Hecton8.Audio
 
         private bool TryResolveStemOwnerViews(out AdaptiveStemVaultViews views)
         {
+            return TryResolveStemOwnerViews(_dataVault, out views);
+        }
+
+        private bool TryResolveStemOwnerViews(IDataVault vault, out AdaptiveStemVaultViews views)
+        {
             views = default;
-            IDataVault vault = _dataVault;
-            if (vault == null || !AreAdaptiveStemVaultHandlesExact())
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !AreAdaptiveStemVaultHandlesExact())
                 return false;
 
             if (!vault.TryResolveHandle(in _stemStateHandle, out views.StemState) ||
@@ -813,6 +843,42 @@ namespace Hecton8.Audio
             }
 
             return true;
+        }
+
+        private bool TryAcquireStemFrameMutationView(out AdaptiveStemVaultViews views, out IDataVault guardVault)
+        {
+            views = default;
+            guardVault = _dataVault;
+            if (guardVault == null ||
+                !AreAdaptiveStemVaultHandlesExact() ||
+                guardVault.IsCompactionFenceActive ||
+                !guardVault.TryAcquireMutationGuard(AudioStemFrameMutationGuardMask))
+            {
+                guardVault = null;
+                return false;
+            }
+
+            bool acquired = true;
+            try
+            {
+                if (guardVault.IsCompactionFenceActive ||
+                    !TryResolveStemOwnerViews(guardVault, out views))
+                {
+                    return false;
+                }
+
+                acquired = false;
+                return true;
+            }
+            finally
+            {
+                if (acquired)
+                {
+                    ReleaseAdaptiveStemMutationGuard(guardVault, AudioStemFrameMutationGuardMask);
+                    views = default;
+                    guardVault = null;
+                }
+            }
         }
 
         private bool TryAcquireRuleMutationView(out NativeArray<AudioStemRuleDTO> rules, out IDataVault guardVault)
@@ -964,50 +1030,57 @@ namespace Hecton8.Audio
         private void GenerateEmergencyMockAudioProfiles()
         {
             if (Volatile.Read(ref _nativeAllocated) == 0 ||
-                !TryResolveStemOwnerViews(out AdaptiveStemVaultViews views))
+                !TryAcquireStemFrameMutationView(out AdaptiveStemVaultViews views, out IDataVault guardVault))
                 return;
 
-            if (views.Rules.Length <= 0 || views.StemCommands.Length < 2)
-                return;
+            try
+            {
+                if (views.Rules.Length <= 0 || views.StemCommands.Length < 2)
+                    return;
 
-            AudioStemRuleDTO rule = default;
-            rule.AttackSeconds = DefaultAttackSeconds;
-            rule.ReleaseSeconds = DefaultReleaseSeconds;
-            rule.CrossfadeSeconds = DefaultCrossfadeSeconds;
-            rule.BeatBpm = DefaultBeatBpm;
-            rule.BeatWindowSeconds = DefaultBeatWindowSeconds;
-            rule.DepthMinMeters = DefaultDepthMinMeters;
-            rule.DepthMaxMeters = DefaultDepthMaxMeters;
-            rule.DepthFilterMinHz = DefaultDepthFilterMinHz;
-            rule.DepthFilterMaxHz = DefaultDepthFilterMaxHz;
-            rule.CombatEnterThreshold = 0.5f;
-            rule.CombatExitThreshold = 0.35f;
-            rule.NarrativeOverrideWeight = 1f;
-            rule.GlobalQualityWeight = ResolveGlobalQualityWeightFromSnapshot();
-            rule.SystemHealth01 = 1f;
-            rule.IoPressure01 = 0f;
-            rule.BiomeFadeSeconds = DefaultBiomeFadeSeconds;
-            rule.CurrentBiomeHash = DefaultBiomeHash;
-            rule.TargetBiomeHash = DefaultBiomeHash;
-            rule.StemBaseHash = StemBaseHash;
-            rule.StemActionHash = StemActionHash;
-            rule.StemDepthHash = StemDepthHash;
-            rule.StemBossHash = StemBossHash;
-            rule.KernelCadenceSeconds = ResolveKernelCadenceSeconds(rule.GlobalQualityWeight);
-            views.Rules[0] = rule;
+                AudioStemRuleDTO rule = default;
+                rule.AttackSeconds = DefaultAttackSeconds;
+                rule.ReleaseSeconds = DefaultReleaseSeconds;
+                rule.CrossfadeSeconds = DefaultCrossfadeSeconds;
+                rule.BeatBpm = DefaultBeatBpm;
+                rule.BeatWindowSeconds = DefaultBeatWindowSeconds;
+                rule.DepthMinMeters = DefaultDepthMinMeters;
+                rule.DepthMaxMeters = DefaultDepthMaxMeters;
+                rule.DepthFilterMinHz = DefaultDepthFilterMinHz;
+                rule.DepthFilterMaxHz = DefaultDepthFilterMaxHz;
+                rule.CombatEnterThreshold = 0.5f;
+                rule.CombatExitThreshold = 0.35f;
+                rule.NarrativeOverrideWeight = 1f;
+                rule.GlobalQualityWeight = ResolveGlobalQualityWeightFromSnapshot();
+                rule.SystemHealth01 = 1f;
+                rule.IoPressure01 = 0f;
+                rule.BiomeFadeSeconds = DefaultBiomeFadeSeconds;
+                rule.CurrentBiomeHash = DefaultBiomeHash;
+                rule.TargetBiomeHash = DefaultBiomeHash;
+                rule.StemBaseHash = StemBaseHash;
+                rule.StemActionHash = StemActionHash;
+                rule.StemDepthHash = StemDepthHash;
+                rule.StemBossHash = StemBossHash;
+                rule.KernelCadenceSeconds = ResolveKernelCadenceSeconds(rule.GlobalQualityWeight);
+                views.Rules[0] = rule;
 
-            StemCommandDTO primary = default;
-            primary.StemHash_A = StemBaseHash;
-            primary.Volume_A = 1f;
-            primary.StemHash_B = StemActionHash;
-            primary.Volume_B = 0f;
-            StemCommandDTO secondary = default;
-            secondary.StemHash_A = StemDepthHash;
-            secondary.Volume_A = 0f;
-            secondary.StemHash_B = StemBossHash;
-            secondary.Volume_B = 0f;
-            views.StemCommands[0] = primary;
-            views.StemCommands[1] = secondary;
+                StemCommandDTO primary = default;
+                primary.StemHash_A = StemBaseHash;
+                primary.Volume_A = 1f;
+                primary.StemHash_B = StemActionHash;
+                primary.Volume_B = 0f;
+                StemCommandDTO secondary = default;
+                secondary.StemHash_A = StemDepthHash;
+                secondary.Volume_A = 0f;
+                secondary.StemHash_B = StemBossHash;
+                secondary.Volume_B = 0f;
+                views.StemCommands[0] = primary;
+                views.StemCommands[1] = secondary;
+            }
+            finally
+            {
+                ReleaseAdaptiveStemMutationGuard(guardVault, AudioStemFrameMutationGuardMask);
+            }
         }
 
         private void DrainSignalInputs()

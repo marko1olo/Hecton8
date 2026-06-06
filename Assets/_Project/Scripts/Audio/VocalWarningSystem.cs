@@ -571,22 +571,33 @@ namespace Hecton8.Audio
 #if UNITY_EDITOR
         public bool EditorInjectMockThreats(int count)
         {
-            if (Volatile.Read(ref _nativeAllocated) == 0 || !TryResolveVwsOwnerViews(out VwsVaultViews views))
+            if (Volatile.Read(ref _nativeAllocated) == 0 ||
+                !TryAcquireVocalWarningFrameGuard(out IDataVault guardVault))
                 return false;
 
-            GenerateMockVocalThreatsJob job = new GenerateMockVocalThreatsJob
+            try
             {
-                Queue = views.Queue,
-                PriorityState = views.PriorityState,
-                Tuning = views.Tuning,
-                Profiles = views.Profiles,
-                TimeSeconds = _vwsClockSeconds,
-                Seed = NextOwnerFrameId() ^ 0x9E3779B9u,
-                Count = math.clamp(count, 1, 50)
-            };
-            job.Run();
-            _queueCount = ResolveActivePriorityCount(ref views);
-            return true;
+                if (!TryResolveVwsOwnerViews(guardVault, out VwsVaultViews views))
+                    return false;
+
+                GenerateMockVocalThreatsJob job = new GenerateMockVocalThreatsJob
+                {
+                    Queue = views.Queue,
+                    PriorityState = views.PriorityState,
+                    Tuning = views.Tuning,
+                    Profiles = views.Profiles,
+                    TimeSeconds = _vwsClockSeconds,
+                    Seed = NextOwnerFrameId() ^ 0x9E3779B9u,
+                    Count = math.clamp(count, 1, 50)
+                };
+                job.Run();
+                _queueCount = ResolveActivePriorityCount(ref views);
+                return true;
+            }
+            finally
+            {
+                ReleaseVocalWarningFrameGuard(guardVault);
+            }
         }
 
         public bool EditorTryReadTuning(out VocalWarningTuningDTO tuning)
@@ -743,7 +754,7 @@ namespace Hecton8.Audio
                 return;
 
             BindVaultStorage(vault);
-            if (!TryResolveVwsOwnerViews(out VwsVaultViews views))
+            if (!TryResolveVwsOwnerViews(vault, out VwsVaultViews views))
             {
                 ClearVaultDescriptors();
                 return;
@@ -1001,8 +1012,12 @@ namespace Hecton8.Audio
 
         private bool TryResolveVwsOwnerViews(out VwsVaultViews views)
         {
+            return TryResolveVwsOwnerViews(_dataVault, out views);
+        }
+
+        private bool TryResolveVwsOwnerViews(IDataVault vault, out VwsVaultViews views)
+        {
             views = default;
-            IDataVault vault = _dataVault;
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
@@ -1138,7 +1153,7 @@ namespace Hecton8.Audio
                 return dependsOn;
 
             bool guardTransferred = false;
-            if (!TryResolveVwsOwnerViews(out VwsVaultViews views))
+            if (!TryResolveVwsOwnerViews(guardVault, out VwsVaultViews views))
             {
                 ReleaseVocalWarningFrameGuard(guardVault);
                 return dependsOn;
@@ -1321,7 +1336,7 @@ namespace Hecton8.Audio
 
             try
             {
-                if (!TryResolveVwsOwnerViews(out VwsVaultViews views))
+                if (!TryResolveVwsOwnerViews(guardVault, out VwsVaultViews views))
                 {
                     Volatile.Write(ref _visualSyncPresentationPending, 1);
                     return;
@@ -1476,13 +1491,26 @@ namespace Hecton8.Audio
 
         private void CancelRendererPlaybackAndClearQueues()
         {
-            if (TryResolveVwsOwnerViews(out VwsVaultViews views))
+            if (!TryAcquireVocalWarningFrameGuard(out IDataVault guardVault))
             {
-                CancelRendererPlaybackAndClearQueues(ref views, true);
+                ClearPresentationState(true);
                 return;
             }
 
-            ClearPresentationState(true);
+            try
+            {
+                if (TryResolveVwsOwnerViews(guardVault, out VwsVaultViews views))
+                {
+                    CancelRendererPlaybackAndClearQueues(ref views, true);
+                    return;
+                }
+
+                ClearPresentationState(true);
+            }
+            finally
+            {
+                ReleaseVocalWarningFrameGuard(guardVault);
+            }
         }
 
         private void CancelRendererPlaybackAndClearQueues(ref VwsVaultViews views, bool clearPendingFaults)

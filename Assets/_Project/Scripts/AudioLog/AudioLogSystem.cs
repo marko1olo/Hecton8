@@ -290,7 +290,9 @@ namespace Hecton8.Narrative
 
         public void SlowTick()
         {
-            TickAtmosphericWarningBlocker();
+            bool queuedPlaybackStarted = TickAtmosphericWarningBlocker();
+            if (queuedPlaybackStarted)
+                return;
 
             if (!_isPlaying && !_atmosphericWarningActive && _queueCount > 0)
             {
@@ -1077,24 +1079,6 @@ namespace Hecton8.Narrative
             _queuedLogHashDedup[_queuedLogHashDedupCount++] = logHash;
         }
 
-        private void RemoveQueuedLogHash(uint logHash)
-        {
-            if (logHash == 0u)
-                return;
-
-            for (int i = 0; i < _queuedLogHashDedupCount; i++)
-            {
-                if (_queuedLogHashDedup[i] != logHash)
-                    continue;
-
-                int lastIndex = _queuedLogHashDedupCount - 1;
-                _queuedLogHashDedup[i] = _queuedLogHashDedup[lastIndex];
-                _queuedLogHashDedup[lastIndex] = 0u;
-                _queuedLogHashDedupCount = lastIndex;
-                return;
-            }
-        }
-
         private void ClearQueuedLogHashes()
         {
             for (int i = 0; i < _queuedLogHashDedupCount; i++)
@@ -1121,10 +1105,7 @@ namespace Hecton8.Narrative
 
                     _playbackQueueReadIndex = (readIndex + 1) % PlaybackQueueCapacity;
                     _queueCount = math.max(0, _queueCount - 1);
-                    if (nextHash != 0u)
-                        RemoveQueuedLogHash(nextHash);
-                    else
-                        RebuildQueuedLogHashDedupFromQueue(queue, _playbackQueueReadIndex, _queueCount);
+                    RebuildQueuedLogHashDedupFromQueue(queue, _playbackQueueReadIndex, _queueCount);
                 }
                 finally
                 {
@@ -1154,16 +1135,18 @@ namespace Hecton8.Narrative
             }
         }
 
-        private void TickAtmosphericWarningBlocker()
+        private bool TickAtmosphericWarningBlocker()
         {
             if (!_atmosphericWarningActive)
-                return;
+                return false;
 
             _atmosphericWarningTimer -= 0.5f; // SlowTick ~0.5s
             if (_atmosphericWarningTimer > 0f)
-                return;
+                return false;
 
+            bool wasPlaying = _isPlaying;
             NotifyAtmosphericWarningCompleted();
+            return !wasPlaying && _isPlaying;
         }
 
         private void ClearAtmosphericWarningBlocker()

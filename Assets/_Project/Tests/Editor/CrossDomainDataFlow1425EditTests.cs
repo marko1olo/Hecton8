@@ -616,6 +616,7 @@ namespace Hecton8.Tests.Editor
                 "_Project/Scripts/AudioLog/AudioLogSystem.cs");
             string source = File.ReadAllText(audioLogPath);
             string slowTickBody = ExtractMethodBody(source, "public void SlowTick()");
+            string warningBlockerBody = ExtractMethodBody(source, "private bool TickAtmosphericWarningBlocker()");
             string lateFrameBody = ExtractMethodBody(source, "public void LateFrameTick()");
             string flushBody = ExtractMethodBody(source, "private void FlushPendingPlaybackVisualSync()");
             string enqueueBody = ExtractMethodBody(source, "private void EnqueuePlayback");
@@ -647,6 +648,14 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("TryStartNextQueuedLog();", slowTickBody);
             Assert.Greater(slowTickBody.IndexOf("if (!_isPlaying || _currentLog == null)", StringComparison.Ordinal),
                 slowTickBody.IndexOf("TryStartNextQueuedLog();", StringComparison.Ordinal));
+            StringAssert.Contains("bool queuedPlaybackStarted = TickAtmosphericWarningBlocker();", slowTickBody);
+            StringAssert.Contains("if (queuedPlaybackStarted)", slowTickBody);
+            Assert.Greater(slowTickBody.IndexOf("if (!_isPlaying && !_atmosphericWarningActive && _queueCount > 0)", StringComparison.Ordinal),
+                slowTickBody.IndexOf("if (queuedPlaybackStarted)", StringComparison.Ordinal));
+            Assert.Greater(slowTickBody.IndexOf("_playbackTimer -= 0.5f", StringComparison.Ordinal),
+                slowTickBody.IndexOf("if (queuedPlaybackStarted)", StringComparison.Ordinal));
+            StringAssert.Contains("bool wasPlaying = _isPlaying;", warningBlockerBody);
+            StringAssert.Contains("return !wasPlaying && _isPlaying;", warningBlockerBody);
             StringAssert.Contains("PlaybackQueueMutationGuardMask", source);
             StringAssert.Contains("EncryptedFragmentStateMutationGuardMask", source);
             StringAssert.Contains("TelemetryMutationGuardMask", source);
@@ -661,6 +670,7 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("RebuildQueuedLogHashDedupFromQueue(queue, _playbackQueueReadIndex, _queueCount)", startNextBody);
             Assert.Greater(startNextBody.LastIndexOf("ReleaseVaultMutation", StringComparison.Ordinal),
                 startNextBody.IndexOf("RebuildQueuedLogHashDedupFromQueue", StringComparison.Ordinal));
+            StringAssert.DoesNotContain("RemoveQueuedLogHash", source);
             StringAssert.Contains("ClearQueuedLogHashes();", rebuildDedupBody);
             StringAssert.Contains("!IsPlaybackQueued(logHash)", rebuildDedupBody);
             StringAssert.Contains("AddQueuedLogHash(logHash)", rebuildDedupBody);

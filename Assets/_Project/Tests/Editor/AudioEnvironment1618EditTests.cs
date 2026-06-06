@@ -673,6 +673,10 @@ namespace Hecton8.Tests.Editor
             string push = ExtractMethodBody(adaptiveStem, "private void PushDynamicMusicSignal(");
             string ruleWrite = ExtractMethodBody(adaptiveStem, "private bool TryWriteRuleForOwnerRoute(");
             string ruleAcquire = ExtractMethodBody(adaptiveStem, "private bool TryAcquireRuleMutationView(");
+            string tick = ExtractMethodBody(adaptiveStem, "public void Tick(float deltaTime)");
+            string frameAcquire = ExtractMethodBody(adaptiveStem, "private bool TryAcquireStemFrameMutationView(");
+            string ensureVaultStorage = ExtractMethodBody(adaptiveStem, "private void EnsureVaultStorage()");
+            string emergencyProfiles = ExtractMethodBody(adaptiveStem, "private void GenerateEmergencyMockAudioProfiles()");
 
             StringAssert.Contains("ProceduralSynthOwnsStemTransport", apply);
             StringAssert.Contains("PushDynamicMusicSignal(tension, depthMeters, quality);", apply);
@@ -685,6 +689,17 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("signal.MusicActivity01 = 0f", push);
             StringAssert.Contains("DynamicMusicScalarSignal.SourceAdaptiveStemHash", push);
             StringAssert.Contains("AudioStemRulesMutationGuardMask", adaptiveStem);
+            StringAssert.Contains("AudioStemFrameMutationGuardMask", adaptiveStem);
+            StringAssert.Contains("AudioStemRulesMutationGuardMask |", adaptiveStem);
+            StringAssert.Contains("TryAcquireStemFrameMutationView", tick);
+            StringAssert.Contains("ReleaseAdaptiveStemMutationGuard(guardVault, AudioStemFrameMutationGuardMask)", tick);
+            StringAssert.Contains("TryAcquireMutationGuard(AudioStemFrameMutationGuardMask)", frameAcquire);
+            StringAssert.Contains("TryResolveStemOwnerViews(guardVault, out views)", frameAcquire);
+            StringAssert.Contains("ReleaseAdaptiveStemMutationGuard(guardVault, AudioStemFrameMutationGuardMask)", frameAcquire);
+            StringAssert.Contains("TryAcquireStemFrameMutationView", ensureVaultStorage);
+            StringAssert.Contains("ReleaseAdaptiveStemMutationGuard(guardVault, AudioStemFrameMutationGuardMask)", ensureVaultStorage);
+            StringAssert.Contains("TryAcquireStemFrameMutationView", emergencyProfiles);
+            StringAssert.Contains("ReleaseAdaptiveStemMutationGuard(guardVault, AudioStemFrameMutationGuardMask)", emergencyProfiles);
             StringAssert.Contains("TryAcquireRuleMutationView", ruleWrite);
             StringAssert.Contains("ReleaseAdaptiveStemMutationGuard", ruleWrite);
             StringAssert.Contains("TryAcquireMutationGuard(AudioStemRulesMutationGuardMask)", ruleAcquire);
@@ -736,6 +751,53 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("ReleaseVocalWarningMutationGuard", tuningAcquire);
             Assert.That(vocalWarning.IndexOf("TryAcquireWriteLock", StringComparison.Ordinal), Is.LessThan(0));
             Assert.That(vocalWarning.IndexOf("ReleaseWriteLock", StringComparison.Ordinal), Is.LessThan(0));
+        }
+
+        [Test]
+        public void VocalWarningEditorMockThreatsUseFrameMutationGuard()
+        {
+            string vocalWarning = Read(VocalWarningSystemPath);
+            string mockInject = ExtractMethodBody(vocalWarning, "public bool EditorInjectMockThreats(");
+
+            StringAssert.Contains("private bool TryResolveVwsOwnerViews(IDataVault vault, out VwsVaultViews views)", vocalWarning);
+            StringAssert.Contains("TryAcquireVocalWarningFrameGuard", mockInject);
+            StringAssert.Contains("TryResolveVwsOwnerViews(guardVault, out VwsVaultViews views)", mockInject);
+            StringAssert.Contains("GenerateMockVocalThreatsJob", mockInject);
+            StringAssert.Contains("ReleaseVocalWarningFrameGuard", mockInject);
+            StringAssert.Contains("finally", mockInject);
+            Assert.That(mockInject.IndexOf("TryAcquireWriteLock", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(mockInject.IndexOf("ReleaseWriteLock", StringComparison.Ordinal), Is.LessThan(0));
+        }
+
+        [Test]
+        public void VocalWarningFrameAndVisualSyncResolveGuardedVaultOnly()
+        {
+            string vocalWarning = Read(VocalWarningSystemPath);
+            string scheduleFrame = ExtractMethodBody(vocalWarning, "private JobHandle ScheduleVocalWarningFrame(");
+            string visualSync = ExtractMethodBody(vocalWarning, "private void VisualSyncPresentationTick()");
+
+            StringAssert.Contains("TryAcquireVocalWarningFrameGuard", scheduleFrame);
+            StringAssert.Contains("TryResolveVwsOwnerViews(guardVault, out VwsVaultViews views)", scheduleFrame);
+            StringAssert.Contains("_pendingVocalWarningGuardVault = guardVault", scheduleFrame);
+            StringAssert.Contains("TryAcquireVocalWarningFrameGuard", visualSync);
+            StringAssert.Contains("TryResolveVwsOwnerViews(guardVault, out VwsVaultViews views)", visualSync);
+            Assert.That(scheduleFrame.IndexOf("TryAcquireWriteLock", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(visualSync.IndexOf("TryAcquireWriteLock", StringComparison.Ordinal), Is.LessThan(0));
+        }
+
+        [Test]
+        public void VocalWarningTeardownQueueClearUsesFrameMutationGuard()
+        {
+            string vocalWarning = Read(VocalWarningSystemPath);
+            string clearQueues = ExtractMethodBody(vocalWarning, "private void CancelRendererPlaybackAndClearQueues()");
+
+            StringAssert.Contains("TryAcquireVocalWarningFrameGuard", clearQueues);
+            StringAssert.Contains("TryResolveVwsOwnerViews(guardVault, out VwsVaultViews views)", clearQueues);
+            StringAssert.Contains("CancelRendererPlaybackAndClearQueues(ref views, true)", clearQueues);
+            StringAssert.Contains("ReleaseVocalWarningFrameGuard", clearQueues);
+            StringAssert.Contains("finally", clearQueues);
+            Assert.That(clearQueues.IndexOf("TryAcquireWriteLock", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(clearQueues.IndexOf("ReleaseWriteLock", StringComparison.Ordinal), Is.LessThan(0));
         }
 
         [Test]

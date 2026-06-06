@@ -166,12 +166,30 @@ namespace Hecton8.Audio.Editor
 
         private static void RequireWriteLockFlattening(string vwsText, string vocalRuntimeText)
         {
+            string mockInjectBody = ExtractMethodBody(vwsText, "public bool EditorInjectMockThreats(");
+            string scheduleFrameBody = ExtractMethodBody(vwsText, "private JobHandle ScheduleVocalWarningFrame(");
+            string visualSyncBody = ExtractMethodBody(vwsText, "private void VisualSyncPresentationTick()");
+            string clearQueuesBody = ExtractMethodBody(vwsText, "private void CancelRendererPlaybackAndClearQueues()");
             Require(Count(vocalRuntimeText, "TryAcquireWriteLock") == 0, "Vocal DSP runtime must not acquire DataVault write locks.");
             Require(Count(vwsText, "TryAcquireWriteLock") == 0, "VWS must not acquire DataVault write locks.");
             Require(Count(vwsText, "ReleaseWriteLock") == 0, "VWS must not release DataVault write locks.");
             Require(vwsText.IndexOf("VocalWarningTuningMutationGuardMask", StringComparison.Ordinal) >= 0, "VWS tuning guard mask missing.");
             Require(vwsText.IndexOf("TryAcquireTuningMutationView", StringComparison.Ordinal) >= 0, "VWS tuning mutation view helper missing.");
             Require(vwsText.IndexOf("ReleaseVocalWarningMutationGuard", StringComparison.Ordinal) >= 0, "VWS tuning mutation guard release missing.");
+            Require(vwsText.IndexOf("private bool TryResolveVwsOwnerViews(IDataVault vault, out VwsVaultViews views)", StringComparison.Ordinal) >= 0,
+                "VWS guarded owner-view resolver overload missing.");
+            Require(mockInjectBody.IndexOf("TryAcquireVocalWarningFrameGuard", StringComparison.Ordinal) >= 0 &&
+                    mockInjectBody.IndexOf("TryResolveVwsOwnerViews(guardVault, out VwsVaultViews views)", StringComparison.Ordinal) >= 0 &&
+                    mockInjectBody.IndexOf("ReleaseVocalWarningFrameGuard", StringComparison.Ordinal) >= 0,
+                "VWS editor mock threat injection does not resolve owner views through the guarded vault.");
+            Require(scheduleFrameBody.IndexOf("TryResolveVwsOwnerViews(guardVault, out VwsVaultViews views)", StringComparison.Ordinal) >= 0,
+                "VWS frame scheduling does not resolve owner views through the guarded vault.");
+            Require(visualSyncBody.IndexOf("TryResolveVwsOwnerViews(guardVault, out VwsVaultViews views)", StringComparison.Ordinal) >= 0,
+                "VWS visual sync does not resolve owner views through the guarded vault.");
+            Require(clearQueuesBody.IndexOf("TryAcquireVocalWarningFrameGuard", StringComparison.Ordinal) >= 0 &&
+                    clearQueuesBody.IndexOf("TryResolveVwsOwnerViews(guardVault, out VwsVaultViews views)", StringComparison.Ordinal) >= 0 &&
+                    clearQueuesBody.IndexOf("ReleaseVocalWarningFrameGuard", StringComparison.Ordinal) >= 0,
+                "VWS teardown queue clear does not resolve owner views through the guarded vault.");
             Require(vocalRuntimeText.IndexOf("TryAcquireVocalMutationGuard", StringComparison.Ordinal) >= 0, "Vocal runtime guard scope missing.");
             Require(vocalRuntimeText.IndexOf("ReleaseVocalMutationGuard", StringComparison.Ordinal) >= 0, "Vocal runtime guard release missing.");
         }
