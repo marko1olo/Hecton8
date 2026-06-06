@@ -46,21 +46,21 @@
         },
         "ja_JP": {
           "title": "Pump Room Handshake",
-          "scanner": "Draft JP localization pending native pass. The pump room is the first honest machine: if the player cannot read intake, output and failure noise, the room is useless.",
-          "field_note": "Draft JP localization pending native pass. The room only works when the safe path and the flooding path share the same hardware.",
-          "terminal": "Draft JP localization pending native pass. Pump handshake: local valve authority accepted. Remote override denied by route-integrity check. Drain speed falls when return corridor pressure rises.",
-          "audio": "Draft JP localization pending native pass. The pump does not save you. It buys time and makes another room worse.",
-          "in_game_wiki": "Draft JP localization pending native pass. Pump Room Handshake defines Submerge machinery language. The player reads a physical system, changes one pressure condition, and learns that repair is never free.",
-          "external_site": "Draft JP localization pending native pass. Pump Room Handshake is a gameplay-facing lore packet for readable pressure machinery: valves, sump logic, dirty feedback and the first cost of keeping a return route alive."
+          "scanner": "JP LOC HOLD: The pump room is the first honest machine: if the player cannot read intake, output and failure noise, the room is useless.",
+          "field_note": "JP LOC HOLD: The room only works when the safe path and the flooding path share the same hardware.",
+          "terminal": "JP LOC HOLD: Pump handshake: local valve authority accepted. Remote override denied by route-integrity check. Drain speed falls when return corridor pressure rises.",
+          "audio": "JP LOC HOLD: The pump does not save you. It buys time and makes another room worse.",
+          "in_game_wiki": "JP LOC HOLD: Pump Room Handshake defines Submerge machinery language. The player reads a physical system, changes one pressure condition, and learns that repair is never free.",
+          "external_site": "JP LOC HOLD: Pump Room Handshake is a gameplay-facing lore packet for readable pressure machinery: valves, sump logic, dirty feedback and the first cost of keeping a return route alive."
         },
         "zh_CN": {
           "title": "Pump Room Handshake",
-          "scanner": "Draft CN localization pending native pass. The pump room is the first honest machine: if the player cannot read intake, output and failure noise, the room is useless.",
-          "field_note": "Draft CN localization pending native pass. The room only works when the safe path and the flooding path share the same hardware.",
-          "terminal": "Draft CN localization pending native pass. Pump handshake: local valve authority accepted. Remote override denied by route-integrity check. Drain speed falls when return corridor pressure rises.",
-          "audio": "Draft CN localization pending native pass. The pump does not save you. It buys time and makes another room worse.",
-          "in_game_wiki": "Draft CN localization pending native pass. Pump Room Handshake defines Submerge machinery language. The player reads a physical system, changes one pressure condition, and learns that repair is never free.",
-          "external_site": "Draft CN localization pending native pass. Pump Room Handshake is a gameplay-facing lore packet for readable pressure machinery: valves, sump logic, dirty feedback and the first cost of keeping a return route alive."
+          "scanner": "CN LOC HOLD: The pump room is the first honest machine: if the player cannot read intake, output and failure noise, the room is useless.",
+          "field_note": "CN LOC HOLD: The room only works when the safe path and the flooding path share the same hardware.",
+          "terminal": "CN LOC HOLD: Pump handshake: local valve authority accepted. Remote override denied by route-integrity check. Drain speed falls when return corridor pressure rises.",
+          "audio": "CN LOC HOLD: The pump does not save you. It buys time and makes another room worse.",
+          "in_game_wiki": "CN LOC HOLD: Pump Room Handshake defines Submerge machinery language. The player reads a physical system, changes one pressure condition, and learns that repair is never free.",
+          "external_site": "CN LOC HOLD: Pump Room Handshake is a gameplay-facing lore packet for readable pressure machinery: valves, sump logic, dirty feedback and the first cost of keeping a return route alive."
         },
         "fr_FR": {
           "title": "Accord de salle des pompes",
@@ -201,21 +201,21 @@
         },
         "ja_JP": {
           "title": "Hatch Seal Ledger",
-          "scanner": "Draft JP localization pending native pass. The hatch keeps a ledger of every bad closure: pressure cuts, manual overrides and people who closed the wrong side.",
-          "field_note": "Draft JP localization pending native pass. A sealed hatch is not safety. It is a decision with a timestamp.",
-          "terminal": "Draft JP localization pending native pass. Seal ledger: gasket deformation exceeds tolerance. Manual closure accepted under evacuation override. Return-side access marked conditional.",
-          "audio": "Draft JP localization pending native pass. The hatch remembers who stayed on which side.",
-          "in_game_wiki": "Draft JP localization pending native pass. Hatch Seal Ledger turns doors into narrative machines. Each seal stores pressure, timing and route consequences instead of acting as a simple locked gate.",
-          "external_site": "Draft JP localization pending native pass. Hatch Seal Ledger is the door language for Submerge: a hatch is evidence, route blocker, pressure surface and moral record in one prop."
+          "scanner": "JP LOC HOLD: The hatch keeps a ledger of every bad closure: pressure cuts, manual overrides and people who closed the wrong side.",
+          "field_note": "JP LOC HOLD: A sealed hatch is not safety. It is a decision with a timestamp.",
+          "terminal": "JP LOC HOLD: Seal ledger: gasket deformation exceeds tolerance. Manual closure accepted under evacuation override. Return-side access marked conditional.",
+          "audio": "JP LOC HOLD: The hatch remembers who stayed on which side.",
+          "in_game_wiki": "JP LOC HOLD: Hatch Seal Ledger turns doors into narrative machines. Each seal stores pressure, timing and route consequences instead of acting as a simple locked gate.",
+          "external_site": "JP LOC HOLD: Hatch Seal Ledger is the door language for Submerge: a hatch is evidence, route blocker, pressure surface and moral record in one prop."
         },
         "zh_CN": {
           "title": "Hatch Seal Ledger",
-          "scanner": "Draft CN localization pending native pass. The hatch keeps a ledger of every bad closure: pressure cuts, manual overrides and people who closed the wrong side.",
-          "field_note": "Draft CN localization pending native pass. A sealed hatch is not safety. It is a decision with a timestamp.",
-          "terminal": "Draft CN localization pending native pass. Seal ledger: gasket deformation exceeds tolerance. Manual closure accepted under evacuation override. Return-side access marked conditional.",
-          "audio": "Draft CN localization pending native pass. The hatch remembers who stayed on which side.",
-          "in_game_wiki": "Draft CN localization pending native pass. Hatch Seal Ledger turns doors into narrative machines. Each seal stores pressure, timing and route consequences instead of acting as a simple locked gate.",
-          "external_site": "Draft CN localization pending native pass. Hatch Seal Ledger is the door language for Submerge: a hatch is evidence, route blocker, pressure surface and moral record in one prop."
+          "scanner": "CN LOC HOLD: The hatch keeps a ledger of every bad closure: pressure cuts, manual overrides and people who closed the wrong side.",
+          "field_note": "CN LOC HOLD: A sealed hatch is not safety. It is a decision with a timestamp.",
+          "terminal": "CN LOC HOLD: Seal ledger: gasket deformation exceeds tolerance. Manual closure accepted under evacuation override. Return-side access marked conditional.",
+          "audio": "CN LOC HOLD: The hatch remembers who stayed on which side.",
+          "in_game_wiki": "CN LOC HOLD: Hatch Seal Ledger turns doors into narrative machines. Each seal stores pressure, timing and route consequences instead of acting as a simple locked gate.",
+          "external_site": "CN LOC HOLD: Hatch Seal Ledger is the door language for Submerge: a hatch is evidence, route blocker, pressure surface and moral record in one prop."
         },
         "fr_FR": {
           "title": "Registre du joint de sas",
@@ -356,21 +356,21 @@
         },
         "ja_JP": {
           "title": "Cable Splice Scar",
-          "scanner": "Draft JP localization pending native pass. The splice is too clean for colony repair and too ugly for factory work. Atlas learned to keep power moving by hurting the cable less than the room.",
-          "field_note": "Draft JP localization pending native pass. Atlas repair should look useful before it looks alive.",
-          "terminal": "Draft JP localization pending native pass. Power trace: nonstandard splice accepted after human routing failed. Repair pattern repeats across later cable reefs with lower insulation loss.",
-          "audio": "Draft JP localization pending native pass. Something fixed the cable after everyone stopped asking permission.",
-          "in_game_wiki": "Draft JP localization pending native pass. Cable Splice Scar is early proof that Atlas repair is practical before it becomes biological. The player sees utility first, then intent.",
-          "external_site": "Draft JP localization pending native pass. Cable Splice Scar connects repair gameplay, Atlas behavior and cable-reef escalation through one readable prop family."
+          "scanner": "JP LOC HOLD: The splice is too clean for colony repair and too ugly for factory work. Atlas learned to keep power moving by hurting the cable less than the room.",
+          "field_note": "JP LOC HOLD: Atlas repair should look useful before it looks alive.",
+          "terminal": "JP LOC HOLD: Power trace: nonstandard splice accepted after human routing failed. Repair pattern repeats across later cable reefs with lower insulation loss.",
+          "audio": "JP LOC HOLD: Something fixed the cable after everyone stopped asking permission.",
+          "in_game_wiki": "JP LOC HOLD: Cable Splice Scar is early proof that Atlas repair is practical before it becomes biological. The player sees utility first, then intent.",
+          "external_site": "JP LOC HOLD: Cable Splice Scar connects repair gameplay, Atlas behavior and cable-reef escalation through one readable prop family."
         },
         "zh_CN": {
           "title": "Cable Splice Scar",
-          "scanner": "Draft CN localization pending native pass. The splice is too clean for colony repair and too ugly for factory work. Atlas learned to keep power moving by hurting the cable less than the room.",
-          "field_note": "Draft CN localization pending native pass. Atlas repair should look useful before it looks alive.",
-          "terminal": "Draft CN localization pending native pass. Power trace: nonstandard splice accepted after human routing failed. Repair pattern repeats across later cable reefs with lower insulation loss.",
-          "audio": "Draft CN localization pending native pass. Something fixed the cable after everyone stopped asking permission.",
-          "in_game_wiki": "Draft CN localization pending native pass. Cable Splice Scar is early proof that Atlas repair is practical before it becomes biological. The player sees utility first, then intent.",
-          "external_site": "Draft CN localization pending native pass. Cable Splice Scar connects repair gameplay, Atlas behavior and cable-reef escalation through one readable prop family."
+          "scanner": "CN LOC HOLD: The splice is too clean for colony repair and too ugly for factory work. Atlas learned to keep power moving by hurting the cable less than the room.",
+          "field_note": "CN LOC HOLD: Atlas repair should look useful before it looks alive.",
+          "terminal": "CN LOC HOLD: Power trace: nonstandard splice accepted after human routing failed. Repair pattern repeats across later cable reefs with lower insulation loss.",
+          "audio": "CN LOC HOLD: Something fixed the cable after everyone stopped asking permission.",
+          "in_game_wiki": "CN LOC HOLD: Cable Splice Scar is early proof that Atlas repair is practical before it becomes biological. The player sees utility first, then intent.",
+          "external_site": "CN LOC HOLD: Cable Splice Scar connects repair gameplay, Atlas behavior and cable-reef escalation through one readable prop family."
         },
         "fr_FR": {
           "title": "Cable Splice Scar",
@@ -511,21 +511,21 @@
         },
         "ja_JP": {
           "title": "Sonar Return Route",
-          "scanner": "Draft JP localization pending native pass. The beacon does not point home. It measures how badly the way back changed since the last safe ping.",
-          "field_note": "Draft JP localization pending native pass. Return route is a living cost, not a minimap line.",
-          "terminal": "Draft JP localization pending native pass. Sonar route: last clean echo invalid. Black Keel ping accepted. Local obstruction drift exceeds mapped tolerance.",
-          "audio": "Draft JP localization pending native pass. The way back is not gone. It is different enough to kill you.",
-          "in_game_wiki": "Draft JP localization pending native pass. Sonar Return Route defines navigation pressure. The player is not lost because the map is empty; the player is pressured because the known route decays.",
-          "external_site": "Draft JP localization pending native pass. Sonar Return Route is the navigation grammar of Submerge: return paths change, echoes lie by omission and safe travel becomes evidence work."
+          "scanner": "JP LOC HOLD: The beacon does not point home. It measures how badly the way back changed since the last safe ping.",
+          "field_note": "JP LOC HOLD: Return route is a living cost, not a minimap line.",
+          "terminal": "JP LOC HOLD: Sonar route: last clean echo invalid. Black Keel ping accepted. Local obstruction drift exceeds mapped tolerance.",
+          "audio": "JP LOC HOLD: The way back is not gone. It is different enough to kill you.",
+          "in_game_wiki": "JP LOC HOLD: Sonar Return Route defines navigation pressure. The player is not lost because the map is empty; the player is pressured because the known route decays.",
+          "external_site": "JP LOC HOLD: Sonar Return Route is the navigation grammar of Submerge: return paths change, echoes lie by omission and safe travel becomes evidence work."
         },
         "zh_CN": {
           "title": "Sonar Return Route",
-          "scanner": "Draft CN localization pending native pass. The beacon does not point home. It measures how badly the way back changed since the last safe ping.",
-          "field_note": "Draft CN localization pending native pass. Return route is a living cost, not a minimap line.",
-          "terminal": "Draft CN localization pending native pass. Sonar route: last clean echo invalid. Black Keel ping accepted. Local obstruction drift exceeds mapped tolerance.",
-          "audio": "Draft CN localization pending native pass. The way back is not gone. It is different enough to kill you.",
-          "in_game_wiki": "Draft CN localization pending native pass. Sonar Return Route defines navigation pressure. The player is not lost because the map is empty; the player is pressured because the known route decays.",
-          "external_site": "Draft CN localization pending native pass. Sonar Return Route is the navigation grammar of Submerge: return paths change, echoes lie by omission and safe travel becomes evidence work."
+          "scanner": "CN LOC HOLD: The beacon does not point home. It measures how badly the way back changed since the last safe ping.",
+          "field_note": "CN LOC HOLD: Return route is a living cost, not a minimap line.",
+          "terminal": "CN LOC HOLD: Sonar route: last clean echo invalid. Black Keel ping accepted. Local obstruction drift exceeds mapped tolerance.",
+          "audio": "CN LOC HOLD: The way back is not gone. It is different enough to kill you.",
+          "in_game_wiki": "CN LOC HOLD: Sonar Return Route defines navigation pressure. The player is not lost because the map is empty; the player is pressured because the known route decays.",
+          "external_site": "CN LOC HOLD: Sonar Return Route is the navigation grammar of Submerge: return paths change, echoes lie by omission and safe travel becomes evidence work."
         },
         "fr_FR": {
           "title": "Route de retour sonar",
@@ -666,21 +666,21 @@
         },
         "ja_JP": {
           "title": "Salvage Tool Custody",
-          "scanner": "Draft JP localization pending native pass. The tool records custody: who cut, who repaired, what sample left the room and which claim owned the work afterward.",
-          "field_note": "Draft JP localization pending native pass. The tool is not neutral. It writes a receipt every time it helps.",
-          "terminal": "Draft JP localization pending native pass. Custody log: cutter use accepted under salvage claim. Sample rights attached. Evidence export conflicts with material payout route.",
-          "audio": "Draft JP localization pending native pass. Every useful cut leaves paperwork behind.",
-          "in_game_wiki": "Draft JP localization pending native pass. Salvage Tool Custody connects minute-to-minute tool use to the ending economy. Cutting a path, repairing a line and taking a sample all become claim evidence.",
-          "external_site": "Draft JP localization pending native pass. Salvage Tool Custody is the bridge from player action to commercial pressure: the tool is survival gear, black-box witness and contract recorder."
+          "scanner": "JP LOC HOLD: The tool records custody: who cut, who repaired, what sample left the room and which claim owned the work afterward.",
+          "field_note": "JP LOC HOLD: The tool is not neutral. It writes a receipt every time it helps.",
+          "terminal": "JP LOC HOLD: Custody log: cutter use accepted under salvage claim. Sample rights attached. Evidence export conflicts with material payout route.",
+          "audio": "JP LOC HOLD: Every useful cut leaves paperwork behind.",
+          "in_game_wiki": "JP LOC HOLD: Salvage Tool Custody connects minute-to-minute tool use to the ending economy. Cutting a path, repairing a line and taking a sample all become claim evidence.",
+          "external_site": "JP LOC HOLD: Salvage Tool Custody is the bridge from player action to commercial pressure: the tool is survival gear, black-box witness and contract recorder."
         },
         "zh_CN": {
           "title": "Salvage Tool Custody",
-          "scanner": "Draft CN localization pending native pass. The tool records custody: who cut, who repaired, what sample left the room and which claim owned the work afterward.",
-          "field_note": "Draft CN localization pending native pass. The tool is not neutral. It writes a receipt every time it helps.",
-          "terminal": "Draft CN localization pending native pass. Custody log: cutter use accepted under salvage claim. Sample rights attached. Evidence export conflicts with material payout route.",
-          "audio": "Draft CN localization pending native pass. Every useful cut leaves paperwork behind.",
-          "in_game_wiki": "Draft CN localization pending native pass. Salvage Tool Custody connects minute-to-minute tool use to the ending economy. Cutting a path, repairing a line and taking a sample all become claim evidence.",
-          "external_site": "Draft CN localization pending native pass. Salvage Tool Custody is the bridge from player action to commercial pressure: the tool is survival gear, black-box witness and contract recorder."
+          "scanner": "CN LOC HOLD: The tool records custody: who cut, who repaired, what sample left the room and which claim owned the work afterward.",
+          "field_note": "CN LOC HOLD: The tool is not neutral. It writes a receipt every time it helps.",
+          "terminal": "CN LOC HOLD: Custody log: cutter use accepted under salvage claim. Sample rights attached. Evidence export conflicts with material payout route.",
+          "audio": "CN LOC HOLD: Every useful cut leaves paperwork behind.",
+          "in_game_wiki": "CN LOC HOLD: Salvage Tool Custody connects minute-to-minute tool use to the ending economy. Cutting a path, repairing a line and taking a sample all become claim evidence.",
+          "external_site": "CN LOC HOLD: Salvage Tool Custody is the bridge from player action to commercial pressure: the tool is survival gear, black-box witness and contract recorder."
         },
         "fr_FR": {
           "title": "Salvage Tool Custody",

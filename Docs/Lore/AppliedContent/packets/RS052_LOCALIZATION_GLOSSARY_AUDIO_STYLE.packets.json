@@ -45,121 +45,121 @@
           "external_site": "Публичная статья: Proper Noun Translation Lock Table defines which HECTON-8 terms remain stable across localization. Names, IDs and claim brands preserve identity; surrounding explanations carry the local language."
         },
         "ja_JP": {
-          "title": "Draft JP localization pending native pass. Proper Noun Translation Lock Table",
-          "scanner": "Draft JP localization pending native pass. A name lock is not flavor. It is save identity protection.",
-          "field_note": "Draft JP localization pending native pass. Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.",
-          "terminal": "Draft JP localization pending native pass. LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.",
-          "audio": "Draft JP localization pending native pass. A translated name can become a different witness.",
-          "in_game_wiki": "Draft JP localization pending native pass. Proper Noun Translation Lock Table protects setting identity, save references and dossier continuity across languages.",
-          "external_site": "Draft JP localization pending native pass. Proper Noun Translation Lock Table defines which HECTON-8 terms remain stable across localization. Names, IDs and claim brands preserve identity; surrounding explanations carry the local language."
+          "title": "JP LOC HOLD: Proper Noun Translation Lock Table",
+          "scanner": "JP LOC HOLD: A name lock is not flavor. It is save identity protection.",
+          "field_note": "JP LOC HOLD: Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.",
+          "terminal": "JP LOC HOLD: LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.",
+          "audio": "JP LOC HOLD: A translated name can become a different witness.",
+          "in_game_wiki": "JP LOC HOLD: Proper Noun Translation Lock Table protects setting identity, save references and dossier continuity across languages.",
+          "external_site": "JP LOC HOLD: Proper Noun Translation Lock Table defines which HECTON-8 terms remain stable across localization. Names, IDs and claim brands preserve identity; surrounding explanations carry the local language."
         },
         "zh_CN": {
-          "title": "Draft CN localization pending native pass. Proper Noun Translation Lock Table",
-          "scanner": "Draft CN localization pending native pass. A name lock is not flavor. It is save identity protection.",
-          "field_note": "Draft CN localization pending native pass. Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.",
-          "terminal": "Draft CN localization pending native pass. LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.",
-          "audio": "Draft CN localization pending native pass. A translated name can become a different witness.",
-          "in_game_wiki": "Draft CN localization pending native pass. Proper Noun Translation Lock Table protects setting identity, save references and dossier continuity across languages.",
-          "external_site": "Draft CN localization pending native pass. Proper Noun Translation Lock Table defines which HECTON-8 terms remain stable across localization. Names, IDs and claim brands preserve identity; surrounding explanations carry the local language."
+          "title": "CN LOC HOLD: Proper Noun Translation Lock Table",
+          "scanner": "CN LOC HOLD: A name lock is not flavor. It is save identity protection.",
+          "field_note": "CN LOC HOLD: Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.",
+          "terminal": "CN LOC HOLD: LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.",
+          "audio": "CN LOC HOLD: A translated name can become a different witness.",
+          "in_game_wiki": "CN LOC HOLD: Proper Noun Translation Lock Table protects setting identity, save references and dossier continuity across languages.",
+          "external_site": "CN LOC HOLD: Proper Noun Translation Lock Table defines which HECTON-8 terms remain stable across localization. Names, IDs and claim brands preserve identity; surrounding explanations carry the local language."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Proper Noun Translation Lock Table",
-          "scanner": "Draft FR localization pending native pass. A name lock is not flavor. It is save identity protection.",
-          "field_note": "Draft FR localization pending native pass. Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.",
-          "terminal": "Draft FR localization pending native pass. LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.",
-          "audio": "Draft FR localization pending native pass. A translated name can become a different witness.",
-          "in_game_wiki": "Draft FR localization pending native pass. Proper Noun Translation Lock Table protects setting identity, save references and dossier continuity across languages.",
-          "external_site": "Draft FR localization pending native pass. Proper Noun Translation Lock Table defines which HECTON-8 terms remain stable across localization. Names, IDs and claim brands preserve identity; surrounding explanations carry the local language."
+          "title": "FR LOC HOLD: Proper Noun Translation Lock Table",
+          "scanner": "FR LOC HOLD: A name lock is not flavor. It is save identity protection.",
+          "field_note": "FR LOC HOLD: Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.",
+          "terminal": "FR LOC HOLD: LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.",
+          "audio": "FR LOC HOLD: A translated name can become a different witness.",
+          "in_game_wiki": "FR LOC HOLD: Proper Noun Translation Lock Table protects setting identity, save references and dossier continuity across languages.",
+          "external_site": "FR LOC HOLD: Proper Noun Translation Lock Table defines which HECTON-8 terms remain stable across localization. Names, IDs and claim brands preserve identity; surrounding explanations carry the local language."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Proper Noun Translation Lock Table",
-          "scanner": "Draft ES localization pending native pass. A name lock is not flavor. It is save identity protection.",
-          "field_note": "Draft ES localization pending native pass. Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.",
-          "terminal": "Draft ES localization pending native pass. LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.",
-          "audio": "Draft ES localization pending native pass. A translated name can become a different witness.",
-          "in_game_wiki": "Draft ES localization pending native pass. Proper Noun Translation Lock Table protects setting identity, save references and dossier continuity across languages.",
-          "external_site": "Draft ES localization pending native pass. Proper Noun Translation Lock Table defines which HECTON-8 terms remain stable across localization. Names, IDs and claim brands preserve identity; surrounding explanations carry the local language."
+          "title": "ES LOC HOLD: Proper Noun Translation Lock Table",
+          "scanner": "ES LOC HOLD: A name lock is not flavor. It is save identity protection.",
+          "field_note": "ES LOC HOLD: Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.",
+          "terminal": "ES LOC HOLD: LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.",
+          "audio": "ES LOC HOLD: A translated name can become a different witness.",
+          "in_game_wiki": "ES LOC HOLD: Proper Noun Translation Lock Table protects setting identity, save references and dossier continuity across languages.",
+          "external_site": "ES LOC HOLD: Proper Noun Translation Lock Table defines which HECTON-8 terms remain stable across localization. Names, IDs and claim brands preserve identity; surrounding explanations carry the local language."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Proper Noun Translation Lock Table",
-          "scanner": "Draft DE localization pending native pass. A name lock is not flavor. It is save identity protection.",
-          "field_note": "Draft DE localization pending native pass. Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.",
-          "terminal": "Draft DE localization pending native pass. LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.",
-          "audio": "Draft DE localization pending native pass. A translated name can become a different witness.",
-          "in_game_wiki": "Draft DE localization pending native pass. Proper Noun Translation Lock Table protects setting identity, save references and dossier continuity across languages.",
-          "external_site": "Draft DE localization pending native pass. Proper Noun Translation Lock Table defines which HECTON-8 terms remain stable across localization. Names, IDs and claim brands preserve identity; surrounding explanations carry the local language."
+          "title": "DE LOC HOLD: Proper Noun Translation Lock Table",
+          "scanner": "DE LOC HOLD: A name lock is not flavor. It is save identity protection.",
+          "field_note": "DE LOC HOLD: Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.",
+          "terminal": "DE LOC HOLD: LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.",
+          "audio": "DE LOC HOLD: A translated name can become a different witness.",
+          "in_game_wiki": "DE LOC HOLD: Proper Noun Translation Lock Table protects setting identity, save references and dossier continuity across languages.",
+          "external_site": "DE LOC HOLD: Proper Noun Translation Lock Table defines which HECTON-8 terms remain stable across localization. Names, IDs and claim brands preserve identity; surrounding explanations carry the local language."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Proper Noun Translation Lock Table",
-          "scanner": "Draft PL localization pending native pass. A name lock is not flavor. It is save identity protection.",
-          "field_note": "Draft PL localization pending native pass. Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.",
-          "terminal": "Draft PL localization pending native pass. LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.",
-          "audio": "Draft PL localization pending native pass. A translated name can become a different witness.",
-          "in_game_wiki": "Draft PL localization pending native pass. Proper Noun Translation Lock Table protects setting identity, save references and dossier continuity across languages.",
-          "external_site": "Draft PL localization pending native pass. Proper Noun Translation Lock Table defines which HECTON-8 terms remain stable across localization. Names, IDs and claim brands preserve identity; surrounding explanations carry the local language."
+          "title": "PL LOC HOLD: Proper Noun Translation Lock Table",
+          "scanner": "PL LOC HOLD: A name lock is not flavor. It is save identity protection.",
+          "field_note": "PL LOC HOLD: Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.",
+          "terminal": "PL LOC HOLD: LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.",
+          "audio": "PL LOC HOLD: A translated name can become a different witness.",
+          "in_game_wiki": "PL LOC HOLD: Proper Noun Translation Lock Table protects setting identity, save references and dossier continuity across languages.",
+          "external_site": "PL LOC HOLD: Proper Noun Translation Lock Table defines which HECTON-8 terms remain stable across localization. Names, IDs and claim brands preserve identity; surrounding explanations carry the local language."
         },
         "uk_UA": {
-          "title": "Draft UA localization pending native pass. Proper Noun Translation Lock Table",
-          "scanner": "Draft UA localization pending native pass. A name lock is not flavor. It is save identity protection.",
-          "field_note": "Draft UA localization pending native pass. Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.",
-          "terminal": "Draft UA localization pending native pass. LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.",
-          "audio": "Draft UA localization pending native pass. A translated name can become a different witness.",
-          "in_game_wiki": "Draft UA localization pending native pass. Proper Noun Translation Lock Table protects setting identity, save references and dossier continuity across languages.",
-          "external_site": "Draft UA localization pending native pass. Proper Noun Translation Lock Table defines which HECTON-8 terms remain stable across localization. Names, IDs and claim brands preserve identity; surrounding explanations carry the local language."
+          "title": "UA LOC HOLD: Proper Noun Translation Lock Table",
+          "scanner": "UA LOC HOLD: A name lock is not flavor. It is save identity protection.",
+          "field_note": "UA LOC HOLD: Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.",
+          "terminal": "UA LOC HOLD: LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.",
+          "audio": "UA LOC HOLD: A translated name can become a different witness.",
+          "in_game_wiki": "UA LOC HOLD: Proper Noun Translation Lock Table protects setting identity, save references and dossier continuity across languages.",
+          "external_site": "UA LOC HOLD: Proper Noun Translation Lock Table defines which HECTON-8 terms remain stable across localization. Names, IDs and claim brands preserve identity; surrounding explanations carry the local language."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Proper Noun Translation Lock Table",
-          "scanner": "Draft AR localization pending native pass. A name lock is not flavor. It is save identity protection.",
-          "field_note": "Draft AR localization pending native pass. Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.",
-          "terminal": "Draft AR localization pending native pass. LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.",
-          "audio": "Draft AR localization pending native pass. A translated name can become a different witness.",
-          "in_game_wiki": "Draft AR localization pending native pass. Proper Noun Translation Lock Table protects setting identity, save references and dossier continuity across languages.",
-          "external_site": "Draft AR localization pending native pass. Proper Noun Translation Lock Table defines which HECTON-8 terms remain stable across localization. Names, IDs and claim brands preserve identity; surrounding explanations carry the local language."
+          "title": "AR LOC HOLD: Proper Noun Translation Lock Table",
+          "scanner": "AR LOC HOLD: A name lock is not flavor. It is save identity protection.",
+          "field_note": "AR LOC HOLD: Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.",
+          "terminal": "AR LOC HOLD: LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.",
+          "audio": "AR LOC HOLD: A translated name can become a different witness.",
+          "in_game_wiki": "AR LOC HOLD: Proper Noun Translation Lock Table protects setting identity, save references and dossier continuity across languages.",
+          "external_site": "AR LOC HOLD: Proper Noun Translation Lock Table defines which HECTON-8 terms remain stable across localization. Names, IDs and claim brands preserve identity; surrounding explanations carry the local language."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Proper Noun Translation Lock Table",
-          "scanner": "Draft ID localization pending native pass. A name lock is not flavor. It is save identity protection.",
-          "field_note": "Draft ID localization pending native pass. Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.",
-          "terminal": "Draft ID localization pending native pass. LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.",
-          "audio": "Draft ID localization pending native pass. A translated name can become a different witness.",
-          "in_game_wiki": "Draft ID localization pending native pass. Proper Noun Translation Lock Table protects setting identity, save references and dossier continuity across languages.",
-          "external_site": "Draft ID localization pending native pass. Proper Noun Translation Lock Table defines which HECTON-8 terms remain stable across localization. Names, IDs and claim brands preserve identity; surrounding explanations carry the local language."
+          "title": "ID LOC HOLD: Proper Noun Translation Lock Table",
+          "scanner": "ID LOC HOLD: A name lock is not flavor. It is save identity protection.",
+          "field_note": "ID LOC HOLD: Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.",
+          "terminal": "ID LOC HOLD: LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.",
+          "audio": "ID LOC HOLD: A translated name can become a different witness.",
+          "in_game_wiki": "ID LOC HOLD: Proper Noun Translation Lock Table protects setting identity, save references and dossier continuity across languages.",
+          "external_site": "ID LOC HOLD: Proper Noun Translation Lock Table defines which HECTON-8 terms remain stable across localization. Names, IDs and claim brands preserve identity; surrounding explanations carry the local language."
         },
         "ko_KR": {
-          "title": "Draft KR localization pending native pass. Proper Noun Translation Lock Table",
-          "scanner": "Draft KR localization pending native pass. A name lock is not flavor. It is save identity protection.",
-          "field_note": "Draft KR localization pending native pass. Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.",
-          "terminal": "Draft KR localization pending native pass. LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.",
-          "audio": "Draft KR localization pending native pass. A translated name can become a different witness.",
-          "in_game_wiki": "Draft KR localization pending native pass. Proper Noun Translation Lock Table protects setting identity, save references and dossier continuity across languages.",
-          "external_site": "Draft KR localization pending native pass. Proper Noun Translation Lock Table defines which HECTON-8 terms remain stable across localization. Names, IDs and claim brands preserve identity; surrounding explanations carry the local language."
+          "title": "KR LOC HOLD: Proper Noun Translation Lock Table",
+          "scanner": "KR LOC HOLD: A name lock is not flavor. It is save identity protection.",
+          "field_note": "KR LOC HOLD: Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.",
+          "terminal": "KR LOC HOLD: LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.",
+          "audio": "KR LOC HOLD: A translated name can become a different witness.",
+          "in_game_wiki": "KR LOC HOLD: Proper Noun Translation Lock Table protects setting identity, save references and dossier continuity across languages.",
+          "external_site": "KR LOC HOLD: Proper Noun Translation Lock Table defines which HECTON-8 terms remain stable across localization. Names, IDs and claim brands preserve identity; surrounding explanations carry the local language."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Proper Noun Translation Lock Table",
-          "scanner": "Draft HE localization pending native pass. A name lock is not flavor. It is save identity protection.",
-          "field_note": "Draft HE localization pending native pass. Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.",
-          "terminal": "Draft HE localization pending native pass. LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.",
-          "audio": "Draft HE localization pending native pass. A translated name can become a different witness.",
-          "in_game_wiki": "Draft HE localization pending native pass. Proper Noun Translation Lock Table protects setting identity, save references and dossier continuity across languages.",
-          "external_site": "Draft HE localization pending native pass. Proper Noun Translation Lock Table defines which HECTON-8 terms remain stable across localization. Names, IDs and claim brands preserve identity; surrounding explanations carry the local language."
+          "title": "HE LOC HOLD: Proper Noun Translation Lock Table",
+          "scanner": "HE LOC HOLD: A name lock is not flavor. It is save identity protection.",
+          "field_note": "HE LOC HOLD: Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.",
+          "terminal": "HE LOC HOLD: LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.",
+          "audio": "HE LOC HOLD: A translated name can become a different witness.",
+          "in_game_wiki": "HE LOC HOLD: Proper Noun Translation Lock Table protects setting identity, save references and dossier continuity across languages.",
+          "external_site": "HE LOC HOLD: Proper Noun Translation Lock Table defines which HECTON-8 terms remain stable across localization. Names, IDs and claim brands preserve identity; surrounding explanations carry the local language."
         },
         "pt_BR": {
-          "title": "Draft PT-BR localization pending native pass. Proper Noun Translation Lock Table",
-          "scanner": "Draft PT-BR localization pending native pass. A name lock is not flavor. It is save identity protection.",
-          "field_note": "Draft PT-BR localization pending native pass. Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.",
-          "terminal": "Draft PT-BR localization pending native pass. LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.",
-          "audio": "Draft PT-BR localization pending native pass. A translated name can become a different witness.",
-          "in_game_wiki": "Draft PT-BR localization pending native pass. Proper Noun Translation Lock Table protects setting identity, save references and dossier continuity across languages.",
-          "external_site": "Draft PT-BR localization pending native pass. Proper Noun Translation Lock Table defines which HECTON-8 terms remain stable across localization. Names, IDs and claim brands preserve identity; surrounding explanations carry the local language."
+          "title": "PT-BR LOC HOLD: Proper Noun Translation Lock Table",
+          "scanner": "PT-BR LOC HOLD: A name lock is not flavor. It is save identity protection.",
+          "field_note": "PT-BR LOC HOLD: Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.",
+          "terminal": "PT-BR LOC HOLD: LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.",
+          "audio": "PT-BR LOC HOLD: A translated name can become a different witness.",
+          "in_game_wiki": "PT-BR LOC HOLD: Proper Noun Translation Lock Table protects setting identity, save references and dossier continuity across languages.",
+          "external_site": "PT-BR LOC HOLD: Proper Noun Translation Lock Table defines which HECTON-8 terms remain stable across localization. Names, IDs and claim brands preserve identity; surrounding explanations carry the local language."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Proper Noun Translation Lock Table",
-          "scanner": "Draft NL localization pending native pass. A name lock is not flavor. It is save identity protection.",
-          "field_note": "Draft NL localization pending native pass. Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.",
-          "terminal": "Draft NL localization pending native pass. LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.",
-          "audio": "Draft NL localization pending native pass. A translated name can become a different witness.",
-          "in_game_wiki": "Draft NL localization pending native pass. Proper Noun Translation Lock Table protects setting identity, save references and dossier continuity across languages.",
-          "external_site": "Draft NL localization pending native pass. Proper Noun Translation Lock Table defines which HECTON-8 terms remain stable across localization. Names, IDs and claim brands preserve identity; surrounding explanations carry the local language."
+          "title": "NL LOC HOLD: Proper Noun Translation Lock Table",
+          "scanner": "NL LOC HOLD: A name lock is not flavor. It is save identity protection.",
+          "field_note": "NL LOC HOLD: Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.",
+          "terminal": "NL LOC HOLD: LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.",
+          "audio": "NL LOC HOLD: A translated name can become a different witness.",
+          "in_game_wiki": "NL LOC HOLD: Proper Noun Translation Lock Table protects setting identity, save references and dossier continuity across languages.",
+          "external_site": "NL LOC HOLD: Proper Noun Translation Lock Table defines which HECTON-8 terms remain stable across localization. Names, IDs and claim brands preserve identity; surrounding explanations carry the local language."
         }
       }
     },
@@ -200,121 +200,121 @@
           "external_site": "Публичная статья: Unit And Number Style Card defines how HECTON-8 handles depth, transit, pressure and debt values in localized articles and UI surfaces."
         },
         "ja_JP": {
-          "title": "Draft JP localization pending native pass. Unit And Number Style Card",
-          "scanner": "Draft JP localization pending native pass. A unit label can kill clarity if it becomes prose.",
-          "field_note": "Draft JP localization pending native pass. Keep depth in meters, route time in days/years where authored, debt as tonne-window equivalent, and pressure grades as service labels.",
-          "terminal": "Draft JP localization pending native pass. UNIT STYLE: preserve numeric value, localize label, avoid ornamental unit rewrites.",
-          "audio": "Draft JP localization pending native pass. Depth is not atmosphere. Do not decorate it.",
-          "in_game_wiki": "Draft JP localization pending native pass. Unit And Number Style Card keeps HECTON-8's hard-sci-fi interface consistent across languages.",
-          "external_site": "Draft JP localization pending native pass. Unit And Number Style Card defines how HECTON-8 handles depth, transit, pressure and debt values in localized articles and UI surfaces."
+          "title": "JP LOC HOLD: Unit And Number Style Card",
+          "scanner": "JP LOC HOLD: A unit label can kill clarity if it becomes prose.",
+          "field_note": "JP LOC HOLD: Keep depth in meters, route time in days/years where authored, debt as tonne-window equivalent, and pressure grades as service labels.",
+          "terminal": "JP LOC HOLD: UNIT STYLE: preserve numeric value, localize label, avoid ornamental unit rewrites.",
+          "audio": "JP LOC HOLD: Depth is not atmosphere. Do not decorate it.",
+          "in_game_wiki": "JP LOC HOLD: Unit And Number Style Card keeps HECTON-8's hard-sci-fi interface consistent across languages.",
+          "external_site": "JP LOC HOLD: Unit And Number Style Card defines how HECTON-8 handles depth, transit, pressure and debt values in localized articles and UI surfaces."
         },
         "zh_CN": {
-          "title": "Draft CN localization pending native pass. Unit And Number Style Card",
-          "scanner": "Draft CN localization pending native pass. A unit label can kill clarity if it becomes prose.",
-          "field_note": "Draft CN localization pending native pass. Keep depth in meters, route time in days/years where authored, debt as tonne-window equivalent, and pressure grades as service labels.",
-          "terminal": "Draft CN localization pending native pass. UNIT STYLE: preserve numeric value, localize label, avoid ornamental unit rewrites.",
-          "audio": "Draft CN localization pending native pass. Depth is not atmosphere. Do not decorate it.",
-          "in_game_wiki": "Draft CN localization pending native pass. Unit And Number Style Card keeps HECTON-8's hard-sci-fi interface consistent across languages.",
-          "external_site": "Draft CN localization pending native pass. Unit And Number Style Card defines how HECTON-8 handles depth, transit, pressure and debt values in localized articles and UI surfaces."
+          "title": "CN LOC HOLD: Unit And Number Style Card",
+          "scanner": "CN LOC HOLD: A unit label can kill clarity if it becomes prose.",
+          "field_note": "CN LOC HOLD: Keep depth in meters, route time in days/years where authored, debt as tonne-window equivalent, and pressure grades as service labels.",
+          "terminal": "CN LOC HOLD: UNIT STYLE: preserve numeric value, localize label, avoid ornamental unit rewrites.",
+          "audio": "CN LOC HOLD: Depth is not atmosphere. Do not decorate it.",
+          "in_game_wiki": "CN LOC HOLD: Unit And Number Style Card keeps HECTON-8's hard-sci-fi interface consistent across languages.",
+          "external_site": "CN LOC HOLD: Unit And Number Style Card defines how HECTON-8 handles depth, transit, pressure and debt values in localized articles and UI surfaces."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Unit And Number Style Card",
-          "scanner": "Draft FR localization pending native pass. A unit label can kill clarity if it becomes prose.",
-          "field_note": "Draft FR localization pending native pass. Keep depth in meters, route time in days/years where authored, debt as tonne-window equivalent, and pressure grades as service labels.",
-          "terminal": "Draft FR localization pending native pass. UNIT STYLE: preserve numeric value, localize label, avoid ornamental unit rewrites.",
-          "audio": "Draft FR localization pending native pass. Depth is not atmosphere. Do not decorate it.",
-          "in_game_wiki": "Draft FR localization pending native pass. Unit And Number Style Card keeps HECTON-8's hard-sci-fi interface consistent across languages.",
-          "external_site": "Draft FR localization pending native pass. Unit And Number Style Card defines how HECTON-8 handles depth, transit, pressure and debt values in localized articles and UI surfaces."
+          "title": "FR LOC HOLD: Unit And Number Style Card",
+          "scanner": "FR LOC HOLD: A unit label can kill clarity if it becomes prose.",
+          "field_note": "FR LOC HOLD: Keep depth in meters, route time in days/years where authored, debt as tonne-window equivalent, and pressure grades as service labels.",
+          "terminal": "FR LOC HOLD: UNIT STYLE: preserve numeric value, localize label, avoid ornamental unit rewrites.",
+          "audio": "FR LOC HOLD: Depth is not atmosphere. Do not decorate it.",
+          "in_game_wiki": "FR LOC HOLD: Unit And Number Style Card keeps HECTON-8's hard-sci-fi interface consistent across languages.",
+          "external_site": "FR LOC HOLD: Unit And Number Style Card defines how HECTON-8 handles depth, transit, pressure and debt values in localized articles and UI surfaces."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Unit And Number Style Card",
-          "scanner": "Draft ES localization pending native pass. A unit label can kill clarity if it becomes prose.",
-          "field_note": "Draft ES localization pending native pass. Keep depth in meters, route time in days/years where authored, debt as tonne-window equivalent, and pressure grades as service labels.",
-          "terminal": "Draft ES localization pending native pass. UNIT STYLE: preserve numeric value, localize label, avoid ornamental unit rewrites.",
-          "audio": "Draft ES localization pending native pass. Depth is not atmosphere. Do not decorate it.",
-          "in_game_wiki": "Draft ES localization pending native pass. Unit And Number Style Card keeps HECTON-8's hard-sci-fi interface consistent across languages.",
-          "external_site": "Draft ES localization pending native pass. Unit And Number Style Card defines how HECTON-8 handles depth, transit, pressure and debt values in localized articles and UI surfaces."
+          "title": "ES LOC HOLD: Unit And Number Style Card",
+          "scanner": "ES LOC HOLD: A unit label can kill clarity if it becomes prose.",
+          "field_note": "ES LOC HOLD: Keep depth in meters, route time in days/years where authored, debt as tonne-window equivalent, and pressure grades as service labels.",
+          "terminal": "ES LOC HOLD: UNIT STYLE: preserve numeric value, localize label, avoid ornamental unit rewrites.",
+          "audio": "ES LOC HOLD: Depth is not atmosphere. Do not decorate it.",
+          "in_game_wiki": "ES LOC HOLD: Unit And Number Style Card keeps HECTON-8's hard-sci-fi interface consistent across languages.",
+          "external_site": "ES LOC HOLD: Unit And Number Style Card defines how HECTON-8 handles depth, transit, pressure and debt values in localized articles and UI surfaces."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Unit And Number Style Card",
-          "scanner": "Draft DE localization pending native pass. A unit label can kill clarity if it becomes prose.",
-          "field_note": "Draft DE localization pending native pass. Keep depth in meters, route time in days/years where authored, debt as tonne-window equivalent, and pressure grades as service labels.",
-          "terminal": "Draft DE localization pending native pass. UNIT STYLE: preserve numeric value, localize label, avoid ornamental unit rewrites.",
-          "audio": "Draft DE localization pending native pass. Depth is not atmosphere. Do not decorate it.",
-          "in_game_wiki": "Draft DE localization pending native pass. Unit And Number Style Card keeps HECTON-8's hard-sci-fi interface consistent across languages.",
-          "external_site": "Draft DE localization pending native pass. Unit And Number Style Card defines how HECTON-8 handles depth, transit, pressure and debt values in localized articles and UI surfaces."
+          "title": "DE LOC HOLD: Unit And Number Style Card",
+          "scanner": "DE LOC HOLD: A unit label can kill clarity if it becomes prose.",
+          "field_note": "DE LOC HOLD: Keep depth in meters, route time in days/years where authored, debt as tonne-window equivalent, and pressure grades as service labels.",
+          "terminal": "DE LOC HOLD: UNIT STYLE: preserve numeric value, localize label, avoid ornamental unit rewrites.",
+          "audio": "DE LOC HOLD: Depth is not atmosphere. Do not decorate it.",
+          "in_game_wiki": "DE LOC HOLD: Unit And Number Style Card keeps HECTON-8's hard-sci-fi interface consistent across languages.",
+          "external_site": "DE LOC HOLD: Unit And Number Style Card defines how HECTON-8 handles depth, transit, pressure and debt values in localized articles and UI surfaces."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Unit And Number Style Card",
-          "scanner": "Draft PL localization pending native pass. A unit label can kill clarity if it becomes prose.",
-          "field_note": "Draft PL localization pending native pass. Keep depth in meters, route time in days/years where authored, debt as tonne-window equivalent, and pressure grades as service labels.",
-          "terminal": "Draft PL localization pending native pass. UNIT STYLE: preserve numeric value, localize label, avoid ornamental unit rewrites.",
-          "audio": "Draft PL localization pending native pass. Depth is not atmosphere. Do not decorate it.",
-          "in_game_wiki": "Draft PL localization pending native pass. Unit And Number Style Card keeps HECTON-8's hard-sci-fi interface consistent across languages.",
-          "external_site": "Draft PL localization pending native pass. Unit And Number Style Card defines how HECTON-8 handles depth, transit, pressure and debt values in localized articles and UI surfaces."
+          "title": "PL LOC HOLD: Unit And Number Style Card",
+          "scanner": "PL LOC HOLD: A unit label can kill clarity if it becomes prose.",
+          "field_note": "PL LOC HOLD: Keep depth in meters, route time in days/years where authored, debt as tonne-window equivalent, and pressure grades as service labels.",
+          "terminal": "PL LOC HOLD: UNIT STYLE: preserve numeric value, localize label, avoid ornamental unit rewrites.",
+          "audio": "PL LOC HOLD: Depth is not atmosphere. Do not decorate it.",
+          "in_game_wiki": "PL LOC HOLD: Unit And Number Style Card keeps HECTON-8's hard-sci-fi interface consistent across languages.",
+          "external_site": "PL LOC HOLD: Unit And Number Style Card defines how HECTON-8 handles depth, transit, pressure and debt values in localized articles and UI surfaces."
         },
         "uk_UA": {
-          "title": "Draft UA localization pending native pass. Unit And Number Style Card",
-          "scanner": "Draft UA localization pending native pass. A unit label can kill clarity if it becomes prose.",
-          "field_note": "Draft UA localization pending native pass. Keep depth in meters, route time in days/years where authored, debt as tonne-window equivalent, and pressure grades as service labels.",
-          "terminal": "Draft UA localization pending native pass. UNIT STYLE: preserve numeric value, localize label, avoid ornamental unit rewrites.",
-          "audio": "Draft UA localization pending native pass. Depth is not atmosphere. Do not decorate it.",
-          "in_game_wiki": "Draft UA localization pending native pass. Unit And Number Style Card keeps HECTON-8's hard-sci-fi interface consistent across languages.",
-          "external_site": "Draft UA localization pending native pass. Unit And Number Style Card defines how HECTON-8 handles depth, transit, pressure and debt values in localized articles and UI surfaces."
+          "title": "UA LOC HOLD: Unit And Number Style Card",
+          "scanner": "UA LOC HOLD: A unit label can kill clarity if it becomes prose.",
+          "field_note": "UA LOC HOLD: Keep depth in meters, route time in days/years where authored, debt as tonne-window equivalent, and pressure grades as service labels.",
+          "terminal": "UA LOC HOLD: UNIT STYLE: preserve numeric value, localize label, avoid ornamental unit rewrites.",
+          "audio": "UA LOC HOLD: Depth is not atmosphere. Do not decorate it.",
+          "in_game_wiki": "UA LOC HOLD: Unit And Number Style Card keeps HECTON-8's hard-sci-fi interface consistent across languages.",
+          "external_site": "UA LOC HOLD: Unit And Number Style Card defines how HECTON-8 handles depth, transit, pressure and debt values in localized articles and UI surfaces."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Unit And Number Style Card",
-          "scanner": "Draft AR localization pending native pass. A unit label can kill clarity if it becomes prose.",
-          "field_note": "Draft AR localization pending native pass. Keep depth in meters, route time in days/years where authored, debt as tonne-window equivalent, and pressure grades as service labels.",
-          "terminal": "Draft AR localization pending native pass. UNIT STYLE: preserve numeric value, localize label, avoid ornamental unit rewrites.",
-          "audio": "Draft AR localization pending native pass. Depth is not atmosphere. Do not decorate it.",
-          "in_game_wiki": "Draft AR localization pending native pass. Unit And Number Style Card keeps HECTON-8's hard-sci-fi interface consistent across languages.",
-          "external_site": "Draft AR localization pending native pass. Unit And Number Style Card defines how HECTON-8 handles depth, transit, pressure and debt values in localized articles and UI surfaces."
+          "title": "AR LOC HOLD: Unit And Number Style Card",
+          "scanner": "AR LOC HOLD: A unit label can kill clarity if it becomes prose.",
+          "field_note": "AR LOC HOLD: Keep depth in meters, route time in days/years where authored, debt as tonne-window equivalent, and pressure grades as service labels.",
+          "terminal": "AR LOC HOLD: UNIT STYLE: preserve numeric value, localize label, avoid ornamental unit rewrites.",
+          "audio": "AR LOC HOLD: Depth is not atmosphere. Do not decorate it.",
+          "in_game_wiki": "AR LOC HOLD: Unit And Number Style Card keeps HECTON-8's hard-sci-fi interface consistent across languages.",
+          "external_site": "AR LOC HOLD: Unit And Number Style Card defines how HECTON-8 handles depth, transit, pressure and debt values in localized articles and UI surfaces."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Unit And Number Style Card",
-          "scanner": "Draft ID localization pending native pass. A unit label can kill clarity if it becomes prose.",
-          "field_note": "Draft ID localization pending native pass. Keep depth in meters, route time in days/years where authored, debt as tonne-window equivalent, and pressure grades as service labels.",
-          "terminal": "Draft ID localization pending native pass. UNIT STYLE: preserve numeric value, localize label, avoid ornamental unit rewrites.",
-          "audio": "Draft ID localization pending native pass. Depth is not atmosphere. Do not decorate it.",
-          "in_game_wiki": "Draft ID localization pending native pass. Unit And Number Style Card keeps HECTON-8's hard-sci-fi interface consistent across languages.",
-          "external_site": "Draft ID localization pending native pass. Unit And Number Style Card defines how HECTON-8 handles depth, transit, pressure and debt values in localized articles and UI surfaces."
+          "title": "ID LOC HOLD: Unit And Number Style Card",
+          "scanner": "ID LOC HOLD: A unit label can kill clarity if it becomes prose.",
+          "field_note": "ID LOC HOLD: Keep depth in meters, route time in days/years where authored, debt as tonne-window equivalent, and pressure grades as service labels.",
+          "terminal": "ID LOC HOLD: UNIT STYLE: preserve numeric value, localize label, avoid ornamental unit rewrites.",
+          "audio": "ID LOC HOLD: Depth is not atmosphere. Do not decorate it.",
+          "in_game_wiki": "ID LOC HOLD: Unit And Number Style Card keeps HECTON-8's hard-sci-fi interface consistent across languages.",
+          "external_site": "ID LOC HOLD: Unit And Number Style Card defines how HECTON-8 handles depth, transit, pressure and debt values in localized articles and UI surfaces."
         },
         "ko_KR": {
-          "title": "Draft KR localization pending native pass. Unit And Number Style Card",
-          "scanner": "Draft KR localization pending native pass. A unit label can kill clarity if it becomes prose.",
-          "field_note": "Draft KR localization pending native pass. Keep depth in meters, route time in days/years where authored, debt as tonne-window equivalent, and pressure grades as service labels.",
-          "terminal": "Draft KR localization pending native pass. UNIT STYLE: preserve numeric value, localize label, avoid ornamental unit rewrites.",
-          "audio": "Draft KR localization pending native pass. Depth is not atmosphere. Do not decorate it.",
-          "in_game_wiki": "Draft KR localization pending native pass. Unit And Number Style Card keeps HECTON-8's hard-sci-fi interface consistent across languages.",
-          "external_site": "Draft KR localization pending native pass. Unit And Number Style Card defines how HECTON-8 handles depth, transit, pressure and debt values in localized articles and UI surfaces."
+          "title": "KR LOC HOLD: Unit And Number Style Card",
+          "scanner": "KR LOC HOLD: A unit label can kill clarity if it becomes prose.",
+          "field_note": "KR LOC HOLD: Keep depth in meters, route time in days/years where authored, debt as tonne-window equivalent, and pressure grades as service labels.",
+          "terminal": "KR LOC HOLD: UNIT STYLE: preserve numeric value, localize label, avoid ornamental unit rewrites.",
+          "audio": "KR LOC HOLD: Depth is not atmosphere. Do not decorate it.",
+          "in_game_wiki": "KR LOC HOLD: Unit And Number Style Card keeps HECTON-8's hard-sci-fi interface consistent across languages.",
+          "external_site": "KR LOC HOLD: Unit And Number Style Card defines how HECTON-8 handles depth, transit, pressure and debt values in localized articles and UI surfaces."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Unit And Number Style Card",
-          "scanner": "Draft HE localization pending native pass. A unit label can kill clarity if it becomes prose.",
-          "field_note": "Draft HE localization pending native pass. Keep depth in meters, route time in days/years where authored, debt as tonne-window equivalent, and pressure grades as service labels.",
-          "terminal": "Draft HE localization pending native pass. UNIT STYLE: preserve numeric value, localize label, avoid ornamental unit rewrites.",
-          "audio": "Draft HE localization pending native pass. Depth is not atmosphere. Do not decorate it.",
-          "in_game_wiki": "Draft HE localization pending native pass. Unit And Number Style Card keeps HECTON-8's hard-sci-fi interface consistent across languages.",
-          "external_site": "Draft HE localization pending native pass. Unit And Number Style Card defines how HECTON-8 handles depth, transit, pressure and debt values in localized articles and UI surfaces."
+          "title": "HE LOC HOLD: Unit And Number Style Card",
+          "scanner": "HE LOC HOLD: A unit label can kill clarity if it becomes prose.",
+          "field_note": "HE LOC HOLD: Keep depth in meters, route time in days/years where authored, debt as tonne-window equivalent, and pressure grades as service labels.",
+          "terminal": "HE LOC HOLD: UNIT STYLE: preserve numeric value, localize label, avoid ornamental unit rewrites.",
+          "audio": "HE LOC HOLD: Depth is not atmosphere. Do not decorate it.",
+          "in_game_wiki": "HE LOC HOLD: Unit And Number Style Card keeps HECTON-8's hard-sci-fi interface consistent across languages.",
+          "external_site": "HE LOC HOLD: Unit And Number Style Card defines how HECTON-8 handles depth, transit, pressure and debt values in localized articles and UI surfaces."
         },
         "pt_BR": {
-          "title": "Draft PT-BR localization pending native pass. Unit And Number Style Card",
-          "scanner": "Draft PT-BR localization pending native pass. A unit label can kill clarity if it becomes prose.",
-          "field_note": "Draft PT-BR localization pending native pass. Keep depth in meters, route time in days/years where authored, debt as tonne-window equivalent, and pressure grades as service labels.",
-          "terminal": "Draft PT-BR localization pending native pass. UNIT STYLE: preserve numeric value, localize label, avoid ornamental unit rewrites.",
-          "audio": "Draft PT-BR localization pending native pass. Depth is not atmosphere. Do not decorate it.",
-          "in_game_wiki": "Draft PT-BR localization pending native pass. Unit And Number Style Card keeps HECTON-8's hard-sci-fi interface consistent across languages.",
-          "external_site": "Draft PT-BR localization pending native pass. Unit And Number Style Card defines how HECTON-8 handles depth, transit, pressure and debt values in localized articles and UI surfaces."
+          "title": "PT-BR LOC HOLD: Unit And Number Style Card",
+          "scanner": "PT-BR LOC HOLD: A unit label can kill clarity if it becomes prose.",
+          "field_note": "PT-BR LOC HOLD: Keep depth in meters, route time in days/years where authored, debt as tonne-window equivalent, and pressure grades as service labels.",
+          "terminal": "PT-BR LOC HOLD: UNIT STYLE: preserve numeric value, localize label, avoid ornamental unit rewrites.",
+          "audio": "PT-BR LOC HOLD: Depth is not atmosphere. Do not decorate it.",
+          "in_game_wiki": "PT-BR LOC HOLD: Unit And Number Style Card keeps HECTON-8's hard-sci-fi interface consistent across languages.",
+          "external_site": "PT-BR LOC HOLD: Unit And Number Style Card defines how HECTON-8 handles depth, transit, pressure and debt values in localized articles and UI surfaces."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Unit And Number Style Card",
-          "scanner": "Draft NL localization pending native pass. A unit label can kill clarity if it becomes prose.",
-          "field_note": "Draft NL localization pending native pass. Keep depth in meters, route time in days/years where authored, debt as tonne-window equivalent, and pressure grades as service labels.",
-          "terminal": "Draft NL localization pending native pass. UNIT STYLE: preserve numeric value, localize label, avoid ornamental unit rewrites.",
-          "audio": "Draft NL localization pending native pass. Depth is not atmosphere. Do not decorate it.",
-          "in_game_wiki": "Draft NL localization pending native pass. Unit And Number Style Card keeps HECTON-8's hard-sci-fi interface consistent across languages.",
-          "external_site": "Draft NL localization pending native pass. Unit And Number Style Card defines how HECTON-8 handles depth, transit, pressure and debt values in localized articles and UI surfaces."
+          "title": "NL LOC HOLD: Unit And Number Style Card",
+          "scanner": "NL LOC HOLD: A unit label can kill clarity if it becomes prose.",
+          "field_note": "NL LOC HOLD: Keep depth in meters, route time in days/years where authored, debt as tonne-window equivalent, and pressure grades as service labels.",
+          "terminal": "NL LOC HOLD: UNIT STYLE: preserve numeric value, localize label, avoid ornamental unit rewrites.",
+          "audio": "NL LOC HOLD: Depth is not atmosphere. Do not decorate it.",
+          "in_game_wiki": "NL LOC HOLD: Unit And Number Style Card keeps HECTON-8's hard-sci-fi interface consistent across languages.",
+          "external_site": "NL LOC HOLD: Unit And Number Style Card defines how HECTON-8 handles depth, transit, pressure and debt values in localized articles and UI surfaces."
         }
       }
     },
@@ -355,121 +355,121 @@
           "external_site": "Публичная статья: Terminal Voice Register Rule separates HECTON-8's text surfaces: corporate packets are cold, Marauder notes are practical, Atlas traces are category errors."
         },
         "ja_JP": {
-          "title": "Draft JP localization pending native pass. Terminal Voice Register Rule",
-          "scanner": "Draft JP localization pending native pass. A terminal can be cruel by being precise.",
-          "field_note": "Draft JP localization pending native pass. Use short lines, procedural nouns, passive liability language and hard constraints. Avoid jokes unless Marauder-authored.",
-          "terminal": "Draft JP localization pending native pass. REGISTER: cold, compressed, actionable. No narrator moralizing. No tutorial prose disguised as corporate text.",
-          "audio": "Draft JP localization pending native pass. The terminal does not care that it is horrifying.",
-          "in_game_wiki": "Draft JP localization pending native pass. Terminal Voice Register Rule keeps in-game technical text diegetic, useful and cold.",
-          "external_site": "Draft JP localization pending native pass. Terminal Voice Register Rule separates HECTON-8's text surfaces: corporate packets are cold, Marauder notes are practical, Atlas traces are category errors."
+          "title": "JP LOC HOLD: Terminal Voice Register Rule",
+          "scanner": "JP LOC HOLD: A terminal can be cruel by being precise.",
+          "field_note": "JP LOC HOLD: Use short lines, procedural nouns, passive liability language and hard constraints. Avoid jokes unless Marauder-authored.",
+          "terminal": "JP LOC HOLD: REGISTER: cold, compressed, actionable. No narrator moralizing. No tutorial prose disguised as corporate text.",
+          "audio": "JP LOC HOLD: The terminal does not care that it is horrifying.",
+          "in_game_wiki": "JP LOC HOLD: Terminal Voice Register Rule keeps in-game technical text diegetic, useful and cold.",
+          "external_site": "JP LOC HOLD: Terminal Voice Register Rule separates HECTON-8's text surfaces: corporate packets are cold, Marauder notes are practical, Atlas traces are category errors."
         },
         "zh_CN": {
-          "title": "Draft CN localization pending native pass. Terminal Voice Register Rule",
-          "scanner": "Draft CN localization pending native pass. A terminal can be cruel by being precise.",
-          "field_note": "Draft CN localization pending native pass. Use short lines, procedural nouns, passive liability language and hard constraints. Avoid jokes unless Marauder-authored.",
-          "terminal": "Draft CN localization pending native pass. REGISTER: cold, compressed, actionable. No narrator moralizing. No tutorial prose disguised as corporate text.",
-          "audio": "Draft CN localization pending native pass. The terminal does not care that it is horrifying.",
-          "in_game_wiki": "Draft CN localization pending native pass. Terminal Voice Register Rule keeps in-game technical text diegetic, useful and cold.",
-          "external_site": "Draft CN localization pending native pass. Terminal Voice Register Rule separates HECTON-8's text surfaces: corporate packets are cold, Marauder notes are practical, Atlas traces are category errors."
+          "title": "CN LOC HOLD: Terminal Voice Register Rule",
+          "scanner": "CN LOC HOLD: A terminal can be cruel by being precise.",
+          "field_note": "CN LOC HOLD: Use short lines, procedural nouns, passive liability language and hard constraints. Avoid jokes unless Marauder-authored.",
+          "terminal": "CN LOC HOLD: REGISTER: cold, compressed, actionable. No narrator moralizing. No tutorial prose disguised as corporate text.",
+          "audio": "CN LOC HOLD: The terminal does not care that it is horrifying.",
+          "in_game_wiki": "CN LOC HOLD: Terminal Voice Register Rule keeps in-game technical text diegetic, useful and cold.",
+          "external_site": "CN LOC HOLD: Terminal Voice Register Rule separates HECTON-8's text surfaces: corporate packets are cold, Marauder notes are practical, Atlas traces are category errors."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Terminal Voice Register Rule",
-          "scanner": "Draft FR localization pending native pass. A terminal can be cruel by being precise.",
-          "field_note": "Draft FR localization pending native pass. Use short lines, procedural nouns, passive liability language and hard constraints. Avoid jokes unless Marauder-authored.",
-          "terminal": "Draft FR localization pending native pass. REGISTER: cold, compressed, actionable. No narrator moralizing. No tutorial prose disguised as corporate text.",
-          "audio": "Draft FR localization pending native pass. The terminal does not care that it is horrifying.",
-          "in_game_wiki": "Draft FR localization pending native pass. Terminal Voice Register Rule keeps in-game technical text diegetic, useful and cold.",
-          "external_site": "Draft FR localization pending native pass. Terminal Voice Register Rule separates HECTON-8's text surfaces: corporate packets are cold, Marauder notes are practical, Atlas traces are category errors."
+          "title": "FR LOC HOLD: Terminal Voice Register Rule",
+          "scanner": "FR LOC HOLD: A terminal can be cruel by being precise.",
+          "field_note": "FR LOC HOLD: Use short lines, procedural nouns, passive liability language and hard constraints. Avoid jokes unless Marauder-authored.",
+          "terminal": "FR LOC HOLD: REGISTER: cold, compressed, actionable. No narrator moralizing. No tutorial prose disguised as corporate text.",
+          "audio": "FR LOC HOLD: The terminal does not care that it is horrifying.",
+          "in_game_wiki": "FR LOC HOLD: Terminal Voice Register Rule keeps in-game technical text diegetic, useful and cold.",
+          "external_site": "FR LOC HOLD: Terminal Voice Register Rule separates HECTON-8's text surfaces: corporate packets are cold, Marauder notes are practical, Atlas traces are category errors."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Terminal Voice Register Rule",
-          "scanner": "Draft ES localization pending native pass. A terminal can be cruel by being precise.",
-          "field_note": "Draft ES localization pending native pass. Use short lines, procedural nouns, passive liability language and hard constraints. Avoid jokes unless Marauder-authored.",
-          "terminal": "Draft ES localization pending native pass. REGISTER: cold, compressed, actionable. No narrator moralizing. No tutorial prose disguised as corporate text.",
-          "audio": "Draft ES localization pending native pass. The terminal does not care that it is horrifying.",
-          "in_game_wiki": "Draft ES localization pending native pass. Terminal Voice Register Rule keeps in-game technical text diegetic, useful and cold.",
-          "external_site": "Draft ES localization pending native pass. Terminal Voice Register Rule separates HECTON-8's text surfaces: corporate packets are cold, Marauder notes are practical, Atlas traces are category errors."
+          "title": "ES LOC HOLD: Terminal Voice Register Rule",
+          "scanner": "ES LOC HOLD: A terminal can be cruel by being precise.",
+          "field_note": "ES LOC HOLD: Use short lines, procedural nouns, passive liability language and hard constraints. Avoid jokes unless Marauder-authored.",
+          "terminal": "ES LOC HOLD: REGISTER: cold, compressed, actionable. No narrator moralizing. No tutorial prose disguised as corporate text.",
+          "audio": "ES LOC HOLD: The terminal does not care that it is horrifying.",
+          "in_game_wiki": "ES LOC HOLD: Terminal Voice Register Rule keeps in-game technical text diegetic, useful and cold.",
+          "external_site": "ES LOC HOLD: Terminal Voice Register Rule separates HECTON-8's text surfaces: corporate packets are cold, Marauder notes are practical, Atlas traces are category errors."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Terminal Voice Register Rule",
-          "scanner": "Draft DE localization pending native pass. A terminal can be cruel by being precise.",
-          "field_note": "Draft DE localization pending native pass. Use short lines, procedural nouns, passive liability language and hard constraints. Avoid jokes unless Marauder-authored.",
-          "terminal": "Draft DE localization pending native pass. REGISTER: cold, compressed, actionable. No narrator moralizing. No tutorial prose disguised as corporate text.",
-          "audio": "Draft DE localization pending native pass. The terminal does not care that it is horrifying.",
-          "in_game_wiki": "Draft DE localization pending native pass. Terminal Voice Register Rule keeps in-game technical text diegetic, useful and cold.",
-          "external_site": "Draft DE localization pending native pass. Terminal Voice Register Rule separates HECTON-8's text surfaces: corporate packets are cold, Marauder notes are practical, Atlas traces are category errors."
+          "title": "DE LOC HOLD: Terminal Voice Register Rule",
+          "scanner": "DE LOC HOLD: A terminal can be cruel by being precise.",
+          "field_note": "DE LOC HOLD: Use short lines, procedural nouns, passive liability language and hard constraints. Avoid jokes unless Marauder-authored.",
+          "terminal": "DE LOC HOLD: REGISTER: cold, compressed, actionable. No narrator moralizing. No tutorial prose disguised as corporate text.",
+          "audio": "DE LOC HOLD: The terminal does not care that it is horrifying.",
+          "in_game_wiki": "DE LOC HOLD: Terminal Voice Register Rule keeps in-game technical text diegetic, useful and cold.",
+          "external_site": "DE LOC HOLD: Terminal Voice Register Rule separates HECTON-8's text surfaces: corporate packets are cold, Marauder notes are practical, Atlas traces are category errors."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Terminal Voice Register Rule",
-          "scanner": "Draft PL localization pending native pass. A terminal can be cruel by being precise.",
-          "field_note": "Draft PL localization pending native pass. Use short lines, procedural nouns, passive liability language and hard constraints. Avoid jokes unless Marauder-authored.",
-          "terminal": "Draft PL localization pending native pass. REGISTER: cold, compressed, actionable. No narrator moralizing. No tutorial prose disguised as corporate text.",
-          "audio": "Draft PL localization pending native pass. The terminal does not care that it is horrifying.",
-          "in_game_wiki": "Draft PL localization pending native pass. Terminal Voice Register Rule keeps in-game technical text diegetic, useful and cold.",
-          "external_site": "Draft PL localization pending native pass. Terminal Voice Register Rule separates HECTON-8's text surfaces: corporate packets are cold, Marauder notes are practical, Atlas traces are category errors."
+          "title": "PL LOC HOLD: Terminal Voice Register Rule",
+          "scanner": "PL LOC HOLD: A terminal can be cruel by being precise.",
+          "field_note": "PL LOC HOLD: Use short lines, procedural nouns, passive liability language and hard constraints. Avoid jokes unless Marauder-authored.",
+          "terminal": "PL LOC HOLD: REGISTER: cold, compressed, actionable. No narrator moralizing. No tutorial prose disguised as corporate text.",
+          "audio": "PL LOC HOLD: The terminal does not care that it is horrifying.",
+          "in_game_wiki": "PL LOC HOLD: Terminal Voice Register Rule keeps in-game technical text diegetic, useful and cold.",
+          "external_site": "PL LOC HOLD: Terminal Voice Register Rule separates HECTON-8's text surfaces: corporate packets are cold, Marauder notes are practical, Atlas traces are category errors."
         },
         "uk_UA": {
-          "title": "Draft UA localization pending native pass. Terminal Voice Register Rule",
-          "scanner": "Draft UA localization pending native pass. A terminal can be cruel by being precise.",
-          "field_note": "Draft UA localization pending native pass. Use short lines, procedural nouns, passive liability language and hard constraints. Avoid jokes unless Marauder-authored.",
-          "terminal": "Draft UA localization pending native pass. REGISTER: cold, compressed, actionable. No narrator moralizing. No tutorial prose disguised as corporate text.",
-          "audio": "Draft UA localization pending native pass. The terminal does not care that it is horrifying.",
-          "in_game_wiki": "Draft UA localization pending native pass. Terminal Voice Register Rule keeps in-game technical text diegetic, useful and cold.",
-          "external_site": "Draft UA localization pending native pass. Terminal Voice Register Rule separates HECTON-8's text surfaces: corporate packets are cold, Marauder notes are practical, Atlas traces are category errors."
+          "title": "UA LOC HOLD: Terminal Voice Register Rule",
+          "scanner": "UA LOC HOLD: A terminal can be cruel by being precise.",
+          "field_note": "UA LOC HOLD: Use short lines, procedural nouns, passive liability language and hard constraints. Avoid jokes unless Marauder-authored.",
+          "terminal": "UA LOC HOLD: REGISTER: cold, compressed, actionable. No narrator moralizing. No tutorial prose disguised as corporate text.",
+          "audio": "UA LOC HOLD: The terminal does not care that it is horrifying.",
+          "in_game_wiki": "UA LOC HOLD: Terminal Voice Register Rule keeps in-game technical text diegetic, useful and cold.",
+          "external_site": "UA LOC HOLD: Terminal Voice Register Rule separates HECTON-8's text surfaces: corporate packets are cold, Marauder notes are practical, Atlas traces are category errors."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Terminal Voice Register Rule",
-          "scanner": "Draft AR localization pending native pass. A terminal can be cruel by being precise.",
-          "field_note": "Draft AR localization pending native pass. Use short lines, procedural nouns, passive liability language and hard constraints. Avoid jokes unless Marauder-authored.",
-          "terminal": "Draft AR localization pending native pass. REGISTER: cold, compressed, actionable. No narrator moralizing. No tutorial prose disguised as corporate text.",
-          "audio": "Draft AR localization pending native pass. The terminal does not care that it is horrifying.",
-          "in_game_wiki": "Draft AR localization pending native pass. Terminal Voice Register Rule keeps in-game technical text diegetic, useful and cold.",
-          "external_site": "Draft AR localization pending native pass. Terminal Voice Register Rule separates HECTON-8's text surfaces: corporate packets are cold, Marauder notes are practical, Atlas traces are category errors."
+          "title": "AR LOC HOLD: Terminal Voice Register Rule",
+          "scanner": "AR LOC HOLD: A terminal can be cruel by being precise.",
+          "field_note": "AR LOC HOLD: Use short lines, procedural nouns, passive liability language and hard constraints. Avoid jokes unless Marauder-authored.",
+          "terminal": "AR LOC HOLD: REGISTER: cold, compressed, actionable. No narrator moralizing. No tutorial prose disguised as corporate text.",
+          "audio": "AR LOC HOLD: The terminal does not care that it is horrifying.",
+          "in_game_wiki": "AR LOC HOLD: Terminal Voice Register Rule keeps in-game technical text diegetic, useful and cold.",
+          "external_site": "AR LOC HOLD: Terminal Voice Register Rule separates HECTON-8's text surfaces: corporate packets are cold, Marauder notes are practical, Atlas traces are category errors."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Terminal Voice Register Rule",
-          "scanner": "Draft ID localization pending native pass. A terminal can be cruel by being precise.",
-          "field_note": "Draft ID localization pending native pass. Use short lines, procedural nouns, passive liability language and hard constraints. Avoid jokes unless Marauder-authored.",
-          "terminal": "Draft ID localization pending native pass. REGISTER: cold, compressed, actionable. No narrator moralizing. No tutorial prose disguised as corporate text.",
-          "audio": "Draft ID localization pending native pass. The terminal does not care that it is horrifying.",
-          "in_game_wiki": "Draft ID localization pending native pass. Terminal Voice Register Rule keeps in-game technical text diegetic, useful and cold.",
-          "external_site": "Draft ID localization pending native pass. Terminal Voice Register Rule separates HECTON-8's text surfaces: corporate packets are cold, Marauder notes are practical, Atlas traces are category errors."
+          "title": "ID LOC HOLD: Terminal Voice Register Rule",
+          "scanner": "ID LOC HOLD: A terminal can be cruel by being precise.",
+          "field_note": "ID LOC HOLD: Use short lines, procedural nouns, passive liability language and hard constraints. Avoid jokes unless Marauder-authored.",
+          "terminal": "ID LOC HOLD: REGISTER: cold, compressed, actionable. No narrator moralizing. No tutorial prose disguised as corporate text.",
+          "audio": "ID LOC HOLD: The terminal does not care that it is horrifying.",
+          "in_game_wiki": "ID LOC HOLD: Terminal Voice Register Rule keeps in-game technical text diegetic, useful and cold.",
+          "external_site": "ID LOC HOLD: Terminal Voice Register Rule separates HECTON-8's text surfaces: corporate packets are cold, Marauder notes are practical, Atlas traces are category errors."
         },
         "ko_KR": {
-          "title": "Draft KR localization pending native pass. Terminal Voice Register Rule",
-          "scanner": "Draft KR localization pending native pass. A terminal can be cruel by being precise.",
-          "field_note": "Draft KR localization pending native pass. Use short lines, procedural nouns, passive liability language and hard constraints. Avoid jokes unless Marauder-authored.",
-          "terminal": "Draft KR localization pending native pass. REGISTER: cold, compressed, actionable. No narrator moralizing. No tutorial prose disguised as corporate text.",
-          "audio": "Draft KR localization pending native pass. The terminal does not care that it is horrifying.",
-          "in_game_wiki": "Draft KR localization pending native pass. Terminal Voice Register Rule keeps in-game technical text diegetic, useful and cold.",
-          "external_site": "Draft KR localization pending native pass. Terminal Voice Register Rule separates HECTON-8's text surfaces: corporate packets are cold, Marauder notes are practical, Atlas traces are category errors."
+          "title": "KR LOC HOLD: Terminal Voice Register Rule",
+          "scanner": "KR LOC HOLD: A terminal can be cruel by being precise.",
+          "field_note": "KR LOC HOLD: Use short lines, procedural nouns, passive liability language and hard constraints. Avoid jokes unless Marauder-authored.",
+          "terminal": "KR LOC HOLD: REGISTER: cold, compressed, actionable. No narrator moralizing. No tutorial prose disguised as corporate text.",
+          "audio": "KR LOC HOLD: The terminal does not care that it is horrifying.",
+          "in_game_wiki": "KR LOC HOLD: Terminal Voice Register Rule keeps in-game technical text diegetic, useful and cold.",
+          "external_site": "KR LOC HOLD: Terminal Voice Register Rule separates HECTON-8's text surfaces: corporate packets are cold, Marauder notes are practical, Atlas traces are category errors."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Terminal Voice Register Rule",
-          "scanner": "Draft HE localization pending native pass. A terminal can be cruel by being precise.",
-          "field_note": "Draft HE localization pending native pass. Use short lines, procedural nouns, passive liability language and hard constraints. Avoid jokes unless Marauder-authored.",
-          "terminal": "Draft HE localization pending native pass. REGISTER: cold, compressed, actionable. No narrator moralizing. No tutorial prose disguised as corporate text.",
-          "audio": "Draft HE localization pending native pass. The terminal does not care that it is horrifying.",
-          "in_game_wiki": "Draft HE localization pending native pass. Terminal Voice Register Rule keeps in-game technical text diegetic, useful and cold.",
-          "external_site": "Draft HE localization pending native pass. Terminal Voice Register Rule separates HECTON-8's text surfaces: corporate packets are cold, Marauder notes are practical, Atlas traces are category errors."
+          "title": "HE LOC HOLD: Terminal Voice Register Rule",
+          "scanner": "HE LOC HOLD: A terminal can be cruel by being precise.",
+          "field_note": "HE LOC HOLD: Use short lines, procedural nouns, passive liability language and hard constraints. Avoid jokes unless Marauder-authored.",
+          "terminal": "HE LOC HOLD: REGISTER: cold, compressed, actionable. No narrator moralizing. No tutorial prose disguised as corporate text.",
+          "audio": "HE LOC HOLD: The terminal does not care that it is horrifying.",
+          "in_game_wiki": "HE LOC HOLD: Terminal Voice Register Rule keeps in-game technical text diegetic, useful and cold.",
+          "external_site": "HE LOC HOLD: Terminal Voice Register Rule separates HECTON-8's text surfaces: corporate packets are cold, Marauder notes are practical, Atlas traces are category errors."
         },
         "pt_BR": {
-          "title": "Draft PT-BR localization pending native pass. Terminal Voice Register Rule",
-          "scanner": "Draft PT-BR localization pending native pass. A terminal can be cruel by being precise.",
-          "field_note": "Draft PT-BR localization pending native pass. Use short lines, procedural nouns, passive liability language and hard constraints. Avoid jokes unless Marauder-authored.",
-          "terminal": "Draft PT-BR localization pending native pass. REGISTER: cold, compressed, actionable. No narrator moralizing. No tutorial prose disguised as corporate text.",
-          "audio": "Draft PT-BR localization pending native pass. The terminal does not care that it is horrifying.",
-          "in_game_wiki": "Draft PT-BR localization pending native pass. Terminal Voice Register Rule keeps in-game technical text diegetic, useful and cold.",
-          "external_site": "Draft PT-BR localization pending native pass. Terminal Voice Register Rule separates HECTON-8's text surfaces: corporate packets are cold, Marauder notes are practical, Atlas traces are category errors."
+          "title": "PT-BR LOC HOLD: Terminal Voice Register Rule",
+          "scanner": "PT-BR LOC HOLD: A terminal can be cruel by being precise.",
+          "field_note": "PT-BR LOC HOLD: Use short lines, procedural nouns, passive liability language and hard constraints. Avoid jokes unless Marauder-authored.",
+          "terminal": "PT-BR LOC HOLD: REGISTER: cold, compressed, actionable. No narrator moralizing. No tutorial prose disguised as corporate text.",
+          "audio": "PT-BR LOC HOLD: The terminal does not care that it is horrifying.",
+          "in_game_wiki": "PT-BR LOC HOLD: Terminal Voice Register Rule keeps in-game technical text diegetic, useful and cold.",
+          "external_site": "PT-BR LOC HOLD: Terminal Voice Register Rule separates HECTON-8's text surfaces: corporate packets are cold, Marauder notes are practical, Atlas traces are category errors."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Terminal Voice Register Rule",
-          "scanner": "Draft NL localization pending native pass. A terminal can be cruel by being precise.",
-          "field_note": "Draft NL localization pending native pass. Use short lines, procedural nouns, passive liability language and hard constraints. Avoid jokes unless Marauder-authored.",
-          "terminal": "Draft NL localization pending native pass. REGISTER: cold, compressed, actionable. No narrator moralizing. No tutorial prose disguised as corporate text.",
-          "audio": "Draft NL localization pending native pass. The terminal does not care that it is horrifying.",
-          "in_game_wiki": "Draft NL localization pending native pass. Terminal Voice Register Rule keeps in-game technical text diegetic, useful and cold.",
-          "external_site": "Draft NL localization pending native pass. Terminal Voice Register Rule separates HECTON-8's text surfaces: corporate packets are cold, Marauder notes are practical, Atlas traces are category errors."
+          "title": "NL LOC HOLD: Terminal Voice Register Rule",
+          "scanner": "NL LOC HOLD: A terminal can be cruel by being precise.",
+          "field_note": "NL LOC HOLD: Use short lines, procedural nouns, passive liability language and hard constraints. Avoid jokes unless Marauder-authored.",
+          "terminal": "NL LOC HOLD: REGISTER: cold, compressed, actionable. No narrator moralizing. No tutorial prose disguised as corporate text.",
+          "audio": "NL LOC HOLD: The terminal does not care that it is horrifying.",
+          "in_game_wiki": "NL LOC HOLD: Terminal Voice Register Rule keeps in-game technical text diegetic, useful and cold.",
+          "external_site": "NL LOC HOLD: Terminal Voice Register Rule separates HECTON-8's text surfaces: corporate packets are cold, Marauder notes are practical, Atlas traces are category errors."
         }
       }
     },
@@ -510,121 +510,121 @@
           "external_site": "Публичная статья: Audio Bark Family Rules lock the voice strategy for HECTON-8: clipped carrier messages, sanitized corporate packets, practical Marauder corrections and Atlas maintenance traces that misname living context."
         },
         "ja_JP": {
-          "title": "Draft JP localization pending native pass. Audio Bark Family Rules",
-          "scanner": "Draft JP localization pending native pass. Silence is part of the audio system.",
-          "field_note": "Draft JP localization pending native pass. Families: Black Keel clipped/legal, Deep Reach sanitized/compliance, Marauder practical, Atlas wrong-category maintenance.",
-          "terminal": "Draft JP localization pending native pass. AUDIO FAMILY: maximum signal, minimum companionship. Every bark must change pressure, route or evidence read.",
-          "audio": "Draft JP localization pending native pass. If it does not change what the player knows, cut it.",
-          "in_game_wiki": "Draft JP localization pending native pass. Audio Bark Family Rules define how HECTON-8 uses sparse voice without flattening loneliness.",
-          "external_site": "Draft JP localization pending native pass. Audio Bark Family Rules lock the voice strategy for HECTON-8: clipped carrier messages, sanitized corporate packets, practical Marauder corrections and Atlas maintenance traces that misname living context."
+          "title": "JP LOC HOLD: Audio Bark Family Rules",
+          "scanner": "JP LOC HOLD: Silence is part of the audio system.",
+          "field_note": "JP LOC HOLD: Families: Black Keel clipped/legal, Deep Reach sanitized/compliance, Marauder practical, Atlas wrong-category maintenance.",
+          "terminal": "JP LOC HOLD: AUDIO FAMILY: maximum signal, minimum companionship. Every bark must change pressure, route or evidence read.",
+          "audio": "JP LOC HOLD: If it does not change what the player knows, cut it.",
+          "in_game_wiki": "JP LOC HOLD: Audio Bark Family Rules define how HECTON-8 uses sparse voice without flattening loneliness.",
+          "external_site": "JP LOC HOLD: Audio Bark Family Rules lock the voice strategy for HECTON-8: clipped carrier messages, sanitized corporate packets, practical Marauder corrections and Atlas maintenance traces that misname living context."
         },
         "zh_CN": {
-          "title": "Draft CN localization pending native pass. Audio Bark Family Rules",
-          "scanner": "Draft CN localization pending native pass. Silence is part of the audio system.",
-          "field_note": "Draft CN localization pending native pass. Families: Black Keel clipped/legal, Deep Reach sanitized/compliance, Marauder practical, Atlas wrong-category maintenance.",
-          "terminal": "Draft CN localization pending native pass. AUDIO FAMILY: maximum signal, minimum companionship. Every bark must change pressure, route or evidence read.",
-          "audio": "Draft CN localization pending native pass. If it does not change what the player knows, cut it.",
-          "in_game_wiki": "Draft CN localization pending native pass. Audio Bark Family Rules define how HECTON-8 uses sparse voice without flattening loneliness.",
-          "external_site": "Draft CN localization pending native pass. Audio Bark Family Rules lock the voice strategy for HECTON-8: clipped carrier messages, sanitized corporate packets, practical Marauder corrections and Atlas maintenance traces that misname living context."
+          "title": "CN LOC HOLD: Audio Bark Family Rules",
+          "scanner": "CN LOC HOLD: Silence is part of the audio system.",
+          "field_note": "CN LOC HOLD: Families: Black Keel clipped/legal, Deep Reach sanitized/compliance, Marauder practical, Atlas wrong-category maintenance.",
+          "terminal": "CN LOC HOLD: AUDIO FAMILY: maximum signal, minimum companionship. Every bark must change pressure, route or evidence read.",
+          "audio": "CN LOC HOLD: If it does not change what the player knows, cut it.",
+          "in_game_wiki": "CN LOC HOLD: Audio Bark Family Rules define how HECTON-8 uses sparse voice without flattening loneliness.",
+          "external_site": "CN LOC HOLD: Audio Bark Family Rules lock the voice strategy for HECTON-8: clipped carrier messages, sanitized corporate packets, practical Marauder corrections and Atlas maintenance traces that misname living context."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Audio Bark Family Rules",
-          "scanner": "Draft FR localization pending native pass. Silence is part of the audio system.",
-          "field_note": "Draft FR localization pending native pass. Families: Black Keel clipped/legal, Deep Reach sanitized/compliance, Marauder practical, Atlas wrong-category maintenance.",
-          "terminal": "Draft FR localization pending native pass. AUDIO FAMILY: maximum signal, minimum companionship. Every bark must change pressure, route or evidence read.",
-          "audio": "Draft FR localization pending native pass. If it does not change what the player knows, cut it.",
-          "in_game_wiki": "Draft FR localization pending native pass. Audio Bark Family Rules define how HECTON-8 uses sparse voice without flattening loneliness.",
-          "external_site": "Draft FR localization pending native pass. Audio Bark Family Rules lock the voice strategy for HECTON-8: clipped carrier messages, sanitized corporate packets, practical Marauder corrections and Atlas maintenance traces that misname living context."
+          "title": "FR LOC HOLD: Audio Bark Family Rules",
+          "scanner": "FR LOC HOLD: Silence is part of the audio system.",
+          "field_note": "FR LOC HOLD: Families: Black Keel clipped/legal, Deep Reach sanitized/compliance, Marauder practical, Atlas wrong-category maintenance.",
+          "terminal": "FR LOC HOLD: AUDIO FAMILY: maximum signal, minimum companionship. Every bark must change pressure, route or evidence read.",
+          "audio": "FR LOC HOLD: If it does not change what the player knows, cut it.",
+          "in_game_wiki": "FR LOC HOLD: Audio Bark Family Rules define how HECTON-8 uses sparse voice without flattening loneliness.",
+          "external_site": "FR LOC HOLD: Audio Bark Family Rules lock the voice strategy for HECTON-8: clipped carrier messages, sanitized corporate packets, practical Marauder corrections and Atlas maintenance traces that misname living context."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Audio Bark Family Rules",
-          "scanner": "Draft ES localization pending native pass. Silence is part of the audio system.",
-          "field_note": "Draft ES localization pending native pass. Families: Black Keel clipped/legal, Deep Reach sanitized/compliance, Marauder practical, Atlas wrong-category maintenance.",
-          "terminal": "Draft ES localization pending native pass. AUDIO FAMILY: maximum signal, minimum companionship. Every bark must change pressure, route or evidence read.",
-          "audio": "Draft ES localization pending native pass. If it does not change what the player knows, cut it.",
-          "in_game_wiki": "Draft ES localization pending native pass. Audio Bark Family Rules define how HECTON-8 uses sparse voice without flattening loneliness.",
-          "external_site": "Draft ES localization pending native pass. Audio Bark Family Rules lock the voice strategy for HECTON-8: clipped carrier messages, sanitized corporate packets, practical Marauder corrections and Atlas maintenance traces that misname living context."
+          "title": "ES LOC HOLD: Audio Bark Family Rules",
+          "scanner": "ES LOC HOLD: Silence is part of the audio system.",
+          "field_note": "ES LOC HOLD: Families: Black Keel clipped/legal, Deep Reach sanitized/compliance, Marauder practical, Atlas wrong-category maintenance.",
+          "terminal": "ES LOC HOLD: AUDIO FAMILY: maximum signal, minimum companionship. Every bark must change pressure, route or evidence read.",
+          "audio": "ES LOC HOLD: If it does not change what the player knows, cut it.",
+          "in_game_wiki": "ES LOC HOLD: Audio Bark Family Rules define how HECTON-8 uses sparse voice without flattening loneliness.",
+          "external_site": "ES LOC HOLD: Audio Bark Family Rules lock the voice strategy for HECTON-8: clipped carrier messages, sanitized corporate packets, practical Marauder corrections and Atlas maintenance traces that misname living context."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Audio Bark Family Rules",
-          "scanner": "Draft DE localization pending native pass. Silence is part of the audio system.",
-          "field_note": "Draft DE localization pending native pass. Families: Black Keel clipped/legal, Deep Reach sanitized/compliance, Marauder practical, Atlas wrong-category maintenance.",
-          "terminal": "Draft DE localization pending native pass. AUDIO FAMILY: maximum signal, minimum companionship. Every bark must change pressure, route or evidence read.",
-          "audio": "Draft DE localization pending native pass. If it does not change what the player knows, cut it.",
-          "in_game_wiki": "Draft DE localization pending native pass. Audio Bark Family Rules define how HECTON-8 uses sparse voice without flattening loneliness.",
-          "external_site": "Draft DE localization pending native pass. Audio Bark Family Rules lock the voice strategy for HECTON-8: clipped carrier messages, sanitized corporate packets, practical Marauder corrections and Atlas maintenance traces that misname living context."
+          "title": "DE LOC HOLD: Audio Bark Family Rules",
+          "scanner": "DE LOC HOLD: Silence is part of the audio system.",
+          "field_note": "DE LOC HOLD: Families: Black Keel clipped/legal, Deep Reach sanitized/compliance, Marauder practical, Atlas wrong-category maintenance.",
+          "terminal": "DE LOC HOLD: AUDIO FAMILY: maximum signal, minimum companionship. Every bark must change pressure, route or evidence read.",
+          "audio": "DE LOC HOLD: If it does not change what the player knows, cut it.",
+          "in_game_wiki": "DE LOC HOLD: Audio Bark Family Rules define how HECTON-8 uses sparse voice without flattening loneliness.",
+          "external_site": "DE LOC HOLD: Audio Bark Family Rules lock the voice strategy for HECTON-8: clipped carrier messages, sanitized corporate packets, practical Marauder corrections and Atlas maintenance traces that misname living context."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Audio Bark Family Rules",
-          "scanner": "Draft PL localization pending native pass. Silence is part of the audio system.",
-          "field_note": "Draft PL localization pending native pass. Families: Black Keel clipped/legal, Deep Reach sanitized/compliance, Marauder practical, Atlas wrong-category maintenance.",
-          "terminal": "Draft PL localization pending native pass. AUDIO FAMILY: maximum signal, minimum companionship. Every bark must change pressure, route or evidence read.",
-          "audio": "Draft PL localization pending native pass. If it does not change what the player knows, cut it.",
-          "in_game_wiki": "Draft PL localization pending native pass. Audio Bark Family Rules define how HECTON-8 uses sparse voice without flattening loneliness.",
-          "external_site": "Draft PL localization pending native pass. Audio Bark Family Rules lock the voice strategy for HECTON-8: clipped carrier messages, sanitized corporate packets, practical Marauder corrections and Atlas maintenance traces that misname living context."
+          "title": "PL LOC HOLD: Audio Bark Family Rules",
+          "scanner": "PL LOC HOLD: Silence is part of the audio system.",
+          "field_note": "PL LOC HOLD: Families: Black Keel clipped/legal, Deep Reach sanitized/compliance, Marauder practical, Atlas wrong-category maintenance.",
+          "terminal": "PL LOC HOLD: AUDIO FAMILY: maximum signal, minimum companionship. Every bark must change pressure, route or evidence read.",
+          "audio": "PL LOC HOLD: If it does not change what the player knows, cut it.",
+          "in_game_wiki": "PL LOC HOLD: Audio Bark Family Rules define how HECTON-8 uses sparse voice without flattening loneliness.",
+          "external_site": "PL LOC HOLD: Audio Bark Family Rules lock the voice strategy for HECTON-8: clipped carrier messages, sanitized corporate packets, practical Marauder corrections and Atlas maintenance traces that misname living context."
         },
         "uk_UA": {
-          "title": "Draft UA localization pending native pass. Audio Bark Family Rules",
-          "scanner": "Draft UA localization pending native pass. Silence is part of the audio system.",
-          "field_note": "Draft UA localization pending native pass. Families: Black Keel clipped/legal, Deep Reach sanitized/compliance, Marauder practical, Atlas wrong-category maintenance.",
-          "terminal": "Draft UA localization pending native pass. AUDIO FAMILY: maximum signal, minimum companionship. Every bark must change pressure, route or evidence read.",
-          "audio": "Draft UA localization pending native pass. If it does not change what the player knows, cut it.",
-          "in_game_wiki": "Draft UA localization pending native pass. Audio Bark Family Rules define how HECTON-8 uses sparse voice without flattening loneliness.",
-          "external_site": "Draft UA localization pending native pass. Audio Bark Family Rules lock the voice strategy for HECTON-8: clipped carrier messages, sanitized corporate packets, practical Marauder corrections and Atlas maintenance traces that misname living context."
+          "title": "UA LOC HOLD: Audio Bark Family Rules",
+          "scanner": "UA LOC HOLD: Silence is part of the audio system.",
+          "field_note": "UA LOC HOLD: Families: Black Keel clipped/legal, Deep Reach sanitized/compliance, Marauder practical, Atlas wrong-category maintenance.",
+          "terminal": "UA LOC HOLD: AUDIO FAMILY: maximum signal, minimum companionship. Every bark must change pressure, route or evidence read.",
+          "audio": "UA LOC HOLD: If it does not change what the player knows, cut it.",
+          "in_game_wiki": "UA LOC HOLD: Audio Bark Family Rules define how HECTON-8 uses sparse voice without flattening loneliness.",
+          "external_site": "UA LOC HOLD: Audio Bark Family Rules lock the voice strategy for HECTON-8: clipped carrier messages, sanitized corporate packets, practical Marauder corrections and Atlas maintenance traces that misname living context."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Audio Bark Family Rules",
-          "scanner": "Draft AR localization pending native pass. Silence is part of the audio system.",
-          "field_note": "Draft AR localization pending native pass. Families: Black Keel clipped/legal, Deep Reach sanitized/compliance, Marauder practical, Atlas wrong-category maintenance.",
-          "terminal": "Draft AR localization pending native pass. AUDIO FAMILY: maximum signal, minimum companionship. Every bark must change pressure, route or evidence read.",
-          "audio": "Draft AR localization pending native pass. If it does not change what the player knows, cut it.",
-          "in_game_wiki": "Draft AR localization pending native pass. Audio Bark Family Rules define how HECTON-8 uses sparse voice without flattening loneliness.",
-          "external_site": "Draft AR localization pending native pass. Audio Bark Family Rules lock the voice strategy for HECTON-8: clipped carrier messages, sanitized corporate packets, practical Marauder corrections and Atlas maintenance traces that misname living context."
+          "title": "AR LOC HOLD: Audio Bark Family Rules",
+          "scanner": "AR LOC HOLD: Silence is part of the audio system.",
+          "field_note": "AR LOC HOLD: Families: Black Keel clipped/legal, Deep Reach sanitized/compliance, Marauder practical, Atlas wrong-category maintenance.",
+          "terminal": "AR LOC HOLD: AUDIO FAMILY: maximum signal, minimum companionship. Every bark must change pressure, route or evidence read.",
+          "audio": "AR LOC HOLD: If it does not change what the player knows, cut it.",
+          "in_game_wiki": "AR LOC HOLD: Audio Bark Family Rules define how HECTON-8 uses sparse voice without flattening loneliness.",
+          "external_site": "AR LOC HOLD: Audio Bark Family Rules lock the voice strategy for HECTON-8: clipped carrier messages, sanitized corporate packets, practical Marauder corrections and Atlas maintenance traces that misname living context."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Audio Bark Family Rules",
-          "scanner": "Draft ID localization pending native pass. Silence is part of the audio system.",
-          "field_note": "Draft ID localization pending native pass. Families: Black Keel clipped/legal, Deep Reach sanitized/compliance, Marauder practical, Atlas wrong-category maintenance.",
-          "terminal": "Draft ID localization pending native pass. AUDIO FAMILY: maximum signal, minimum companionship. Every bark must change pressure, route or evidence read.",
-          "audio": "Draft ID localization pending native pass. If it does not change what the player knows, cut it.",
-          "in_game_wiki": "Draft ID localization pending native pass. Audio Bark Family Rules define how HECTON-8 uses sparse voice without flattening loneliness.",
-          "external_site": "Draft ID localization pending native pass. Audio Bark Family Rules lock the voice strategy for HECTON-8: clipped carrier messages, sanitized corporate packets, practical Marauder corrections and Atlas maintenance traces that misname living context."
+          "title": "ID LOC HOLD: Audio Bark Family Rules",
+          "scanner": "ID LOC HOLD: Silence is part of the audio system.",
+          "field_note": "ID LOC HOLD: Families: Black Keel clipped/legal, Deep Reach sanitized/compliance, Marauder practical, Atlas wrong-category maintenance.",
+          "terminal": "ID LOC HOLD: AUDIO FAMILY: maximum signal, minimum companionship. Every bark must change pressure, route or evidence read.",
+          "audio": "ID LOC HOLD: If it does not change what the player knows, cut it.",
+          "in_game_wiki": "ID LOC HOLD: Audio Bark Family Rules define how HECTON-8 uses sparse voice without flattening loneliness.",
+          "external_site": "ID LOC HOLD: Audio Bark Family Rules lock the voice strategy for HECTON-8: clipped carrier messages, sanitized corporate packets, practical Marauder corrections and Atlas maintenance traces that misname living context."
         },
         "ko_KR": {
-          "title": "Draft KR localization pending native pass. Audio Bark Family Rules",
-          "scanner": "Draft KR localization pending native pass. Silence is part of the audio system.",
-          "field_note": "Draft KR localization pending native pass. Families: Black Keel clipped/legal, Deep Reach sanitized/compliance, Marauder practical, Atlas wrong-category maintenance.",
-          "terminal": "Draft KR localization pending native pass. AUDIO FAMILY: maximum signal, minimum companionship. Every bark must change pressure, route or evidence read.",
-          "audio": "Draft KR localization pending native pass. If it does not change what the player knows, cut it.",
-          "in_game_wiki": "Draft KR localization pending native pass. Audio Bark Family Rules define how HECTON-8 uses sparse voice without flattening loneliness.",
-          "external_site": "Draft KR localization pending native pass. Audio Bark Family Rules lock the voice strategy for HECTON-8: clipped carrier messages, sanitized corporate packets, practical Marauder corrections and Atlas maintenance traces that misname living context."
+          "title": "KR LOC HOLD: Audio Bark Family Rules",
+          "scanner": "KR LOC HOLD: Silence is part of the audio system.",
+          "field_note": "KR LOC HOLD: Families: Black Keel clipped/legal, Deep Reach sanitized/compliance, Marauder practical, Atlas wrong-category maintenance.",
+          "terminal": "KR LOC HOLD: AUDIO FAMILY: maximum signal, minimum companionship. Every bark must change pressure, route or evidence read.",
+          "audio": "KR LOC HOLD: If it does not change what the player knows, cut it.",
+          "in_game_wiki": "KR LOC HOLD: Audio Bark Family Rules define how HECTON-8 uses sparse voice without flattening loneliness.",
+          "external_site": "KR LOC HOLD: Audio Bark Family Rules lock the voice strategy for HECTON-8: clipped carrier messages, sanitized corporate packets, practical Marauder corrections and Atlas maintenance traces that misname living context."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Audio Bark Family Rules",
-          "scanner": "Draft HE localization pending native pass. Silence is part of the audio system.",
-          "field_note": "Draft HE localization pending native pass. Families: Black Keel clipped/legal, Deep Reach sanitized/compliance, Marauder practical, Atlas wrong-category maintenance.",
-          "terminal": "Draft HE localization pending native pass. AUDIO FAMILY: maximum signal, minimum companionship. Every bark must change pressure, route or evidence read.",
-          "audio": "Draft HE localization pending native pass. If it does not change what the player knows, cut it.",
-          "in_game_wiki": "Draft HE localization pending native pass. Audio Bark Family Rules define how HECTON-8 uses sparse voice without flattening loneliness.",
-          "external_site": "Draft HE localization pending native pass. Audio Bark Family Rules lock the voice strategy for HECTON-8: clipped carrier messages, sanitized corporate packets, practical Marauder corrections and Atlas maintenance traces that misname living context."
+          "title": "HE LOC HOLD: Audio Bark Family Rules",
+          "scanner": "HE LOC HOLD: Silence is part of the audio system.",
+          "field_note": "HE LOC HOLD: Families: Black Keel clipped/legal, Deep Reach sanitized/compliance, Marauder practical, Atlas wrong-category maintenance.",
+          "terminal": "HE LOC HOLD: AUDIO FAMILY: maximum signal, minimum companionship. Every bark must change pressure, route or evidence read.",
+          "audio": "HE LOC HOLD: If it does not change what the player knows, cut it.",
+          "in_game_wiki": "HE LOC HOLD: Audio Bark Family Rules define how HECTON-8 uses sparse voice without flattening loneliness.",
+          "external_site": "HE LOC HOLD: Audio Bark Family Rules lock the voice strategy for HECTON-8: clipped carrier messages, sanitized corporate packets, practical Marauder corrections and Atlas maintenance traces that misname living context."
         },
         "pt_BR": {
-          "title": "Draft PT-BR localization pending native pass. Audio Bark Family Rules",
-          "scanner": "Draft PT-BR localization pending native pass. Silence is part of the audio system.",
-          "field_note": "Draft PT-BR localization pending native pass. Families: Black Keel clipped/legal, Deep Reach sanitized/compliance, Marauder practical, Atlas wrong-category maintenance.",
-          "terminal": "Draft PT-BR localization pending native pass. AUDIO FAMILY: maximum signal, minimum companionship. Every bark must change pressure, route or evidence read.",
-          "audio": "Draft PT-BR localization pending native pass. If it does not change what the player knows, cut it.",
-          "in_game_wiki": "Draft PT-BR localization pending native pass. Audio Bark Family Rules define how HECTON-8 uses sparse voice without flattening loneliness.",
-          "external_site": "Draft PT-BR localization pending native pass. Audio Bark Family Rules lock the voice strategy for HECTON-8: clipped carrier messages, sanitized corporate packets, practical Marauder corrections and Atlas maintenance traces that misname living context."
+          "title": "PT-BR LOC HOLD: Audio Bark Family Rules",
+          "scanner": "PT-BR LOC HOLD: Silence is part of the audio system.",
+          "field_note": "PT-BR LOC HOLD: Families: Black Keel clipped/legal, Deep Reach sanitized/compliance, Marauder practical, Atlas wrong-category maintenance.",
+          "terminal": "PT-BR LOC HOLD: AUDIO FAMILY: maximum signal, minimum companionship. Every bark must change pressure, route or evidence read.",
+          "audio": "PT-BR LOC HOLD: If it does not change what the player knows, cut it.",
+          "in_game_wiki": "PT-BR LOC HOLD: Audio Bark Family Rules define how HECTON-8 uses sparse voice without flattening loneliness.",
+          "external_site": "PT-BR LOC HOLD: Audio Bark Family Rules lock the voice strategy for HECTON-8: clipped carrier messages, sanitized corporate packets, practical Marauder corrections and Atlas maintenance traces that misname living context."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Audio Bark Family Rules",
-          "scanner": "Draft NL localization pending native pass. Silence is part of the audio system.",
-          "field_note": "Draft NL localization pending native pass. Families: Black Keel clipped/legal, Deep Reach sanitized/compliance, Marauder practical, Atlas wrong-category maintenance.",
-          "terminal": "Draft NL localization pending native pass. AUDIO FAMILY: maximum signal, minimum companionship. Every bark must change pressure, route or evidence read.",
-          "audio": "Draft NL localization pending native pass. If it does not change what the player knows, cut it.",
-          "in_game_wiki": "Draft NL localization pending native pass. Audio Bark Family Rules define how HECTON-8 uses sparse voice without flattening loneliness.",
-          "external_site": "Draft NL localization pending native pass. Audio Bark Family Rules lock the voice strategy for HECTON-8: clipped carrier messages, sanitized corporate packets, practical Marauder corrections and Atlas maintenance traces that misname living context."
+          "title": "NL LOC HOLD: Audio Bark Family Rules",
+          "scanner": "NL LOC HOLD: Silence is part of the audio system.",
+          "field_note": "NL LOC HOLD: Families: Black Keel clipped/legal, Deep Reach sanitized/compliance, Marauder practical, Atlas wrong-category maintenance.",
+          "terminal": "NL LOC HOLD: AUDIO FAMILY: maximum signal, minimum companionship. Every bark must change pressure, route or evidence read.",
+          "audio": "NL LOC HOLD: If it does not change what the player knows, cut it.",
+          "in_game_wiki": "NL LOC HOLD: Audio Bark Family Rules define how HECTON-8 uses sparse voice without flattening loneliness.",
+          "external_site": "NL LOC HOLD: Audio Bark Family Rules lock the voice strategy for HECTON-8: clipped carrier messages, sanitized corporate packets, practical Marauder corrections and Atlas maintenance traces that misname living context."
         }
       }
     },
@@ -665,121 +665,121 @@
           "external_site": "Публичная статья: RTL And CJK Font Risk Card defines the localization proof needed before HECTON-8's multilingual pages and in-game wiki can be called release-ready."
         },
         "ja_JP": {
-          "title": "Draft JP localization pending native pass. RTL And CJK Font Risk Card",
-          "scanner": "Draft JP localization pending native pass. A text box is also a pressure vessel.",
-          "field_note": "Draft JP localization pending native pass. RTL and CJK passes must prove font coverage, line length, numeric labels, spoiler gates and terminal monospace equivalents.",
-          "terminal": "Draft JP localization pending native pass. FONT RISK: validate RTL flow, CJK wrapping, Arabic/Hebrew shaping, fallback glyphs and terminal width.",
-          "audio": "Draft JP localization pending native pass. The wrong font can erase the witness.",
-          "in_game_wiki": "Draft JP localization pending native pass. RTL And CJK Font Risk Card records localization production hazards for Arabic, Hebrew, CJK and dense UI languages.",
-          "external_site": "Draft JP localization pending native pass. RTL And CJK Font Risk Card defines the localization proof needed before HECTON-8's multilingual pages and in-game wiki can be called release-ready."
+          "title": "JP LOC HOLD: RTL And CJK Font Risk Card",
+          "scanner": "JP LOC HOLD: A text box is also a pressure vessel.",
+          "field_note": "JP LOC HOLD: RTL and CJK passes must prove font coverage, line length, numeric labels, spoiler gates and terminal monospace equivalents.",
+          "terminal": "JP LOC HOLD: FONT RISK: validate RTL flow, CJK wrapping, Arabic/Hebrew shaping, fallback glyphs and terminal width.",
+          "audio": "JP LOC HOLD: The wrong font can erase the witness.",
+          "in_game_wiki": "JP LOC HOLD: RTL And CJK Font Risk Card records localization production hazards for Arabic, Hebrew, CJK and dense UI languages.",
+          "external_site": "JP LOC HOLD: RTL And CJK Font Risk Card defines the localization proof needed before HECTON-8's multilingual pages and in-game wiki can be called release-ready."
         },
         "zh_CN": {
-          "title": "Draft CN localization pending native pass. RTL And CJK Font Risk Card",
-          "scanner": "Draft CN localization pending native pass. A text box is also a pressure vessel.",
-          "field_note": "Draft CN localization pending native pass. RTL and CJK passes must prove font coverage, line length, numeric labels, spoiler gates and terminal monospace equivalents.",
-          "terminal": "Draft CN localization pending native pass. FONT RISK: validate RTL flow, CJK wrapping, Arabic/Hebrew shaping, fallback glyphs and terminal width.",
-          "audio": "Draft CN localization pending native pass. The wrong font can erase the witness.",
-          "in_game_wiki": "Draft CN localization pending native pass. RTL And CJK Font Risk Card records localization production hazards for Arabic, Hebrew, CJK and dense UI languages.",
-          "external_site": "Draft CN localization pending native pass. RTL And CJK Font Risk Card defines the localization proof needed before HECTON-8's multilingual pages and in-game wiki can be called release-ready."
+          "title": "CN LOC HOLD: RTL And CJK Font Risk Card",
+          "scanner": "CN LOC HOLD: A text box is also a pressure vessel.",
+          "field_note": "CN LOC HOLD: RTL and CJK passes must prove font coverage, line length, numeric labels, spoiler gates and terminal monospace equivalents.",
+          "terminal": "CN LOC HOLD: FONT RISK: validate RTL flow, CJK wrapping, Arabic/Hebrew shaping, fallback glyphs and terminal width.",
+          "audio": "CN LOC HOLD: The wrong font can erase the witness.",
+          "in_game_wiki": "CN LOC HOLD: RTL And CJK Font Risk Card records localization production hazards for Arabic, Hebrew, CJK and dense UI languages.",
+          "external_site": "CN LOC HOLD: RTL And CJK Font Risk Card defines the localization proof needed before HECTON-8's multilingual pages and in-game wiki can be called release-ready."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. RTL And CJK Font Risk Card",
-          "scanner": "Draft FR localization pending native pass. A text box is also a pressure vessel.",
-          "field_note": "Draft FR localization pending native pass. RTL and CJK passes must prove font coverage, line length, numeric labels, spoiler gates and terminal monospace equivalents.",
-          "terminal": "Draft FR localization pending native pass. FONT RISK: validate RTL flow, CJK wrapping, Arabic/Hebrew shaping, fallback glyphs and terminal width.",
-          "audio": "Draft FR localization pending native pass. The wrong font can erase the witness.",
-          "in_game_wiki": "Draft FR localization pending native pass. RTL And CJK Font Risk Card records localization production hazards for Arabic, Hebrew, CJK and dense UI languages.",
-          "external_site": "Draft FR localization pending native pass. RTL And CJK Font Risk Card defines the localization proof needed before HECTON-8's multilingual pages and in-game wiki can be called release-ready."
+          "title": "FR LOC HOLD: RTL And CJK Font Risk Card",
+          "scanner": "FR LOC HOLD: A text box is also a pressure vessel.",
+          "field_note": "FR LOC HOLD: RTL and CJK passes must prove font coverage, line length, numeric labels, spoiler gates and terminal monospace equivalents.",
+          "terminal": "FR LOC HOLD: FONT RISK: validate RTL flow, CJK wrapping, Arabic/Hebrew shaping, fallback glyphs and terminal width.",
+          "audio": "FR LOC HOLD: The wrong font can erase the witness.",
+          "in_game_wiki": "FR LOC HOLD: RTL And CJK Font Risk Card records localization production hazards for Arabic, Hebrew, CJK and dense UI languages.",
+          "external_site": "FR LOC HOLD: RTL And CJK Font Risk Card defines the localization proof needed before HECTON-8's multilingual pages and in-game wiki can be called release-ready."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. RTL And CJK Font Risk Card",
-          "scanner": "Draft ES localization pending native pass. A text box is also a pressure vessel.",
-          "field_note": "Draft ES localization pending native pass. RTL and CJK passes must prove font coverage, line length, numeric labels, spoiler gates and terminal monospace equivalents.",
-          "terminal": "Draft ES localization pending native pass. FONT RISK: validate RTL flow, CJK wrapping, Arabic/Hebrew shaping, fallback glyphs and terminal width.",
-          "audio": "Draft ES localization pending native pass. The wrong font can erase the witness.",
-          "in_game_wiki": "Draft ES localization pending native pass. RTL And CJK Font Risk Card records localization production hazards for Arabic, Hebrew, CJK and dense UI languages.",
-          "external_site": "Draft ES localization pending native pass. RTL And CJK Font Risk Card defines the localization proof needed before HECTON-8's multilingual pages and in-game wiki can be called release-ready."
+          "title": "ES LOC HOLD: RTL And CJK Font Risk Card",
+          "scanner": "ES LOC HOLD: A text box is also a pressure vessel.",
+          "field_note": "ES LOC HOLD: RTL and CJK passes must prove font coverage, line length, numeric labels, spoiler gates and terminal monospace equivalents.",
+          "terminal": "ES LOC HOLD: FONT RISK: validate RTL flow, CJK wrapping, Arabic/Hebrew shaping, fallback glyphs and terminal width.",
+          "audio": "ES LOC HOLD: The wrong font can erase the witness.",
+          "in_game_wiki": "ES LOC HOLD: RTL And CJK Font Risk Card records localization production hazards for Arabic, Hebrew, CJK and dense UI languages.",
+          "external_site": "ES LOC HOLD: RTL And CJK Font Risk Card defines the localization proof needed before HECTON-8's multilingual pages and in-game wiki can be called release-ready."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. RTL And CJK Font Risk Card",
-          "scanner": "Draft DE localization pending native pass. A text box is also a pressure vessel.",
-          "field_note": "Draft DE localization pending native pass. RTL and CJK passes must prove font coverage, line length, numeric labels, spoiler gates and terminal monospace equivalents.",
-          "terminal": "Draft DE localization pending native pass. FONT RISK: validate RTL flow, CJK wrapping, Arabic/Hebrew shaping, fallback glyphs and terminal width.",
-          "audio": "Draft DE localization pending native pass. The wrong font can erase the witness.",
-          "in_game_wiki": "Draft DE localization pending native pass. RTL And CJK Font Risk Card records localization production hazards for Arabic, Hebrew, CJK and dense UI languages.",
-          "external_site": "Draft DE localization pending native pass. RTL And CJK Font Risk Card defines the localization proof needed before HECTON-8's multilingual pages and in-game wiki can be called release-ready."
+          "title": "DE LOC HOLD: RTL And CJK Font Risk Card",
+          "scanner": "DE LOC HOLD: A text box is also a pressure vessel.",
+          "field_note": "DE LOC HOLD: RTL and CJK passes must prove font coverage, line length, numeric labels, spoiler gates and terminal monospace equivalents.",
+          "terminal": "DE LOC HOLD: FONT RISK: validate RTL flow, CJK wrapping, Arabic/Hebrew shaping, fallback glyphs and terminal width.",
+          "audio": "DE LOC HOLD: The wrong font can erase the witness.",
+          "in_game_wiki": "DE LOC HOLD: RTL And CJK Font Risk Card records localization production hazards for Arabic, Hebrew, CJK and dense UI languages.",
+          "external_site": "DE LOC HOLD: RTL And CJK Font Risk Card defines the localization proof needed before HECTON-8's multilingual pages and in-game wiki can be called release-ready."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. RTL And CJK Font Risk Card",
-          "scanner": "Draft PL localization pending native pass. A text box is also a pressure vessel.",
-          "field_note": "Draft PL localization pending native pass. RTL and CJK passes must prove font coverage, line length, numeric labels, spoiler gates and terminal monospace equivalents.",
-          "terminal": "Draft PL localization pending native pass. FONT RISK: validate RTL flow, CJK wrapping, Arabic/Hebrew shaping, fallback glyphs and terminal width.",
-          "audio": "Draft PL localization pending native pass. The wrong font can erase the witness.",
-          "in_game_wiki": "Draft PL localization pending native pass. RTL And CJK Font Risk Card records localization production hazards for Arabic, Hebrew, CJK and dense UI languages.",
-          "external_site": "Draft PL localization pending native pass. RTL And CJK Font Risk Card defines the localization proof needed before HECTON-8's multilingual pages and in-game wiki can be called release-ready."
+          "title": "PL LOC HOLD: RTL And CJK Font Risk Card",
+          "scanner": "PL LOC HOLD: A text box is also a pressure vessel.",
+          "field_note": "PL LOC HOLD: RTL and CJK passes must prove font coverage, line length, numeric labels, spoiler gates and terminal monospace equivalents.",
+          "terminal": "PL LOC HOLD: FONT RISK: validate RTL flow, CJK wrapping, Arabic/Hebrew shaping, fallback glyphs and terminal width.",
+          "audio": "PL LOC HOLD: The wrong font can erase the witness.",
+          "in_game_wiki": "PL LOC HOLD: RTL And CJK Font Risk Card records localization production hazards for Arabic, Hebrew, CJK and dense UI languages.",
+          "external_site": "PL LOC HOLD: RTL And CJK Font Risk Card defines the localization proof needed before HECTON-8's multilingual pages and in-game wiki can be called release-ready."
         },
         "uk_UA": {
-          "title": "Draft UA localization pending native pass. RTL And CJK Font Risk Card",
-          "scanner": "Draft UA localization pending native pass. A text box is also a pressure vessel.",
-          "field_note": "Draft UA localization pending native pass. RTL and CJK passes must prove font coverage, line length, numeric labels, spoiler gates and terminal monospace equivalents.",
-          "terminal": "Draft UA localization pending native pass. FONT RISK: validate RTL flow, CJK wrapping, Arabic/Hebrew shaping, fallback glyphs and terminal width.",
-          "audio": "Draft UA localization pending native pass. The wrong font can erase the witness.",
-          "in_game_wiki": "Draft UA localization pending native pass. RTL And CJK Font Risk Card records localization production hazards for Arabic, Hebrew, CJK and dense UI languages.",
-          "external_site": "Draft UA localization pending native pass. RTL And CJK Font Risk Card defines the localization proof needed before HECTON-8's multilingual pages and in-game wiki can be called release-ready."
+          "title": "UA LOC HOLD: RTL And CJK Font Risk Card",
+          "scanner": "UA LOC HOLD: A text box is also a pressure vessel.",
+          "field_note": "UA LOC HOLD: RTL and CJK passes must prove font coverage, line length, numeric labels, spoiler gates and terminal monospace equivalents.",
+          "terminal": "UA LOC HOLD: FONT RISK: validate RTL flow, CJK wrapping, Arabic/Hebrew shaping, fallback glyphs and terminal width.",
+          "audio": "UA LOC HOLD: The wrong font can erase the witness.",
+          "in_game_wiki": "UA LOC HOLD: RTL And CJK Font Risk Card records localization production hazards for Arabic, Hebrew, CJK and dense UI languages.",
+          "external_site": "UA LOC HOLD: RTL And CJK Font Risk Card defines the localization proof needed before HECTON-8's multilingual pages and in-game wiki can be called release-ready."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. RTL And CJK Font Risk Card",
-          "scanner": "Draft AR localization pending native pass. A text box is also a pressure vessel.",
-          "field_note": "Draft AR localization pending native pass. RTL and CJK passes must prove font coverage, line length, numeric labels, spoiler gates and terminal monospace equivalents.",
-          "terminal": "Draft AR localization pending native pass. FONT RISK: validate RTL flow, CJK wrapping, Arabic/Hebrew shaping, fallback glyphs and terminal width.",
-          "audio": "Draft AR localization pending native pass. The wrong font can erase the witness.",
-          "in_game_wiki": "Draft AR localization pending native pass. RTL And CJK Font Risk Card records localization production hazards for Arabic, Hebrew, CJK and dense UI languages.",
-          "external_site": "Draft AR localization pending native pass. RTL And CJK Font Risk Card defines the localization proof needed before HECTON-8's multilingual pages and in-game wiki can be called release-ready."
+          "title": "AR LOC HOLD: RTL And CJK Font Risk Card",
+          "scanner": "AR LOC HOLD: A text box is also a pressure vessel.",
+          "field_note": "AR LOC HOLD: RTL and CJK passes must prove font coverage, line length, numeric labels, spoiler gates and terminal monospace equivalents.",
+          "terminal": "AR LOC HOLD: FONT RISK: validate RTL flow, CJK wrapping, Arabic/Hebrew shaping, fallback glyphs and terminal width.",
+          "audio": "AR LOC HOLD: The wrong font can erase the witness.",
+          "in_game_wiki": "AR LOC HOLD: RTL And CJK Font Risk Card records localization production hazards for Arabic, Hebrew, CJK and dense UI languages.",
+          "external_site": "AR LOC HOLD: RTL And CJK Font Risk Card defines the localization proof needed before HECTON-8's multilingual pages and in-game wiki can be called release-ready."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. RTL And CJK Font Risk Card",
-          "scanner": "Draft ID localization pending native pass. A text box is also a pressure vessel.",
-          "field_note": "Draft ID localization pending native pass. RTL and CJK passes must prove font coverage, line length, numeric labels, spoiler gates and terminal monospace equivalents.",
-          "terminal": "Draft ID localization pending native pass. FONT RISK: validate RTL flow, CJK wrapping, Arabic/Hebrew shaping, fallback glyphs and terminal width.",
-          "audio": "Draft ID localization pending native pass. The wrong font can erase the witness.",
-          "in_game_wiki": "Draft ID localization pending native pass. RTL And CJK Font Risk Card records localization production hazards for Arabic, Hebrew, CJK and dense UI languages.",
-          "external_site": "Draft ID localization pending native pass. RTL And CJK Font Risk Card defines the localization proof needed before HECTON-8's multilingual pages and in-game wiki can be called release-ready."
+          "title": "ID LOC HOLD: RTL And CJK Font Risk Card",
+          "scanner": "ID LOC HOLD: A text box is also a pressure vessel.",
+          "field_note": "ID LOC HOLD: RTL and CJK passes must prove font coverage, line length, numeric labels, spoiler gates and terminal monospace equivalents.",
+          "terminal": "ID LOC HOLD: FONT RISK: validate RTL flow, CJK wrapping, Arabic/Hebrew shaping, fallback glyphs and terminal width.",
+          "audio": "ID LOC HOLD: The wrong font can erase the witness.",
+          "in_game_wiki": "ID LOC HOLD: RTL And CJK Font Risk Card records localization production hazards for Arabic, Hebrew, CJK and dense UI languages.",
+          "external_site": "ID LOC HOLD: RTL And CJK Font Risk Card defines the localization proof needed before HECTON-8's multilingual pages and in-game wiki can be called release-ready."
         },
         "ko_KR": {
-          "title": "Draft KR localization pending native pass. RTL And CJK Font Risk Card",
-          "scanner": "Draft KR localization pending native pass. A text box is also a pressure vessel.",
-          "field_note": "Draft KR localization pending native pass. RTL and CJK passes must prove font coverage, line length, numeric labels, spoiler gates and terminal monospace equivalents.",
-          "terminal": "Draft KR localization pending native pass. FONT RISK: validate RTL flow, CJK wrapping, Arabic/Hebrew shaping, fallback glyphs and terminal width.",
-          "audio": "Draft KR localization pending native pass. The wrong font can erase the witness.",
-          "in_game_wiki": "Draft KR localization pending native pass. RTL And CJK Font Risk Card records localization production hazards for Arabic, Hebrew, CJK and dense UI languages.",
-          "external_site": "Draft KR localization pending native pass. RTL And CJK Font Risk Card defines the localization proof needed before HECTON-8's multilingual pages and in-game wiki can be called release-ready."
+          "title": "KR LOC HOLD: RTL And CJK Font Risk Card",
+          "scanner": "KR LOC HOLD: A text box is also a pressure vessel.",
+          "field_note": "KR LOC HOLD: RTL and CJK passes must prove font coverage, line length, numeric labels, spoiler gates and terminal monospace equivalents.",
+          "terminal": "KR LOC HOLD: FONT RISK: validate RTL flow, CJK wrapping, Arabic/Hebrew shaping, fallback glyphs and terminal width.",
+          "audio": "KR LOC HOLD: The wrong font can erase the witness.",
+          "in_game_wiki": "KR LOC HOLD: RTL And CJK Font Risk Card records localization production hazards for Arabic, Hebrew, CJK and dense UI languages.",
+          "external_site": "KR LOC HOLD: RTL And CJK Font Risk Card defines the localization proof needed before HECTON-8's multilingual pages and in-game wiki can be called release-ready."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. RTL And CJK Font Risk Card",
-          "scanner": "Draft HE localization pending native pass. A text box is also a pressure vessel.",
-          "field_note": "Draft HE localization pending native pass. RTL and CJK passes must prove font coverage, line length, numeric labels, spoiler gates and terminal monospace equivalents.",
-          "terminal": "Draft HE localization pending native pass. FONT RISK: validate RTL flow, CJK wrapping, Arabic/Hebrew shaping, fallback glyphs and terminal width.",
-          "audio": "Draft HE localization pending native pass. The wrong font can erase the witness.",
-          "in_game_wiki": "Draft HE localization pending native pass. RTL And CJK Font Risk Card records localization production hazards for Arabic, Hebrew, CJK and dense UI languages.",
-          "external_site": "Draft HE localization pending native pass. RTL And CJK Font Risk Card defines the localization proof needed before HECTON-8's multilingual pages and in-game wiki can be called release-ready."
+          "title": "HE LOC HOLD: RTL And CJK Font Risk Card",
+          "scanner": "HE LOC HOLD: A text box is also a pressure vessel.",
+          "field_note": "HE LOC HOLD: RTL and CJK passes must prove font coverage, line length, numeric labels, spoiler gates and terminal monospace equivalents.",
+          "terminal": "HE LOC HOLD: FONT RISK: validate RTL flow, CJK wrapping, Arabic/Hebrew shaping, fallback glyphs and terminal width.",
+          "audio": "HE LOC HOLD: The wrong font can erase the witness.",
+          "in_game_wiki": "HE LOC HOLD: RTL And CJK Font Risk Card records localization production hazards for Arabic, Hebrew, CJK and dense UI languages.",
+          "external_site": "HE LOC HOLD: RTL And CJK Font Risk Card defines the localization proof needed before HECTON-8's multilingual pages and in-game wiki can be called release-ready."
         },
         "pt_BR": {
-          "title": "Draft PT-BR localization pending native pass. RTL And CJK Font Risk Card",
-          "scanner": "Draft PT-BR localization pending native pass. A text box is also a pressure vessel.",
-          "field_note": "Draft PT-BR localization pending native pass. RTL and CJK passes must prove font coverage, line length, numeric labels, spoiler gates and terminal monospace equivalents.",
-          "terminal": "Draft PT-BR localization pending native pass. FONT RISK: validate RTL flow, CJK wrapping, Arabic/Hebrew shaping, fallback glyphs and terminal width.",
-          "audio": "Draft PT-BR localization pending native pass. The wrong font can erase the witness.",
-          "in_game_wiki": "Draft PT-BR localization pending native pass. RTL And CJK Font Risk Card records localization production hazards for Arabic, Hebrew, CJK and dense UI languages.",
-          "external_site": "Draft PT-BR localization pending native pass. RTL And CJK Font Risk Card defines the localization proof needed before HECTON-8's multilingual pages and in-game wiki can be called release-ready."
+          "title": "PT-BR LOC HOLD: RTL And CJK Font Risk Card",
+          "scanner": "PT-BR LOC HOLD: A text box is also a pressure vessel.",
+          "field_note": "PT-BR LOC HOLD: RTL and CJK passes must prove font coverage, line length, numeric labels, spoiler gates and terminal monospace equivalents.",
+          "terminal": "PT-BR LOC HOLD: FONT RISK: validate RTL flow, CJK wrapping, Arabic/Hebrew shaping, fallback glyphs and terminal width.",
+          "audio": "PT-BR LOC HOLD: The wrong font can erase the witness.",
+          "in_game_wiki": "PT-BR LOC HOLD: RTL And CJK Font Risk Card records localization production hazards for Arabic, Hebrew, CJK and dense UI languages.",
+          "external_site": "PT-BR LOC HOLD: RTL And CJK Font Risk Card defines the localization proof needed before HECTON-8's multilingual pages and in-game wiki can be called release-ready."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. RTL And CJK Font Risk Card",
-          "scanner": "Draft NL localization pending native pass. A text box is also a pressure vessel.",
-          "field_note": "Draft NL localization pending native pass. RTL and CJK passes must prove font coverage, line length, numeric labels, spoiler gates and terminal monospace equivalents.",
-          "terminal": "Draft NL localization pending native pass. FONT RISK: validate RTL flow, CJK wrapping, Arabic/Hebrew shaping, fallback glyphs and terminal width.",
-          "audio": "Draft NL localization pending native pass. The wrong font can erase the witness.",
-          "in_game_wiki": "Draft NL localization pending native pass. RTL And CJK Font Risk Card records localization production hazards for Arabic, Hebrew, CJK and dense UI languages.",
-          "external_site": "Draft NL localization pending native pass. RTL And CJK Font Risk Card defines the localization proof needed before HECTON-8's multilingual pages and in-game wiki can be called release-ready."
+          "title": "NL LOC HOLD: RTL And CJK Font Risk Card",
+          "scanner": "NL LOC HOLD: A text box is also a pressure vessel.",
+          "field_note": "NL LOC HOLD: RTL and CJK passes must prove font coverage, line length, numeric labels, spoiler gates and terminal monospace equivalents.",
+          "terminal": "NL LOC HOLD: FONT RISK: validate RTL flow, CJK wrapping, Arabic/Hebrew shaping, fallback glyphs and terminal width.",
+          "audio": "NL LOC HOLD: The wrong font can erase the witness.",
+          "in_game_wiki": "NL LOC HOLD: RTL And CJK Font Risk Card records localization production hazards for Arabic, Hebrew, CJK and dense UI languages.",
+          "external_site": "NL LOC HOLD: RTL And CJK Font Risk Card defines the localization proof needed before HECTON-8's multilingual pages and in-game wiki can be called release-ready."
         }
       }
     }

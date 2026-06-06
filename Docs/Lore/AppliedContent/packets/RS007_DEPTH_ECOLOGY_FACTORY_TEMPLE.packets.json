@@ -39,7 +39,7 @@
           "title": "Жизнь светового шельфа",
           "scanner": "Биология мелкого шельфа яркая, шумная и почти не переделана. На поверхности луна не мертва.",
           "field_note": "Красота здесь контрольный образец.",
-          "terminal": "Draft RU localization pending native pass. SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
+          "terminal": "RU LOC HOLD: SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
           "audio": "Первая живая вода не милость. Это базовая линия.",
           "in_game_wiki": "Световой шельф нужен как контраст. Он доказывает, что у HECTON-8 еще есть родная океанская экология до кабельных рифов и ремонтных шрамов ниже.",
           "external_site": "Жизнь светового шельфа задает яркий стартовый биом: не безопасный аквариум, а живая база, на фоне которой читается глубокая порча Atlas."
@@ -48,7 +48,7 @@
           "title": "有光棚の生命",
           "scanner": "浅い棚の生物は明るく騒がしく、ほぼ未改造だ。表層の月は死んでいない。",
           "field_note": "美しさは対照標本だ。",
-          "terminal": "Draft JP localization pending native pass. SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
+          "terminal": "JP LOC HOLD: SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
           "audio": "最初の生きた水は慈悲ではない。基準線だ。",
           "in_game_wiki": "有光棚は対照層だ。下層のケーブル礁や修復痕に入る前に、HECTON-8本来の海洋生態が残ることを示す。",
           "external_site": "有光棚は明るい序盤バイオームを定義する。安全な水族館ではなく、深部のAtlas汚染を読ませる生きた基準だ。"
@@ -57,7 +57,7 @@
           "title": "透光陆架生命",
           "scanner": "浅层陆架生物明亮、喧闹，基本未被改造。月球表层并未死亡。",
           "field_note": "美丽是对照样本。",
-          "terminal": "Draft CN localization pending native pass. SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
+          "terminal": "CN LOC HOLD: SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
           "audio": "第一片活水不是仁慈。它是基线。",
           "in_game_wiki": "透光陆架是对照层。它证明玩家进入下方电缆礁和修复疤痕前，HECTON-8仍有原生海洋生态。",
           "external_site": "透光陆架定义明亮开场生物群落：不是安全水族箱，而是让深层Atlas修复污染可读的生命基线。"
@@ -66,7 +66,7 @@
           "title": "Vie du plateau photique",
           "scanner": "La biologie du plateau peu profond est vive, sonore et peu altérée. La lune n'est pas morte en surface.",
           "field_note": "La beauté sert d'échantillon témoin.",
-          "terminal": "Draft FR localization pending native pass. SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
+          "terminal": "FR LOC HOLD: SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
           "audio": "La première eau vivante n'est pas une grâce. C'est la ligne de base.",
           "in_game_wiki": "Le plateau photique est la couche de contraste. Il prouve qu'HECTON-8 garde une écologie native avant les récifs de câbles et les cicatrices de réparation.",
           "external_site": "Cette entrée définit le biome lumineux d'ouverture: pas un aquarium sûr, mais la base vivante qui rend la corruption Atlas lisible."
@@ -75,7 +75,7 @@
           "title": "Vida de la plataforma fótica",
           "scanner": "La biología somera es brillante, ruidosa y casi intacta. La luna no está muerta en la superficie.",
           "field_note": "La belleza es la muestra de control.",
-          "terminal": "Draft ES localization pending native pass. SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
+          "terminal": "ES LOC HOLD: SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
           "audio": "La primera agua viva no es misericordia. Es línea base.",
           "in_game_wiki": "La plataforma fótica es la capa de contraste. Demuestra una ecología nativa antes de los arrecifes de cable y las cicatrices de reparación.",
           "external_site": "Define el bioma inicial luminoso: no un acuario seguro, sino la base viva que vuelve legible la corrupción profunda de Atlas."
@@ -84,7 +84,7 @@
           "title": "Leben des Lichtschelfs",
           "scanner": "Die Biologie des flachen Schelfs ist hell, laut und kaum verändert. An der Oberfläche ist der Mond nicht tot.",
           "field_note": "Schönheit ist die Kontrollprobe.",
-          "terminal": "Draft DE localization pending native pass. SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
+          "terminal": "DE LOC HOLD: SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
           "audio": "Das erste lebende Wasser ist keine Gnade. Es ist die Basislinie.",
           "in_game_wiki": "Der Lichtschelf ist die Kontrastschicht. Er beweist native Ozeanökologie vor Kabelriffen und Reparaturnarben.",
           "external_site": "Der Lichtschelf ist das helle Anfangsbiom: kein sicheres Aquarium, sondern die lebende Basis für lesbare Atlas-Korruption."
@@ -93,7 +93,7 @@
           "title": "Życie półki świetlnej",
           "scanner": "Płytka półka jest jasna, głośna i prawie nietknięta. Księżyc nie jest martwy przy powierzchni.",
           "field_note": "Piękno jest próbką kontrolną.",
-          "terminal": "Draft PL localization pending native pass. SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
+          "terminal": "PL LOC HOLD: SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
           "audio": "Pierwsza żywa woda nie jest łaską. To linia bazowa.",
           "in_game_wiki": "Półka świetlna jest warstwą kontrastu. Dowodzi, że HECTON-8 ma rodzimą ekologię przed rafami kabli i bliznami napraw.",
           "external_site": "To jasny biom otwarcia: nie bezpieczne akwarium, lecz żywa baza dla czytelnej korupcji Atlas."
@@ -102,7 +102,7 @@
           "title": "Життя світлового шельфу",
           "scanner": "Мілкий шельф яскравий, шумний і майже не змінений. Біля поверхні місяць не мертвий.",
           "field_note": "Краса тут контрольний зразок.",
-          "terminal": "Draft UA localization pending native pass. SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
+          "terminal": "UA LOC HOLD: SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
           "audio": "Перша жива вода не милість. Це базова лінія.",
           "in_game_wiki": "Світловий шельф є шаром контрасту. Він доводить, що HECTON-8 має рідну океанську екологію до кабельних рифів і ремонтних шрамів нижче.",
           "external_site": "Світловий шельф задає яскравий початок: не безпечний акваріум, а жива база для читання глибокої порчі Atlas."
@@ -111,7 +111,7 @@
           "title": "حياة الرف الضوئي",
           "scanner": "أحياء الرف الضحل ساطعة وصاخبة وغير معدلة غالبا. القمر ليس ميتا عند السطح.",
           "field_note": "الجمال هنا عينة ضبط.",
-          "terminal": "Draft AR localization pending native pass. SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
+          "terminal": "AR LOC HOLD: SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
           "audio": "أول ماء حي ليس رحمة. إنه خط أساس.",
           "in_game_wiki": "الرف الضوئي هو طبقة التباين. يثبت أن HECTON-8 يحتفظ ببيئة محيطية أصلية قبل شعاب الكابلات وندوب الإصلاح.",
           "external_site": "حياة الرف الضوئي تعرف بيوم الافتتاح المشرق: ليس حوضا آمنا بل خط أساس حي يجعل فساد Atlas العميق مقروءا."
@@ -120,7 +120,7 @@
           "title": "Kehidupan Paparan Fotik",
           "scanner": "Biologi paparan dangkal terang, bising dan hampir belum diubah. Bulan ini belum mati di permukaan.",
           "field_note": "Keindahan adalah sampel kontrol.",
-          "terminal": "Draft ID localization pending native pass. SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
+          "terminal": "ID LOC HOLD: SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
           "audio": "Air hidup pertama bukan belas kasihan. Itu garis dasar.",
           "in_game_wiki": "Paparan fotik adalah lapisan kontras. Ia membuktikan HECTON-8 masih punya ekologi laut asli sebelum karang kabel dan luka perbaikan.",
           "external_site": "Bioma awal ini cerah bukan akuarium aman, melainkan baseline hidup agar korupsi Atlas di bawah terbaca."
@@ -129,7 +129,7 @@
           "title": "유광 선반의 생명",
           "scanner": "얕은 선반 생태는 밝고 시끄럽고 거의 변형되지 않았다. 표면의 달은 죽지 않았다.",
           "field_note": "아름다움은 대조 표본이다.",
-          "terminal": "Draft KO localization pending native pass. SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
+          "terminal": "KO LOC HOLD: SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
           "audio": "첫 살아 있는 물은 자비가 아니다. 기준선이다.",
           "in_game_wiki": "유광 선반은 대비층이다. 아래 케이블 암초와 수리 흉터 전의 HECTON-8 원생 해양 생태를 증명한다.",
           "external_site": "밝은 시작 생물군계는 안전한 수족관이 아니라 깊은 Atlas 오염을 읽게 하는 생명 기준선이다."
@@ -138,7 +138,7 @@
           "title": "חיי המדף המואר",
           "scanner": "הביולוגיה הרדודה בהירה, רועשת וכמעט לא שונתה. הירח אינו מת על פני השטח.",
           "field_note": "היופי הוא דגימת הבקרה.",
-          "terminal": "Draft HE localization pending native pass. SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
+          "terminal": "HE LOC HOLD: SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
           "audio": "המים החיים הראשונים אינם חסד. הם קו בסיס.",
           "in_game_wiki": "המדף המואר הוא שכבת הניגוד. הוא מוכיח של-HECTON-8 יש אקולוגיית אוקיינוס מקורית לפני שוניות הכבלים וצלקות התיקון.",
           "external_site": "חיי המדף המואר מגדירים פתיחה בהירה: לא אקווריום בטוח, אלא בסיס חי לקריאת השחתת Atlas בעומק."
@@ -147,7 +147,7 @@
           "title": "Vida da plataforma fótica",
           "scanner": "A biologia rasa é brilhante, sonora e quase intacta. A lua não está morta na superfície.",
           "field_note": "A beleza é a amostra de controle.",
-          "terminal": "Draft PT localization pending native pass. SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
+          "terminal": "PT LOC HOLD: SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
           "audio": "A primeira água viva não é misericórdia. É linha de base.",
           "in_game_wiki": "A plataforma fótica é a camada de contraste. Ela prova ecologia nativa antes dos recifes de cabo e cicatrizes de reparo.",
           "external_site": "Define o bioma claro inicial: não um aquário seguro, mas a base viva que torna legível a corrupção profunda de Atlas."
@@ -156,7 +156,7 @@
           "title": "Leven op het lichtplateau",
           "scanner": "Het ondiepe plateau is helder, luid en nauwelijks veranderd. De maan is aan de oppervlakte niet dood.",
           "field_note": "Schoonheid is het controlemonster.",
-          "terminal": "Draft NL localization pending native pass. SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
+          "terminal": "NL LOC HOLD: SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.",
           "audio": "Het eerste levende water is geen genade. Het is de basislijn.",
           "in_game_wiki": "Het lichtplateau is de contrastlaag. Het bewijst native oceaanecologie vóór kabelriffen en reparatielittekens.",
           "external_site": "Dit heldere openingsbioom is geen veilig aquarium, maar de levende basis die diepe Atlas-corruptie leesbaar maakt."

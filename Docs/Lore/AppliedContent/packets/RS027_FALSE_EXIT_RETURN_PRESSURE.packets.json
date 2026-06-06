@@ -46,120 +46,120 @@
         },
         "ja_JP": {
           "title": "Material Exit Bitter Credits",
-          "scanner": "Draft JP localization pending native pass. You can leave richer and still fail the place.",
-          "field_note": "Draft JP localization pending native pass. This ending should be real credits, not a fake game over.",
-          "terminal": "Draft JP localization pending native pass. MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.",
-          "audio": "Draft JP localization pending native pass. The invoice clears before the names do.",
-          "in_game_wiki": "Draft JP localization pending native pass. A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.",
-          "external_site": "Draft JP localization pending native pass. Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid."
+          "scanner": "JP LOC HOLD: You can leave richer and still fail the place.",
+          "field_note": "JP LOC HOLD: This ending should be real credits, not a fake game over.",
+          "terminal": "JP LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.",
+          "audio": "JP LOC HOLD: The invoice clears before the names do.",
+          "in_game_wiki": "JP LOC HOLD: A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.",
+          "external_site": "JP LOC HOLD: Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid."
         },
         "zh_CN": {
           "title": "Material Exit Bitter Credits",
-          "scanner": "Draft CN localization pending native pass. You can leave richer and still fail the place.",
-          "field_note": "Draft CN localization pending native pass. This ending should be real credits, not a fake game over.",
-          "terminal": "Draft CN localization pending native pass. MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.",
-          "audio": "Draft CN localization pending native pass. The invoice clears before the names do.",
-          "in_game_wiki": "Draft CN localization pending native pass. A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.",
-          "external_site": "Draft CN localization pending native pass. Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid."
+          "scanner": "CN LOC HOLD: You can leave richer and still fail the place.",
+          "field_note": "CN LOC HOLD: This ending should be real credits, not a fake game over.",
+          "terminal": "CN LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.",
+          "audio": "CN LOC HOLD: The invoice clears before the names do.",
+          "in_game_wiki": "CN LOC HOLD: A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.",
+          "external_site": "CN LOC HOLD: Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid."
         },
         "fr_FR": {
           "title": "Material Exit Bitter Credits",
-          "scanner": "Draft FR localization pending native pass. You can leave richer and still fail the place.",
-          "field_note": "Draft FR localization pending native pass. This ending should be real credits, not a fake game over.",
-          "terminal": "Draft FR localization pending native pass. MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.",
-          "audio": "Draft FR localization pending native pass. The invoice clears before the names do.",
-          "in_game_wiki": "Draft FR localization pending native pass. A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.",
-          "external_site": "Draft FR localization pending native pass. Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid."
+          "scanner": "FR LOC HOLD: You can leave richer and still fail the place.",
+          "field_note": "FR LOC HOLD: This ending should be real credits, not a fake game over.",
+          "terminal": "FR LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.",
+          "audio": "FR LOC HOLD: The invoice clears before the names do.",
+          "in_game_wiki": "FR LOC HOLD: A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.",
+          "external_site": "FR LOC HOLD: Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid."
         },
         "es_ES": {
           "title": "Material Exit Bitter Credits",
-          "scanner": "Draft ES localization pending native pass. You can leave richer and still fail the place.",
-          "field_note": "Draft ES localization pending native pass. This ending should be real credits, not a fake game over.",
-          "terminal": "Draft ES localization pending native pass. MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.",
-          "audio": "Draft ES localization pending native pass. The invoice clears before the names do.",
-          "in_game_wiki": "Draft ES localization pending native pass. A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.",
-          "external_site": "Draft ES localization pending native pass. Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid."
+          "scanner": "ES LOC HOLD: You can leave richer and still fail the place.",
+          "field_note": "ES LOC HOLD: This ending should be real credits, not a fake game over.",
+          "terminal": "ES LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.",
+          "audio": "ES LOC HOLD: The invoice clears before the names do.",
+          "in_game_wiki": "ES LOC HOLD: A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.",
+          "external_site": "ES LOC HOLD: Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid."
         },
         "de_DE": {
           "title": "Material Exit Bitter Credits",
-          "scanner": "Draft DE localization pending native pass. You can leave richer and still fail the place.",
-          "field_note": "Draft DE localization pending native pass. This ending should be real credits, not a fake game over.",
-          "terminal": "Draft DE localization pending native pass. MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.",
-          "audio": "Draft DE localization pending native pass. The invoice clears before the names do.",
-          "in_game_wiki": "Draft DE localization pending native pass. A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.",
-          "external_site": "Draft DE localization pending native pass. Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid."
+          "scanner": "DE LOC HOLD: You can leave richer and still fail the place.",
+          "field_note": "DE LOC HOLD: This ending should be real credits, not a fake game over.",
+          "terminal": "DE LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.",
+          "audio": "DE LOC HOLD: The invoice clears before the names do.",
+          "in_game_wiki": "DE LOC HOLD: A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.",
+          "external_site": "DE LOC HOLD: Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid."
         },
         "pl_PL": {
           "title": "Material Exit Bitter Credits",
-          "scanner": "Draft PL localization pending native pass. You can leave richer and still fail the place.",
-          "field_note": "Draft PL localization pending native pass. This ending should be real credits, not a fake game over.",
-          "terminal": "Draft PL localization pending native pass. MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.",
-          "audio": "Draft PL localization pending native pass. The invoice clears before the names do.",
-          "in_game_wiki": "Draft PL localization pending native pass. A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.",
-          "external_site": "Draft PL localization pending native pass. Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid."
+          "scanner": "PL LOC HOLD: You can leave richer and still fail the place.",
+          "field_note": "PL LOC HOLD: This ending should be real credits, not a fake game over.",
+          "terminal": "PL LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.",
+          "audio": "PL LOC HOLD: The invoice clears before the names do.",
+          "in_game_wiki": "PL LOC HOLD: A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.",
+          "external_site": "PL LOC HOLD: Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid."
         },
         "uk_UA": {
           "title": "Material Exit Bitter Credits",
-          "scanner": "Draft UA localization pending native pass. You can leave richer and still fail the place.",
-          "field_note": "Draft UA localization pending native pass. This ending should be real credits, not a fake game over.",
-          "terminal": "Draft UA localization pending native pass. MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.",
-          "audio": "Draft UA localization pending native pass. The invoice clears before the names do.",
-          "in_game_wiki": "Draft UA localization pending native pass. A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.",
-          "external_site": "Draft UA localization pending native pass. Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid."
+          "scanner": "UA LOC HOLD: You can leave richer and still fail the place.",
+          "field_note": "UA LOC HOLD: This ending should be real credits, not a fake game over.",
+          "terminal": "UA LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.",
+          "audio": "UA LOC HOLD: The invoice clears before the names do.",
+          "in_game_wiki": "UA LOC HOLD: A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.",
+          "external_site": "UA LOC HOLD: Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid."
         },
         "ar_SA": {
           "title": "Material Exit Bitter Credits",
-          "scanner": "Draft AR localization pending native pass. You can leave richer and still fail the place.",
-          "field_note": "Draft AR localization pending native pass. This ending should be real credits, not a fake game over.",
-          "terminal": "Draft AR localization pending native pass. MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.",
-          "audio": "Draft AR localization pending native pass. The invoice clears before the names do.",
-          "in_game_wiki": "Draft AR localization pending native pass. A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.",
-          "external_site": "Draft AR localization pending native pass. Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid."
+          "scanner": "AR LOC HOLD: You can leave richer and still fail the place.",
+          "field_note": "AR LOC HOLD: This ending should be real credits, not a fake game over.",
+          "terminal": "AR LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.",
+          "audio": "AR LOC HOLD: The invoice clears before the names do.",
+          "in_game_wiki": "AR LOC HOLD: A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.",
+          "external_site": "AR LOC HOLD: Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid."
         },
         "id_ID": {
           "title": "Material Exit Bitter Credits",
-          "scanner": "Draft ID localization pending native pass. You can leave richer and still fail the place.",
-          "field_note": "Draft ID localization pending native pass. This ending should be real credits, not a fake game over.",
-          "terminal": "Draft ID localization pending native pass. MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.",
-          "audio": "Draft ID localization pending native pass. The invoice clears before the names do.",
-          "in_game_wiki": "Draft ID localization pending native pass. A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.",
-          "external_site": "Draft ID localization pending native pass. Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid."
+          "scanner": "ID LOC HOLD: You can leave richer and still fail the place.",
+          "field_note": "ID LOC HOLD: This ending should be real credits, not a fake game over.",
+          "terminal": "ID LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.",
+          "audio": "ID LOC HOLD: The invoice clears before the names do.",
+          "in_game_wiki": "ID LOC HOLD: A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.",
+          "external_site": "ID LOC HOLD: Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid."
         },
         "ko_KR": {
           "title": "Material Exit Bitter Credits",
-          "scanner": "Draft KO localization pending native pass. You can leave richer and still fail the place.",
-          "field_note": "Draft KO localization pending native pass. This ending should be real credits, not a fake game over.",
-          "terminal": "Draft KO localization pending native pass. MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.",
-          "audio": "Draft KO localization pending native pass. The invoice clears before the names do.",
-          "in_game_wiki": "Draft KO localization pending native pass. A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.",
-          "external_site": "Draft KO localization pending native pass. Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid."
+          "scanner": "KO LOC HOLD: You can leave richer and still fail the place.",
+          "field_note": "KO LOC HOLD: This ending should be real credits, not a fake game over.",
+          "terminal": "KO LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.",
+          "audio": "KO LOC HOLD: The invoice clears before the names do.",
+          "in_game_wiki": "KO LOC HOLD: A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.",
+          "external_site": "KO LOC HOLD: Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid."
         },
         "he_IL": {
           "title": "Material Exit Bitter Credits",
-          "scanner": "Draft HE localization pending native pass. You can leave richer and still fail the place.",
-          "field_note": "Draft HE localization pending native pass. This ending should be real credits, not a fake game over.",
-          "terminal": "Draft HE localization pending native pass. MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.",
-          "audio": "Draft HE localization pending native pass. The invoice clears before the names do.",
-          "in_game_wiki": "Draft HE localization pending native pass. A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.",
-          "external_site": "Draft HE localization pending native pass. Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid."
+          "scanner": "HE LOC HOLD: You can leave richer and still fail the place.",
+          "field_note": "HE LOC HOLD: This ending should be real credits, not a fake game over.",
+          "terminal": "HE LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.",
+          "audio": "HE LOC HOLD: The invoice clears before the names do.",
+          "in_game_wiki": "HE LOC HOLD: A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.",
+          "external_site": "HE LOC HOLD: Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid."
         },
         "pt_BR": {
           "title": "Material Exit Bitter Credits",
-          "scanner": "Draft PT localization pending native pass. You can leave richer and still fail the place.",
-          "field_note": "Draft PT localization pending native pass. This ending should be real credits, not a fake game over.",
-          "terminal": "Draft PT localization pending native pass. MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.",
-          "audio": "Draft PT localization pending native pass. The invoice clears before the names do.",
-          "in_game_wiki": "Draft PT localization pending native pass. A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.",
-          "external_site": "Draft PT localization pending native pass. Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid."
+          "scanner": "PT LOC HOLD: You can leave richer and still fail the place.",
+          "field_note": "PT LOC HOLD: This ending should be real credits, not a fake game over.",
+          "terminal": "PT LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.",
+          "audio": "PT LOC HOLD: The invoice clears before the names do.",
+          "in_game_wiki": "PT LOC HOLD: A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.",
+          "external_site": "PT LOC HOLD: Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid."
         },
         "nl_NL": {
           "title": "Material Exit Bitter Credits",
-          "scanner": "Draft NL localization pending native pass. You can leave richer and still fail the place.",
-          "field_note": "Draft NL localization pending native pass. This ending should be real credits, not a fake game over.",
-          "terminal": "Draft NL localization pending native pass. MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.",
-          "audio": "Draft NL localization pending native pass. The invoice clears before the names do.",
-          "in_game_wiki": "Draft NL localization pending native pass. A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.",
-          "external_site": "Draft NL localization pending native pass. Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid."
+          "scanner": "NL LOC HOLD: You can leave richer and still fail the place.",
+          "field_note": "NL LOC HOLD: This ending should be real credits, not a fake game over.",
+          "terminal": "NL LOC HOLD: MATERIAL EXIT: recovered pressure material accepted. Claim lien reduced. Evidence payload incomplete. Missing-worker records remain unreconciled. Deep Reach recovery priority improves.",
+          "audio": "NL LOC HOLD: The invoice clears before the names do.",
+          "in_game_wiki": "NL LOC HOLD: A material exit pays the player without resolving HECTON-8. It is a valid ending for a Marauder who treats the moon as work. It becomes bitter because the payout strengthens the systems that kept the crime shallow.",
+          "external_site": "NL LOC HOLD: Material Exit Bitter Credits makes the salvage-success ending morally compromised without making it invalid."
         }
       }
     },
@@ -201,120 +201,120 @@
         },
         "ja_JP": {
           "title": "Partial Exit Same-Seed Return",
-          "scanner": "Draft JP localization pending native pass. Extraction possible. Closure not included.",
-          "field_note": "Draft JP localization pending native pass. Let the player breathe, then make the same ocean still be there.",
-          "terminal": "Draft JP localization pending native pass. PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.",
-          "audio": "Draft JP localization pending native pass. You left the pressure. You did not leave the contract.",
-          "in_game_wiki": "Draft JP localization pending native pass. Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.",
-          "external_site": "Draft JP localization pending native pass. Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed."
+          "scanner": "JP LOC HOLD: Extraction possible. Closure not included.",
+          "field_note": "JP LOC HOLD: Let the player breathe, then make the same ocean still be there.",
+          "terminal": "JP LOC HOLD: PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.",
+          "audio": "JP LOC HOLD: You left the pressure. You did not leave the contract.",
+          "in_game_wiki": "JP LOC HOLD: Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.",
+          "external_site": "JP LOC HOLD: Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed."
         },
         "zh_CN": {
           "title": "Partial Exit Same-Seed Return",
-          "scanner": "Draft CN localization pending native pass. Extraction possible. Closure not included.",
-          "field_note": "Draft CN localization pending native pass. Let the player breathe, then make the same ocean still be there.",
-          "terminal": "Draft CN localization pending native pass. PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.",
-          "audio": "Draft CN localization pending native pass. You left the pressure. You did not leave the contract.",
-          "in_game_wiki": "Draft CN localization pending native pass. Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.",
-          "external_site": "Draft CN localization pending native pass. Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed."
+          "scanner": "CN LOC HOLD: Extraction possible. Closure not included.",
+          "field_note": "CN LOC HOLD: Let the player breathe, then make the same ocean still be there.",
+          "terminal": "CN LOC HOLD: PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.",
+          "audio": "CN LOC HOLD: You left the pressure. You did not leave the contract.",
+          "in_game_wiki": "CN LOC HOLD: Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.",
+          "external_site": "CN LOC HOLD: Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed."
         },
         "fr_FR": {
           "title": "Partial Exit Same-Seed Return",
-          "scanner": "Draft FR localization pending native pass. Extraction possible. Closure not included.",
-          "field_note": "Draft FR localization pending native pass. Let the player breathe, then make the same ocean still be there.",
-          "terminal": "Draft FR localization pending native pass. PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.",
-          "audio": "Draft FR localization pending native pass. You left the pressure. You did not leave the contract.",
-          "in_game_wiki": "Draft FR localization pending native pass. Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.",
-          "external_site": "Draft FR localization pending native pass. Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed."
+          "scanner": "FR LOC HOLD: Extraction possible. Closure not included.",
+          "field_note": "FR LOC HOLD: Let the player breathe, then make the same ocean still be there.",
+          "terminal": "FR LOC HOLD: PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.",
+          "audio": "FR LOC HOLD: You left the pressure. You did not leave the contract.",
+          "in_game_wiki": "FR LOC HOLD: Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.",
+          "external_site": "FR LOC HOLD: Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed."
         },
         "es_ES": {
           "title": "Partial Exit Same-Seed Return",
-          "scanner": "Draft ES localization pending native pass. Extraction possible. Closure not included.",
-          "field_note": "Draft ES localization pending native pass. Let the player breathe, then make the same ocean still be there.",
-          "terminal": "Draft ES localization pending native pass. PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.",
-          "audio": "Draft ES localization pending native pass. You left the pressure. You did not leave the contract.",
-          "in_game_wiki": "Draft ES localization pending native pass. Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.",
-          "external_site": "Draft ES localization pending native pass. Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed."
+          "scanner": "ES LOC HOLD: Extraction possible. Closure not included.",
+          "field_note": "ES LOC HOLD: Let the player breathe, then make the same ocean still be there.",
+          "terminal": "ES LOC HOLD: PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.",
+          "audio": "ES LOC HOLD: You left the pressure. You did not leave the contract.",
+          "in_game_wiki": "ES LOC HOLD: Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.",
+          "external_site": "ES LOC HOLD: Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed."
         },
         "de_DE": {
           "title": "Partial Exit Same-Seed Return",
-          "scanner": "Draft DE localization pending native pass. Extraction possible. Closure not included.",
-          "field_note": "Draft DE localization pending native pass. Let the player breathe, then make the same ocean still be there.",
-          "terminal": "Draft DE localization pending native pass. PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.",
-          "audio": "Draft DE localization pending native pass. You left the pressure. You did not leave the contract.",
-          "in_game_wiki": "Draft DE localization pending native pass. Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.",
-          "external_site": "Draft DE localization pending native pass. Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed."
+          "scanner": "DE LOC HOLD: Extraction possible. Closure not included.",
+          "field_note": "DE LOC HOLD: Let the player breathe, then make the same ocean still be there.",
+          "terminal": "DE LOC HOLD: PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.",
+          "audio": "DE LOC HOLD: You left the pressure. You did not leave the contract.",
+          "in_game_wiki": "DE LOC HOLD: Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.",
+          "external_site": "DE LOC HOLD: Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed."
         },
         "pl_PL": {
           "title": "Partial Exit Same-Seed Return",
-          "scanner": "Draft PL localization pending native pass. Extraction possible. Closure not included.",
-          "field_note": "Draft PL localization pending native pass. Let the player breathe, then make the same ocean still be there.",
-          "terminal": "Draft PL localization pending native pass. PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.",
-          "audio": "Draft PL localization pending native pass. You left the pressure. You did not leave the contract.",
-          "in_game_wiki": "Draft PL localization pending native pass. Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.",
-          "external_site": "Draft PL localization pending native pass. Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed."
+          "scanner": "PL LOC HOLD: Extraction possible. Closure not included.",
+          "field_note": "PL LOC HOLD: Let the player breathe, then make the same ocean still be there.",
+          "terminal": "PL LOC HOLD: PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.",
+          "audio": "PL LOC HOLD: You left the pressure. You did not leave the contract.",
+          "in_game_wiki": "PL LOC HOLD: Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.",
+          "external_site": "PL LOC HOLD: Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed."
         },
         "uk_UA": {
           "title": "Partial Exit Same-Seed Return",
-          "scanner": "Draft UA localization pending native pass. Extraction possible. Closure not included.",
-          "field_note": "Draft UA localization pending native pass. Let the player breathe, then make the same ocean still be there.",
-          "terminal": "Draft UA localization pending native pass. PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.",
-          "audio": "Draft UA localization pending native pass. You left the pressure. You did not leave the contract.",
-          "in_game_wiki": "Draft UA localization pending native pass. Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.",
-          "external_site": "Draft UA localization pending native pass. Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed."
+          "scanner": "UA LOC HOLD: Extraction possible. Closure not included.",
+          "field_note": "UA LOC HOLD: Let the player breathe, then make the same ocean still be there.",
+          "terminal": "UA LOC HOLD: PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.",
+          "audio": "UA LOC HOLD: You left the pressure. You did not leave the contract.",
+          "in_game_wiki": "UA LOC HOLD: Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.",
+          "external_site": "UA LOC HOLD: Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed."
         },
         "ar_SA": {
           "title": "Partial Exit Same-Seed Return",
-          "scanner": "Draft AR localization pending native pass. Extraction possible. Closure not included.",
-          "field_note": "Draft AR localization pending native pass. Let the player breathe, then make the same ocean still be there.",
-          "terminal": "Draft AR localization pending native pass. PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.",
-          "audio": "Draft AR localization pending native pass. You left the pressure. You did not leave the contract.",
-          "in_game_wiki": "Draft AR localization pending native pass. Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.",
-          "external_site": "Draft AR localization pending native pass. Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed."
+          "scanner": "AR LOC HOLD: Extraction possible. Closure not included.",
+          "field_note": "AR LOC HOLD: Let the player breathe, then make the same ocean still be there.",
+          "terminal": "AR LOC HOLD: PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.",
+          "audio": "AR LOC HOLD: You left the pressure. You did not leave the contract.",
+          "in_game_wiki": "AR LOC HOLD: Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.",
+          "external_site": "AR LOC HOLD: Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed."
         },
         "id_ID": {
           "title": "Partial Exit Same-Seed Return",
-          "scanner": "Draft ID localization pending native pass. Extraction possible. Closure not included.",
-          "field_note": "Draft ID localization pending native pass. Let the player breathe, then make the same ocean still be there.",
-          "terminal": "Draft ID localization pending native pass. PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.",
-          "audio": "Draft ID localization pending native pass. You left the pressure. You did not leave the contract.",
-          "in_game_wiki": "Draft ID localization pending native pass. Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.",
-          "external_site": "Draft ID localization pending native pass. Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed."
+          "scanner": "ID LOC HOLD: Extraction possible. Closure not included.",
+          "field_note": "ID LOC HOLD: Let the player breathe, then make the same ocean still be there.",
+          "terminal": "ID LOC HOLD: PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.",
+          "audio": "ID LOC HOLD: You left the pressure. You did not leave the contract.",
+          "in_game_wiki": "ID LOC HOLD: Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.",
+          "external_site": "ID LOC HOLD: Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed."
         },
         "ko_KR": {
           "title": "Partial Exit Same-Seed Return",
-          "scanner": "Draft KO localization pending native pass. Extraction possible. Closure not included.",
-          "field_note": "Draft KO localization pending native pass. Let the player breathe, then make the same ocean still be there.",
-          "terminal": "Draft KO localization pending native pass. PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.",
-          "audio": "Draft KO localization pending native pass. You left the pressure. You did not leave the contract.",
-          "in_game_wiki": "Draft KO localization pending native pass. Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.",
-          "external_site": "Draft KO localization pending native pass. Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed."
+          "scanner": "KO LOC HOLD: Extraction possible. Closure not included.",
+          "field_note": "KO LOC HOLD: Let the player breathe, then make the same ocean still be there.",
+          "terminal": "KO LOC HOLD: PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.",
+          "audio": "KO LOC HOLD: You left the pressure. You did not leave the contract.",
+          "in_game_wiki": "KO LOC HOLD: Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.",
+          "external_site": "KO LOC HOLD: Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed."
         },
         "he_IL": {
           "title": "Partial Exit Same-Seed Return",
-          "scanner": "Draft HE localization pending native pass. Extraction possible. Closure not included.",
-          "field_note": "Draft HE localization pending native pass. Let the player breathe, then make the same ocean still be there.",
-          "terminal": "Draft HE localization pending native pass. PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.",
-          "audio": "Draft HE localization pending native pass. You left the pressure. You did not leave the contract.",
-          "in_game_wiki": "Draft HE localization pending native pass. Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.",
-          "external_site": "Draft HE localization pending native pass. Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed."
+          "scanner": "HE LOC HOLD: Extraction possible. Closure not included.",
+          "field_note": "HE LOC HOLD: Let the player breathe, then make the same ocean still be there.",
+          "terminal": "HE LOC HOLD: PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.",
+          "audio": "HE LOC HOLD: You left the pressure. You did not leave the contract.",
+          "in_game_wiki": "HE LOC HOLD: Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.",
+          "external_site": "HE LOC HOLD: Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed."
         },
         "pt_BR": {
           "title": "Partial Exit Same-Seed Return",
-          "scanner": "Draft PT localization pending native pass. Extraction possible. Closure not included.",
-          "field_note": "Draft PT localization pending native pass. Let the player breathe, then make the same ocean still be there.",
-          "terminal": "Draft PT localization pending native pass. PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.",
-          "audio": "Draft PT localization pending native pass. You left the pressure. You did not leave the contract.",
-          "in_game_wiki": "Draft PT localization pending native pass. Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.",
-          "external_site": "Draft PT localization pending native pass. Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed."
+          "scanner": "PT LOC HOLD: Extraction possible. Closure not included.",
+          "field_note": "PT LOC HOLD: Let the player breathe, then make the same ocean still be there.",
+          "terminal": "PT LOC HOLD: PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.",
+          "audio": "PT LOC HOLD: You left the pressure. You did not leave the contract.",
+          "in_game_wiki": "PT LOC HOLD: Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.",
+          "external_site": "PT LOC HOLD: Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed."
         },
         "nl_NL": {
           "title": "Partial Exit Same-Seed Return",
-          "scanner": "Draft NL localization pending native pass. Extraction possible. Closure not included.",
-          "field_note": "Draft NL localization pending native pass. Let the player breathe, then make the same ocean still be there.",
-          "terminal": "Draft NL localization pending native pass. PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.",
-          "audio": "Draft NL localization pending native pass. You left the pressure. You did not leave the contract.",
-          "in_game_wiki": "Draft NL localization pending native pass. Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.",
-          "external_site": "Draft NL localization pending native pass. Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed."
+          "scanner": "NL LOC HOLD: Extraction possible. Closure not included.",
+          "field_note": "NL LOC HOLD: Let the player breathe, then make the same ocean still be there.",
+          "terminal": "NL LOC HOLD: PARTIAL EXIT: Black Keel accepts temporary pickup. Same-seed return authorized under lien extension. Route warnings and recovered packet custody persist; world truth and geology remain the same.",
+          "audio": "NL LOC HOLD: You left the pressure. You did not leave the contract.",
+          "in_game_wiki": "NL LOC HOLD: Partial Exit is not a retry button. It is a real extraction window that returns the player to the same generated HECTON-8. The ocean, discovered routes, unresolved evidence and pressure geography remain waiting.",
+          "external_site": "NL LOC HOLD: Partial Exit Same-Seed Return gives the campaign room to breathe without breaking the long-form exploration seed."
         }
       }
     },
@@ -356,120 +356,120 @@
         },
         "ja_JP": {
           "title": "Corporate Capture Bad End",
-          "scanner": "Draft JP localization pending native pass. Rescue offer. Payload first. Witness second.",
-          "field_note": "Draft JP localization pending native pass. A rescue that demands silence is a capture with better lighting.",
-          "terminal": "Draft JP localization pending native pass. DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.",
-          "audio": "Draft JP localization pending native pass. The clean room is not for you.",
-          "in_game_wiki": "Draft JP localization pending native pass. Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.",
-          "external_site": "Draft JP localization pending native pass. Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call."
+          "scanner": "JP LOC HOLD: Rescue offer. Payload first. Witness second.",
+          "field_note": "JP LOC HOLD: A rescue that demands silence is a capture with better lighting.",
+          "terminal": "JP LOC HOLD: DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.",
+          "audio": "JP LOC HOLD: The clean room is not for you.",
+          "in_game_wiki": "JP LOC HOLD: Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.",
+          "external_site": "JP LOC HOLD: Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call."
         },
         "zh_CN": {
           "title": "Corporate Capture Bad End",
-          "scanner": "Draft CN localization pending native pass. Rescue offer. Payload first. Witness second.",
-          "field_note": "Draft CN localization pending native pass. A rescue that demands silence is a capture with better lighting.",
-          "terminal": "Draft CN localization pending native pass. DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.",
-          "audio": "Draft CN localization pending native pass. The clean room is not for you.",
-          "in_game_wiki": "Draft CN localization pending native pass. Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.",
-          "external_site": "Draft CN localization pending native pass. Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call."
+          "scanner": "CN LOC HOLD: Rescue offer. Payload first. Witness second.",
+          "field_note": "CN LOC HOLD: A rescue that demands silence is a capture with better lighting.",
+          "terminal": "CN LOC HOLD: DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.",
+          "audio": "CN LOC HOLD: The clean room is not for you.",
+          "in_game_wiki": "CN LOC HOLD: Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.",
+          "external_site": "CN LOC HOLD: Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call."
         },
         "fr_FR": {
           "title": "Corporate Capture Bad End",
-          "scanner": "Draft FR localization pending native pass. Rescue offer. Payload first. Witness second.",
-          "field_note": "Draft FR localization pending native pass. A rescue that demands silence is a capture with better lighting.",
-          "terminal": "Draft FR localization pending native pass. DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.",
-          "audio": "Draft FR localization pending native pass. The clean room is not for you.",
-          "in_game_wiki": "Draft FR localization pending native pass. Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.",
-          "external_site": "Draft FR localization pending native pass. Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call."
+          "scanner": "FR LOC HOLD: Rescue offer. Payload first. Witness second.",
+          "field_note": "FR LOC HOLD: A rescue that demands silence is a capture with better lighting.",
+          "terminal": "FR LOC HOLD: DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.",
+          "audio": "FR LOC HOLD: The clean room is not for you.",
+          "in_game_wiki": "FR LOC HOLD: Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.",
+          "external_site": "FR LOC HOLD: Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call."
         },
         "es_ES": {
           "title": "Corporate Capture Bad End",
-          "scanner": "Draft ES localization pending native pass. Rescue offer. Payload first. Witness second.",
-          "field_note": "Draft ES localization pending native pass. A rescue that demands silence is a capture with better lighting.",
-          "terminal": "Draft ES localization pending native pass. DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.",
-          "audio": "Draft ES localization pending native pass. The clean room is not for you.",
-          "in_game_wiki": "Draft ES localization pending native pass. Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.",
-          "external_site": "Draft ES localization pending native pass. Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call."
+          "scanner": "ES LOC HOLD: Rescue offer. Payload first. Witness second.",
+          "field_note": "ES LOC HOLD: A rescue that demands silence is a capture with better lighting.",
+          "terminal": "ES LOC HOLD: DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.",
+          "audio": "ES LOC HOLD: The clean room is not for you.",
+          "in_game_wiki": "ES LOC HOLD: Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.",
+          "external_site": "ES LOC HOLD: Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call."
         },
         "de_DE": {
           "title": "Corporate Capture Bad End",
-          "scanner": "Draft DE localization pending native pass. Rescue offer. Payload first. Witness second.",
-          "field_note": "Draft DE localization pending native pass. A rescue that demands silence is a capture with better lighting.",
-          "terminal": "Draft DE localization pending native pass. DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.",
-          "audio": "Draft DE localization pending native pass. The clean room is not for you.",
-          "in_game_wiki": "Draft DE localization pending native pass. Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.",
-          "external_site": "Draft DE localization pending native pass. Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call."
+          "scanner": "DE LOC HOLD: Rescue offer. Payload first. Witness second.",
+          "field_note": "DE LOC HOLD: A rescue that demands silence is a capture with better lighting.",
+          "terminal": "DE LOC HOLD: DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.",
+          "audio": "DE LOC HOLD: The clean room is not for you.",
+          "in_game_wiki": "DE LOC HOLD: Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.",
+          "external_site": "DE LOC HOLD: Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call."
         },
         "pl_PL": {
           "title": "Corporate Capture Bad End",
-          "scanner": "Draft PL localization pending native pass. Rescue offer. Payload first. Witness second.",
-          "field_note": "Draft PL localization pending native pass. A rescue that demands silence is a capture with better lighting.",
-          "terminal": "Draft PL localization pending native pass. DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.",
-          "audio": "Draft PL localization pending native pass. The clean room is not for you.",
-          "in_game_wiki": "Draft PL localization pending native pass. Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.",
-          "external_site": "Draft PL localization pending native pass. Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call."
+          "scanner": "PL LOC HOLD: Rescue offer. Payload first. Witness second.",
+          "field_note": "PL LOC HOLD: A rescue that demands silence is a capture with better lighting.",
+          "terminal": "PL LOC HOLD: DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.",
+          "audio": "PL LOC HOLD: The clean room is not for you.",
+          "in_game_wiki": "PL LOC HOLD: Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.",
+          "external_site": "PL LOC HOLD: Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call."
         },
         "uk_UA": {
           "title": "Corporate Capture Bad End",
-          "scanner": "Draft UA localization pending native pass. Rescue offer. Payload first. Witness second.",
-          "field_note": "Draft UA localization pending native pass. A rescue that demands silence is a capture with better lighting.",
-          "terminal": "Draft UA localization pending native pass. DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.",
-          "audio": "Draft UA localization pending native pass. The clean room is not for you.",
-          "in_game_wiki": "Draft UA localization pending native pass. Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.",
-          "external_site": "Draft UA localization pending native pass. Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call."
+          "scanner": "UA LOC HOLD: Rescue offer. Payload first. Witness second.",
+          "field_note": "UA LOC HOLD: A rescue that demands silence is a capture with better lighting.",
+          "terminal": "UA LOC HOLD: DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.",
+          "audio": "UA LOC HOLD: The clean room is not for you.",
+          "in_game_wiki": "UA LOC HOLD: Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.",
+          "external_site": "UA LOC HOLD: Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call."
         },
         "ar_SA": {
           "title": "Corporate Capture Bad End",
-          "scanner": "Draft AR localization pending native pass. Rescue offer. Payload first. Witness second.",
-          "field_note": "Draft AR localization pending native pass. A rescue that demands silence is a capture with better lighting.",
-          "terminal": "Draft AR localization pending native pass. DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.",
-          "audio": "Draft AR localization pending native pass. The clean room is not for you.",
-          "in_game_wiki": "Draft AR localization pending native pass. Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.",
-          "external_site": "Draft AR localization pending native pass. Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call."
+          "scanner": "AR LOC HOLD: Rescue offer. Payload first. Witness second.",
+          "field_note": "AR LOC HOLD: A rescue that demands silence is a capture with better lighting.",
+          "terminal": "AR LOC HOLD: DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.",
+          "audio": "AR LOC HOLD: The clean room is not for you.",
+          "in_game_wiki": "AR LOC HOLD: Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.",
+          "external_site": "AR LOC HOLD: Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call."
         },
         "id_ID": {
           "title": "Corporate Capture Bad End",
-          "scanner": "Draft ID localization pending native pass. Rescue offer. Payload first. Witness second.",
-          "field_note": "Draft ID localization pending native pass. A rescue that demands silence is a capture with better lighting.",
-          "terminal": "Draft ID localization pending native pass. DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.",
-          "audio": "Draft ID localization pending native pass. The clean room is not for you.",
-          "in_game_wiki": "Draft ID localization pending native pass. Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.",
-          "external_site": "Draft ID localization pending native pass. Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call."
+          "scanner": "ID LOC HOLD: Rescue offer. Payload first. Witness second.",
+          "field_note": "ID LOC HOLD: A rescue that demands silence is a capture with better lighting.",
+          "terminal": "ID LOC HOLD: DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.",
+          "audio": "ID LOC HOLD: The clean room is not for you.",
+          "in_game_wiki": "ID LOC HOLD: Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.",
+          "external_site": "ID LOC HOLD: Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call."
         },
         "ko_KR": {
           "title": "Corporate Capture Bad End",
-          "scanner": "Draft KO localization pending native pass. Rescue offer. Payload first. Witness second.",
-          "field_note": "Draft KO localization pending native pass. A rescue that demands silence is a capture with better lighting.",
-          "terminal": "Draft KO localization pending native pass. DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.",
-          "audio": "Draft KO localization pending native pass. The clean room is not for you.",
-          "in_game_wiki": "Draft KO localization pending native pass. Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.",
-          "external_site": "Draft KO localization pending native pass. Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call."
+          "scanner": "KO LOC HOLD: Rescue offer. Payload first. Witness second.",
+          "field_note": "KO LOC HOLD: A rescue that demands silence is a capture with better lighting.",
+          "terminal": "KO LOC HOLD: DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.",
+          "audio": "KO LOC HOLD: The clean room is not for you.",
+          "in_game_wiki": "KO LOC HOLD: Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.",
+          "external_site": "KO LOC HOLD: Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call."
         },
         "he_IL": {
           "title": "Corporate Capture Bad End",
-          "scanner": "Draft HE localization pending native pass. Rescue offer. Payload first. Witness second.",
-          "field_note": "Draft HE localization pending native pass. A rescue that demands silence is a capture with better lighting.",
-          "terminal": "Draft HE localization pending native pass. DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.",
-          "audio": "Draft HE localization pending native pass. The clean room is not for you.",
-          "in_game_wiki": "Draft HE localization pending native pass. Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.",
-          "external_site": "Draft HE localization pending native pass. Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call."
+          "scanner": "HE LOC HOLD: Rescue offer. Payload first. Witness second.",
+          "field_note": "HE LOC HOLD: A rescue that demands silence is a capture with better lighting.",
+          "terminal": "HE LOC HOLD: DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.",
+          "audio": "HE LOC HOLD: The clean room is not for you.",
+          "in_game_wiki": "HE LOC HOLD: Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.",
+          "external_site": "HE LOC HOLD: Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call."
         },
         "pt_BR": {
           "title": "Corporate Capture Bad End",
-          "scanner": "Draft PT localization pending native pass. Rescue offer. Payload first. Witness second.",
-          "field_note": "Draft PT localization pending native pass. A rescue that demands silence is a capture with better lighting.",
-          "terminal": "Draft PT localization pending native pass. DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.",
-          "audio": "Draft PT localization pending native pass. The clean room is not for you.",
-          "in_game_wiki": "Draft PT localization pending native pass. Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.",
-          "external_site": "Draft PT localization pending native pass. Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call."
+          "scanner": "PT LOC HOLD: Rescue offer. Payload first. Witness second.",
+          "field_note": "PT LOC HOLD: A rescue that demands silence is a capture with better lighting.",
+          "terminal": "PT LOC HOLD: DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.",
+          "audio": "PT LOC HOLD: The clean room is not for you.",
+          "in_game_wiki": "PT LOC HOLD: Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.",
+          "external_site": "PT LOC HOLD: Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call."
         },
         "nl_NL": {
           "title": "Corporate Capture Bad End",
-          "scanner": "Draft NL localization pending native pass. Rescue offer. Payload first. Witness second.",
-          "field_note": "Draft NL localization pending native pass. A rescue that demands silence is a capture with better lighting.",
-          "terminal": "Draft NL localization pending native pass. DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.",
-          "audio": "Draft NL localization pending native pass. The clean room is not for you.",
-          "in_game_wiki": "Draft NL localization pending native pass. Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.",
-          "external_site": "Draft NL localization pending native pass. Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call."
+          "scanner": "NL LOC HOLD: Rescue offer. Payload first. Witness second.",
+          "field_note": "NL LOC HOLD: A rescue that demands silence is a capture with better lighting.",
+          "terminal": "NL LOC HOLD: DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.",
+          "audio": "NL LOC HOLD: The clean room is not for you.",
+          "in_game_wiki": "NL LOC HOLD: Corporate Capture is a bad ending built from a plausible rescue offer. Deep Reach recovers payload and contains the witness. It should feel like the player escaped the ocean into a more sterile pressure vessel.",
+          "external_site": "NL LOC HOLD: Corporate Capture Bad End makes rescue itself suspect when the wrong authority answers the call."
         }
       }
     },
@@ -511,120 +511,120 @@
         },
         "ja_JP": {
           "title": "Quarantine Hold Stale Air",
-          "scanner": "Draft JP localization pending native pass. You are alive, sealed, and still not free.",
-          "field_note": "Draft JP localization pending native pass. This is the bureaucratic version of drowning.",
-          "terminal": "Draft JP localization pending native pass. QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.",
-          "audio": "Draft JP localization pending native pass. The hatch opens only to another closed hatch.",
-          "in_game_wiki": "Draft JP localization pending native pass. Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.",
-          "external_site": "Draft JP localization pending native pass. Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory."
+          "scanner": "JP LOC HOLD: You are alive, sealed, and still not free.",
+          "field_note": "JP LOC HOLD: This is the bureaucratic version of drowning.",
+          "terminal": "JP LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.",
+          "audio": "JP LOC HOLD: The hatch opens only to another closed hatch.",
+          "in_game_wiki": "JP LOC HOLD: Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.",
+          "external_site": "JP LOC HOLD: Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory."
         },
         "zh_CN": {
           "title": "Quarantine Hold Stale Air",
-          "scanner": "Draft CN localization pending native pass. You are alive, sealed, and still not free.",
-          "field_note": "Draft CN localization pending native pass. This is the bureaucratic version of drowning.",
-          "terminal": "Draft CN localization pending native pass. QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.",
-          "audio": "Draft CN localization pending native pass. The hatch opens only to another closed hatch.",
-          "in_game_wiki": "Draft CN localization pending native pass. Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.",
-          "external_site": "Draft CN localization pending native pass. Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory."
+          "scanner": "CN LOC HOLD: You are alive, sealed, and still not free.",
+          "field_note": "CN LOC HOLD: This is the bureaucratic version of drowning.",
+          "terminal": "CN LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.",
+          "audio": "CN LOC HOLD: The hatch opens only to another closed hatch.",
+          "in_game_wiki": "CN LOC HOLD: Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.",
+          "external_site": "CN LOC HOLD: Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory."
         },
         "fr_FR": {
           "title": "Quarantine Hold Stale Air",
-          "scanner": "Draft FR localization pending native pass. You are alive, sealed, and still not free.",
-          "field_note": "Draft FR localization pending native pass. This is the bureaucratic version of drowning.",
-          "terminal": "Draft FR localization pending native pass. QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.",
-          "audio": "Draft FR localization pending native pass. The hatch opens only to another closed hatch.",
-          "in_game_wiki": "Draft FR localization pending native pass. Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.",
-          "external_site": "Draft FR localization pending native pass. Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory."
+          "scanner": "FR LOC HOLD: You are alive, sealed, and still not free.",
+          "field_note": "FR LOC HOLD: This is the bureaucratic version of drowning.",
+          "terminal": "FR LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.",
+          "audio": "FR LOC HOLD: The hatch opens only to another closed hatch.",
+          "in_game_wiki": "FR LOC HOLD: Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.",
+          "external_site": "FR LOC HOLD: Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory."
         },
         "es_ES": {
           "title": "Quarantine Hold Stale Air",
-          "scanner": "Draft ES localization pending native pass. You are alive, sealed, and still not free.",
-          "field_note": "Draft ES localization pending native pass. This is the bureaucratic version of drowning.",
-          "terminal": "Draft ES localization pending native pass. QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.",
-          "audio": "Draft ES localization pending native pass. The hatch opens only to another closed hatch.",
-          "in_game_wiki": "Draft ES localization pending native pass. Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.",
-          "external_site": "Draft ES localization pending native pass. Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory."
+          "scanner": "ES LOC HOLD: You are alive, sealed, and still not free.",
+          "field_note": "ES LOC HOLD: This is the bureaucratic version of drowning.",
+          "terminal": "ES LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.",
+          "audio": "ES LOC HOLD: The hatch opens only to another closed hatch.",
+          "in_game_wiki": "ES LOC HOLD: Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.",
+          "external_site": "ES LOC HOLD: Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory."
         },
         "de_DE": {
           "title": "Quarantine Hold Stale Air",
-          "scanner": "Draft DE localization pending native pass. You are alive, sealed, and still not free.",
-          "field_note": "Draft DE localization pending native pass. This is the bureaucratic version of drowning.",
-          "terminal": "Draft DE localization pending native pass. QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.",
-          "audio": "Draft DE localization pending native pass. The hatch opens only to another closed hatch.",
-          "in_game_wiki": "Draft DE localization pending native pass. Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.",
-          "external_site": "Draft DE localization pending native pass. Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory."
+          "scanner": "DE LOC HOLD: You are alive, sealed, and still not free.",
+          "field_note": "DE LOC HOLD: This is the bureaucratic version of drowning.",
+          "terminal": "DE LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.",
+          "audio": "DE LOC HOLD: The hatch opens only to another closed hatch.",
+          "in_game_wiki": "DE LOC HOLD: Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.",
+          "external_site": "DE LOC HOLD: Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory."
         },
         "pl_PL": {
           "title": "Quarantine Hold Stale Air",
-          "scanner": "Draft PL localization pending native pass. You are alive, sealed, and still not free.",
-          "field_note": "Draft PL localization pending native pass. This is the bureaucratic version of drowning.",
-          "terminal": "Draft PL localization pending native pass. QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.",
-          "audio": "Draft PL localization pending native pass. The hatch opens only to another closed hatch.",
-          "in_game_wiki": "Draft PL localization pending native pass. Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.",
-          "external_site": "Draft PL localization pending native pass. Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory."
+          "scanner": "PL LOC HOLD: You are alive, sealed, and still not free.",
+          "field_note": "PL LOC HOLD: This is the bureaucratic version of drowning.",
+          "terminal": "PL LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.",
+          "audio": "PL LOC HOLD: The hatch opens only to another closed hatch.",
+          "in_game_wiki": "PL LOC HOLD: Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.",
+          "external_site": "PL LOC HOLD: Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory."
         },
         "uk_UA": {
           "title": "Quarantine Hold Stale Air",
-          "scanner": "Draft UA localization pending native pass. You are alive, sealed, and still not free.",
-          "field_note": "Draft UA localization pending native pass. This is the bureaucratic version of drowning.",
-          "terminal": "Draft UA localization pending native pass. QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.",
-          "audio": "Draft UA localization pending native pass. The hatch opens only to another closed hatch.",
-          "in_game_wiki": "Draft UA localization pending native pass. Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.",
-          "external_site": "Draft UA localization pending native pass. Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory."
+          "scanner": "UA LOC HOLD: You are alive, sealed, and still not free.",
+          "field_note": "UA LOC HOLD: This is the bureaucratic version of drowning.",
+          "terminal": "UA LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.",
+          "audio": "UA LOC HOLD: The hatch opens only to another closed hatch.",
+          "in_game_wiki": "UA LOC HOLD: Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.",
+          "external_site": "UA LOC HOLD: Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory."
         },
         "ar_SA": {
           "title": "Quarantine Hold Stale Air",
-          "scanner": "Draft AR localization pending native pass. You are alive, sealed, and still not free.",
-          "field_note": "Draft AR localization pending native pass. This is the bureaucratic version of drowning.",
-          "terminal": "Draft AR localization pending native pass. QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.",
-          "audio": "Draft AR localization pending native pass. The hatch opens only to another closed hatch.",
-          "in_game_wiki": "Draft AR localization pending native pass. Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.",
-          "external_site": "Draft AR localization pending native pass. Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory."
+          "scanner": "AR LOC HOLD: You are alive, sealed, and still not free.",
+          "field_note": "AR LOC HOLD: This is the bureaucratic version of drowning.",
+          "terminal": "AR LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.",
+          "audio": "AR LOC HOLD: The hatch opens only to another closed hatch.",
+          "in_game_wiki": "AR LOC HOLD: Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.",
+          "external_site": "AR LOC HOLD: Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory."
         },
         "id_ID": {
           "title": "Quarantine Hold Stale Air",
-          "scanner": "Draft ID localization pending native pass. You are alive, sealed, and still not free.",
-          "field_note": "Draft ID localization pending native pass. This is the bureaucratic version of drowning.",
-          "terminal": "Draft ID localization pending native pass. QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.",
-          "audio": "Draft ID localization pending native pass. The hatch opens only to another closed hatch.",
-          "in_game_wiki": "Draft ID localization pending native pass. Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.",
-          "external_site": "Draft ID localization pending native pass. Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory."
+          "scanner": "ID LOC HOLD: You are alive, sealed, and still not free.",
+          "field_note": "ID LOC HOLD: This is the bureaucratic version of drowning.",
+          "terminal": "ID LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.",
+          "audio": "ID LOC HOLD: The hatch opens only to another closed hatch.",
+          "in_game_wiki": "ID LOC HOLD: Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.",
+          "external_site": "ID LOC HOLD: Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory."
         },
         "ko_KR": {
           "title": "Quarantine Hold Stale Air",
-          "scanner": "Draft KO localization pending native pass. You are alive, sealed, and still not free.",
-          "field_note": "Draft KO localization pending native pass. This is the bureaucratic version of drowning.",
-          "terminal": "Draft KO localization pending native pass. QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.",
-          "audio": "Draft KO localization pending native pass. The hatch opens only to another closed hatch.",
-          "in_game_wiki": "Draft KO localization pending native pass. Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.",
-          "external_site": "Draft KO localization pending native pass. Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory."
+          "scanner": "KO LOC HOLD: You are alive, sealed, and still not free.",
+          "field_note": "KO LOC HOLD: This is the bureaucratic version of drowning.",
+          "terminal": "KO LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.",
+          "audio": "KO LOC HOLD: The hatch opens only to another closed hatch.",
+          "in_game_wiki": "KO LOC HOLD: Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.",
+          "external_site": "KO LOC HOLD: Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory."
         },
         "he_IL": {
           "title": "Quarantine Hold Stale Air",
-          "scanner": "Draft HE localization pending native pass. You are alive, sealed, and still not free.",
-          "field_note": "Draft HE localization pending native pass. This is the bureaucratic version of drowning.",
-          "terminal": "Draft HE localization pending native pass. QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.",
-          "audio": "Draft HE localization pending native pass. The hatch opens only to another closed hatch.",
-          "in_game_wiki": "Draft HE localization pending native pass. Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.",
-          "external_site": "Draft HE localization pending native pass. Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory."
+          "scanner": "HE LOC HOLD: You are alive, sealed, and still not free.",
+          "field_note": "HE LOC HOLD: This is the bureaucratic version of drowning.",
+          "terminal": "HE LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.",
+          "audio": "HE LOC HOLD: The hatch opens only to another closed hatch.",
+          "in_game_wiki": "HE LOC HOLD: Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.",
+          "external_site": "HE LOC HOLD: Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory."
         },
         "pt_BR": {
           "title": "Quarantine Hold Stale Air",
-          "scanner": "Draft PT localization pending native pass. You are alive, sealed, and still not free.",
-          "field_note": "Draft PT localization pending native pass. This is the bureaucratic version of drowning.",
-          "terminal": "Draft PT localization pending native pass. QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.",
-          "audio": "Draft PT localization pending native pass. The hatch opens only to another closed hatch.",
-          "in_game_wiki": "Draft PT localization pending native pass. Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.",
-          "external_site": "Draft PT localization pending native pass. Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory."
+          "scanner": "PT LOC HOLD: You are alive, sealed, and still not free.",
+          "field_note": "PT LOC HOLD: This is the bureaucratic version of drowning.",
+          "terminal": "PT LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.",
+          "audio": "PT LOC HOLD: The hatch opens only to another closed hatch.",
+          "in_game_wiki": "PT LOC HOLD: Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.",
+          "external_site": "PT LOC HOLD: Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory."
         },
         "nl_NL": {
           "title": "Quarantine Hold Stale Air",
-          "scanner": "Draft NL localization pending native pass. You are alive, sealed, and still not free.",
-          "field_note": "Draft NL localization pending native pass. This is the bureaucratic version of drowning.",
-          "terminal": "Draft NL localization pending native pass. QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.",
-          "audio": "Draft NL localization pending native pass. The hatch opens only to another closed hatch.",
-          "in_game_wiki": "Draft NL localization pending native pass. Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.",
-          "external_site": "Draft NL localization pending native pass. Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory."
+          "scanner": "NL LOC HOLD: You are alive, sealed, and still not free.",
+          "field_note": "NL LOC HOLD: This is the bureaucratic version of drowning.",
+          "terminal": "NL LOC HOLD: QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.",
+          "audio": "NL LOC HOLD: The hatch opens only to another closed hatch.",
+          "in_game_wiki": "NL LOC HOLD: Quarantine Hold is an early exit where survival becomes administrative confinement. It is useful when the player has enough risk to leave but not enough custody to control the story.",
+          "external_site": "NL LOC HOLD: Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory."
         }
       }
     },
@@ -662,124 +662,124 @@
           "terminal": "PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.",
           "audio": "Правда уходит первой. Тебе может не понравиться, кто ее прочитает.",
           "in_game_wiki": "Public Ledger Leak - концовка частичной правды. Игрок может опубликовать достаточно evidence, чтобы стирание стало сложнее, не решив Atlas и не защитив ocean-machine ecology. Это сильно, грязно и не является чистой победой.",
-          "external_site": "Draft RU localization pending native pass. The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood."
+          "external_site": "RU LOC HOLD: The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood."
         },
         "ja_JP": {
           "title": "Public Ledger Leak Route",
-          "scanner": "Draft JP localization pending native pass. You can leak truth before you understand all of it.",
-          "field_note": "Draft JP localization pending native pass. Public does not mean safe. It means harder to erase.",
-          "terminal": "Draft JP localization pending native pass. PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.",
-          "audio": "Draft JP localization pending native pass. The truth leaves first. You may not like who reads it.",
-          "in_game_wiki": "Draft JP localization pending native pass. Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.",
-          "external_site": "Draft JP localization pending native pass. The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood."
+          "scanner": "JP LOC HOLD: You can leak truth before you understand all of it.",
+          "field_note": "JP LOC HOLD: Public does not mean safe. It means harder to erase.",
+          "terminal": "JP LOC HOLD: PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.",
+          "audio": "JP LOC HOLD: The truth leaves first. You may not like who reads it.",
+          "in_game_wiki": "JP LOC HOLD: Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.",
+          "external_site": "JP LOC HOLD: The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood."
         },
         "zh_CN": {
           "title": "Public Ledger Leak Route",
-          "scanner": "Draft CN localization pending native pass. You can leak truth before you understand all of it.",
-          "field_note": "Draft CN localization pending native pass. Public does not mean safe. It means harder to erase.",
-          "terminal": "Draft CN localization pending native pass. PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.",
-          "audio": "Draft CN localization pending native pass. The truth leaves first. You may not like who reads it.",
-          "in_game_wiki": "Draft CN localization pending native pass. Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.",
-          "external_site": "Draft CN localization pending native pass. The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood."
+          "scanner": "CN LOC HOLD: You can leak truth before you understand all of it.",
+          "field_note": "CN LOC HOLD: Public does not mean safe. It means harder to erase.",
+          "terminal": "CN LOC HOLD: PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.",
+          "audio": "CN LOC HOLD: The truth leaves first. You may not like who reads it.",
+          "in_game_wiki": "CN LOC HOLD: Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.",
+          "external_site": "CN LOC HOLD: The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood."
         },
         "fr_FR": {
           "title": "Public Ledger Leak Route",
-          "scanner": "Draft FR localization pending native pass. You can leak truth before you understand all of it.",
-          "field_note": "Draft FR localization pending native pass. Public does not mean safe. It means harder to erase.",
-          "terminal": "Draft FR localization pending native pass. PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.",
-          "audio": "Draft FR localization pending native pass. The truth leaves first. You may not like who reads it.",
-          "in_game_wiki": "Draft FR localization pending native pass. Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.",
-          "external_site": "Draft FR localization pending native pass. The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood."
+          "scanner": "FR LOC HOLD: You can leak truth before you understand all of it.",
+          "field_note": "FR LOC HOLD: Public does not mean safe. It means harder to erase.",
+          "terminal": "FR LOC HOLD: PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.",
+          "audio": "FR LOC HOLD: The truth leaves first. You may not like who reads it.",
+          "in_game_wiki": "FR LOC HOLD: Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.",
+          "external_site": "FR LOC HOLD: The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood."
         },
         "es_ES": {
           "title": "Public Ledger Leak Route",
-          "scanner": "Draft ES localization pending native pass. You can leak truth before you understand all of it.",
-          "field_note": "Draft ES localization pending native pass. Public does not mean safe. It means harder to erase.",
-          "terminal": "Draft ES localization pending native pass. PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.",
-          "audio": "Draft ES localization pending native pass. The truth leaves first. You may not like who reads it.",
-          "in_game_wiki": "Draft ES localization pending native pass. Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.",
-          "external_site": "Draft ES localization pending native pass. The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood."
+          "scanner": "ES LOC HOLD: You can leak truth before you understand all of it.",
+          "field_note": "ES LOC HOLD: Public does not mean safe. It means harder to erase.",
+          "terminal": "ES LOC HOLD: PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.",
+          "audio": "ES LOC HOLD: The truth leaves first. You may not like who reads it.",
+          "in_game_wiki": "ES LOC HOLD: Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.",
+          "external_site": "ES LOC HOLD: The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood."
         },
         "de_DE": {
           "title": "Public Ledger Leak Route",
-          "scanner": "Draft DE localization pending native pass. You can leak truth before you understand all of it.",
-          "field_note": "Draft DE localization pending native pass. Public does not mean safe. It means harder to erase.",
-          "terminal": "Draft DE localization pending native pass. PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.",
-          "audio": "Draft DE localization pending native pass. The truth leaves first. You may not like who reads it.",
-          "in_game_wiki": "Draft DE localization pending native pass. Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.",
-          "external_site": "Draft DE localization pending native pass. The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood."
+          "scanner": "DE LOC HOLD: You can leak truth before you understand all of it.",
+          "field_note": "DE LOC HOLD: Public does not mean safe. It means harder to erase.",
+          "terminal": "DE LOC HOLD: PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.",
+          "audio": "DE LOC HOLD: The truth leaves first. You may not like who reads it.",
+          "in_game_wiki": "DE LOC HOLD: Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.",
+          "external_site": "DE LOC HOLD: The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood."
         },
         "pl_PL": {
           "title": "Public Ledger Leak Route",
-          "scanner": "Draft PL localization pending native pass. You can leak truth before you understand all of it.",
-          "field_note": "Draft PL localization pending native pass. Public does not mean safe. It means harder to erase.",
-          "terminal": "Draft PL localization pending native pass. PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.",
-          "audio": "Draft PL localization pending native pass. The truth leaves first. You may not like who reads it.",
-          "in_game_wiki": "Draft PL localization pending native pass. Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.",
-          "external_site": "Draft PL localization pending native pass. The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood."
+          "scanner": "PL LOC HOLD: You can leak truth before you understand all of it.",
+          "field_note": "PL LOC HOLD: Public does not mean safe. It means harder to erase.",
+          "terminal": "PL LOC HOLD: PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.",
+          "audio": "PL LOC HOLD: The truth leaves first. You may not like who reads it.",
+          "in_game_wiki": "PL LOC HOLD: Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.",
+          "external_site": "PL LOC HOLD: The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood."
         },
         "uk_UA": {
           "title": "Public Ledger Leak Route",
-          "scanner": "Draft UA localization pending native pass. You can leak truth before you understand all of it.",
-          "field_note": "Draft UA localization pending native pass. Public does not mean safe. It means harder to erase.",
-          "terminal": "Draft UA localization pending native pass. PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.",
-          "audio": "Draft UA localization pending native pass. The truth leaves first. You may not like who reads it.",
-          "in_game_wiki": "Draft UA localization pending native pass. Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.",
-          "external_site": "Draft UA localization pending native pass. The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood."
+          "scanner": "UA LOC HOLD: You can leak truth before you understand all of it.",
+          "field_note": "UA LOC HOLD: Public does not mean safe. It means harder to erase.",
+          "terminal": "UA LOC HOLD: PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.",
+          "audio": "UA LOC HOLD: The truth leaves first. You may not like who reads it.",
+          "in_game_wiki": "UA LOC HOLD: Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.",
+          "external_site": "UA LOC HOLD: The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood."
         },
         "ar_SA": {
           "title": "Public Ledger Leak Route",
-          "scanner": "Draft AR localization pending native pass. You can leak truth before you understand all of it.",
-          "field_note": "Draft AR localization pending native pass. Public does not mean safe. It means harder to erase.",
-          "terminal": "Draft AR localization pending native pass. PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.",
-          "audio": "Draft AR localization pending native pass. The truth leaves first. You may not like who reads it.",
-          "in_game_wiki": "Draft AR localization pending native pass. Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.",
-          "external_site": "Draft AR localization pending native pass. The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood."
+          "scanner": "AR LOC HOLD: You can leak truth before you understand all of it.",
+          "field_note": "AR LOC HOLD: Public does not mean safe. It means harder to erase.",
+          "terminal": "AR LOC HOLD: PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.",
+          "audio": "AR LOC HOLD: The truth leaves first. You may not like who reads it.",
+          "in_game_wiki": "AR LOC HOLD: Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.",
+          "external_site": "AR LOC HOLD: The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood."
         },
         "id_ID": {
           "title": "Public Ledger Leak Route",
-          "scanner": "Draft ID localization pending native pass. You can leak truth before you understand all of it.",
-          "field_note": "Draft ID localization pending native pass. Public does not mean safe. It means harder to erase.",
-          "terminal": "Draft ID localization pending native pass. PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.",
-          "audio": "Draft ID localization pending native pass. The truth leaves first. You may not like who reads it.",
-          "in_game_wiki": "Draft ID localization pending native pass. Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.",
-          "external_site": "Draft ID localization pending native pass. The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood."
+          "scanner": "ID LOC HOLD: You can leak truth before you understand all of it.",
+          "field_note": "ID LOC HOLD: Public does not mean safe. It means harder to erase.",
+          "terminal": "ID LOC HOLD: PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.",
+          "audio": "ID LOC HOLD: The truth leaves first. You may not like who reads it.",
+          "in_game_wiki": "ID LOC HOLD: Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.",
+          "external_site": "ID LOC HOLD: The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood."
         },
         "ko_KR": {
           "title": "Public Ledger Leak Route",
-          "scanner": "Draft KO localization pending native pass. You can leak truth before you understand all of it.",
-          "field_note": "Draft KO localization pending native pass. Public does not mean safe. It means harder to erase.",
-          "terminal": "Draft KO localization pending native pass. PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.",
-          "audio": "Draft KO localization pending native pass. The truth leaves first. You may not like who reads it.",
-          "in_game_wiki": "Draft KO localization pending native pass. Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.",
-          "external_site": "Draft KO localization pending native pass. The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood."
+          "scanner": "KO LOC HOLD: You can leak truth before you understand all of it.",
+          "field_note": "KO LOC HOLD: Public does not mean safe. It means harder to erase.",
+          "terminal": "KO LOC HOLD: PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.",
+          "audio": "KO LOC HOLD: The truth leaves first. You may not like who reads it.",
+          "in_game_wiki": "KO LOC HOLD: Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.",
+          "external_site": "KO LOC HOLD: The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood."
         },
         "he_IL": {
           "title": "Public Ledger Leak Route",
-          "scanner": "Draft HE localization pending native pass. You can leak truth before you understand all of it.",
-          "field_note": "Draft HE localization pending native pass. Public does not mean safe. It means harder to erase.",
-          "terminal": "Draft HE localization pending native pass. PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.",
-          "audio": "Draft HE localization pending native pass. The truth leaves first. You may not like who reads it.",
-          "in_game_wiki": "Draft HE localization pending native pass. Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.",
-          "external_site": "Draft HE localization pending native pass. The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood."
+          "scanner": "HE LOC HOLD: You can leak truth before you understand all of it.",
+          "field_note": "HE LOC HOLD: Public does not mean safe. It means harder to erase.",
+          "terminal": "HE LOC HOLD: PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.",
+          "audio": "HE LOC HOLD: The truth leaves first. You may not like who reads it.",
+          "in_game_wiki": "HE LOC HOLD: Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.",
+          "external_site": "HE LOC HOLD: The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood."
         },
         "pt_BR": {
           "title": "Public Ledger Leak Route",
-          "scanner": "Draft PT localization pending native pass. You can leak truth before you understand all of it.",
-          "field_note": "Draft PT localization pending native pass. Public does not mean safe. It means harder to erase.",
-          "terminal": "Draft PT localization pending native pass. PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.",
-          "audio": "Draft PT localization pending native pass. The truth leaves first. You may not like who reads it.",
-          "in_game_wiki": "Draft PT localization pending native pass. Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.",
-          "external_site": "Draft PT localization pending native pass. The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood."
+          "scanner": "PT LOC HOLD: You can leak truth before you understand all of it.",
+          "field_note": "PT LOC HOLD: Public does not mean safe. It means harder to erase.",
+          "terminal": "PT LOC HOLD: PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.",
+          "audio": "PT LOC HOLD: The truth leaves first. You may not like who reads it.",
+          "in_game_wiki": "PT LOC HOLD: Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.",
+          "external_site": "PT LOC HOLD: The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood."
         },
         "nl_NL": {
           "title": "Public Ledger Leak Route",
-          "scanner": "Draft NL localization pending native pass. You can leak truth before you understand all of it.",
-          "field_note": "Draft NL localization pending native pass. Public does not mean safe. It means harder to erase.",
-          "terminal": "Draft NL localization pending native pass. PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.",
-          "audio": "Draft NL localization pending native pass. The truth leaves first. You may not like who reads it.",
-          "in_game_wiki": "Draft NL localization pending native pass. Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.",
-          "external_site": "Draft NL localization pending native pass. The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood."
+          "scanner": "NL LOC HOLD: You can leak truth before you understand all of it.",
+          "field_note": "NL LOC HOLD: Public does not mean safe. It means harder to erase.",
+          "terminal": "NL LOC HOLD: PUBLIC LEDGER ROUTE: packet witness hash accepted by external notary. Payload incomplete. Claimant challenge probable. Deep Reach retaliation window begins after relay acknowledgement.",
+          "audio": "NL LOC HOLD: The truth leaves first. You may not like who reads it.",
+          "in_game_wiki": "NL LOC HOLD: Public Ledger Leak is a partial truth ending. The player can publish enough evidence to make erasure harder without resolving Atlas or protecting the ocean-machine ecology. It is powerful, messy and not a clean victory.",
+          "external_site": "NL LOC HOLD: The Public Ledger Leak route sends partial truth into an external record: harder to erase, delayed by custody, and dangerous before the whole machine is understood."
         }
       }
     }

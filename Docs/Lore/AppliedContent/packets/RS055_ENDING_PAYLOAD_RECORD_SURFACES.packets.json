@@ -45,121 +45,121 @@
           "external_site": "Эта статья объясняет, как HECTON-8 может закончиться реальными деньгами и худшим truth state."
         },
         "ja_JP": {
-          "title": "Draft JP localization pending native pass. Material Payout Record",
-          "scanner": "Draft JP localization pending native pass. Paid. Not cleared.",
-          "field_note": "Draft JP localization pending native pass. Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.",
-          "terminal": "Draft JP localization pending native pass. ENDING RECORD: material payout accepted; public truth absent; claim custody closed.",
-          "audio": "Draft JP localization pending native pass. The receipt is clean because it ignores the room.",
-          "in_game_wiki": "Draft JP localization pending native pass. Material Payout Record defines the bitter successful salvage ending.",
-          "external_site": "Draft JP localization pending native pass. Material Payout Record explains that HECTON-8 can end with real money and a worse truth state."
+          "title": "JP LOC HOLD: Material Payout Record",
+          "scanner": "JP LOC HOLD: Paid. Not cleared.",
+          "field_note": "JP LOC HOLD: Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.",
+          "terminal": "JP LOC HOLD: ENDING RECORD: material payout accepted; public truth absent; claim custody closed.",
+          "audio": "JP LOC HOLD: The receipt is clean because it ignores the room.",
+          "in_game_wiki": "JP LOC HOLD: Material Payout Record defines the bitter successful salvage ending.",
+          "external_site": "JP LOC HOLD: Material Payout Record explains that HECTON-8 can end with real money and a worse truth state."
         },
         "zh_CN": {
-          "title": "Draft CN localization pending native pass. Material Payout Record",
-          "scanner": "Draft CN localization pending native pass. Paid. Not cleared.",
-          "field_note": "Draft CN localization pending native pass. Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.",
-          "terminal": "Draft CN localization pending native pass. ENDING RECORD: material payout accepted; public truth absent; claim custody closed.",
-          "audio": "Draft CN localization pending native pass. The receipt is clean because it ignores the room.",
-          "in_game_wiki": "Draft CN localization pending native pass. Material Payout Record defines the bitter successful salvage ending.",
-          "external_site": "Draft CN localization pending native pass. Material Payout Record explains that HECTON-8 can end with real money and a worse truth state."
+          "title": "CN LOC HOLD: Material Payout Record",
+          "scanner": "CN LOC HOLD: Paid. Not cleared.",
+          "field_note": "CN LOC HOLD: Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.",
+          "terminal": "CN LOC HOLD: ENDING RECORD: material payout accepted; public truth absent; claim custody closed.",
+          "audio": "CN LOC HOLD: The receipt is clean because it ignores the room.",
+          "in_game_wiki": "CN LOC HOLD: Material Payout Record defines the bitter successful salvage ending.",
+          "external_site": "CN LOC HOLD: Material Payout Record explains that HECTON-8 can end with real money and a worse truth state."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Material Payout Record",
-          "scanner": "Draft FR localization pending native pass. Paid. Not cleared.",
-          "field_note": "Draft FR localization pending native pass. Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.",
-          "terminal": "Draft FR localization pending native pass. ENDING RECORD: material payout accepted; public truth absent; claim custody closed.",
-          "audio": "Draft FR localization pending native pass. The receipt is clean because it ignores the room.",
-          "in_game_wiki": "Draft FR localization pending native pass. Material Payout Record defines the bitter successful salvage ending.",
-          "external_site": "Draft FR localization pending native pass. Material Payout Record explains that HECTON-8 can end with real money and a worse truth state."
+          "title": "FR LOC HOLD: Material Payout Record",
+          "scanner": "FR LOC HOLD: Paid. Not cleared.",
+          "field_note": "FR LOC HOLD: Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.",
+          "terminal": "FR LOC HOLD: ENDING RECORD: material payout accepted; public truth absent; claim custody closed.",
+          "audio": "FR LOC HOLD: The receipt is clean because it ignores the room.",
+          "in_game_wiki": "FR LOC HOLD: Material Payout Record defines the bitter successful salvage ending.",
+          "external_site": "FR LOC HOLD: Material Payout Record explains that HECTON-8 can end with real money and a worse truth state."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Material Payout Record",
-          "scanner": "Draft ES localization pending native pass. Paid. Not cleared.",
-          "field_note": "Draft ES localization pending native pass. Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.",
-          "terminal": "Draft ES localization pending native pass. ENDING RECORD: material payout accepted; public truth absent; claim custody closed.",
-          "audio": "Draft ES localization pending native pass. The receipt is clean because it ignores the room.",
-          "in_game_wiki": "Draft ES localization pending native pass. Material Payout Record defines the bitter successful salvage ending.",
-          "external_site": "Draft ES localization pending native pass. Material Payout Record explains that HECTON-8 can end with real money and a worse truth state."
+          "title": "ES LOC HOLD: Material Payout Record",
+          "scanner": "ES LOC HOLD: Paid. Not cleared.",
+          "field_note": "ES LOC HOLD: Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.",
+          "terminal": "ES LOC HOLD: ENDING RECORD: material payout accepted; public truth absent; claim custody closed.",
+          "audio": "ES LOC HOLD: The receipt is clean because it ignores the room.",
+          "in_game_wiki": "ES LOC HOLD: Material Payout Record defines the bitter successful salvage ending.",
+          "external_site": "ES LOC HOLD: Material Payout Record explains that HECTON-8 can end with real money and a worse truth state."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Material Payout Record",
-          "scanner": "Draft DE localization pending native pass. Paid. Not cleared.",
-          "field_note": "Draft DE localization pending native pass. Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.",
-          "terminal": "Draft DE localization pending native pass. ENDING RECORD: material payout accepted; public truth absent; claim custody closed.",
-          "audio": "Draft DE localization pending native pass. The receipt is clean because it ignores the room.",
-          "in_game_wiki": "Draft DE localization pending native pass. Material Payout Record defines the bitter successful salvage ending.",
-          "external_site": "Draft DE localization pending native pass. Material Payout Record explains that HECTON-8 can end with real money and a worse truth state."
+          "title": "DE LOC HOLD: Material Payout Record",
+          "scanner": "DE LOC HOLD: Paid. Not cleared.",
+          "field_note": "DE LOC HOLD: Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.",
+          "terminal": "DE LOC HOLD: ENDING RECORD: material payout accepted; public truth absent; claim custody closed.",
+          "audio": "DE LOC HOLD: The receipt is clean because it ignores the room.",
+          "in_game_wiki": "DE LOC HOLD: Material Payout Record defines the bitter successful salvage ending.",
+          "external_site": "DE LOC HOLD: Material Payout Record explains that HECTON-8 can end with real money and a worse truth state."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Material Payout Record",
-          "scanner": "Draft PL localization pending native pass. Paid. Not cleared.",
-          "field_note": "Draft PL localization pending native pass. Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.",
-          "terminal": "Draft PL localization pending native pass. ENDING RECORD: material payout accepted; public truth absent; claim custody closed.",
-          "audio": "Draft PL localization pending native pass. The receipt is clean because it ignores the room.",
-          "in_game_wiki": "Draft PL localization pending native pass. Material Payout Record defines the bitter successful salvage ending.",
-          "external_site": "Draft PL localization pending native pass. Material Payout Record explains that HECTON-8 can end with real money and a worse truth state."
+          "title": "PL LOC HOLD: Material Payout Record",
+          "scanner": "PL LOC HOLD: Paid. Not cleared.",
+          "field_note": "PL LOC HOLD: Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.",
+          "terminal": "PL LOC HOLD: ENDING RECORD: material payout accepted; public truth absent; claim custody closed.",
+          "audio": "PL LOC HOLD: The receipt is clean because it ignores the room.",
+          "in_game_wiki": "PL LOC HOLD: Material Payout Record defines the bitter successful salvage ending.",
+          "external_site": "PL LOC HOLD: Material Payout Record explains that HECTON-8 can end with real money and a worse truth state."
         },
         "uk_UA": {
-          "title": "Draft UA localization pending native pass. Material Payout Record",
-          "scanner": "Draft UA localization pending native pass. Paid. Not cleared.",
-          "field_note": "Draft UA localization pending native pass. Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.",
-          "terminal": "Draft UA localization pending native pass. ENDING RECORD: material payout accepted; public truth absent; claim custody closed.",
-          "audio": "Draft UA localization pending native pass. The receipt is clean because it ignores the room.",
-          "in_game_wiki": "Draft UA localization pending native pass. Material Payout Record defines the bitter successful salvage ending.",
-          "external_site": "Draft UA localization pending native pass. Material Payout Record explains that HECTON-8 can end with real money and a worse truth state."
+          "title": "UA LOC HOLD: Material Payout Record",
+          "scanner": "UA LOC HOLD: Paid. Not cleared.",
+          "field_note": "UA LOC HOLD: Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.",
+          "terminal": "UA LOC HOLD: ENDING RECORD: material payout accepted; public truth absent; claim custody closed.",
+          "audio": "UA LOC HOLD: The receipt is clean because it ignores the room.",
+          "in_game_wiki": "UA LOC HOLD: Material Payout Record defines the bitter successful salvage ending.",
+          "external_site": "UA LOC HOLD: Material Payout Record explains that HECTON-8 can end with real money and a worse truth state."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Material Payout Record",
-          "scanner": "Draft AR localization pending native pass. Paid. Not cleared.",
-          "field_note": "Draft AR localization pending native pass. Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.",
-          "terminal": "Draft AR localization pending native pass. ENDING RECORD: material payout accepted; public truth absent; claim custody closed.",
-          "audio": "Draft AR localization pending native pass. The receipt is clean because it ignores the room.",
-          "in_game_wiki": "Draft AR localization pending native pass. Material Payout Record defines the bitter successful salvage ending.",
-          "external_site": "Draft AR localization pending native pass. Material Payout Record explains that HECTON-8 can end with real money and a worse truth state."
+          "title": "AR LOC HOLD: Material Payout Record",
+          "scanner": "AR LOC HOLD: Paid. Not cleared.",
+          "field_note": "AR LOC HOLD: Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.",
+          "terminal": "AR LOC HOLD: ENDING RECORD: material payout accepted; public truth absent; claim custody closed.",
+          "audio": "AR LOC HOLD: The receipt is clean because it ignores the room.",
+          "in_game_wiki": "AR LOC HOLD: Material Payout Record defines the bitter successful salvage ending.",
+          "external_site": "AR LOC HOLD: Material Payout Record explains that HECTON-8 can end with real money and a worse truth state."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Material Payout Record",
-          "scanner": "Draft ID localization pending native pass. Paid. Not cleared.",
-          "field_note": "Draft ID localization pending native pass. Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.",
-          "terminal": "Draft ID localization pending native pass. ENDING RECORD: material payout accepted; public truth absent; claim custody closed.",
-          "audio": "Draft ID localization pending native pass. The receipt is clean because it ignores the room.",
-          "in_game_wiki": "Draft ID localization pending native pass. Material Payout Record defines the bitter successful salvage ending.",
-          "external_site": "Draft ID localization pending native pass. Material Payout Record explains that HECTON-8 can end with real money and a worse truth state."
+          "title": "ID LOC HOLD: Material Payout Record",
+          "scanner": "ID LOC HOLD: Paid. Not cleared.",
+          "field_note": "ID LOC HOLD: Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.",
+          "terminal": "ID LOC HOLD: ENDING RECORD: material payout accepted; public truth absent; claim custody closed.",
+          "audio": "ID LOC HOLD: The receipt is clean because it ignores the room.",
+          "in_game_wiki": "ID LOC HOLD: Material Payout Record defines the bitter successful salvage ending.",
+          "external_site": "ID LOC HOLD: Material Payout Record explains that HECTON-8 can end with real money and a worse truth state."
         },
         "ko_KR": {
-          "title": "Draft KR localization pending native pass. Material Payout Record",
-          "scanner": "Draft KR localization pending native pass. Paid. Not cleared.",
-          "field_note": "Draft KR localization pending native pass. Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.",
-          "terminal": "Draft KR localization pending native pass. ENDING RECORD: material payout accepted; public truth absent; claim custody closed.",
-          "audio": "Draft KR localization pending native pass. The receipt is clean because it ignores the room.",
-          "in_game_wiki": "Draft KR localization pending native pass. Material Payout Record defines the bitter successful salvage ending.",
-          "external_site": "Draft KR localization pending native pass. Material Payout Record explains that HECTON-8 can end with real money and a worse truth state."
+          "title": "KR LOC HOLD: Material Payout Record",
+          "scanner": "KR LOC HOLD: Paid. Not cleared.",
+          "field_note": "KR LOC HOLD: Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.",
+          "terminal": "KR LOC HOLD: ENDING RECORD: material payout accepted; public truth absent; claim custody closed.",
+          "audio": "KR LOC HOLD: The receipt is clean because it ignores the room.",
+          "in_game_wiki": "KR LOC HOLD: Material Payout Record defines the bitter successful salvage ending.",
+          "external_site": "KR LOC HOLD: Material Payout Record explains that HECTON-8 can end with real money and a worse truth state."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Material Payout Record",
-          "scanner": "Draft HE localization pending native pass. Paid. Not cleared.",
-          "field_note": "Draft HE localization pending native pass. Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.",
-          "terminal": "Draft HE localization pending native pass. ENDING RECORD: material payout accepted; public truth absent; claim custody closed.",
-          "audio": "Draft HE localization pending native pass. The receipt is clean because it ignores the room.",
-          "in_game_wiki": "Draft HE localization pending native pass. Material Payout Record defines the bitter successful salvage ending.",
-          "external_site": "Draft HE localization pending native pass. Material Payout Record explains that HECTON-8 can end with real money and a worse truth state."
+          "title": "HE LOC HOLD: Material Payout Record",
+          "scanner": "HE LOC HOLD: Paid. Not cleared.",
+          "field_note": "HE LOC HOLD: Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.",
+          "terminal": "HE LOC HOLD: ENDING RECORD: material payout accepted; public truth absent; claim custody closed.",
+          "audio": "HE LOC HOLD: The receipt is clean because it ignores the room.",
+          "in_game_wiki": "HE LOC HOLD: Material Payout Record defines the bitter successful salvage ending.",
+          "external_site": "HE LOC HOLD: Material Payout Record explains that HECTON-8 can end with real money and a worse truth state."
         },
         "pt_BR": {
-          "title": "Draft PT-BR localization pending native pass. Material Payout Record",
-          "scanner": "Draft PT-BR localization pending native pass. Paid. Not cleared.",
-          "field_note": "Draft PT-BR localization pending native pass. Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.",
-          "terminal": "Draft PT-BR localization pending native pass. ENDING RECORD: material payout accepted; public truth absent; claim custody closed.",
-          "audio": "Draft PT-BR localization pending native pass. The receipt is clean because it ignores the room.",
-          "in_game_wiki": "Draft PT-BR localization pending native pass. Material Payout Record defines the bitter successful salvage ending.",
-          "external_site": "Draft PT-BR localization pending native pass. Material Payout Record explains that HECTON-8 can end with real money and a worse truth state."
+          "title": "PT-BR LOC HOLD: Material Payout Record",
+          "scanner": "PT-BR LOC HOLD: Paid. Not cleared.",
+          "field_note": "PT-BR LOC HOLD: Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.",
+          "terminal": "PT-BR LOC HOLD: ENDING RECORD: material payout accepted; public truth absent; claim custody closed.",
+          "audio": "PT-BR LOC HOLD: The receipt is clean because it ignores the room.",
+          "in_game_wiki": "PT-BR LOC HOLD: Material Payout Record defines the bitter successful salvage ending.",
+          "external_site": "PT-BR LOC HOLD: Material Payout Record explains that HECTON-8 can end with real money and a worse truth state."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Material Payout Record",
-          "scanner": "Draft NL localization pending native pass. Paid. Not cleared.",
-          "field_note": "Draft NL localization pending native pass. Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.",
-          "terminal": "Draft NL localization pending native pass. ENDING RECORD: material payout accepted; public truth absent; claim custody closed.",
-          "audio": "Draft NL localization pending native pass. The receipt is clean because it ignores the room.",
-          "in_game_wiki": "Draft NL localization pending native pass. Material Payout Record defines the bitter successful salvage ending.",
-          "external_site": "Draft NL localization pending native pass. Material Payout Record explains that HECTON-8 can end with real money and a worse truth state."
+          "title": "NL LOC HOLD: Material Payout Record",
+          "scanner": "NL LOC HOLD: Paid. Not cleared.",
+          "field_note": "NL LOC HOLD: Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.",
+          "terminal": "NL LOC HOLD: ENDING RECORD: material payout accepted; public truth absent; claim custody closed.",
+          "audio": "NL LOC HOLD: The receipt is clean because it ignores the room.",
+          "in_game_wiki": "NL LOC HOLD: Material Payout Record defines the bitter successful salvage ending.",
+          "external_site": "NL LOC HOLD: Material Payout Record explains that HECTON-8 can end with real money and a worse truth state."
         }
       }
     },
@@ -200,121 +200,121 @@
           "external_site": "Эта статья объясняет горькую лестницу ранней эвакуации HECTON-8."
         },
         "ja_JP": {
-          "title": "Draft JP localization pending native pass. Partial Return Record",
-          "scanner": "Draft JP localization pending native pass. Extraction granted. Claim unresolved.",
-          "field_note": "Draft JP localization pending native pass. Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.",
-          "terminal": "Draft JP localization pending native pass. ENDING RECORD: partial return; same seed eligible for reentry under extended custody.",
-          "audio": "Draft JP localization pending native pass. Out is not away.",
-          "in_game_wiki": "Draft JP localization pending native pass. Partial Return Record defines the non-final escape that can pull the player back into the same world.",
-          "external_site": "Draft JP localization pending native pass. Partial Return Record explains HECTON-8's bitter early extraction ladder."
+          "title": "JP LOC HOLD: Partial Return Record",
+          "scanner": "JP LOC HOLD: Extraction granted. Claim unresolved.",
+          "field_note": "JP LOC HOLD: Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.",
+          "terminal": "JP LOC HOLD: ENDING RECORD: partial return; same seed eligible for reentry under extended custody.",
+          "audio": "JP LOC HOLD: Out is not away.",
+          "in_game_wiki": "JP LOC HOLD: Partial Return Record defines the non-final escape that can pull the player back into the same world.",
+          "external_site": "JP LOC HOLD: Partial Return Record explains HECTON-8's bitter early extraction ladder."
         },
         "zh_CN": {
-          "title": "Draft CN localization pending native pass. Partial Return Record",
-          "scanner": "Draft CN localization pending native pass. Extraction granted. Claim unresolved.",
-          "field_note": "Draft CN localization pending native pass. Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.",
-          "terminal": "Draft CN localization pending native pass. ENDING RECORD: partial return; same seed eligible for reentry under extended custody.",
-          "audio": "Draft CN localization pending native pass. Out is not away.",
-          "in_game_wiki": "Draft CN localization pending native pass. Partial Return Record defines the non-final escape that can pull the player back into the same world.",
-          "external_site": "Draft CN localization pending native pass. Partial Return Record explains HECTON-8's bitter early extraction ladder."
+          "title": "CN LOC HOLD: Partial Return Record",
+          "scanner": "CN LOC HOLD: Extraction granted. Claim unresolved.",
+          "field_note": "CN LOC HOLD: Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.",
+          "terminal": "CN LOC HOLD: ENDING RECORD: partial return; same seed eligible for reentry under extended custody.",
+          "audio": "CN LOC HOLD: Out is not away.",
+          "in_game_wiki": "CN LOC HOLD: Partial Return Record defines the non-final escape that can pull the player back into the same world.",
+          "external_site": "CN LOC HOLD: Partial Return Record explains HECTON-8's bitter early extraction ladder."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Partial Return Record",
-          "scanner": "Draft FR localization pending native pass. Extraction granted. Claim unresolved.",
-          "field_note": "Draft FR localization pending native pass. Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.",
-          "terminal": "Draft FR localization pending native pass. ENDING RECORD: partial return; same seed eligible for reentry under extended custody.",
-          "audio": "Draft FR localization pending native pass. Out is not away.",
-          "in_game_wiki": "Draft FR localization pending native pass. Partial Return Record defines the non-final escape that can pull the player back into the same world.",
-          "external_site": "Draft FR localization pending native pass. Partial Return Record explains HECTON-8's bitter early extraction ladder."
+          "title": "FR LOC HOLD: Partial Return Record",
+          "scanner": "FR LOC HOLD: Extraction granted. Claim unresolved.",
+          "field_note": "FR LOC HOLD: Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.",
+          "terminal": "FR LOC HOLD: ENDING RECORD: partial return; same seed eligible for reentry under extended custody.",
+          "audio": "FR LOC HOLD: Out is not away.",
+          "in_game_wiki": "FR LOC HOLD: Partial Return Record defines the non-final escape that can pull the player back into the same world.",
+          "external_site": "FR LOC HOLD: Partial Return Record explains HECTON-8's bitter early extraction ladder."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Partial Return Record",
-          "scanner": "Draft ES localization pending native pass. Extraction granted. Claim unresolved.",
-          "field_note": "Draft ES localization pending native pass. Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.",
-          "terminal": "Draft ES localization pending native pass. ENDING RECORD: partial return; same seed eligible for reentry under extended custody.",
-          "audio": "Draft ES localization pending native pass. Out is not away.",
-          "in_game_wiki": "Draft ES localization pending native pass. Partial Return Record defines the non-final escape that can pull the player back into the same world.",
-          "external_site": "Draft ES localization pending native pass. Partial Return Record explains HECTON-8's bitter early extraction ladder."
+          "title": "ES LOC HOLD: Partial Return Record",
+          "scanner": "ES LOC HOLD: Extraction granted. Claim unresolved.",
+          "field_note": "ES LOC HOLD: Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.",
+          "terminal": "ES LOC HOLD: ENDING RECORD: partial return; same seed eligible for reentry under extended custody.",
+          "audio": "ES LOC HOLD: Out is not away.",
+          "in_game_wiki": "ES LOC HOLD: Partial Return Record defines the non-final escape that can pull the player back into the same world.",
+          "external_site": "ES LOC HOLD: Partial Return Record explains HECTON-8's bitter early extraction ladder."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Partial Return Record",
-          "scanner": "Draft DE localization pending native pass. Extraction granted. Claim unresolved.",
-          "field_note": "Draft DE localization pending native pass. Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.",
-          "terminal": "Draft DE localization pending native pass. ENDING RECORD: partial return; same seed eligible for reentry under extended custody.",
-          "audio": "Draft DE localization pending native pass. Out is not away.",
-          "in_game_wiki": "Draft DE localization pending native pass. Partial Return Record defines the non-final escape that can pull the player back into the same world.",
-          "external_site": "Draft DE localization pending native pass. Partial Return Record explains HECTON-8's bitter early extraction ladder."
+          "title": "DE LOC HOLD: Partial Return Record",
+          "scanner": "DE LOC HOLD: Extraction granted. Claim unresolved.",
+          "field_note": "DE LOC HOLD: Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.",
+          "terminal": "DE LOC HOLD: ENDING RECORD: partial return; same seed eligible for reentry under extended custody.",
+          "audio": "DE LOC HOLD: Out is not away.",
+          "in_game_wiki": "DE LOC HOLD: Partial Return Record defines the non-final escape that can pull the player back into the same world.",
+          "external_site": "DE LOC HOLD: Partial Return Record explains HECTON-8's bitter early extraction ladder."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Partial Return Record",
-          "scanner": "Draft PL localization pending native pass. Extraction granted. Claim unresolved.",
-          "field_note": "Draft PL localization pending native pass. Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.",
-          "terminal": "Draft PL localization pending native pass. ENDING RECORD: partial return; same seed eligible for reentry under extended custody.",
-          "audio": "Draft PL localization pending native pass. Out is not away.",
-          "in_game_wiki": "Draft PL localization pending native pass. Partial Return Record defines the non-final escape that can pull the player back into the same world.",
-          "external_site": "Draft PL localization pending native pass. Partial Return Record explains HECTON-8's bitter early extraction ladder."
+          "title": "PL LOC HOLD: Partial Return Record",
+          "scanner": "PL LOC HOLD: Extraction granted. Claim unresolved.",
+          "field_note": "PL LOC HOLD: Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.",
+          "terminal": "PL LOC HOLD: ENDING RECORD: partial return; same seed eligible for reentry under extended custody.",
+          "audio": "PL LOC HOLD: Out is not away.",
+          "in_game_wiki": "PL LOC HOLD: Partial Return Record defines the non-final escape that can pull the player back into the same world.",
+          "external_site": "PL LOC HOLD: Partial Return Record explains HECTON-8's bitter early extraction ladder."
         },
         "uk_UA": {
-          "title": "Draft UA localization pending native pass. Partial Return Record",
-          "scanner": "Draft UA localization pending native pass. Extraction granted. Claim unresolved.",
-          "field_note": "Draft UA localization pending native pass. Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.",
-          "terminal": "Draft UA localization pending native pass. ENDING RECORD: partial return; same seed eligible for reentry under extended custody.",
-          "audio": "Draft UA localization pending native pass. Out is not away.",
-          "in_game_wiki": "Draft UA localization pending native pass. Partial Return Record defines the non-final escape that can pull the player back into the same world.",
-          "external_site": "Draft UA localization pending native pass. Partial Return Record explains HECTON-8's bitter early extraction ladder."
+          "title": "UA LOC HOLD: Partial Return Record",
+          "scanner": "UA LOC HOLD: Extraction granted. Claim unresolved.",
+          "field_note": "UA LOC HOLD: Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.",
+          "terminal": "UA LOC HOLD: ENDING RECORD: partial return; same seed eligible for reentry under extended custody.",
+          "audio": "UA LOC HOLD: Out is not away.",
+          "in_game_wiki": "UA LOC HOLD: Partial Return Record defines the non-final escape that can pull the player back into the same world.",
+          "external_site": "UA LOC HOLD: Partial Return Record explains HECTON-8's bitter early extraction ladder."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Partial Return Record",
-          "scanner": "Draft AR localization pending native pass. Extraction granted. Claim unresolved.",
-          "field_note": "Draft AR localization pending native pass. Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.",
-          "terminal": "Draft AR localization pending native pass. ENDING RECORD: partial return; same seed eligible for reentry under extended custody.",
-          "audio": "Draft AR localization pending native pass. Out is not away.",
-          "in_game_wiki": "Draft AR localization pending native pass. Partial Return Record defines the non-final escape that can pull the player back into the same world.",
-          "external_site": "Draft AR localization pending native pass. Partial Return Record explains HECTON-8's bitter early extraction ladder."
+          "title": "AR LOC HOLD: Partial Return Record",
+          "scanner": "AR LOC HOLD: Extraction granted. Claim unresolved.",
+          "field_note": "AR LOC HOLD: Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.",
+          "terminal": "AR LOC HOLD: ENDING RECORD: partial return; same seed eligible for reentry under extended custody.",
+          "audio": "AR LOC HOLD: Out is not away.",
+          "in_game_wiki": "AR LOC HOLD: Partial Return Record defines the non-final escape that can pull the player back into the same world.",
+          "external_site": "AR LOC HOLD: Partial Return Record explains HECTON-8's bitter early extraction ladder."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Partial Return Record",
-          "scanner": "Draft ID localization pending native pass. Extraction granted. Claim unresolved.",
-          "field_note": "Draft ID localization pending native pass. Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.",
-          "terminal": "Draft ID localization pending native pass. ENDING RECORD: partial return; same seed eligible for reentry under extended custody.",
-          "audio": "Draft ID localization pending native pass. Out is not away.",
-          "in_game_wiki": "Draft ID localization pending native pass. Partial Return Record defines the non-final escape that can pull the player back into the same world.",
-          "external_site": "Draft ID localization pending native pass. Partial Return Record explains HECTON-8's bitter early extraction ladder."
+          "title": "ID LOC HOLD: Partial Return Record",
+          "scanner": "ID LOC HOLD: Extraction granted. Claim unresolved.",
+          "field_note": "ID LOC HOLD: Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.",
+          "terminal": "ID LOC HOLD: ENDING RECORD: partial return; same seed eligible for reentry under extended custody.",
+          "audio": "ID LOC HOLD: Out is not away.",
+          "in_game_wiki": "ID LOC HOLD: Partial Return Record defines the non-final escape that can pull the player back into the same world.",
+          "external_site": "ID LOC HOLD: Partial Return Record explains HECTON-8's bitter early extraction ladder."
         },
         "ko_KR": {
-          "title": "Draft KR localization pending native pass. Partial Return Record",
-          "scanner": "Draft KR localization pending native pass. Extraction granted. Claim unresolved.",
-          "field_note": "Draft KR localization pending native pass. Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.",
-          "terminal": "Draft KR localization pending native pass. ENDING RECORD: partial return; same seed eligible for reentry under extended custody.",
-          "audio": "Draft KR localization pending native pass. Out is not away.",
-          "in_game_wiki": "Draft KR localization pending native pass. Partial Return Record defines the non-final escape that can pull the player back into the same world.",
-          "external_site": "Draft KR localization pending native pass. Partial Return Record explains HECTON-8's bitter early extraction ladder."
+          "title": "KR LOC HOLD: Partial Return Record",
+          "scanner": "KR LOC HOLD: Extraction granted. Claim unresolved.",
+          "field_note": "KR LOC HOLD: Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.",
+          "terminal": "KR LOC HOLD: ENDING RECORD: partial return; same seed eligible for reentry under extended custody.",
+          "audio": "KR LOC HOLD: Out is not away.",
+          "in_game_wiki": "KR LOC HOLD: Partial Return Record defines the non-final escape that can pull the player back into the same world.",
+          "external_site": "KR LOC HOLD: Partial Return Record explains HECTON-8's bitter early extraction ladder."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Partial Return Record",
-          "scanner": "Draft HE localization pending native pass. Extraction granted. Claim unresolved.",
-          "field_note": "Draft HE localization pending native pass. Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.",
-          "terminal": "Draft HE localization pending native pass. ENDING RECORD: partial return; same seed eligible for reentry under extended custody.",
-          "audio": "Draft HE localization pending native pass. Out is not away.",
-          "in_game_wiki": "Draft HE localization pending native pass. Partial Return Record defines the non-final escape that can pull the player back into the same world.",
-          "external_site": "Draft HE localization pending native pass. Partial Return Record explains HECTON-8's bitter early extraction ladder."
+          "title": "HE LOC HOLD: Partial Return Record",
+          "scanner": "HE LOC HOLD: Extraction granted. Claim unresolved.",
+          "field_note": "HE LOC HOLD: Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.",
+          "terminal": "HE LOC HOLD: ENDING RECORD: partial return; same seed eligible for reentry under extended custody.",
+          "audio": "HE LOC HOLD: Out is not away.",
+          "in_game_wiki": "HE LOC HOLD: Partial Return Record defines the non-final escape that can pull the player back into the same world.",
+          "external_site": "HE LOC HOLD: Partial Return Record explains HECTON-8's bitter early extraction ladder."
         },
         "pt_BR": {
-          "title": "Draft PT-BR localization pending native pass. Partial Return Record",
-          "scanner": "Draft PT-BR localization pending native pass. Extraction granted. Claim unresolved.",
-          "field_note": "Draft PT-BR localization pending native pass. Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.",
-          "terminal": "Draft PT-BR localization pending native pass. ENDING RECORD: partial return; same seed eligible for reentry under extended custody.",
-          "audio": "Draft PT-BR localization pending native pass. Out is not away.",
-          "in_game_wiki": "Draft PT-BR localization pending native pass. Partial Return Record defines the non-final escape that can pull the player back into the same world.",
-          "external_site": "Draft PT-BR localization pending native pass. Partial Return Record explains HECTON-8's bitter early extraction ladder."
+          "title": "PT-BR LOC HOLD: Partial Return Record",
+          "scanner": "PT-BR LOC HOLD: Extraction granted. Claim unresolved.",
+          "field_note": "PT-BR LOC HOLD: Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.",
+          "terminal": "PT-BR LOC HOLD: ENDING RECORD: partial return; same seed eligible for reentry under extended custody.",
+          "audio": "PT-BR LOC HOLD: Out is not away.",
+          "in_game_wiki": "PT-BR LOC HOLD: Partial Return Record defines the non-final escape that can pull the player back into the same world.",
+          "external_site": "PT-BR LOC HOLD: Partial Return Record explains HECTON-8's bitter early extraction ladder."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Partial Return Record",
-          "scanner": "Draft NL localization pending native pass. Extraction granted. Claim unresolved.",
-          "field_note": "Draft NL localization pending native pass. Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.",
-          "terminal": "Draft NL localization pending native pass. ENDING RECORD: partial return; same seed eligible for reentry under extended custody.",
-          "audio": "Draft NL localization pending native pass. Out is not away.",
-          "in_game_wiki": "Draft NL localization pending native pass. Partial Return Record defines the non-final escape that can pull the player back into the same world.",
-          "external_site": "Draft NL localization pending native pass. Partial Return Record explains HECTON-8's bitter early extraction ladder."
+          "title": "NL LOC HOLD: Partial Return Record",
+          "scanner": "NL LOC HOLD: Extraction granted. Claim unresolved.",
+          "field_note": "NL LOC HOLD: Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.",
+          "terminal": "NL LOC HOLD: ENDING RECORD: partial return; same seed eligible for reentry under extended custody.",
+          "audio": "NL LOC HOLD: Out is not away.",
+          "in_game_wiki": "NL LOC HOLD: Partial Return Record defines the non-final escape that can pull the player back into the same world.",
+          "external_site": "NL LOC HOLD: Partial Return Record explains HECTON-8's bitter early extraction ladder."
         }
       }
     },
@@ -355,121 +355,121 @@
           "external_site": "Эта статья объясняет, как HECTON-8 обращается с evidence через custody, delay и consequence."
         },
         "ja_JP": {
-          "title": "Draft JP localization pending native pass. Public Ledger Record",
-          "scanner": "Draft JP localization pending native pass. Witness hash escaped claimant custody.",
-          "field_note": "Draft JP localization pending native pass. Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.",
-          "terminal": "Draft JP localization pending native pass. ENDING RECORD: public ledger route accepted; control surrendered after relay custody.",
-          "audio": "Draft JP localization pending native pass. Truth can leave your hands and still matter.",
-          "in_game_wiki": "Draft JP localization pending native pass. Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.",
-          "external_site": "Draft JP localization pending native pass. Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence."
+          "title": "JP LOC HOLD: Public Ledger Record",
+          "scanner": "JP LOC HOLD: Witness hash escaped claimant custody.",
+          "field_note": "JP LOC HOLD: Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.",
+          "terminal": "JP LOC HOLD: ENDING RECORD: public ledger route accepted; control surrendered after relay custody.",
+          "audio": "JP LOC HOLD: Truth can leave your hands and still matter.",
+          "in_game_wiki": "JP LOC HOLD: Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.",
+          "external_site": "JP LOC HOLD: Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence."
         },
         "zh_CN": {
-          "title": "Draft CN localization pending native pass. Public Ledger Record",
-          "scanner": "Draft CN localization pending native pass. Witness hash escaped claimant custody.",
-          "field_note": "Draft CN localization pending native pass. Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.",
-          "terminal": "Draft CN localization pending native pass. ENDING RECORD: public ledger route accepted; control surrendered after relay custody.",
-          "audio": "Draft CN localization pending native pass. Truth can leave your hands and still matter.",
-          "in_game_wiki": "Draft CN localization pending native pass. Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.",
-          "external_site": "Draft CN localization pending native pass. Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence."
+          "title": "CN LOC HOLD: Public Ledger Record",
+          "scanner": "CN LOC HOLD: Witness hash escaped claimant custody.",
+          "field_note": "CN LOC HOLD: Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.",
+          "terminal": "CN LOC HOLD: ENDING RECORD: public ledger route accepted; control surrendered after relay custody.",
+          "audio": "CN LOC HOLD: Truth can leave your hands and still matter.",
+          "in_game_wiki": "CN LOC HOLD: Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.",
+          "external_site": "CN LOC HOLD: Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Public Ledger Record",
-          "scanner": "Draft FR localization pending native pass. Witness hash escaped claimant custody.",
-          "field_note": "Draft FR localization pending native pass. Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.",
-          "terminal": "Draft FR localization pending native pass. ENDING RECORD: public ledger route accepted; control surrendered after relay custody.",
-          "audio": "Draft FR localization pending native pass. Truth can leave your hands and still matter.",
-          "in_game_wiki": "Draft FR localization pending native pass. Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.",
-          "external_site": "Draft FR localization pending native pass. Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence."
+          "title": "FR LOC HOLD: Public Ledger Record",
+          "scanner": "FR LOC HOLD: Witness hash escaped claimant custody.",
+          "field_note": "FR LOC HOLD: Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.",
+          "terminal": "FR LOC HOLD: ENDING RECORD: public ledger route accepted; control surrendered after relay custody.",
+          "audio": "FR LOC HOLD: Truth can leave your hands and still matter.",
+          "in_game_wiki": "FR LOC HOLD: Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.",
+          "external_site": "FR LOC HOLD: Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Public Ledger Record",
-          "scanner": "Draft ES localization pending native pass. Witness hash escaped claimant custody.",
-          "field_note": "Draft ES localization pending native pass. Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.",
-          "terminal": "Draft ES localization pending native pass. ENDING RECORD: public ledger route accepted; control surrendered after relay custody.",
-          "audio": "Draft ES localization pending native pass. Truth can leave your hands and still matter.",
-          "in_game_wiki": "Draft ES localization pending native pass. Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.",
-          "external_site": "Draft ES localization pending native pass. Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence."
+          "title": "ES LOC HOLD: Public Ledger Record",
+          "scanner": "ES LOC HOLD: Witness hash escaped claimant custody.",
+          "field_note": "ES LOC HOLD: Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.",
+          "terminal": "ES LOC HOLD: ENDING RECORD: public ledger route accepted; control surrendered after relay custody.",
+          "audio": "ES LOC HOLD: Truth can leave your hands and still matter.",
+          "in_game_wiki": "ES LOC HOLD: Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.",
+          "external_site": "ES LOC HOLD: Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Public Ledger Record",
-          "scanner": "Draft DE localization pending native pass. Witness hash escaped claimant custody.",
-          "field_note": "Draft DE localization pending native pass. Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.",
-          "terminal": "Draft DE localization pending native pass. ENDING RECORD: public ledger route accepted; control surrendered after relay custody.",
-          "audio": "Draft DE localization pending native pass. Truth can leave your hands and still matter.",
-          "in_game_wiki": "Draft DE localization pending native pass. Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.",
-          "external_site": "Draft DE localization pending native pass. Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence."
+          "title": "DE LOC HOLD: Public Ledger Record",
+          "scanner": "DE LOC HOLD: Witness hash escaped claimant custody.",
+          "field_note": "DE LOC HOLD: Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.",
+          "terminal": "DE LOC HOLD: ENDING RECORD: public ledger route accepted; control surrendered after relay custody.",
+          "audio": "DE LOC HOLD: Truth can leave your hands and still matter.",
+          "in_game_wiki": "DE LOC HOLD: Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.",
+          "external_site": "DE LOC HOLD: Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Public Ledger Record",
-          "scanner": "Draft PL localization pending native pass. Witness hash escaped claimant custody.",
-          "field_note": "Draft PL localization pending native pass. Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.",
-          "terminal": "Draft PL localization pending native pass. ENDING RECORD: public ledger route accepted; control surrendered after relay custody.",
-          "audio": "Draft PL localization pending native pass. Truth can leave your hands and still matter.",
-          "in_game_wiki": "Draft PL localization pending native pass. Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.",
-          "external_site": "Draft PL localization pending native pass. Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence."
+          "title": "PL LOC HOLD: Public Ledger Record",
+          "scanner": "PL LOC HOLD: Witness hash escaped claimant custody.",
+          "field_note": "PL LOC HOLD: Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.",
+          "terminal": "PL LOC HOLD: ENDING RECORD: public ledger route accepted; control surrendered after relay custody.",
+          "audio": "PL LOC HOLD: Truth can leave your hands and still matter.",
+          "in_game_wiki": "PL LOC HOLD: Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.",
+          "external_site": "PL LOC HOLD: Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence."
         },
         "uk_UA": {
-          "title": "Draft UA localization pending native pass. Public Ledger Record",
-          "scanner": "Draft UA localization pending native pass. Witness hash escaped claimant custody.",
-          "field_note": "Draft UA localization pending native pass. Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.",
-          "terminal": "Draft UA localization pending native pass. ENDING RECORD: public ledger route accepted; control surrendered after relay custody.",
-          "audio": "Draft UA localization pending native pass. Truth can leave your hands and still matter.",
-          "in_game_wiki": "Draft UA localization pending native pass. Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.",
-          "external_site": "Draft UA localization pending native pass. Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence."
+          "title": "UA LOC HOLD: Public Ledger Record",
+          "scanner": "UA LOC HOLD: Witness hash escaped claimant custody.",
+          "field_note": "UA LOC HOLD: Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.",
+          "terminal": "UA LOC HOLD: ENDING RECORD: public ledger route accepted; control surrendered after relay custody.",
+          "audio": "UA LOC HOLD: Truth can leave your hands and still matter.",
+          "in_game_wiki": "UA LOC HOLD: Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.",
+          "external_site": "UA LOC HOLD: Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Public Ledger Record",
-          "scanner": "Draft AR localization pending native pass. Witness hash escaped claimant custody.",
-          "field_note": "Draft AR localization pending native pass. Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.",
-          "terminal": "Draft AR localization pending native pass. ENDING RECORD: public ledger route accepted; control surrendered after relay custody.",
-          "audio": "Draft AR localization pending native pass. Truth can leave your hands and still matter.",
-          "in_game_wiki": "Draft AR localization pending native pass. Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.",
-          "external_site": "Draft AR localization pending native pass. Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence."
+          "title": "AR LOC HOLD: Public Ledger Record",
+          "scanner": "AR LOC HOLD: Witness hash escaped claimant custody.",
+          "field_note": "AR LOC HOLD: Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.",
+          "terminal": "AR LOC HOLD: ENDING RECORD: public ledger route accepted; control surrendered after relay custody.",
+          "audio": "AR LOC HOLD: Truth can leave your hands and still matter.",
+          "in_game_wiki": "AR LOC HOLD: Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.",
+          "external_site": "AR LOC HOLD: Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Public Ledger Record",
-          "scanner": "Draft ID localization pending native pass. Witness hash escaped claimant custody.",
-          "field_note": "Draft ID localization pending native pass. Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.",
-          "terminal": "Draft ID localization pending native pass. ENDING RECORD: public ledger route accepted; control surrendered after relay custody.",
-          "audio": "Draft ID localization pending native pass. Truth can leave your hands and still matter.",
-          "in_game_wiki": "Draft ID localization pending native pass. Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.",
-          "external_site": "Draft ID localization pending native pass. Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence."
+          "title": "ID LOC HOLD: Public Ledger Record",
+          "scanner": "ID LOC HOLD: Witness hash escaped claimant custody.",
+          "field_note": "ID LOC HOLD: Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.",
+          "terminal": "ID LOC HOLD: ENDING RECORD: public ledger route accepted; control surrendered after relay custody.",
+          "audio": "ID LOC HOLD: Truth can leave your hands and still matter.",
+          "in_game_wiki": "ID LOC HOLD: Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.",
+          "external_site": "ID LOC HOLD: Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence."
         },
         "ko_KR": {
-          "title": "Draft KR localization pending native pass. Public Ledger Record",
-          "scanner": "Draft KR localization pending native pass. Witness hash escaped claimant custody.",
-          "field_note": "Draft KR localization pending native pass. Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.",
-          "terminal": "Draft KR localization pending native pass. ENDING RECORD: public ledger route accepted; control surrendered after relay custody.",
-          "audio": "Draft KR localization pending native pass. Truth can leave your hands and still matter.",
-          "in_game_wiki": "Draft KR localization pending native pass. Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.",
-          "external_site": "Draft KR localization pending native pass. Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence."
+          "title": "KR LOC HOLD: Public Ledger Record",
+          "scanner": "KR LOC HOLD: Witness hash escaped claimant custody.",
+          "field_note": "KR LOC HOLD: Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.",
+          "terminal": "KR LOC HOLD: ENDING RECORD: public ledger route accepted; control surrendered after relay custody.",
+          "audio": "KR LOC HOLD: Truth can leave your hands and still matter.",
+          "in_game_wiki": "KR LOC HOLD: Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.",
+          "external_site": "KR LOC HOLD: Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Public Ledger Record",
-          "scanner": "Draft HE localization pending native pass. Witness hash escaped claimant custody.",
-          "field_note": "Draft HE localization pending native pass. Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.",
-          "terminal": "Draft HE localization pending native pass. ENDING RECORD: public ledger route accepted; control surrendered after relay custody.",
-          "audio": "Draft HE localization pending native pass. Truth can leave your hands and still matter.",
-          "in_game_wiki": "Draft HE localization pending native pass. Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.",
-          "external_site": "Draft HE localization pending native pass. Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence."
+          "title": "HE LOC HOLD: Public Ledger Record",
+          "scanner": "HE LOC HOLD: Witness hash escaped claimant custody.",
+          "field_note": "HE LOC HOLD: Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.",
+          "terminal": "HE LOC HOLD: ENDING RECORD: public ledger route accepted; control surrendered after relay custody.",
+          "audio": "HE LOC HOLD: Truth can leave your hands and still matter.",
+          "in_game_wiki": "HE LOC HOLD: Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.",
+          "external_site": "HE LOC HOLD: Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence."
         },
         "pt_BR": {
-          "title": "Draft PT-BR localization pending native pass. Public Ledger Record",
-          "scanner": "Draft PT-BR localization pending native pass. Witness hash escaped claimant custody.",
-          "field_note": "Draft PT-BR localization pending native pass. Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.",
-          "terminal": "Draft PT-BR localization pending native pass. ENDING RECORD: public ledger route accepted; control surrendered after relay custody.",
-          "audio": "Draft PT-BR localization pending native pass. Truth can leave your hands and still matter.",
-          "in_game_wiki": "Draft PT-BR localization pending native pass. Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.",
-          "external_site": "Draft PT-BR localization pending native pass. Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence."
+          "title": "PT-BR LOC HOLD: Public Ledger Record",
+          "scanner": "PT-BR LOC HOLD: Witness hash escaped claimant custody.",
+          "field_note": "PT-BR LOC HOLD: Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.",
+          "terminal": "PT-BR LOC HOLD: ENDING RECORD: public ledger route accepted; control surrendered after relay custody.",
+          "audio": "PT-BR LOC HOLD: Truth can leave your hands and still matter.",
+          "in_game_wiki": "PT-BR LOC HOLD: Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.",
+          "external_site": "PT-BR LOC HOLD: Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Public Ledger Record",
-          "scanner": "Draft NL localization pending native pass. Witness hash escaped claimant custody.",
-          "field_note": "Draft NL localization pending native pass. Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.",
-          "terminal": "Draft NL localization pending native pass. ENDING RECORD: public ledger route accepted; control surrendered after relay custody.",
-          "audio": "Draft NL localization pending native pass. Truth can leave your hands and still matter.",
-          "in_game_wiki": "Draft NL localization pending native pass. Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.",
-          "external_site": "Draft NL localization pending native pass. Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence."
+          "title": "NL LOC HOLD: Public Ledger Record",
+          "scanner": "NL LOC HOLD: Witness hash escaped claimant custody.",
+          "field_note": "NL LOC HOLD: Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.",
+          "terminal": "NL LOC HOLD: ENDING RECORD: public ledger route accepted; control surrendered after relay custody.",
+          "audio": "NL LOC HOLD: Truth can leave your hands and still matter.",
+          "in_game_wiki": "NL LOC HOLD: Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.",
+          "external_site": "NL LOC HOLD: Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence."
         }
       }
     },
@@ -510,121 +510,121 @@
           "external_site": "Эта статья объясняет, почему HECTON-8 не делает отключение AI чистым binary choice."
         },
         "ja_JP": {
-          "title": "Draft JP localization pending native pass. Atlas Severance Record",
-          "scanner": "Draft JP localization pending native pass. Continuity cut. Damage not contained.",
-          "field_note": "Draft JP localization pending native pass. Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.",
-          "terminal": "Draft JP localization pending native pass. ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.",
-          "audio": "Draft JP localization pending native pass. Stopping the machine does not sort what it had become.",
-          "in_game_wiki": "Draft JP localization pending native pass. Atlas Severance Record defines shutdown as a morally split ending route.",
-          "external_site": "Draft JP localization pending native pass. Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice."
+          "title": "JP LOC HOLD: Atlas Severance Record",
+          "scanner": "JP LOC HOLD: Continuity cut. Damage not contained.",
+          "field_note": "JP LOC HOLD: Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.",
+          "terminal": "JP LOC HOLD: ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.",
+          "audio": "JP LOC HOLD: Stopping the machine does not sort what it had become.",
+          "in_game_wiki": "JP LOC HOLD: Atlas Severance Record defines shutdown as a morally split ending route.",
+          "external_site": "JP LOC HOLD: Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice."
         },
         "zh_CN": {
-          "title": "Draft CN localization pending native pass. Atlas Severance Record",
-          "scanner": "Draft CN localization pending native pass. Continuity cut. Damage not contained.",
-          "field_note": "Draft CN localization pending native pass. Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.",
-          "terminal": "Draft CN localization pending native pass. ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.",
-          "audio": "Draft CN localization pending native pass. Stopping the machine does not sort what it had become.",
-          "in_game_wiki": "Draft CN localization pending native pass. Atlas Severance Record defines shutdown as a morally split ending route.",
-          "external_site": "Draft CN localization pending native pass. Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice."
+          "title": "CN LOC HOLD: Atlas Severance Record",
+          "scanner": "CN LOC HOLD: Continuity cut. Damage not contained.",
+          "field_note": "CN LOC HOLD: Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.",
+          "terminal": "CN LOC HOLD: ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.",
+          "audio": "CN LOC HOLD: Stopping the machine does not sort what it had become.",
+          "in_game_wiki": "CN LOC HOLD: Atlas Severance Record defines shutdown as a morally split ending route.",
+          "external_site": "CN LOC HOLD: Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Atlas Severance Record",
-          "scanner": "Draft FR localization pending native pass. Continuity cut. Damage not contained.",
-          "field_note": "Draft FR localization pending native pass. Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.",
-          "terminal": "Draft FR localization pending native pass. ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.",
-          "audio": "Draft FR localization pending native pass. Stopping the machine does not sort what it had become.",
-          "in_game_wiki": "Draft FR localization pending native pass. Atlas Severance Record defines shutdown as a morally split ending route.",
-          "external_site": "Draft FR localization pending native pass. Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice."
+          "title": "FR LOC HOLD: Atlas Severance Record",
+          "scanner": "FR LOC HOLD: Continuity cut. Damage not contained.",
+          "field_note": "FR LOC HOLD: Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.",
+          "terminal": "FR LOC HOLD: ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.",
+          "audio": "FR LOC HOLD: Stopping the machine does not sort what it had become.",
+          "in_game_wiki": "FR LOC HOLD: Atlas Severance Record defines shutdown as a morally split ending route.",
+          "external_site": "FR LOC HOLD: Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Atlas Severance Record",
-          "scanner": "Draft ES localization pending native pass. Continuity cut. Damage not contained.",
-          "field_note": "Draft ES localization pending native pass. Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.",
-          "terminal": "Draft ES localization pending native pass. ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.",
-          "audio": "Draft ES localization pending native pass. Stopping the machine does not sort what it had become.",
-          "in_game_wiki": "Draft ES localization pending native pass. Atlas Severance Record defines shutdown as a morally split ending route.",
-          "external_site": "Draft ES localization pending native pass. Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice."
+          "title": "ES LOC HOLD: Atlas Severance Record",
+          "scanner": "ES LOC HOLD: Continuity cut. Damage not contained.",
+          "field_note": "ES LOC HOLD: Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.",
+          "terminal": "ES LOC HOLD: ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.",
+          "audio": "ES LOC HOLD: Stopping the machine does not sort what it had become.",
+          "in_game_wiki": "ES LOC HOLD: Atlas Severance Record defines shutdown as a morally split ending route.",
+          "external_site": "ES LOC HOLD: Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Atlas Severance Record",
-          "scanner": "Draft DE localization pending native pass. Continuity cut. Damage not contained.",
-          "field_note": "Draft DE localization pending native pass. Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.",
-          "terminal": "Draft DE localization pending native pass. ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.",
-          "audio": "Draft DE localization pending native pass. Stopping the machine does not sort what it had become.",
-          "in_game_wiki": "Draft DE localization pending native pass. Atlas Severance Record defines shutdown as a morally split ending route.",
-          "external_site": "Draft DE localization pending native pass. Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice."
+          "title": "DE LOC HOLD: Atlas Severance Record",
+          "scanner": "DE LOC HOLD: Continuity cut. Damage not contained.",
+          "field_note": "DE LOC HOLD: Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.",
+          "terminal": "DE LOC HOLD: ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.",
+          "audio": "DE LOC HOLD: Stopping the machine does not sort what it had become.",
+          "in_game_wiki": "DE LOC HOLD: Atlas Severance Record defines shutdown as a morally split ending route.",
+          "external_site": "DE LOC HOLD: Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Atlas Severance Record",
-          "scanner": "Draft PL localization pending native pass. Continuity cut. Damage not contained.",
-          "field_note": "Draft PL localization pending native pass. Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.",
-          "terminal": "Draft PL localization pending native pass. ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.",
-          "audio": "Draft PL localization pending native pass. Stopping the machine does not sort what it had become.",
-          "in_game_wiki": "Draft PL localization pending native pass. Atlas Severance Record defines shutdown as a morally split ending route.",
-          "external_site": "Draft PL localization pending native pass. Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice."
+          "title": "PL LOC HOLD: Atlas Severance Record",
+          "scanner": "PL LOC HOLD: Continuity cut. Damage not contained.",
+          "field_note": "PL LOC HOLD: Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.",
+          "terminal": "PL LOC HOLD: ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.",
+          "audio": "PL LOC HOLD: Stopping the machine does not sort what it had become.",
+          "in_game_wiki": "PL LOC HOLD: Atlas Severance Record defines shutdown as a morally split ending route.",
+          "external_site": "PL LOC HOLD: Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice."
         },
         "uk_UA": {
-          "title": "Draft UA localization pending native pass. Atlas Severance Record",
-          "scanner": "Draft UA localization pending native pass. Continuity cut. Damage not contained.",
-          "field_note": "Draft UA localization pending native pass. Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.",
-          "terminal": "Draft UA localization pending native pass. ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.",
-          "audio": "Draft UA localization pending native pass. Stopping the machine does not sort what it had become.",
-          "in_game_wiki": "Draft UA localization pending native pass. Atlas Severance Record defines shutdown as a morally split ending route.",
-          "external_site": "Draft UA localization pending native pass. Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice."
+          "title": "UA LOC HOLD: Atlas Severance Record",
+          "scanner": "UA LOC HOLD: Continuity cut. Damage not contained.",
+          "field_note": "UA LOC HOLD: Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.",
+          "terminal": "UA LOC HOLD: ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.",
+          "audio": "UA LOC HOLD: Stopping the machine does not sort what it had become.",
+          "in_game_wiki": "UA LOC HOLD: Atlas Severance Record defines shutdown as a morally split ending route.",
+          "external_site": "UA LOC HOLD: Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Atlas Severance Record",
-          "scanner": "Draft AR localization pending native pass. Continuity cut. Damage not contained.",
-          "field_note": "Draft AR localization pending native pass. Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.",
-          "terminal": "Draft AR localization pending native pass. ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.",
-          "audio": "Draft AR localization pending native pass. Stopping the machine does not sort what it had become.",
-          "in_game_wiki": "Draft AR localization pending native pass. Atlas Severance Record defines shutdown as a morally split ending route.",
-          "external_site": "Draft AR localization pending native pass. Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice."
+          "title": "AR LOC HOLD: Atlas Severance Record",
+          "scanner": "AR LOC HOLD: Continuity cut. Damage not contained.",
+          "field_note": "AR LOC HOLD: Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.",
+          "terminal": "AR LOC HOLD: ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.",
+          "audio": "AR LOC HOLD: Stopping the machine does not sort what it had become.",
+          "in_game_wiki": "AR LOC HOLD: Atlas Severance Record defines shutdown as a morally split ending route.",
+          "external_site": "AR LOC HOLD: Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Atlas Severance Record",
-          "scanner": "Draft ID localization pending native pass. Continuity cut. Damage not contained.",
-          "field_note": "Draft ID localization pending native pass. Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.",
-          "terminal": "Draft ID localization pending native pass. ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.",
-          "audio": "Draft ID localization pending native pass. Stopping the machine does not sort what it had become.",
-          "in_game_wiki": "Draft ID localization pending native pass. Atlas Severance Record defines shutdown as a morally split ending route.",
-          "external_site": "Draft ID localization pending native pass. Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice."
+          "title": "ID LOC HOLD: Atlas Severance Record",
+          "scanner": "ID LOC HOLD: Continuity cut. Damage not contained.",
+          "field_note": "ID LOC HOLD: Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.",
+          "terminal": "ID LOC HOLD: ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.",
+          "audio": "ID LOC HOLD: Stopping the machine does not sort what it had become.",
+          "in_game_wiki": "ID LOC HOLD: Atlas Severance Record defines shutdown as a morally split ending route.",
+          "external_site": "ID LOC HOLD: Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice."
         },
         "ko_KR": {
-          "title": "Draft KR localization pending native pass. Atlas Severance Record",
-          "scanner": "Draft KR localization pending native pass. Continuity cut. Damage not contained.",
-          "field_note": "Draft KR localization pending native pass. Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.",
-          "terminal": "Draft KR localization pending native pass. ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.",
-          "audio": "Draft KR localization pending native pass. Stopping the machine does not sort what it had become.",
-          "in_game_wiki": "Draft KR localization pending native pass. Atlas Severance Record defines shutdown as a morally split ending route.",
-          "external_site": "Draft KR localization pending native pass. Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice."
+          "title": "KR LOC HOLD: Atlas Severance Record",
+          "scanner": "KR LOC HOLD: Continuity cut. Damage not contained.",
+          "field_note": "KR LOC HOLD: Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.",
+          "terminal": "KR LOC HOLD: ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.",
+          "audio": "KR LOC HOLD: Stopping the machine does not sort what it had become.",
+          "in_game_wiki": "KR LOC HOLD: Atlas Severance Record defines shutdown as a morally split ending route.",
+          "external_site": "KR LOC HOLD: Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Atlas Severance Record",
-          "scanner": "Draft HE localization pending native pass. Continuity cut. Damage not contained.",
-          "field_note": "Draft HE localization pending native pass. Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.",
-          "terminal": "Draft HE localization pending native pass. ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.",
-          "audio": "Draft HE localization pending native pass. Stopping the machine does not sort what it had become.",
-          "in_game_wiki": "Draft HE localization pending native pass. Atlas Severance Record defines shutdown as a morally split ending route.",
-          "external_site": "Draft HE localization pending native pass. Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice."
+          "title": "HE LOC HOLD: Atlas Severance Record",
+          "scanner": "HE LOC HOLD: Continuity cut. Damage not contained.",
+          "field_note": "HE LOC HOLD: Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.",
+          "terminal": "HE LOC HOLD: ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.",
+          "audio": "HE LOC HOLD: Stopping the machine does not sort what it had become.",
+          "in_game_wiki": "HE LOC HOLD: Atlas Severance Record defines shutdown as a morally split ending route.",
+          "external_site": "HE LOC HOLD: Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice."
         },
         "pt_BR": {
-          "title": "Draft PT-BR localization pending native pass. Atlas Severance Record",
-          "scanner": "Draft PT-BR localization pending native pass. Continuity cut. Damage not contained.",
-          "field_note": "Draft PT-BR localization pending native pass. Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.",
-          "terminal": "Draft PT-BR localization pending native pass. ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.",
-          "audio": "Draft PT-BR localization pending native pass. Stopping the machine does not sort what it had become.",
-          "in_game_wiki": "Draft PT-BR localization pending native pass. Atlas Severance Record defines shutdown as a morally split ending route.",
-          "external_site": "Draft PT-BR localization pending native pass. Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice."
+          "title": "PT-BR LOC HOLD: Atlas Severance Record",
+          "scanner": "PT-BR LOC HOLD: Continuity cut. Damage not contained.",
+          "field_note": "PT-BR LOC HOLD: Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.",
+          "terminal": "PT-BR LOC HOLD: ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.",
+          "audio": "PT-BR LOC HOLD: Stopping the machine does not sort what it had become.",
+          "in_game_wiki": "PT-BR LOC HOLD: Atlas Severance Record defines shutdown as a morally split ending route.",
+          "external_site": "PT-BR LOC HOLD: Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Atlas Severance Record",
-          "scanner": "Draft NL localization pending native pass. Continuity cut. Damage not contained.",
-          "field_note": "Draft NL localization pending native pass. Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.",
-          "terminal": "Draft NL localization pending native pass. ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.",
-          "audio": "Draft NL localization pending native pass. Stopping the machine does not sort what it had become.",
-          "in_game_wiki": "Draft NL localization pending native pass. Atlas Severance Record defines shutdown as a morally split ending route.",
-          "external_site": "Draft NL localization pending native pass. Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice."
+          "title": "NL LOC HOLD: Atlas Severance Record",
+          "scanner": "NL LOC HOLD: Continuity cut. Damage not contained.",
+          "field_note": "NL LOC HOLD: Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.",
+          "terminal": "NL LOC HOLD: ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.",
+          "audio": "NL LOC HOLD: Stopping the machine does not sort what it had become.",
+          "in_game_wiki": "NL LOC HOLD: Atlas Severance Record defines shutdown as a morally split ending route.",
+          "external_site": "NL LOC HOLD: Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice."
         }
       }
     },
@@ -665,121 +665,121 @@
           "external_site": "Эта статья объясняет отказ HECTON-8 от чистых концовок."
         },
         "ja_JP": {
-          "title": "Draft JP localization pending native pass. Preserve Quarantine Record",
-          "scanner": "Draft JP localization pending native pass. Payload withheld. Consequence deferred.",
-          "field_note": "Draft JP localization pending native pass. Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.",
-          "terminal": "Draft JP localization pending native pass. ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.",
-          "audio": "Draft JP localization pending native pass. Leaving something alive is not the same as saving it.",
-          "in_game_wiki": "Draft JP localization pending native pass. Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.",
-          "external_site": "Draft JP localization pending native pass. Preserve Quarantine Record explains HECTON-8's refusal of clean endings."
+          "title": "JP LOC HOLD: Preserve Quarantine Record",
+          "scanner": "JP LOC HOLD: Payload withheld. Consequence deferred.",
+          "field_note": "JP LOC HOLD: Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.",
+          "terminal": "JP LOC HOLD: ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.",
+          "audio": "JP LOC HOLD: Leaving something alive is not the same as saving it.",
+          "in_game_wiki": "JP LOC HOLD: Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.",
+          "external_site": "JP LOC HOLD: Preserve Quarantine Record explains HECTON-8's refusal of clean endings."
         },
         "zh_CN": {
-          "title": "Draft CN localization pending native pass. Preserve Quarantine Record",
-          "scanner": "Draft CN localization pending native pass. Payload withheld. Consequence deferred.",
-          "field_note": "Draft CN localization pending native pass. Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.",
-          "terminal": "Draft CN localization pending native pass. ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.",
-          "audio": "Draft CN localization pending native pass. Leaving something alive is not the same as saving it.",
-          "in_game_wiki": "Draft CN localization pending native pass. Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.",
-          "external_site": "Draft CN localization pending native pass. Preserve Quarantine Record explains HECTON-8's refusal of clean endings."
+          "title": "CN LOC HOLD: Preserve Quarantine Record",
+          "scanner": "CN LOC HOLD: Payload withheld. Consequence deferred.",
+          "field_note": "CN LOC HOLD: Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.",
+          "terminal": "CN LOC HOLD: ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.",
+          "audio": "CN LOC HOLD: Leaving something alive is not the same as saving it.",
+          "in_game_wiki": "CN LOC HOLD: Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.",
+          "external_site": "CN LOC HOLD: Preserve Quarantine Record explains HECTON-8's refusal of clean endings."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Preserve Quarantine Record",
-          "scanner": "Draft FR localization pending native pass. Payload withheld. Consequence deferred.",
-          "field_note": "Draft FR localization pending native pass. Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.",
-          "terminal": "Draft FR localization pending native pass. ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.",
-          "audio": "Draft FR localization pending native pass. Leaving something alive is not the same as saving it.",
-          "in_game_wiki": "Draft FR localization pending native pass. Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.",
-          "external_site": "Draft FR localization pending native pass. Preserve Quarantine Record explains HECTON-8's refusal of clean endings."
+          "title": "FR LOC HOLD: Preserve Quarantine Record",
+          "scanner": "FR LOC HOLD: Payload withheld. Consequence deferred.",
+          "field_note": "FR LOC HOLD: Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.",
+          "terminal": "FR LOC HOLD: ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.",
+          "audio": "FR LOC HOLD: Leaving something alive is not the same as saving it.",
+          "in_game_wiki": "FR LOC HOLD: Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.",
+          "external_site": "FR LOC HOLD: Preserve Quarantine Record explains HECTON-8's refusal of clean endings."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Preserve Quarantine Record",
-          "scanner": "Draft ES localization pending native pass. Payload withheld. Consequence deferred.",
-          "field_note": "Draft ES localization pending native pass. Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.",
-          "terminal": "Draft ES localization pending native pass. ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.",
-          "audio": "Draft ES localization pending native pass. Leaving something alive is not the same as saving it.",
-          "in_game_wiki": "Draft ES localization pending native pass. Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.",
-          "external_site": "Draft ES localization pending native pass. Preserve Quarantine Record explains HECTON-8's refusal of clean endings."
+          "title": "ES LOC HOLD: Preserve Quarantine Record",
+          "scanner": "ES LOC HOLD: Payload withheld. Consequence deferred.",
+          "field_note": "ES LOC HOLD: Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.",
+          "terminal": "ES LOC HOLD: ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.",
+          "audio": "ES LOC HOLD: Leaving something alive is not the same as saving it.",
+          "in_game_wiki": "ES LOC HOLD: Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.",
+          "external_site": "ES LOC HOLD: Preserve Quarantine Record explains HECTON-8's refusal of clean endings."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Preserve Quarantine Record",
-          "scanner": "Draft DE localization pending native pass. Payload withheld. Consequence deferred.",
-          "field_note": "Draft DE localization pending native pass. Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.",
-          "terminal": "Draft DE localization pending native pass. ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.",
-          "audio": "Draft DE localization pending native pass. Leaving something alive is not the same as saving it.",
-          "in_game_wiki": "Draft DE localization pending native pass. Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.",
-          "external_site": "Draft DE localization pending native pass. Preserve Quarantine Record explains HECTON-8's refusal of clean endings."
+          "title": "DE LOC HOLD: Preserve Quarantine Record",
+          "scanner": "DE LOC HOLD: Payload withheld. Consequence deferred.",
+          "field_note": "DE LOC HOLD: Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.",
+          "terminal": "DE LOC HOLD: ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.",
+          "audio": "DE LOC HOLD: Leaving something alive is not the same as saving it.",
+          "in_game_wiki": "DE LOC HOLD: Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.",
+          "external_site": "DE LOC HOLD: Preserve Quarantine Record explains HECTON-8's refusal of clean endings."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Preserve Quarantine Record",
-          "scanner": "Draft PL localization pending native pass. Payload withheld. Consequence deferred.",
-          "field_note": "Draft PL localization pending native pass. Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.",
-          "terminal": "Draft PL localization pending native pass. ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.",
-          "audio": "Draft PL localization pending native pass. Leaving something alive is not the same as saving it.",
-          "in_game_wiki": "Draft PL localization pending native pass. Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.",
-          "external_site": "Draft PL localization pending native pass. Preserve Quarantine Record explains HECTON-8's refusal of clean endings."
+          "title": "PL LOC HOLD: Preserve Quarantine Record",
+          "scanner": "PL LOC HOLD: Payload withheld. Consequence deferred.",
+          "field_note": "PL LOC HOLD: Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.",
+          "terminal": "PL LOC HOLD: ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.",
+          "audio": "PL LOC HOLD: Leaving something alive is not the same as saving it.",
+          "in_game_wiki": "PL LOC HOLD: Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.",
+          "external_site": "PL LOC HOLD: Preserve Quarantine Record explains HECTON-8's refusal of clean endings."
         },
         "uk_UA": {
-          "title": "Draft UA localization pending native pass. Preserve Quarantine Record",
-          "scanner": "Draft UA localization pending native pass. Payload withheld. Consequence deferred.",
-          "field_note": "Draft UA localization pending native pass. Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.",
-          "terminal": "Draft UA localization pending native pass. ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.",
-          "audio": "Draft UA localization pending native pass. Leaving something alive is not the same as saving it.",
-          "in_game_wiki": "Draft UA localization pending native pass. Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.",
-          "external_site": "Draft UA localization pending native pass. Preserve Quarantine Record explains HECTON-8's refusal of clean endings."
+          "title": "UA LOC HOLD: Preserve Quarantine Record",
+          "scanner": "UA LOC HOLD: Payload withheld. Consequence deferred.",
+          "field_note": "UA LOC HOLD: Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.",
+          "terminal": "UA LOC HOLD: ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.",
+          "audio": "UA LOC HOLD: Leaving something alive is not the same as saving it.",
+          "in_game_wiki": "UA LOC HOLD: Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.",
+          "external_site": "UA LOC HOLD: Preserve Quarantine Record explains HECTON-8's refusal of clean endings."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Preserve Quarantine Record",
-          "scanner": "Draft AR localization pending native pass. Payload withheld. Consequence deferred.",
-          "field_note": "Draft AR localization pending native pass. Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.",
-          "terminal": "Draft AR localization pending native pass. ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.",
-          "audio": "Draft AR localization pending native pass. Leaving something alive is not the same as saving it.",
-          "in_game_wiki": "Draft AR localization pending native pass. Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.",
-          "external_site": "Draft AR localization pending native pass. Preserve Quarantine Record explains HECTON-8's refusal of clean endings."
+          "title": "AR LOC HOLD: Preserve Quarantine Record",
+          "scanner": "AR LOC HOLD: Payload withheld. Consequence deferred.",
+          "field_note": "AR LOC HOLD: Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.",
+          "terminal": "AR LOC HOLD: ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.",
+          "audio": "AR LOC HOLD: Leaving something alive is not the same as saving it.",
+          "in_game_wiki": "AR LOC HOLD: Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.",
+          "external_site": "AR LOC HOLD: Preserve Quarantine Record explains HECTON-8's refusal of clean endings."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Preserve Quarantine Record",
-          "scanner": "Draft ID localization pending native pass. Payload withheld. Consequence deferred.",
-          "field_note": "Draft ID localization pending native pass. Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.",
-          "terminal": "Draft ID localization pending native pass. ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.",
-          "audio": "Draft ID localization pending native pass. Leaving something alive is not the same as saving it.",
-          "in_game_wiki": "Draft ID localization pending native pass. Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.",
-          "external_site": "Draft ID localization pending native pass. Preserve Quarantine Record explains HECTON-8's refusal of clean endings."
+          "title": "ID LOC HOLD: Preserve Quarantine Record",
+          "scanner": "ID LOC HOLD: Payload withheld. Consequence deferred.",
+          "field_note": "ID LOC HOLD: Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.",
+          "terminal": "ID LOC HOLD: ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.",
+          "audio": "ID LOC HOLD: Leaving something alive is not the same as saving it.",
+          "in_game_wiki": "ID LOC HOLD: Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.",
+          "external_site": "ID LOC HOLD: Preserve Quarantine Record explains HECTON-8's refusal of clean endings."
         },
         "ko_KR": {
-          "title": "Draft KR localization pending native pass. Preserve Quarantine Record",
-          "scanner": "Draft KR localization pending native pass. Payload withheld. Consequence deferred.",
-          "field_note": "Draft KR localization pending native pass. Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.",
-          "terminal": "Draft KR localization pending native pass. ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.",
-          "audio": "Draft KR localization pending native pass. Leaving something alive is not the same as saving it.",
-          "in_game_wiki": "Draft KR localization pending native pass. Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.",
-          "external_site": "Draft KR localization pending native pass. Preserve Quarantine Record explains HECTON-8's refusal of clean endings."
+          "title": "KR LOC HOLD: Preserve Quarantine Record",
+          "scanner": "KR LOC HOLD: Payload withheld. Consequence deferred.",
+          "field_note": "KR LOC HOLD: Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.",
+          "terminal": "KR LOC HOLD: ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.",
+          "audio": "KR LOC HOLD: Leaving something alive is not the same as saving it.",
+          "in_game_wiki": "KR LOC HOLD: Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.",
+          "external_site": "KR LOC HOLD: Preserve Quarantine Record explains HECTON-8's refusal of clean endings."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Preserve Quarantine Record",
-          "scanner": "Draft HE localization pending native pass. Payload withheld. Consequence deferred.",
-          "field_note": "Draft HE localization pending native pass. Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.",
-          "terminal": "Draft HE localization pending native pass. ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.",
-          "audio": "Draft HE localization pending native pass. Leaving something alive is not the same as saving it.",
-          "in_game_wiki": "Draft HE localization pending native pass. Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.",
-          "external_site": "Draft HE localization pending native pass. Preserve Quarantine Record explains HECTON-8's refusal of clean endings."
+          "title": "HE LOC HOLD: Preserve Quarantine Record",
+          "scanner": "HE LOC HOLD: Payload withheld. Consequence deferred.",
+          "field_note": "HE LOC HOLD: Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.",
+          "terminal": "HE LOC HOLD: ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.",
+          "audio": "HE LOC HOLD: Leaving something alive is not the same as saving it.",
+          "in_game_wiki": "HE LOC HOLD: Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.",
+          "external_site": "HE LOC HOLD: Preserve Quarantine Record explains HECTON-8's refusal of clean endings."
         },
         "pt_BR": {
-          "title": "Draft PT-BR localization pending native pass. Preserve Quarantine Record",
-          "scanner": "Draft PT-BR localization pending native pass. Payload withheld. Consequence deferred.",
-          "field_note": "Draft PT-BR localization pending native pass. Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.",
-          "terminal": "Draft PT-BR localization pending native pass. ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.",
-          "audio": "Draft PT-BR localization pending native pass. Leaving something alive is not the same as saving it.",
-          "in_game_wiki": "Draft PT-BR localization pending native pass. Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.",
-          "external_site": "Draft PT-BR localization pending native pass. Preserve Quarantine Record explains HECTON-8's refusal of clean endings."
+          "title": "PT-BR LOC HOLD: Preserve Quarantine Record",
+          "scanner": "PT-BR LOC HOLD: Payload withheld. Consequence deferred.",
+          "field_note": "PT-BR LOC HOLD: Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.",
+          "terminal": "PT-BR LOC HOLD: ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.",
+          "audio": "PT-BR LOC HOLD: Leaving something alive is not the same as saving it.",
+          "in_game_wiki": "PT-BR LOC HOLD: Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.",
+          "external_site": "PT-BR LOC HOLD: Preserve Quarantine Record explains HECTON-8's refusal of clean endings."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Preserve Quarantine Record",
-          "scanner": "Draft NL localization pending native pass. Payload withheld. Consequence deferred.",
-          "field_note": "Draft NL localization pending native pass. Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.",
-          "terminal": "Draft NL localization pending native pass. ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.",
-          "audio": "Draft NL localization pending native pass. Leaving something alive is not the same as saving it.",
-          "in_game_wiki": "Draft NL localization pending native pass. Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.",
-          "external_site": "Draft NL localization pending native pass. Preserve Quarantine Record explains HECTON-8's refusal of clean endings."
+          "title": "NL LOC HOLD: Preserve Quarantine Record",
+          "scanner": "NL LOC HOLD: Payload withheld. Consequence deferred.",
+          "field_note": "NL LOC HOLD: Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.",
+          "terminal": "NL LOC HOLD: ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.",
+          "audio": "NL LOC HOLD: Leaving something alive is not the same as saving it.",
+          "in_game_wiki": "NL LOC HOLD: Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.",
+          "external_site": "NL LOC HOLD: Preserve Quarantine Record explains HECTON-8's refusal of clean endings."
         }
       }
     }

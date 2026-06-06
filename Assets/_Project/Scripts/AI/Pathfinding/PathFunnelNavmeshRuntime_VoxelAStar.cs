@@ -573,20 +573,28 @@ namespace Hecton8.AI.Pathfinding
 
         private void ForceCompleteVoxelAStarJobsForTeardown()
         {
-            if (_voxelAStarEvaluateScheduled)
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
             {
-                DispatcherJobFence.TryComplete(ref _voxelAStarEvaluateHandle, forceComplete: true);
-                _voxelAStarEvaluateScheduled = false;
-                MarkVoxelAStarJobCompleted();
-                _voxelAStarEvaluateScheduleTicks = 0L;
-            }
+                if (_voxelAStarEvaluateScheduled)
+                {
+                    DispatcherJobFence.TryComplete(ref _voxelAStarEvaluateHandle, forceComplete: true);
+                    _voxelAStarEvaluateScheduled = false;
+                    MarkVoxelAStarJobCompleted();
+                    _voxelAStarEvaluateScheduleTicks = 0L;
+                }
 
-            if (_voxelAStarSmoothScheduled)
+                if (_voxelAStarSmoothScheduled)
+                {
+                    DispatcherJobFence.TryComplete(ref _voxelAStarSmoothHandle, forceComplete: true);
+                    _voxelAStarSmoothScheduled = false;
+                    MarkVoxelAStarJobCompleted();
+                    _voxelAStarSmoothScheduleTicks = 0L;
+                }
+            }
+            finally
             {
-                DispatcherJobFence.TryComplete(ref _voxelAStarSmoothHandle, forceComplete: true);
-                _voxelAStarSmoothScheduled = false;
-                MarkVoxelAStarJobCompleted();
-                _voxelAStarSmoothScheduleTicks = 0L;
+                DispatcherJobFence.EndPostSimulationSwapWindow();
             }
         }
 
@@ -654,7 +662,15 @@ namespace Hecton8.AI.Pathfinding
             };
             JobHandle handle = job.Schedule(sdf.Length, 128);
             H8Memory.RegisterActiveJob(SystemID.AIPathfinding, handle);
-            DispatcherJobFence.TryComplete(ref handle, forceComplete: true); // COLD_BOOTSTRAP_SYNC: mock SDF must exist before first request admission.
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true); // COLD_BOOTSTRAP_SYNC: mock SDF must exist before first request admission.
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
         }
 
         private static bool EnsureVoxelAStarBuffer<T>(

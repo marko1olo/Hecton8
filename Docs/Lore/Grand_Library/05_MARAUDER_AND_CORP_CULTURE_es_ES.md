@@ -1,36 +1,39 @@
-# BUROCRACIA CORPORATIVA Y CULTURA DE MERODEADORES
-**Sección de la Gran Biblioteca:** 05
-**Idioma:** es_ES
-**Canon:** Estricto (Lore Bible 2190)
+# CUMPLIMIENTO CORPORATIVO Y SUBCULTURA MERODEADORA
+
+> **Fuente:** Oficina de Cumplimiento de Recuperación, Guía de Incorporación para Subcontratistas (Formulario 88-C).  
+> **Hablante:** Sistema de Admisión Automatizado / Supervisor K. Ren.  
+> **Nota del revisor:** Se ha recuperado grafiti no autorizado (indicado como *[Nota al margen: ... ]*) del interior de la cápsula Styx 'Lazarus'. Estas notas describen la subcultura ilícita "Merodeadora".
 
 ---
 
-## 1. Deep Reach: Estructura del Enemigo
-El *Deep Reach Extraterrestrial Development Combine* no es un villano de cartón con capa negra. Es una máquina burocrática que mata personas con hojas de cálculo. Su trabajo sucio en Aegir está dividido a través de un sistema de empresas fantasma y departamentos para que nadie tenga responsabilidad personal por los cadáveres:
+## 1. Estructura Corporativa de Deep Reach
 
-*   **Aegir Continuity Holdings:** La empresa fantasma de la frontera que posee la documentación del planeta HECTON-8.
-*   **Atlas Continuity Office:** El departamento legal que defiende la redacción en el código de la IA Atlas-6, garantizando la continuidad de la extracción de isótopos.
-*   **Keelmark Loss Desk:** El departamento de seguros. Su trabajo es convertir los nombres de los trabajadores muertos en "categorías de carga y riesgos financieros".
-*   **Recovery Compliance Office:** Son los que nos contratan a nosotros, los merodeadores, en 2190. Coordinan el buque nodriza orbital *Black Keel*, exigen pruebas de la presencia de xenón y garantizan el silencio de los contratistas.
+Bienvenidos al Sistema Aegir. Ahora son subcontratistas independientes con licencia que operan bajo la jurisdicción del Combinado de Desarrollo Extraterrestre Deep Reach. Para asegurar una integración perfecta, memoricen las siguientes autoridades departamentales:
 
-El horror de Deep Reach no está en que tengan un trono secreto. El horror está en que cada documento que producen es técnicamente impecable y legalmente justificable, incluso mientras las personas se asfixian detrás de una puerta cerrada.
+*   **Aegir Continuity Holdings:** La división de la frontera que posee todos los contratos de arrendamiento planetario para HECTON-8. Ellos son su empleador final.
+*   **Atlas Continuity Office:** La división legal y de software que maneja el núcleo de IA Atlas-6. No intenten interactuar con Atlas-6 sin autorización.
+*   **Keelmark Loss Desk:** La división de suscripción de seguros. En caso de una falla catastrófica del equipo, Keelmark evalúa el riesgo financiero de su pérdida.
+*   **Recovery Compliance Office:** Somos sus coordinadores directos en el buque de apoyo orbital *Black Keel*. Emitimos sus coordenadas de inmersión, exigimos pruebas de la presencia de Xenón-Omega y aplicamos el Protocolo de Silencio del Contratista.
 
-## 2. Cultura de los Merodeadores
-No somos piratas espaciales románticos de novelas de aventuras. La palabra "Merodeadores" fue originalmente un insulto corporativo para las tripulaciones independientes que abrían módulos abandonados antes de que llegaran los inspectores de seguros. Las tripulaciones conservaron la palabra porque asustaba a las personas correctas.
+*[Nota al margen: No son mentes maestras malvadas. Son hojas de cálculo. Nadie asume la culpa cuando mueres, porque su papeleo es técnicamente impecable.]*
 
-Un merodeador es un recuperador, un rompedor de contratos, un piloto en bancarrota o un soldador proscrito que ha aprendido: "una cláusula de rescate en un contrato corporativo es solo otra forma de ser dueño de tu cadáver".
+## 2. La Distinción "Merodeador"
 
-## 3. Los Tres Libros de Contabilidad
-La economía de las tripulaciones de merodeadores se construye sobre tres conceptos: **Aire, Deuda y Los Muertos**.
+Están clasificados oficialmente como "Contratistas Independientes de Salvamento". Cualquier referencia a ustedes mismos como "Merodeadores" es una violación del código de conducta corporativo. El término se origina como una clasificación legal despectiva para las tripulaciones que abren módulos abandonados antes de que lleguen los inspectores de Keelmark.
 
-*   **Aire:** Se cuenta en minutos, presión parcial, calor del depurador de CO2 y el feo silencio que sigue a una válvula rota.
-*   **Deuda:** Se cuenta en desgaste de herramientas, ciclos de batería, favores y nombres tachados de las listas de seguros de Deep Reach. La deuda inicial de un merodeador es de 4,8 toneladas equivalentes (masa de elevación orbital), que debe trabajarse antes de que te permitan subir al Black Keel.
-*   **Los Muertos:** Un trabajador desaparecido no es un trofeo hasta que alguien demuestre si fue abandonado, reasignado, "disuelto en la contabilidad de biomasa" o simplemente encerrado detrás de una puerta que la corporación sigue llamando "segura". Los merodeadores no romantizan este trabajo. Lo inventarían.
+*[Nota al margen: Mantuvimos el nombre porque asusta a los trajes. Una cláusula de rescate en un contrato corporativo es solo otra forma de ser dueños de tu cadáver. Somos pilotos en bancarrota, soldadores renegados y rompe-contratos.]*
 
-## 4. El Lenguaje de la Supervivencia
-Dentro de un complejo inundado, el rango pertenece a la competencia. Un cortador abre una puerta solo después de que el explorador marca la ruta de regreso. Un técnico puede anular a un piloto cuando los indicadores mienten. Un merodeador novato gana confianza no a través del heroísmo, sino reportando fallos menores antes de que se conviertan en desastres: escarcha alrededor de una escotilla, una voz resonando en un canal muerto, un banco de peces comprimiéndose contra la corriente.
+## 3. Los Tres Libros Mayores
 
-Los corporativos escriben: "variación atmosférica temporal". Un merodeador escribe: "el CO2 devora el juicio primero".
-Los corporativos escriben: "prioridad de contención de activos". Un merodeador escribe: "salvaron el tanque de xenón y ventilaron los cuartos habitables".
+Como contratistas independientes, su pago se calcula estrictamente en función de la masa del sustrato Xenón-Omega recuperado. Su gravamen inicial es el equivalente a 4.8 toneladas (masa de elevación orbital). Trabajarán para pagar esta deuda antes de que se les permitan habitaciones permanentes en el *Black Keel*.
 
-El honor de un merodeador no es moralidad limpia. Es un procedimiento repetible y a prueba de fallos bajo presión letal. Robamos a la corporación y cobramos deudas a los muertos. Esa es la única frontera que impide que los merodeadores se conviertan en corporativos con trajes más baratos.
+*[Nota al margen: El libro mayor corporativo es falso. La verdadera economía merodeadora funciona con Aire, Deudas y Los Muertos.*
+*Aire: Contado en minutos, presión parcial, calor del depurador de CO2 y el feo silencio después de que se rompe una válvula.*
+*Deuda: Contada en desgaste de herramientas, ciclos de batería, favores y nombres tachados de las listas de Keelmark.*
+*Los Muertos: Un trabajador desaparecido no es una tragedia para ellos; es una "carga de sistema no resuelta". Nosotros inventariamos a los muertos para que la corporación no pueda fingir que nunca existieron.]*
+
+## 4. Terminología Operativa
+
+Por favor, adhiéranse a la terminología corporativa estándar al registrar incidentes. Debe utilizarse "variación atmosférica temporal" para las fluctuaciones de presión. "Prioridad de contención de activos" se refiere al sellado necesario de las bóvedas de xenón durante emergencias.
+
+*[Nota al margen: Dentro de un complejo inundado, el único rango es la competencia. Un cortador rebana una puerta solo después de que el explorador marca la ruta de regreso. Un técnico anula a un piloto cuando los indicadores mienten. Un merodeador novato se gana la confianza informando de fallas menores: escarcha floreciendo alrededor de una escotilla, una voz haciendo eco en un canal muerto, un banco de peces comprimiéndose contra la corriente. Los corporativos dicen "contención de activos". Nosotros decimos "salvaron el tanque de xenón y ventilaron los cuartos de vida". Robamos a la corporación para cobrar deudas a los muertos. Es lo único que nos impide convertirnos en ellos.]*

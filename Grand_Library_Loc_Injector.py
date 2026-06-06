@@ -7,8 +7,17 @@ LOC_DIR = r"C:\hades\Hecton8\Data\Localization"
 def inject_library():
     print("Starting Grand Library Localization Injection...")
     
-    # Supported languages that have markdown files authored
-    langs = ["en_US", "ru_RU"]
+    # Dynamically detect all languages from authored markdown filenames (e.g. *_ru_RU.md)
+    langs = set()
+    if os.path.exists(GRAND_LIBRARY_DIR):
+        for filename in os.listdir(GRAND_LIBRARY_DIR):
+            if filename.endswith(".md") and "_" in filename:
+                parts = filename.replace(".md", "").split("_")
+                if len(parts) >= 2:
+                    lang = "_".join(parts[-2:])
+                    if len(lang) == 5 and lang[2] == "_":
+                        langs.add(lang)
+    langs = sorted(list(langs))
     
     for lang in langs:
         loc_file = os.path.join(LOC_DIR, f"{lang}.json")
@@ -16,7 +25,7 @@ def inject_library():
             print(f"Skipping {lang}, loc file not found.")
             continue
             
-        with open(loc_file, "r", encoding="utf-8") as f:
+        with open(loc_file, "r", encoding="utf-8-sig") as f:
             loc_data = json.load(f)
             
         # Ensure strings dictionary exists
@@ -27,7 +36,7 @@ def inject_library():
         for filename in os.listdir(GRAND_LIBRARY_DIR):
             if filename.endswith(f"{lang}.md"):
                 file_path = os.path.join(GRAND_LIBRARY_DIR, filename)
-                with open(file_path, "r", encoding="utf-8") as md_file:
+                with open(file_path, "r", encoding="utf-8-sig") as md_file:
                     content = md_file.read()
                     
                 # Create a key based on the filename, e.g., 01_ASTRONOMY_AND_HISTORY -> ns.lore.grand_library.astronomy

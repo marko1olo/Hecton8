@@ -41,7 +41,23 @@ locales = {
 
 for loc, strings in locales.items():
     filepath = os.path.join(loc_dir, f"{loc}.json")
-    data = {"schema": "HECTON8_LOC_V2", "locale": loc, "strings": strings}
+    
+    # Safe load of existing translations to prevent overwriting other pipeline keys
+    data = {"schema": "HECTON8_LOC_V2", "locale": loc, "strings": {}}
+    if os.path.exists(filepath):
+        try:
+            with open(filepath, "r", encoding="utf-8-sig") as f:
+                existing = json.load(f)
+                if isinstance(existing, dict):
+                    data.update(existing)
+                    if "strings" not in data or not isinstance(data["strings"], dict):
+                        data["strings"] = {}
+        except Exception as e:
+            print(f"Warning: Could not load existing {filepath}: {e}")
+            
+    # Merge new core translation strings
+    data["strings"].update(strings)
+    
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
 

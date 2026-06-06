@@ -46,120 +46,120 @@
         },
         "ja_JP": {
           "title": "Dossier Rumor Unlocks",
-          "scanner": "Draft JP localization pending native pass. Replay memory: rumor, warning, contract context. Not power.",
-          "field_note": "Draft JP localization pending native pass. Knowledge can persist without making the next run easier in a boring way.",
-          "terminal": "Draft JP localization pending native pass. DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.",
-          "audio": "Draft JP localization pending native pass. Your file remembers what your hands cannot carry.",
-          "in_game_wiki": "Draft JP localization pending native pass. The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.",
-          "external_site": "Draft JP localization pending native pass. Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength."
+          "scanner": "JP LOC HOLD: Replay memory: rumor, warning, contract context. Not power.",
+          "field_note": "JP LOC HOLD: Knowledge can persist without making the next run easier in a boring way.",
+          "terminal": "JP LOC HOLD: DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.",
+          "audio": "JP LOC HOLD: Your file remembers what your hands cannot carry.",
+          "in_game_wiki": "JP LOC HOLD: The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.",
+          "external_site": "JP LOC HOLD: Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength."
         },
         "zh_CN": {
           "title": "Dossier Rumor Unlocks",
-          "scanner": "Draft CN localization pending native pass. Replay memory: rumor, warning, contract context. Not power.",
-          "field_note": "Draft CN localization pending native pass. Knowledge can persist without making the next run easier in a boring way.",
-          "terminal": "Draft CN localization pending native pass. DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.",
-          "audio": "Draft CN localization pending native pass. Your file remembers what your hands cannot carry.",
-          "in_game_wiki": "Draft CN localization pending native pass. The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.",
-          "external_site": "Draft CN localization pending native pass. Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength."
+          "scanner": "CN LOC HOLD: Replay memory: rumor, warning, contract context. Not power.",
+          "field_note": "CN LOC HOLD: Knowledge can persist without making the next run easier in a boring way.",
+          "terminal": "CN LOC HOLD: DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.",
+          "audio": "CN LOC HOLD: Your file remembers what your hands cannot carry.",
+          "in_game_wiki": "CN LOC HOLD: The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.",
+          "external_site": "CN LOC HOLD: Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength."
         },
         "fr_FR": {
           "title": "Dossier Rumor Unlocks",
-          "scanner": "Draft FR localization pending native pass. Replay memory: rumor, warning, contract context. Not power.",
-          "field_note": "Draft FR localization pending native pass. Knowledge can persist without making the next run easier in a boring way.",
-          "terminal": "Draft FR localization pending native pass. DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.",
-          "audio": "Draft FR localization pending native pass. Your file remembers what your hands cannot carry.",
-          "in_game_wiki": "Draft FR localization pending native pass. The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.",
-          "external_site": "Draft FR localization pending native pass. Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength."
+          "scanner": "FR LOC HOLD: Replay memory: rumor, warning, contract context. Not power.",
+          "field_note": "FR LOC HOLD: Knowledge can persist without making the next run easier in a boring way.",
+          "terminal": "FR LOC HOLD: DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.",
+          "audio": "FR LOC HOLD: Your file remembers what your hands cannot carry.",
+          "in_game_wiki": "FR LOC HOLD: The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.",
+          "external_site": "FR LOC HOLD: Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength."
         },
         "es_ES": {
           "title": "Dossier Rumor Unlocks",
-          "scanner": "Draft ES localization pending native pass. Replay memory: rumor, warning, contract context. Not power.",
-          "field_note": "Draft ES localization pending native pass. Knowledge can persist without making the next run easier in a boring way.",
-          "terminal": "Draft ES localization pending native pass. DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.",
-          "audio": "Draft ES localization pending native pass. Your file remembers what your hands cannot carry.",
-          "in_game_wiki": "Draft ES localization pending native pass. The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.",
-          "external_site": "Draft ES localization pending native pass. Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength."
+          "scanner": "ES LOC HOLD: Replay memory: rumor, warning, contract context. Not power.",
+          "field_note": "ES LOC HOLD: Knowledge can persist without making the next run easier in a boring way.",
+          "terminal": "ES LOC HOLD: DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.",
+          "audio": "ES LOC HOLD: Your file remembers what your hands cannot carry.",
+          "in_game_wiki": "ES LOC HOLD: The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.",
+          "external_site": "ES LOC HOLD: Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength."
         },
         "de_DE": {
           "title": "Dossier Rumor Unlocks",
-          "scanner": "Draft DE localization pending native pass. Replay memory: rumor, warning, contract context. Not power.",
-          "field_note": "Draft DE localization pending native pass. Knowledge can persist without making the next run easier in a boring way.",
-          "terminal": "Draft DE localization pending native pass. DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.",
-          "audio": "Draft DE localization pending native pass. Your file remembers what your hands cannot carry.",
-          "in_game_wiki": "Draft DE localization pending native pass. The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.",
-          "external_site": "Draft DE localization pending native pass. Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength."
+          "scanner": "DE LOC HOLD: Replay memory: rumor, warning, contract context. Not power.",
+          "field_note": "DE LOC HOLD: Knowledge can persist without making the next run easier in a boring way.",
+          "terminal": "DE LOC HOLD: DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.",
+          "audio": "DE LOC HOLD: Your file remembers what your hands cannot carry.",
+          "in_game_wiki": "DE LOC HOLD: The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.",
+          "external_site": "DE LOC HOLD: Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength."
         },
         "pl_PL": {
           "title": "Dossier Rumor Unlocks",
-          "scanner": "Draft PL localization pending native pass. Replay memory: rumor, warning, contract context. Not power.",
-          "field_note": "Draft PL localization pending native pass. Knowledge can persist without making the next run easier in a boring way.",
-          "terminal": "Draft PL localization pending native pass. DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.",
-          "audio": "Draft PL localization pending native pass. Your file remembers what your hands cannot carry.",
-          "in_game_wiki": "Draft PL localization pending native pass. The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.",
-          "external_site": "Draft PL localization pending native pass. Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength."
+          "scanner": "PL LOC HOLD: Replay memory: rumor, warning, contract context. Not power.",
+          "field_note": "PL LOC HOLD: Knowledge can persist without making the next run easier in a boring way.",
+          "terminal": "PL LOC HOLD: DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.",
+          "audio": "PL LOC HOLD: Your file remembers what your hands cannot carry.",
+          "in_game_wiki": "PL LOC HOLD: The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.",
+          "external_site": "PL LOC HOLD: Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength."
         },
         "uk_UA": {
           "title": "Dossier Rumor Unlocks",
-          "scanner": "Draft UA localization pending native pass. Replay memory: rumor, warning, contract context. Not power.",
-          "field_note": "Draft UA localization pending native pass. Knowledge can persist without making the next run easier in a boring way.",
-          "terminal": "Draft UA localization pending native pass. DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.",
-          "audio": "Draft UA localization pending native pass. Your file remembers what your hands cannot carry.",
-          "in_game_wiki": "Draft UA localization pending native pass. The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.",
-          "external_site": "Draft UA localization pending native pass. Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength."
+          "scanner": "UA LOC HOLD: Replay memory: rumor, warning, contract context. Not power.",
+          "field_note": "UA LOC HOLD: Knowledge can persist without making the next run easier in a boring way.",
+          "terminal": "UA LOC HOLD: DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.",
+          "audio": "UA LOC HOLD: Your file remembers what your hands cannot carry.",
+          "in_game_wiki": "UA LOC HOLD: The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.",
+          "external_site": "UA LOC HOLD: Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength."
         },
         "ar_SA": {
           "title": "Dossier Rumor Unlocks",
-          "scanner": "Draft AR localization pending native pass. Replay memory: rumor, warning, contract context. Not power.",
-          "field_note": "Draft AR localization pending native pass. Knowledge can persist without making the next run easier in a boring way.",
-          "terminal": "Draft AR localization pending native pass. DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.",
-          "audio": "Draft AR localization pending native pass. Your file remembers what your hands cannot carry.",
-          "in_game_wiki": "Draft AR localization pending native pass. The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.",
-          "external_site": "Draft AR localization pending native pass. Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength."
+          "scanner": "AR LOC HOLD: Replay memory: rumor, warning, contract context. Not power.",
+          "field_note": "AR LOC HOLD: Knowledge can persist without making the next run easier in a boring way.",
+          "terminal": "AR LOC HOLD: DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.",
+          "audio": "AR LOC HOLD: Your file remembers what your hands cannot carry.",
+          "in_game_wiki": "AR LOC HOLD: The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.",
+          "external_site": "AR LOC HOLD: Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength."
         },
         "id_ID": {
           "title": "Dossier Rumor Unlocks",
-          "scanner": "Draft ID localization pending native pass. Replay memory: rumor, warning, contract context. Not power.",
-          "field_note": "Draft ID localization pending native pass. Knowledge can persist without making the next run easier in a boring way.",
-          "terminal": "Draft ID localization pending native pass. DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.",
-          "audio": "Draft ID localization pending native pass. Your file remembers what your hands cannot carry.",
-          "in_game_wiki": "Draft ID localization pending native pass. The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.",
-          "external_site": "Draft ID localization pending native pass. Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength."
+          "scanner": "ID LOC HOLD: Replay memory: rumor, warning, contract context. Not power.",
+          "field_note": "ID LOC HOLD: Knowledge can persist without making the next run easier in a boring way.",
+          "terminal": "ID LOC HOLD: DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.",
+          "audio": "ID LOC HOLD: Your file remembers what your hands cannot carry.",
+          "in_game_wiki": "ID LOC HOLD: The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.",
+          "external_site": "ID LOC HOLD: Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength."
         },
         "ko_KR": {
           "title": "Dossier Rumor Unlocks",
-          "scanner": "Draft KO localization pending native pass. Replay memory: rumor, warning, contract context. Not power.",
-          "field_note": "Draft KO localization pending native pass. Knowledge can persist without making the next run easier in a boring way.",
-          "terminal": "Draft KO localization pending native pass. DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.",
-          "audio": "Draft KO localization pending native pass. Your file remembers what your hands cannot carry.",
-          "in_game_wiki": "Draft KO localization pending native pass. The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.",
-          "external_site": "Draft KO localization pending native pass. Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength."
+          "scanner": "KO LOC HOLD: Replay memory: rumor, warning, contract context. Not power.",
+          "field_note": "KO LOC HOLD: Knowledge can persist without making the next run easier in a boring way.",
+          "terminal": "KO LOC HOLD: DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.",
+          "audio": "KO LOC HOLD: Your file remembers what your hands cannot carry.",
+          "in_game_wiki": "KO LOC HOLD: The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.",
+          "external_site": "KO LOC HOLD: Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength."
         },
         "he_IL": {
           "title": "Dossier Rumor Unlocks",
-          "scanner": "Draft HE localization pending native pass. Replay memory: rumor, warning, contract context. Not power.",
-          "field_note": "Draft HE localization pending native pass. Knowledge can persist without making the next run easier in a boring way.",
-          "terminal": "Draft HE localization pending native pass. DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.",
-          "audio": "Draft HE localization pending native pass. Your file remembers what your hands cannot carry.",
-          "in_game_wiki": "Draft HE localization pending native pass. The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.",
-          "external_site": "Draft HE localization pending native pass. Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength."
+          "scanner": "HE LOC HOLD: Replay memory: rumor, warning, contract context. Not power.",
+          "field_note": "HE LOC HOLD: Knowledge can persist without making the next run easier in a boring way.",
+          "terminal": "HE LOC HOLD: DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.",
+          "audio": "HE LOC HOLD: Your file remembers what your hands cannot carry.",
+          "in_game_wiki": "HE LOC HOLD: The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.",
+          "external_site": "HE LOC HOLD: Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength."
         },
         "pt_BR": {
           "title": "Dossier Rumor Unlocks",
-          "scanner": "Draft PT localization pending native pass. Replay memory: rumor, warning, contract context. Not power.",
-          "field_note": "Draft PT localization pending native pass. Knowledge can persist without making the next run easier in a boring way.",
-          "terminal": "Draft PT localization pending native pass. DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.",
-          "audio": "Draft PT localization pending native pass. Your file remembers what your hands cannot carry.",
-          "in_game_wiki": "Draft PT localization pending native pass. The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.",
-          "external_site": "Draft PT localization pending native pass. Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength."
+          "scanner": "PT LOC HOLD: Replay memory: rumor, warning, contract context. Not power.",
+          "field_note": "PT LOC HOLD: Knowledge can persist without making the next run easier in a boring way.",
+          "terminal": "PT LOC HOLD: DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.",
+          "audio": "PT LOC HOLD: Your file remembers what your hands cannot carry.",
+          "in_game_wiki": "PT LOC HOLD: The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.",
+          "external_site": "PT LOC HOLD: Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength."
         },
         "nl_NL": {
           "title": "Dossier Rumor Unlocks",
-          "scanner": "Draft NL localization pending native pass. Replay memory: rumor, warning, contract context. Not power.",
-          "field_note": "Draft NL localization pending native pass. Knowledge can persist without making the next run easier in a boring way.",
-          "terminal": "Draft NL localization pending native pass. DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.",
-          "audio": "Draft NL localization pending native pass. Your file remembers what your hands cannot carry.",
-          "in_game_wiki": "Draft NL localization pending native pass. The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.",
-          "external_site": "Draft NL localization pending native pass. Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength."
+          "scanner": "NL LOC HOLD: Replay memory: rumor, warning, contract context. Not power.",
+          "field_note": "NL LOC HOLD: Knowledge can persist without making the next run easier in a boring way.",
+          "terminal": "NL LOC HOLD: DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.",
+          "audio": "NL LOC HOLD: Your file remembers what your hands cannot carry.",
+          "in_game_wiki": "NL LOC HOLD: The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.",
+          "external_site": "NL LOC HOLD: Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength."
         }
       }
     },
@@ -201,120 +201,120 @@
         },
         "ja_JP": {
           "title": "Riskier Contract Seeds",
-          "scanner": "Draft JP localization pending native pass. You can choose a worse contract, not a stronger body.",
-          "field_note": "Draft JP localization pending native pass. Replay should ask for greed, courage or stupidity, not grind.",
-          "terminal": "Draft JP localization pending native pass. CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.",
-          "audio": "Draft JP localization pending native pass. The board pays more when it expects less of you to return.",
-          "in_game_wiki": "Draft JP localization pending native pass. Riskier contract seeds let experienced players change pressure without changing canon. A run can start with worse orbital timing, deeper early objectives or harsher custody terms. The player chooses risk, not inherited strength.",
-          "external_site": "Draft JP localization pending native pass. Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands."
+          "scanner": "JP LOC HOLD: You can choose a worse contract, not a stronger body.",
+          "field_note": "JP LOC HOLD: Replay should ask for greed, courage or stupidity, not grind.",
+          "terminal": "JP LOC HOLD: CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.",
+          "audio": "JP LOC HOLD: The board pays more when it expects less of you to return.",
+          "in_game_wiki": "JP LOC HOLD: Riskier contract seeds let experienced players change pressure without changing canon. A run can start with worse orbital timing, deeper early objectives or harsher custody terms. The player chooses risk, not inherited strength.",
+          "external_site": "JP LOC HOLD: Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands."
         },
         "zh_CN": {
           "title": "Riskier Contract Seeds",
-          "scanner": "Draft CN localization pending native pass. You can choose a worse contract, not a stronger body.",
-          "field_note": "Draft CN localization pending native pass. Replay should ask for greed, courage or stupidity, not grind.",
-          "terminal": "Draft CN localization pending native pass. CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.",
-          "audio": "Draft CN localization pending native pass. The board pays more when it expects less of you to return.",
-          "in_game_wiki": "Draft CN localization pending native pass. Riskier contract seeds let experienced players change pressure without changing canon. A run can start with worse orbital timing, deeper early objectives or harsher custody terms. The player chooses risk, not inherited strength.",
-          "external_site": "Draft CN localization pending native pass. Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands."
+          "scanner": "CN LOC HOLD: You can choose a worse contract, not a stronger body.",
+          "field_note": "CN LOC HOLD: Replay should ask for greed, courage or stupidity, not grind.",
+          "terminal": "CN LOC HOLD: CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.",
+          "audio": "CN LOC HOLD: The board pays more when it expects less of you to return.",
+          "in_game_wiki": "CN LOC HOLD: Riskier contract seeds let experienced players change pressure without changing canon. A run can start with worse orbital timing, deeper early objectives or harsher custody terms. The player chooses risk, not inherited strength.",
+          "external_site": "CN LOC HOLD: Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands."
         },
         "fr_FR": {
           "title": "Riskier Contract Seeds",
-          "scanner": "Draft FR localization pending native pass. You can choose a worse contract, not a stronger body.",
-          "field_note": "Draft FR localization pending native pass. Replay should ask for greed, courage or stupidity, not grind.",
-          "terminal": "Draft FR localization pending native pass. CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.",
-          "audio": "Draft FR localization pending native pass. The board pays more when it expects less of you to return.",
-          "in_game_wiki": "Draft FR localization pending native pass. Riskier contract seeds let experienced players change pressure without changing canon. A run can start with worse orbital timing, deeper early objectives or harsher custody terms. The player chooses risk, not inherited strength.",
-          "external_site": "Draft FR localization pending native pass. Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands."
+          "scanner": "FR LOC HOLD: You can choose a worse contract, not a stronger body.",
+          "field_note": "FR LOC HOLD: Replay should ask for greed, courage or stupidity, not grind.",
+          "terminal": "FR LOC HOLD: CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.",
+          "audio": "FR LOC HOLD: The board pays more when it expects less of you to return.",
+          "in_game_wiki": "FR LOC HOLD: Riskier contract seeds let experienced players change pressure without changing canon. A run can start with worse orbital timing, deeper early objectives or harsher custody terms. The player chooses risk, not inherited strength.",
+          "external_site": "FR LOC HOLD: Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands."
         },
         "es_ES": {
           "title": "Riskier Contract Seeds",
-          "scanner": "Draft ES localization pending native pass. You can choose a worse contract, not a stronger body.",
-          "field_note": "Draft ES localization pending native pass. Replay should ask for greed, courage or stupidity, not grind.",
-          "terminal": "Draft ES localization pending native pass. CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.",
-          "audio": "Draft ES localization pending native pass. The board pays more when it expects less of you to return.",
-          "in_game_wiki": "Draft ES localization pending native pass. Riskier contract seeds let experienced players change pressure without changing canon. A run can start with worse orbital timing, deeper early objectives or harsher custody terms. The player chooses risk, not inherited strength.",
-          "external_site": "Draft ES localization pending native pass. Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands."
+          "scanner": "ES LOC HOLD: You can choose a worse contract, not a stronger body.",
+          "field_note": "ES LOC HOLD: Replay should ask for greed, courage or stupidity, not grind.",
+          "terminal": "ES LOC HOLD: CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.",
+          "audio": "ES LOC HOLD: The board pays more when it expects less of you to return.",
+          "in_game_wiki": "ES LOC HOLD: Riskier contract seeds let experienced players change pressure without changing canon. A run can start with worse orbital timing, deeper early objectives or harsher custody terms. The player chooses risk, not inherited strength.",
+          "external_site": "ES LOC HOLD: Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands."
         },
         "de_DE": {
           "title": "Riskier Contract Seeds",
-          "scanner": "Draft DE localization pending native pass. You can choose a worse contract, not a stronger body.",
-          "field_note": "Draft DE localization pending native pass. Replay should ask for greed, courage or stupidity, not grind.",
-          "terminal": "Draft DE localization pending native pass. CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.",
-          "audio": "Draft DE localization pending native pass. The board pays more when it expects less of you to return.",
-          "in_game_wiki": "Draft DE localization pending native pass. Riskier contract seeds let experienced players change pressure without changing canon. A run can start with worse orbital timing, deeper early objectives or harsher custody terms. The player chooses risk, not inherited strength.",
-          "external_site": "Draft DE localization pending native pass. Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands."
+          "scanner": "DE LOC HOLD: You can choose a worse contract, not a stronger body.",
+          "field_note": "DE LOC HOLD: Replay should ask for greed, courage or stupidity, not grind.",
+          "terminal": "DE LOC HOLD: CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.",
+          "audio": "DE LOC HOLD: The board pays more when it expects less of you to return.",
+          "in_game_wiki": "DE LOC HOLD: Riskier contract seeds let experienced players change pressure without changing canon. A run can start with worse orbital timing, deeper early objectives or harsher custody terms. The player chooses risk, not inherited strength.",
+          "external_site": "DE LOC HOLD: Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands."
         },
         "pl_PL": {
           "title": "Riskier Contract Seeds",
-          "scanner": "Draft PL localization pending native pass. You can choose a worse contract, not a stronger body.",
-          "field_note": "Draft PL localization pending native pass. Replay should ask for greed, courage or stupidity, not grind.",
-          "terminal": "Draft PL localization pending native pass. CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.",
-          "audio": "Draft PL localization pending native pass. The board pays more when it expects less of you to return.",
-          "in_game_wiki": "Draft PL localization pending native pass. Riskier contract seeds let experienced players change pressure without changing canon. A run can start with worse orbital timing, deeper early objectives or harsher custody terms. The player chooses risk, not inherited strength.",
-          "external_site": "Draft PL localization pending native pass. Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands."
+          "scanner": "PL LOC HOLD: You can choose a worse contract, not a stronger body.",
+          "field_note": "PL LOC HOLD: Replay should ask for greed, courage or stupidity, not grind.",
+          "terminal": "PL LOC HOLD: CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.",
+          "audio": "PL LOC HOLD: The board pays more when it expects less of you to return.",
+          "in_game_wiki": "PL LOC HOLD: Riskier contract seeds let experienced players change pressure without changing canon. A run can start with worse orbital timing, deeper early objectives or harsher custody terms. The player chooses risk, not inherited strength.",
+          "external_site": "PL LOC HOLD: Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands."
         },
         "uk_UA": {
           "title": "Riskier Contract Seeds",
-          "scanner": "Draft UA localization pending native pass. You can choose a worse contract, not a stronger body.",
-          "field_note": "Draft UA localization pending native pass. Replay should ask for greed, courage or stupidity, not grind.",
-          "terminal": "Draft UA localization pending native pass. CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.",
-          "audio": "Draft UA localization pending native pass. The board pays more when it expects less of you to return.",
-          "in_game_wiki": "Draft UA localization pending native pass. Riskier contract seeds let experienced players change pressure without changing canon. A run can start with worse orbital timing, deeper early objectives or harsher custody terms. The player chooses risk, not inherited strength.",
-          "external_site": "Draft UA localization pending native pass. Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands."
+          "scanner": "UA LOC HOLD: You can choose a worse contract, not a stronger body.",
+          "field_note": "UA LOC HOLD: Replay should ask for greed, courage or stupidity, not grind.",
+          "terminal": "UA LOC HOLD: CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.",
+          "audio": "UA LOC HOLD: The board pays more when it expects less of you to return.",
+          "in_game_wiki": "UA LOC HOLD: Riskier contract seeds let experienced players change pressure without changing canon. A run can start with worse orbital timing, deeper early objectives or harsher custody terms. The player chooses risk, not inherited strength.",
+          "external_site": "UA LOC HOLD: Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands."
         },
         "ar_SA": {
           "title": "Riskier Contract Seeds",
-          "scanner": "Draft AR localization pending native pass. You can choose a worse contract, not a stronger body.",
-          "field_note": "Draft AR localization pending native pass. Replay should ask for greed, courage or stupidity, not grind.",
-          "terminal": "Draft AR localization pending native pass. CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.",
-          "audio": "Draft AR localization pending native pass. The board pays more when it expects less of you to return.",
-          "in_game_wiki": "Draft AR localization pending native pass. Riskier contract seeds let experienced players change pressure without changing canon. A run can start with worse orbital timing, deeper early objectives or harsher custody terms. The player chooses risk, not inherited strength.",
-          "external_site": "Draft AR localization pending native pass. Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands."
+          "scanner": "AR LOC HOLD: You can choose a worse contract, not a stronger body.",
+          "field_note": "AR LOC HOLD: Replay should ask for greed, courage or stupidity, not grind.",
+          "terminal": "AR LOC HOLD: CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.",
+          "audio": "AR LOC HOLD: The board pays more when it expects less of you to return.",
+          "in_game_wiki": "AR LOC HOLD: Riskier contract seeds let experienced players change pressure without changing canon. A run can start with worse orbital timing, deeper early objectives or harsher custody terms. The player chooses risk, not inherited strength.",
+          "external_site": "AR LOC HOLD: Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands."
         },
         "id_ID": {
           "title": "Riskier Contract Seeds",
-          "scanner": "Draft ID localization pending native pass. You can choose a worse contract, not a stronger body.",
-          "field_note": "Draft ID localization pending native pass. Replay should ask for greed, courage or stupidity, not grind.",
-          "terminal": "Draft ID localization pending native pass. CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.",
-          "audio": "Draft ID localization pending native pass. The board pays more when it expects less of you to return.",
-          "in_game_wiki": "Draft ID localization pending native pass. Riskier contract seeds let experienced players change pressure without changing canon. A run can start with worse orbital timing, deeper early objectives or harsher custody terms. The player chooses risk, not inherited strength.",
-          "external_site": "Draft ID localization pending native pass. Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands."
+          "scanner": "ID LOC HOLD: You can choose a worse contract, not a stronger body.",
+          "field_note": "ID LOC HOLD: Replay should ask for greed, courage or stupidity, not grind.",
+          "terminal": "ID LOC HOLD: CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.",
+          "audio": "ID LOC HOLD: The board pays more when it expects less of you to return.",
+          "in_game_wiki": "ID LOC HOLD: Riskier contract seeds let experienced players change pressure without changing canon. A run can start with worse orbital timing, deeper early objectives or harsher custody terms. The player chooses risk, not inherited strength.",
+          "external_site": "ID LOC HOLD: Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands."
         },
         "ko_KR": {
           "title": "Riskier Contract Seeds",
-          "scanner": "Draft KO localization pending native pass. You can choose a worse contract, not a stronger body.",
-          "field_note": "Draft KO localization pending native pass. Replay should ask for greed, courage or stupidity, not grind.",
-          "terminal": "Draft KO localization pending native pass. CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.",
-          "audio": "Draft KO localization pending native pass. The board pays more when it expects less of you to return.",
-          "in_game_wiki": "Draft KO localization pending native pass. Riskier contract seeds let experienced players change pressure without changing canon. A run can start with worse orbital timing, deeper early objectives or harsher custody terms. The player chooses risk, not inherited strength.",
-          "external_site": "Draft KO localization pending native pass. Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands."
+          "scanner": "KO LOC HOLD: You can choose a worse contract, not a stronger body.",
+          "field_note": "KO LOC HOLD: Replay should ask for greed, courage or stupidity, not grind.",
+          "terminal": "KO LOC HOLD: CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.",
+          "audio": "KO LOC HOLD: The board pays more when it expects less of you to return.",
+          "in_game_wiki": "KO LOC HOLD: Riskier contract seeds let experienced players change pressure without changing canon. A run can start with worse orbital timing, deeper early objectives or harsher custody terms. The player chooses risk, not inherited strength.",
+          "external_site": "KO LOC HOLD: Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands."
         },
         "he_IL": {
           "title": "Riskier Contract Seeds",
-          "scanner": "Draft HE localization pending native pass. You can choose a worse contract, not a stronger body.",
-          "field_note": "Draft HE localization pending native pass. Replay should ask for greed, courage or stupidity, not grind.",
-          "terminal": "Draft HE localization pending native pass. CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.",
-          "audio": "Draft HE localization pending native pass. The board pays more when it expects less of you to return.",
-          "in_game_wiki": "Draft HE localization pending native pass. Riskier contract seeds let experienced players change pressure without changing canon. A run can start with worse orbital timing, deeper early objectives or harsher custody terms. The player chooses risk, not inherited strength.",
-          "external_site": "Draft HE localization pending native pass. Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands."
+          "scanner": "HE LOC HOLD: You can choose a worse contract, not a stronger body.",
+          "field_note": "HE LOC HOLD: Replay should ask for greed, courage or stupidity, not grind.",
+          "terminal": "HE LOC HOLD: CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.",
+          "audio": "HE LOC HOLD: The board pays more when it expects less of you to return.",
+          "in_game_wiki": "HE LOC HOLD: Riskier contract seeds let experienced players change pressure without changing canon. A run can start with worse orbital timing, deeper early objectives or harsher custody terms. The player chooses risk, not inherited strength.",
+          "external_site": "HE LOC HOLD: Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands."
         },
         "pt_BR": {
           "title": "Riskier Contract Seeds",
-          "scanner": "Draft PT localization pending native pass. You can choose a worse contract, not a stronger body.",
-          "field_note": "Draft PT localization pending native pass. Replay should ask for greed, courage or stupidity, not grind.",
-          "terminal": "Draft PT localization pending native pass. CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.",
-          "audio": "Draft PT localization pending native pass. The board pays more when it expects less of you to return.",
-          "in_game_wiki": "Draft PT localization pending native pass. Riskier contract seeds let experienced players change pressure without changing canon. A run can start with worse orbital timing, deeper early objectives or harsher custody terms. The player chooses risk, not inherited strength.",
-          "external_site": "Draft PT localization pending native pass. Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands."
+          "scanner": "PT LOC HOLD: You can choose a worse contract, not a stronger body.",
+          "field_note": "PT LOC HOLD: Replay should ask for greed, courage or stupidity, not grind.",
+          "terminal": "PT LOC HOLD: CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.",
+          "audio": "PT LOC HOLD: The board pays more when it expects less of you to return.",
+          "in_game_wiki": "PT LOC HOLD: Riskier contract seeds let experienced players change pressure without changing canon. A run can start with worse orbital timing, deeper early objectives or harsher custody terms. The player chooses risk, not inherited strength.",
+          "external_site": "PT LOC HOLD: Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands."
         },
         "nl_NL": {
           "title": "Riskier Contract Seeds",
-          "scanner": "Draft NL localization pending native pass. You can choose a worse contract, not a stronger body.",
-          "field_note": "Draft NL localization pending native pass. Replay should ask for greed, courage or stupidity, not grind.",
-          "terminal": "Draft NL localization pending native pass. CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.",
-          "audio": "Draft NL localization pending native pass. The board pays more when it expects less of you to return.",
-          "in_game_wiki": "Draft NL localization pending native pass. Riskier contract seeds let experienced players change pressure without changing canon. A run can start with worse orbital timing, deeper early objectives or harsher custody terms. The player chooses risk, not inherited strength.",
-          "external_site": "Draft NL localization pending native pass. Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands."
+          "scanner": "NL LOC HOLD: You can choose a worse contract, not a stronger body.",
+          "field_note": "NL LOC HOLD: Replay should ask for greed, courage or stupidity, not grind.",
+          "terminal": "NL LOC HOLD: CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.",
+          "audio": "NL LOC HOLD: The board pays more when it expects less of you to return.",
+          "in_game_wiki": "NL LOC HOLD: Riskier contract seeds let experienced players change pressure without changing canon. A run can start with worse orbital timing, deeper early objectives or harsher custody terms. The player chooses risk, not inherited strength.",
+          "external_site": "NL LOC HOLD: Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands."
         }
       }
     },
@@ -356,120 +356,120 @@
         },
         "ja_JP": {
           "title": "False Ending Count Ladder",
-          "scanner": "Draft JP localization pending native pass. Four major false families before the deep Atlas resolutions.",
-          "field_note": "Draft JP localization pending native pass. Enough endings to reward playstyles. Not so many that the truth becomes noise.",
-          "terminal": "Draft JP localization pending native pass. ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.",
-          "audio": "Draft JP localization pending native pass. The dossier can mark many exits before it marks an answer.",
-          "in_game_wiki": "Draft JP localization pending native pass. HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.",
-          "external_site": "Draft JP localization pending native pass. False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center."
+          "scanner": "JP LOC HOLD: Four major false families before the deep Atlas resolutions.",
+          "field_note": "JP LOC HOLD: Enough endings to reward playstyles. Not so many that the truth becomes noise.",
+          "terminal": "JP LOC HOLD: ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.",
+          "audio": "JP LOC HOLD: The dossier can mark many exits before it marks an answer.",
+          "in_game_wiki": "JP LOC HOLD: HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.",
+          "external_site": "JP LOC HOLD: False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center."
         },
         "zh_CN": {
           "title": "False Ending Count Ladder",
-          "scanner": "Draft CN localization pending native pass. Four major false families before the deep Atlas resolutions.",
-          "field_note": "Draft CN localization pending native pass. Enough endings to reward playstyles. Not so many that the truth becomes noise.",
-          "terminal": "Draft CN localization pending native pass. ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.",
-          "audio": "Draft CN localization pending native pass. The dossier can mark many exits before it marks an answer.",
-          "in_game_wiki": "Draft CN localization pending native pass. HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.",
-          "external_site": "Draft CN localization pending native pass. False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center."
+          "scanner": "CN LOC HOLD: Four major false families before the deep Atlas resolutions.",
+          "field_note": "CN LOC HOLD: Enough endings to reward playstyles. Not so many that the truth becomes noise.",
+          "terminal": "CN LOC HOLD: ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.",
+          "audio": "CN LOC HOLD: The dossier can mark many exits before it marks an answer.",
+          "in_game_wiki": "CN LOC HOLD: HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.",
+          "external_site": "CN LOC HOLD: False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center."
         },
         "fr_FR": {
           "title": "False Ending Count Ladder",
-          "scanner": "Draft FR localization pending native pass. Four major false families before the deep Atlas resolutions.",
-          "field_note": "Draft FR localization pending native pass. Enough endings to reward playstyles. Not so many that the truth becomes noise.",
-          "terminal": "Draft FR localization pending native pass. ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.",
-          "audio": "Draft FR localization pending native pass. The dossier can mark many exits before it marks an answer.",
-          "in_game_wiki": "Draft FR localization pending native pass. HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.",
-          "external_site": "Draft FR localization pending native pass. False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center."
+          "scanner": "FR LOC HOLD: Four major false families before the deep Atlas resolutions.",
+          "field_note": "FR LOC HOLD: Enough endings to reward playstyles. Not so many that the truth becomes noise.",
+          "terminal": "FR LOC HOLD: ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.",
+          "audio": "FR LOC HOLD: The dossier can mark many exits before it marks an answer.",
+          "in_game_wiki": "FR LOC HOLD: HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.",
+          "external_site": "FR LOC HOLD: False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center."
         },
         "es_ES": {
           "title": "False Ending Count Ladder",
-          "scanner": "Draft ES localization pending native pass. Four major false families before the deep Atlas resolutions.",
-          "field_note": "Draft ES localization pending native pass. Enough endings to reward playstyles. Not so many that the truth becomes noise.",
-          "terminal": "Draft ES localization pending native pass. ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.",
-          "audio": "Draft ES localization pending native pass. The dossier can mark many exits before it marks an answer.",
-          "in_game_wiki": "Draft ES localization pending native pass. HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.",
-          "external_site": "Draft ES localization pending native pass. False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center."
+          "scanner": "ES LOC HOLD: Four major false families before the deep Atlas resolutions.",
+          "field_note": "ES LOC HOLD: Enough endings to reward playstyles. Not so many that the truth becomes noise.",
+          "terminal": "ES LOC HOLD: ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.",
+          "audio": "ES LOC HOLD: The dossier can mark many exits before it marks an answer.",
+          "in_game_wiki": "ES LOC HOLD: HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.",
+          "external_site": "ES LOC HOLD: False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center."
         },
         "de_DE": {
           "title": "False Ending Count Ladder",
-          "scanner": "Draft DE localization pending native pass. Four major false families before the deep Atlas resolutions.",
-          "field_note": "Draft DE localization pending native pass. Enough endings to reward playstyles. Not so many that the truth becomes noise.",
-          "terminal": "Draft DE localization pending native pass. ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.",
-          "audio": "Draft DE localization pending native pass. The dossier can mark many exits before it marks an answer.",
-          "in_game_wiki": "Draft DE localization pending native pass. HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.",
-          "external_site": "Draft DE localization pending native pass. False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center."
+          "scanner": "DE LOC HOLD: Four major false families before the deep Atlas resolutions.",
+          "field_note": "DE LOC HOLD: Enough endings to reward playstyles. Not so many that the truth becomes noise.",
+          "terminal": "DE LOC HOLD: ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.",
+          "audio": "DE LOC HOLD: The dossier can mark many exits before it marks an answer.",
+          "in_game_wiki": "DE LOC HOLD: HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.",
+          "external_site": "DE LOC HOLD: False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center."
         },
         "pl_PL": {
           "title": "False Ending Count Ladder",
-          "scanner": "Draft PL localization pending native pass. Four major false families before the deep Atlas resolutions.",
-          "field_note": "Draft PL localization pending native pass. Enough endings to reward playstyles. Not so many that the truth becomes noise.",
-          "terminal": "Draft PL localization pending native pass. ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.",
-          "audio": "Draft PL localization pending native pass. The dossier can mark many exits before it marks an answer.",
-          "in_game_wiki": "Draft PL localization pending native pass. HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.",
-          "external_site": "Draft PL localization pending native pass. False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center."
+          "scanner": "PL LOC HOLD: Four major false families before the deep Atlas resolutions.",
+          "field_note": "PL LOC HOLD: Enough endings to reward playstyles. Not so many that the truth becomes noise.",
+          "terminal": "PL LOC HOLD: ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.",
+          "audio": "PL LOC HOLD: The dossier can mark many exits before it marks an answer.",
+          "in_game_wiki": "PL LOC HOLD: HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.",
+          "external_site": "PL LOC HOLD: False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center."
         },
         "uk_UA": {
           "title": "False Ending Count Ladder",
-          "scanner": "Draft UA localization pending native pass. Four major false families before the deep Atlas resolutions.",
-          "field_note": "Draft UA localization pending native pass. Enough endings to reward playstyles. Not so many that the truth becomes noise.",
-          "terminal": "Draft UA localization pending native pass. ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.",
-          "audio": "Draft UA localization pending native pass. The dossier can mark many exits before it marks an answer.",
-          "in_game_wiki": "Draft UA localization pending native pass. HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.",
-          "external_site": "Draft UA localization pending native pass. False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center."
+          "scanner": "UA LOC HOLD: Four major false families before the deep Atlas resolutions.",
+          "field_note": "UA LOC HOLD: Enough endings to reward playstyles. Not so many that the truth becomes noise.",
+          "terminal": "UA LOC HOLD: ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.",
+          "audio": "UA LOC HOLD: The dossier can mark many exits before it marks an answer.",
+          "in_game_wiki": "UA LOC HOLD: HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.",
+          "external_site": "UA LOC HOLD: False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center."
         },
         "ar_SA": {
           "title": "False Ending Count Ladder",
-          "scanner": "Draft AR localization pending native pass. Four major false families before the deep Atlas resolutions.",
-          "field_note": "Draft AR localization pending native pass. Enough endings to reward playstyles. Not so many that the truth becomes noise.",
-          "terminal": "Draft AR localization pending native pass. ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.",
-          "audio": "Draft AR localization pending native pass. The dossier can mark many exits before it marks an answer.",
-          "in_game_wiki": "Draft AR localization pending native pass. HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.",
-          "external_site": "Draft AR localization pending native pass. False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center."
+          "scanner": "AR LOC HOLD: Four major false families before the deep Atlas resolutions.",
+          "field_note": "AR LOC HOLD: Enough endings to reward playstyles. Not so many that the truth becomes noise.",
+          "terminal": "AR LOC HOLD: ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.",
+          "audio": "AR LOC HOLD: The dossier can mark many exits before it marks an answer.",
+          "in_game_wiki": "AR LOC HOLD: HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.",
+          "external_site": "AR LOC HOLD: False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center."
         },
         "id_ID": {
           "title": "False Ending Count Ladder",
-          "scanner": "Draft ID localization pending native pass. Four major false families before the deep Atlas resolutions.",
-          "field_note": "Draft ID localization pending native pass. Enough endings to reward playstyles. Not so many that the truth becomes noise.",
-          "terminal": "Draft ID localization pending native pass. ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.",
-          "audio": "Draft ID localization pending native pass. The dossier can mark many exits before it marks an answer.",
-          "in_game_wiki": "Draft ID localization pending native pass. HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.",
-          "external_site": "Draft ID localization pending native pass. False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center."
+          "scanner": "ID LOC HOLD: Four major false families before the deep Atlas resolutions.",
+          "field_note": "ID LOC HOLD: Enough endings to reward playstyles. Not so many that the truth becomes noise.",
+          "terminal": "ID LOC HOLD: ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.",
+          "audio": "ID LOC HOLD: The dossier can mark many exits before it marks an answer.",
+          "in_game_wiki": "ID LOC HOLD: HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.",
+          "external_site": "ID LOC HOLD: False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center."
         },
         "ko_KR": {
           "title": "False Ending Count Ladder",
-          "scanner": "Draft KO localization pending native pass. Four major false families before the deep Atlas resolutions.",
-          "field_note": "Draft KO localization pending native pass. Enough endings to reward playstyles. Not so many that the truth becomes noise.",
-          "terminal": "Draft KO localization pending native pass. ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.",
-          "audio": "Draft KO localization pending native pass. The dossier can mark many exits before it marks an answer.",
-          "in_game_wiki": "Draft KO localization pending native pass. HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.",
-          "external_site": "Draft KO localization pending native pass. False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center."
+          "scanner": "KO LOC HOLD: Four major false families before the deep Atlas resolutions.",
+          "field_note": "KO LOC HOLD: Enough endings to reward playstyles. Not so many that the truth becomes noise.",
+          "terminal": "KO LOC HOLD: ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.",
+          "audio": "KO LOC HOLD: The dossier can mark many exits before it marks an answer.",
+          "in_game_wiki": "KO LOC HOLD: HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.",
+          "external_site": "KO LOC HOLD: False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center."
         },
         "he_IL": {
           "title": "False Ending Count Ladder",
-          "scanner": "Draft HE localization pending native pass. Four major false families before the deep Atlas resolutions.",
-          "field_note": "Draft HE localization pending native pass. Enough endings to reward playstyles. Not so many that the truth becomes noise.",
-          "terminal": "Draft HE localization pending native pass. ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.",
-          "audio": "Draft HE localization pending native pass. The dossier can mark many exits before it marks an answer.",
-          "in_game_wiki": "Draft HE localization pending native pass. HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.",
-          "external_site": "Draft HE localization pending native pass. False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center."
+          "scanner": "HE LOC HOLD: Four major false families before the deep Atlas resolutions.",
+          "field_note": "HE LOC HOLD: Enough endings to reward playstyles. Not so many that the truth becomes noise.",
+          "terminal": "HE LOC HOLD: ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.",
+          "audio": "HE LOC HOLD: The dossier can mark many exits before it marks an answer.",
+          "in_game_wiki": "HE LOC HOLD: HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.",
+          "external_site": "HE LOC HOLD: False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center."
         },
         "pt_BR": {
           "title": "False Ending Count Ladder",
-          "scanner": "Draft PT localization pending native pass. Four major false families before the deep Atlas resolutions.",
-          "field_note": "Draft PT localization pending native pass. Enough endings to reward playstyles. Not so many that the truth becomes noise.",
-          "terminal": "Draft PT localization pending native pass. ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.",
-          "audio": "Draft PT localization pending native pass. The dossier can mark many exits before it marks an answer.",
-          "in_game_wiki": "Draft PT localization pending native pass. HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.",
-          "external_site": "Draft PT localization pending native pass. False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center."
+          "scanner": "PT LOC HOLD: Four major false families before the deep Atlas resolutions.",
+          "field_note": "PT LOC HOLD: Enough endings to reward playstyles. Not so many that the truth becomes noise.",
+          "terminal": "PT LOC HOLD: ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.",
+          "audio": "PT LOC HOLD: The dossier can mark many exits before it marks an answer.",
+          "in_game_wiki": "PT LOC HOLD: HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.",
+          "external_site": "PT LOC HOLD: False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center."
         },
         "nl_NL": {
           "title": "False Ending Count Ladder",
-          "scanner": "Draft NL localization pending native pass. Four major false families before the deep Atlas resolutions.",
-          "field_note": "Draft NL localization pending native pass. Enough endings to reward playstyles. Not so many that the truth becomes noise.",
-          "terminal": "Draft NL localization pending native pass. ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.",
-          "audio": "Draft NL localization pending native pass. The dossier can mark many exits before it marks an answer.",
-          "in_game_wiki": "Draft NL localization pending native pass. HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.",
-          "external_site": "Draft NL localization pending native pass. False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center."
+          "scanner": "NL LOC HOLD: Four major false families before the deep Atlas resolutions.",
+          "field_note": "NL LOC HOLD: Enough endings to reward playstyles. Not so many that the truth becomes noise.",
+          "terminal": "NL LOC HOLD: ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.",
+          "audio": "NL LOC HOLD: The dossier can mark many exits before it marks an answer.",
+          "in_game_wiki": "NL LOC HOLD: HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.",
+          "external_site": "NL LOC HOLD: False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center."
         }
       }
     },
@@ -511,120 +511,120 @@
         },
         "ja_JP": {
           "title": "Starting Claim Variants",
-          "scanner": "Draft JP localization pending native pass. Same protagonist. Different claim pressure.",
-          "field_note": "Draft JP localization pending native pass. Variants should color motive, not erase the canon character.",
-          "terminal": "Draft JP localization pending native pass. CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.",
-          "audio": "Draft JP localization pending native pass. You can change the job without changing who took it.",
-          "in_game_wiki": "Draft JP localization pending native pass. Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.",
-          "external_site": "Draft JP localization pending native pass. Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist."
+          "scanner": "JP LOC HOLD: Same protagonist. Different claim pressure.",
+          "field_note": "JP LOC HOLD: Variants should color motive, not erase the canon character.",
+          "terminal": "JP LOC HOLD: CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.",
+          "audio": "JP LOC HOLD: You can change the job without changing who took it.",
+          "in_game_wiki": "JP LOC HOLD: Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.",
+          "external_site": "JP LOC HOLD: Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist."
         },
         "zh_CN": {
           "title": "Starting Claim Variants",
-          "scanner": "Draft CN localization pending native pass. Same protagonist. Different claim pressure.",
-          "field_note": "Draft CN localization pending native pass. Variants should color motive, not erase the canon character.",
-          "terminal": "Draft CN localization pending native pass. CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.",
-          "audio": "Draft CN localization pending native pass. You can change the job without changing who took it.",
-          "in_game_wiki": "Draft CN localization pending native pass. Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.",
-          "external_site": "Draft CN localization pending native pass. Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist."
+          "scanner": "CN LOC HOLD: Same protagonist. Different claim pressure.",
+          "field_note": "CN LOC HOLD: Variants should color motive, not erase the canon character.",
+          "terminal": "CN LOC HOLD: CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.",
+          "audio": "CN LOC HOLD: You can change the job without changing who took it.",
+          "in_game_wiki": "CN LOC HOLD: Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.",
+          "external_site": "CN LOC HOLD: Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist."
         },
         "fr_FR": {
           "title": "Starting Claim Variants",
-          "scanner": "Draft FR localization pending native pass. Same protagonist. Different claim pressure.",
-          "field_note": "Draft FR localization pending native pass. Variants should color motive, not erase the canon character.",
-          "terminal": "Draft FR localization pending native pass. CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.",
-          "audio": "Draft FR localization pending native pass. You can change the job without changing who took it.",
-          "in_game_wiki": "Draft FR localization pending native pass. Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.",
-          "external_site": "Draft FR localization pending native pass. Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist."
+          "scanner": "FR LOC HOLD: Same protagonist. Different claim pressure.",
+          "field_note": "FR LOC HOLD: Variants should color motive, not erase the canon character.",
+          "terminal": "FR LOC HOLD: CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.",
+          "audio": "FR LOC HOLD: You can change the job without changing who took it.",
+          "in_game_wiki": "FR LOC HOLD: Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.",
+          "external_site": "FR LOC HOLD: Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist."
         },
         "es_ES": {
           "title": "Starting Claim Variants",
-          "scanner": "Draft ES localization pending native pass. Same protagonist. Different claim pressure.",
-          "field_note": "Draft ES localization pending native pass. Variants should color motive, not erase the canon character.",
-          "terminal": "Draft ES localization pending native pass. CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.",
-          "audio": "Draft ES localization pending native pass. You can change the job without changing who took it.",
-          "in_game_wiki": "Draft ES localization pending native pass. Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.",
-          "external_site": "Draft ES localization pending native pass. Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist."
+          "scanner": "ES LOC HOLD: Same protagonist. Different claim pressure.",
+          "field_note": "ES LOC HOLD: Variants should color motive, not erase the canon character.",
+          "terminal": "ES LOC HOLD: CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.",
+          "audio": "ES LOC HOLD: You can change the job without changing who took it.",
+          "in_game_wiki": "ES LOC HOLD: Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.",
+          "external_site": "ES LOC HOLD: Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist."
         },
         "de_DE": {
           "title": "Starting Claim Variants",
-          "scanner": "Draft DE localization pending native pass. Same protagonist. Different claim pressure.",
-          "field_note": "Draft DE localization pending native pass. Variants should color motive, not erase the canon character.",
-          "terminal": "Draft DE localization pending native pass. CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.",
-          "audio": "Draft DE localization pending native pass. You can change the job without changing who took it.",
-          "in_game_wiki": "Draft DE localization pending native pass. Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.",
-          "external_site": "Draft DE localization pending native pass. Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist."
+          "scanner": "DE LOC HOLD: Same protagonist. Different claim pressure.",
+          "field_note": "DE LOC HOLD: Variants should color motive, not erase the canon character.",
+          "terminal": "DE LOC HOLD: CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.",
+          "audio": "DE LOC HOLD: You can change the job without changing who took it.",
+          "in_game_wiki": "DE LOC HOLD: Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.",
+          "external_site": "DE LOC HOLD: Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist."
         },
         "pl_PL": {
           "title": "Starting Claim Variants",
-          "scanner": "Draft PL localization pending native pass. Same protagonist. Different claim pressure.",
-          "field_note": "Draft PL localization pending native pass. Variants should color motive, not erase the canon character.",
-          "terminal": "Draft PL localization pending native pass. CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.",
-          "audio": "Draft PL localization pending native pass. You can change the job without changing who took it.",
-          "in_game_wiki": "Draft PL localization pending native pass. Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.",
-          "external_site": "Draft PL localization pending native pass. Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist."
+          "scanner": "PL LOC HOLD: Same protagonist. Different claim pressure.",
+          "field_note": "PL LOC HOLD: Variants should color motive, not erase the canon character.",
+          "terminal": "PL LOC HOLD: CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.",
+          "audio": "PL LOC HOLD: You can change the job without changing who took it.",
+          "in_game_wiki": "PL LOC HOLD: Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.",
+          "external_site": "PL LOC HOLD: Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist."
         },
         "uk_UA": {
           "title": "Starting Claim Variants",
-          "scanner": "Draft UA localization pending native pass. Same protagonist. Different claim pressure.",
-          "field_note": "Draft UA localization pending native pass. Variants should color motive, not erase the canon character.",
-          "terminal": "Draft UA localization pending native pass. CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.",
-          "audio": "Draft UA localization pending native pass. You can change the job without changing who took it.",
-          "in_game_wiki": "Draft UA localization pending native pass. Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.",
-          "external_site": "Draft UA localization pending native pass. Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist."
+          "scanner": "UA LOC HOLD: Same protagonist. Different claim pressure.",
+          "field_note": "UA LOC HOLD: Variants should color motive, not erase the canon character.",
+          "terminal": "UA LOC HOLD: CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.",
+          "audio": "UA LOC HOLD: You can change the job without changing who took it.",
+          "in_game_wiki": "UA LOC HOLD: Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.",
+          "external_site": "UA LOC HOLD: Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist."
         },
         "ar_SA": {
           "title": "Starting Claim Variants",
-          "scanner": "Draft AR localization pending native pass. Same protagonist. Different claim pressure.",
-          "field_note": "Draft AR localization pending native pass. Variants should color motive, not erase the canon character.",
-          "terminal": "Draft AR localization pending native pass. CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.",
-          "audio": "Draft AR localization pending native pass. You can change the job without changing who took it.",
-          "in_game_wiki": "Draft AR localization pending native pass. Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.",
-          "external_site": "Draft AR localization pending native pass. Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist."
+          "scanner": "AR LOC HOLD: Same protagonist. Different claim pressure.",
+          "field_note": "AR LOC HOLD: Variants should color motive, not erase the canon character.",
+          "terminal": "AR LOC HOLD: CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.",
+          "audio": "AR LOC HOLD: You can change the job without changing who took it.",
+          "in_game_wiki": "AR LOC HOLD: Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.",
+          "external_site": "AR LOC HOLD: Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist."
         },
         "id_ID": {
           "title": "Starting Claim Variants",
-          "scanner": "Draft ID localization pending native pass. Same protagonist. Different claim pressure.",
-          "field_note": "Draft ID localization pending native pass. Variants should color motive, not erase the canon character.",
-          "terminal": "Draft ID localization pending native pass. CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.",
-          "audio": "Draft ID localization pending native pass. You can change the job without changing who took it.",
-          "in_game_wiki": "Draft ID localization pending native pass. Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.",
-          "external_site": "Draft ID localization pending native pass. Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist."
+          "scanner": "ID LOC HOLD: Same protagonist. Different claim pressure.",
+          "field_note": "ID LOC HOLD: Variants should color motive, not erase the canon character.",
+          "terminal": "ID LOC HOLD: CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.",
+          "audio": "ID LOC HOLD: You can change the job without changing who took it.",
+          "in_game_wiki": "ID LOC HOLD: Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.",
+          "external_site": "ID LOC HOLD: Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist."
         },
         "ko_KR": {
           "title": "Starting Claim Variants",
-          "scanner": "Draft KO localization pending native pass. Same protagonist. Different claim pressure.",
-          "field_note": "Draft KO localization pending native pass. Variants should color motive, not erase the canon character.",
-          "terminal": "Draft KO localization pending native pass. CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.",
-          "audio": "Draft KO localization pending native pass. You can change the job without changing who took it.",
-          "in_game_wiki": "Draft KO localization pending native pass. Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.",
-          "external_site": "Draft KO localization pending native pass. Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist."
+          "scanner": "KO LOC HOLD: Same protagonist. Different claim pressure.",
+          "field_note": "KO LOC HOLD: Variants should color motive, not erase the canon character.",
+          "terminal": "KO LOC HOLD: CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.",
+          "audio": "KO LOC HOLD: You can change the job without changing who took it.",
+          "in_game_wiki": "KO LOC HOLD: Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.",
+          "external_site": "KO LOC HOLD: Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist."
         },
         "he_IL": {
           "title": "Starting Claim Variants",
-          "scanner": "Draft HE localization pending native pass. Same protagonist. Different claim pressure.",
-          "field_note": "Draft HE localization pending native pass. Variants should color motive, not erase the canon character.",
-          "terminal": "Draft HE localization pending native pass. CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.",
-          "audio": "Draft HE localization pending native pass. You can change the job without changing who took it.",
-          "in_game_wiki": "Draft HE localization pending native pass. Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.",
-          "external_site": "Draft HE localization pending native pass. Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist."
+          "scanner": "HE LOC HOLD: Same protagonist. Different claim pressure.",
+          "field_note": "HE LOC HOLD: Variants should color motive, not erase the canon character.",
+          "terminal": "HE LOC HOLD: CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.",
+          "audio": "HE LOC HOLD: You can change the job without changing who took it.",
+          "in_game_wiki": "HE LOC HOLD: Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.",
+          "external_site": "HE LOC HOLD: Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist."
         },
         "pt_BR": {
           "title": "Starting Claim Variants",
-          "scanner": "Draft PT localization pending native pass. Same protagonist. Different claim pressure.",
-          "field_note": "Draft PT localization pending native pass. Variants should color motive, not erase the canon character.",
-          "terminal": "Draft PT localization pending native pass. CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.",
-          "audio": "Draft PT localization pending native pass. You can change the job without changing who took it.",
-          "in_game_wiki": "Draft PT localization pending native pass. Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.",
-          "external_site": "Draft PT localization pending native pass. Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist."
+          "scanner": "PT LOC HOLD: Same protagonist. Different claim pressure.",
+          "field_note": "PT LOC HOLD: Variants should color motive, not erase the canon character.",
+          "terminal": "PT LOC HOLD: CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.",
+          "audio": "PT LOC HOLD: You can change the job without changing who took it.",
+          "in_game_wiki": "PT LOC HOLD: Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.",
+          "external_site": "PT LOC HOLD: Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist."
         },
         "nl_NL": {
           "title": "Starting Claim Variants",
-          "scanner": "Draft NL localization pending native pass. Same protagonist. Different claim pressure.",
-          "field_note": "Draft NL localization pending native pass. Variants should color motive, not erase the canon character.",
-          "terminal": "Draft NL localization pending native pass. CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.",
-          "audio": "Draft NL localization pending native pass. You can change the job without changing who took it.",
-          "in_game_wiki": "Draft NL localization pending native pass. Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.",
-          "external_site": "Draft NL localization pending native pass. Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist."
+          "scanner": "NL LOC HOLD: Same protagonist. Different claim pressure.",
+          "field_note": "NL LOC HOLD: Variants should color motive, not erase the canon character.",
+          "terminal": "NL LOC HOLD: CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.",
+          "audio": "NL LOC HOLD: You can change the job without changing who took it.",
+          "in_game_wiki": "NL LOC HOLD: Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.",
+          "external_site": "NL LOC HOLD: Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist."
         }
       }
     },
@@ -666,120 +666,120 @@
         },
         "ja_JP": {
           "title": "Dossier Knowledge Not Power",
-          "scanner": "Draft JP localization pending native pass. No inherited oxygen, guns, hull, or magic shortcuts.",
-          "field_note": "Draft JP localization pending native pass. The player can become wiser. The ocean should not become smaller.",
-          "terminal": "Draft JP localization pending native pass. META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.",
-          "audio": "Draft JP localization pending native pass. Memory does not reinforce a cracked hull.",
-          "in_game_wiki": "Draft JP localization pending native pass. Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.",
-          "external_site": "Draft JP localization pending native pass. Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous."
+          "scanner": "JP LOC HOLD: No inherited oxygen, guns, hull, or magic shortcuts.",
+          "field_note": "JP LOC HOLD: The player can become wiser. The ocean should not become smaller.",
+          "terminal": "JP LOC HOLD: META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.",
+          "audio": "JP LOC HOLD: Memory does not reinforce a cracked hull.",
+          "in_game_wiki": "JP LOC HOLD: Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.",
+          "external_site": "JP LOC HOLD: Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous."
         },
         "zh_CN": {
           "title": "Dossier Knowledge Not Power",
-          "scanner": "Draft CN localization pending native pass. No inherited oxygen, guns, hull, or magic shortcuts.",
-          "field_note": "Draft CN localization pending native pass. The player can become wiser. The ocean should not become smaller.",
-          "terminal": "Draft CN localization pending native pass. META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.",
-          "audio": "Draft CN localization pending native pass. Memory does not reinforce a cracked hull.",
-          "in_game_wiki": "Draft CN localization pending native pass. Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.",
-          "external_site": "Draft CN localization pending native pass. Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous."
+          "scanner": "CN LOC HOLD: No inherited oxygen, guns, hull, or magic shortcuts.",
+          "field_note": "CN LOC HOLD: The player can become wiser. The ocean should not become smaller.",
+          "terminal": "CN LOC HOLD: META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.",
+          "audio": "CN LOC HOLD: Memory does not reinforce a cracked hull.",
+          "in_game_wiki": "CN LOC HOLD: Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.",
+          "external_site": "CN LOC HOLD: Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous."
         },
         "fr_FR": {
           "title": "Dossier Knowledge Not Power",
-          "scanner": "Draft FR localization pending native pass. No inherited oxygen, guns, hull, or magic shortcuts.",
-          "field_note": "Draft FR localization pending native pass. The player can become wiser. The ocean should not become smaller.",
-          "terminal": "Draft FR localization pending native pass. META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.",
-          "audio": "Draft FR localization pending native pass. Memory does not reinforce a cracked hull.",
-          "in_game_wiki": "Draft FR localization pending native pass. Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.",
-          "external_site": "Draft FR localization pending native pass. Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous."
+          "scanner": "FR LOC HOLD: No inherited oxygen, guns, hull, or magic shortcuts.",
+          "field_note": "FR LOC HOLD: The player can become wiser. The ocean should not become smaller.",
+          "terminal": "FR LOC HOLD: META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.",
+          "audio": "FR LOC HOLD: Memory does not reinforce a cracked hull.",
+          "in_game_wiki": "FR LOC HOLD: Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.",
+          "external_site": "FR LOC HOLD: Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous."
         },
         "es_ES": {
           "title": "Dossier Knowledge Not Power",
-          "scanner": "Draft ES localization pending native pass. No inherited oxygen, guns, hull, or magic shortcuts.",
-          "field_note": "Draft ES localization pending native pass. The player can become wiser. The ocean should not become smaller.",
-          "terminal": "Draft ES localization pending native pass. META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.",
-          "audio": "Draft ES localization pending native pass. Memory does not reinforce a cracked hull.",
-          "in_game_wiki": "Draft ES localization pending native pass. Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.",
-          "external_site": "Draft ES localization pending native pass. Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous."
+          "scanner": "ES LOC HOLD: No inherited oxygen, guns, hull, or magic shortcuts.",
+          "field_note": "ES LOC HOLD: The player can become wiser. The ocean should not become smaller.",
+          "terminal": "ES LOC HOLD: META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.",
+          "audio": "ES LOC HOLD: Memory does not reinforce a cracked hull.",
+          "in_game_wiki": "ES LOC HOLD: Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.",
+          "external_site": "ES LOC HOLD: Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous."
         },
         "de_DE": {
           "title": "Dossier Knowledge Not Power",
-          "scanner": "Draft DE localization pending native pass. No inherited oxygen, guns, hull, or magic shortcuts.",
-          "field_note": "Draft DE localization pending native pass. The player can become wiser. The ocean should not become smaller.",
-          "terminal": "Draft DE localization pending native pass. META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.",
-          "audio": "Draft DE localization pending native pass. Memory does not reinforce a cracked hull.",
-          "in_game_wiki": "Draft DE localization pending native pass. Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.",
-          "external_site": "Draft DE localization pending native pass. Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous."
+          "scanner": "DE LOC HOLD: No inherited oxygen, guns, hull, or magic shortcuts.",
+          "field_note": "DE LOC HOLD: The player can become wiser. The ocean should not become smaller.",
+          "terminal": "DE LOC HOLD: META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.",
+          "audio": "DE LOC HOLD: Memory does not reinforce a cracked hull.",
+          "in_game_wiki": "DE LOC HOLD: Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.",
+          "external_site": "DE LOC HOLD: Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous."
         },
         "pl_PL": {
           "title": "Dossier Knowledge Not Power",
-          "scanner": "Draft PL localization pending native pass. No inherited oxygen, guns, hull, or magic shortcuts.",
-          "field_note": "Draft PL localization pending native pass. The player can become wiser. The ocean should not become smaller.",
-          "terminal": "Draft PL localization pending native pass. META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.",
-          "audio": "Draft PL localization pending native pass. Memory does not reinforce a cracked hull.",
-          "in_game_wiki": "Draft PL localization pending native pass. Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.",
-          "external_site": "Draft PL localization pending native pass. Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous."
+          "scanner": "PL LOC HOLD: No inherited oxygen, guns, hull, or magic shortcuts.",
+          "field_note": "PL LOC HOLD: The player can become wiser. The ocean should not become smaller.",
+          "terminal": "PL LOC HOLD: META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.",
+          "audio": "PL LOC HOLD: Memory does not reinforce a cracked hull.",
+          "in_game_wiki": "PL LOC HOLD: Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.",
+          "external_site": "PL LOC HOLD: Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous."
         },
         "uk_UA": {
           "title": "Dossier Knowledge Not Power",
-          "scanner": "Draft UA localization pending native pass. No inherited oxygen, guns, hull, or magic shortcuts.",
-          "field_note": "Draft UA localization pending native pass. The player can become wiser. The ocean should not become smaller.",
-          "terminal": "Draft UA localization pending native pass. META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.",
-          "audio": "Draft UA localization pending native pass. Memory does not reinforce a cracked hull.",
-          "in_game_wiki": "Draft UA localization pending native pass. Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.",
-          "external_site": "Draft UA localization pending native pass. Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous."
+          "scanner": "UA LOC HOLD: No inherited oxygen, guns, hull, or magic shortcuts.",
+          "field_note": "UA LOC HOLD: The player can become wiser. The ocean should not become smaller.",
+          "terminal": "UA LOC HOLD: META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.",
+          "audio": "UA LOC HOLD: Memory does not reinforce a cracked hull.",
+          "in_game_wiki": "UA LOC HOLD: Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.",
+          "external_site": "UA LOC HOLD: Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous."
         },
         "ar_SA": {
           "title": "Dossier Knowledge Not Power",
-          "scanner": "Draft AR localization pending native pass. No inherited oxygen, guns, hull, or magic shortcuts.",
-          "field_note": "Draft AR localization pending native pass. The player can become wiser. The ocean should not become smaller.",
-          "terminal": "Draft AR localization pending native pass. META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.",
-          "audio": "Draft AR localization pending native pass. Memory does not reinforce a cracked hull.",
-          "in_game_wiki": "Draft AR localization pending native pass. Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.",
-          "external_site": "Draft AR localization pending native pass. Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous."
+          "scanner": "AR LOC HOLD: No inherited oxygen, guns, hull, or magic shortcuts.",
+          "field_note": "AR LOC HOLD: The player can become wiser. The ocean should not become smaller.",
+          "terminal": "AR LOC HOLD: META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.",
+          "audio": "AR LOC HOLD: Memory does not reinforce a cracked hull.",
+          "in_game_wiki": "AR LOC HOLD: Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.",
+          "external_site": "AR LOC HOLD: Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous."
         },
         "id_ID": {
           "title": "Dossier Knowledge Not Power",
-          "scanner": "Draft ID localization pending native pass. No inherited oxygen, guns, hull, or magic shortcuts.",
-          "field_note": "Draft ID localization pending native pass. The player can become wiser. The ocean should not become smaller.",
-          "terminal": "Draft ID localization pending native pass. META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.",
-          "audio": "Draft ID localization pending native pass. Memory does not reinforce a cracked hull.",
-          "in_game_wiki": "Draft ID localization pending native pass. Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.",
-          "external_site": "Draft ID localization pending native pass. Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous."
+          "scanner": "ID LOC HOLD: No inherited oxygen, guns, hull, or magic shortcuts.",
+          "field_note": "ID LOC HOLD: The player can become wiser. The ocean should not become smaller.",
+          "terminal": "ID LOC HOLD: META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.",
+          "audio": "ID LOC HOLD: Memory does not reinforce a cracked hull.",
+          "in_game_wiki": "ID LOC HOLD: Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.",
+          "external_site": "ID LOC HOLD: Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous."
         },
         "ko_KR": {
           "title": "Dossier Knowledge Not Power",
-          "scanner": "Draft KO localization pending native pass. No inherited oxygen, guns, hull, or magic shortcuts.",
-          "field_note": "Draft KO localization pending native pass. The player can become wiser. The ocean should not become smaller.",
-          "terminal": "Draft KO localization pending native pass. META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.",
-          "audio": "Draft KO localization pending native pass. Memory does not reinforce a cracked hull.",
-          "in_game_wiki": "Draft KO localization pending native pass. Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.",
-          "external_site": "Draft KO localization pending native pass. Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous."
+          "scanner": "KO LOC HOLD: No inherited oxygen, guns, hull, or magic shortcuts.",
+          "field_note": "KO LOC HOLD: The player can become wiser. The ocean should not become smaller.",
+          "terminal": "KO LOC HOLD: META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.",
+          "audio": "KO LOC HOLD: Memory does not reinforce a cracked hull.",
+          "in_game_wiki": "KO LOC HOLD: Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.",
+          "external_site": "KO LOC HOLD: Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous."
         },
         "he_IL": {
           "title": "Dossier Knowledge Not Power",
-          "scanner": "Draft HE localization pending native pass. No inherited oxygen, guns, hull, or magic shortcuts.",
-          "field_note": "Draft HE localization pending native pass. The player can become wiser. The ocean should not become smaller.",
-          "terminal": "Draft HE localization pending native pass. META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.",
-          "audio": "Draft HE localization pending native pass. Memory does not reinforce a cracked hull.",
-          "in_game_wiki": "Draft HE localization pending native pass. Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.",
-          "external_site": "Draft HE localization pending native pass. Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous."
+          "scanner": "HE LOC HOLD: No inherited oxygen, guns, hull, or magic shortcuts.",
+          "field_note": "HE LOC HOLD: The player can become wiser. The ocean should not become smaller.",
+          "terminal": "HE LOC HOLD: META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.",
+          "audio": "HE LOC HOLD: Memory does not reinforce a cracked hull.",
+          "in_game_wiki": "HE LOC HOLD: Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.",
+          "external_site": "HE LOC HOLD: Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous."
         },
         "pt_BR": {
           "title": "Dossier Knowledge Not Power",
-          "scanner": "Draft PT localization pending native pass. No inherited oxygen, guns, hull, or magic shortcuts.",
-          "field_note": "Draft PT localization pending native pass. The player can become wiser. The ocean should not become smaller.",
-          "terminal": "Draft PT localization pending native pass. META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.",
-          "audio": "Draft PT localization pending native pass. Memory does not reinforce a cracked hull.",
-          "in_game_wiki": "Draft PT localization pending native pass. Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.",
-          "external_site": "Draft PT localization pending native pass. Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous."
+          "scanner": "PT LOC HOLD: No inherited oxygen, guns, hull, or magic shortcuts.",
+          "field_note": "PT LOC HOLD: The player can become wiser. The ocean should not become smaller.",
+          "terminal": "PT LOC HOLD: META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.",
+          "audio": "PT LOC HOLD: Memory does not reinforce a cracked hull.",
+          "in_game_wiki": "PT LOC HOLD: Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.",
+          "external_site": "PT LOC HOLD: Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous."
         },
         "nl_NL": {
           "title": "Dossier Knowledge Not Power",
-          "scanner": "Draft NL localization pending native pass. No inherited oxygen, guns, hull, or magic shortcuts.",
-          "field_note": "Draft NL localization pending native pass. The player can become wiser. The ocean should not become smaller.",
-          "terminal": "Draft NL localization pending native pass. META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.",
-          "audio": "Draft NL localization pending native pass. Memory does not reinforce a cracked hull.",
-          "in_game_wiki": "Draft NL localization pending native pass. Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.",
-          "external_site": "Draft NL localization pending native pass. Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous."
+          "scanner": "NL LOC HOLD: No inherited oxygen, guns, hull, or magic shortcuts.",
+          "field_note": "NL LOC HOLD: The player can become wiser. The ocean should not become smaller.",
+          "terminal": "NL LOC HOLD: META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.",
+          "audio": "NL LOC HOLD: Memory does not reinforce a cracked hull.",
+          "in_game_wiki": "NL LOC HOLD: Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.",
+          "external_site": "NL LOC HOLD: Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous."
         }
       }
     }

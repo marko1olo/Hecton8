@@ -1,29 +1,44 @@
-# PROJETO DE MOTORES E LOGÍSTICA INTERESTELAR
-**Seção da Grande Biblioteca:** 02
-**Idioma:** pt_BR
-**Cânone:** Estrito (Lore Bible 2190)
+# DESIGN DE MOTORES E LOGÍSTICA INTERESTELAR
+
+> **Fonte:** Programa de Treinamento Técnico, Estaleiros Barnard. Documento 44-A. Leitura obrigatória para todos os contratados de saída.  
+> **Palestrante:** Silas Vane, Técnico de Propulsão de Primeira Classe (aposentado).  
+> **Nota do revisor:** Este programa é fornecido aos contratados após saírem da criogenia. Não contém nenhuma telemetria proprietária da Deep Reach.
 
 ---
 
-## 1. Sem Magia, Apenas Física
-No universo HECTON-8, **NÃO existem motores mais rápidos que a luz (FTL)**. Não há portais de salto, hiperespaço, ansíveis (comunicação instantânea) ou propulsores sem reação que violem a conservação do momento.
+## 1. A Ficção da Velocidade
 
-A expansão da humanidade é lenta, difícil e custa quantias colossais de dinheiro. É exatamente por isso que o "espaço profundo" pertence às megacorporações — só elas podem se dar ao luxo de esperar décadas por um retorno sobre o investimento.
+Deixe-me esclarecer isso antes de você entrar no tubo frio: não existe botão mágico. Vocês cresceram assistindo a vídeos sobre portais de salto e hiperespaço. Esqueçam isso. No universo, não existe motor mais rápido que a luz. Não existem ansibles para conversar instantaneamente com a sua mãe. Não existem propulsores sem reação que trapaceiem a conservação do momento.
 
-## 2. Tipos de Naves e Motores
+A expansão espacial é lenta, extenuante e queima dinheiro numa escala que faz os estados-nação chorarem. É exatamente por isso que o espaço profundo pertence às megacorporações. Apenas uma entidade com um horizonte financeiro de um século pode se dar ao luxo de esperar vinte anos pelo retorno de um investimento.
 
-### A. Sondas Assistidas por Feixe e Pacotes Autônomos
-As primeiras a chegarem ao sistema Aegir (HECTON-8) foram sondas automatizadas. Foram aceleradas usando colossais lasers orbitais de feixe de pellets instalados no Sistema Solar ou em nós intermediários como Luyten Junction. As sondas são pequenas, rápidas, não tripuladas e baratas o suficiente para serem "arremessadas" por uma rota antes que alguém confirme que é segura.
+Quando você sair desta doca, estará preso à física, não à poesia.
 
-### B. Naves de Carga de Pulso de Fusão / Elétricas de Fusão
-Naves coloniais pesadas da classe "Atlas", transportando fábricas, infraestrutura e tripulação dormindo em letargia, usam motores elétricos de fusão ou de pulso. O voo até o sistema Aegir leva anos. Uma nave dessas é literalmente uma "hipoteca com motores".
+## 2. Como se Chega Lá
 
-### C. Velas Magnéticas e Aerofrenagem
-O principal problema do voo em velocidade próxima à da luz não é acelerar, mas parar. As naves pesadas da Deep Reach implantam velas magnéticas gigantes (Magsails) que se estendem por centenas de quilômetros para frear contra o meio interestelar. Na fase final, usam aerofrenagem contra atmosferas de gigantes gasosos ou o denso envelope de tempestade do próprio HECTON-8.
+A cadeia logística para Aegir depende de três fatos duros da engenharia:
 
-## 3. Doutrina de Trânsito e Resgate
-Como não existe viagem FTL, resgate a partir do núcleo dos mundos humanos é **impossível**. Se um desastre ocorre em HECTON-8, a resposta da Terra ou de Tau Ceti chegará 10 a 15 anos depois.
+### A. O Impulso por Feixe de Pelotas
+As primeiras coisas a alcançar Aegir não foram naves; foram sondas autônomas. Não amarramos foguetes nelas. Construímos matrizes de laser orbitais — instalações colossais de feixe de pelotas na Junção Luyten — e literalmente as disparamos através do vazio. As sondas são pequenas, não tripuladas e baratas o suficiente para que a Corporação possa jogar uma dúzia por um corredor de trânsito antes mesmo de saber se a rota é segura. Foi um desses batedores descartáveis que detectou primeiro a assinatura do Xenônio-Ômega.
 
-Quando um saqueador desce à superfície do oceano, é largado da nave orbital (Black Keel) numa cápsula classe "Styx". Essa cápsula é projetada para descida sem retorno. Sua estrutura deforma sob a pressão e sua aviônica alaga. Para voltar à órbita, o saqueador precisa encontrar, reparar ou roubar cargas de ascensão termoquímicas da colônia morta.
+### B. A Hipoteca Voadora
+Vocês vão em um cargueiro colonial pesado da classe *Atlas*. Ele é movido por motores de pulso de fusão-elétrica. Transporta fábricas, plataformas de perfuração e vocês — dormindo em letargo para não comer a margem de lucro. O trânsito leva anos.
 
-Você não é passageiro. Não possui uma nave. Você é material descartável na ponta de uma corda muito longa e muito lenta esticada através do vazio.
+Não romantizem a nave. Ela é, literalmente, uma hipoteca com motores. A Deep Reach não queima massa de reação para resgatar um técnico isolado. Eles só enviam um cargueiro quando a matemática prova que a carga vale mais que o combustível.
+
+### C. O Problema da Frenagem
+Acelerar para quase a velocidade da luz é fácil; parar é o pesadelo. Quando sua nave se aproximar de Aegir, ela não vai simplesmente se virar e acionar os propulsores. Isso desperdiça massa. Em vez disso, o cargueiro implanta Velas Magnéticas (Magsails) — velas gigantes que se estendem por centenas de quilômetros. Vocês frearão contra o próprio meio interestelar. Nos estágios finais e violentos da inserção orbital, a nave usará frenagem aerodinâmica, quicando como uma pedra pela atmosfera de gigantes gasosos, ou arrastando a barriga pelo envelope de tempestades do próprio HECTON-8. Se a matemática errar por uma fração de porcentagem, a nave queima.
+
+## 3. A Doutrina de Resgate (ou a Falta Dela)
+
+Como a velocidade da luz é o limite absoluto, o resgate a partir dos mundos centrais é fisicamente impossível.
+
+Se uma cascata de pressão aniquilar um setor em HECTON-8, o sinal de socorro leva mais de dez anos para chegar à Terra. A resposta — se eles se derem ao trabalho de enviar uma — leva outros dez anos para chegar.
+
+É por isso que a Deep Reach instalou a IA Atlas-6. Ela foi construída para ser um "Governador de Fábrica", mantendo a colônia sem precisar ligar para casa. Era suposto manter as luzes acesas e as bombas funcionando.
+
+Quando vocês descerem para a superfície do oceano, serão largados pelo navio de apoio orbital *Black Keel*. Vocês viajarão num módulo da classe "Styx". Entendam isto: o Styx é projetado para uma viagem só de ida. Sua estrutura é construída para se deformar sob a pressão abissal, e seus aviônicos são destinados a inundar assim que vocês tocarem o fundo.
+
+Para voltar à órbita, vocês terão que encontrar, consertar ou arrancar as cargas de ascensão termoquímica das mãos da colônia morta.
+
+Vocês não são exploradores. Vocês não são passageiros. Vocês são massa dispensável na ponta de uma corda muito longa e muito lenta esticada através do vazio. Ajam de acordo.

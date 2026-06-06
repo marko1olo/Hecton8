@@ -1,36 +1,39 @@
-# BUREAUCRATIE CORPORATIVE ET CULTURE DES MARAUDEURS
-**Section de la Grande Bibliothèque:** 05
-**Langue:** fr_FR
-**Canon:** Strict (Lore Bible 2190)
+# CONFORMITÉ DE L'ENTREPRISE ET SOUS-CULTURE DES MARAUDEURS
+
+> **Source :** Bureau de Conformité de Récupération, Guide d'Intégration des Sous-Traitants (Formulaire 88-C).  
+> **Intervenant :** Système d'Admission Automatisé / Superviseur K. Ren.  
+> **Note du réviseur :** Des graffitis non autorisés (indiqués par *[Note dans la marge : ... ]*) ont été récupérés à l'intérieur de la capsule Styx 'Lazarus'. Ces notes décrivent la sous-culture illicite des "Maraudeurs".
 
 ---
 
-## 1. Deep Reach : Structure de l'Ennemi
-Le *Deep Reach Extraterrestrial Development Combine* n'est pas un méchant en carton avec une cape noire. C'est une machine bureaucratique qui tue des gens avec des tableurs. Leur sale besogne sur Aegir est répartie à travers un système de sociétés écrans et de départements de sorte que personne ne porte la responsabilité personnelle des cadavres :
+## 1. Structure de l'Entreprise Deep Reach
 
-*   **Aegir Continuity Holdings :** La société écran de la frontière détenant les papiers de la planète HECTON-8.
-*   **Atlas Continuity Office :** Le département juridique défendant la formulation dans le code de l'IA Atlas-6, garantissant la continuité de l'extraction d'isotopes.
-*   **Keelmark Loss Desk :** Le département des assurances. Leur travail est de transformer les noms des travailleurs morts en « catégories de charge et risques financiers ».
-*   **Recovery Compliance Office :** Ce sont eux qui nous embauchent, nous les maraudeurs, en 2190. Ils coordonnent le navire ravitailleur orbital *Black Keel*, exigent des preuves de la présence de xénon et s'assurent du silence des contractants.
+Bienvenue dans le Système Aegir. Vous êtes maintenant des sous-traitants indépendants sous licence opérant sous la juridiction du Deep Reach Extraterrestrial Development Combine. Pour assurer une intégration sans faille, mémorisez les autorités départementales suivantes :
 
-L'horreur de Deep Reach ne réside pas dans un trône secret. L'horreur réside dans le fait que chaque document qu'ils produisent est techniquement irréprochable et juridiquement justifiable, même pendant que des gens suffoquent derrière une porte verrouillée.
+*   **Aegir Continuity Holdings :** La division de la frontière qui détient tous les baux planétaires pour HECTON-8. Ils sont votre employeur ultime.
+*   **Atlas Continuity Office :** La division juridique et logicielle qui gère le cœur de l'IA Atlas-6. N'essayez pas de communiquer avec Atlas-6 sans autorisation.
+*   **Keelmark Loss Desk :** La division de souscription. En cas de panne d'équipement catastrophique, Keelmark évalue le risque financier de votre perte.
+*   **Recovery Compliance Office :** Nous sommes vos superviseurs directs sur le navire ravitailleur orbital *Black Keel*. Nous émettons vos coordonnées de plongée, exigeons la preuve de la présence de Xénon-Oméga et faisons appliquer le Protocole de Silence des Sous-Traitants.
 
-## 2. Culture des Maraudeurs
-Nous ne sommes pas des pirates de l'espace romantiques sortis de romans d'aventure. Le mot « Maraudeurs » était à l'origine une insulte corporative pour les équipages indépendants qui forçaient les modules abandonnés avant l'arrivée des inspecteurs d'assurance. Les équipages ont gardé le mot parce qu'il effrayait les bonnes personnes.
+*[Note dans la marge : Ce ne sont pas des génies du mal. Ce sont des feuilles de calcul. Personne n'assume la responsabilité quand tu meurs, parce que leur paperasse est techniquement irréprochable.]*
 
-Un maraudeur est un récupérateur, un briseur de contrat, un pilote en faillite ou un soudeur proscrit qui a appris : « une clause de sauvetage dans un contrat corporatif est juste une autre façon de posséder ton cadavre. »
+## 2. La Distinction "Maraudeur"
 
-## 3. Les Trois Grands Livres
-L'économie des équipages de maraudeurs repose sur trois concepts : **l'Air, la Dette et les Morts**.
+Vous êtes officiellement classés comme "Sous-Traitants Indépendants de Sauvetage". Toute référence à vous-mêmes en tant que "Maraudeurs" est une violation du code de conduite de l'entreprise. Le terme a pour origine une classification juridique péjorative pour les équipes qui forcent les modules abandonnés avant l'arrivée des inspecteurs de Keelmark.
 
-*   **L'Air :** Compté en minutes, en pression partielle, en chaleur du laveur de CO2, et le silence laid qui suit une valve cassée.
-*   **La Dette :** Comptée en usure d'outils, en cycles de batterie, en faveurs, et en noms rayés des listes d'assurance de Deep Reach. Le privilège initial d'un maraudeur est de 4,8 tonnes-équivalent (masse de mise en orbite), qui doit être travaillé avant qu'on vous autorise à monter sur le Black Keel.
-*   **Les Morts :** Un travailleur disparu n'est pas un trophée tant que quelqu'un ne prouve pas s'il a été abandonné, réaffecté, « dissous dans la comptabilité de biomasse » ou simplement enfermé derrière une porte que la société qualifie toujours de « sécurisée ». Les maraudeurs ne romantisent pas ce travail. Ils l'inventorient.
+*[Note dans la marge : On a gardé le nom parce qu'il fait peur aux cols blancs. Une clause de sauvetage dans un contrat d'entreprise n'est qu'un autre moyen pour eux de s'approprier ton cadavre. Nous sommes des pilotes en faillite, des soudeurs rebelles et des briseurs de contrats.]*
 
-## 4. Le Langage de la Survie
-À l'intérieur d'un complexe inondé, le rang appartient à la compétence. Un découpeur n'ouvre une porte qu'après que l'éclaireur a marqué le chemin du retour. Un technicien peut contredire un pilote quand les jauges mentent. Un maraudeur novice gagne la confiance non par l'héroïsme, mais en signalant les petites défaillances avant qu'elles ne deviennent des catastrophes : du givre autour d'une écoutille, une voix résonnant sur un canal mort, un banc de poissons se comprimant contre le courant.
+## 3. Les Trois Registres
 
-Les corporatifs écrivent : « variance atmosphérique temporaire ». Un maraudeur écrit : « le CO2 dévore le jugement en premier. »
-Les corporatifs écrivent : « priorité de confinement des actifs ». Un maraudeur écrit : « ils ont sauvé le réservoir de xénon et ventilé les quartiers d'habitation. »
+En tant que sous-traitants indépendants, votre rémunération est strictement calculée sur la base de la masse de substrat de Xénon-Oméga récupérée. Votre privilège de départ est l'équivalent de 4,8 tonnes (masse de levage orbital). Vous devrez rembourser cette dette avant d'être autorisés à occuper des quartiers permanents sur le *Black Keel*.
 
-L'honneur d'un maraudeur n'est pas une moralité propre. C'est une procédure reproductible et infaillible sous une pression létale. Nous volons à la société et encaissons les dettes des morts. C'est la seule frontière qui empêche les maraudeurs de devenir des corpos avec des combinaisons moins chères.
+*[Note dans la marge : Le registre de l'entreprise est bidon. La vraie économie des Maraudeurs fonctionne à l'Air, aux Dettes et aux Morts.*
+*L'Air : Compté en minutes, en pression partielle, en chaleur de l'épurateur de CO2 et dans le silence affreux après la rupture d'une valve.*
+*Les Dettes : Comptées en usure des outils, en cycles de batterie, en faveurs et en noms rayés des listes de Keelmark.*
+*Les Morts : Un travailleur disparu n'est pas une tragédie pour eux ; c'est une "charge système non résolue". On inventorie les morts pour que la corporation ne puisse pas prétendre qu'ils n'ont jamais existé.]*
+
+## 4. Terminologie Opérationnelle
+
+Veuillez vous en tenir à la terminologie standard de l'entreprise lors de la consignation des incidents. "Variance atmosphérique temporaire" doit être utilisé pour les fluctuations de pression. "Priorité de confinement des actifs" fait référence au scellement nécessaire des coffres-forts à xénon en cas d'urgence.
+
+*[Note dans la marge : À l'intérieur d'un complexe inondé, le seul grade est la compétence. Un découpeur ne tranche une porte qu'après que l'éclaireur a marqué l'itinéraire de retour. Un technicien a le dernier mot sur un pilote quand les jauges mentent. Un maraudeur débutant gagne la confiance en signalant des pannes mineures : du givre s'épanouissant autour d'une écoutille, une voix résonnant sur un canal mort, un banc de poissons se comprimant à contre-courant. Les corpos disent "confinement des actifs". Nous on dit "ils ont sauvé le réservoir de xénon et purgé les quartiers d'habitation". On vole la corporation pour recouvrer les dettes des morts. C'est la seule chose qui nous empêche de devenir comme eux.]*

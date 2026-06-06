@@ -109,8 +109,26 @@ namespace Hecton8.Tests.Editor
             string text = File.ReadAllText(DispatcherJobFencePath());
 
             Assert.That(text, Does.Contain("IllegalForcedCompletionWarningMessage"));
-            Assert.That(text, Does.Contain("forceComplete && !handle.IsCompleted && _activeSwapWindowDepth <= 0"));
+            Assert.That(text, Does.Contain("forceComplete && !handle.IsCompleted && !IsInsideSwapWindow()"));
             Assert.That(text, Does.Contain("WarnIllegalForcedCompletion();"));
+            Assert.That(text, Does.Contain("Volatile.Read(ref _activeSwapWindowDepth) > 0"));
+            Assert.That(text, Does.Contain("Interlocked.Exchange(ref _illegalForcedCompletionWarningLogged, 1)"));
+        }
+
+        [Test]
+        public void VoxelAStarForcedCompletions_RunInsideDispatcherSwapWindow()
+        {
+            string text = File.ReadAllText(PathFunnelVoxelAStarPath());
+            string teardown = ExtractMethodBody(text, "ForceCompleteVoxelAStarJobsForTeardown");
+            string mockSdf = ExtractMethodBody(text, "EnsureVoxelAStarMockSdfCold");
+
+            Assert.That(teardown, Does.Contain("DispatcherJobFence.BeginPostSimulationSwapWindow()"));
+            Assert.That(teardown, Does.Contain("DispatcherJobFence.EndPostSimulationSwapWindow()"));
+            Assert.That(teardown, Does.Contain("DispatcherJobFence.TryComplete(ref _voxelAStarEvaluateHandle, forceComplete: true)"));
+            Assert.That(teardown, Does.Contain("DispatcherJobFence.TryComplete(ref _voxelAStarSmoothHandle, forceComplete: true)"));
+            Assert.That(mockSdf, Does.Contain("DispatcherJobFence.BeginPostSimulationSwapWindow()"));
+            Assert.That(mockSdf, Does.Contain("DispatcherJobFence.EndPostSimulationSwapWindow()"));
+            Assert.That(mockSdf, Does.Contain("DispatcherJobFence.TryComplete(ref handle, forceComplete: true)"));
         }
 
         [Test]
@@ -1427,12 +1445,17 @@ namespace Hecton8.Tests.Editor
 
         private static string DispatcherJobFencePath()
         {
-            return Path.Combine(RuntimeScriptsRoot(), "Core", "DispatcherJobFence.cs");
+            return Path.Combine(RuntimeScriptsRoot(), "Core", "Contracts", "CoreLowLevelUtilities.cs");
         }
 
         private static string GlobalDataVaultPath()
         {
             return Path.Combine(RuntimeScriptsRoot(), "Core", "Memory", "GlobalDataVault.cs");
+        }
+
+        private static string PathFunnelVoxelAStarPath()
+        {
+            return Path.Combine(RuntimeScriptsRoot(), "AI", "Pathfinding", "PathFunnelNavmeshRuntime_VoxelAStar.cs");
         }
 
         private static string VisualPressureAgingPath()

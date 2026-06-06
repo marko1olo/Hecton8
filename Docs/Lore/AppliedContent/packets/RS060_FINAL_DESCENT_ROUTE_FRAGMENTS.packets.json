@@ -45,121 +45,121 @@
           "external_site": "Перед final basin мир перестает выглядеть заброшенным и начинает выглядеть как машина, слишком большая, чтобы показать все тело."
         },
         "ja_JP": {
-          "title": "Draft JA localization pending native pass. Abyssal Machine Field Warning",
-          "scanner": "Draft JA localization pending native pass. Machine field warning: silt motion does not match current.",
-          "field_note": "Draft JA localization pending native pass. Late-game warning should be quiet and objective, not boss buildup.",
-          "terminal": "Draft JA localization pending native pass. ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.",
-          "audio": "Draft JA localization pending native pass. The floor is not still.",
-          "in_game_wiki": "Draft JA localization pending native pass. Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.",
-          "external_site": "Draft JA localization pending native pass. Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body."
+          "title": "JA LOC HOLD: Abyssal Machine Field Warning",
+          "scanner": "JA LOC HOLD: Machine field warning: silt motion does not match current.",
+          "field_note": "JA LOC HOLD: Late-game warning should be quiet and objective, not boss buildup.",
+          "terminal": "JA LOC HOLD: ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.",
+          "audio": "JA LOC HOLD: The floor is not still.",
+          "in_game_wiki": "JA LOC HOLD: Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.",
+          "external_site": "JA LOC HOLD: Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body."
         },
         "zh_CN": {
-          "title": "Draft ZH localization pending native pass. Abyssal Machine Field Warning",
-          "scanner": "Draft ZH localization pending native pass. Machine field warning: silt motion does not match current.",
-          "field_note": "Draft ZH localization pending native pass. Late-game warning should be quiet and objective, not boss buildup.",
-          "terminal": "Draft ZH localization pending native pass. ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.",
-          "audio": "Draft ZH localization pending native pass. The floor is not still.",
-          "in_game_wiki": "Draft ZH localization pending native pass. Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.",
-          "external_site": "Draft ZH localization pending native pass. Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body."
+          "title": "ZH LOC HOLD: Abyssal Machine Field Warning",
+          "scanner": "ZH LOC HOLD: Machine field warning: silt motion does not match current.",
+          "field_note": "ZH LOC HOLD: Late-game warning should be quiet and objective, not boss buildup.",
+          "terminal": "ZH LOC HOLD: ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.",
+          "audio": "ZH LOC HOLD: The floor is not still.",
+          "in_game_wiki": "ZH LOC HOLD: Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.",
+          "external_site": "ZH LOC HOLD: Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Abyssal Machine Field Warning",
-          "scanner": "Draft FR localization pending native pass. Machine field warning: silt motion does not match current.",
-          "field_note": "Draft FR localization pending native pass. Late-game warning should be quiet and objective, not boss buildup.",
-          "terminal": "Draft FR localization pending native pass. ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.",
-          "audio": "Draft FR localization pending native pass. The floor is not still.",
-          "in_game_wiki": "Draft FR localization pending native pass. Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.",
-          "external_site": "Draft FR localization pending native pass. Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body."
+          "title": "FR LOC HOLD: Abyssal Machine Field Warning",
+          "scanner": "FR LOC HOLD: Machine field warning: silt motion does not match current.",
+          "field_note": "FR LOC HOLD: Late-game warning should be quiet and objective, not boss buildup.",
+          "terminal": "FR LOC HOLD: ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.",
+          "audio": "FR LOC HOLD: The floor is not still.",
+          "in_game_wiki": "FR LOC HOLD: Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.",
+          "external_site": "FR LOC HOLD: Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Abyssal Machine Field Warning",
-          "scanner": "Draft ES localization pending native pass. Machine field warning: silt motion does not match current.",
-          "field_note": "Draft ES localization pending native pass. Late-game warning should be quiet and objective, not boss buildup.",
-          "terminal": "Draft ES localization pending native pass. ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.",
-          "audio": "Draft ES localization pending native pass. The floor is not still.",
-          "in_game_wiki": "Draft ES localization pending native pass. Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.",
-          "external_site": "Draft ES localization pending native pass. Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body."
+          "title": "ES LOC HOLD: Abyssal Machine Field Warning",
+          "scanner": "ES LOC HOLD: Machine field warning: silt motion does not match current.",
+          "field_note": "ES LOC HOLD: Late-game warning should be quiet and objective, not boss buildup.",
+          "terminal": "ES LOC HOLD: ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.",
+          "audio": "ES LOC HOLD: The floor is not still.",
+          "in_game_wiki": "ES LOC HOLD: Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.",
+          "external_site": "ES LOC HOLD: Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Abyssal Machine Field Warning",
-          "scanner": "Draft DE localization pending native pass. Machine field warning: silt motion does not match current.",
-          "field_note": "Draft DE localization pending native pass. Late-game warning should be quiet and objective, not boss buildup.",
-          "terminal": "Draft DE localization pending native pass. ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.",
-          "audio": "Draft DE localization pending native pass. The floor is not still.",
-          "in_game_wiki": "Draft DE localization pending native pass. Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.",
-          "external_site": "Draft DE localization pending native pass. Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body."
+          "title": "DE LOC HOLD: Abyssal Machine Field Warning",
+          "scanner": "DE LOC HOLD: Machine field warning: silt motion does not match current.",
+          "field_note": "DE LOC HOLD: Late-game warning should be quiet and objective, not boss buildup.",
+          "terminal": "DE LOC HOLD: ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.",
+          "audio": "DE LOC HOLD: The floor is not still.",
+          "in_game_wiki": "DE LOC HOLD: Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.",
+          "external_site": "DE LOC HOLD: Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Abyssal Machine Field Warning",
-          "scanner": "Draft PL localization pending native pass. Machine field warning: silt motion does not match current.",
-          "field_note": "Draft PL localization pending native pass. Late-game warning should be quiet and objective, not boss buildup.",
-          "terminal": "Draft PL localization pending native pass. ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.",
-          "audio": "Draft PL localization pending native pass. The floor is not still.",
-          "in_game_wiki": "Draft PL localization pending native pass. Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.",
-          "external_site": "Draft PL localization pending native pass. Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body."
+          "title": "PL LOC HOLD: Abyssal Machine Field Warning",
+          "scanner": "PL LOC HOLD: Machine field warning: silt motion does not match current.",
+          "field_note": "PL LOC HOLD: Late-game warning should be quiet and objective, not boss buildup.",
+          "terminal": "PL LOC HOLD: ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.",
+          "audio": "PL LOC HOLD: The floor is not still.",
+          "in_game_wiki": "PL LOC HOLD: Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.",
+          "external_site": "PL LOC HOLD: Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body."
         },
         "uk_UA": {
-          "title": "Draft UK localization pending native pass. Abyssal Machine Field Warning",
-          "scanner": "Draft UK localization pending native pass. Machine field warning: silt motion does not match current.",
-          "field_note": "Draft UK localization pending native pass. Late-game warning should be quiet and objective, not boss buildup.",
-          "terminal": "Draft UK localization pending native pass. ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.",
-          "audio": "Draft UK localization pending native pass. The floor is not still.",
-          "in_game_wiki": "Draft UK localization pending native pass. Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.",
-          "external_site": "Draft UK localization pending native pass. Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body."
+          "title": "UK LOC HOLD: Abyssal Machine Field Warning",
+          "scanner": "UK LOC HOLD: Machine field warning: silt motion does not match current.",
+          "field_note": "UK LOC HOLD: Late-game warning should be quiet and objective, not boss buildup.",
+          "terminal": "UK LOC HOLD: ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.",
+          "audio": "UK LOC HOLD: The floor is not still.",
+          "in_game_wiki": "UK LOC HOLD: Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.",
+          "external_site": "UK LOC HOLD: Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Abyssal Machine Field Warning",
-          "scanner": "Draft AR localization pending native pass. Machine field warning: silt motion does not match current.",
-          "field_note": "Draft AR localization pending native pass. Late-game warning should be quiet and objective, not boss buildup.",
-          "terminal": "Draft AR localization pending native pass. ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.",
-          "audio": "Draft AR localization pending native pass. The floor is not still.",
-          "in_game_wiki": "Draft AR localization pending native pass. Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.",
-          "external_site": "Draft AR localization pending native pass. Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body."
+          "title": "AR LOC HOLD: Abyssal Machine Field Warning",
+          "scanner": "AR LOC HOLD: Machine field warning: silt motion does not match current.",
+          "field_note": "AR LOC HOLD: Late-game warning should be quiet and objective, not boss buildup.",
+          "terminal": "AR LOC HOLD: ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.",
+          "audio": "AR LOC HOLD: The floor is not still.",
+          "in_game_wiki": "AR LOC HOLD: Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.",
+          "external_site": "AR LOC HOLD: Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Abyssal Machine Field Warning",
-          "scanner": "Draft ID localization pending native pass. Machine field warning: silt motion does not match current.",
-          "field_note": "Draft ID localization pending native pass. Late-game warning should be quiet and objective, not boss buildup.",
-          "terminal": "Draft ID localization pending native pass. ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.",
-          "audio": "Draft ID localization pending native pass. The floor is not still.",
-          "in_game_wiki": "Draft ID localization pending native pass. Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.",
-          "external_site": "Draft ID localization pending native pass. Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body."
+          "title": "ID LOC HOLD: Abyssal Machine Field Warning",
+          "scanner": "ID LOC HOLD: Machine field warning: silt motion does not match current.",
+          "field_note": "ID LOC HOLD: Late-game warning should be quiet and objective, not boss buildup.",
+          "terminal": "ID LOC HOLD: ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.",
+          "audio": "ID LOC HOLD: The floor is not still.",
+          "in_game_wiki": "ID LOC HOLD: Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.",
+          "external_site": "ID LOC HOLD: Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Abyssal Machine Field Warning",
-          "scanner": "Draft KO localization pending native pass. Machine field warning: silt motion does not match current.",
-          "field_note": "Draft KO localization pending native pass. Late-game warning should be quiet and objective, not boss buildup.",
-          "terminal": "Draft KO localization pending native pass. ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.",
-          "audio": "Draft KO localization pending native pass. The floor is not still.",
-          "in_game_wiki": "Draft KO localization pending native pass. Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.",
-          "external_site": "Draft KO localization pending native pass. Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body."
+          "title": "KO LOC HOLD: Abyssal Machine Field Warning",
+          "scanner": "KO LOC HOLD: Machine field warning: silt motion does not match current.",
+          "field_note": "KO LOC HOLD: Late-game warning should be quiet and objective, not boss buildup.",
+          "terminal": "KO LOC HOLD: ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.",
+          "audio": "KO LOC HOLD: The floor is not still.",
+          "in_game_wiki": "KO LOC HOLD: Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.",
+          "external_site": "KO LOC HOLD: Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Abyssal Machine Field Warning",
-          "scanner": "Draft HE localization pending native pass. Machine field warning: silt motion does not match current.",
-          "field_note": "Draft HE localization pending native pass. Late-game warning should be quiet and objective, not boss buildup.",
-          "terminal": "Draft HE localization pending native pass. ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.",
-          "audio": "Draft HE localization pending native pass. The floor is not still.",
-          "in_game_wiki": "Draft HE localization pending native pass. Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.",
-          "external_site": "Draft HE localization pending native pass. Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body."
+          "title": "HE LOC HOLD: Abyssal Machine Field Warning",
+          "scanner": "HE LOC HOLD: Machine field warning: silt motion does not match current.",
+          "field_note": "HE LOC HOLD: Late-game warning should be quiet and objective, not boss buildup.",
+          "terminal": "HE LOC HOLD: ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.",
+          "audio": "HE LOC HOLD: The floor is not still.",
+          "in_game_wiki": "HE LOC HOLD: Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.",
+          "external_site": "HE LOC HOLD: Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Abyssal Machine Field Warning",
-          "scanner": "Draft PT localization pending native pass. Machine field warning: silt motion does not match current.",
-          "field_note": "Draft PT localization pending native pass. Late-game warning should be quiet and objective, not boss buildup.",
-          "terminal": "Draft PT localization pending native pass. ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.",
-          "audio": "Draft PT localization pending native pass. The floor is not still.",
-          "in_game_wiki": "Draft PT localization pending native pass. Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.",
-          "external_site": "Draft PT localization pending native pass. Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body."
+          "title": "PT LOC HOLD: Abyssal Machine Field Warning",
+          "scanner": "PT LOC HOLD: Machine field warning: silt motion does not match current.",
+          "field_note": "PT LOC HOLD: Late-game warning should be quiet and objective, not boss buildup.",
+          "terminal": "PT LOC HOLD: ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.",
+          "audio": "PT LOC HOLD: The floor is not still.",
+          "in_game_wiki": "PT LOC HOLD: Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.",
+          "external_site": "PT LOC HOLD: Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Abyssal Machine Field Warning",
-          "scanner": "Draft NL localization pending native pass. Machine field warning: silt motion does not match current.",
-          "field_note": "Draft NL localization pending native pass. Late-game warning should be quiet and objective, not boss buildup.",
-          "terminal": "Draft NL localization pending native pass. ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.",
-          "audio": "Draft NL localization pending native pass. The floor is not still.",
-          "in_game_wiki": "Draft NL localization pending native pass. Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.",
-          "external_site": "Draft NL localization pending native pass. Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body."
+          "title": "NL LOC HOLD: Abyssal Machine Field Warning",
+          "scanner": "NL LOC HOLD: Machine field warning: silt motion does not match current.",
+          "field_note": "NL LOC HOLD: Late-game warning should be quiet and objective, not boss buildup.",
+          "terminal": "NL LOC HOLD: ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.",
+          "audio": "NL LOC HOLD: The floor is not still.",
+          "in_game_wiki": "NL LOC HOLD: Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.",
+          "external_site": "NL LOC HOLD: Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body."
         }
       }
     },
@@ -200,121 +200,121 @@
           "external_site": "Финальный спуск не бросает hard sci-fi: дно открывается через pressure ratings, damaged authority и industrial system, misreading identity."
         },
         "ja_JP": {
-          "title": "Draft JA localization pending native pass. Atlas Basin Pressure Gate",
-          "scanner": "Draft JA localization pending native pass. Basin gate requires pressure proof and authority response.",
-          "field_note": "Draft JA localization pending native pass. Final threshold should read like a service gate to a living factory, not a fantasy portal.",
-          "terminal": "Draft JA localization pending native pass. ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.",
-          "audio": "Draft JA localization pending native pass. It knows the old key. It does not know you.",
-          "in_game_wiki": "Draft JA localization pending native pass. Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.",
-          "external_site": "Draft JA localization pending native pass. The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity."
+          "title": "JA LOC HOLD: Atlas Basin Pressure Gate",
+          "scanner": "JA LOC HOLD: Basin gate requires pressure proof and authority response.",
+          "field_note": "JA LOC HOLD: Final threshold should read like a service gate to a living factory, not a fantasy portal.",
+          "terminal": "JA LOC HOLD: ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.",
+          "audio": "JA LOC HOLD: It knows the old key. It does not know you.",
+          "in_game_wiki": "JA LOC HOLD: Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.",
+          "external_site": "JA LOC HOLD: The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity."
         },
         "zh_CN": {
-          "title": "Draft ZH localization pending native pass. Atlas Basin Pressure Gate",
-          "scanner": "Draft ZH localization pending native pass. Basin gate requires pressure proof and authority response.",
-          "field_note": "Draft ZH localization pending native pass. Final threshold should read like a service gate to a living factory, not a fantasy portal.",
-          "terminal": "Draft ZH localization pending native pass. ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.",
-          "audio": "Draft ZH localization pending native pass. It knows the old key. It does not know you.",
-          "in_game_wiki": "Draft ZH localization pending native pass. Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.",
-          "external_site": "Draft ZH localization pending native pass. The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity."
+          "title": "ZH LOC HOLD: Atlas Basin Pressure Gate",
+          "scanner": "ZH LOC HOLD: Basin gate requires pressure proof and authority response.",
+          "field_note": "ZH LOC HOLD: Final threshold should read like a service gate to a living factory, not a fantasy portal.",
+          "terminal": "ZH LOC HOLD: ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.",
+          "audio": "ZH LOC HOLD: It knows the old key. It does not know you.",
+          "in_game_wiki": "ZH LOC HOLD: Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.",
+          "external_site": "ZH LOC HOLD: The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Atlas Basin Pressure Gate",
-          "scanner": "Draft FR localization pending native pass. Basin gate requires pressure proof and authority response.",
-          "field_note": "Draft FR localization pending native pass. Final threshold should read like a service gate to a living factory, not a fantasy portal.",
-          "terminal": "Draft FR localization pending native pass. ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.",
-          "audio": "Draft FR localization pending native pass. It knows the old key. It does not know you.",
-          "in_game_wiki": "Draft FR localization pending native pass. Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.",
-          "external_site": "Draft FR localization pending native pass. The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity."
+          "title": "FR LOC HOLD: Atlas Basin Pressure Gate",
+          "scanner": "FR LOC HOLD: Basin gate requires pressure proof and authority response.",
+          "field_note": "FR LOC HOLD: Final threshold should read like a service gate to a living factory, not a fantasy portal.",
+          "terminal": "FR LOC HOLD: ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.",
+          "audio": "FR LOC HOLD: It knows the old key. It does not know you.",
+          "in_game_wiki": "FR LOC HOLD: Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.",
+          "external_site": "FR LOC HOLD: The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Atlas Basin Pressure Gate",
-          "scanner": "Draft ES localization pending native pass. Basin gate requires pressure proof and authority response.",
-          "field_note": "Draft ES localization pending native pass. Final threshold should read like a service gate to a living factory, not a fantasy portal.",
-          "terminal": "Draft ES localization pending native pass. ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.",
-          "audio": "Draft ES localization pending native pass. It knows the old key. It does not know you.",
-          "in_game_wiki": "Draft ES localization pending native pass. Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.",
-          "external_site": "Draft ES localization pending native pass. The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity."
+          "title": "ES LOC HOLD: Atlas Basin Pressure Gate",
+          "scanner": "ES LOC HOLD: Basin gate requires pressure proof and authority response.",
+          "field_note": "ES LOC HOLD: Final threshold should read like a service gate to a living factory, not a fantasy portal.",
+          "terminal": "ES LOC HOLD: ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.",
+          "audio": "ES LOC HOLD: It knows the old key. It does not know you.",
+          "in_game_wiki": "ES LOC HOLD: Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.",
+          "external_site": "ES LOC HOLD: The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Atlas Basin Pressure Gate",
-          "scanner": "Draft DE localization pending native pass. Basin gate requires pressure proof and authority response.",
-          "field_note": "Draft DE localization pending native pass. Final threshold should read like a service gate to a living factory, not a fantasy portal.",
-          "terminal": "Draft DE localization pending native pass. ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.",
-          "audio": "Draft DE localization pending native pass. It knows the old key. It does not know you.",
-          "in_game_wiki": "Draft DE localization pending native pass. Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.",
-          "external_site": "Draft DE localization pending native pass. The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity."
+          "title": "DE LOC HOLD: Atlas Basin Pressure Gate",
+          "scanner": "DE LOC HOLD: Basin gate requires pressure proof and authority response.",
+          "field_note": "DE LOC HOLD: Final threshold should read like a service gate to a living factory, not a fantasy portal.",
+          "terminal": "DE LOC HOLD: ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.",
+          "audio": "DE LOC HOLD: It knows the old key. It does not know you.",
+          "in_game_wiki": "DE LOC HOLD: Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.",
+          "external_site": "DE LOC HOLD: The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Atlas Basin Pressure Gate",
-          "scanner": "Draft PL localization pending native pass. Basin gate requires pressure proof and authority response.",
-          "field_note": "Draft PL localization pending native pass. Final threshold should read like a service gate to a living factory, not a fantasy portal.",
-          "terminal": "Draft PL localization pending native pass. ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.",
-          "audio": "Draft PL localization pending native pass. It knows the old key. It does not know you.",
-          "in_game_wiki": "Draft PL localization pending native pass. Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.",
-          "external_site": "Draft PL localization pending native pass. The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity."
+          "title": "PL LOC HOLD: Atlas Basin Pressure Gate",
+          "scanner": "PL LOC HOLD: Basin gate requires pressure proof and authority response.",
+          "field_note": "PL LOC HOLD: Final threshold should read like a service gate to a living factory, not a fantasy portal.",
+          "terminal": "PL LOC HOLD: ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.",
+          "audio": "PL LOC HOLD: It knows the old key. It does not know you.",
+          "in_game_wiki": "PL LOC HOLD: Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.",
+          "external_site": "PL LOC HOLD: The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity."
         },
         "uk_UA": {
-          "title": "Draft UK localization pending native pass. Atlas Basin Pressure Gate",
-          "scanner": "Draft UK localization pending native pass. Basin gate requires pressure proof and authority response.",
-          "field_note": "Draft UK localization pending native pass. Final threshold should read like a service gate to a living factory, not a fantasy portal.",
-          "terminal": "Draft UK localization pending native pass. ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.",
-          "audio": "Draft UK localization pending native pass. It knows the old key. It does not know you.",
-          "in_game_wiki": "Draft UK localization pending native pass. Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.",
-          "external_site": "Draft UK localization pending native pass. The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity."
+          "title": "UK LOC HOLD: Atlas Basin Pressure Gate",
+          "scanner": "UK LOC HOLD: Basin gate requires pressure proof and authority response.",
+          "field_note": "UK LOC HOLD: Final threshold should read like a service gate to a living factory, not a fantasy portal.",
+          "terminal": "UK LOC HOLD: ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.",
+          "audio": "UK LOC HOLD: It knows the old key. It does not know you.",
+          "in_game_wiki": "UK LOC HOLD: Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.",
+          "external_site": "UK LOC HOLD: The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Atlas Basin Pressure Gate",
-          "scanner": "Draft AR localization pending native pass. Basin gate requires pressure proof and authority response.",
-          "field_note": "Draft AR localization pending native pass. Final threshold should read like a service gate to a living factory, not a fantasy portal.",
-          "terminal": "Draft AR localization pending native pass. ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.",
-          "audio": "Draft AR localization pending native pass. It knows the old key. It does not know you.",
-          "in_game_wiki": "Draft AR localization pending native pass. Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.",
-          "external_site": "Draft AR localization pending native pass. The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity."
+          "title": "AR LOC HOLD: Atlas Basin Pressure Gate",
+          "scanner": "AR LOC HOLD: Basin gate requires pressure proof and authority response.",
+          "field_note": "AR LOC HOLD: Final threshold should read like a service gate to a living factory, not a fantasy portal.",
+          "terminal": "AR LOC HOLD: ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.",
+          "audio": "AR LOC HOLD: It knows the old key. It does not know you.",
+          "in_game_wiki": "AR LOC HOLD: Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.",
+          "external_site": "AR LOC HOLD: The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Atlas Basin Pressure Gate",
-          "scanner": "Draft ID localization pending native pass. Basin gate requires pressure proof and authority response.",
-          "field_note": "Draft ID localization pending native pass. Final threshold should read like a service gate to a living factory, not a fantasy portal.",
-          "terminal": "Draft ID localization pending native pass. ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.",
-          "audio": "Draft ID localization pending native pass. It knows the old key. It does not know you.",
-          "in_game_wiki": "Draft ID localization pending native pass. Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.",
-          "external_site": "Draft ID localization pending native pass. The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity."
+          "title": "ID LOC HOLD: Atlas Basin Pressure Gate",
+          "scanner": "ID LOC HOLD: Basin gate requires pressure proof and authority response.",
+          "field_note": "ID LOC HOLD: Final threshold should read like a service gate to a living factory, not a fantasy portal.",
+          "terminal": "ID LOC HOLD: ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.",
+          "audio": "ID LOC HOLD: It knows the old key. It does not know you.",
+          "in_game_wiki": "ID LOC HOLD: Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.",
+          "external_site": "ID LOC HOLD: The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Atlas Basin Pressure Gate",
-          "scanner": "Draft KO localization pending native pass. Basin gate requires pressure proof and authority response.",
-          "field_note": "Draft KO localization pending native pass. Final threshold should read like a service gate to a living factory, not a fantasy portal.",
-          "terminal": "Draft KO localization pending native pass. ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.",
-          "audio": "Draft KO localization pending native pass. It knows the old key. It does not know you.",
-          "in_game_wiki": "Draft KO localization pending native pass. Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.",
-          "external_site": "Draft KO localization pending native pass. The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity."
+          "title": "KO LOC HOLD: Atlas Basin Pressure Gate",
+          "scanner": "KO LOC HOLD: Basin gate requires pressure proof and authority response.",
+          "field_note": "KO LOC HOLD: Final threshold should read like a service gate to a living factory, not a fantasy portal.",
+          "terminal": "KO LOC HOLD: ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.",
+          "audio": "KO LOC HOLD: It knows the old key. It does not know you.",
+          "in_game_wiki": "KO LOC HOLD: Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.",
+          "external_site": "KO LOC HOLD: The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Atlas Basin Pressure Gate",
-          "scanner": "Draft HE localization pending native pass. Basin gate requires pressure proof and authority response.",
-          "field_note": "Draft HE localization pending native pass. Final threshold should read like a service gate to a living factory, not a fantasy portal.",
-          "terminal": "Draft HE localization pending native pass. ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.",
-          "audio": "Draft HE localization pending native pass. It knows the old key. It does not know you.",
-          "in_game_wiki": "Draft HE localization pending native pass. Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.",
-          "external_site": "Draft HE localization pending native pass. The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity."
+          "title": "HE LOC HOLD: Atlas Basin Pressure Gate",
+          "scanner": "HE LOC HOLD: Basin gate requires pressure proof and authority response.",
+          "field_note": "HE LOC HOLD: Final threshold should read like a service gate to a living factory, not a fantasy portal.",
+          "terminal": "HE LOC HOLD: ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.",
+          "audio": "HE LOC HOLD: It knows the old key. It does not know you.",
+          "in_game_wiki": "HE LOC HOLD: Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.",
+          "external_site": "HE LOC HOLD: The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Atlas Basin Pressure Gate",
-          "scanner": "Draft PT localization pending native pass. Basin gate requires pressure proof and authority response.",
-          "field_note": "Draft PT localization pending native pass. Final threshold should read like a service gate to a living factory, not a fantasy portal.",
-          "terminal": "Draft PT localization pending native pass. ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.",
-          "audio": "Draft PT localization pending native pass. It knows the old key. It does not know you.",
-          "in_game_wiki": "Draft PT localization pending native pass. Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.",
-          "external_site": "Draft PT localization pending native pass. The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity."
+          "title": "PT LOC HOLD: Atlas Basin Pressure Gate",
+          "scanner": "PT LOC HOLD: Basin gate requires pressure proof and authority response.",
+          "field_note": "PT LOC HOLD: Final threshold should read like a service gate to a living factory, not a fantasy portal.",
+          "terminal": "PT LOC HOLD: ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.",
+          "audio": "PT LOC HOLD: It knows the old key. It does not know you.",
+          "in_game_wiki": "PT LOC HOLD: Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.",
+          "external_site": "PT LOC HOLD: The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Atlas Basin Pressure Gate",
-          "scanner": "Draft NL localization pending native pass. Basin gate requires pressure proof and authority response.",
-          "field_note": "Draft NL localization pending native pass. Final threshold should read like a service gate to a living factory, not a fantasy portal.",
-          "terminal": "Draft NL localization pending native pass. ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.",
-          "audio": "Draft NL localization pending native pass. It knows the old key. It does not know you.",
-          "in_game_wiki": "Draft NL localization pending native pass. Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.",
-          "external_site": "Draft NL localization pending native pass. The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity."
+          "title": "NL LOC HOLD: Atlas Basin Pressure Gate",
+          "scanner": "NL LOC HOLD: Basin gate requires pressure proof and authority response.",
+          "field_note": "NL LOC HOLD: Final threshold should read like a service gate to a living factory, not a fantasy portal.",
+          "terminal": "NL LOC HOLD: ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.",
+          "audio": "NL LOC HOLD: It knows the old key. It does not know you.",
+          "in_game_wiki": "NL LOC HOLD: Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.",
+          "external_site": "NL LOC HOLD: The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity."
         }
       }
     },
@@ -355,121 +355,121 @@
           "external_site": "На дне HECTON-8 перестает разделять colony, ocean, machine и evidence. Само место становится аргументом."
         },
         "ja_JP": {
-          "title": "Draft JA localization pending native pass. Factory Temple Entry Fragment",
-          "scanner": "Draft JA localization pending native pass. Entry fragment: alloy, shell sealant, human tool, active repair pulse.",
-          "field_note": "Draft JA localization pending native pass. Visual rule: temple only because industry and tissue have become ritual through repetition.",
-          "terminal": "Draft JA localization pending native pass. ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.",
-          "audio": "Draft JA localization pending native pass. This is not a room. This is a habit.",
-          "in_game_wiki": "Draft JA localization pending native pass. Factory-Temple Entry Fragment defines the final-zone visual grammar.",
-          "external_site": "Draft JA localization pending native pass. At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument."
+          "title": "JA LOC HOLD: Factory Temple Entry Fragment",
+          "scanner": "JA LOC HOLD: Entry fragment: alloy, shell sealant, human tool, active repair pulse.",
+          "field_note": "JA LOC HOLD: Visual rule: temple only because industry and tissue have become ritual through repetition.",
+          "terminal": "JA LOC HOLD: ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.",
+          "audio": "JA LOC HOLD: This is not a room. This is a habit.",
+          "in_game_wiki": "JA LOC HOLD: Factory-Temple Entry Fragment defines the final-zone visual grammar.",
+          "external_site": "JA LOC HOLD: At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument."
         },
         "zh_CN": {
-          "title": "Draft ZH localization pending native pass. Factory Temple Entry Fragment",
-          "scanner": "Draft ZH localization pending native pass. Entry fragment: alloy, shell sealant, human tool, active repair pulse.",
-          "field_note": "Draft ZH localization pending native pass. Visual rule: temple only because industry and tissue have become ritual through repetition.",
-          "terminal": "Draft ZH localization pending native pass. ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.",
-          "audio": "Draft ZH localization pending native pass. This is not a room. This is a habit.",
-          "in_game_wiki": "Draft ZH localization pending native pass. Factory-Temple Entry Fragment defines the final-zone visual grammar.",
-          "external_site": "Draft ZH localization pending native pass. At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument."
+          "title": "ZH LOC HOLD: Factory Temple Entry Fragment",
+          "scanner": "ZH LOC HOLD: Entry fragment: alloy, shell sealant, human tool, active repair pulse.",
+          "field_note": "ZH LOC HOLD: Visual rule: temple only because industry and tissue have become ritual through repetition.",
+          "terminal": "ZH LOC HOLD: ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.",
+          "audio": "ZH LOC HOLD: This is not a room. This is a habit.",
+          "in_game_wiki": "ZH LOC HOLD: Factory-Temple Entry Fragment defines the final-zone visual grammar.",
+          "external_site": "ZH LOC HOLD: At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Factory Temple Entry Fragment",
-          "scanner": "Draft FR localization pending native pass. Entry fragment: alloy, shell sealant, human tool, active repair pulse.",
-          "field_note": "Draft FR localization pending native pass. Visual rule: temple only because industry and tissue have become ritual through repetition.",
-          "terminal": "Draft FR localization pending native pass. ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.",
-          "audio": "Draft FR localization pending native pass. This is not a room. This is a habit.",
-          "in_game_wiki": "Draft FR localization pending native pass. Factory-Temple Entry Fragment defines the final-zone visual grammar.",
-          "external_site": "Draft FR localization pending native pass. At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument."
+          "title": "FR LOC HOLD: Factory Temple Entry Fragment",
+          "scanner": "FR LOC HOLD: Entry fragment: alloy, shell sealant, human tool, active repair pulse.",
+          "field_note": "FR LOC HOLD: Visual rule: temple only because industry and tissue have become ritual through repetition.",
+          "terminal": "FR LOC HOLD: ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.",
+          "audio": "FR LOC HOLD: This is not a room. This is a habit.",
+          "in_game_wiki": "FR LOC HOLD: Factory-Temple Entry Fragment defines the final-zone visual grammar.",
+          "external_site": "FR LOC HOLD: At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Factory Temple Entry Fragment",
-          "scanner": "Draft ES localization pending native pass. Entry fragment: alloy, shell sealant, human tool, active repair pulse.",
-          "field_note": "Draft ES localization pending native pass. Visual rule: temple only because industry and tissue have become ritual through repetition.",
-          "terminal": "Draft ES localization pending native pass. ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.",
-          "audio": "Draft ES localization pending native pass. This is not a room. This is a habit.",
-          "in_game_wiki": "Draft ES localization pending native pass. Factory-Temple Entry Fragment defines the final-zone visual grammar.",
-          "external_site": "Draft ES localization pending native pass. At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument."
+          "title": "ES LOC HOLD: Factory Temple Entry Fragment",
+          "scanner": "ES LOC HOLD: Entry fragment: alloy, shell sealant, human tool, active repair pulse.",
+          "field_note": "ES LOC HOLD: Visual rule: temple only because industry and tissue have become ritual through repetition.",
+          "terminal": "ES LOC HOLD: ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.",
+          "audio": "ES LOC HOLD: This is not a room. This is a habit.",
+          "in_game_wiki": "ES LOC HOLD: Factory-Temple Entry Fragment defines the final-zone visual grammar.",
+          "external_site": "ES LOC HOLD: At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Factory Temple Entry Fragment",
-          "scanner": "Draft DE localization pending native pass. Entry fragment: alloy, shell sealant, human tool, active repair pulse.",
-          "field_note": "Draft DE localization pending native pass. Visual rule: temple only because industry and tissue have become ritual through repetition.",
-          "terminal": "Draft DE localization pending native pass. ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.",
-          "audio": "Draft DE localization pending native pass. This is not a room. This is a habit.",
-          "in_game_wiki": "Draft DE localization pending native pass. Factory-Temple Entry Fragment defines the final-zone visual grammar.",
-          "external_site": "Draft DE localization pending native pass. At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument."
+          "title": "DE LOC HOLD: Factory Temple Entry Fragment",
+          "scanner": "DE LOC HOLD: Entry fragment: alloy, shell sealant, human tool, active repair pulse.",
+          "field_note": "DE LOC HOLD: Visual rule: temple only because industry and tissue have become ritual through repetition.",
+          "terminal": "DE LOC HOLD: ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.",
+          "audio": "DE LOC HOLD: This is not a room. This is a habit.",
+          "in_game_wiki": "DE LOC HOLD: Factory-Temple Entry Fragment defines the final-zone visual grammar.",
+          "external_site": "DE LOC HOLD: At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Factory Temple Entry Fragment",
-          "scanner": "Draft PL localization pending native pass. Entry fragment: alloy, shell sealant, human tool, active repair pulse.",
-          "field_note": "Draft PL localization pending native pass. Visual rule: temple only because industry and tissue have become ritual through repetition.",
-          "terminal": "Draft PL localization pending native pass. ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.",
-          "audio": "Draft PL localization pending native pass. This is not a room. This is a habit.",
-          "in_game_wiki": "Draft PL localization pending native pass. Factory-Temple Entry Fragment defines the final-zone visual grammar.",
-          "external_site": "Draft PL localization pending native pass. At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument."
+          "title": "PL LOC HOLD: Factory Temple Entry Fragment",
+          "scanner": "PL LOC HOLD: Entry fragment: alloy, shell sealant, human tool, active repair pulse.",
+          "field_note": "PL LOC HOLD: Visual rule: temple only because industry and tissue have become ritual through repetition.",
+          "terminal": "PL LOC HOLD: ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.",
+          "audio": "PL LOC HOLD: This is not a room. This is a habit.",
+          "in_game_wiki": "PL LOC HOLD: Factory-Temple Entry Fragment defines the final-zone visual grammar.",
+          "external_site": "PL LOC HOLD: At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument."
         },
         "uk_UA": {
-          "title": "Draft UK localization pending native pass. Factory Temple Entry Fragment",
-          "scanner": "Draft UK localization pending native pass. Entry fragment: alloy, shell sealant, human tool, active repair pulse.",
-          "field_note": "Draft UK localization pending native pass. Visual rule: temple only because industry and tissue have become ritual through repetition.",
-          "terminal": "Draft UK localization pending native pass. ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.",
-          "audio": "Draft UK localization pending native pass. This is not a room. This is a habit.",
-          "in_game_wiki": "Draft UK localization pending native pass. Factory-Temple Entry Fragment defines the final-zone visual grammar.",
-          "external_site": "Draft UK localization pending native pass. At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument."
+          "title": "UK LOC HOLD: Factory Temple Entry Fragment",
+          "scanner": "UK LOC HOLD: Entry fragment: alloy, shell sealant, human tool, active repair pulse.",
+          "field_note": "UK LOC HOLD: Visual rule: temple only because industry and tissue have become ritual through repetition.",
+          "terminal": "UK LOC HOLD: ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.",
+          "audio": "UK LOC HOLD: This is not a room. This is a habit.",
+          "in_game_wiki": "UK LOC HOLD: Factory-Temple Entry Fragment defines the final-zone visual grammar.",
+          "external_site": "UK LOC HOLD: At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Factory Temple Entry Fragment",
-          "scanner": "Draft AR localization pending native pass. Entry fragment: alloy, shell sealant, human tool, active repair pulse.",
-          "field_note": "Draft AR localization pending native pass. Visual rule: temple only because industry and tissue have become ritual through repetition.",
-          "terminal": "Draft AR localization pending native pass. ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.",
-          "audio": "Draft AR localization pending native pass. This is not a room. This is a habit.",
-          "in_game_wiki": "Draft AR localization pending native pass. Factory-Temple Entry Fragment defines the final-zone visual grammar.",
-          "external_site": "Draft AR localization pending native pass. At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument."
+          "title": "AR LOC HOLD: Factory Temple Entry Fragment",
+          "scanner": "AR LOC HOLD: Entry fragment: alloy, shell sealant, human tool, active repair pulse.",
+          "field_note": "AR LOC HOLD: Visual rule: temple only because industry and tissue have become ritual through repetition.",
+          "terminal": "AR LOC HOLD: ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.",
+          "audio": "AR LOC HOLD: This is not a room. This is a habit.",
+          "in_game_wiki": "AR LOC HOLD: Factory-Temple Entry Fragment defines the final-zone visual grammar.",
+          "external_site": "AR LOC HOLD: At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Factory Temple Entry Fragment",
-          "scanner": "Draft ID localization pending native pass. Entry fragment: alloy, shell sealant, human tool, active repair pulse.",
-          "field_note": "Draft ID localization pending native pass. Visual rule: temple only because industry and tissue have become ritual through repetition.",
-          "terminal": "Draft ID localization pending native pass. ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.",
-          "audio": "Draft ID localization pending native pass. This is not a room. This is a habit.",
-          "in_game_wiki": "Draft ID localization pending native pass. Factory-Temple Entry Fragment defines the final-zone visual grammar.",
-          "external_site": "Draft ID localization pending native pass. At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument."
+          "title": "ID LOC HOLD: Factory Temple Entry Fragment",
+          "scanner": "ID LOC HOLD: Entry fragment: alloy, shell sealant, human tool, active repair pulse.",
+          "field_note": "ID LOC HOLD: Visual rule: temple only because industry and tissue have become ritual through repetition.",
+          "terminal": "ID LOC HOLD: ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.",
+          "audio": "ID LOC HOLD: This is not a room. This is a habit.",
+          "in_game_wiki": "ID LOC HOLD: Factory-Temple Entry Fragment defines the final-zone visual grammar.",
+          "external_site": "ID LOC HOLD: At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Factory Temple Entry Fragment",
-          "scanner": "Draft KO localization pending native pass. Entry fragment: alloy, shell sealant, human tool, active repair pulse.",
-          "field_note": "Draft KO localization pending native pass. Visual rule: temple only because industry and tissue have become ritual through repetition.",
-          "terminal": "Draft KO localization pending native pass. ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.",
-          "audio": "Draft KO localization pending native pass. This is not a room. This is a habit.",
-          "in_game_wiki": "Draft KO localization pending native pass. Factory-Temple Entry Fragment defines the final-zone visual grammar.",
-          "external_site": "Draft KO localization pending native pass. At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument."
+          "title": "KO LOC HOLD: Factory Temple Entry Fragment",
+          "scanner": "KO LOC HOLD: Entry fragment: alloy, shell sealant, human tool, active repair pulse.",
+          "field_note": "KO LOC HOLD: Visual rule: temple only because industry and tissue have become ritual through repetition.",
+          "terminal": "KO LOC HOLD: ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.",
+          "audio": "KO LOC HOLD: This is not a room. This is a habit.",
+          "in_game_wiki": "KO LOC HOLD: Factory-Temple Entry Fragment defines the final-zone visual grammar.",
+          "external_site": "KO LOC HOLD: At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Factory Temple Entry Fragment",
-          "scanner": "Draft HE localization pending native pass. Entry fragment: alloy, shell sealant, human tool, active repair pulse.",
-          "field_note": "Draft HE localization pending native pass. Visual rule: temple only because industry and tissue have become ritual through repetition.",
-          "terminal": "Draft HE localization pending native pass. ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.",
-          "audio": "Draft HE localization pending native pass. This is not a room. This is a habit.",
-          "in_game_wiki": "Draft HE localization pending native pass. Factory-Temple Entry Fragment defines the final-zone visual grammar.",
-          "external_site": "Draft HE localization pending native pass. At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument."
+          "title": "HE LOC HOLD: Factory Temple Entry Fragment",
+          "scanner": "HE LOC HOLD: Entry fragment: alloy, shell sealant, human tool, active repair pulse.",
+          "field_note": "HE LOC HOLD: Visual rule: temple only because industry and tissue have become ritual through repetition.",
+          "terminal": "HE LOC HOLD: ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.",
+          "audio": "HE LOC HOLD: This is not a room. This is a habit.",
+          "in_game_wiki": "HE LOC HOLD: Factory-Temple Entry Fragment defines the final-zone visual grammar.",
+          "external_site": "HE LOC HOLD: At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Factory Temple Entry Fragment",
-          "scanner": "Draft PT localization pending native pass. Entry fragment: alloy, shell sealant, human tool, active repair pulse.",
-          "field_note": "Draft PT localization pending native pass. Visual rule: temple only because industry and tissue have become ritual through repetition.",
-          "terminal": "Draft PT localization pending native pass. ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.",
-          "audio": "Draft PT localization pending native pass. This is not a room. This is a habit.",
-          "in_game_wiki": "Draft PT localization pending native pass. Factory-Temple Entry Fragment defines the final-zone visual grammar.",
-          "external_site": "Draft PT localization pending native pass. At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument."
+          "title": "PT LOC HOLD: Factory Temple Entry Fragment",
+          "scanner": "PT LOC HOLD: Entry fragment: alloy, shell sealant, human tool, active repair pulse.",
+          "field_note": "PT LOC HOLD: Visual rule: temple only because industry and tissue have become ritual through repetition.",
+          "terminal": "PT LOC HOLD: ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.",
+          "audio": "PT LOC HOLD: This is not a room. This is a habit.",
+          "in_game_wiki": "PT LOC HOLD: Factory-Temple Entry Fragment defines the final-zone visual grammar.",
+          "external_site": "PT LOC HOLD: At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Factory Temple Entry Fragment",
-          "scanner": "Draft NL localization pending native pass. Entry fragment: alloy, shell sealant, human tool, active repair pulse.",
-          "field_note": "Draft NL localization pending native pass. Visual rule: temple only because industry and tissue have become ritual through repetition.",
-          "terminal": "Draft NL localization pending native pass. ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.",
-          "audio": "Draft NL localization pending native pass. This is not a room. This is a habit.",
-          "in_game_wiki": "Draft NL localization pending native pass. Factory-Temple Entry Fragment defines the final-zone visual grammar.",
-          "external_site": "Draft NL localization pending native pass. At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument."
+          "title": "NL LOC HOLD: Factory Temple Entry Fragment",
+          "scanner": "NL LOC HOLD: Entry fragment: alloy, shell sealant, human tool, active repair pulse.",
+          "field_note": "NL LOC HOLD: Visual rule: temple only because industry and tissue have become ritual through repetition.",
+          "terminal": "NL LOC HOLD: ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.",
+          "audio": "NL LOC HOLD: This is not a room. This is a habit.",
+          "in_game_wiki": "NL LOC HOLD: Factory-Temple Entry Fragment defines the final-zone visual grammar.",
+          "external_site": "NL LOC HOLD: At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument."
         }
       }
     },
@@ -510,121 +510,121 @@
           "external_site": "Концовка HECTON-8 не о том, выжил ли игрок. Она о том, кто получит proof и что этот receiver сможет с ним сделать."
         },
         "ja_JP": {
-          "title": "Draft JA localization pending native pass. Payload Authority Last Check",
-          "scanner": "Draft JA localization pending native pass. Payload check: receiver changes meaning, not only reward.",
-          "field_note": "Draft JA localization pending native pass. Use immediately before irreversible ending route selection.",
-          "terminal": "Draft JA localization pending native pass. PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.",
-          "audio": "Draft JA localization pending native pass. What leaves will own what remains.",
-          "in_game_wiki": "Draft JA localization pending native pass. Payload Authority Last Check gives the final UI its hard question.",
-          "external_site": "Draft JA localization pending native pass. HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it."
+          "title": "JA LOC HOLD: Payload Authority Last Check",
+          "scanner": "JA LOC HOLD: Payload check: receiver changes meaning, not only reward.",
+          "field_note": "JA LOC HOLD: Use immediately before irreversible ending route selection.",
+          "terminal": "JA LOC HOLD: PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.",
+          "audio": "JA LOC HOLD: What leaves will own what remains.",
+          "in_game_wiki": "JA LOC HOLD: Payload Authority Last Check gives the final UI its hard question.",
+          "external_site": "JA LOC HOLD: HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it."
         },
         "zh_CN": {
-          "title": "Draft ZH localization pending native pass. Payload Authority Last Check",
-          "scanner": "Draft ZH localization pending native pass. Payload check: receiver changes meaning, not only reward.",
-          "field_note": "Draft ZH localization pending native pass. Use immediately before irreversible ending route selection.",
-          "terminal": "Draft ZH localization pending native pass. PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.",
-          "audio": "Draft ZH localization pending native pass. What leaves will own what remains.",
-          "in_game_wiki": "Draft ZH localization pending native pass. Payload Authority Last Check gives the final UI its hard question.",
-          "external_site": "Draft ZH localization pending native pass. HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it."
+          "title": "ZH LOC HOLD: Payload Authority Last Check",
+          "scanner": "ZH LOC HOLD: Payload check: receiver changes meaning, not only reward.",
+          "field_note": "ZH LOC HOLD: Use immediately before irreversible ending route selection.",
+          "terminal": "ZH LOC HOLD: PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.",
+          "audio": "ZH LOC HOLD: What leaves will own what remains.",
+          "in_game_wiki": "ZH LOC HOLD: Payload Authority Last Check gives the final UI its hard question.",
+          "external_site": "ZH LOC HOLD: HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Payload Authority Last Check",
-          "scanner": "Draft FR localization pending native pass. Payload check: receiver changes meaning, not only reward.",
-          "field_note": "Draft FR localization pending native pass. Use immediately before irreversible ending route selection.",
-          "terminal": "Draft FR localization pending native pass. PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.",
-          "audio": "Draft FR localization pending native pass. What leaves will own what remains.",
-          "in_game_wiki": "Draft FR localization pending native pass. Payload Authority Last Check gives the final UI its hard question.",
-          "external_site": "Draft FR localization pending native pass. HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it."
+          "title": "FR LOC HOLD: Payload Authority Last Check",
+          "scanner": "FR LOC HOLD: Payload check: receiver changes meaning, not only reward.",
+          "field_note": "FR LOC HOLD: Use immediately before irreversible ending route selection.",
+          "terminal": "FR LOC HOLD: PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.",
+          "audio": "FR LOC HOLD: What leaves will own what remains.",
+          "in_game_wiki": "FR LOC HOLD: Payload Authority Last Check gives the final UI its hard question.",
+          "external_site": "FR LOC HOLD: HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Payload Authority Last Check",
-          "scanner": "Draft ES localization pending native pass. Payload check: receiver changes meaning, not only reward.",
-          "field_note": "Draft ES localization pending native pass. Use immediately before irreversible ending route selection.",
-          "terminal": "Draft ES localization pending native pass. PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.",
-          "audio": "Draft ES localization pending native pass. What leaves will own what remains.",
-          "in_game_wiki": "Draft ES localization pending native pass. Payload Authority Last Check gives the final UI its hard question.",
-          "external_site": "Draft ES localization pending native pass. HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it."
+          "title": "ES LOC HOLD: Payload Authority Last Check",
+          "scanner": "ES LOC HOLD: Payload check: receiver changes meaning, not only reward.",
+          "field_note": "ES LOC HOLD: Use immediately before irreversible ending route selection.",
+          "terminal": "ES LOC HOLD: PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.",
+          "audio": "ES LOC HOLD: What leaves will own what remains.",
+          "in_game_wiki": "ES LOC HOLD: Payload Authority Last Check gives the final UI its hard question.",
+          "external_site": "ES LOC HOLD: HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Payload Authority Last Check",
-          "scanner": "Draft DE localization pending native pass. Payload check: receiver changes meaning, not only reward.",
-          "field_note": "Draft DE localization pending native pass. Use immediately before irreversible ending route selection.",
-          "terminal": "Draft DE localization pending native pass. PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.",
-          "audio": "Draft DE localization pending native pass. What leaves will own what remains.",
-          "in_game_wiki": "Draft DE localization pending native pass. Payload Authority Last Check gives the final UI its hard question.",
-          "external_site": "Draft DE localization pending native pass. HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it."
+          "title": "DE LOC HOLD: Payload Authority Last Check",
+          "scanner": "DE LOC HOLD: Payload check: receiver changes meaning, not only reward.",
+          "field_note": "DE LOC HOLD: Use immediately before irreversible ending route selection.",
+          "terminal": "DE LOC HOLD: PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.",
+          "audio": "DE LOC HOLD: What leaves will own what remains.",
+          "in_game_wiki": "DE LOC HOLD: Payload Authority Last Check gives the final UI its hard question.",
+          "external_site": "DE LOC HOLD: HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Payload Authority Last Check",
-          "scanner": "Draft PL localization pending native pass. Payload check: receiver changes meaning, not only reward.",
-          "field_note": "Draft PL localization pending native pass. Use immediately before irreversible ending route selection.",
-          "terminal": "Draft PL localization pending native pass. PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.",
-          "audio": "Draft PL localization pending native pass. What leaves will own what remains.",
-          "in_game_wiki": "Draft PL localization pending native pass. Payload Authority Last Check gives the final UI its hard question.",
-          "external_site": "Draft PL localization pending native pass. HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it."
+          "title": "PL LOC HOLD: Payload Authority Last Check",
+          "scanner": "PL LOC HOLD: Payload check: receiver changes meaning, not only reward.",
+          "field_note": "PL LOC HOLD: Use immediately before irreversible ending route selection.",
+          "terminal": "PL LOC HOLD: PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.",
+          "audio": "PL LOC HOLD: What leaves will own what remains.",
+          "in_game_wiki": "PL LOC HOLD: Payload Authority Last Check gives the final UI its hard question.",
+          "external_site": "PL LOC HOLD: HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it."
         },
         "uk_UA": {
-          "title": "Draft UK localization pending native pass. Payload Authority Last Check",
-          "scanner": "Draft UK localization pending native pass. Payload check: receiver changes meaning, not only reward.",
-          "field_note": "Draft UK localization pending native pass. Use immediately before irreversible ending route selection.",
-          "terminal": "Draft UK localization pending native pass. PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.",
-          "audio": "Draft UK localization pending native pass. What leaves will own what remains.",
-          "in_game_wiki": "Draft UK localization pending native pass. Payload Authority Last Check gives the final UI its hard question.",
-          "external_site": "Draft UK localization pending native pass. HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it."
+          "title": "UK LOC HOLD: Payload Authority Last Check",
+          "scanner": "UK LOC HOLD: Payload check: receiver changes meaning, not only reward.",
+          "field_note": "UK LOC HOLD: Use immediately before irreversible ending route selection.",
+          "terminal": "UK LOC HOLD: PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.",
+          "audio": "UK LOC HOLD: What leaves will own what remains.",
+          "in_game_wiki": "UK LOC HOLD: Payload Authority Last Check gives the final UI its hard question.",
+          "external_site": "UK LOC HOLD: HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Payload Authority Last Check",
-          "scanner": "Draft AR localization pending native pass. Payload check: receiver changes meaning, not only reward.",
-          "field_note": "Draft AR localization pending native pass. Use immediately before irreversible ending route selection.",
-          "terminal": "Draft AR localization pending native pass. PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.",
-          "audio": "Draft AR localization pending native pass. What leaves will own what remains.",
-          "in_game_wiki": "Draft AR localization pending native pass. Payload Authority Last Check gives the final UI its hard question.",
-          "external_site": "Draft AR localization pending native pass. HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it."
+          "title": "AR LOC HOLD: Payload Authority Last Check",
+          "scanner": "AR LOC HOLD: Payload check: receiver changes meaning, not only reward.",
+          "field_note": "AR LOC HOLD: Use immediately before irreversible ending route selection.",
+          "terminal": "AR LOC HOLD: PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.",
+          "audio": "AR LOC HOLD: What leaves will own what remains.",
+          "in_game_wiki": "AR LOC HOLD: Payload Authority Last Check gives the final UI its hard question.",
+          "external_site": "AR LOC HOLD: HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Payload Authority Last Check",
-          "scanner": "Draft ID localization pending native pass. Payload check: receiver changes meaning, not only reward.",
-          "field_note": "Draft ID localization pending native pass. Use immediately before irreversible ending route selection.",
-          "terminal": "Draft ID localization pending native pass. PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.",
-          "audio": "Draft ID localization pending native pass. What leaves will own what remains.",
-          "in_game_wiki": "Draft ID localization pending native pass. Payload Authority Last Check gives the final UI its hard question.",
-          "external_site": "Draft ID localization pending native pass. HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it."
+          "title": "ID LOC HOLD: Payload Authority Last Check",
+          "scanner": "ID LOC HOLD: Payload check: receiver changes meaning, not only reward.",
+          "field_note": "ID LOC HOLD: Use immediately before irreversible ending route selection.",
+          "terminal": "ID LOC HOLD: PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.",
+          "audio": "ID LOC HOLD: What leaves will own what remains.",
+          "in_game_wiki": "ID LOC HOLD: Payload Authority Last Check gives the final UI its hard question.",
+          "external_site": "ID LOC HOLD: HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Payload Authority Last Check",
-          "scanner": "Draft KO localization pending native pass. Payload check: receiver changes meaning, not only reward.",
-          "field_note": "Draft KO localization pending native pass. Use immediately before irreversible ending route selection.",
-          "terminal": "Draft KO localization pending native pass. PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.",
-          "audio": "Draft KO localization pending native pass. What leaves will own what remains.",
-          "in_game_wiki": "Draft KO localization pending native pass. Payload Authority Last Check gives the final UI its hard question.",
-          "external_site": "Draft KO localization pending native pass. HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it."
+          "title": "KO LOC HOLD: Payload Authority Last Check",
+          "scanner": "KO LOC HOLD: Payload check: receiver changes meaning, not only reward.",
+          "field_note": "KO LOC HOLD: Use immediately before irreversible ending route selection.",
+          "terminal": "KO LOC HOLD: PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.",
+          "audio": "KO LOC HOLD: What leaves will own what remains.",
+          "in_game_wiki": "KO LOC HOLD: Payload Authority Last Check gives the final UI its hard question.",
+          "external_site": "KO LOC HOLD: HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Payload Authority Last Check",
-          "scanner": "Draft HE localization pending native pass. Payload check: receiver changes meaning, not only reward.",
-          "field_note": "Draft HE localization pending native pass. Use immediately before irreversible ending route selection.",
-          "terminal": "Draft HE localization pending native pass. PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.",
-          "audio": "Draft HE localization pending native pass. What leaves will own what remains.",
-          "in_game_wiki": "Draft HE localization pending native pass. Payload Authority Last Check gives the final UI its hard question.",
-          "external_site": "Draft HE localization pending native pass. HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it."
+          "title": "HE LOC HOLD: Payload Authority Last Check",
+          "scanner": "HE LOC HOLD: Payload check: receiver changes meaning, not only reward.",
+          "field_note": "HE LOC HOLD: Use immediately before irreversible ending route selection.",
+          "terminal": "HE LOC HOLD: PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.",
+          "audio": "HE LOC HOLD: What leaves will own what remains.",
+          "in_game_wiki": "HE LOC HOLD: Payload Authority Last Check gives the final UI its hard question.",
+          "external_site": "HE LOC HOLD: HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Payload Authority Last Check",
-          "scanner": "Draft PT localization pending native pass. Payload check: receiver changes meaning, not only reward.",
-          "field_note": "Draft PT localization pending native pass. Use immediately before irreversible ending route selection.",
-          "terminal": "Draft PT localization pending native pass. PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.",
-          "audio": "Draft PT localization pending native pass. What leaves will own what remains.",
-          "in_game_wiki": "Draft PT localization pending native pass. Payload Authority Last Check gives the final UI its hard question.",
-          "external_site": "Draft PT localization pending native pass. HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it."
+          "title": "PT LOC HOLD: Payload Authority Last Check",
+          "scanner": "PT LOC HOLD: Payload check: receiver changes meaning, not only reward.",
+          "field_note": "PT LOC HOLD: Use immediately before irreversible ending route selection.",
+          "terminal": "PT LOC HOLD: PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.",
+          "audio": "PT LOC HOLD: What leaves will own what remains.",
+          "in_game_wiki": "PT LOC HOLD: Payload Authority Last Check gives the final UI its hard question.",
+          "external_site": "PT LOC HOLD: HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Payload Authority Last Check",
-          "scanner": "Draft NL localization pending native pass. Payload check: receiver changes meaning, not only reward.",
-          "field_note": "Draft NL localization pending native pass. Use immediately before irreversible ending route selection.",
-          "terminal": "Draft NL localization pending native pass. PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.",
-          "audio": "Draft NL localization pending native pass. What leaves will own what remains.",
-          "in_game_wiki": "Draft NL localization pending native pass. Payload Authority Last Check gives the final UI its hard question.",
-          "external_site": "Draft NL localization pending native pass. HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it."
+          "title": "NL LOC HOLD: Payload Authority Last Check",
+          "scanner": "NL LOC HOLD: Payload check: receiver changes meaning, not only reward.",
+          "field_note": "NL LOC HOLD: Use immediately before irreversible ending route selection.",
+          "terminal": "NL LOC HOLD: PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.",
+          "audio": "NL LOC HOLD: What leaves will own what remains.",
+          "in_game_wiki": "NL LOC HOLD: Payload Authority Last Check gives the final UI its hard question.",
+          "external_site": "NL LOC HOLD: HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it."
         }
       }
     },
@@ -658,128 +658,128 @@
         "ru_RU": {
           "title": "Dossier note: нет чистой концовки",
           "scanner": "Dossier note: closure denied; consequence retained.",
-          "field_note": "Draft RU localization pending native pass. The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
+          "field_note": "RU LOC HOLD: The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
           "terminal": "DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
           "audio": "Ты что-то спас. Это не значит, что все очищено.",
           "in_game_wiki": "Dossier note no clean ending задает post-ending memory tone.",
           "external_site": "Даже сильнейшая концовка HECTON-8 оставляет шрам: protected ecology, denied corporation, witness record и unresolved cost."
         },
         "ja_JP": {
-          "title": "Draft JA localization pending native pass. No Clean Ending Dossier Note",
-          "scanner": "Draft JA localization pending native pass. Dossier note: closure denied; consequence retained.",
-          "field_note": "Draft JP localization pending native pass. The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
-          "terminal": "Draft JA localization pending native pass. DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
-          "audio": "Draft JA localization pending native pass. You saved something. That is not the same as clearing it.",
-          "in_game_wiki": "Draft JA localization pending native pass. No Clean Ending Dossier Note defines the post-ending memory tone.",
-          "external_site": "Draft JA localization pending native pass. Even HECTON-8's strongest ending leaves a scar: a protected ecology, a denied corporation, a witness record and an unresolved cost."
+          "title": "JA LOC HOLD: No Clean Ending Dossier Note",
+          "scanner": "JA LOC HOLD: Dossier note: closure denied; consequence retained.",
+          "field_note": "JP LOC HOLD: The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
+          "terminal": "JA LOC HOLD: DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
+          "audio": "JA LOC HOLD: You saved something. That is not the same as clearing it.",
+          "in_game_wiki": "JA LOC HOLD: No Clean Ending Dossier Note defines the post-ending memory tone.",
+          "external_site": "JA LOC HOLD: Even HECTON-8's strongest ending leaves a scar: a protected ecology, a denied corporation, a witness record and an unresolved cost."
         },
         "zh_CN": {
-          "title": "Draft ZH localization pending native pass. No Clean Ending Dossier Note",
-          "scanner": "Draft ZH localization pending native pass. Dossier note: closure denied; consequence retained.",
-          "field_note": "Draft CN localization pending native pass. The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
-          "terminal": "Draft ZH localization pending native pass. DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
-          "audio": "Draft ZH localization pending native pass. You saved something. That is not the same as clearing it.",
-          "in_game_wiki": "Draft ZH localization pending native pass. No Clean Ending Dossier Note defines the post-ending memory tone.",
-          "external_site": "Draft ZH localization pending native pass. Even HECTON-8's strongest ending leaves a scar: a protected ecology, a denied corporation, a witness record and an unresolved cost."
+          "title": "ZH LOC HOLD: No Clean Ending Dossier Note",
+          "scanner": "ZH LOC HOLD: Dossier note: closure denied; consequence retained.",
+          "field_note": "CN LOC HOLD: The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
+          "terminal": "ZH LOC HOLD: DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
+          "audio": "ZH LOC HOLD: You saved something. That is not the same as clearing it.",
+          "in_game_wiki": "ZH LOC HOLD: No Clean Ending Dossier Note defines the post-ending memory tone.",
+          "external_site": "ZH LOC HOLD: Even HECTON-8's strongest ending leaves a scar: a protected ecology, a denied corporation, a witness record and an unresolved cost."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. No Clean Ending Dossier Note",
-          "scanner": "Draft FR localization pending native pass. Dossier note: closure denied; consequence retained.",
-          "field_note": "Draft FR localization pending native pass. The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
-          "terminal": "Draft FR localization pending native pass. DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
-          "audio": "Draft FR localization pending native pass. You saved something. That is not the same as clearing it.",
-          "in_game_wiki": "Draft FR localization pending native pass. No Clean Ending Dossier Note defines the post-ending memory tone.",
-          "external_site": "Draft FR localization pending native pass. Even HECTON-8's strongest ending leaves a scar: a protected ecology, a denied corporation, a witness record and an unresolved cost."
+          "title": "FR LOC HOLD: No Clean Ending Dossier Note",
+          "scanner": "FR LOC HOLD: Dossier note: closure denied; consequence retained.",
+          "field_note": "FR LOC HOLD: The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
+          "terminal": "FR LOC HOLD: DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
+          "audio": "FR LOC HOLD: You saved something. That is not the same as clearing it.",
+          "in_game_wiki": "FR LOC HOLD: No Clean Ending Dossier Note defines the post-ending memory tone.",
+          "external_site": "FR LOC HOLD: Even HECTON-8's strongest ending leaves a scar: a protected ecology, a denied corporation, a witness record and an unresolved cost."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. No Clean Ending Dossier Note",
-          "scanner": "Draft ES localization pending native pass. Dossier note: closure denied; consequence retained.",
-          "field_note": "Draft ES localization pending native pass. The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
-          "terminal": "Draft ES localization pending native pass. DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
-          "audio": "Draft ES localization pending native pass. You saved something. That is not the same as clearing it.",
-          "in_game_wiki": "Draft ES localization pending native pass. No Clean Ending Dossier Note defines the post-ending memory tone.",
-          "external_site": "Draft ES localization pending native pass. Even HECTON-8's strongest ending leaves a scar: a protected ecology, a denied corporation, a witness record and an unresolved cost."
+          "title": "ES LOC HOLD: No Clean Ending Dossier Note",
+          "scanner": "ES LOC HOLD: Dossier note: closure denied; consequence retained.",
+          "field_note": "ES LOC HOLD: The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
+          "terminal": "ES LOC HOLD: DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
+          "audio": "ES LOC HOLD: You saved something. That is not the same as clearing it.",
+          "in_game_wiki": "ES LOC HOLD: No Clean Ending Dossier Note defines the post-ending memory tone.",
+          "external_site": "ES LOC HOLD: Even HECTON-8's strongest ending leaves a scar: a protected ecology, a denied corporation, a witness record and an unresolved cost."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. No Clean Ending Dossier Note",
-          "scanner": "Draft DE localization pending native pass. Dossier note: closure denied; consequence retained.",
-          "field_note": "Draft DE localization pending native pass. The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
-          "terminal": "Draft DE localization pending native pass. DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
-          "audio": "Draft DE localization pending native pass. You saved something. That is not the same as clearing it.",
-          "in_game_wiki": "Draft DE localization pending native pass. No Clean Ending Dossier Note defines the post-ending memory tone.",
-          "external_site": "Draft DE localization pending native pass. Even HECTON-8's strongest ending leaves a scar: a protected ecology, a denied corporation, a witness record and an unresolved cost."
+          "title": "DE LOC HOLD: No Clean Ending Dossier Note",
+          "scanner": "DE LOC HOLD: Dossier note: closure denied; consequence retained.",
+          "field_note": "DE LOC HOLD: The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
+          "terminal": "DE LOC HOLD: DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
+          "audio": "DE LOC HOLD: You saved something. That is not the same as clearing it.",
+          "in_game_wiki": "DE LOC HOLD: No Clean Ending Dossier Note defines the post-ending memory tone.",
+          "external_site": "DE LOC HOLD: Even HECTON-8's strongest ending leaves a scar: a protected ecology, a denied corporation, a witness record and an unresolved cost."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. No Clean Ending Dossier Note",
-          "scanner": "Draft PL localization pending native pass. Dossier note: closure denied; consequence retained.",
-          "field_note": "Draft PL localization pending native pass. The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
-          "terminal": "Draft PL localization pending native pass. DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
-          "audio": "Draft PL localization pending native pass. You saved something. That is not the same as clearing it.",
-          "in_game_wiki": "Draft PL localization pending native pass. No Clean Ending Dossier Note defines the post-ending memory tone.",
-          "external_site": "Draft PL localization pending native pass. Even HECTON-8's strongest ending leaves a scar: a protected ecology, a denied corporation, a witness record and an unresolved cost."
+          "title": "PL LOC HOLD: No Clean Ending Dossier Note",
+          "scanner": "PL LOC HOLD: Dossier note: closure denied; consequence retained.",
+          "field_note": "PL LOC HOLD: The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
+          "terminal": "PL LOC HOLD: DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
+          "audio": "PL LOC HOLD: You saved something. That is not the same as clearing it.",
+          "in_game_wiki": "PL LOC HOLD: No Clean Ending Dossier Note defines the post-ending memory tone.",
+          "external_site": "PL LOC HOLD: Even HECTON-8's strongest ending leaves a scar: a protected ecology, a denied corporation, a witness record and an unresolved cost."
         },
         "uk_UA": {
-          "title": "Draft UK localization pending native pass. No Clean Ending Dossier Note",
-          "scanner": "Draft UK localization pending native pass. Dossier note: closure denied; consequence retained.",
-          "field_note": "Draft UA localization pending native pass. The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
-          "terminal": "Draft UK localization pending native pass. DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
-          "audio": "Draft UK localization pending native pass. You saved something. That is not the same as clearing it.",
-          "in_game_wiki": "Draft UK localization pending native pass. No Clean Ending Dossier Note defines the post-ending memory tone.",
-          "external_site": "Draft UK localization pending native pass. Even HECTON-8's strongest ending leaves a scar: a protected ecology, a denied corporation, a witness record and an unresolved cost."
+          "title": "UK LOC HOLD: No Clean Ending Dossier Note",
+          "scanner": "UK LOC HOLD: Dossier note: closure denied; consequence retained.",
+          "field_note": "UA LOC HOLD: The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
+          "terminal": "UK LOC HOLD: DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
+          "audio": "UK LOC HOLD: You saved something. That is not the same as clearing it.",
+          "in_game_wiki": "UK LOC HOLD: No Clean Ending Dossier Note defines the post-ending memory tone.",
+          "external_site": "UK LOC HOLD: Even HECTON-8's strongest ending leaves a scar: a protected ecology, a denied corporation, a witness record and an unresolved cost."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. No Clean Ending Dossier Note",
-          "scanner": "Draft AR localization pending native pass. Dossier note: closure denied; consequence retained.",
-          "field_note": "Draft AR localization pending native pass. The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
-          "terminal": "Draft AR localization pending native pass. DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
-          "audio": "Draft AR localization pending native pass. You saved something. That is not the same as clearing it.",
-          "in_game_wiki": "Draft AR localization pending native pass. No Clean Ending Dossier Note defines the post-ending memory tone.",
-          "external_site": "Draft AR localization pending native pass. Even HECTON-8's strongest ending leaves a scar: a protected ecology, a denied corporation, a witness record and an unresolved cost."
+          "title": "AR LOC HOLD: No Clean Ending Dossier Note",
+          "scanner": "AR LOC HOLD: Dossier note: closure denied; consequence retained.",
+          "field_note": "AR LOC HOLD: The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
+          "terminal": "AR LOC HOLD: DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
+          "audio": "AR LOC HOLD: You saved something. That is not the same as clearing it.",
+          "in_game_wiki": "AR LOC HOLD: No Clean Ending Dossier Note defines the post-ending memory tone.",
+          "external_site": "AR LOC HOLD: Even HECTON-8's strongest ending leaves a scar: a protected ecology, a denied corporation, a witness record and an unresolved cost."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. No Clean Ending Dossier Note",
-          "scanner": "Draft ID localization pending native pass. Dossier note: closure denied; consequence retained.",
-          "field_note": "Draft ID localization pending native pass. The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
-          "terminal": "Draft ID localization pending native pass. DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
-          "audio": "Draft ID localization pending native pass. You saved something. That is not the same as clearing it.",
-          "in_game_wiki": "Draft ID localization pending native pass. No Clean Ending Dossier Note defines the post-ending memory tone.",
-          "external_site": "Draft ID localization pending native pass. Even HECTON-8's strongest ending leaves a scar: a protected ecology, a denied corporation, a witness record and an unresolved cost."
+          "title": "ID LOC HOLD: No Clean Ending Dossier Note",
+          "scanner": "ID LOC HOLD: Dossier note: closure denied; consequence retained.",
+          "field_note": "ID LOC HOLD: The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
+          "terminal": "ID LOC HOLD: DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
+          "audio": "ID LOC HOLD: You saved something. That is not the same as clearing it.",
+          "in_game_wiki": "ID LOC HOLD: No Clean Ending Dossier Note defines the post-ending memory tone.",
+          "external_site": "ID LOC HOLD: Even HECTON-8's strongest ending leaves a scar: a protected ecology, a denied corporation, a witness record and an unresolved cost."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. No Clean Ending Dossier Note",
-          "scanner": "Draft KO localization pending native pass. Dossier note: closure denied; consequence retained.",
-          "field_note": "Draft KO localization pending native pass. The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
-          "terminal": "Draft KO localization pending native pass. DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
-          "audio": "Draft KO localization pending native pass. You saved something. That is not the same as clearing it.",
-          "in_game_wiki": "Draft KO localization pending native pass. No Clean Ending Dossier Note defines the post-ending memory tone.",
-          "external_site": "Draft KO localization pending native pass. Even HECTON-8's strongest ending leaves a scar: a protected ecology, a denied corporation, a witness record and an unresolved cost."
+          "title": "KO LOC HOLD: No Clean Ending Dossier Note",
+          "scanner": "KO LOC HOLD: Dossier note: closure denied; consequence retained.",
+          "field_note": "KO LOC HOLD: The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
+          "terminal": "KO LOC HOLD: DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
+          "audio": "KO LOC HOLD: You saved something. That is not the same as clearing it.",
+          "in_game_wiki": "KO LOC HOLD: No Clean Ending Dossier Note defines the post-ending memory tone.",
+          "external_site": "KO LOC HOLD: Even HECTON-8's strongest ending leaves a scar: a protected ecology, a denied corporation, a witness record and an unresolved cost."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. No Clean Ending Dossier Note",
-          "scanner": "Draft HE localization pending native pass. Dossier note: closure denied; consequence retained.",
-          "field_note": "Draft HE localization pending native pass. The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
-          "terminal": "Draft HE localization pending native pass. DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
-          "audio": "Draft HE localization pending native pass. You saved something. That is not the same as clearing it.",
-          "in_game_wiki": "Draft HE localization pending native pass. No Clean Ending Dossier Note defines the post-ending memory tone.",
-          "external_site": "Draft HE localization pending native pass. Even HECTON-8's strongest ending leaves a scar: a protected ecology, a denied corporation, a witness record and an unresolved cost."
+          "title": "HE LOC HOLD: No Clean Ending Dossier Note",
+          "scanner": "HE LOC HOLD: Dossier note: closure denied; consequence retained.",
+          "field_note": "HE LOC HOLD: The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
+          "terminal": "HE LOC HOLD: DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
+          "audio": "HE LOC HOLD: You saved something. That is not the same as clearing it.",
+          "in_game_wiki": "HE LOC HOLD: No Clean Ending Dossier Note defines the post-ending memory tone.",
+          "external_site": "HE LOC HOLD: Even HECTON-8's strongest ending leaves a scar: a protected ecology, a denied corporation, a witness record and an unresolved cost."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. No Clean Ending Dossier Note",
-          "scanner": "Draft PT localization pending native pass. Dossier note: closure denied; consequence retained.",
-          "field_note": "Draft PT localization pending native pass. The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
-          "terminal": "Draft PT localization pending native pass. DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
-          "audio": "Draft PT localization pending native pass. You saved something. That is not the same as clearing it.",
-          "in_game_wiki": "Draft PT localization pending native pass. No Clean Ending Dossier Note defines the post-ending memory tone.",
-          "external_site": "Draft PT localization pending native pass. Even HECTON-8's strongest ending leaves a scar: a protected ecology, a denied corporation, a witness record and an unresolved cost."
+          "title": "PT LOC HOLD: No Clean Ending Dossier Note",
+          "scanner": "PT LOC HOLD: Dossier note: closure denied; consequence retained.",
+          "field_note": "PT LOC HOLD: The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
+          "terminal": "PT LOC HOLD: DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
+          "audio": "PT LOC HOLD: You saved something. That is not the same as clearing it.",
+          "in_game_wiki": "PT LOC HOLD: No Clean Ending Dossier Note defines the post-ending memory tone.",
+          "external_site": "PT LOC HOLD: Even HECTON-8's strongest ending leaves a scar: a protected ecology, a denied corporation, a witness record and an unresolved cost."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. No Clean Ending Dossier Note",
-          "scanner": "Draft NL localization pending native pass. Dossier note: closure denied; consequence retained.",
-          "field_note": "Draft NL localization pending native pass. The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
-          "terminal": "Draft NL localization pending native pass. DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
-          "audio": "Draft NL localization pending native pass. You saved something. That is not the same as clearing it.",
-          "in_game_wiki": "Draft NL localization pending native pass. No Clean Ending Dossier Note defines the post-ending memory tone.",
-          "external_site": "Draft NL localization pending native pass. Even HECTON-8's strongest ending leaves a scar: a protected ecology, a denied corporation, a witness record and an unresolved cost."
+          "title": "NL LOC HOLD: No Clean Ending Dossier Note",
+          "scanner": "NL LOC HOLD: Dossier note: closure denied; consequence retained.",
+          "field_note": "NL LOC HOLD: The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
+          "terminal": "NL LOC HOLD: DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.",
+          "audio": "NL LOC HOLD: You saved something. That is not the same as clearing it.",
+          "in_game_wiki": "NL LOC HOLD: No Clean Ending Dossier Note defines the post-ending memory tone.",
+          "external_site": "NL LOC HOLD: Even HECTON-8's strongest ending leaves a scar: a protected ecology, a denied corporation, a witness record and an unresolved cost."
         }
       }
     }

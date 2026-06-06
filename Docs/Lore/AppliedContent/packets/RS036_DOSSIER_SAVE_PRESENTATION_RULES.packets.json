@@ -46,120 +46,120 @@
         },
         "ja_JP": {
           "title": "Dossier Selection UI Rule",
-          "scanner": "Draft JP localization pending native pass. Dossier UI should choose risk, not inherited power.",
-          "field_note": "Draft JP localization pending native pass. No permanent gear advantage in dossier selection.",
-          "terminal": "Draft JP localization pending native pass. DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.",
-          "audio": "Draft JP localization pending native pass. You keep suspicion, not a stronger body.",
-          "in_game_wiki": "Draft JP localization pending native pass. Dossier selection turns replay into informed contracts while preserving survival difficulty.",
-          "external_site": "Draft JP localization pending native pass. Dossier Selection UI Rule defines how replay knowledge appears to players."
+          "scanner": "JP LOC HOLD: Dossier UI should choose risk, not inherited power.",
+          "field_note": "JP LOC HOLD: No permanent gear advantage in dossier selection.",
+          "terminal": "JP LOC HOLD: DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.",
+          "audio": "JP LOC HOLD: You keep suspicion, not a stronger body.",
+          "in_game_wiki": "JP LOC HOLD: Dossier selection turns replay into informed contracts while preserving survival difficulty.",
+          "external_site": "JP LOC HOLD: Dossier Selection UI Rule defines how replay knowledge appears to players."
         },
         "zh_CN": {
           "title": "Dossier Selection UI Rule",
-          "scanner": "Draft CN localization pending native pass. Dossier UI should choose risk, not inherited power.",
-          "field_note": "Draft CN localization pending native pass. No permanent gear advantage in dossier selection.",
-          "terminal": "Draft CN localization pending native pass. DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.",
-          "audio": "Draft CN localization pending native pass. You keep suspicion, not a stronger body.",
-          "in_game_wiki": "Draft CN localization pending native pass. Dossier selection turns replay into informed contracts while preserving survival difficulty.",
-          "external_site": "Draft CN localization pending native pass. Dossier Selection UI Rule defines how replay knowledge appears to players."
+          "scanner": "CN LOC HOLD: Dossier UI should choose risk, not inherited power.",
+          "field_note": "CN LOC HOLD: No permanent gear advantage in dossier selection.",
+          "terminal": "CN LOC HOLD: DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.",
+          "audio": "CN LOC HOLD: You keep suspicion, not a stronger body.",
+          "in_game_wiki": "CN LOC HOLD: Dossier selection turns replay into informed contracts while preserving survival difficulty.",
+          "external_site": "CN LOC HOLD: Dossier Selection UI Rule defines how replay knowledge appears to players."
         },
         "fr_FR": {
           "title": "Dossier Selection UI Rule",
-          "scanner": "Draft FR localization pending native pass. Dossier UI should choose risk, not inherited power.",
-          "field_note": "Draft FR localization pending native pass. No permanent gear advantage in dossier selection.",
-          "terminal": "Draft FR localization pending native pass. DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.",
-          "audio": "Draft FR localization pending native pass. You keep suspicion, not a stronger body.",
-          "in_game_wiki": "Draft FR localization pending native pass. Dossier selection turns replay into informed contracts while preserving survival difficulty.",
-          "external_site": "Draft FR localization pending native pass. Dossier Selection UI Rule defines how replay knowledge appears to players."
+          "scanner": "FR LOC HOLD: Dossier UI should choose risk, not inherited power.",
+          "field_note": "FR LOC HOLD: No permanent gear advantage in dossier selection.",
+          "terminal": "FR LOC HOLD: DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.",
+          "audio": "FR LOC HOLD: You keep suspicion, not a stronger body.",
+          "in_game_wiki": "FR LOC HOLD: Dossier selection turns replay into informed contracts while preserving survival difficulty.",
+          "external_site": "FR LOC HOLD: Dossier Selection UI Rule defines how replay knowledge appears to players."
         },
         "es_ES": {
           "title": "Dossier Selection UI Rule",
-          "scanner": "Draft ES localization pending native pass. Dossier UI should choose risk, not inherited power.",
-          "field_note": "Draft ES localization pending native pass. No permanent gear advantage in dossier selection.",
-          "terminal": "Draft ES localization pending native pass. DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.",
-          "audio": "Draft ES localization pending native pass. You keep suspicion, not a stronger body.",
-          "in_game_wiki": "Draft ES localization pending native pass. Dossier selection turns replay into informed contracts while preserving survival difficulty.",
-          "external_site": "Draft ES localization pending native pass. Dossier Selection UI Rule defines how replay knowledge appears to players."
+          "scanner": "ES LOC HOLD: Dossier UI should choose risk, not inherited power.",
+          "field_note": "ES LOC HOLD: No permanent gear advantage in dossier selection.",
+          "terminal": "ES LOC HOLD: DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.",
+          "audio": "ES LOC HOLD: You keep suspicion, not a stronger body.",
+          "in_game_wiki": "ES LOC HOLD: Dossier selection turns replay into informed contracts while preserving survival difficulty.",
+          "external_site": "ES LOC HOLD: Dossier Selection UI Rule defines how replay knowledge appears to players."
         },
         "de_DE": {
           "title": "Dossier Selection UI Rule",
-          "scanner": "Draft DE localization pending native pass. Dossier UI should choose risk, not inherited power.",
-          "field_note": "Draft DE localization pending native pass. No permanent gear advantage in dossier selection.",
-          "terminal": "Draft DE localization pending native pass. DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.",
-          "audio": "Draft DE localization pending native pass. You keep suspicion, not a stronger body.",
-          "in_game_wiki": "Draft DE localization pending native pass. Dossier selection turns replay into informed contracts while preserving survival difficulty.",
-          "external_site": "Draft DE localization pending native pass. Dossier Selection UI Rule defines how replay knowledge appears to players."
+          "scanner": "DE LOC HOLD: Dossier UI should choose risk, not inherited power.",
+          "field_note": "DE LOC HOLD: No permanent gear advantage in dossier selection.",
+          "terminal": "DE LOC HOLD: DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.",
+          "audio": "DE LOC HOLD: You keep suspicion, not a stronger body.",
+          "in_game_wiki": "DE LOC HOLD: Dossier selection turns replay into informed contracts while preserving survival difficulty.",
+          "external_site": "DE LOC HOLD: Dossier Selection UI Rule defines how replay knowledge appears to players."
         },
         "pl_PL": {
           "title": "Dossier Selection UI Rule",
-          "scanner": "Draft PL localization pending native pass. Dossier UI should choose risk, not inherited power.",
-          "field_note": "Draft PL localization pending native pass. No permanent gear advantage in dossier selection.",
-          "terminal": "Draft PL localization pending native pass. DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.",
-          "audio": "Draft PL localization pending native pass. You keep suspicion, not a stronger body.",
-          "in_game_wiki": "Draft PL localization pending native pass. Dossier selection turns replay into informed contracts while preserving survival difficulty.",
-          "external_site": "Draft PL localization pending native pass. Dossier Selection UI Rule defines how replay knowledge appears to players."
+          "scanner": "PL LOC HOLD: Dossier UI should choose risk, not inherited power.",
+          "field_note": "PL LOC HOLD: No permanent gear advantage in dossier selection.",
+          "terminal": "PL LOC HOLD: DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.",
+          "audio": "PL LOC HOLD: You keep suspicion, not a stronger body.",
+          "in_game_wiki": "PL LOC HOLD: Dossier selection turns replay into informed contracts while preserving survival difficulty.",
+          "external_site": "PL LOC HOLD: Dossier Selection UI Rule defines how replay knowledge appears to players."
         },
         "uk_UA": {
           "title": "Dossier Selection UI Rule",
-          "scanner": "Draft UA localization pending native pass. Dossier UI should choose risk, not inherited power.",
-          "field_note": "Draft UA localization pending native pass. No permanent gear advantage in dossier selection.",
-          "terminal": "Draft UA localization pending native pass. DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.",
-          "audio": "Draft UA localization pending native pass. You keep suspicion, not a stronger body.",
-          "in_game_wiki": "Draft UA localization pending native pass. Dossier selection turns replay into informed contracts while preserving survival difficulty.",
-          "external_site": "Draft UA localization pending native pass. Dossier Selection UI Rule defines how replay knowledge appears to players."
+          "scanner": "UA LOC HOLD: Dossier UI should choose risk, not inherited power.",
+          "field_note": "UA LOC HOLD: No permanent gear advantage in dossier selection.",
+          "terminal": "UA LOC HOLD: DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.",
+          "audio": "UA LOC HOLD: You keep suspicion, not a stronger body.",
+          "in_game_wiki": "UA LOC HOLD: Dossier selection turns replay into informed contracts while preserving survival difficulty.",
+          "external_site": "UA LOC HOLD: Dossier Selection UI Rule defines how replay knowledge appears to players."
         },
         "ar_SA": {
           "title": "Dossier Selection UI Rule",
-          "scanner": "Draft AR localization pending native pass. Dossier UI should choose risk, not inherited power.",
-          "field_note": "Draft AR localization pending native pass. No permanent gear advantage in dossier selection.",
-          "terminal": "Draft AR localization pending native pass. DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.",
-          "audio": "Draft AR localization pending native pass. You keep suspicion, not a stronger body.",
-          "in_game_wiki": "Draft AR localization pending native pass. Dossier selection turns replay into informed contracts while preserving survival difficulty.",
-          "external_site": "Draft AR localization pending native pass. Dossier Selection UI Rule defines how replay knowledge appears to players."
+          "scanner": "AR LOC HOLD: Dossier UI should choose risk, not inherited power.",
+          "field_note": "AR LOC HOLD: No permanent gear advantage in dossier selection.",
+          "terminal": "AR LOC HOLD: DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.",
+          "audio": "AR LOC HOLD: You keep suspicion, not a stronger body.",
+          "in_game_wiki": "AR LOC HOLD: Dossier selection turns replay into informed contracts while preserving survival difficulty.",
+          "external_site": "AR LOC HOLD: Dossier Selection UI Rule defines how replay knowledge appears to players."
         },
         "id_ID": {
           "title": "Dossier Selection UI Rule",
-          "scanner": "Draft ID localization pending native pass. Dossier UI should choose risk, not inherited power.",
-          "field_note": "Draft ID localization pending native pass. No permanent gear advantage in dossier selection.",
-          "terminal": "Draft ID localization pending native pass. DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.",
-          "audio": "Draft ID localization pending native pass. You keep suspicion, not a stronger body.",
-          "in_game_wiki": "Draft ID localization pending native pass. Dossier selection turns replay into informed contracts while preserving survival difficulty.",
-          "external_site": "Draft ID localization pending native pass. Dossier Selection UI Rule defines how replay knowledge appears to players."
+          "scanner": "ID LOC HOLD: Dossier UI should choose risk, not inherited power.",
+          "field_note": "ID LOC HOLD: No permanent gear advantage in dossier selection.",
+          "terminal": "ID LOC HOLD: DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.",
+          "audio": "ID LOC HOLD: You keep suspicion, not a stronger body.",
+          "in_game_wiki": "ID LOC HOLD: Dossier selection turns replay into informed contracts while preserving survival difficulty.",
+          "external_site": "ID LOC HOLD: Dossier Selection UI Rule defines how replay knowledge appears to players."
         },
         "ko_KR": {
           "title": "Dossier Selection UI Rule",
-          "scanner": "Draft KO localization pending native pass. Dossier UI should choose risk, not inherited power.",
-          "field_note": "Draft KO localization pending native pass. No permanent gear advantage in dossier selection.",
-          "terminal": "Draft KO localization pending native pass. DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.",
-          "audio": "Draft KO localization pending native pass. You keep suspicion, not a stronger body.",
-          "in_game_wiki": "Draft KO localization pending native pass. Dossier selection turns replay into informed contracts while preserving survival difficulty.",
-          "external_site": "Draft KO localization pending native pass. Dossier Selection UI Rule defines how replay knowledge appears to players."
+          "scanner": "KO LOC HOLD: Dossier UI should choose risk, not inherited power.",
+          "field_note": "KO LOC HOLD: No permanent gear advantage in dossier selection.",
+          "terminal": "KO LOC HOLD: DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.",
+          "audio": "KO LOC HOLD: You keep suspicion, not a stronger body.",
+          "in_game_wiki": "KO LOC HOLD: Dossier selection turns replay into informed contracts while preserving survival difficulty.",
+          "external_site": "KO LOC HOLD: Dossier Selection UI Rule defines how replay knowledge appears to players."
         },
         "he_IL": {
           "title": "Dossier Selection UI Rule",
-          "scanner": "Draft HE localization pending native pass. Dossier UI should choose risk, not inherited power.",
-          "field_note": "Draft HE localization pending native pass. No permanent gear advantage in dossier selection.",
-          "terminal": "Draft HE localization pending native pass. DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.",
-          "audio": "Draft HE localization pending native pass. You keep suspicion, not a stronger body.",
-          "in_game_wiki": "Draft HE localization pending native pass. Dossier selection turns replay into informed contracts while preserving survival difficulty.",
-          "external_site": "Draft HE localization pending native pass. Dossier Selection UI Rule defines how replay knowledge appears to players."
+          "scanner": "HE LOC HOLD: Dossier UI should choose risk, not inherited power.",
+          "field_note": "HE LOC HOLD: No permanent gear advantage in dossier selection.",
+          "terminal": "HE LOC HOLD: DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.",
+          "audio": "HE LOC HOLD: You keep suspicion, not a stronger body.",
+          "in_game_wiki": "HE LOC HOLD: Dossier selection turns replay into informed contracts while preserving survival difficulty.",
+          "external_site": "HE LOC HOLD: Dossier Selection UI Rule defines how replay knowledge appears to players."
         },
         "pt_BR": {
           "title": "Dossier Selection UI Rule",
-          "scanner": "Draft PT localization pending native pass. Dossier UI should choose risk, not inherited power.",
-          "field_note": "Draft PT localization pending native pass. No permanent gear advantage in dossier selection.",
-          "terminal": "Draft PT localization pending native pass. DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.",
-          "audio": "Draft PT localization pending native pass. You keep suspicion, not a stronger body.",
-          "in_game_wiki": "Draft PT localization pending native pass. Dossier selection turns replay into informed contracts while preserving survival difficulty.",
-          "external_site": "Draft PT localization pending native pass. Dossier Selection UI Rule defines how replay knowledge appears to players."
+          "scanner": "PT LOC HOLD: Dossier UI should choose risk, not inherited power.",
+          "field_note": "PT LOC HOLD: No permanent gear advantage in dossier selection.",
+          "terminal": "PT LOC HOLD: DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.",
+          "audio": "PT LOC HOLD: You keep suspicion, not a stronger body.",
+          "in_game_wiki": "PT LOC HOLD: Dossier selection turns replay into informed contracts while preserving survival difficulty.",
+          "external_site": "PT LOC HOLD: Dossier Selection UI Rule defines how replay knowledge appears to players."
         },
         "nl_NL": {
           "title": "Dossier Selection UI Rule",
-          "scanner": "Draft NL localization pending native pass. Dossier UI should choose risk, not inherited power.",
-          "field_note": "Draft NL localization pending native pass. No permanent gear advantage in dossier selection.",
-          "terminal": "Draft NL localization pending native pass. DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.",
-          "audio": "Draft NL localization pending native pass. You keep suspicion, not a stronger body.",
-          "in_game_wiki": "Draft NL localization pending native pass. Dossier selection turns replay into informed contracts while preserving survival difficulty.",
-          "external_site": "Draft NL localization pending native pass. Dossier Selection UI Rule defines how replay knowledge appears to players."
+          "scanner": "NL LOC HOLD: Dossier UI should choose risk, not inherited power.",
+          "field_note": "NL LOC HOLD: No permanent gear advantage in dossier selection.",
+          "terminal": "NL LOC HOLD: DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.",
+          "audio": "NL LOC HOLD: You keep suspicion, not a stronger body.",
+          "in_game_wiki": "NL LOC HOLD: Dossier selection turns replay into informed contracts while preserving survival difficulty.",
+          "external_site": "NL LOC HOLD: Dossier Selection UI Rule defines how replay knowledge appears to players."
         }
       }
     },
@@ -201,120 +201,120 @@
         },
         "ja_JP": {
           "title": "Risk Weight Contract Card",
-          "scanner": "Draft JP localization pending native pass. Risk should be continuous pressure, not a binary difficulty switch.",
-          "field_note": "Draft JP localization pending native pass. Use weights that alter contract conditions, not canon truth.",
-          "terminal": "Draft JP localization pending native pass. RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.",
-          "audio": "Draft JP localization pending native pass. The contract changes the cost, not the crime.",
-          "in_game_wiki": "Draft JP localization pending native pass. Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.",
-          "external_site": "Draft JP localization pending native pass. Risk Weight Contract Card defines replay contract knobs."
+          "scanner": "JP LOC HOLD: Risk should be continuous pressure, not a binary difficulty switch.",
+          "field_note": "JP LOC HOLD: Use weights that alter contract conditions, not canon truth.",
+          "terminal": "JP LOC HOLD: RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.",
+          "audio": "JP LOC HOLD: The contract changes the cost, not the crime.",
+          "in_game_wiki": "JP LOC HOLD: Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.",
+          "external_site": "JP LOC HOLD: Risk Weight Contract Card defines replay contract knobs."
         },
         "zh_CN": {
           "title": "Risk Weight Contract Card",
-          "scanner": "Draft CN localization pending native pass. Risk should be continuous pressure, not a binary difficulty switch.",
-          "field_note": "Draft CN localization pending native pass. Use weights that alter contract conditions, not canon truth.",
-          "terminal": "Draft CN localization pending native pass. RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.",
-          "audio": "Draft CN localization pending native pass. The contract changes the cost, not the crime.",
-          "in_game_wiki": "Draft CN localization pending native pass. Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.",
-          "external_site": "Draft CN localization pending native pass. Risk Weight Contract Card defines replay contract knobs."
+          "scanner": "CN LOC HOLD: Risk should be continuous pressure, not a binary difficulty switch.",
+          "field_note": "CN LOC HOLD: Use weights that alter contract conditions, not canon truth.",
+          "terminal": "CN LOC HOLD: RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.",
+          "audio": "CN LOC HOLD: The contract changes the cost, not the crime.",
+          "in_game_wiki": "CN LOC HOLD: Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.",
+          "external_site": "CN LOC HOLD: Risk Weight Contract Card defines replay contract knobs."
         },
         "fr_FR": {
           "title": "Risk Weight Contract Card",
-          "scanner": "Draft FR localization pending native pass. Risk should be continuous pressure, not a binary difficulty switch.",
-          "field_note": "Draft FR localization pending native pass. Use weights that alter contract conditions, not canon truth.",
-          "terminal": "Draft FR localization pending native pass. RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.",
-          "audio": "Draft FR localization pending native pass. The contract changes the cost, not the crime.",
-          "in_game_wiki": "Draft FR localization pending native pass. Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.",
-          "external_site": "Draft FR localization pending native pass. Risk Weight Contract Card defines replay contract knobs."
+          "scanner": "FR LOC HOLD: Risk should be continuous pressure, not a binary difficulty switch.",
+          "field_note": "FR LOC HOLD: Use weights that alter contract conditions, not canon truth.",
+          "terminal": "FR LOC HOLD: RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.",
+          "audio": "FR LOC HOLD: The contract changes the cost, not the crime.",
+          "in_game_wiki": "FR LOC HOLD: Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.",
+          "external_site": "FR LOC HOLD: Risk Weight Contract Card defines replay contract knobs."
         },
         "es_ES": {
           "title": "Risk Weight Contract Card",
-          "scanner": "Draft ES localization pending native pass. Risk should be continuous pressure, not a binary difficulty switch.",
-          "field_note": "Draft ES localization pending native pass. Use weights that alter contract conditions, not canon truth.",
-          "terminal": "Draft ES localization pending native pass. RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.",
-          "audio": "Draft ES localization pending native pass. The contract changes the cost, not the crime.",
-          "in_game_wiki": "Draft ES localization pending native pass. Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.",
-          "external_site": "Draft ES localization pending native pass. Risk Weight Contract Card defines replay contract knobs."
+          "scanner": "ES LOC HOLD: Risk should be continuous pressure, not a binary difficulty switch.",
+          "field_note": "ES LOC HOLD: Use weights that alter contract conditions, not canon truth.",
+          "terminal": "ES LOC HOLD: RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.",
+          "audio": "ES LOC HOLD: The contract changes the cost, not the crime.",
+          "in_game_wiki": "ES LOC HOLD: Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.",
+          "external_site": "ES LOC HOLD: Risk Weight Contract Card defines replay contract knobs."
         },
         "de_DE": {
           "title": "Risk Weight Contract Card",
-          "scanner": "Draft DE localization pending native pass. Risk should be continuous pressure, not a binary difficulty switch.",
-          "field_note": "Draft DE localization pending native pass. Use weights that alter contract conditions, not canon truth.",
-          "terminal": "Draft DE localization pending native pass. RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.",
-          "audio": "Draft DE localization pending native pass. The contract changes the cost, not the crime.",
-          "in_game_wiki": "Draft DE localization pending native pass. Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.",
-          "external_site": "Draft DE localization pending native pass. Risk Weight Contract Card defines replay contract knobs."
+          "scanner": "DE LOC HOLD: Risk should be continuous pressure, not a binary difficulty switch.",
+          "field_note": "DE LOC HOLD: Use weights that alter contract conditions, not canon truth.",
+          "terminal": "DE LOC HOLD: RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.",
+          "audio": "DE LOC HOLD: The contract changes the cost, not the crime.",
+          "in_game_wiki": "DE LOC HOLD: Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.",
+          "external_site": "DE LOC HOLD: Risk Weight Contract Card defines replay contract knobs."
         },
         "pl_PL": {
           "title": "Risk Weight Contract Card",
-          "scanner": "Draft PL localization pending native pass. Risk should be continuous pressure, not a binary difficulty switch.",
-          "field_note": "Draft PL localization pending native pass. Use weights that alter contract conditions, not canon truth.",
-          "terminal": "Draft PL localization pending native pass. RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.",
-          "audio": "Draft PL localization pending native pass. The contract changes the cost, not the crime.",
-          "in_game_wiki": "Draft PL localization pending native pass. Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.",
-          "external_site": "Draft PL localization pending native pass. Risk Weight Contract Card defines replay contract knobs."
+          "scanner": "PL LOC HOLD: Risk should be continuous pressure, not a binary difficulty switch.",
+          "field_note": "PL LOC HOLD: Use weights that alter contract conditions, not canon truth.",
+          "terminal": "PL LOC HOLD: RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.",
+          "audio": "PL LOC HOLD: The contract changes the cost, not the crime.",
+          "in_game_wiki": "PL LOC HOLD: Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.",
+          "external_site": "PL LOC HOLD: Risk Weight Contract Card defines replay contract knobs."
         },
         "uk_UA": {
           "title": "Risk Weight Contract Card",
-          "scanner": "Draft UA localization pending native pass. Risk should be continuous pressure, not a binary difficulty switch.",
-          "field_note": "Draft UA localization pending native pass. Use weights that alter contract conditions, not canon truth.",
-          "terminal": "Draft UA localization pending native pass. RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.",
-          "audio": "Draft UA localization pending native pass. The contract changes the cost, not the crime.",
-          "in_game_wiki": "Draft UA localization pending native pass. Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.",
-          "external_site": "Draft UA localization pending native pass. Risk Weight Contract Card defines replay contract knobs."
+          "scanner": "UA LOC HOLD: Risk should be continuous pressure, not a binary difficulty switch.",
+          "field_note": "UA LOC HOLD: Use weights that alter contract conditions, not canon truth.",
+          "terminal": "UA LOC HOLD: RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.",
+          "audio": "UA LOC HOLD: The contract changes the cost, not the crime.",
+          "in_game_wiki": "UA LOC HOLD: Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.",
+          "external_site": "UA LOC HOLD: Risk Weight Contract Card defines replay contract knobs."
         },
         "ar_SA": {
           "title": "Risk Weight Contract Card",
-          "scanner": "Draft AR localization pending native pass. Risk should be continuous pressure, not a binary difficulty switch.",
-          "field_note": "Draft AR localization pending native pass. Use weights that alter contract conditions, not canon truth.",
-          "terminal": "Draft AR localization pending native pass. RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.",
-          "audio": "Draft AR localization pending native pass. The contract changes the cost, not the crime.",
-          "in_game_wiki": "Draft AR localization pending native pass. Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.",
-          "external_site": "Draft AR localization pending native pass. Risk Weight Contract Card defines replay contract knobs."
+          "scanner": "AR LOC HOLD: Risk should be continuous pressure, not a binary difficulty switch.",
+          "field_note": "AR LOC HOLD: Use weights that alter contract conditions, not canon truth.",
+          "terminal": "AR LOC HOLD: RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.",
+          "audio": "AR LOC HOLD: The contract changes the cost, not the crime.",
+          "in_game_wiki": "AR LOC HOLD: Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.",
+          "external_site": "AR LOC HOLD: Risk Weight Contract Card defines replay contract knobs."
         },
         "id_ID": {
           "title": "Risk Weight Contract Card",
-          "scanner": "Draft ID localization pending native pass. Risk should be continuous pressure, not a binary difficulty switch.",
-          "field_note": "Draft ID localization pending native pass. Use weights that alter contract conditions, not canon truth.",
-          "terminal": "Draft ID localization pending native pass. RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.",
-          "audio": "Draft ID localization pending native pass. The contract changes the cost, not the crime.",
-          "in_game_wiki": "Draft ID localization pending native pass. Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.",
-          "external_site": "Draft ID localization pending native pass. Risk Weight Contract Card defines replay contract knobs."
+          "scanner": "ID LOC HOLD: Risk should be continuous pressure, not a binary difficulty switch.",
+          "field_note": "ID LOC HOLD: Use weights that alter contract conditions, not canon truth.",
+          "terminal": "ID LOC HOLD: RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.",
+          "audio": "ID LOC HOLD: The contract changes the cost, not the crime.",
+          "in_game_wiki": "ID LOC HOLD: Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.",
+          "external_site": "ID LOC HOLD: Risk Weight Contract Card defines replay contract knobs."
         },
         "ko_KR": {
           "title": "Risk Weight Contract Card",
-          "scanner": "Draft KO localization pending native pass. Risk should be continuous pressure, not a binary difficulty switch.",
-          "field_note": "Draft KO localization pending native pass. Use weights that alter contract conditions, not canon truth.",
-          "terminal": "Draft KO localization pending native pass. RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.",
-          "audio": "Draft KO localization pending native pass. The contract changes the cost, not the crime.",
-          "in_game_wiki": "Draft KO localization pending native pass. Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.",
-          "external_site": "Draft KO localization pending native pass. Risk Weight Contract Card defines replay contract knobs."
+          "scanner": "KO LOC HOLD: Risk should be continuous pressure, not a binary difficulty switch.",
+          "field_note": "KO LOC HOLD: Use weights that alter contract conditions, not canon truth.",
+          "terminal": "KO LOC HOLD: RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.",
+          "audio": "KO LOC HOLD: The contract changes the cost, not the crime.",
+          "in_game_wiki": "KO LOC HOLD: Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.",
+          "external_site": "KO LOC HOLD: Risk Weight Contract Card defines replay contract knobs."
         },
         "he_IL": {
           "title": "Risk Weight Contract Card",
-          "scanner": "Draft HE localization pending native pass. Risk should be continuous pressure, not a binary difficulty switch.",
-          "field_note": "Draft HE localization pending native pass. Use weights that alter contract conditions, not canon truth.",
-          "terminal": "Draft HE localization pending native pass. RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.",
-          "audio": "Draft HE localization pending native pass. The contract changes the cost, not the crime.",
-          "in_game_wiki": "Draft HE localization pending native pass. Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.",
-          "external_site": "Draft HE localization pending native pass. Risk Weight Contract Card defines replay contract knobs."
+          "scanner": "HE LOC HOLD: Risk should be continuous pressure, not a binary difficulty switch.",
+          "field_note": "HE LOC HOLD: Use weights that alter contract conditions, not canon truth.",
+          "terminal": "HE LOC HOLD: RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.",
+          "audio": "HE LOC HOLD: The contract changes the cost, not the crime.",
+          "in_game_wiki": "HE LOC HOLD: Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.",
+          "external_site": "HE LOC HOLD: Risk Weight Contract Card defines replay contract knobs."
         },
         "pt_BR": {
           "title": "Risk Weight Contract Card",
-          "scanner": "Draft PT localization pending native pass. Risk should be continuous pressure, not a binary difficulty switch.",
-          "field_note": "Draft PT localization pending native pass. Use weights that alter contract conditions, not canon truth.",
-          "terminal": "Draft PT localization pending native pass. RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.",
-          "audio": "Draft PT localization pending native pass. The contract changes the cost, not the crime.",
-          "in_game_wiki": "Draft PT localization pending native pass. Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.",
-          "external_site": "Draft PT localization pending native pass. Risk Weight Contract Card defines replay contract knobs."
+          "scanner": "PT LOC HOLD: Risk should be continuous pressure, not a binary difficulty switch.",
+          "field_note": "PT LOC HOLD: Use weights that alter contract conditions, not canon truth.",
+          "terminal": "PT LOC HOLD: RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.",
+          "audio": "PT LOC HOLD: The contract changes the cost, not the crime.",
+          "in_game_wiki": "PT LOC HOLD: Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.",
+          "external_site": "PT LOC HOLD: Risk Weight Contract Card defines replay contract knobs."
         },
         "nl_NL": {
           "title": "Risk Weight Contract Card",
-          "scanner": "Draft NL localization pending native pass. Risk should be continuous pressure, not a binary difficulty switch.",
-          "field_note": "Draft NL localization pending native pass. Use weights that alter contract conditions, not canon truth.",
-          "terminal": "Draft NL localization pending native pass. RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.",
-          "audio": "Draft NL localization pending native pass. The contract changes the cost, not the crime.",
-          "in_game_wiki": "Draft NL localization pending native pass. Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.",
-          "external_site": "Draft NL localization pending native pass. Risk Weight Contract Card defines replay contract knobs."
+          "scanner": "NL LOC HOLD: Risk should be continuous pressure, not a binary difficulty switch.",
+          "field_note": "NL LOC HOLD: Use weights that alter contract conditions, not canon truth.",
+          "terminal": "NL LOC HOLD: RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.",
+          "audio": "NL LOC HOLD: The contract changes the cost, not the crime.",
+          "in_game_wiki": "NL LOC HOLD: Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.",
+          "external_site": "NL LOC HOLD: Risk Weight Contract Card defines replay contract knobs."
         }
       }
     },
@@ -356,120 +356,120 @@
         },
         "ja_JP": {
           "title": "Ending Record Presentation",
-          "scanner": "Draft JP localization pending native pass. An ending record is evidence, not a trophy shelf.",
-          "field_note": "Draft JP localization pending native pass. Show who received the payload and what it cost.",
-          "terminal": "Draft JP localization pending native pass. ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
-          "audio": "Draft JP localization pending native pass. The ending is not over. It is filed.",
-          "in_game_wiki": "Draft JP localization pending native pass. Ending records let the player remember consequences without inheriting mechanical power.",
-          "external_site": "Draft JP localization pending native pass. Ending Record Presentation defines the dossier-facing shape of outcomes."
+          "scanner": "JP LOC HOLD: An ending record is evidence, not a trophy shelf.",
+          "field_note": "JP LOC HOLD: Show who received the payload and what it cost.",
+          "terminal": "JP LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
+          "audio": "JP LOC HOLD: The ending is not over. It is filed.",
+          "in_game_wiki": "JP LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
+          "external_site": "JP LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
         },
         "zh_CN": {
           "title": "Ending Record Presentation",
-          "scanner": "Draft CN localization pending native pass. An ending record is evidence, not a trophy shelf.",
-          "field_note": "Draft CN localization pending native pass. Show who received the payload and what it cost.",
-          "terminal": "Draft CN localization pending native pass. ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
-          "audio": "Draft CN localization pending native pass. The ending is not over. It is filed.",
-          "in_game_wiki": "Draft CN localization pending native pass. Ending records let the player remember consequences without inheriting mechanical power.",
-          "external_site": "Draft CN localization pending native pass. Ending Record Presentation defines the dossier-facing shape of outcomes."
+          "scanner": "CN LOC HOLD: An ending record is evidence, not a trophy shelf.",
+          "field_note": "CN LOC HOLD: Show who received the payload and what it cost.",
+          "terminal": "CN LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
+          "audio": "CN LOC HOLD: The ending is not over. It is filed.",
+          "in_game_wiki": "CN LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
+          "external_site": "CN LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
         },
         "fr_FR": {
           "title": "Ending Record Presentation",
-          "scanner": "Draft FR localization pending native pass. An ending record is evidence, not a trophy shelf.",
-          "field_note": "Draft FR localization pending native pass. Show who received the payload and what it cost.",
-          "terminal": "Draft FR localization pending native pass. ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
-          "audio": "Draft FR localization pending native pass. The ending is not over. It is filed.",
-          "in_game_wiki": "Draft FR localization pending native pass. Ending records let the player remember consequences without inheriting mechanical power.",
-          "external_site": "Draft FR localization pending native pass. Ending Record Presentation defines the dossier-facing shape of outcomes."
+          "scanner": "FR LOC HOLD: An ending record is evidence, not a trophy shelf.",
+          "field_note": "FR LOC HOLD: Show who received the payload and what it cost.",
+          "terminal": "FR LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
+          "audio": "FR LOC HOLD: The ending is not over. It is filed.",
+          "in_game_wiki": "FR LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
+          "external_site": "FR LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
         },
         "es_ES": {
           "title": "Ending Record Presentation",
-          "scanner": "Draft ES localization pending native pass. An ending record is evidence, not a trophy shelf.",
-          "field_note": "Draft ES localization pending native pass. Show who received the payload and what it cost.",
-          "terminal": "Draft ES localization pending native pass. ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
-          "audio": "Draft ES localization pending native pass. The ending is not over. It is filed.",
-          "in_game_wiki": "Draft ES localization pending native pass. Ending records let the player remember consequences without inheriting mechanical power.",
-          "external_site": "Draft ES localization pending native pass. Ending Record Presentation defines the dossier-facing shape of outcomes."
+          "scanner": "ES LOC HOLD: An ending record is evidence, not a trophy shelf.",
+          "field_note": "ES LOC HOLD: Show who received the payload and what it cost.",
+          "terminal": "ES LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
+          "audio": "ES LOC HOLD: The ending is not over. It is filed.",
+          "in_game_wiki": "ES LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
+          "external_site": "ES LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
         },
         "de_DE": {
           "title": "Ending Record Presentation",
-          "scanner": "Draft DE localization pending native pass. An ending record is evidence, not a trophy shelf.",
-          "field_note": "Draft DE localization pending native pass. Show who received the payload and what it cost.",
-          "terminal": "Draft DE localization pending native pass. ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
-          "audio": "Draft DE localization pending native pass. The ending is not over. It is filed.",
-          "in_game_wiki": "Draft DE localization pending native pass. Ending records let the player remember consequences without inheriting mechanical power.",
-          "external_site": "Draft DE localization pending native pass. Ending Record Presentation defines the dossier-facing shape of outcomes."
+          "scanner": "DE LOC HOLD: An ending record is evidence, not a trophy shelf.",
+          "field_note": "DE LOC HOLD: Show who received the payload and what it cost.",
+          "terminal": "DE LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
+          "audio": "DE LOC HOLD: The ending is not over. It is filed.",
+          "in_game_wiki": "DE LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
+          "external_site": "DE LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
         },
         "pl_PL": {
           "title": "Ending Record Presentation",
-          "scanner": "Draft PL localization pending native pass. An ending record is evidence, not a trophy shelf.",
-          "field_note": "Draft PL localization pending native pass. Show who received the payload and what it cost.",
-          "terminal": "Draft PL localization pending native pass. ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
-          "audio": "Draft PL localization pending native pass. The ending is not over. It is filed.",
-          "in_game_wiki": "Draft PL localization pending native pass. Ending records let the player remember consequences without inheriting mechanical power.",
-          "external_site": "Draft PL localization pending native pass. Ending Record Presentation defines the dossier-facing shape of outcomes."
+          "scanner": "PL LOC HOLD: An ending record is evidence, not a trophy shelf.",
+          "field_note": "PL LOC HOLD: Show who received the payload and what it cost.",
+          "terminal": "PL LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
+          "audio": "PL LOC HOLD: The ending is not over. It is filed.",
+          "in_game_wiki": "PL LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
+          "external_site": "PL LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
         },
         "uk_UA": {
           "title": "Ending Record Presentation",
-          "scanner": "Draft UA localization pending native pass. An ending record is evidence, not a trophy shelf.",
-          "field_note": "Draft UA localization pending native pass. Show who received the payload and what it cost.",
-          "terminal": "Draft UA localization pending native pass. ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
-          "audio": "Draft UA localization pending native pass. The ending is not over. It is filed.",
-          "in_game_wiki": "Draft UA localization pending native pass. Ending records let the player remember consequences without inheriting mechanical power.",
-          "external_site": "Draft UA localization pending native pass. Ending Record Presentation defines the dossier-facing shape of outcomes."
+          "scanner": "UA LOC HOLD: An ending record is evidence, not a trophy shelf.",
+          "field_note": "UA LOC HOLD: Show who received the payload and what it cost.",
+          "terminal": "UA LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
+          "audio": "UA LOC HOLD: The ending is not over. It is filed.",
+          "in_game_wiki": "UA LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
+          "external_site": "UA LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
         },
         "ar_SA": {
           "title": "Ending Record Presentation",
-          "scanner": "Draft AR localization pending native pass. An ending record is evidence, not a trophy shelf.",
-          "field_note": "Draft AR localization pending native pass. Show who received the payload and what it cost.",
-          "terminal": "Draft AR localization pending native pass. ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
-          "audio": "Draft AR localization pending native pass. The ending is not over. It is filed.",
-          "in_game_wiki": "Draft AR localization pending native pass. Ending records let the player remember consequences without inheriting mechanical power.",
-          "external_site": "Draft AR localization pending native pass. Ending Record Presentation defines the dossier-facing shape of outcomes."
+          "scanner": "AR LOC HOLD: An ending record is evidence, not a trophy shelf.",
+          "field_note": "AR LOC HOLD: Show who received the payload and what it cost.",
+          "terminal": "AR LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
+          "audio": "AR LOC HOLD: The ending is not over. It is filed.",
+          "in_game_wiki": "AR LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
+          "external_site": "AR LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
         },
         "id_ID": {
           "title": "Ending Record Presentation",
-          "scanner": "Draft ID localization pending native pass. An ending record is evidence, not a trophy shelf.",
-          "field_note": "Draft ID localization pending native pass. Show who received the payload and what it cost.",
-          "terminal": "Draft ID localization pending native pass. ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
-          "audio": "Draft ID localization pending native pass. The ending is not over. It is filed.",
-          "in_game_wiki": "Draft ID localization pending native pass. Ending records let the player remember consequences without inheriting mechanical power.",
-          "external_site": "Draft ID localization pending native pass. Ending Record Presentation defines the dossier-facing shape of outcomes."
+          "scanner": "ID LOC HOLD: An ending record is evidence, not a trophy shelf.",
+          "field_note": "ID LOC HOLD: Show who received the payload and what it cost.",
+          "terminal": "ID LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
+          "audio": "ID LOC HOLD: The ending is not over. It is filed.",
+          "in_game_wiki": "ID LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
+          "external_site": "ID LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
         },
         "ko_KR": {
           "title": "Ending Record Presentation",
-          "scanner": "Draft KO localization pending native pass. An ending record is evidence, not a trophy shelf.",
-          "field_note": "Draft KO localization pending native pass. Show who received the payload and what it cost.",
-          "terminal": "Draft KO localization pending native pass. ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
-          "audio": "Draft KO localization pending native pass. The ending is not over. It is filed.",
-          "in_game_wiki": "Draft KO localization pending native pass. Ending records let the player remember consequences without inheriting mechanical power.",
-          "external_site": "Draft KO localization pending native pass. Ending Record Presentation defines the dossier-facing shape of outcomes."
+          "scanner": "KO LOC HOLD: An ending record is evidence, not a trophy shelf.",
+          "field_note": "KO LOC HOLD: Show who received the payload and what it cost.",
+          "terminal": "KO LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
+          "audio": "KO LOC HOLD: The ending is not over. It is filed.",
+          "in_game_wiki": "KO LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
+          "external_site": "KO LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
         },
         "he_IL": {
           "title": "Ending Record Presentation",
-          "scanner": "Draft HE localization pending native pass. An ending record is evidence, not a trophy shelf.",
-          "field_note": "Draft HE localization pending native pass. Show who received the payload and what it cost.",
-          "terminal": "Draft HE localization pending native pass. ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
-          "audio": "Draft HE localization pending native pass. The ending is not over. It is filed.",
-          "in_game_wiki": "Draft HE localization pending native pass. Ending records let the player remember consequences without inheriting mechanical power.",
-          "external_site": "Draft HE localization pending native pass. Ending Record Presentation defines the dossier-facing shape of outcomes."
+          "scanner": "HE LOC HOLD: An ending record is evidence, not a trophy shelf.",
+          "field_note": "HE LOC HOLD: Show who received the payload and what it cost.",
+          "terminal": "HE LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
+          "audio": "HE LOC HOLD: The ending is not over. It is filed.",
+          "in_game_wiki": "HE LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
+          "external_site": "HE LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
         },
         "pt_BR": {
           "title": "Ending Record Presentation",
-          "scanner": "Draft PT localization pending native pass. An ending record is evidence, not a trophy shelf.",
-          "field_note": "Draft PT localization pending native pass. Show who received the payload and what it cost.",
-          "terminal": "Draft PT localization pending native pass. ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
-          "audio": "Draft PT localization pending native pass. The ending is not over. It is filed.",
-          "in_game_wiki": "Draft PT localization pending native pass. Ending records let the player remember consequences without inheriting mechanical power.",
-          "external_site": "Draft PT localization pending native pass. Ending Record Presentation defines the dossier-facing shape of outcomes."
+          "scanner": "PT LOC HOLD: An ending record is evidence, not a trophy shelf.",
+          "field_note": "PT LOC HOLD: Show who received the payload and what it cost.",
+          "terminal": "PT LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
+          "audio": "PT LOC HOLD: The ending is not over. It is filed.",
+          "in_game_wiki": "PT LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
+          "external_site": "PT LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
         },
         "nl_NL": {
           "title": "Ending Record Presentation",
-          "scanner": "Draft NL localization pending native pass. An ending record is evidence, not a trophy shelf.",
-          "field_note": "Draft NL localization pending native pass. Show who received the payload and what it cost.",
-          "terminal": "Draft NL localization pending native pass. ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
-          "audio": "Draft NL localization pending native pass. The ending is not over. It is filed.",
-          "in_game_wiki": "Draft NL localization pending native pass. Ending records let the player remember consequences without inheriting mechanical power.",
-          "external_site": "Draft NL localization pending native pass. Ending Record Presentation defines the dossier-facing shape of outcomes."
+          "scanner": "NL LOC HOLD: An ending record is evidence, not a trophy shelf.",
+          "field_note": "NL LOC HOLD: Show who received the payload and what it cost.",
+          "terminal": "NL LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
+          "audio": "NL LOC HOLD: The ending is not over. It is filed.",
+          "in_game_wiki": "NL LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
+          "external_site": "NL LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
         }
       }
     },
@@ -511,120 +511,120 @@
         },
         "ja_JP": {
           "title": "Save Profile Knowledge Flags",
-          "scanner": "Draft JP localization pending native pass. Save persistence should remember knowledge categories, not hot inventory.",
-          "field_note": "Draft JP localization pending native pass. Knowledge flags must not change truth ownership or DTO layout.",
-          "terminal": "Draft JP localization pending native pass. SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
-          "audio": "Draft JP localization pending native pass. Memory is allowed. Power is not.",
-          "in_game_wiki": "Draft JP localization pending native pass. Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
-          "external_site": "Draft JP localization pending native pass. Save Profile Knowledge Flags defines persistence-safe replay memory."
+          "scanner": "JP LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
+          "field_note": "JP LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
+          "terminal": "JP LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
+          "audio": "JP LOC HOLD: Memory is allowed. Power is not.",
+          "in_game_wiki": "JP LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
+          "external_site": "JP LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
         },
         "zh_CN": {
           "title": "Save Profile Knowledge Flags",
-          "scanner": "Draft CN localization pending native pass. Save persistence should remember knowledge categories, not hot inventory.",
-          "field_note": "Draft CN localization pending native pass. Knowledge flags must not change truth ownership or DTO layout.",
-          "terminal": "Draft CN localization pending native pass. SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
-          "audio": "Draft CN localization pending native pass. Memory is allowed. Power is not.",
-          "in_game_wiki": "Draft CN localization pending native pass. Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
-          "external_site": "Draft CN localization pending native pass. Save Profile Knowledge Flags defines persistence-safe replay memory."
+          "scanner": "CN LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
+          "field_note": "CN LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
+          "terminal": "CN LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
+          "audio": "CN LOC HOLD: Memory is allowed. Power is not.",
+          "in_game_wiki": "CN LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
+          "external_site": "CN LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
         },
         "fr_FR": {
           "title": "Save Profile Knowledge Flags",
-          "scanner": "Draft FR localization pending native pass. Save persistence should remember knowledge categories, not hot inventory.",
-          "field_note": "Draft FR localization pending native pass. Knowledge flags must not change truth ownership or DTO layout.",
-          "terminal": "Draft FR localization pending native pass. SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
-          "audio": "Draft FR localization pending native pass. Memory is allowed. Power is not.",
-          "in_game_wiki": "Draft FR localization pending native pass. Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
-          "external_site": "Draft FR localization pending native pass. Save Profile Knowledge Flags defines persistence-safe replay memory."
+          "scanner": "FR LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
+          "field_note": "FR LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
+          "terminal": "FR LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
+          "audio": "FR LOC HOLD: Memory is allowed. Power is not.",
+          "in_game_wiki": "FR LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
+          "external_site": "FR LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
         },
         "es_ES": {
           "title": "Save Profile Knowledge Flags",
-          "scanner": "Draft ES localization pending native pass. Save persistence should remember knowledge categories, not hot inventory.",
-          "field_note": "Draft ES localization pending native pass. Knowledge flags must not change truth ownership or DTO layout.",
-          "terminal": "Draft ES localization pending native pass. SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
-          "audio": "Draft ES localization pending native pass. Memory is allowed. Power is not.",
-          "in_game_wiki": "Draft ES localization pending native pass. Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
-          "external_site": "Draft ES localization pending native pass. Save Profile Knowledge Flags defines persistence-safe replay memory."
+          "scanner": "ES LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
+          "field_note": "ES LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
+          "terminal": "ES LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
+          "audio": "ES LOC HOLD: Memory is allowed. Power is not.",
+          "in_game_wiki": "ES LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
+          "external_site": "ES LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
         },
         "de_DE": {
           "title": "Save Profile Knowledge Flags",
-          "scanner": "Draft DE localization pending native pass. Save persistence should remember knowledge categories, not hot inventory.",
-          "field_note": "Draft DE localization pending native pass. Knowledge flags must not change truth ownership or DTO layout.",
-          "terminal": "Draft DE localization pending native pass. SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
-          "audio": "Draft DE localization pending native pass. Memory is allowed. Power is not.",
-          "in_game_wiki": "Draft DE localization pending native pass. Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
-          "external_site": "Draft DE localization pending native pass. Save Profile Knowledge Flags defines persistence-safe replay memory."
+          "scanner": "DE LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
+          "field_note": "DE LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
+          "terminal": "DE LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
+          "audio": "DE LOC HOLD: Memory is allowed. Power is not.",
+          "in_game_wiki": "DE LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
+          "external_site": "DE LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
         },
         "pl_PL": {
           "title": "Save Profile Knowledge Flags",
-          "scanner": "Draft PL localization pending native pass. Save persistence should remember knowledge categories, not hot inventory.",
-          "field_note": "Draft PL localization pending native pass. Knowledge flags must not change truth ownership or DTO layout.",
-          "terminal": "Draft PL localization pending native pass. SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
-          "audio": "Draft PL localization pending native pass. Memory is allowed. Power is not.",
-          "in_game_wiki": "Draft PL localization pending native pass. Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
-          "external_site": "Draft PL localization pending native pass. Save Profile Knowledge Flags defines persistence-safe replay memory."
+          "scanner": "PL LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
+          "field_note": "PL LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
+          "terminal": "PL LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
+          "audio": "PL LOC HOLD: Memory is allowed. Power is not.",
+          "in_game_wiki": "PL LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
+          "external_site": "PL LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
         },
         "uk_UA": {
           "title": "Save Profile Knowledge Flags",
-          "scanner": "Draft UA localization pending native pass. Save persistence should remember knowledge categories, not hot inventory.",
-          "field_note": "Draft UA localization pending native pass. Knowledge flags must not change truth ownership or DTO layout.",
-          "terminal": "Draft UA localization pending native pass. SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
-          "audio": "Draft UA localization pending native pass. Memory is allowed. Power is not.",
-          "in_game_wiki": "Draft UA localization pending native pass. Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
-          "external_site": "Draft UA localization pending native pass. Save Profile Knowledge Flags defines persistence-safe replay memory."
+          "scanner": "UA LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
+          "field_note": "UA LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
+          "terminal": "UA LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
+          "audio": "UA LOC HOLD: Memory is allowed. Power is not.",
+          "in_game_wiki": "UA LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
+          "external_site": "UA LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
         },
         "ar_SA": {
           "title": "Save Profile Knowledge Flags",
-          "scanner": "Draft AR localization pending native pass. Save persistence should remember knowledge categories, not hot inventory.",
-          "field_note": "Draft AR localization pending native pass. Knowledge flags must not change truth ownership or DTO layout.",
-          "terminal": "Draft AR localization pending native pass. SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
-          "audio": "Draft AR localization pending native pass. Memory is allowed. Power is not.",
-          "in_game_wiki": "Draft AR localization pending native pass. Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
-          "external_site": "Draft AR localization pending native pass. Save Profile Knowledge Flags defines persistence-safe replay memory."
+          "scanner": "AR LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
+          "field_note": "AR LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
+          "terminal": "AR LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
+          "audio": "AR LOC HOLD: Memory is allowed. Power is not.",
+          "in_game_wiki": "AR LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
+          "external_site": "AR LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
         },
         "id_ID": {
           "title": "Save Profile Knowledge Flags",
-          "scanner": "Draft ID localization pending native pass. Save persistence should remember knowledge categories, not hot inventory.",
-          "field_note": "Draft ID localization pending native pass. Knowledge flags must not change truth ownership or DTO layout.",
-          "terminal": "Draft ID localization pending native pass. SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
-          "audio": "Draft ID localization pending native pass. Memory is allowed. Power is not.",
-          "in_game_wiki": "Draft ID localization pending native pass. Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
-          "external_site": "Draft ID localization pending native pass. Save Profile Knowledge Flags defines persistence-safe replay memory."
+          "scanner": "ID LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
+          "field_note": "ID LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
+          "terminal": "ID LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
+          "audio": "ID LOC HOLD: Memory is allowed. Power is not.",
+          "in_game_wiki": "ID LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
+          "external_site": "ID LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
         },
         "ko_KR": {
           "title": "Save Profile Knowledge Flags",
-          "scanner": "Draft KO localization pending native pass. Save persistence should remember knowledge categories, not hot inventory.",
-          "field_note": "Draft KO localization pending native pass. Knowledge flags must not change truth ownership or DTO layout.",
-          "terminal": "Draft KO localization pending native pass. SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
-          "audio": "Draft KO localization pending native pass. Memory is allowed. Power is not.",
-          "in_game_wiki": "Draft KO localization pending native pass. Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
-          "external_site": "Draft KO localization pending native pass. Save Profile Knowledge Flags defines persistence-safe replay memory."
+          "scanner": "KO LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
+          "field_note": "KO LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
+          "terminal": "KO LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
+          "audio": "KO LOC HOLD: Memory is allowed. Power is not.",
+          "in_game_wiki": "KO LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
+          "external_site": "KO LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
         },
         "he_IL": {
           "title": "Save Profile Knowledge Flags",
-          "scanner": "Draft HE localization pending native pass. Save persistence should remember knowledge categories, not hot inventory.",
-          "field_note": "Draft HE localization pending native pass. Knowledge flags must not change truth ownership or DTO layout.",
-          "terminal": "Draft HE localization pending native pass. SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
-          "audio": "Draft HE localization pending native pass. Memory is allowed. Power is not.",
-          "in_game_wiki": "Draft HE localization pending native pass. Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
-          "external_site": "Draft HE localization pending native pass. Save Profile Knowledge Flags defines persistence-safe replay memory."
+          "scanner": "HE LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
+          "field_note": "HE LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
+          "terminal": "HE LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
+          "audio": "HE LOC HOLD: Memory is allowed. Power is not.",
+          "in_game_wiki": "HE LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
+          "external_site": "HE LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
         },
         "pt_BR": {
           "title": "Save Profile Knowledge Flags",
-          "scanner": "Draft PT localization pending native pass. Save persistence should remember knowledge categories, not hot inventory.",
-          "field_note": "Draft PT localization pending native pass. Knowledge flags must not change truth ownership or DTO layout.",
-          "terminal": "Draft PT localization pending native pass. SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
-          "audio": "Draft PT localization pending native pass. Memory is allowed. Power is not.",
-          "in_game_wiki": "Draft PT localization pending native pass. Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
-          "external_site": "Draft PT localization pending native pass. Save Profile Knowledge Flags defines persistence-safe replay memory."
+          "scanner": "PT LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
+          "field_note": "PT LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
+          "terminal": "PT LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
+          "audio": "PT LOC HOLD: Memory is allowed. Power is not.",
+          "in_game_wiki": "PT LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
+          "external_site": "PT LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
         },
         "nl_NL": {
           "title": "Save Profile Knowledge Flags",
-          "scanner": "Draft NL localization pending native pass. Save persistence should remember knowledge categories, not hot inventory.",
-          "field_note": "Draft NL localization pending native pass. Knowledge flags must not change truth ownership or DTO layout.",
-          "terminal": "Draft NL localization pending native pass. SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
-          "audio": "Draft NL localization pending native pass. Memory is allowed. Power is not.",
-          "in_game_wiki": "Draft NL localization pending native pass. Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
-          "external_site": "Draft NL localization pending native pass. Save Profile Knowledge Flags defines persistence-safe replay memory."
+          "scanner": "NL LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
+          "field_note": "NL LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
+          "terminal": "NL LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
+          "audio": "NL LOC HOLD: Memory is allowed. Power is not.",
+          "in_game_wiki": "NL LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
+          "external_site": "NL LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
         }
       }
     },
@@ -656,130 +656,130 @@
           "external_site": "Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
         },
         "ru_RU": {
-          "title": "Draft RU localization pending native pass. Public Spoiler Tiering Protocol",
-          "scanner": "Draft RU localization pending native pass. Public records need pressure doors like field evidence does.",
+          "title": "RU LOC HOLD: Public Spoiler Tiering Protocol",
+          "scanner": "RU LOC HOLD: Public records need pressure doors like field evidence does.",
           "field_note": "Разделять то, что продает мир, и то, что решает преступление.",
-          "terminal": "Draft RU localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
-          "audio": "Draft RU localization pending native pass. A public archive can ruin a case if it has no pressure doors.",
-          "in_game_wiki": "Draft RU localization pending native pass. Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
-          "external_site": "Draft RU localization pending native pass. Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
+          "terminal": "RU LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+          "audio": "RU LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
+          "in_game_wiki": "RU LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+          "external_site": "RU LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
         },
         "ja_JP": {
-          "title": "Draft JP localization pending native pass. Public Spoiler Tiering Protocol",
-          "scanner": "Draft JP localization pending native pass. Public records need pressure doors like field evidence does.",
-          "field_note": "Draft JP localization pending native pass. Split what sells the world from what solves the crime.",
-          "terminal": "Draft JP localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
-          "audio": "Draft JP localization pending native pass. A public archive can ruin a case if it has no pressure doors.",
-          "in_game_wiki": "Draft JP localization pending native pass. Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
-          "external_site": "Draft JP localization pending native pass. Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
+          "title": "JP LOC HOLD: Public Spoiler Tiering Protocol",
+          "scanner": "JP LOC HOLD: Public records need pressure doors like field evidence does.",
+          "field_note": "JP LOC HOLD: Split what sells the world from what solves the crime.",
+          "terminal": "JP LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+          "audio": "JP LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
+          "in_game_wiki": "JP LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+          "external_site": "JP LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
         },
         "zh_CN": {
-          "title": "Draft CN localization pending native pass. Public Spoiler Tiering Protocol",
-          "scanner": "Draft CN localization pending native pass. Public records need pressure doors like field evidence does.",
-          "field_note": "Draft CN localization pending native pass. Split what sells the world from what solves the crime.",
-          "terminal": "Draft CN localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
-          "audio": "Draft CN localization pending native pass. A public archive can ruin a case if it has no pressure doors.",
-          "in_game_wiki": "Draft CN localization pending native pass. Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
-          "external_site": "Draft CN localization pending native pass. Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
+          "title": "CN LOC HOLD: Public Spoiler Tiering Protocol",
+          "scanner": "CN LOC HOLD: Public records need pressure doors like field evidence does.",
+          "field_note": "CN LOC HOLD: Split what sells the world from what solves the crime.",
+          "terminal": "CN LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+          "audio": "CN LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
+          "in_game_wiki": "CN LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+          "external_site": "CN LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Public Spoiler Tiering Protocol",
-          "scanner": "Draft FR localization pending native pass. Public records need pressure doors like field evidence does.",
-          "field_note": "Draft FR localization pending native pass. Split what sells the world from what solves the crime.",
-          "terminal": "Draft FR localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
-          "audio": "Draft FR localization pending native pass. A public archive can ruin a case if it has no pressure doors.",
-          "in_game_wiki": "Draft FR localization pending native pass. Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
-          "external_site": "Draft FR localization pending native pass. Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
+          "title": "FR LOC HOLD: Public Spoiler Tiering Protocol",
+          "scanner": "FR LOC HOLD: Public records need pressure doors like field evidence does.",
+          "field_note": "FR LOC HOLD: Split what sells the world from what solves the crime.",
+          "terminal": "FR LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+          "audio": "FR LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
+          "in_game_wiki": "FR LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+          "external_site": "FR LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Public Spoiler Tiering Protocol",
-          "scanner": "Draft ES localization pending native pass. Public records need pressure doors like field evidence does.",
-          "field_note": "Draft ES localization pending native pass. Split what sells the world from what solves the crime.",
-          "terminal": "Draft ES localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
-          "audio": "Draft ES localization pending native pass. A public archive can ruin a case if it has no pressure doors.",
-          "in_game_wiki": "Draft ES localization pending native pass. Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
-          "external_site": "Draft ES localization pending native pass. Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
+          "title": "ES LOC HOLD: Public Spoiler Tiering Protocol",
+          "scanner": "ES LOC HOLD: Public records need pressure doors like field evidence does.",
+          "field_note": "ES LOC HOLD: Split what sells the world from what solves the crime.",
+          "terminal": "ES LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+          "audio": "ES LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
+          "in_game_wiki": "ES LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+          "external_site": "ES LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Public Spoiler Tiering Protocol",
-          "scanner": "Draft DE localization pending native pass. Public records need pressure doors like field evidence does.",
-          "field_note": "Draft DE localization pending native pass. Split what sells the world from what solves the crime.",
-          "terminal": "Draft DE localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
-          "audio": "Draft DE localization pending native pass. A public archive can ruin a case if it has no pressure doors.",
-          "in_game_wiki": "Draft DE localization pending native pass. Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
-          "external_site": "Draft DE localization pending native pass. Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
+          "title": "DE LOC HOLD: Public Spoiler Tiering Protocol",
+          "scanner": "DE LOC HOLD: Public records need pressure doors like field evidence does.",
+          "field_note": "DE LOC HOLD: Split what sells the world from what solves the crime.",
+          "terminal": "DE LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+          "audio": "DE LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
+          "in_game_wiki": "DE LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+          "external_site": "DE LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Public Spoiler Tiering Protocol",
-          "scanner": "Draft PL localization pending native pass. Public records need pressure doors like field evidence does.",
-          "field_note": "Draft PL localization pending native pass. Split what sells the world from what solves the crime.",
-          "terminal": "Draft PL localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
-          "audio": "Draft PL localization pending native pass. A public archive can ruin a case if it has no pressure doors.",
-          "in_game_wiki": "Draft PL localization pending native pass. Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
-          "external_site": "Draft PL localization pending native pass. Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
+          "title": "PL LOC HOLD: Public Spoiler Tiering Protocol",
+          "scanner": "PL LOC HOLD: Public records need pressure doors like field evidence does.",
+          "field_note": "PL LOC HOLD: Split what sells the world from what solves the crime.",
+          "terminal": "PL LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+          "audio": "PL LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
+          "in_game_wiki": "PL LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+          "external_site": "PL LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
         },
         "uk_UA": {
-          "title": "Draft UA localization pending native pass. Public Spoiler Tiering Protocol",
-          "scanner": "Draft UA localization pending native pass. Public records need pressure doors like field evidence does.",
-          "field_note": "Draft UA localization pending native pass. Split what sells the world from what solves the crime.",
-          "terminal": "Draft UA localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
-          "audio": "Draft UA localization pending native pass. A public archive can ruin a case if it has no pressure doors.",
-          "in_game_wiki": "Draft UA localization pending native pass. Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
-          "external_site": "Draft UA localization pending native pass. Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
+          "title": "UA LOC HOLD: Public Spoiler Tiering Protocol",
+          "scanner": "UA LOC HOLD: Public records need pressure doors like field evidence does.",
+          "field_note": "UA LOC HOLD: Split what sells the world from what solves the crime.",
+          "terminal": "UA LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+          "audio": "UA LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
+          "in_game_wiki": "UA LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+          "external_site": "UA LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Public Spoiler Tiering Protocol",
-          "scanner": "Draft AR localization pending native pass. Public records need pressure doors like field evidence does.",
-          "field_note": "Draft AR localization pending native pass. Split what sells the world from what solves the crime.",
-          "terminal": "Draft AR localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
-          "audio": "Draft AR localization pending native pass. A public archive can ruin a case if it has no pressure doors.",
-          "in_game_wiki": "Draft AR localization pending native pass. Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
-          "external_site": "Draft AR localization pending native pass. Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
+          "title": "AR LOC HOLD: Public Spoiler Tiering Protocol",
+          "scanner": "AR LOC HOLD: Public records need pressure doors like field evidence does.",
+          "field_note": "AR LOC HOLD: Split what sells the world from what solves the crime.",
+          "terminal": "AR LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+          "audio": "AR LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
+          "in_game_wiki": "AR LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+          "external_site": "AR LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Public Spoiler Tiering Protocol",
-          "scanner": "Draft ID localization pending native pass. Public records need pressure doors like field evidence does.",
-          "field_note": "Draft ID localization pending native pass. Split what sells the world from what solves the crime.",
-          "terminal": "Draft ID localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
-          "audio": "Draft ID localization pending native pass. A public archive can ruin a case if it has no pressure doors.",
-          "in_game_wiki": "Draft ID localization pending native pass. Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
-          "external_site": "Draft ID localization pending native pass. Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
+          "title": "ID LOC HOLD: Public Spoiler Tiering Protocol",
+          "scanner": "ID LOC HOLD: Public records need pressure doors like field evidence does.",
+          "field_note": "ID LOC HOLD: Split what sells the world from what solves the crime.",
+          "terminal": "ID LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+          "audio": "ID LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
+          "in_game_wiki": "ID LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+          "external_site": "ID LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Public Spoiler Tiering Protocol",
-          "scanner": "Draft KO localization pending native pass. Public records need pressure doors like field evidence does.",
-          "field_note": "Draft KO localization pending native pass. Split what sells the world from what solves the crime.",
-          "terminal": "Draft KO localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
-          "audio": "Draft KO localization pending native pass. A public archive can ruin a case if it has no pressure doors.",
-          "in_game_wiki": "Draft KO localization pending native pass. Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
-          "external_site": "Draft KO localization pending native pass. Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
+          "title": "KO LOC HOLD: Public Spoiler Tiering Protocol",
+          "scanner": "KO LOC HOLD: Public records need pressure doors like field evidence does.",
+          "field_note": "KO LOC HOLD: Split what sells the world from what solves the crime.",
+          "terminal": "KO LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+          "audio": "KO LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
+          "in_game_wiki": "KO LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+          "external_site": "KO LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Public Spoiler Tiering Protocol",
-          "scanner": "Draft HE localization pending native pass. Public records need pressure doors like field evidence does.",
-          "field_note": "Draft HE localization pending native pass. Split what sells the world from what solves the crime.",
-          "terminal": "Draft HE localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
-          "audio": "Draft HE localization pending native pass. A public archive can ruin a case if it has no pressure doors.",
-          "in_game_wiki": "Draft HE localization pending native pass. Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
-          "external_site": "Draft HE localization pending native pass. Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
+          "title": "HE LOC HOLD: Public Spoiler Tiering Protocol",
+          "scanner": "HE LOC HOLD: Public records need pressure doors like field evidence does.",
+          "field_note": "HE LOC HOLD: Split what sells the world from what solves the crime.",
+          "terminal": "HE LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+          "audio": "HE LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
+          "in_game_wiki": "HE LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+          "external_site": "HE LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Public Spoiler Tiering Protocol",
-          "scanner": "Draft PT localization pending native pass. Public records need pressure doors like field evidence does.",
-          "field_note": "Draft PT localization pending native pass. Split what sells the world from what solves the crime.",
-          "terminal": "Draft PT localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
-          "audio": "Draft PT localization pending native pass. A public archive can ruin a case if it has no pressure doors.",
-          "in_game_wiki": "Draft PT localization pending native pass. Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
-          "external_site": "Draft PT localization pending native pass. Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
+          "title": "PT LOC HOLD: Public Spoiler Tiering Protocol",
+          "scanner": "PT LOC HOLD: Public records need pressure doors like field evidence does.",
+          "field_note": "PT LOC HOLD: Split what sells the world from what solves the crime.",
+          "terminal": "PT LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+          "audio": "PT LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
+          "in_game_wiki": "PT LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+          "external_site": "PT LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Public Spoiler Tiering Protocol",
-          "scanner": "Draft NL localization pending native pass. Public records need pressure doors like field evidence does.",
-          "field_note": "Draft NL localization pending native pass. Split what sells the world from what solves the crime.",
-          "terminal": "Draft NL localization pending native pass. SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
-          "audio": "Draft NL localization pending native pass. A public archive can ruin a case if it has no pressure doors.",
-          "in_game_wiki": "Draft NL localization pending native pass. Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
-          "external_site": "Draft NL localization pending native pass. Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
+          "title": "NL LOC HOLD: Public Spoiler Tiering Protocol",
+          "scanner": "NL LOC HOLD: Public records need pressure doors like field evidence does.",
+          "field_note": "NL LOC HOLD: Split what sells the world from what solves the crime.",
+          "terminal": "NL LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+          "audio": "NL LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
+          "in_game_wiki": "NL LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+          "external_site": "NL LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
         }
       }
     }

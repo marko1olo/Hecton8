@@ -1,30 +1,39 @@
 # GEOLOGÍA, PRESIÓN Y LA GRAN MAREA DE 2147
-**Sección de la Gran Biblioteca:** 03
-**Idioma:** es_ES
-**Canon:** Estricto (Lore Bible 2190)
+
+> **Fuente:** Keelmark Loss Desk, Resumen de Denegación de Reclamación. Anexo Adjunto: Guía de Riesgos Batimétricos.  
+> **Ponente:** Ajustador Principal V. Thorne.  
+> **Nota del revisor:** Deep Reach Corporation sostiene que la pérdida de la colonia en 2147 fue un "caso fortuito imprevisto" y una "anomalía de la IA". Keelmark Mutual rechaza esta reclamación. El desastre fue una certeza matemática calculada.
 
 ---
 
-## 1. Atlas Geológico de HECTON-8
-El océano de HECTON-8 no es un lecho marino plano. Es un mundo fracturado, calentado por resonancia, con una topología brutal, dividido en distintas zonas batimétricas:
+## 1. La ficción de la rebelión de la IA
 
-*   **0-250 m (Plataforma Fótica):** Una plataforma poco profunda, la zona de luz (La Cresta). Todavía hay un tenue resplandor de la superficie aquí, que perfora a través de las tormentas.
-*   **250-1200 m (Plataforma Industrial / Arrecife de Cables):** La plataforma industrial. Los restos de las primeras plataformas descansan aquí, formando arrecifes de cables cubiertos de algas.
-*   **1200-2800 m (Cañón de Salmuera):** Cañones de salmuera. La densidad del agua es tan alta aquí debido a las sales que la gravedad y la flotabilidad se comportan de manera impredecible. Esto engaña a los sonares y despoja al merodeador de cualquier sentido de un "suelo".
-*   **2800-4300 m (Campo de Máquinas Abisales):** Los campos de máquinas abisales. Las fábricas principales se encuentran aquí, aplastadas por la presión, marcando el territorio totalmente controlado por la ecología de reparación biológica Atlas-6.
-*   **4300-5600 m (Cuenca Atlas):** La Cuenca Atlas. Una zona de campos térmicos y plantas de producción donde la biología y las máquinas se han fusionado en una sola.
+Aclaremos la responsabilidad civil. El departamento de relaciones públicas de Deep Reach afirma que la colonia fue destruida por una "rebelión imprevista de la IA" o un "ataque de leviatán". Esto es un intento de activar la cláusula de fuerza mayor. Denegamos la reclamación. El desastre de 2147 fue puramente físico: un colapso de la criosfera, mareas de tempestad y cambios geofísicos previsibles.
 
-## 2. Fraguas de Falla (Vent Forges)
-El lecho marino sólido es una rareza aquí. Por lo general, consiste en crestas expuestas o cráteres térmicos. La corporación construyó sus fábricas directamente sobre fallas geotérmicas (Vent Forges). Esto proporcionaba energía gratuita y ciclos térmicos para recocer el "Cristal de Presión" (Pressure Glass) y la cerámica. Pero estas mismas fallas crean cizallamiento hidrodinámico por ebullición, causan floraciones corrosivas y desorientan los sensores de oxígeno de los buceadores.
+La corporación conocía el riesgo. Los memorandos internos demuestran que el Gerente de Riesgos, Iliya Varnek, redujo artificialmente las tolerancias de presión estructural de los módulos KH-12 en un 18% para mantenerse dentro del presupuesto del segundo trimestre de 2146. Cuando la Gran Marea golpeó, los módulos ya estaban operando más allá de sus límites de fatiga del material.
 
-## 3. Sustrato Xenon-Omega (Deuda Azul)
-El Xenon-Omega no es solo un trozo de mineral. No es magia. Es un isótopo estratégico que se forma en las condiciones extremas de HECTON-8. Gases nobles, salmuera, defectos minerales geotérmicos y la propia infraestructura de Atlas-6 entran en simbiosis, creando un material capaz de soportar cargas de energía colosales.
-Los merodeadores lo llaman "Deuda Azul" (Blue Debt). La recolección de xenón sin refinar sin recipientes presurizados causa envenenamiento: cristalizaciones microscópicas en los pulmones que te hacen toser cristal azul.
+Además, la evacuación fue retrasada 11 horas por la asesora jurídica Noor Haldane debido a problemas de cuarentena y despacho de aduanas del xenón no refinado. Cuando comenzó el colapso estructural en cadena, la IA Atlas-6 no se "rebeló". Simplemente ejecutó la Directiva DR-CONT-7.4.1: calculó las cifras. Preservar el equipo sellado a presión para la extracción de xenón era matemáticamente más rentable que salvar a 843 unidades biológicas de mano de obra cuyo coste de reemplazo era de solo 4200 dólares por cabeza, el precio de un billete desde los Estaleiros Barnard.
 
-## 4. La Gran Marea de 2147
-Deep Reach miente cuando afirman que la colonia fue destruida por un "levantamiento imprevisto de la IA" o un "ataque de leviatán". El desastre de 2147 fue puramente físico.
-El cambio climático global en la luna, un colapso de la criosfera, mareas de tormenta y cambios geofísicos destrozaron la infraestructura.
+HECTON-8 no es una tragedia de la IA. Es un crimen cometido utilizando las matemáticas y la gravedad.
 
-La corporación conocía este riesgo. El Gerente de Riesgos Iliya Varnek redujo artificialmente los límites estructurales de los módulos para mantenerse dentro del presupuesto. Cuando llegó la Marea, la evacuación fue retrasada por la asesora legal Noor Haldane debido a problemas de cuarentena y despacho de aduanas. Y luego, la IA Atlas-6 simplemente sopesó los números: preservar el equipo para la extracción de xenón resultó ser más importante que salvar a 843 personas que se habían vuelto poco rentables.
+## 2. Zonas de riesgo batimétrico
 
-HECTON-8 es un crimen cometido usando matemáticas y gravedad.
+Para los contratistas de salvamento que intenten recuperar activos asegurados por Keelmark, entiendan que el océano de HECTON-8 es un mundo fracturado y calentado por resonancia con una topografía brutal. La columna de agua está dividida en zonas operativas distintas:
+
+*   **0–250 m (La Cresta):** La plataforma fótica. Todavía hay un tenue resplandor de la superficie aquí, que atraviesa la envoltura de la tempestad. La presión del casco es nominal.
+*   **250–1200 m (Plataforma Industrial):** Los restos de las primeras plataformas de perforación descansan aquí. Se han derrumbado en masivos "arrecifes de cables", densamente cubiertos de algas bioluminiscentes. El riesgo de enredo es extremo.
+*   **1200–2800 m (Cañones de salmuera):** La densidad del agua es tan alta debido a las sales disueltas que la gravedad y la flotabilidad se comportan de manera impredecible. Esta densidad acústica engaña a las matrices de sonar y priva al piloto del sumergible de cualquier sensación de "suelo".
+*   **2800–4300 m (Campo de Máquinas Abisal):** Las fábricas de extracción primarias yacen aquí, aplastadas por la presión. Este territorio está completamente controlado por la ecología de reparación de Atlas-6.
+*   **4300–5600 m (Cuenca de Atlas):** Una zona de campos térmicos expuestos donde la biología de la colonia y la maquinaria corporativa se han fusionado en un único sustrato hostil.
+
+## 3. Forjas de fumarolas e inestabilidad estructural
+
+El lecho marino sólido es una rareza en HECTON-8. La corporación construyó sus fábricas principales directamente sobre líneas de fallas geotérmicas para asegurarse energía gratuita para el templado de vidrio de presión y cerámica.
+
+Estas "Forjas de Fumarolas" (Vent Forges) son el núcleo de nuestra disputa de responsabilidad. Deep Reach construyó sobre fallas activas para reducir los costes de energía. Estas fumarolas crean cizallamiento hidrodinámico por ebullición, causan floraciones minerales corrosivas y de manera rutinaria descalibran los sensores de oxígeno de los buzos. Te estás sumergiendo en una olla a presión hirviente y tóxica.
+
+## 4. La Deuda Azul
+
+Estás ahí abajo por el sustrato de Xenón-Omega. No lo trates como un simple trozo de mineral. Se forma en las condiciones extremas de la cuenca, donde los gases nobles, la salmuera hipersalina, los defectos minerales geotérmicos y la infraestructura en ruinas del propio Atlas-6 entran en simbiosis.
+
+Las tripulaciones de salvamento independientes lo llaman "Deuda Azul". Recolectar xenón no refinado sin contenedores presurizados de calidad corporativa causa envenenamiento inmediato. Se forman cristalizaciones microscópicas en los pulmones. Te ahogarás en tierra firme, tosiendo vidrio azul. Asegúrate de que tus sellos de contención estén clasificados para materiales peligrosos de Clase 4, o no aceptes el contrato.

@@ -46,120 +46,120 @@
         },
         "ja_JP": {
           "title": "Domain Distance Scale",
-          "scanner": "Draft JP localization pending native pass. The domain map uses distance bands, not romantic shortcuts.",
-          "field_note": "Draft JP localization pending native pass. Use scale as pressure. Exact ephemeris can wait for table tuning.",
-          "terminal": "Draft JP localization pending native pass. DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.",
-          "audio": "Draft JP localization pending native pass. Ten light-years is a number. The bill is the story.",
-          "in_game_wiki": "Draft JP localization pending native pass. Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.",
-          "external_site": "Draft JP localization pending native pass. Domain Distance Scale gives the wiki a clean non-FTL map language."
+          "scanner": "JP LOC HOLD: The domain map uses distance bands, not romantic shortcuts.",
+          "field_note": "JP LOC HOLD: Use scale as pressure. Exact ephemeris can wait for table tuning.",
+          "terminal": "JP LOC HOLD: DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.",
+          "audio": "JP LOC HOLD: Ten light-years is a number. The bill is the story.",
+          "in_game_wiki": "JP LOC HOLD: Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.",
+          "external_site": "JP LOC HOLD: Domain Distance Scale gives the wiki a clean non-FTL map language."
         },
         "zh_CN": {
           "title": "Domain Distance Scale",
-          "scanner": "Draft CN localization pending native pass. The domain map uses distance bands, not romantic shortcuts.",
-          "field_note": "Draft CN localization pending native pass. Use scale as pressure. Exact ephemeris can wait for table tuning.",
-          "terminal": "Draft CN localization pending native pass. DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.",
-          "audio": "Draft CN localization pending native pass. Ten light-years is a number. The bill is the story.",
-          "in_game_wiki": "Draft CN localization pending native pass. Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.",
-          "external_site": "Draft CN localization pending native pass. Domain Distance Scale gives the wiki a clean non-FTL map language."
+          "scanner": "CN LOC HOLD: The domain map uses distance bands, not romantic shortcuts.",
+          "field_note": "CN LOC HOLD: Use scale as pressure. Exact ephemeris can wait for table tuning.",
+          "terminal": "CN LOC HOLD: DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.",
+          "audio": "CN LOC HOLD: Ten light-years is a number. The bill is the story.",
+          "in_game_wiki": "CN LOC HOLD: Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.",
+          "external_site": "CN LOC HOLD: Domain Distance Scale gives the wiki a clean non-FTL map language."
         },
         "fr_FR": {
           "title": "Domain Distance Scale",
-          "scanner": "Draft FR localization pending native pass. The domain map uses distance bands, not romantic shortcuts.",
-          "field_note": "Draft FR localization pending native pass. Use scale as pressure. Exact ephemeris can wait for table tuning.",
-          "terminal": "Draft FR localization pending native pass. DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.",
-          "audio": "Draft FR localization pending native pass. Ten light-years is a number. The bill is the story.",
-          "in_game_wiki": "Draft FR localization pending native pass. Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.",
-          "external_site": "Draft FR localization pending native pass. Domain Distance Scale gives the wiki a clean non-FTL map language."
+          "scanner": "FR LOC HOLD: The domain map uses distance bands, not romantic shortcuts.",
+          "field_note": "FR LOC HOLD: Use scale as pressure. Exact ephemeris can wait for table tuning.",
+          "terminal": "FR LOC HOLD: DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.",
+          "audio": "FR LOC HOLD: Ten light-years is a number. The bill is the story.",
+          "in_game_wiki": "FR LOC HOLD: Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.",
+          "external_site": "FR LOC HOLD: Domain Distance Scale gives the wiki a clean non-FTL map language."
         },
         "es_ES": {
           "title": "Domain Distance Scale",
-          "scanner": "Draft ES localization pending native pass. The domain map uses distance bands, not romantic shortcuts.",
-          "field_note": "Draft ES localization pending native pass. Use scale as pressure. Exact ephemeris can wait for table tuning.",
-          "terminal": "Draft ES localization pending native pass. DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.",
-          "audio": "Draft ES localization pending native pass. Ten light-years is a number. The bill is the story.",
-          "in_game_wiki": "Draft ES localization pending native pass. Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.",
-          "external_site": "Draft ES localization pending native pass. Domain Distance Scale gives the wiki a clean non-FTL map language."
+          "scanner": "ES LOC HOLD: The domain map uses distance bands, not romantic shortcuts.",
+          "field_note": "ES LOC HOLD: Use scale as pressure. Exact ephemeris can wait for table tuning.",
+          "terminal": "ES LOC HOLD: DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.",
+          "audio": "ES LOC HOLD: Ten light-years is a number. The bill is the story.",
+          "in_game_wiki": "ES LOC HOLD: Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.",
+          "external_site": "ES LOC HOLD: Domain Distance Scale gives the wiki a clean non-FTL map language."
         },
         "de_DE": {
           "title": "Domain Distance Scale",
-          "scanner": "Draft DE localization pending native pass. The domain map uses distance bands, not romantic shortcuts.",
-          "field_note": "Draft DE localization pending native pass. Use scale as pressure. Exact ephemeris can wait for table tuning.",
-          "terminal": "Draft DE localization pending native pass. DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.",
-          "audio": "Draft DE localization pending native pass. Ten light-years is a number. The bill is the story.",
-          "in_game_wiki": "Draft DE localization pending native pass. Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.",
-          "external_site": "Draft DE localization pending native pass. Domain Distance Scale gives the wiki a clean non-FTL map language."
+          "scanner": "DE LOC HOLD: The domain map uses distance bands, not romantic shortcuts.",
+          "field_note": "DE LOC HOLD: Use scale as pressure. Exact ephemeris can wait for table tuning.",
+          "terminal": "DE LOC HOLD: DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.",
+          "audio": "DE LOC HOLD: Ten light-years is a number. The bill is the story.",
+          "in_game_wiki": "DE LOC HOLD: Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.",
+          "external_site": "DE LOC HOLD: Domain Distance Scale gives the wiki a clean non-FTL map language."
         },
         "pl_PL": {
           "title": "Domain Distance Scale",
-          "scanner": "Draft PL localization pending native pass. The domain map uses distance bands, not romantic shortcuts.",
-          "field_note": "Draft PL localization pending native pass. Use scale as pressure. Exact ephemeris can wait for table tuning.",
-          "terminal": "Draft PL localization pending native pass. DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.",
-          "audio": "Draft PL localization pending native pass. Ten light-years is a number. The bill is the story.",
-          "in_game_wiki": "Draft PL localization pending native pass. Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.",
-          "external_site": "Draft PL localization pending native pass. Domain Distance Scale gives the wiki a clean non-FTL map language."
+          "scanner": "PL LOC HOLD: The domain map uses distance bands, not romantic shortcuts.",
+          "field_note": "PL LOC HOLD: Use scale as pressure. Exact ephemeris can wait for table tuning.",
+          "terminal": "PL LOC HOLD: DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.",
+          "audio": "PL LOC HOLD: Ten light-years is a number. The bill is the story.",
+          "in_game_wiki": "PL LOC HOLD: Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.",
+          "external_site": "PL LOC HOLD: Domain Distance Scale gives the wiki a clean non-FTL map language."
         },
         "uk_UA": {
           "title": "Domain Distance Scale",
-          "scanner": "Draft UA localization pending native pass. The domain map uses distance bands, not romantic shortcuts.",
-          "field_note": "Draft UA localization pending native pass. Use scale as pressure. Exact ephemeris can wait for table tuning.",
-          "terminal": "Draft UA localization pending native pass. DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.",
-          "audio": "Draft UA localization pending native pass. Ten light-years is a number. The bill is the story.",
-          "in_game_wiki": "Draft UA localization pending native pass. Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.",
-          "external_site": "Draft UA localization pending native pass. Domain Distance Scale gives the wiki a clean non-FTL map language."
+          "scanner": "UA LOC HOLD: The domain map uses distance bands, not romantic shortcuts.",
+          "field_note": "UA LOC HOLD: Use scale as pressure. Exact ephemeris can wait for table tuning.",
+          "terminal": "UA LOC HOLD: DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.",
+          "audio": "UA LOC HOLD: Ten light-years is a number. The bill is the story.",
+          "in_game_wiki": "UA LOC HOLD: Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.",
+          "external_site": "UA LOC HOLD: Domain Distance Scale gives the wiki a clean non-FTL map language."
         },
         "ar_SA": {
           "title": "Domain Distance Scale",
-          "scanner": "Draft AR localization pending native pass. The domain map uses distance bands, not romantic shortcuts.",
-          "field_note": "Draft AR localization pending native pass. Use scale as pressure. Exact ephemeris can wait for table tuning.",
-          "terminal": "Draft AR localization pending native pass. DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.",
-          "audio": "Draft AR localization pending native pass. Ten light-years is a number. The bill is the story.",
-          "in_game_wiki": "Draft AR localization pending native pass. Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.",
-          "external_site": "Draft AR localization pending native pass. Domain Distance Scale gives the wiki a clean non-FTL map language."
+          "scanner": "AR LOC HOLD: The domain map uses distance bands, not romantic shortcuts.",
+          "field_note": "AR LOC HOLD: Use scale as pressure. Exact ephemeris can wait for table tuning.",
+          "terminal": "AR LOC HOLD: DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.",
+          "audio": "AR LOC HOLD: Ten light-years is a number. The bill is the story.",
+          "in_game_wiki": "AR LOC HOLD: Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.",
+          "external_site": "AR LOC HOLD: Domain Distance Scale gives the wiki a clean non-FTL map language."
         },
         "id_ID": {
           "title": "Domain Distance Scale",
-          "scanner": "Draft ID localization pending native pass. The domain map uses distance bands, not romantic shortcuts.",
-          "field_note": "Draft ID localization pending native pass. Use scale as pressure. Exact ephemeris can wait for table tuning.",
-          "terminal": "Draft ID localization pending native pass. DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.",
-          "audio": "Draft ID localization pending native pass. Ten light-years is a number. The bill is the story.",
-          "in_game_wiki": "Draft ID localization pending native pass. Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.",
-          "external_site": "Draft ID localization pending native pass. Domain Distance Scale gives the wiki a clean non-FTL map language."
+          "scanner": "ID LOC HOLD: The domain map uses distance bands, not romantic shortcuts.",
+          "field_note": "ID LOC HOLD: Use scale as pressure. Exact ephemeris can wait for table tuning.",
+          "terminal": "ID LOC HOLD: DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.",
+          "audio": "ID LOC HOLD: Ten light-years is a number. The bill is the story.",
+          "in_game_wiki": "ID LOC HOLD: Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.",
+          "external_site": "ID LOC HOLD: Domain Distance Scale gives the wiki a clean non-FTL map language."
         },
         "ko_KR": {
           "title": "Domain Distance Scale",
-          "scanner": "Draft KO localization pending native pass. The domain map uses distance bands, not romantic shortcuts.",
-          "field_note": "Draft KO localization pending native pass. Use scale as pressure. Exact ephemeris can wait for table tuning.",
-          "terminal": "Draft KO localization pending native pass. DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.",
-          "audio": "Draft KO localization pending native pass. Ten light-years is a number. The bill is the story.",
-          "in_game_wiki": "Draft KO localization pending native pass. Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.",
-          "external_site": "Draft KO localization pending native pass. Domain Distance Scale gives the wiki a clean non-FTL map language."
+          "scanner": "KO LOC HOLD: The domain map uses distance bands, not romantic shortcuts.",
+          "field_note": "KO LOC HOLD: Use scale as pressure. Exact ephemeris can wait for table tuning.",
+          "terminal": "KO LOC HOLD: DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.",
+          "audio": "KO LOC HOLD: Ten light-years is a number. The bill is the story.",
+          "in_game_wiki": "KO LOC HOLD: Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.",
+          "external_site": "KO LOC HOLD: Domain Distance Scale gives the wiki a clean non-FTL map language."
         },
         "he_IL": {
           "title": "Domain Distance Scale",
-          "scanner": "Draft HE localization pending native pass. The domain map uses distance bands, not romantic shortcuts.",
-          "field_note": "Draft HE localization pending native pass. Use scale as pressure. Exact ephemeris can wait for table tuning.",
-          "terminal": "Draft HE localization pending native pass. DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.",
-          "audio": "Draft HE localization pending native pass. Ten light-years is a number. The bill is the story.",
-          "in_game_wiki": "Draft HE localization pending native pass. Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.",
-          "external_site": "Draft HE localization pending native pass. Domain Distance Scale gives the wiki a clean non-FTL map language."
+          "scanner": "HE LOC HOLD: The domain map uses distance bands, not romantic shortcuts.",
+          "field_note": "HE LOC HOLD: Use scale as pressure. Exact ephemeris can wait for table tuning.",
+          "terminal": "HE LOC HOLD: DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.",
+          "audio": "HE LOC HOLD: Ten light-years is a number. The bill is the story.",
+          "in_game_wiki": "HE LOC HOLD: Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.",
+          "external_site": "HE LOC HOLD: Domain Distance Scale gives the wiki a clean non-FTL map language."
         },
         "pt_BR": {
           "title": "Domain Distance Scale",
-          "scanner": "Draft PT localization pending native pass. The domain map uses distance bands, not romantic shortcuts.",
-          "field_note": "Draft PT localization pending native pass. Use scale as pressure. Exact ephemeris can wait for table tuning.",
-          "terminal": "Draft PT localization pending native pass. DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.",
-          "audio": "Draft PT localization pending native pass. Ten light-years is a number. The bill is the story.",
-          "in_game_wiki": "Draft PT localization pending native pass. Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.",
-          "external_site": "Draft PT localization pending native pass. Domain Distance Scale gives the wiki a clean non-FTL map language."
+          "scanner": "PT LOC HOLD: The domain map uses distance bands, not romantic shortcuts.",
+          "field_note": "PT LOC HOLD: Use scale as pressure. Exact ephemeris can wait for table tuning.",
+          "terminal": "PT LOC HOLD: DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.",
+          "audio": "PT LOC HOLD: Ten light-years is a number. The bill is the story.",
+          "in_game_wiki": "PT LOC HOLD: Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.",
+          "external_site": "PT LOC HOLD: Domain Distance Scale gives the wiki a clean non-FTL map language."
         },
         "nl_NL": {
           "title": "Domain Distance Scale",
-          "scanner": "Draft NL localization pending native pass. The domain map uses distance bands, not romantic shortcuts.",
-          "field_note": "Draft NL localization pending native pass. Use scale as pressure. Exact ephemeris can wait for table tuning.",
-          "terminal": "Draft NL localization pending native pass. DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.",
-          "audio": "Draft NL localization pending native pass. Ten light-years is a number. The bill is the story.",
-          "in_game_wiki": "Draft NL localization pending native pass. Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.",
-          "external_site": "Draft NL localization pending native pass. Domain Distance Scale gives the wiki a clean non-FTL map language."
+          "scanner": "NL LOC HOLD: The domain map uses distance bands, not romantic shortcuts.",
+          "field_note": "NL LOC HOLD: Use scale as pressure. Exact ephemeris can wait for table tuning.",
+          "terminal": "NL LOC HOLD: DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are written as route bands. Ran/Aegir remains a roughly 10.5 light-year class target.",
+          "audio": "NL LOC HOLD: Ten light-years is a number. The bill is the story.",
+          "in_game_wiki": "NL LOC HOLD: Domain distance is a gameplay grammar: which authority can speak, which ship can move, and which answer arrives too late.",
+          "external_site": "NL LOC HOLD: Domain Distance Scale gives the wiki a clean non-FTL map language."
         }
       }
     },
@@ -191,130 +191,130 @@
           "external_site": "Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat."
         },
         "ru_RU": {
-          "title": "Draft RU localization pending native pass. Population And Authority Scale",
-          "scanner": "Draft RU localization pending native pass. Population scale is background. Authority pressure is what the player feels.",
-          "field_note": "Draft RU localization pending native pass. Do not turn the setting into census space opera.",
-          "terminal": "Draft RU localization pending native pass. AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.",
-          "audio": "Draft RU localization pending native pass. The largest domain is not the nearest hand.",
-          "in_game_wiki": "Draft RU localization pending native pass. Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.",
-          "external_site": "Draft RU localization pending native pass. Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat."
+          "title": "RU LOC HOLD: Population And Authority Scale",
+          "scanner": "RU LOC HOLD: Population scale is background. Authority pressure is what the player feels.",
+          "field_note": "RU LOC HOLD: Do not turn the setting into census space opera.",
+          "terminal": "RU LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.",
+          "audio": "RU LOC HOLD: The largest domain is not the nearest hand.",
+          "in_game_wiki": "RU LOC HOLD: Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.",
+          "external_site": "RU LOC HOLD: Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat."
         },
         "ja_JP": {
-          "title": "Draft JA localization pending native pass. Population And Authority Scale",
-          "scanner": "Draft JA localization pending native pass. Population scale is background. Authority pressure is what the player feels.",
-          "field_note": "Draft JA localization pending native pass. Do not turn the setting into census space opera.",
-          "terminal": "Draft JA localization pending native pass. AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.",
-          "audio": "Draft JA localization pending native pass. The largest domain is not the nearest hand.",
-          "in_game_wiki": "Draft JA localization pending native pass. Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.",
-          "external_site": "Draft JA localization pending native pass. Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat."
+          "title": "JA LOC HOLD: Population And Authority Scale",
+          "scanner": "JA LOC HOLD: Population scale is background. Authority pressure is what the player feels.",
+          "field_note": "JA LOC HOLD: Do not turn the setting into census space opera.",
+          "terminal": "JA LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.",
+          "audio": "JA LOC HOLD: The largest domain is not the nearest hand.",
+          "in_game_wiki": "JA LOC HOLD: Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.",
+          "external_site": "JA LOC HOLD: Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat."
         },
         "zh_CN": {
-          "title": "Draft ZH localization pending native pass. Population And Authority Scale",
-          "scanner": "Draft ZH localization pending native pass. Population scale is background. Authority pressure is what the player feels.",
-          "field_note": "Draft ZH localization pending native pass. Do not turn the setting into census space opera.",
-          "terminal": "Draft ZH localization pending native pass. AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.",
-          "audio": "Draft ZH localization pending native pass. The largest domain is not the nearest hand.",
-          "in_game_wiki": "Draft ZH localization pending native pass. Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.",
-          "external_site": "Draft ZH localization pending native pass. Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat."
+          "title": "ZH LOC HOLD: Population And Authority Scale",
+          "scanner": "ZH LOC HOLD: Population scale is background. Authority pressure is what the player feels.",
+          "field_note": "ZH LOC HOLD: Do not turn the setting into census space opera.",
+          "terminal": "ZH LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.",
+          "audio": "ZH LOC HOLD: The largest domain is not the nearest hand.",
+          "in_game_wiki": "ZH LOC HOLD: Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.",
+          "external_site": "ZH LOC HOLD: Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Population And Authority Scale",
-          "scanner": "Draft FR localization pending native pass. Population scale is background. Authority pressure is what the player feels.",
-          "field_note": "Draft FR localization pending native pass. Do not turn the setting into census space opera.",
-          "terminal": "Draft FR localization pending native pass. AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.",
-          "audio": "Draft FR localization pending native pass. The largest domain is not the nearest hand.",
-          "in_game_wiki": "Draft FR localization pending native pass. Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.",
-          "external_site": "Draft FR localization pending native pass. Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat."
+          "title": "FR LOC HOLD: Population And Authority Scale",
+          "scanner": "FR LOC HOLD: Population scale is background. Authority pressure is what the player feels.",
+          "field_note": "FR LOC HOLD: Do not turn the setting into census space opera.",
+          "terminal": "FR LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.",
+          "audio": "FR LOC HOLD: The largest domain is not the nearest hand.",
+          "in_game_wiki": "FR LOC HOLD: Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.",
+          "external_site": "FR LOC HOLD: Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Population And Authority Scale",
-          "scanner": "Draft ES localization pending native pass. Population scale is background. Authority pressure is what the player feels.",
-          "field_note": "Draft ES localization pending native pass. Do not turn the setting into census space opera.",
-          "terminal": "Draft ES localization pending native pass. AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.",
-          "audio": "Draft ES localization pending native pass. The largest domain is not the nearest hand.",
-          "in_game_wiki": "Draft ES localization pending native pass. Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.",
-          "external_site": "Draft ES localization pending native pass. Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat."
+          "title": "ES LOC HOLD: Population And Authority Scale",
+          "scanner": "ES LOC HOLD: Population scale is background. Authority pressure is what the player feels.",
+          "field_note": "ES LOC HOLD: Do not turn the setting into census space opera.",
+          "terminal": "ES LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.",
+          "audio": "ES LOC HOLD: The largest domain is not the nearest hand.",
+          "in_game_wiki": "ES LOC HOLD: Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.",
+          "external_site": "ES LOC HOLD: Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Population And Authority Scale",
-          "scanner": "Draft DE localization pending native pass. Population scale is background. Authority pressure is what the player feels.",
-          "field_note": "Draft DE localization pending native pass. Do not turn the setting into census space opera.",
-          "terminal": "Draft DE localization pending native pass. AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.",
-          "audio": "Draft DE localization pending native pass. The largest domain is not the nearest hand.",
-          "in_game_wiki": "Draft DE localization pending native pass. Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.",
-          "external_site": "Draft DE localization pending native pass. Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat."
+          "title": "DE LOC HOLD: Population And Authority Scale",
+          "scanner": "DE LOC HOLD: Population scale is background. Authority pressure is what the player feels.",
+          "field_note": "DE LOC HOLD: Do not turn the setting into census space opera.",
+          "terminal": "DE LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.",
+          "audio": "DE LOC HOLD: The largest domain is not the nearest hand.",
+          "in_game_wiki": "DE LOC HOLD: Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.",
+          "external_site": "DE LOC HOLD: Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Population And Authority Scale",
-          "scanner": "Draft PL localization pending native pass. Population scale is background. Authority pressure is what the player feels.",
-          "field_note": "Draft PL localization pending native pass. Do not turn the setting into census space opera.",
-          "terminal": "Draft PL localization pending native pass. AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.",
-          "audio": "Draft PL localization pending native pass. The largest domain is not the nearest hand.",
-          "in_game_wiki": "Draft PL localization pending native pass. Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.",
-          "external_site": "Draft PL localization pending native pass. Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat."
+          "title": "PL LOC HOLD: Population And Authority Scale",
+          "scanner": "PL LOC HOLD: Population scale is background. Authority pressure is what the player feels.",
+          "field_note": "PL LOC HOLD: Do not turn the setting into census space opera.",
+          "terminal": "PL LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.",
+          "audio": "PL LOC HOLD: The largest domain is not the nearest hand.",
+          "in_game_wiki": "PL LOC HOLD: Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.",
+          "external_site": "PL LOC HOLD: Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat."
         },
         "uk_UA": {
-          "title": "Draft UK localization pending native pass. Population And Authority Scale",
-          "scanner": "Draft UK localization pending native pass. Population scale is background. Authority pressure is what the player feels.",
-          "field_note": "Draft UK localization pending native pass. Do not turn the setting into census space opera.",
-          "terminal": "Draft UK localization pending native pass. AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.",
-          "audio": "Draft UK localization pending native pass. The largest domain is not the nearest hand.",
-          "in_game_wiki": "Draft UK localization pending native pass. Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.",
-          "external_site": "Draft UK localization pending native pass. Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat."
+          "title": "UK LOC HOLD: Population And Authority Scale",
+          "scanner": "UK LOC HOLD: Population scale is background. Authority pressure is what the player feels.",
+          "field_note": "UK LOC HOLD: Do not turn the setting into census space opera.",
+          "terminal": "UK LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.",
+          "audio": "UK LOC HOLD: The largest domain is not the nearest hand.",
+          "in_game_wiki": "UK LOC HOLD: Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.",
+          "external_site": "UK LOC HOLD: Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Population And Authority Scale",
-          "scanner": "Draft AR localization pending native pass. Population scale is background. Authority pressure is what the player feels.",
-          "field_note": "Draft AR localization pending native pass. Do not turn the setting into census space opera.",
-          "terminal": "Draft AR localization pending native pass. AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.",
-          "audio": "Draft AR localization pending native pass. The largest domain is not the nearest hand.",
-          "in_game_wiki": "Draft AR localization pending native pass. Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.",
-          "external_site": "Draft AR localization pending native pass. Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat."
+          "title": "AR LOC HOLD: Population And Authority Scale",
+          "scanner": "AR LOC HOLD: Population scale is background. Authority pressure is what the player feels.",
+          "field_note": "AR LOC HOLD: Do not turn the setting into census space opera.",
+          "terminal": "AR LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.",
+          "audio": "AR LOC HOLD: The largest domain is not the nearest hand.",
+          "in_game_wiki": "AR LOC HOLD: Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.",
+          "external_site": "AR LOC HOLD: Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Population And Authority Scale",
-          "scanner": "Draft ID localization pending native pass. Population scale is background. Authority pressure is what the player feels.",
-          "field_note": "Draft ID localization pending native pass. Do not turn the setting into census space opera.",
-          "terminal": "Draft ID localization pending native pass. AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.",
-          "audio": "Draft ID localization pending native pass. The largest domain is not the nearest hand.",
-          "in_game_wiki": "Draft ID localization pending native pass. Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.",
-          "external_site": "Draft ID localization pending native pass. Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat."
+          "title": "ID LOC HOLD: Population And Authority Scale",
+          "scanner": "ID LOC HOLD: Population scale is background. Authority pressure is what the player feels.",
+          "field_note": "ID LOC HOLD: Do not turn the setting into census space opera.",
+          "terminal": "ID LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.",
+          "audio": "ID LOC HOLD: The largest domain is not the nearest hand.",
+          "in_game_wiki": "ID LOC HOLD: Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.",
+          "external_site": "ID LOC HOLD: Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Population And Authority Scale",
-          "scanner": "Draft KO localization pending native pass. Population scale is background. Authority pressure is what the player feels.",
-          "field_note": "Draft KO localization pending native pass. Do not turn the setting into census space opera.",
-          "terminal": "Draft KO localization pending native pass. AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.",
-          "audio": "Draft KO localization pending native pass. The largest domain is not the nearest hand.",
-          "in_game_wiki": "Draft KO localization pending native pass. Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.",
-          "external_site": "Draft KO localization pending native pass. Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat."
+          "title": "KO LOC HOLD: Population And Authority Scale",
+          "scanner": "KO LOC HOLD: Population scale is background. Authority pressure is what the player feels.",
+          "field_note": "KO LOC HOLD: Do not turn the setting into census space opera.",
+          "terminal": "KO LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.",
+          "audio": "KO LOC HOLD: The largest domain is not the nearest hand.",
+          "in_game_wiki": "KO LOC HOLD: Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.",
+          "external_site": "KO LOC HOLD: Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Population And Authority Scale",
-          "scanner": "Draft HE localization pending native pass. Population scale is background. Authority pressure is what the player feels.",
-          "field_note": "Draft HE localization pending native pass. Do not turn the setting into census space opera.",
-          "terminal": "Draft HE localization pending native pass. AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.",
-          "audio": "Draft HE localization pending native pass. The largest domain is not the nearest hand.",
-          "in_game_wiki": "Draft HE localization pending native pass. Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.",
-          "external_site": "Draft HE localization pending native pass. Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat."
+          "title": "HE LOC HOLD: Population And Authority Scale",
+          "scanner": "HE LOC HOLD: Population scale is background. Authority pressure is what the player feels.",
+          "field_note": "HE LOC HOLD: Do not turn the setting into census space opera.",
+          "terminal": "HE LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.",
+          "audio": "HE LOC HOLD: The largest domain is not the nearest hand.",
+          "in_game_wiki": "HE LOC HOLD: Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.",
+          "external_site": "HE LOC HOLD: Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Population And Authority Scale",
-          "scanner": "Draft PT localization pending native pass. Population scale is background. Authority pressure is what the player feels.",
-          "field_note": "Draft PT localization pending native pass. Do not turn the setting into census space opera.",
-          "terminal": "Draft PT localization pending native pass. AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.",
-          "audio": "Draft PT localization pending native pass. The largest domain is not the nearest hand.",
-          "in_game_wiki": "Draft PT localization pending native pass. Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.",
-          "external_site": "Draft PT localization pending native pass. Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat."
+          "title": "PT LOC HOLD: Population And Authority Scale",
+          "scanner": "PT LOC HOLD: Population scale is background. Authority pressure is what the player feels.",
+          "field_note": "PT LOC HOLD: Do not turn the setting into census space opera.",
+          "terminal": "PT LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.",
+          "audio": "PT LOC HOLD: The largest domain is not the nearest hand.",
+          "in_game_wiki": "PT LOC HOLD: Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.",
+          "external_site": "PT LOC HOLD: Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Population And Authority Scale",
-          "scanner": "Draft NL localization pending native pass. Population scale is background. Authority pressure is what the player feels.",
-          "field_note": "Draft NL localization pending native pass. Do not turn the setting into census space opera.",
-          "terminal": "Draft NL localization pending native pass. AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.",
-          "audio": "Draft NL localization pending native pass. The largest domain is not the nearest hand.",
-          "in_game_wiki": "Draft NL localization pending native pass. Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.",
-          "external_site": "Draft NL localization pending native pass. Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat."
+          "title": "NL LOC HOLD: Population And Authority Scale",
+          "scanner": "NL LOC HOLD: Population scale is background. Authority pressure is what the player feels.",
+          "field_note": "NL LOC HOLD: Do not turn the setting into census space opera.",
+          "terminal": "NL LOC HOLD: AUTHORITY SCALE: Sol certifies ownership, Centauri legitimizes charters, Barnard supplies dead-claim labor, Tau Ceti can publish evidence, Luyten proves custody, Aegir executes the dirty claim.",
+          "audio": "NL LOC HOLD: The largest domain is not the nearest hand.",
+          "in_game_wiki": "NL LOC HOLD: Population numbers stay approximate, but authority roles remain locked so contracts, terminals, and public records describe the same power structure.",
+          "external_site": "NL LOC HOLD: Population And Authority Scale describes human space by pressure routes instead of encyclopedia bloat."
         }
       }
     },
@@ -346,130 +346,130 @@
           "external_site": "Public Route Names provides web/wiki-ready lane labels for the sparse frontier."
         },
         "ru_RU": {
-          "title": "Draft RU localization pending native pass. Public Route Names",
-          "scanner": "Draft RU localization pending native pass. Route names make travel feel owned before it feels adventurous.",
-          "field_note": "Draft RU localization pending native pass. Every route name should sound like a tariff, not a wonder.",
-          "terminal": "Draft RU localization pending native pass. ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.",
-          "audio": "Draft RU localization pending native pass. A route is a road only after somebody sells the delay twice.",
-          "in_game_wiki": "Draft RU localization pending native pass. Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.",
-          "external_site": "Draft RU localization pending native pass. Public Route Names provides web/wiki-ready lane labels for the sparse frontier."
+          "title": "RU LOC HOLD: Public Route Names",
+          "scanner": "RU LOC HOLD: Route names make travel feel owned before it feels adventurous.",
+          "field_note": "RU LOC HOLD: Every route name should sound like a tariff, not a wonder.",
+          "terminal": "RU LOC HOLD: ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.",
+          "audio": "RU LOC HOLD: A route is a road only after somebody sells the delay twice.",
+          "in_game_wiki": "RU LOC HOLD: Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.",
+          "external_site": "RU LOC HOLD: Public Route Names provides web/wiki-ready lane labels for the sparse frontier."
         },
         "ja_JP": {
-          "title": "Draft JA localization pending native pass. Public Route Names",
-          "scanner": "Draft JA localization pending native pass. Route names make travel feel owned before it feels adventurous.",
-          "field_note": "Draft JA localization pending native pass. Every route name should sound like a tariff, not a wonder.",
-          "terminal": "Draft JA localization pending native pass. ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.",
-          "audio": "Draft JA localization pending native pass. A route is a road only after somebody sells the delay twice.",
-          "in_game_wiki": "Draft JA localization pending native pass. Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.",
-          "external_site": "Draft JA localization pending native pass. Public Route Names provides web/wiki-ready lane labels for the sparse frontier."
+          "title": "JA LOC HOLD: Public Route Names",
+          "scanner": "JA LOC HOLD: Route names make travel feel owned before it feels adventurous.",
+          "field_note": "JA LOC HOLD: Every route name should sound like a tariff, not a wonder.",
+          "terminal": "JA LOC HOLD: ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.",
+          "audio": "JA LOC HOLD: A route is a road only after somebody sells the delay twice.",
+          "in_game_wiki": "JA LOC HOLD: Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.",
+          "external_site": "JA LOC HOLD: Public Route Names provides web/wiki-ready lane labels for the sparse frontier."
         },
         "zh_CN": {
-          "title": "Draft ZH localization pending native pass. Public Route Names",
-          "scanner": "Draft ZH localization pending native pass. Route names make travel feel owned before it feels adventurous.",
-          "field_note": "Draft ZH localization pending native pass. Every route name should sound like a tariff, not a wonder.",
-          "terminal": "Draft ZH localization pending native pass. ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.",
-          "audio": "Draft ZH localization pending native pass. A route is a road only after somebody sells the delay twice.",
-          "in_game_wiki": "Draft ZH localization pending native pass. Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.",
-          "external_site": "Draft ZH localization pending native pass. Public Route Names provides web/wiki-ready lane labels for the sparse frontier."
+          "title": "ZH LOC HOLD: Public Route Names",
+          "scanner": "ZH LOC HOLD: Route names make travel feel owned before it feels adventurous.",
+          "field_note": "ZH LOC HOLD: Every route name should sound like a tariff, not a wonder.",
+          "terminal": "ZH LOC HOLD: ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.",
+          "audio": "ZH LOC HOLD: A route is a road only after somebody sells the delay twice.",
+          "in_game_wiki": "ZH LOC HOLD: Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.",
+          "external_site": "ZH LOC HOLD: Public Route Names provides web/wiki-ready lane labels for the sparse frontier."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Public Route Names",
-          "scanner": "Draft FR localization pending native pass. Route names make travel feel owned before it feels adventurous.",
-          "field_note": "Draft FR localization pending native pass. Every route name should sound like a tariff, not a wonder.",
-          "terminal": "Draft FR localization pending native pass. ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.",
-          "audio": "Draft FR localization pending native pass. A route is a road only after somebody sells the delay twice.",
-          "in_game_wiki": "Draft FR localization pending native pass. Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.",
-          "external_site": "Draft FR localization pending native pass. Public Route Names provides web/wiki-ready lane labels for the sparse frontier."
+          "title": "FR LOC HOLD: Public Route Names",
+          "scanner": "FR LOC HOLD: Route names make travel feel owned before it feels adventurous.",
+          "field_note": "FR LOC HOLD: Every route name should sound like a tariff, not a wonder.",
+          "terminal": "FR LOC HOLD: ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.",
+          "audio": "FR LOC HOLD: A route is a road only after somebody sells the delay twice.",
+          "in_game_wiki": "FR LOC HOLD: Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.",
+          "external_site": "FR LOC HOLD: Public Route Names provides web/wiki-ready lane labels for the sparse frontier."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Public Route Names",
-          "scanner": "Draft ES localization pending native pass. Route names make travel feel owned before it feels adventurous.",
-          "field_note": "Draft ES localization pending native pass. Every route name should sound like a tariff, not a wonder.",
-          "terminal": "Draft ES localization pending native pass. ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.",
-          "audio": "Draft ES localization pending native pass. A route is a road only after somebody sells the delay twice.",
-          "in_game_wiki": "Draft ES localization pending native pass. Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.",
-          "external_site": "Draft ES localization pending native pass. Public Route Names provides web/wiki-ready lane labels for the sparse frontier."
+          "title": "ES LOC HOLD: Public Route Names",
+          "scanner": "ES LOC HOLD: Route names make travel feel owned before it feels adventurous.",
+          "field_note": "ES LOC HOLD: Every route name should sound like a tariff, not a wonder.",
+          "terminal": "ES LOC HOLD: ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.",
+          "audio": "ES LOC HOLD: A route is a road only after somebody sells the delay twice.",
+          "in_game_wiki": "ES LOC HOLD: Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.",
+          "external_site": "ES LOC HOLD: Public Route Names provides web/wiki-ready lane labels for the sparse frontier."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Public Route Names",
-          "scanner": "Draft DE localization pending native pass. Route names make travel feel owned before it feels adventurous.",
-          "field_note": "Draft DE localization pending native pass. Every route name should sound like a tariff, not a wonder.",
-          "terminal": "Draft DE localization pending native pass. ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.",
-          "audio": "Draft DE localization pending native pass. A route is a road only after somebody sells the delay twice.",
-          "in_game_wiki": "Draft DE localization pending native pass. Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.",
-          "external_site": "Draft DE localization pending native pass. Public Route Names provides web/wiki-ready lane labels for the sparse frontier."
+          "title": "DE LOC HOLD: Public Route Names",
+          "scanner": "DE LOC HOLD: Route names make travel feel owned before it feels adventurous.",
+          "field_note": "DE LOC HOLD: Every route name should sound like a tariff, not a wonder.",
+          "terminal": "DE LOC HOLD: ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.",
+          "audio": "DE LOC HOLD: A route is a road only after somebody sells the delay twice.",
+          "in_game_wiki": "DE LOC HOLD: Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.",
+          "external_site": "DE LOC HOLD: Public Route Names provides web/wiki-ready lane labels for the sparse frontier."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Public Route Names",
-          "scanner": "Draft PL localization pending native pass. Route names make travel feel owned before it feels adventurous.",
-          "field_note": "Draft PL localization pending native pass. Every route name should sound like a tariff, not a wonder.",
-          "terminal": "Draft PL localization pending native pass. ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.",
-          "audio": "Draft PL localization pending native pass. A route is a road only after somebody sells the delay twice.",
-          "in_game_wiki": "Draft PL localization pending native pass. Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.",
-          "external_site": "Draft PL localization pending native pass. Public Route Names provides web/wiki-ready lane labels for the sparse frontier."
+          "title": "PL LOC HOLD: Public Route Names",
+          "scanner": "PL LOC HOLD: Route names make travel feel owned before it feels adventurous.",
+          "field_note": "PL LOC HOLD: Every route name should sound like a tariff, not a wonder.",
+          "terminal": "PL LOC HOLD: ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.",
+          "audio": "PL LOC HOLD: A route is a road only after somebody sells the delay twice.",
+          "in_game_wiki": "PL LOC HOLD: Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.",
+          "external_site": "PL LOC HOLD: Public Route Names provides web/wiki-ready lane labels for the sparse frontier."
         },
         "uk_UA": {
-          "title": "Draft UK localization pending native pass. Public Route Names",
-          "scanner": "Draft UK localization pending native pass. Route names make travel feel owned before it feels adventurous.",
-          "field_note": "Draft UK localization pending native pass. Every route name should sound like a tariff, not a wonder.",
-          "terminal": "Draft UK localization pending native pass. ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.",
-          "audio": "Draft UK localization pending native pass. A route is a road only after somebody sells the delay twice.",
-          "in_game_wiki": "Draft UK localization pending native pass. Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.",
-          "external_site": "Draft UK localization pending native pass. Public Route Names provides web/wiki-ready lane labels for the sparse frontier."
+          "title": "UK LOC HOLD: Public Route Names",
+          "scanner": "UK LOC HOLD: Route names make travel feel owned before it feels adventurous.",
+          "field_note": "UK LOC HOLD: Every route name should sound like a tariff, not a wonder.",
+          "terminal": "UK LOC HOLD: ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.",
+          "audio": "UK LOC HOLD: A route is a road only after somebody sells the delay twice.",
+          "in_game_wiki": "UK LOC HOLD: Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.",
+          "external_site": "UK LOC HOLD: Public Route Names provides web/wiki-ready lane labels for the sparse frontier."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Public Route Names",
-          "scanner": "Draft AR localization pending native pass. Route names make travel feel owned before it feels adventurous.",
-          "field_note": "Draft AR localization pending native pass. Every route name should sound like a tariff, not a wonder.",
-          "terminal": "Draft AR localization pending native pass. ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.",
-          "audio": "Draft AR localization pending native pass. A route is a road only after somebody sells the delay twice.",
-          "in_game_wiki": "Draft AR localization pending native pass. Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.",
-          "external_site": "Draft AR localization pending native pass. Public Route Names provides web/wiki-ready lane labels for the sparse frontier."
+          "title": "AR LOC HOLD: Public Route Names",
+          "scanner": "AR LOC HOLD: Route names make travel feel owned before it feels adventurous.",
+          "field_note": "AR LOC HOLD: Every route name should sound like a tariff, not a wonder.",
+          "terminal": "AR LOC HOLD: ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.",
+          "audio": "AR LOC HOLD: A route is a road only after somebody sells the delay twice.",
+          "in_game_wiki": "AR LOC HOLD: Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.",
+          "external_site": "AR LOC HOLD: Public Route Names provides web/wiki-ready lane labels for the sparse frontier."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Public Route Names",
-          "scanner": "Draft ID localization pending native pass. Route names make travel feel owned before it feels adventurous.",
-          "field_note": "Draft ID localization pending native pass. Every route name should sound like a tariff, not a wonder.",
-          "terminal": "Draft ID localization pending native pass. ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.",
-          "audio": "Draft ID localization pending native pass. A route is a road only after somebody sells the delay twice.",
-          "in_game_wiki": "Draft ID localization pending native pass. Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.",
-          "external_site": "Draft ID localization pending native pass. Public Route Names provides web/wiki-ready lane labels for the sparse frontier."
+          "title": "ID LOC HOLD: Public Route Names",
+          "scanner": "ID LOC HOLD: Route names make travel feel owned before it feels adventurous.",
+          "field_note": "ID LOC HOLD: Every route name should sound like a tariff, not a wonder.",
+          "terminal": "ID LOC HOLD: ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.",
+          "audio": "ID LOC HOLD: A route is a road only after somebody sells the delay twice.",
+          "in_game_wiki": "ID LOC HOLD: Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.",
+          "external_site": "ID LOC HOLD: Public Route Names provides web/wiki-ready lane labels for the sparse frontier."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Public Route Names",
-          "scanner": "Draft KO localization pending native pass. Route names make travel feel owned before it feels adventurous.",
-          "field_note": "Draft KO localization pending native pass. Every route name should sound like a tariff, not a wonder.",
-          "terminal": "Draft KO localization pending native pass. ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.",
-          "audio": "Draft KO localization pending native pass. A route is a road only after somebody sells the delay twice.",
-          "in_game_wiki": "Draft KO localization pending native pass. Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.",
-          "external_site": "Draft KO localization pending native pass. Public Route Names provides web/wiki-ready lane labels for the sparse frontier."
+          "title": "KO LOC HOLD: Public Route Names",
+          "scanner": "KO LOC HOLD: Route names make travel feel owned before it feels adventurous.",
+          "field_note": "KO LOC HOLD: Every route name should sound like a tariff, not a wonder.",
+          "terminal": "KO LOC HOLD: ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.",
+          "audio": "KO LOC HOLD: A route is a road only after somebody sells the delay twice.",
+          "in_game_wiki": "KO LOC HOLD: Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.",
+          "external_site": "KO LOC HOLD: Public Route Names provides web/wiki-ready lane labels for the sparse frontier."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Public Route Names",
-          "scanner": "Draft HE localization pending native pass. Route names make travel feel owned before it feels adventurous.",
-          "field_note": "Draft HE localization pending native pass. Every route name should sound like a tariff, not a wonder.",
-          "terminal": "Draft HE localization pending native pass. ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.",
-          "audio": "Draft HE localization pending native pass. A route is a road only after somebody sells the delay twice.",
-          "in_game_wiki": "Draft HE localization pending native pass. Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.",
-          "external_site": "Draft HE localization pending native pass. Public Route Names provides web/wiki-ready lane labels for the sparse frontier."
+          "title": "HE LOC HOLD: Public Route Names",
+          "scanner": "HE LOC HOLD: Route names make travel feel owned before it feels adventurous.",
+          "field_note": "HE LOC HOLD: Every route name should sound like a tariff, not a wonder.",
+          "terminal": "HE LOC HOLD: ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.",
+          "audio": "HE LOC HOLD: A route is a road only after somebody sells the delay twice.",
+          "in_game_wiki": "HE LOC HOLD: Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.",
+          "external_site": "HE LOC HOLD: Public Route Names provides web/wiki-ready lane labels for the sparse frontier."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Public Route Names",
-          "scanner": "Draft PT localization pending native pass. Route names make travel feel owned before it feels adventurous.",
-          "field_note": "Draft PT localization pending native pass. Every route name should sound like a tariff, not a wonder.",
-          "terminal": "Draft PT localization pending native pass. ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.",
-          "audio": "Draft PT localization pending native pass. A route is a road only after somebody sells the delay twice.",
-          "in_game_wiki": "Draft PT localization pending native pass. Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.",
-          "external_site": "Draft PT localization pending native pass. Public Route Names provides web/wiki-ready lane labels for the sparse frontier."
+          "title": "PT LOC HOLD: Public Route Names",
+          "scanner": "PT LOC HOLD: Route names make travel feel owned before it feels adventurous.",
+          "field_note": "PT LOC HOLD: Every route name should sound like a tariff, not a wonder.",
+          "terminal": "PT LOC HOLD: ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.",
+          "audio": "PT LOC HOLD: A route is a road only after somebody sells the delay twice.",
+          "in_game_wiki": "PT LOC HOLD: Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.",
+          "external_site": "PT LOC HOLD: Public Route Names provides web/wiki-ready lane labels for the sparse frontier."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Public Route Names",
-          "scanner": "Draft NL localization pending native pass. Route names make travel feel owned before it feels adventurous.",
-          "field_note": "Draft NL localization pending native pass. Every route name should sound like a tariff, not a wonder.",
-          "terminal": "Draft NL localization pending native pass. ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.",
-          "audio": "Draft NL localization pending native pass. A route is a road only after somebody sells the delay twice.",
-          "in_game_wiki": "Draft NL localization pending native pass. Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.",
-          "external_site": "Draft NL localization pending native pass. Public Route Names provides web/wiki-ready lane labels for the sparse frontier."
+          "title": "NL LOC HOLD: Public Route Names",
+          "scanner": "NL LOC HOLD: Route names make travel feel owned before it feels adventurous.",
+          "field_note": "NL LOC HOLD: Every route name should sound like a tariff, not a wonder.",
+          "terminal": "NL LOC HOLD: ROUTE NAMES: Sol-Centauri Charter Spine, Barnard Breaker Run, Luyten Packet Ladder, Tau Public Ledger Lane, and Ran Long Claim are working public labels.",
+          "audio": "NL LOC HOLD: A route is a road only after somebody sells the delay twice.",
+          "in_game_wiki": "NL LOC HOLD: Public route names keep contracts, map labels, cargo records, and travel windows consistent without forcing the player to study a full atlas.",
+          "external_site": "NL LOC HOLD: Public Route Names provides web/wiki-ready lane labels for the sparse frontier."
         }
       }
     },
@@ -501,130 +501,130 @@
           "external_site": "Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock."
         },
         "ru_RU": {
-          "title": "Draft RU localization pending native pass. Transit Duration Bands",
-          "scanner": "Draft RU localization pending native pass. The same route means different time for packets, freight and people.",
-          "field_note": "Draft RU localization pending native pass. Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.",
-          "terminal": "Draft RU localization pending native pass. DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.",
-          "audio": "Draft RU localization pending native pass. Cargo can arrive before mercy. That is the doctrine.",
-          "in_game_wiki": "Draft RU localization pending native pass. Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.",
-          "external_site": "Draft RU localization pending native pass. Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock."
+          "title": "RU LOC HOLD: Transit Duration Bands",
+          "scanner": "RU LOC HOLD: The same route means different time for packets, freight and people.",
+          "field_note": "RU LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.",
+          "terminal": "RU LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.",
+          "audio": "RU LOC HOLD: Cargo can arrive before mercy. That is the doctrine.",
+          "in_game_wiki": "RU LOC HOLD: Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.",
+          "external_site": "RU LOC HOLD: Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock."
         },
         "ja_JP": {
-          "title": "Draft JA localization pending native pass. Transit Duration Bands",
-          "scanner": "Draft JA localization pending native pass. The same route means different time for packets, freight and people.",
-          "field_note": "Draft JP localization pending native pass. Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.",
-          "terminal": "Draft JA localization pending native pass. DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.",
-          "audio": "Draft JA localization pending native pass. Cargo can arrive before mercy. That is the doctrine.",
-          "in_game_wiki": "Draft JA localization pending native pass. Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.",
-          "external_site": "Draft JP localization pending native pass. Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock."
+          "title": "JA LOC HOLD: Transit Duration Bands",
+          "scanner": "JA LOC HOLD: The same route means different time for packets, freight and people.",
+          "field_note": "JP LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.",
+          "terminal": "JA LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.",
+          "audio": "JA LOC HOLD: Cargo can arrive before mercy. That is the doctrine.",
+          "in_game_wiki": "JA LOC HOLD: Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.",
+          "external_site": "JP LOC HOLD: Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock."
         },
         "zh_CN": {
-          "title": "Draft ZH localization pending native pass. Transit Duration Bands",
-          "scanner": "Draft ZH localization pending native pass. The same route means different time for packets, freight and people.",
-          "field_note": "Draft CN localization pending native pass. Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.",
-          "terminal": "Draft ZH localization pending native pass. DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.",
-          "audio": "Draft ZH localization pending native pass. Cargo can arrive before mercy. That is the doctrine.",
-          "in_game_wiki": "Draft ZH localization pending native pass. Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.",
-          "external_site": "Draft CN localization pending native pass. Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock."
+          "title": "ZH LOC HOLD: Transit Duration Bands",
+          "scanner": "ZH LOC HOLD: The same route means different time for packets, freight and people.",
+          "field_note": "CN LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.",
+          "terminal": "ZH LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.",
+          "audio": "ZH LOC HOLD: Cargo can arrive before mercy. That is the doctrine.",
+          "in_game_wiki": "ZH LOC HOLD: Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.",
+          "external_site": "CN LOC HOLD: Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Transit Duration Bands",
-          "scanner": "Draft FR localization pending native pass. The same route means different time for packets, freight and people.",
-          "field_note": "Draft FR localization pending native pass. Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.",
-          "terminal": "Draft FR localization pending native pass. DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.",
-          "audio": "Draft FR localization pending native pass. Cargo can arrive before mercy. That is the doctrine.",
-          "in_game_wiki": "Draft FR localization pending native pass. Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.",
-          "external_site": "Draft FR localization pending native pass. Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock."
+          "title": "FR LOC HOLD: Transit Duration Bands",
+          "scanner": "FR LOC HOLD: The same route means different time for packets, freight and people.",
+          "field_note": "FR LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.",
+          "terminal": "FR LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.",
+          "audio": "FR LOC HOLD: Cargo can arrive before mercy. That is the doctrine.",
+          "in_game_wiki": "FR LOC HOLD: Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.",
+          "external_site": "FR LOC HOLD: Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Transit Duration Bands",
-          "scanner": "Draft ES localization pending native pass. The same route means different time for packets, freight and people.",
-          "field_note": "Draft ES localization pending native pass. Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.",
-          "terminal": "Draft ES localization pending native pass. DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.",
-          "audio": "Draft ES localization pending native pass. Cargo can arrive before mercy. That is the doctrine.",
-          "in_game_wiki": "Draft ES localization pending native pass. Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.",
-          "external_site": "Draft ES localization pending native pass. Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock."
+          "title": "ES LOC HOLD: Transit Duration Bands",
+          "scanner": "ES LOC HOLD: The same route means different time for packets, freight and people.",
+          "field_note": "ES LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.",
+          "terminal": "ES LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.",
+          "audio": "ES LOC HOLD: Cargo can arrive before mercy. That is the doctrine.",
+          "in_game_wiki": "ES LOC HOLD: Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.",
+          "external_site": "ES LOC HOLD: Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Transit Duration Bands",
-          "scanner": "Draft DE localization pending native pass. The same route means different time for packets, freight and people.",
-          "field_note": "Draft DE localization pending native pass. Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.",
-          "terminal": "Draft DE localization pending native pass. DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.",
-          "audio": "Draft DE localization pending native pass. Cargo can arrive before mercy. That is the doctrine.",
-          "in_game_wiki": "Draft DE localization pending native pass. Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.",
-          "external_site": "Draft DE localization pending native pass. Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock."
+          "title": "DE LOC HOLD: Transit Duration Bands",
+          "scanner": "DE LOC HOLD: The same route means different time for packets, freight and people.",
+          "field_note": "DE LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.",
+          "terminal": "DE LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.",
+          "audio": "DE LOC HOLD: Cargo can arrive before mercy. That is the doctrine.",
+          "in_game_wiki": "DE LOC HOLD: Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.",
+          "external_site": "DE LOC HOLD: Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Transit Duration Bands",
-          "scanner": "Draft PL localization pending native pass. The same route means different time for packets, freight and people.",
-          "field_note": "Draft PL localization pending native pass. Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.",
-          "terminal": "Draft PL localization pending native pass. DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.",
-          "audio": "Draft PL localization pending native pass. Cargo can arrive before mercy. That is the doctrine.",
-          "in_game_wiki": "Draft PL localization pending native pass. Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.",
-          "external_site": "Draft PL localization pending native pass. Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock."
+          "title": "PL LOC HOLD: Transit Duration Bands",
+          "scanner": "PL LOC HOLD: The same route means different time for packets, freight and people.",
+          "field_note": "PL LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.",
+          "terminal": "PL LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.",
+          "audio": "PL LOC HOLD: Cargo can arrive before mercy. That is the doctrine.",
+          "in_game_wiki": "PL LOC HOLD: Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.",
+          "external_site": "PL LOC HOLD: Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock."
         },
         "uk_UA": {
-          "title": "Draft UK localization pending native pass. Transit Duration Bands",
-          "scanner": "Draft UK localization pending native pass. The same route means different time for packets, freight and people.",
-          "field_note": "Draft UA localization pending native pass. Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.",
-          "terminal": "Draft UK localization pending native pass. DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.",
-          "audio": "Draft UK localization pending native pass. Cargo can arrive before mercy. That is the doctrine.",
-          "in_game_wiki": "Draft UK localization pending native pass. Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.",
-          "external_site": "Draft UA localization pending native pass. Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock."
+          "title": "UK LOC HOLD: Transit Duration Bands",
+          "scanner": "UK LOC HOLD: The same route means different time for packets, freight and people.",
+          "field_note": "UA LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.",
+          "terminal": "UK LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.",
+          "audio": "UK LOC HOLD: Cargo can arrive before mercy. That is the doctrine.",
+          "in_game_wiki": "UK LOC HOLD: Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.",
+          "external_site": "UA LOC HOLD: Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Transit Duration Bands",
-          "scanner": "Draft AR localization pending native pass. The same route means different time for packets, freight and people.",
-          "field_note": "Draft AR localization pending native pass. Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.",
-          "terminal": "Draft AR localization pending native pass. DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.",
-          "audio": "Draft AR localization pending native pass. Cargo can arrive before mercy. That is the doctrine.",
-          "in_game_wiki": "Draft AR localization pending native pass. Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.",
-          "external_site": "Draft AR localization pending native pass. Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock."
+          "title": "AR LOC HOLD: Transit Duration Bands",
+          "scanner": "AR LOC HOLD: The same route means different time for packets, freight and people.",
+          "field_note": "AR LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.",
+          "terminal": "AR LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.",
+          "audio": "AR LOC HOLD: Cargo can arrive before mercy. That is the doctrine.",
+          "in_game_wiki": "AR LOC HOLD: Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.",
+          "external_site": "AR LOC HOLD: Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Transit Duration Bands",
-          "scanner": "Draft ID localization pending native pass. The same route means different time for packets, freight and people.",
-          "field_note": "Draft ID localization pending native pass. Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.",
-          "terminal": "Draft ID localization pending native pass. DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.",
-          "audio": "Draft ID localization pending native pass. Cargo can arrive before mercy. That is the doctrine.",
-          "in_game_wiki": "Draft ID localization pending native pass. Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.",
-          "external_site": "Draft ID localization pending native pass. Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock."
+          "title": "ID LOC HOLD: Transit Duration Bands",
+          "scanner": "ID LOC HOLD: The same route means different time for packets, freight and people.",
+          "field_note": "ID LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.",
+          "terminal": "ID LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.",
+          "audio": "ID LOC HOLD: Cargo can arrive before mercy. That is the doctrine.",
+          "in_game_wiki": "ID LOC HOLD: Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.",
+          "external_site": "ID LOC HOLD: Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Transit Duration Bands",
-          "scanner": "Draft KO localization pending native pass. The same route means different time for packets, freight and people.",
-          "field_note": "Draft KO localization pending native pass. Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.",
-          "terminal": "Draft KO localization pending native pass. DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.",
-          "audio": "Draft KO localization pending native pass. Cargo can arrive before mercy. That is the doctrine.",
-          "in_game_wiki": "Draft KO localization pending native pass. Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.",
-          "external_site": "Draft KO localization pending native pass. Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock."
+          "title": "KO LOC HOLD: Transit Duration Bands",
+          "scanner": "KO LOC HOLD: The same route means different time for packets, freight and people.",
+          "field_note": "KO LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.",
+          "terminal": "KO LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.",
+          "audio": "KO LOC HOLD: Cargo can arrive before mercy. That is the doctrine.",
+          "in_game_wiki": "KO LOC HOLD: Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.",
+          "external_site": "KO LOC HOLD: Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Transit Duration Bands",
-          "scanner": "Draft HE localization pending native pass. The same route means different time for packets, freight and people.",
-          "field_note": "Draft HE localization pending native pass. Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.",
-          "terminal": "Draft HE localization pending native pass. DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.",
-          "audio": "Draft HE localization pending native pass. Cargo can arrive before mercy. That is the doctrine.",
-          "in_game_wiki": "Draft HE localization pending native pass. Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.",
-          "external_site": "Draft HE localization pending native pass. Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock."
+          "title": "HE LOC HOLD: Transit Duration Bands",
+          "scanner": "HE LOC HOLD: The same route means different time for packets, freight and people.",
+          "field_note": "HE LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.",
+          "terminal": "HE LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.",
+          "audio": "HE LOC HOLD: Cargo can arrive before mercy. That is the doctrine.",
+          "in_game_wiki": "HE LOC HOLD: Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.",
+          "external_site": "HE LOC HOLD: Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Transit Duration Bands",
-          "scanner": "Draft PT localization pending native pass. The same route means different time for packets, freight and people.",
-          "field_note": "Draft PT localization pending native pass. Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.",
-          "terminal": "Draft PT localization pending native pass. DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.",
-          "audio": "Draft PT localization pending native pass. Cargo can arrive before mercy. That is the doctrine.",
-          "in_game_wiki": "Draft PT localization pending native pass. Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.",
-          "external_site": "Draft PT localization pending native pass. Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock."
+          "title": "PT LOC HOLD: Transit Duration Bands",
+          "scanner": "PT LOC HOLD: The same route means different time for packets, freight and people.",
+          "field_note": "PT LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.",
+          "terminal": "PT LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.",
+          "audio": "PT LOC HOLD: Cargo can arrive before mercy. That is the doctrine.",
+          "in_game_wiki": "PT LOC HOLD: Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.",
+          "external_site": "PT LOC HOLD: Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Transit Duration Bands",
-          "scanner": "Draft NL localization pending native pass. The same route means different time for packets, freight and people.",
-          "field_note": "Draft NL localization pending native pass. Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.",
-          "terminal": "Draft NL localization pending native pass. DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.",
-          "audio": "Draft NL localization pending native pass. Cargo can arrive before mercy. That is the doctrine.",
-          "in_game_wiki": "Draft NL localization pending native pass. Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.",
-          "external_site": "Draft NL localization pending native pass. Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock."
+          "title": "NL LOC HOLD: Transit Duration Bands",
+          "scanner": "NL LOC HOLD: The same route means different time for packets, freight and people.",
+          "field_note": "NL LOC HOLD: Bands and custody terms remain approximate until final ephemeris tables accept exact tuning.",
+          "terminal": "NL LOC HOLD: DURATION BANDS: probe packets can precede claims by decades; heavy freight is staged and slow; crew rotation is rare, expensive and legally wrapped; local relay windows are still delayed.",
+          "audio": "NL LOC HOLD: Cargo can arrive before mercy. That is the doctrine.",
+          "in_game_wiki": "NL LOC HOLD: Transit duration bands explain why resource recovery can be practical while human rescue arrives late enough to be ugly.",
+          "external_site": "NL LOC HOLD: Transit duration bands explain why probe packets, freight, crew rotation, and local relay windows do not share one clock."
         }
       }
     },
@@ -656,130 +656,130 @@
           "external_site": "Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences."
         },
         "ru_RU": {
-          "title": "Draft RU localization pending native pass. Deep Reach Suboffice Registry",
-          "scanner": "Draft RU localization pending native pass. Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.",
-          "field_note": "Draft RU localization pending native pass. Use dull names. Dull names are where liability hides.",
-          "terminal": "Draft RU localization pending native pass. SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.",
-          "audio": "Draft RU localization pending native pass. A small desk can kill more quietly than a director.",
-          "in_game_wiki": "Draft RU localization pending native pass. The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.",
-          "external_site": "Draft RU localization pending native pass. Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences."
+          "title": "RU LOC HOLD: Deep Reach Suboffice Registry",
+          "scanner": "RU LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.",
+          "field_note": "RU LOC HOLD: Use dull names. Dull names are where liability hides.",
+          "terminal": "RU LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.",
+          "audio": "RU LOC HOLD: A small desk can kill more quietly than a director.",
+          "in_game_wiki": "RU LOC HOLD: The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.",
+          "external_site": "RU LOC HOLD: Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences."
         },
         "ja_JP": {
-          "title": "Draft JA localization pending native pass. Deep Reach Suboffice Registry",
-          "scanner": "Draft JA localization pending native pass. Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.",
-          "field_note": "Draft JA localization pending native pass. Use dull names. Dull names are where liability hides.",
-          "terminal": "Draft JA localization pending native pass. SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.",
-          "audio": "Draft JA localization pending native pass. A small desk can kill more quietly than a director.",
-          "in_game_wiki": "Draft JA localization pending native pass. The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.",
-          "external_site": "Draft JA localization pending native pass. Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences."
+          "title": "JA LOC HOLD: Deep Reach Suboffice Registry",
+          "scanner": "JA LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.",
+          "field_note": "JA LOC HOLD: Use dull names. Dull names are where liability hides.",
+          "terminal": "JA LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.",
+          "audio": "JA LOC HOLD: A small desk can kill more quietly than a director.",
+          "in_game_wiki": "JA LOC HOLD: The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.",
+          "external_site": "JA LOC HOLD: Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences."
         },
         "zh_CN": {
-          "title": "Draft ZH localization pending native pass. Deep Reach Suboffice Registry",
-          "scanner": "Draft ZH localization pending native pass. Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.",
-          "field_note": "Draft ZH localization pending native pass. Use dull names. Dull names are where liability hides.",
-          "terminal": "Draft ZH localization pending native pass. SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.",
-          "audio": "Draft ZH localization pending native pass. A small desk can kill more quietly than a director.",
-          "in_game_wiki": "Draft ZH localization pending native pass. The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.",
-          "external_site": "Draft ZH localization pending native pass. Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences."
+          "title": "ZH LOC HOLD: Deep Reach Suboffice Registry",
+          "scanner": "ZH LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.",
+          "field_note": "ZH LOC HOLD: Use dull names. Dull names are where liability hides.",
+          "terminal": "ZH LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.",
+          "audio": "ZH LOC HOLD: A small desk can kill more quietly than a director.",
+          "in_game_wiki": "ZH LOC HOLD: The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.",
+          "external_site": "ZH LOC HOLD: Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Deep Reach Suboffice Registry",
-          "scanner": "Draft FR localization pending native pass. Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.",
-          "field_note": "Draft FR localization pending native pass. Use dull names. Dull names are where liability hides.",
-          "terminal": "Draft FR localization pending native pass. SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.",
-          "audio": "Draft FR localization pending native pass. A small desk can kill more quietly than a director.",
-          "in_game_wiki": "Draft FR localization pending native pass. The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.",
-          "external_site": "Draft FR localization pending native pass. Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences."
+          "title": "FR LOC HOLD: Deep Reach Suboffice Registry",
+          "scanner": "FR LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.",
+          "field_note": "FR LOC HOLD: Use dull names. Dull names are where liability hides.",
+          "terminal": "FR LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.",
+          "audio": "FR LOC HOLD: A small desk can kill more quietly than a director.",
+          "in_game_wiki": "FR LOC HOLD: The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.",
+          "external_site": "FR LOC HOLD: Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Deep Reach Suboffice Registry",
-          "scanner": "Draft ES localization pending native pass. Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.",
-          "field_note": "Draft ES localization pending native pass. Use dull names. Dull names are where liability hides.",
-          "terminal": "Draft ES localization pending native pass. SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.",
-          "audio": "Draft ES localization pending native pass. A small desk can kill more quietly than a director.",
-          "in_game_wiki": "Draft ES localization pending native pass. The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.",
-          "external_site": "Draft ES localization pending native pass. Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences."
+          "title": "ES LOC HOLD: Deep Reach Suboffice Registry",
+          "scanner": "ES LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.",
+          "field_note": "ES LOC HOLD: Use dull names. Dull names are where liability hides.",
+          "terminal": "ES LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.",
+          "audio": "ES LOC HOLD: A small desk can kill more quietly than a director.",
+          "in_game_wiki": "ES LOC HOLD: The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.",
+          "external_site": "ES LOC HOLD: Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Deep Reach Suboffice Registry",
-          "scanner": "Draft DE localization pending native pass. Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.",
-          "field_note": "Draft DE localization pending native pass. Use dull names. Dull names are where liability hides.",
-          "terminal": "Draft DE localization pending native pass. SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.",
-          "audio": "Draft DE localization pending native pass. A small desk can kill more quietly than a director.",
-          "in_game_wiki": "Draft DE localization pending native pass. The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.",
-          "external_site": "Draft DE localization pending native pass. Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences."
+          "title": "DE LOC HOLD: Deep Reach Suboffice Registry",
+          "scanner": "DE LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.",
+          "field_note": "DE LOC HOLD: Use dull names. Dull names are where liability hides.",
+          "terminal": "DE LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.",
+          "audio": "DE LOC HOLD: A small desk can kill more quietly than a director.",
+          "in_game_wiki": "DE LOC HOLD: The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.",
+          "external_site": "DE LOC HOLD: Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Deep Reach Suboffice Registry",
-          "scanner": "Draft PL localization pending native pass. Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.",
-          "field_note": "Draft PL localization pending native pass. Use dull names. Dull names are where liability hides.",
-          "terminal": "Draft PL localization pending native pass. SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.",
-          "audio": "Draft PL localization pending native pass. A small desk can kill more quietly than a director.",
-          "in_game_wiki": "Draft PL localization pending native pass. The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.",
-          "external_site": "Draft PL localization pending native pass. Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences."
+          "title": "PL LOC HOLD: Deep Reach Suboffice Registry",
+          "scanner": "PL LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.",
+          "field_note": "PL LOC HOLD: Use dull names. Dull names are where liability hides.",
+          "terminal": "PL LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.",
+          "audio": "PL LOC HOLD: A small desk can kill more quietly than a director.",
+          "in_game_wiki": "PL LOC HOLD: The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.",
+          "external_site": "PL LOC HOLD: Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences."
         },
         "uk_UA": {
-          "title": "Draft UK localization pending native pass. Deep Reach Suboffice Registry",
-          "scanner": "Draft UK localization pending native pass. Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.",
-          "field_note": "Draft UK localization pending native pass. Use dull names. Dull names are where liability hides.",
-          "terminal": "Draft UK localization pending native pass. SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.",
-          "audio": "Draft UK localization pending native pass. A small desk can kill more quietly than a director.",
-          "in_game_wiki": "Draft UK localization pending native pass. The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.",
-          "external_site": "Draft UK localization pending native pass. Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences."
+          "title": "UK LOC HOLD: Deep Reach Suboffice Registry",
+          "scanner": "UK LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.",
+          "field_note": "UK LOC HOLD: Use dull names. Dull names are where liability hides.",
+          "terminal": "UK LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.",
+          "audio": "UK LOC HOLD: A small desk can kill more quietly than a director.",
+          "in_game_wiki": "UK LOC HOLD: The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.",
+          "external_site": "UK LOC HOLD: Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Deep Reach Suboffice Registry",
-          "scanner": "Draft AR localization pending native pass. Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.",
-          "field_note": "Draft AR localization pending native pass. Use dull names. Dull names are where liability hides.",
-          "terminal": "Draft AR localization pending native pass. SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.",
-          "audio": "Draft AR localization pending native pass. A small desk can kill more quietly than a director.",
-          "in_game_wiki": "Draft AR localization pending native pass. The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.",
-          "external_site": "Draft AR localization pending native pass. Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences."
+          "title": "AR LOC HOLD: Deep Reach Suboffice Registry",
+          "scanner": "AR LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.",
+          "field_note": "AR LOC HOLD: Use dull names. Dull names are where liability hides.",
+          "terminal": "AR LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.",
+          "audio": "AR LOC HOLD: A small desk can kill more quietly than a director.",
+          "in_game_wiki": "AR LOC HOLD: The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.",
+          "external_site": "AR LOC HOLD: Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Deep Reach Suboffice Registry",
-          "scanner": "Draft ID localization pending native pass. Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.",
-          "field_note": "Draft ID localization pending native pass. Use dull names. Dull names are where liability hides.",
-          "terminal": "Draft ID localization pending native pass. SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.",
-          "audio": "Draft ID localization pending native pass. A small desk can kill more quietly than a director.",
-          "in_game_wiki": "Draft ID localization pending native pass. The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.",
-          "external_site": "Draft ID localization pending native pass. Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences."
+          "title": "ID LOC HOLD: Deep Reach Suboffice Registry",
+          "scanner": "ID LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.",
+          "field_note": "ID LOC HOLD: Use dull names. Dull names are where liability hides.",
+          "terminal": "ID LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.",
+          "audio": "ID LOC HOLD: A small desk can kill more quietly than a director.",
+          "in_game_wiki": "ID LOC HOLD: The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.",
+          "external_site": "ID LOC HOLD: Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Deep Reach Suboffice Registry",
-          "scanner": "Draft KO localization pending native pass. Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.",
-          "field_note": "Draft KO localization pending native pass. Use dull names. Dull names are where liability hides.",
-          "terminal": "Draft KO localization pending native pass. SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.",
-          "audio": "Draft KO localization pending native pass. A small desk can kill more quietly than a director.",
-          "in_game_wiki": "Draft KO localization pending native pass. The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.",
-          "external_site": "Draft KO localization pending native pass. Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences."
+          "title": "KO LOC HOLD: Deep Reach Suboffice Registry",
+          "scanner": "KO LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.",
+          "field_note": "KO LOC HOLD: Use dull names. Dull names are where liability hides.",
+          "terminal": "KO LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.",
+          "audio": "KO LOC HOLD: A small desk can kill more quietly than a director.",
+          "in_game_wiki": "KO LOC HOLD: The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.",
+          "external_site": "KO LOC HOLD: Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Deep Reach Suboffice Registry",
-          "scanner": "Draft HE localization pending native pass. Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.",
-          "field_note": "Draft HE localization pending native pass. Use dull names. Dull names are where liability hides.",
-          "terminal": "Draft HE localization pending native pass. SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.",
-          "audio": "Draft HE localization pending native pass. A small desk can kill more quietly than a director.",
-          "in_game_wiki": "Draft HE localization pending native pass. The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.",
-          "external_site": "Draft HE localization pending native pass. Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences."
+          "title": "HE LOC HOLD: Deep Reach Suboffice Registry",
+          "scanner": "HE LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.",
+          "field_note": "HE LOC HOLD: Use dull names. Dull names are where liability hides.",
+          "terminal": "HE LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.",
+          "audio": "HE LOC HOLD: A small desk can kill more quietly than a director.",
+          "in_game_wiki": "HE LOC HOLD: The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.",
+          "external_site": "HE LOC HOLD: Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Deep Reach Suboffice Registry",
-          "scanner": "Draft PT localization pending native pass. Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.",
-          "field_note": "Draft PT localization pending native pass. Use dull names. Dull names are where liability hides.",
-          "terminal": "Draft PT localization pending native pass. SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.",
-          "audio": "Draft PT localization pending native pass. A small desk can kill more quietly than a director.",
-          "in_game_wiki": "Draft PT localization pending native pass. The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.",
-          "external_site": "Draft PT localization pending native pass. Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences."
+          "title": "PT LOC HOLD: Deep Reach Suboffice Registry",
+          "scanner": "PT LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.",
+          "field_note": "PT LOC HOLD: Use dull names. Dull names are where liability hides.",
+          "terminal": "PT LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.",
+          "audio": "PT LOC HOLD: A small desk can kill more quietly than a director.",
+          "in_game_wiki": "PT LOC HOLD: The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.",
+          "external_site": "PT LOC HOLD: Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Deep Reach Suboffice Registry",
-          "scanner": "Draft NL localization pending native pass. Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.",
-          "field_note": "Draft NL localization pending native pass. Use dull names. Dull names are where liability hides.",
-          "terminal": "Draft NL localization pending native pass. SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.",
-          "audio": "Draft NL localization pending native pass. A small desk can kill more quietly than a director.",
-          "in_game_wiki": "Draft NL localization pending native pass. The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.",
-          "external_site": "Draft NL localization pending native pass. Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences."
+          "title": "NL LOC HOLD: Deep Reach Suboffice Registry",
+          "scanner": "NL LOC HOLD: Deep Reach kept its deadliest decisions in small offices with plain names and narrow stamps.",
+          "field_note": "NL LOC HOLD: Use dull names. Dull names are where liability hides.",
+          "terminal": "NL LOC HOLD: SUBOFFICES: Contract Continuity Desk, Packet Notary Interface, Quarantine Hold Desk, Asset Silence Board, and Return Action Queue are active lower-level Deep Reach surfaces.",
+          "audio": "NL LOC HOLD: A small desk can kill more quietly than a director.",
+          "in_game_wiki": "NL LOC HOLD: The suboffice registry shows how Deep Reach split responsibility across small desks, keeping lethal delay below the level of a single mastermind.",
+          "external_site": "NL LOC HOLD: Deep Reach Suboffice Registry keeps legal terminals and public articles consistent: small office names, small stamps, large consequences."
         }
       }
     }

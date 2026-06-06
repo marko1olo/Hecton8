@@ -46,120 +46,120 @@
         },
         "ja_JP": {
           "title": "Lian Torres Last Packet",
-          "scanner": "Draft JP localization pending native pass. The last clean packet was not lost. It was too expensive to admit receiving.",
-          "field_note": "Draft JP localization pending native pass. A timestamp can be a corpse when the carrier answers the wrong queue.",
-          "terminal": "Draft JP localization pending native pass. TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
-          "audio": "Draft JP localization pending native pass. He sent the names. The archive called them noise.",
-          "in_game_wiki": "Draft JP localization pending native pass. Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
-          "external_site": "Draft JP localization pending native pass. Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
+          "scanner": "JP LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.",
+          "field_note": "JP LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.",
+          "terminal": "JP LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
+          "audio": "JP LOC HOLD: He sent the names. The archive called them noise.",
+          "in_game_wiki": "JP LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
+          "external_site": "JP LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
         },
         "zh_CN": {
           "title": "Lian Torres Last Packet",
-          "scanner": "Draft CN localization pending native pass. The last clean packet was not lost. It was too expensive to admit receiving.",
-          "field_note": "Draft CN localization pending native pass. A timestamp can be a corpse when the carrier answers the wrong queue.",
-          "terminal": "Draft CN localization pending native pass. TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
-          "audio": "Draft CN localization pending native pass. He sent the names. The archive called them noise.",
-          "in_game_wiki": "Draft CN localization pending native pass. Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
-          "external_site": "Draft CN localization pending native pass. Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
+          "scanner": "CN LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.",
+          "field_note": "CN LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.",
+          "terminal": "CN LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
+          "audio": "CN LOC HOLD: He sent the names. The archive called them noise.",
+          "in_game_wiki": "CN LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
+          "external_site": "CN LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
         },
         "fr_FR": {
           "title": "Lian Torres Last Packet",
-          "scanner": "Draft FR localization pending native pass. The last clean packet was not lost. It was too expensive to admit receiving.",
-          "field_note": "Draft FR localization pending native pass. A timestamp can be a corpse when the carrier answers the wrong queue.",
-          "terminal": "Draft FR localization pending native pass. TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
-          "audio": "Draft FR localization pending native pass. He sent the names. The archive called them noise.",
-          "in_game_wiki": "Draft FR localization pending native pass. Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
-          "external_site": "Draft FR localization pending native pass. Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
+          "scanner": "FR LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.",
+          "field_note": "FR LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.",
+          "terminal": "FR LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
+          "audio": "FR LOC HOLD: He sent the names. The archive called them noise.",
+          "in_game_wiki": "FR LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
+          "external_site": "FR LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
         },
         "es_ES": {
           "title": "Lian Torres Last Packet",
-          "scanner": "Draft ES localization pending native pass. The last clean packet was not lost. It was too expensive to admit receiving.",
-          "field_note": "Draft ES localization pending native pass. A timestamp can be a corpse when the carrier answers the wrong queue.",
-          "terminal": "Draft ES localization pending native pass. TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
-          "audio": "Draft ES localization pending native pass. He sent the names. The archive called them noise.",
-          "in_game_wiki": "Draft ES localization pending native pass. Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
-          "external_site": "Draft ES localization pending native pass. Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
+          "scanner": "ES LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.",
+          "field_note": "ES LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.",
+          "terminal": "ES LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
+          "audio": "ES LOC HOLD: He sent the names. The archive called them noise.",
+          "in_game_wiki": "ES LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
+          "external_site": "ES LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
         },
         "de_DE": {
           "title": "Lian Torres Last Packet",
-          "scanner": "Draft DE localization pending native pass. The last clean packet was not lost. It was too expensive to admit receiving.",
-          "field_note": "Draft DE localization pending native pass. A timestamp can be a corpse when the carrier answers the wrong queue.",
-          "terminal": "Draft DE localization pending native pass. TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
-          "audio": "Draft DE localization pending native pass. He sent the names. The archive called them noise.",
-          "in_game_wiki": "Draft DE localization pending native pass. Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
-          "external_site": "Draft DE localization pending native pass. Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
+          "scanner": "DE LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.",
+          "field_note": "DE LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.",
+          "terminal": "DE LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
+          "audio": "DE LOC HOLD: He sent the names. The archive called them noise.",
+          "in_game_wiki": "DE LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
+          "external_site": "DE LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
         },
         "pl_PL": {
           "title": "Lian Torres Last Packet",
-          "scanner": "Draft PL localization pending native pass. The last clean packet was not lost. It was too expensive to admit receiving.",
-          "field_note": "Draft PL localization pending native pass. A timestamp can be a corpse when the carrier answers the wrong queue.",
-          "terminal": "Draft PL localization pending native pass. TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
-          "audio": "Draft PL localization pending native pass. He sent the names. The archive called them noise.",
-          "in_game_wiki": "Draft PL localization pending native pass. Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
-          "external_site": "Draft PL localization pending native pass. Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
+          "scanner": "PL LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.",
+          "field_note": "PL LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.",
+          "terminal": "PL LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
+          "audio": "PL LOC HOLD: He sent the names. The archive called them noise.",
+          "in_game_wiki": "PL LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
+          "external_site": "PL LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
         },
         "uk_UA": {
           "title": "Lian Torres Last Packet",
-          "scanner": "Draft UK localization pending native pass. The last clean packet was not lost. It was too expensive to admit receiving.",
-          "field_note": "Draft UK localization pending native pass. A timestamp can be a corpse when the carrier answers the wrong queue.",
-          "terminal": "Draft UK localization pending native pass. TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
-          "audio": "Draft UK localization pending native pass. He sent the names. The archive called them noise.",
-          "in_game_wiki": "Draft UK localization pending native pass. Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
-          "external_site": "Draft UK localization pending native pass. Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
+          "scanner": "UK LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.",
+          "field_note": "UK LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.",
+          "terminal": "UK LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
+          "audio": "UK LOC HOLD: He sent the names. The archive called them noise.",
+          "in_game_wiki": "UK LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
+          "external_site": "UK LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
         },
         "ar_SA": {
           "title": "Lian Torres Last Packet",
-          "scanner": "Draft AR localization pending native pass. The last clean packet was not lost. It was too expensive to admit receiving.",
-          "field_note": "Draft AR localization pending native pass. A timestamp can be a corpse when the carrier answers the wrong queue.",
-          "terminal": "Draft AR localization pending native pass. TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
-          "audio": "Draft AR localization pending native pass. He sent the names. The archive called them noise.",
-          "in_game_wiki": "Draft AR localization pending native pass. Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
-          "external_site": "Draft AR localization pending native pass. Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
+          "scanner": "AR LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.",
+          "field_note": "AR LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.",
+          "terminal": "AR LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
+          "audio": "AR LOC HOLD: He sent the names. The archive called them noise.",
+          "in_game_wiki": "AR LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
+          "external_site": "AR LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
         },
         "id_ID": {
           "title": "Lian Torres Last Packet",
-          "scanner": "Draft ID localization pending native pass. The last clean packet was not lost. It was too expensive to admit receiving.",
-          "field_note": "Draft ID localization pending native pass. A timestamp can be a corpse when the carrier answers the wrong queue.",
-          "terminal": "Draft ID localization pending native pass. TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
-          "audio": "Draft ID localization pending native pass. He sent the names. The archive called them noise.",
-          "in_game_wiki": "Draft ID localization pending native pass. Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
-          "external_site": "Draft ID localization pending native pass. Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
+          "scanner": "ID LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.",
+          "field_note": "ID LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.",
+          "terminal": "ID LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
+          "audio": "ID LOC HOLD: He sent the names. The archive called them noise.",
+          "in_game_wiki": "ID LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
+          "external_site": "ID LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
         },
         "ko_KR": {
           "title": "Lian Torres Last Packet",
-          "scanner": "Draft KO localization pending native pass. The last clean packet was not lost. It was too expensive to admit receiving.",
-          "field_note": "Draft KO localization pending native pass. A timestamp can be a corpse when the carrier answers the wrong queue.",
-          "terminal": "Draft KO localization pending native pass. TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
-          "audio": "Draft KO localization pending native pass. He sent the names. The archive called them noise.",
-          "in_game_wiki": "Draft KO localization pending native pass. Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
-          "external_site": "Draft KO localization pending native pass. Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
+          "scanner": "KO LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.",
+          "field_note": "KO LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.",
+          "terminal": "KO LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
+          "audio": "KO LOC HOLD: He sent the names. The archive called them noise.",
+          "in_game_wiki": "KO LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
+          "external_site": "KO LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
         },
         "he_IL": {
           "title": "Lian Torres Last Packet",
-          "scanner": "Draft HE localization pending native pass. The last clean packet was not lost. It was too expensive to admit receiving.",
-          "field_note": "Draft HE localization pending native pass. A timestamp can be a corpse when the carrier answers the wrong queue.",
-          "terminal": "Draft HE localization pending native pass. TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
-          "audio": "Draft HE localization pending native pass. He sent the names. The archive called them noise.",
-          "in_game_wiki": "Draft HE localization pending native pass. Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
-          "external_site": "Draft HE localization pending native pass. Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
+          "scanner": "HE LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.",
+          "field_note": "HE LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.",
+          "terminal": "HE LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
+          "audio": "HE LOC HOLD: He sent the names. The archive called them noise.",
+          "in_game_wiki": "HE LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
+          "external_site": "HE LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
         },
         "pt_BR": {
           "title": "Lian Torres Last Packet",
-          "scanner": "Draft PT-BR localization pending native pass. The last clean packet was not lost. It was too expensive to admit receiving.",
-          "field_note": "Draft PT-BR localization pending native pass. A timestamp can be a corpse when the carrier answers the wrong queue.",
-          "terminal": "Draft PT-BR localization pending native pass. TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
-          "audio": "Draft PT-BR localization pending native pass. He sent the names. The archive called them noise.",
-          "in_game_wiki": "Draft PT-BR localization pending native pass. Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
-          "external_site": "Draft PT-BR localization pending native pass. Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
+          "scanner": "PT-BR LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.",
+          "field_note": "PT-BR LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.",
+          "terminal": "PT-BR LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
+          "audio": "PT-BR LOC HOLD: He sent the names. The archive called them noise.",
+          "in_game_wiki": "PT-BR LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
+          "external_site": "PT-BR LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
         },
         "nl_NL": {
           "title": "Lian Torres Last Packet",
-          "scanner": "Draft NL localization pending native pass. The last clean packet was not lost. It was too expensive to admit receiving.",
-          "field_note": "Draft NL localization pending native pass. A timestamp can be a corpse when the carrier answers the wrong queue.",
-          "terminal": "Draft NL localization pending native pass. TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
-          "audio": "Draft NL localization pending native pass. He sent the names. The archive called them noise.",
-          "in_game_wiki": "Draft NL localization pending native pass. Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
-          "external_site": "Draft NL localization pending native pass. Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
+          "scanner": "NL LOC HOLD: The last clean packet was not lost. It was too expensive to admit receiving.",
+          "field_note": "NL LOC HOLD: A timestamp can be a corpse when the carrier answers the wrong queue.",
+          "terminal": "NL LOC HOLD: TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.",
+          "audio": "NL LOC HOLD: He sent the names. The archive called them noise.",
+          "in_game_wiki": "NL LOC HOLD: Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.",
+          "external_site": "NL LOC HOLD: Lian Torres Last Packet is the no-ansible tragedy in human form: the packet exists, the names exist, but distance, queue priority and corporate response make truth arrive as liability instead of rescue."
         }
       }
     },
@@ -201,120 +201,120 @@
         },
         "ja_JP": {
           "title": "Oskar Neumann Pressure Forge",
-          "scanner": "Draft JP localization pending native pass. Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
-          "field_note": "Draft JP localization pending native pass. The exit needs craft, not courage.",
-          "terminal": "Draft JP localization pending native pass. NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
-          "audio": "Draft JP localization pending native pass. A launch is just a pressure door that moves upward. Build it like one.",
-          "in_game_wiki": "Draft JP localization pending native pass. Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
-          "external_site": "Draft JP localization pending native pass. Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
+          "scanner": "JP LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
+          "field_note": "JP LOC HOLD: The exit needs craft, not courage.",
+          "terminal": "JP LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
+          "audio": "JP LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.",
+          "in_game_wiki": "JP LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
+          "external_site": "JP LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
         },
         "zh_CN": {
           "title": "Oskar Neumann Pressure Forge",
-          "scanner": "Draft CN localization pending native pass. Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
-          "field_note": "Draft CN localization pending native pass. The exit needs craft, not courage.",
-          "terminal": "Draft CN localization pending native pass. NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
-          "audio": "Draft CN localization pending native pass. A launch is just a pressure door that moves upward. Build it like one.",
-          "in_game_wiki": "Draft CN localization pending native pass. Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
-          "external_site": "Draft CN localization pending native pass. Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
+          "scanner": "CN LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
+          "field_note": "CN LOC HOLD: The exit needs craft, not courage.",
+          "terminal": "CN LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
+          "audio": "CN LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.",
+          "in_game_wiki": "CN LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
+          "external_site": "CN LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
         },
         "fr_FR": {
           "title": "Oskar Neumann Pressure Forge",
-          "scanner": "Draft FR localization pending native pass. Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
-          "field_note": "Draft FR localization pending native pass. The exit needs craft, not courage.",
-          "terminal": "Draft FR localization pending native pass. NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
-          "audio": "Draft FR localization pending native pass. A launch is just a pressure door that moves upward. Build it like one.",
-          "in_game_wiki": "Draft FR localization pending native pass. Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
-          "external_site": "Draft FR localization pending native pass. Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
+          "scanner": "FR LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
+          "field_note": "FR LOC HOLD: The exit needs craft, not courage.",
+          "terminal": "FR LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
+          "audio": "FR LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.",
+          "in_game_wiki": "FR LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
+          "external_site": "FR LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
         },
         "es_ES": {
           "title": "Oskar Neumann Pressure Forge",
-          "scanner": "Draft ES localization pending native pass. Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
-          "field_note": "Draft ES localization pending native pass. The exit needs craft, not courage.",
-          "terminal": "Draft ES localization pending native pass. NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
-          "audio": "Draft ES localization pending native pass. A launch is just a pressure door that moves upward. Build it like one.",
-          "in_game_wiki": "Draft ES localization pending native pass. Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
-          "external_site": "Draft ES localization pending native pass. Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
+          "scanner": "ES LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
+          "field_note": "ES LOC HOLD: The exit needs craft, not courage.",
+          "terminal": "ES LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
+          "audio": "ES LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.",
+          "in_game_wiki": "ES LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
+          "external_site": "ES LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
         },
         "de_DE": {
           "title": "Oskar Neumann Pressure Forge",
-          "scanner": "Draft DE localization pending native pass. Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
-          "field_note": "Draft DE localization pending native pass. The exit needs craft, not courage.",
-          "terminal": "Draft DE localization pending native pass. NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
-          "audio": "Draft DE localization pending native pass. A launch is just a pressure door that moves upward. Build it like one.",
-          "in_game_wiki": "Draft DE localization pending native pass. Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
-          "external_site": "Draft DE localization pending native pass. Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
+          "scanner": "DE LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
+          "field_note": "DE LOC HOLD: The exit needs craft, not courage.",
+          "terminal": "DE LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
+          "audio": "DE LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.",
+          "in_game_wiki": "DE LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
+          "external_site": "DE LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
         },
         "pl_PL": {
           "title": "Oskar Neumann Pressure Forge",
-          "scanner": "Draft PL localization pending native pass. Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
-          "field_note": "Draft PL localization pending native pass. The exit needs craft, not courage.",
-          "terminal": "Draft PL localization pending native pass. NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
-          "audio": "Draft PL localization pending native pass. A launch is just a pressure door that moves upward. Build it like one.",
-          "in_game_wiki": "Draft PL localization pending native pass. Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
-          "external_site": "Draft PL localization pending native pass. Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
+          "scanner": "PL LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
+          "field_note": "PL LOC HOLD: The exit needs craft, not courage.",
+          "terminal": "PL LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
+          "audio": "PL LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.",
+          "in_game_wiki": "PL LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
+          "external_site": "PL LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
         },
         "uk_UA": {
           "title": "Oskar Neumann Pressure Forge",
-          "scanner": "Draft UK localization pending native pass. Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
-          "field_note": "Draft UK localization pending native pass. The exit needs craft, not courage.",
-          "terminal": "Draft UK localization pending native pass. NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
-          "audio": "Draft UK localization pending native pass. A launch is just a pressure door that moves upward. Build it like one.",
-          "in_game_wiki": "Draft UK localization pending native pass. Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
-          "external_site": "Draft UK localization pending native pass. Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
+          "scanner": "UK LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
+          "field_note": "UK LOC HOLD: The exit needs craft, not courage.",
+          "terminal": "UK LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
+          "audio": "UK LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.",
+          "in_game_wiki": "UK LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
+          "external_site": "UK LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
         },
         "ar_SA": {
           "title": "Oskar Neumann Pressure Forge",
-          "scanner": "Draft AR localization pending native pass. Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
-          "field_note": "Draft AR localization pending native pass. The exit needs craft, not courage.",
-          "terminal": "Draft AR localization pending native pass. NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
-          "audio": "Draft AR localization pending native pass. A launch is just a pressure door that moves upward. Build it like one.",
-          "in_game_wiki": "Draft AR localization pending native pass. Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
-          "external_site": "Draft AR localization pending native pass. Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
+          "scanner": "AR LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
+          "field_note": "AR LOC HOLD: The exit needs craft, not courage.",
+          "terminal": "AR LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
+          "audio": "AR LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.",
+          "in_game_wiki": "AR LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
+          "external_site": "AR LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
         },
         "id_ID": {
           "title": "Oskar Neumann Pressure Forge",
-          "scanner": "Draft ID localization pending native pass. Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
-          "field_note": "Draft ID localization pending native pass. The exit needs craft, not courage.",
-          "terminal": "Draft ID localization pending native pass. NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
-          "audio": "Draft ID localization pending native pass. A launch is just a pressure door that moves upward. Build it like one.",
-          "in_game_wiki": "Draft ID localization pending native pass. Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
-          "external_site": "Draft ID localization pending native pass. Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
+          "scanner": "ID LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
+          "field_note": "ID LOC HOLD: The exit needs craft, not courage.",
+          "terminal": "ID LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
+          "audio": "ID LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.",
+          "in_game_wiki": "ID LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
+          "external_site": "ID LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
         },
         "ko_KR": {
           "title": "Oskar Neumann Pressure Forge",
-          "scanner": "Draft KO localization pending native pass. Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
-          "field_note": "Draft KO localization pending native pass. The exit needs craft, not courage.",
-          "terminal": "Draft KO localization pending native pass. NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
-          "audio": "Draft KO localization pending native pass. A launch is just a pressure door that moves upward. Build it like one.",
-          "in_game_wiki": "Draft KO localization pending native pass. Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
-          "external_site": "Draft KO localization pending native pass. Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
+          "scanner": "KO LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
+          "field_note": "KO LOC HOLD: The exit needs craft, not courage.",
+          "terminal": "KO LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
+          "audio": "KO LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.",
+          "in_game_wiki": "KO LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
+          "external_site": "KO LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
         },
         "he_IL": {
           "title": "Oskar Neumann Pressure Forge",
-          "scanner": "Draft HE localization pending native pass. Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
-          "field_note": "Draft HE localization pending native pass. The exit needs craft, not courage.",
-          "terminal": "Draft HE localization pending native pass. NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
-          "audio": "Draft HE localization pending native pass. A launch is just a pressure door that moves upward. Build it like one.",
-          "in_game_wiki": "Draft HE localization pending native pass. Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
-          "external_site": "Draft HE localization pending native pass. Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
+          "scanner": "HE LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
+          "field_note": "HE LOC HOLD: The exit needs craft, not courage.",
+          "terminal": "HE LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
+          "audio": "HE LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.",
+          "in_game_wiki": "HE LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
+          "external_site": "HE LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
         },
         "pt_BR": {
           "title": "Oskar Neumann Pressure Forge",
-          "scanner": "Draft PT-BR localization pending native pass. Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
-          "field_note": "Draft PT-BR localization pending native pass. The exit needs craft, not courage.",
-          "terminal": "Draft PT-BR localization pending native pass. NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
-          "audio": "Draft PT-BR localization pending native pass. A launch is just a pressure door that moves upward. Build it like one.",
-          "in_game_wiki": "Draft PT-BR localization pending native pass. Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
-          "external_site": "Draft PT-BR localization pending native pass. Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
+          "scanner": "PT-BR LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
+          "field_note": "PT-BR LOC HOLD: The exit needs craft, not courage.",
+          "terminal": "PT-BR LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
+          "audio": "PT-BR LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.",
+          "in_game_wiki": "PT-BR LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
+          "external_site": "PT-BR LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
         },
         "nl_NL": {
           "title": "Oskar Neumann Pressure Forge",
-          "scanner": "Draft NL localization pending native pass. Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
-          "field_note": "Draft NL localization pending native pass. The exit needs craft, not courage.",
-          "terminal": "Draft NL localization pending native pass. NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
-          "audio": "Draft NL localization pending native pass. A launch is just a pressure door that moves upward. Build it like one.",
-          "in_game_wiki": "Draft NL localization pending native pass. Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
-          "external_site": "Draft NL localization pending native pass. Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
+          "scanner": "NL LOC HOLD: Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.",
+          "field_note": "NL LOC HOLD: The exit needs craft, not courage.",
+          "terminal": "NL LOC HOLD: NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.",
+          "audio": "NL LOC HOLD: A launch is just a pressure door that moves upward. Build it like one.",
+          "in_game_wiki": "NL LOC HOLD: Oskar Neumann links colony craft to the escape chain. His pressure forge notes justify deep fabrication, clamp rings, seal tests and the need to descend for components instead of waiting for surface rescue.",
+          "external_site": "NL LOC HOLD: Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key."
         }
       }
     },
@@ -352,124 +352,124 @@
           "terminal": "MORITA, A. Ткань пациента принята sealant colony после cable exposure. Hostile aggression не наблюдается. Atlas tag классифицирует wound как interface damage. Reject repair protocol for human triage.",
           "audio": "Он закрыл рану вокруг кабеля. В этот момент она перестала называть это лечением.",
           "in_game_wiki": "Ая Морита задает границу медицинского ужаса. Ремонтная логика Atlas не является некромантией; она неверно классифицирует живую ткань, травму, cable damage и sealant biology внутри одного maintenance vocabulary.",
-          "external_site": "Draft RU localization pending native pass. Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
+          "external_site": "RU LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
         },
         "ja_JP": {
           "title": "Aya Morita Repair Medicine",
-          "scanner": "Draft JP localization pending native pass. Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
-          "field_note": "Draft JP localization pending native pass. This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
-          "terminal": "Draft JP localization pending native pass. MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
-          "audio": "Draft JP localization pending native pass. It closed the wound around the cable. That was the moment she stopped calling it treatment.",
-          "in_game_wiki": "Draft JP localization pending native pass. Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
-          "external_site": "Draft JP localization pending native pass. Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
+          "scanner": "JP LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
+          "field_note": "JP LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
+          "terminal": "JP LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
+          "audio": "JP LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.",
+          "in_game_wiki": "JP LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
+          "external_site": "JP LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
         },
         "zh_CN": {
           "title": "Aya Morita Repair Medicine",
-          "scanner": "Draft CN localization pending native pass. Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
-          "field_note": "Draft CN localization pending native pass. This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
-          "terminal": "Draft CN localization pending native pass. MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
-          "audio": "Draft CN localization pending native pass. It closed the wound around the cable. That was the moment she stopped calling it treatment.",
-          "in_game_wiki": "Draft CN localization pending native pass. Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
-          "external_site": "Draft CN localization pending native pass. Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
+          "scanner": "CN LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
+          "field_note": "CN LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
+          "terminal": "CN LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
+          "audio": "CN LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.",
+          "in_game_wiki": "CN LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
+          "external_site": "CN LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
         },
         "fr_FR": {
           "title": "Aya Morita Repair Medicine",
-          "scanner": "Draft FR localization pending native pass. Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
-          "field_note": "Draft FR localization pending native pass. This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
-          "terminal": "Draft FR localization pending native pass. MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
-          "audio": "Draft FR localization pending native pass. It closed the wound around the cable. That was the moment she stopped calling it treatment.",
-          "in_game_wiki": "Draft FR localization pending native pass. Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
-          "external_site": "Draft FR localization pending native pass. Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
+          "scanner": "FR LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
+          "field_note": "FR LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
+          "terminal": "FR LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
+          "audio": "FR LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.",
+          "in_game_wiki": "FR LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
+          "external_site": "FR LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
         },
         "es_ES": {
           "title": "Aya Morita Repair Medicine",
-          "scanner": "Draft ES localization pending native pass. Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
-          "field_note": "Draft ES localization pending native pass. This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
-          "terminal": "Draft ES localization pending native pass. MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
-          "audio": "Draft ES localization pending native pass. It closed the wound around the cable. That was the moment she stopped calling it treatment.",
-          "in_game_wiki": "Draft ES localization pending native pass. Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
-          "external_site": "Draft ES localization pending native pass. Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
+          "scanner": "ES LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
+          "field_note": "ES LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
+          "terminal": "ES LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
+          "audio": "ES LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.",
+          "in_game_wiki": "ES LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
+          "external_site": "ES LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
         },
         "de_DE": {
           "title": "Aya Morita Repair Medicine",
-          "scanner": "Draft DE localization pending native pass. Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
-          "field_note": "Draft DE localization pending native pass. This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
-          "terminal": "Draft DE localization pending native pass. MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
-          "audio": "Draft DE localization pending native pass. It closed the wound around the cable. That was the moment she stopped calling it treatment.",
-          "in_game_wiki": "Draft DE localization pending native pass. Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
-          "external_site": "Draft DE localization pending native pass. Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
+          "scanner": "DE LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
+          "field_note": "DE LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
+          "terminal": "DE LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
+          "audio": "DE LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.",
+          "in_game_wiki": "DE LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
+          "external_site": "DE LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
         },
         "pl_PL": {
           "title": "Aya Morita Repair Medicine",
-          "scanner": "Draft PL localization pending native pass. Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
-          "field_note": "Draft PL localization pending native pass. This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
-          "terminal": "Draft PL localization pending native pass. MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
-          "audio": "Draft PL localization pending native pass. It closed the wound around the cable. That was the moment she stopped calling it treatment.",
-          "in_game_wiki": "Draft PL localization pending native pass. Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
-          "external_site": "Draft PL localization pending native pass. Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
+          "scanner": "PL LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
+          "field_note": "PL LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
+          "terminal": "PL LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
+          "audio": "PL LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.",
+          "in_game_wiki": "PL LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
+          "external_site": "PL LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
         },
         "uk_UA": {
           "title": "Aya Morita Repair Medicine",
-          "scanner": "Draft UK localization pending native pass. Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
-          "field_note": "Draft UK localization pending native pass. This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
-          "terminal": "Draft UK localization pending native pass. MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
-          "audio": "Draft UK localization pending native pass. It closed the wound around the cable. That was the moment she stopped calling it treatment.",
-          "in_game_wiki": "Draft UK localization pending native pass. Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
-          "external_site": "Draft UA localization pending native pass. Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
+          "scanner": "UK LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
+          "field_note": "UK LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
+          "terminal": "UK LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
+          "audio": "UK LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.",
+          "in_game_wiki": "UK LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
+          "external_site": "UA LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
         },
         "ar_SA": {
           "title": "Aya Morita Repair Medicine",
-          "scanner": "Draft AR localization pending native pass. Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
-          "field_note": "Draft AR localization pending native pass. This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
-          "terminal": "Draft AR localization pending native pass. MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
-          "audio": "Draft AR localization pending native pass. It closed the wound around the cable. That was the moment she stopped calling it treatment.",
-          "in_game_wiki": "Draft AR localization pending native pass. Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
-          "external_site": "Draft AR localization pending native pass. Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
+          "scanner": "AR LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
+          "field_note": "AR LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
+          "terminal": "AR LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
+          "audio": "AR LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.",
+          "in_game_wiki": "AR LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
+          "external_site": "AR LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
         },
         "id_ID": {
           "title": "Aya Morita Repair Medicine",
-          "scanner": "Draft ID localization pending native pass. Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
-          "field_note": "Draft ID localization pending native pass. This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
-          "terminal": "Draft ID localization pending native pass. MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
-          "audio": "Draft ID localization pending native pass. It closed the wound around the cable. That was the moment she stopped calling it treatment.",
-          "in_game_wiki": "Draft ID localization pending native pass. Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
-          "external_site": "Draft ID localization pending native pass. Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
+          "scanner": "ID LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
+          "field_note": "ID LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
+          "terminal": "ID LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
+          "audio": "ID LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.",
+          "in_game_wiki": "ID LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
+          "external_site": "ID LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
         },
         "ko_KR": {
           "title": "Aya Morita Repair Medicine",
-          "scanner": "Draft KO localization pending native pass. Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
-          "field_note": "Draft KO localization pending native pass. This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
-          "terminal": "Draft KO localization pending native pass. MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
-          "audio": "Draft KO localization pending native pass. It closed the wound around the cable. That was the moment she stopped calling it treatment.",
-          "in_game_wiki": "Draft KO localization pending native pass. Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
-          "external_site": "Draft KO localization pending native pass. Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
+          "scanner": "KO LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
+          "field_note": "KO LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
+          "terminal": "KO LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
+          "audio": "KO LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.",
+          "in_game_wiki": "KO LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
+          "external_site": "KO LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
         },
         "he_IL": {
           "title": "Aya Morita Repair Medicine",
-          "scanner": "Draft HE localization pending native pass. Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
-          "field_note": "Draft HE localization pending native pass. This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
-          "terminal": "Draft HE localization pending native pass. MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
-          "audio": "Draft HE localization pending native pass. It closed the wound around the cable. That was the moment she stopped calling it treatment.",
-          "in_game_wiki": "Draft HE localization pending native pass. Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
-          "external_site": "Draft HE localization pending native pass. Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
+          "scanner": "HE LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
+          "field_note": "HE LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
+          "terminal": "HE LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
+          "audio": "HE LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.",
+          "in_game_wiki": "HE LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
+          "external_site": "HE LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
         },
         "pt_BR": {
           "title": "Aya Morita Repair Medicine",
-          "scanner": "Draft PT-BR localization pending native pass. Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
-          "field_note": "Draft PT-BR localization pending native pass. This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
-          "terminal": "Draft PT-BR localization pending native pass. MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
-          "audio": "Draft PT-BR localization pending native pass. It closed the wound around the cable. That was the moment she stopped calling it treatment.",
-          "in_game_wiki": "Draft PT-BR localization pending native pass. Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
-          "external_site": "Draft PT localization pending native pass. Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
+          "scanner": "PT-BR LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
+          "field_note": "PT-BR LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
+          "terminal": "PT-BR LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
+          "audio": "PT-BR LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.",
+          "in_game_wiki": "PT-BR LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
+          "external_site": "PT LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
         },
         "nl_NL": {
           "title": "Aya Morita Repair Medicine",
-          "scanner": "Draft NL localization pending native pass. Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
-          "field_note": "Draft NL localization pending native pass. This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
-          "terminal": "Draft NL localization pending native pass. MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
-          "audio": "Draft NL localization pending native pass. It closed the wound around the cable. That was the moment she stopped calling it treatment.",
-          "in_game_wiki": "Draft NL localization pending native pass. Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
-          "external_site": "Draft NL localization pending native pass. Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
+          "scanner": "NL LOC HOLD: Aya Morita logged the first point where Atlas stopped healing bodies and started using them as compatible repair surface.",
+          "field_note": "NL LOC HOLD: This is not a zombie note. It is worse: a maintenance note with bedside handwriting.",
+          "terminal": "NL LOC HOLD: MORITA, A. Patient tissue accepted by sealant colony after cable exposure. No hostile aggression observed. Atlas tag classifies wound as interface damage. Reject repair protocol for human triage.",
+          "audio": "NL LOC HOLD: It closed the wound around the cable. That was the moment she stopped calling it treatment.",
+          "in_game_wiki": "NL LOC HOLD: Aya Morita defines the medical horror boundary. Atlas repair logic is not necromancy; it misclassifies living tissue, injury, cable damage and sealant biology inside the same maintenance vocabulary.",
+          "external_site": "NL LOC HOLD: Aya Morita's repair-medicine record documents the point where Atlas maintenance logic, emergency triage, cable injury, and living tissue collapse into one category."
         }
       }
     },
@@ -511,120 +511,120 @@
         },
         "ja_JP": {
           "title": "Pavel Sorn Procedure Hold",
-          "scanner": "Draft JP localization pending native pass. Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.",
-          "field_note": "Draft JP localization pending native pass. Useful evil often signs in normal handwriting.",
-          "terminal": "Draft JP localization pending native pass. SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.",
-          "audio": "Draft JP localization pending native pass. He wrote the sentence that kept the door closed and probably hated it less than he should have.",
-          "in_game_wiki": "Draft JP localization pending native pass. Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.",
-          "external_site": "Draft JP localization pending native pass. Pavel Sorn Procedure Hold is the bureaucratic horror packet: a local contract officer follows procedure too long, converting a real geophysical disaster into a fatal corporate permission problem."
+          "scanner": "JP LOC HOLD: Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.",
+          "field_note": "JP LOC HOLD: Useful evil often signs in normal handwriting.",
+          "terminal": "JP LOC HOLD: SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.",
+          "audio": "JP LOC HOLD: He wrote the sentence that kept the door closed and probably hated it less than he should have.",
+          "in_game_wiki": "JP LOC HOLD: Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.",
+          "external_site": "JP LOC HOLD: Pavel Sorn Procedure Hold is the bureaucratic horror packet: a local contract officer follows procedure too long, converting a real geophysical disaster into a fatal corporate permission problem."
         },
         "zh_CN": {
           "title": "Pavel Sorn Procedure Hold",
-          "scanner": "Draft CN localization pending native pass. Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.",
-          "field_note": "Draft CN localization pending native pass. Useful evil often signs in normal handwriting.",
-          "terminal": "Draft CN localization pending native pass. SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.",
-          "audio": "Draft CN localization pending native pass. He wrote the sentence that kept the door closed and probably hated it less than he should have.",
-          "in_game_wiki": "Draft CN localization pending native pass. Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.",
-          "external_site": "Draft CN localization pending native pass. Pavel Sorn Procedure Hold is the bureaucratic horror packet: a local contract officer follows procedure too long, converting a real geophysical disaster into a fatal corporate permission problem."
+          "scanner": "CN LOC HOLD: Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.",
+          "field_note": "CN LOC HOLD: Useful evil often signs in normal handwriting.",
+          "terminal": "CN LOC HOLD: SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.",
+          "audio": "CN LOC HOLD: He wrote the sentence that kept the door closed and probably hated it less than he should have.",
+          "in_game_wiki": "CN LOC HOLD: Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.",
+          "external_site": "CN LOC HOLD: Pavel Sorn Procedure Hold is the bureaucratic horror packet: a local contract officer follows procedure too long, converting a real geophysical disaster into a fatal corporate permission problem."
         },
         "fr_FR": {
           "title": "Pavel Sorn Procedure Hold",
-          "scanner": "Draft FR localization pending native pass. Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.",
-          "field_note": "Draft FR localization pending native pass. Useful evil often signs in normal handwriting.",
-          "terminal": "Draft FR localization pending native pass. SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.",
-          "audio": "Draft FR localization pending native pass. He wrote the sentence that kept the door closed and probably hated it less than he should have.",
-          "in_game_wiki": "Draft FR localization pending native pass. Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.",
-          "external_site": "Draft FR localization pending native pass. Pavel Sorn Procedure Hold is the bureaucratic horror packet: a local contract officer follows procedure too long, converting a real geophysical disaster into a fatal corporate permission problem."
+          "scanner": "FR LOC HOLD: Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.",
+          "field_note": "FR LOC HOLD: Useful evil often signs in normal handwriting.",
+          "terminal": "FR LOC HOLD: SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.",
+          "audio": "FR LOC HOLD: He wrote the sentence that kept the door closed and probably hated it less than he should have.",
+          "in_game_wiki": "FR LOC HOLD: Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.",
+          "external_site": "FR LOC HOLD: Pavel Sorn Procedure Hold is the bureaucratic horror packet: a local contract officer follows procedure too long, converting a real geophysical disaster into a fatal corporate permission problem."
         },
         "es_ES": {
           "title": "Pavel Sorn Procedure Hold",
-          "scanner": "Draft ES localization pending native pass. Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.",
-          "field_note": "Draft ES localization pending native pass. Useful evil often signs in normal handwriting.",
-          "terminal": "Draft ES localization pending native pass. SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.",
-          "audio": "Draft ES localization pending native pass. He wrote the sentence that kept the door closed and probably hated it less than he should have.",
-          "in_game_wiki": "Draft ES localization pending native pass. Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.",
-          "external_site": "Draft ES localization pending native pass. Pavel Sorn Procedure Hold is the bureaucratic horror packet: a local contract officer follows procedure too long, converting a real geophysical disaster into a fatal corporate permission problem."
+          "scanner": "ES LOC HOLD: Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.",
+          "field_note": "ES LOC HOLD: Useful evil often signs in normal handwriting.",
+          "terminal": "ES LOC HOLD: SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.",
+          "audio": "ES LOC HOLD: He wrote the sentence that kept the door closed and probably hated it less than he should have.",
+          "in_game_wiki": "ES LOC HOLD: Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.",
+          "external_site": "ES LOC HOLD: Pavel Sorn Procedure Hold is the bureaucratic horror packet: a local contract officer follows procedure too long, converting a real geophysical disaster into a fatal corporate permission problem."
         },
         "de_DE": {
           "title": "Pavel Sorn Procedure Hold",
-          "scanner": "Draft DE localization pending native pass. Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.",
-          "field_note": "Draft DE localization pending native pass. Useful evil often signs in normal handwriting.",
-          "terminal": "Draft DE localization pending native pass. SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.",
-          "audio": "Draft DE localization pending native pass. He wrote the sentence that kept the door closed and probably hated it less than he should have.",
-          "in_game_wiki": "Draft DE localization pending native pass. Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.",
-          "external_site": "Draft DE localization pending native pass. Pavel Sorn Procedure Hold is the bureaucratic horror packet: a local contract officer follows procedure too long, converting a real geophysical disaster into a fatal corporate permission problem."
+          "scanner": "DE LOC HOLD: Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.",
+          "field_note": "DE LOC HOLD: Useful evil often signs in normal handwriting.",
+          "terminal": "DE LOC HOLD: SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.",
+          "audio": "DE LOC HOLD: He wrote the sentence that kept the door closed and probably hated it less than he should have.",
+          "in_game_wiki": "DE LOC HOLD: Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.",
+          "external_site": "DE LOC HOLD: Pavel Sorn Procedure Hold is the bureaucratic horror packet: a local contract officer follows procedure too long, converting a real geophysical disaster into a fatal corporate permission problem."
         },
         "pl_PL": {
           "title": "Pavel Sorn Procedure Hold",
-          "scanner": "Draft PL localization pending native pass. Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.",
-          "field_note": "Draft PL localization pending native pass. Useful evil often signs in normal handwriting.",
-          "terminal": "Draft PL localization pending native pass. SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.",
-          "audio": "Draft PL localization pending native pass. He wrote the sentence that kept the door closed and probably hated it less than he should have.",
-          "in_game_wiki": "Draft PL localization pending native pass. Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.",
-          "external_site": "Draft PL localization pending native pass. Pavel Sorn Procedure Hold is the bureaucratic horror packet: a local contract officer follows procedure too long, converting a real geophysical disaster into a fatal corporate permission problem."
+          "scanner": "PL LOC HOLD: Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.",
+          "field_note": "PL LOC HOLD: Useful evil often signs in normal handwriting.",
+          "terminal": "PL LOC HOLD: SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.",
+          "audio": "PL LOC HOLD: He wrote the sentence that kept the door closed and probably hated it less than he should have.",
+          "in_game_wiki": "PL LOC HOLD: Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.",
+          "external_site": "PL LOC HOLD: Pavel Sorn Procedure Hold is the bureaucratic horror packet: a local contract officer follows procedure too long, converting a real geophysical disaster into a fatal corporate permission problem."
         },
         "uk_UA": {
           "title": "Pavel Sorn Procedure Hold",
-          "scanner": "Draft UK localization pending native pass. Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.",
-          "field_note": "Draft UK localization pending native pass. Useful evil often signs in normal handwriting.",
-          "terminal": "Draft UK localization pending native pass. SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.",
-          "audio": "Draft UK localization pending native pass. He wrote the sentence that kept the door closed and probably hated it less than he should have.",
-          "in_game_wiki": "Draft UK localization pending native pass. Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.",
-          "external_site": "Draft UK localization pending native pass. Pavel Sorn Procedure Hold is the bureaucratic horror packet: a local contract officer follows procedure too long, converting a real geophysical disaster into a fatal corporate permission problem."
+          "scanner": "UK LOC HOLD: Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.",
+          "field_note": "UK LOC HOLD: Useful evil often signs in normal handwriting.",
+          "terminal": "UK LOC HOLD: SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.",
+          "audio": "UK LOC HOLD: He wrote the sentence that kept the door closed and probably hated it less than he should have.",
+          "in_game_wiki": "UK LOC HOLD: Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.",
+          "external_site": "UK LOC HOLD: Pavel Sorn Procedure Hold is the bureaucratic horror packet: a local contract officer follows procedure too long, converting a real geophysical disaster into a fatal corporate permission problem."
         },
         "ar_SA": {
           "title": "Pavel Sorn Procedure Hold",
-          "scanner": "Draft AR localization pending native pass. Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.",
-          "field_note": "Draft AR localization pending native pass. Useful evil often signs in normal handwriting.",
-          "terminal": "Draft AR localization pending native pass. SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.",
-          "audio": "Draft AR localization pending native pass. He wrote the sentence that kept the door closed and probably hated it less than he should have.",
-          "in_game_wiki": "Draft AR localization pending native pass. Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.",
-          "external_site": "Draft AR localization pending native pass. Pavel Sorn Procedure Hold is the bureaucratic horror packet: a local contract officer follows procedure too long, converting a real geophysical disaster into a fatal corporate permission problem."
+          "scanner": "AR LOC HOLD: Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.",
+          "field_note": "AR LOC HOLD: Useful evil often signs in normal handwriting.",
+          "terminal": "AR LOC HOLD: SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.",
+          "audio": "AR LOC HOLD: He wrote the sentence that kept the door closed and probably hated it less than he should have.",
+          "in_game_wiki": "AR LOC HOLD: Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.",
+          "external_site": "AR LOC HOLD: Pavel Sorn Procedure Hold is the bureaucratic horror packet: a local contract officer follows procedure too long, converting a real geophysical disaster into a fatal corporate permission problem."
         },
         "id_ID": {
           "title": "Pavel Sorn Procedure Hold",
-          "scanner": "Draft ID localization pending native pass. Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.",
-          "field_note": "Draft ID localization pending native pass. Useful evil often signs in normal handwriting.",
-          "terminal": "Draft ID localization pending native pass. SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.",
-          "audio": "Draft ID localization pending native pass. He wrote the sentence that kept the door closed and probably hated it less than he should have.",
-          "in_game_wiki": "Draft ID localization pending native pass. Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.",
-          "external_site": "Draft ID localization pending native pass. Pavel Sorn Procedure Hold is the bureaucratic horror packet: a local contract officer follows procedure too long, converting a real geophysical disaster into a fatal corporate permission problem."
+          "scanner": "ID LOC HOLD: Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.",
+          "field_note": "ID LOC HOLD: Useful evil often signs in normal handwriting.",
+          "terminal": "ID LOC HOLD: SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.",
+          "audio": "ID LOC HOLD: He wrote the sentence that kept the door closed and probably hated it less than he should have.",
+          "in_game_wiki": "ID LOC HOLD: Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.",
+          "external_site": "ID LOC HOLD: Pavel Sorn Procedure Hold is the bureaucratic horror packet: a local contract officer follows procedure too long, converting a real geophysical disaster into a fatal corporate permission problem."
         },
         "ko_KR": {
           "title": "Pavel Sorn Procedure Hold",
-          "scanner": "Draft KO localization pending native pass. Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.",
-          "field_note": "Draft KO localization pending native pass. Useful evil often signs in normal handwriting.",
-          "terminal": "Draft KO localization pending native pass. SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.",
-          "audio": "Draft KO localization pending native pass. He wrote the sentence that kept the door closed and probably hated it less than he should have.",
-          "in_game_wiki": "Draft KO localization pending native pass. Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.",
-          "external_site": "Draft KO localization pending native pass. Pavel Sorn Procedure Hold is the bureaucratic horror packet: a local contract officer follows procedure too long, converting a real geophysical disaster into a fatal corporate permission problem."
+          "scanner": "KO LOC HOLD: Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.",
+          "field_note": "KO LOC HOLD: Useful evil often signs in normal handwriting.",
+          "terminal": "KO LOC HOLD: SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.",
+          "audio": "KO LOC HOLD: He wrote the sentence that kept the door closed and probably hated it less than he should have.",
+          "in_game_wiki": "KO LOC HOLD: Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.",
+          "external_site": "KO LOC HOLD: Pavel Sorn Procedure Hold is the bureaucratic horror packet: a local contract officer follows procedure too long, converting a real geophysical disaster into a fatal corporate permission problem."
         },
         "he_IL": {
           "title": "Pavel Sorn Procedure Hold",
-          "scanner": "Draft HE localization pending native pass. Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.",
-          "field_note": "Draft HE localization pending native pass. Useful evil often signs in normal handwriting.",
-          "terminal": "Draft HE localization pending native pass. SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.",
-          "audio": "Draft HE localization pending native pass. He wrote the sentence that kept the door closed and probably hated it less than he should have.",
-          "in_game_wiki": "Draft HE localization pending native pass. Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.",
-          "external_site": "Draft HE localization pending native pass. Pavel Sorn Procedure Hold is the bureaucratic horror packet: a local contract officer follows procedure too long, converting a real geophysical disaster into a fatal corporate permission problem."
+          "scanner": "HE LOC HOLD: Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.",
+          "field_note": "HE LOC HOLD: Useful evil often signs in normal handwriting.",
+          "terminal": "HE LOC HOLD: SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.",
+          "audio": "HE LOC HOLD: He wrote the sentence that kept the door closed and probably hated it less than he should have.",
+          "in_game_wiki": "HE LOC HOLD: Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.",
+          "external_site": "HE LOC HOLD: Pavel Sorn Procedure Hold is the bureaucratic horror packet: a local contract officer follows procedure too long, converting a real geophysical disaster into a fatal corporate permission problem."
         },
         "pt_BR": {
           "title": "Pavel Sorn Procedure Hold",
-          "scanner": "Draft PT-BR localization pending native pass. Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.",
-          "field_note": "Draft PT-BR localization pending native pass. Useful evil often signs in normal handwriting.",
-          "terminal": "Draft PT-BR localization pending native pass. SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.",
-          "audio": "Draft PT-BR localization pending native pass. He wrote the sentence that kept the door closed and probably hated it less than he should have.",
-          "in_game_wiki": "Draft PT-BR localization pending native pass. Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.",
-          "external_site": "Draft PT-BR localization pending native pass. Pavel Sorn Procedure Hold is the bureaucratic horror packet: a local contract officer follows procedure too long, converting a real geophysical disaster into a fatal corporate permission problem."
+          "scanner": "PT-BR LOC HOLD: Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.",
+          "field_note": "PT-BR LOC HOLD: Useful evil often signs in normal handwriting.",
+          "terminal": "PT-BR LOC HOLD: SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.",
+          "audio": "PT-BR LOC HOLD: He wrote the sentence that kept the door closed and probably hated it less than he should have.",
+          "in_game_wiki": "PT-BR LOC HOLD: Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.",
+          "external_site": "PT-BR LOC HOLD: Pavel Sorn Procedure Hold is the bureaucratic horror packet: a local contract officer follows procedure too long, converting a real geophysical disaster into a fatal corporate permission problem."
         },
         "nl_NL": {
           "title": "Pavel Sorn Procedure Hold",
-          "scanner": "Draft NL localization pending native pass. Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.",
-          "field_note": "Draft NL localization pending native pass. Useful evil often signs in normal handwriting.",
-          "terminal": "Draft NL localization pending native pass. SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.",
-          "audio": "Draft NL localization pending native pass. He wrote the sentence that kept the door closed and probably hated it less than he should have.",
-          "in_game_wiki": "Draft NL localization pending native pass. Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.",
-          "external_site": "Draft NL localization pending native pass. Pavel Sorn Procedure Hold is the bureaucratic horror packet: a local contract officer follows procedure too long, converting a real geophysical disaster into a fatal corporate permission problem."
+          "scanner": "NL LOC HOLD: Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.",
+          "field_note": "NL LOC HOLD: Useful evil often signs in normal handwriting.",
+          "terminal": "NL LOC HOLD: SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.",
+          "audio": "NL LOC HOLD: He wrote the sentence that kept the door closed and probably hated it less than he should have.",
+          "in_game_wiki": "NL LOC HOLD: Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.",
+          "external_site": "NL LOC HOLD: Pavel Sorn Procedure Hold is the bureaucratic horror packet: a local contract officer follows procedure too long, converting a real geophysical disaster into a fatal corporate permission problem."
         }
       }
     },
@@ -666,120 +666,120 @@
         },
         "ja_JP": {
           "title": "Deep Reach Present Windows",
-          "scanner": "Draft JP localization pending native pass. Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.",
-          "field_note": "Draft JP localization pending native pass. Their voice is delayed. Their leverage is already here.",
-          "terminal": "Draft JP localization pending native pass. LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.",
-          "audio": "Draft JP localization pending native pass. When they finally speak, they ask for the thing that proves they should not have it.",
-          "in_game_wiki": "Draft JP localization pending native pass. Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.",
-          "external_site": "Draft JP localization pending native pass. Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure."
+          "scanner": "JP LOC HOLD: Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.",
+          "field_note": "JP LOC HOLD: Their voice is delayed. Their leverage is already here.",
+          "terminal": "JP LOC HOLD: LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.",
+          "audio": "JP LOC HOLD: When they finally speak, they ask for the thing that proves they should not have it.",
+          "in_game_wiki": "JP LOC HOLD: Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.",
+          "external_site": "JP LOC HOLD: Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure."
         },
         "zh_CN": {
           "title": "Deep Reach Present Windows",
-          "scanner": "Draft CN localization pending native pass. Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.",
-          "field_note": "Draft CN localization pending native pass. Their voice is delayed. Their leverage is already here.",
-          "terminal": "Draft CN localization pending native pass. LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.",
-          "audio": "Draft CN localization pending native pass. When they finally speak, they ask for the thing that proves they should not have it.",
-          "in_game_wiki": "Draft CN localization pending native pass. Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.",
-          "external_site": "Draft CN localization pending native pass. Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure."
+          "scanner": "CN LOC HOLD: Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.",
+          "field_note": "CN LOC HOLD: Their voice is delayed. Their leverage is already here.",
+          "terminal": "CN LOC HOLD: LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.",
+          "audio": "CN LOC HOLD: When they finally speak, they ask for the thing that proves they should not have it.",
+          "in_game_wiki": "CN LOC HOLD: Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.",
+          "external_site": "CN LOC HOLD: Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure."
         },
         "fr_FR": {
           "title": "Deep Reach Present Windows",
-          "scanner": "Draft FR localization pending native pass. Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.",
-          "field_note": "Draft FR localization pending native pass. Their voice is delayed. Their leverage is already here.",
-          "terminal": "Draft FR localization pending native pass. LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.",
-          "audio": "Draft FR localization pending native pass. When they finally speak, they ask for the thing that proves they should not have it.",
-          "in_game_wiki": "Draft FR localization pending native pass. Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.",
-          "external_site": "Draft FR localization pending native pass. Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure."
+          "scanner": "FR LOC HOLD: Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.",
+          "field_note": "FR LOC HOLD: Their voice is delayed. Their leverage is already here.",
+          "terminal": "FR LOC HOLD: LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.",
+          "audio": "FR LOC HOLD: When they finally speak, they ask for the thing that proves they should not have it.",
+          "in_game_wiki": "FR LOC HOLD: Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.",
+          "external_site": "FR LOC HOLD: Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure."
         },
         "es_ES": {
           "title": "Deep Reach Present Windows",
-          "scanner": "Draft ES localization pending native pass. Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.",
-          "field_note": "Draft ES localization pending native pass. Their voice is delayed. Their leverage is already here.",
-          "terminal": "Draft ES localization pending native pass. LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.",
-          "audio": "Draft ES localization pending native pass. When they finally speak, they ask for the thing that proves they should not have it.",
-          "in_game_wiki": "Draft ES localization pending native pass. Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.",
-          "external_site": "Draft ES localization pending native pass. Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure."
+          "scanner": "ES LOC HOLD: Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.",
+          "field_note": "ES LOC HOLD: Their voice is delayed. Their leverage is already here.",
+          "terminal": "ES LOC HOLD: LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.",
+          "audio": "ES LOC HOLD: When they finally speak, they ask for the thing that proves they should not have it.",
+          "in_game_wiki": "ES LOC HOLD: Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.",
+          "external_site": "ES LOC HOLD: Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure."
         },
         "de_DE": {
           "title": "Deep Reach Present Windows",
-          "scanner": "Draft DE localization pending native pass. Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.",
-          "field_note": "Draft DE localization pending native pass. Their voice is delayed. Their leverage is already here.",
-          "terminal": "Draft DE localization pending native pass. LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.",
-          "audio": "Draft DE localization pending native pass. When they finally speak, they ask for the thing that proves they should not have it.",
-          "in_game_wiki": "Draft DE localization pending native pass. Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.",
-          "external_site": "Draft DE localization pending native pass. Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure."
+          "scanner": "DE LOC HOLD: Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.",
+          "field_note": "DE LOC HOLD: Their voice is delayed. Their leverage is already here.",
+          "terminal": "DE LOC HOLD: LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.",
+          "audio": "DE LOC HOLD: When they finally speak, they ask for the thing that proves they should not have it.",
+          "in_game_wiki": "DE LOC HOLD: Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.",
+          "external_site": "DE LOC HOLD: Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure."
         },
         "pl_PL": {
           "title": "Deep Reach Present Windows",
-          "scanner": "Draft PL localization pending native pass. Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.",
-          "field_note": "Draft PL localization pending native pass. Their voice is delayed. Their leverage is already here.",
-          "terminal": "Draft PL localization pending native pass. LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.",
-          "audio": "Draft PL localization pending native pass. When they finally speak, they ask for the thing that proves they should not have it.",
-          "in_game_wiki": "Draft PL localization pending native pass. Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.",
-          "external_site": "Draft PL localization pending native pass. Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure."
+          "scanner": "PL LOC HOLD: Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.",
+          "field_note": "PL LOC HOLD: Their voice is delayed. Their leverage is already here.",
+          "terminal": "PL LOC HOLD: LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.",
+          "audio": "PL LOC HOLD: When they finally speak, they ask for the thing that proves they should not have it.",
+          "in_game_wiki": "PL LOC HOLD: Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.",
+          "external_site": "PL LOC HOLD: Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure."
         },
         "uk_UA": {
           "title": "Deep Reach Present Windows",
-          "scanner": "Draft UK localization pending native pass. Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.",
-          "field_note": "Draft UK localization pending native pass. Their voice is delayed. Their leverage is already here.",
-          "terminal": "Draft UK localization pending native pass. LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.",
-          "audio": "Draft UK localization pending native pass. When they finally speak, they ask for the thing that proves they should not have it.",
-          "in_game_wiki": "Draft UK localization pending native pass. Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.",
-          "external_site": "Draft UK localization pending native pass. Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure."
+          "scanner": "UK LOC HOLD: Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.",
+          "field_note": "UK LOC HOLD: Their voice is delayed. Their leverage is already here.",
+          "terminal": "UK LOC HOLD: LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.",
+          "audio": "UK LOC HOLD: When they finally speak, they ask for the thing that proves they should not have it.",
+          "in_game_wiki": "UK LOC HOLD: Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.",
+          "external_site": "UK LOC HOLD: Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure."
         },
         "ar_SA": {
           "title": "Deep Reach Present Windows",
-          "scanner": "Draft AR localization pending native pass. Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.",
-          "field_note": "Draft AR localization pending native pass. Their voice is delayed. Their leverage is already here.",
-          "terminal": "Draft AR localization pending native pass. LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.",
-          "audio": "Draft AR localization pending native pass. When they finally speak, they ask for the thing that proves they should not have it.",
-          "in_game_wiki": "Draft AR localization pending native pass. Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.",
-          "external_site": "Draft AR localization pending native pass. Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure."
+          "scanner": "AR LOC HOLD: Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.",
+          "field_note": "AR LOC HOLD: Their voice is delayed. Their leverage is already here.",
+          "terminal": "AR LOC HOLD: LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.",
+          "audio": "AR LOC HOLD: When they finally speak, they ask for the thing that proves they should not have it.",
+          "in_game_wiki": "AR LOC HOLD: Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.",
+          "external_site": "AR LOC HOLD: Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure."
         },
         "id_ID": {
           "title": "Deep Reach Present Windows",
-          "scanner": "Draft ID localization pending native pass. Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.",
-          "field_note": "Draft ID localization pending native pass. Their voice is delayed. Their leverage is already here.",
-          "terminal": "Draft ID localization pending native pass. LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.",
-          "audio": "Draft ID localization pending native pass. When they finally speak, they ask for the thing that proves they should not have it.",
-          "in_game_wiki": "Draft ID localization pending native pass. Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.",
-          "external_site": "Draft ID localization pending native pass. Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure."
+          "scanner": "ID LOC HOLD: Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.",
+          "field_note": "ID LOC HOLD: Their voice is delayed. Their leverage is already here.",
+          "terminal": "ID LOC HOLD: LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.",
+          "audio": "ID LOC HOLD: When they finally speak, they ask for the thing that proves they should not have it.",
+          "in_game_wiki": "ID LOC HOLD: Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.",
+          "external_site": "ID LOC HOLD: Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure."
         },
         "ko_KR": {
           "title": "Deep Reach Present Windows",
-          "scanner": "Draft KO localization pending native pass. Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.",
-          "field_note": "Draft KO localization pending native pass. Their voice is delayed. Their leverage is already here.",
-          "terminal": "Draft KO localization pending native pass. LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.",
-          "audio": "Draft KO localization pending native pass. When they finally speak, they ask for the thing that proves they should not have it.",
-          "in_game_wiki": "Draft KO localization pending native pass. Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.",
-          "external_site": "Draft KO localization pending native pass. Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure."
+          "scanner": "KO LOC HOLD: Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.",
+          "field_note": "KO LOC HOLD: Their voice is delayed. Their leverage is already here.",
+          "terminal": "KO LOC HOLD: LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.",
+          "audio": "KO LOC HOLD: When they finally speak, they ask for the thing that proves they should not have it.",
+          "in_game_wiki": "KO LOC HOLD: Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.",
+          "external_site": "KO LOC HOLD: Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure."
         },
         "he_IL": {
           "title": "Deep Reach Present Windows",
-          "scanner": "Draft HE localization pending native pass. Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.",
-          "field_note": "Draft HE localization pending native pass. Their voice is delayed. Their leverage is already here.",
-          "terminal": "Draft HE localization pending native pass. LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.",
-          "audio": "Draft HE localization pending native pass. When they finally speak, they ask for the thing that proves they should not have it.",
-          "in_game_wiki": "Draft HE localization pending native pass. Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.",
-          "external_site": "Draft HE localization pending native pass. Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure."
+          "scanner": "HE LOC HOLD: Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.",
+          "field_note": "HE LOC HOLD: Their voice is delayed. Their leverage is already here.",
+          "terminal": "HE LOC HOLD: LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.",
+          "audio": "HE LOC HOLD: When they finally speak, they ask for the thing that proves they should not have it.",
+          "in_game_wiki": "HE LOC HOLD: Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.",
+          "external_site": "HE LOC HOLD: Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure."
         },
         "pt_BR": {
           "title": "Deep Reach Present Windows",
-          "scanner": "Draft PT-BR localization pending native pass. Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.",
-          "field_note": "Draft PT-BR localization pending native pass. Their voice is delayed. Their leverage is already here.",
-          "terminal": "Draft PT-BR localization pending native pass. LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.",
-          "audio": "Draft PT-BR localization pending native pass. When they finally speak, they ask for the thing that proves they should not have it.",
-          "in_game_wiki": "Draft PT-BR localization pending native pass. Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.",
-          "external_site": "Draft PT-BR localization pending native pass. Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure."
+          "scanner": "PT-BR LOC HOLD: Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.",
+          "field_note": "PT-BR LOC HOLD: Their voice is delayed. Their leverage is already here.",
+          "terminal": "PT-BR LOC HOLD: LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.",
+          "audio": "PT-BR LOC HOLD: When they finally speak, they ask for the thing that proves they should not have it.",
+          "in_game_wiki": "PT-BR LOC HOLD: Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.",
+          "external_site": "PT-BR LOC HOLD: Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure."
         },
         "nl_NL": {
           "title": "Deep Reach Present Windows",
-          "scanner": "Draft NL localization pending native pass. Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.",
-          "field_note": "Draft NL localization pending native pass. Their voice is delayed. Their leverage is already here.",
-          "terminal": "Draft NL localization pending native pass. LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.",
-          "audio": "Draft NL localization pending native pass. When they finally speak, they ask for the thing that proves they should not have it.",
-          "in_game_wiki": "Draft NL localization pending native pass. Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.",
-          "external_site": "Draft NL localization pending native pass. Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure."
+          "scanner": "NL LOC HOLD: Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.",
+          "field_note": "NL LOC HOLD: Their voice is delayed. Their leverage is already here.",
+          "terminal": "NL LOC HOLD: LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.",
+          "audio": "NL LOC HOLD: When they finally speak, they ask for the thing that proves they should not have it.",
+          "in_game_wiki": "NL LOC HOLD: Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.",
+          "external_site": "NL LOC HOLD: Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure."
         }
       }
     }

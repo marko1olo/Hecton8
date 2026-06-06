@@ -187,7 +187,20 @@ loc_db = {
     }
 }
 
+# Safe load of existing translations to prevent overwriting other pipeline keys (like Grand Library keys)
+if os.path.exists(out_loc_json):
+    try:
+        with open(out_loc_json, "r", encoding="utf-8-sig") as f:
+            existing = json.load(f)
+            if isinstance(existing, dict):
+                existing_strings = existing.get("strings", {})
+                existing_strings.update(loc_db["strings"])
+                loc_db.update(existing)
+                loc_db["strings"] = existing_strings
+    except Exception as e:
+        print(f"Warning: Could not load existing {out_loc_json}: {e}")
+
 with open(out_loc_json, "w", encoding="utf-8") as f:
     json.dump(loc_db, f, indent=4, ensure_ascii=False)
 
-print(f"Authored ru_RU Localization file with 37 translated Deep Lore nodes to {out_loc_json}")
+print(f"Authored ru_RU Localization file with {len(loc_db['strings'])} total nodes to {out_loc_json}")

@@ -1,30 +1,39 @@
 # GEOLOGY, PRESSURE, AND THE GREAT TIDE OF 2147
-**Grand Library Section:** 03
-**Language:** en_US
-**Canon:** Strict (Lore Bible 2190)
+
+> **Source:** Keelmark Loss Desk, Claim Denial Summary. Attached Addendum: Bathymetric Hazard Guide.  
+> **Speaker:** Lead Adjuster V. Thorne.  
+> **Reviewer note:** Deep Reach Corporation maintains that the 2147 colony loss was an "unforeseen Act of God" and an "AI anomaly." Keelmark Mutual rejects this claim. The disaster was a calculated mathematical certainty.
 
 ---
 
-## 1. Geological Atlas of HECTON-8
-The ocean of HECTON-8 is not a flat seabed. It is a fractured, resonance-heated world with a brutal topology, divided into distinct bathymetric zones:
+## 1. The Fiction of the AI Uprising
 
-*   **0-250 m (Photic Shelf):** A shallow shelf, the zone of light (The Ridge). There is still a faint glow from the surface here, piercing through the storms.
-*   **250-1200 m (Industrial Shelf / Cable Reef):** The industrial shelf. The wreckage of the first platforms rests here, forming cable reefs overgrown with algae.
-*   **1200-2800 m (Brine Canyon):** Brine canyons. Water density is so high here due to salts that gravity and buoyancy behave unpredictably. This fools sonars and strips the marauder of any sense of a "floor."
-*   **2800-4300 m (Abyssal Machine Field):** The abyssal machine fields. The main factories lie here, crushed by pressure, marking the territory fully controlled by the Atlas-6 repair-biological ecology.
-*   **4300-5600 m (Atlas Basin):** The Atlas Basin. A zone of thermal fields and production floors where biology and machines have fused into one.
+Let us clarify the liability. Deep Reach public relations claims the colony was destroyed by an "unforeseen AI uprising" or a "leviathan attack." This is an attempt to trigger the Force Majeure clause. We deny the claim. The disaster of 2147 was purely physical: a cryosphere collapse, storm tides, and predictable geophysical shifts. 
 
-## 2. Vent Forges
-Solid seabed is a rarity here. Usually, it consists of exposed ridges or thermal craters. The corporation built its factories directly over geothermal fault lines (Vent Forges). This provided free energy and thermal cycles for annealing "Pressure Glass" and ceramics. But these same fault lines create hydrodynamic boil shear, cause corrosive blooms, and throw off divers' oxygen sensors.
+The corporation knew the risk. Internal memos prove Risk Manager Iliya Varnek artificially lowered the structural pressure tolerances of the KH-12 modules by 18% to stay under the Q2 2146 budget. When the Great Tide hit, the modules were already operating beyond their fatigue limits. 
 
-## 3. Xenon-Omega Substrate (Blue Debt)
-Xenon-Omega is not just a chunk of ore. It is not magic. It is a strategic isotope that forms in the extreme conditions of HECTON-8. Noble gases, brine, geothermal mineral defects, and the infrastructure of Atlas-6 itself enter a symbiosis, creating a material capable of withstanding colossal energy loads.
-Marauders call it "Blue Debt." Harvesting unrefined xenon without pressure-rated containers causes poisoning—microscopic crystallizations in the lungs that make you cough up blue glass.
+Additionally, evacuation was delayed by 11 hours by legal counsel Noor Haldane due to quarantine and customs clearance issues regarding unrefined xenon. When the structural cascade began, the Atlas-6 AI did not "rebel." It simply executed Directive DR-CONT-7.4.1: it weighed the numbers. Preserving the pressure-sealed equipment for xenon extraction was mathematically more profitable than saving 843 biological labor units whose replacement cost was only $4,200 a head. 
 
-## 4. The Great Tide of 2147
-Deep Reach lies when they claim the colony was destroyed by an "unforeseen AI uprising" or a "leviathan attack." The disaster of 2147 was purely physical.
-Global climate change on the moon, a cryosphere collapse, storm tides, and geophysical shifts tore the infrastructure apart.
+HECTON-8 is not an AI tragedy. It is a crime committed using mathematics and gravity.
 
-The corporation knew about this risk. Risk Manager Iliya Varnek artificially lowered the structural limits of the modules to stay under budget. When the Tide came, evacuation was delayed by legal counsel Noor Haldane due to quarantine and customs clearance issues. And then, the Atlas-6 AI simply weighed the numbers: preserving the equipment for xenon extraction turned out to be more important than saving 843 people who had become unprofitable.
+## 2. Bathymetric Hazard Zones
 
-HECTON-8 is a crime committed using mathematics and gravity.
+For salvage contractors attempting to recover Keelmark-insured assets, understand that the ocean of HECTON-8 is a fractured, resonance-heated world with a brutal topology. The water column is divided into distinct operational zones:
+
+*   **0-250 m (The Ridge):** The photic shelf. There is still a faint glow from the surface here, piercing through the storm envelope. Hull pressure is nominal.
+*   **250-1200 m (Industrial Shelf):** The wreckage of the first drilling platforms rests here. They have collapsed into massive "cable reefs," heavily overgrown with bioluminescent algae. Entanglement risk is extreme.
+*   **1200-2800 m (Brine Canyons):** Water density is so high due to dissolved salts that gravity and buoyancy behave unpredictably. This acoustic density fools sonar arrays and strips a submersible pilot of any sense of a "floor." 
+*   **2800-4300 m (Abyssal Machine Field):** The primary extraction factories lie here, crushed by pressure. This territory is entirely controlled by the Atlas-6 repair-ecology.
+*   **4300-5600 m (Atlas Basin):** A zone of exposed thermal fields where the colony's biology and corporate machinery have fused into a single, hostile substrate.
+
+## 3. Vent Forges and Structural Instability
+
+Solid seabed is a rarity on HECTON-8. The corporation built its primary factories directly over geothermal fault lines to secure free energy for annealing pressure-glass and ceramics. 
+
+These "Vent Forges" are the core of our liability dispute. Deep Reach built on active fault lines to cut power costs. These vents create hydrodynamic boil shear, cause corrosive mineral blooms, and routinely throw off divers' oxygen sensors. You are diving into a boiling, toxic pressure cooker. 
+
+## 4. The Blue Debt
+
+You are down there for the Xenon-Omega substrate. Do not treat it as a simple chunk of ore. It forms in the extreme conditions of the basin, where noble gases, hypersaline brine, geothermal mineral defects, and the ruined infrastructure of Atlas-6 itself enter a symbiosis.
+
+Independent salvage crews call it "Blue Debt." Harvesting unrefined xenon without corporate-grade pressure-rated containers causes immediate poisoning. Microscopic crystallizations form in the lungs. You will drown on dry land, coughing up blue glass. Ensure your containment seals are rated for Class-4 hazardous materials, or do not accept the contract.

@@ -38,128 +38,128 @@
         "ru_RU": {
           "title": "Правило размера worker roster",
           "scanner": "Список колонии достаточно большой, чтобы место было населенным, и достаточно малый, чтобы остаться авторским.",
-          "field_note": "Draft RU localization pending native pass. The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.",
-          "terminal": "Draft RU localization pending native pass. ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.",
+          "field_note": "RU LOC HOLD: The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.",
+          "terminal": "RU LOC HOLD: ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.",
           "audio": "Имя становится доказательством только когда комната доказывает работу.",
           "in_game_wiki": "Правило размера worker roster защищает от анонимных руин и неконтролируемого name spam.",
-          "external_site": "Draft RU localization pending native pass. Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise."
+          "external_site": "RU LOC HOLD: Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise."
         },
         "ja_JP": {
           "title": "Worker Roster Size Rule",
-          "scanner": "Draft JP localization pending native pass. The colony roster is large enough to feel inhabited and small enough to stay authored.",
-          "field_note": "Draft JP localization pending native pass. The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.",
-          "terminal": "Draft JP localization pending native pass. ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.",
-          "audio": "Draft JP localization pending native pass. A name is evidence only when the room can prove the job.",
-          "in_game_wiki": "Draft JP localization pending native pass. The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
-          "external_site": "Draft JP localization pending native pass. Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise."
+          "scanner": "JP LOC HOLD: The colony roster is large enough to feel inhabited and small enough to stay authored.",
+          "field_note": "JP LOC HOLD: The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.",
+          "terminal": "JP LOC HOLD: ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.",
+          "audio": "JP LOC HOLD: A name is evidence only when the room can prove the job.",
+          "in_game_wiki": "JP LOC HOLD: The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
+          "external_site": "JP LOC HOLD: Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise."
         },
         "zh_CN": {
           "title": "Worker Roster Size Rule",
-          "scanner": "Draft CN localization pending native pass. The colony roster is large enough to feel inhabited and small enough to stay authored.",
-          "field_note": "Draft CN localization pending native pass. The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.",
-          "terminal": "Draft CN localization pending native pass. ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.",
-          "audio": "Draft CN localization pending native pass. A name is evidence only when the room can prove the job.",
-          "in_game_wiki": "Draft CN localization pending native pass. The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
-          "external_site": "Draft CN localization pending native pass. Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise."
+          "scanner": "CN LOC HOLD: The colony roster is large enough to feel inhabited and small enough to stay authored.",
+          "field_note": "CN LOC HOLD: The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.",
+          "terminal": "CN LOC HOLD: ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.",
+          "audio": "CN LOC HOLD: A name is evidence only when the room can prove the job.",
+          "in_game_wiki": "CN LOC HOLD: The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
+          "external_site": "CN LOC HOLD: Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise."
         },
         "fr_FR": {
           "title": "Worker Roster Size Rule",
-          "scanner": "Draft FR localization pending native pass. The colony roster is large enough to feel inhabited and small enough to stay authored.",
-          "field_note": "Draft FR localization pending native pass. The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.",
-          "terminal": "Draft FR localization pending native pass. ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.",
-          "audio": "Draft FR localization pending native pass. A name is evidence only when the room can prove the job.",
-          "in_game_wiki": "Draft FR localization pending native pass. The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
-          "external_site": "Draft FR localization pending native pass. Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise."
+          "scanner": "FR LOC HOLD: The colony roster is large enough to feel inhabited and small enough to stay authored.",
+          "field_note": "FR LOC HOLD: The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.",
+          "terminal": "FR LOC HOLD: ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.",
+          "audio": "FR LOC HOLD: A name is evidence only when the room can prove the job.",
+          "in_game_wiki": "FR LOC HOLD: The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
+          "external_site": "FR LOC HOLD: Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise."
         },
         "es_ES": {
           "title": "Worker Roster Size Rule",
-          "scanner": "Draft ES localization pending native pass. The colony roster is large enough to feel inhabited and small enough to stay authored.",
-          "field_note": "Draft ES localization pending native pass. The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.",
-          "terminal": "Draft ES localization pending native pass. ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.",
-          "audio": "Draft ES localization pending native pass. A name is evidence only when the room can prove the job.",
-          "in_game_wiki": "Draft ES localization pending native pass. The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
-          "external_site": "Draft ES localization pending native pass. Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise."
+          "scanner": "ES LOC HOLD: The colony roster is large enough to feel inhabited and small enough to stay authored.",
+          "field_note": "ES LOC HOLD: The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.",
+          "terminal": "ES LOC HOLD: ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.",
+          "audio": "ES LOC HOLD: A name is evidence only when the room can prove the job.",
+          "in_game_wiki": "ES LOC HOLD: The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
+          "external_site": "ES LOC HOLD: Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise."
         },
         "de_DE": {
           "title": "Worker Roster Size Rule",
-          "scanner": "Draft DE localization pending native pass. The colony roster is large enough to feel inhabited and small enough to stay authored.",
-          "field_note": "Draft DE localization pending native pass. The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.",
-          "terminal": "Draft DE localization pending native pass. ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.",
-          "audio": "Draft DE localization pending native pass. A name is evidence only when the room can prove the job.",
-          "in_game_wiki": "Draft DE localization pending native pass. The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
-          "external_site": "Draft DE localization pending native pass. Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise."
+          "scanner": "DE LOC HOLD: The colony roster is large enough to feel inhabited and small enough to stay authored.",
+          "field_note": "DE LOC HOLD: The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.",
+          "terminal": "DE LOC HOLD: ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.",
+          "audio": "DE LOC HOLD: A name is evidence only when the room can prove the job.",
+          "in_game_wiki": "DE LOC HOLD: The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
+          "external_site": "DE LOC HOLD: Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise."
         },
         "pl_PL": {
           "title": "Worker Roster Size Rule",
-          "scanner": "Draft PL localization pending native pass. The colony roster is large enough to feel inhabited and small enough to stay authored.",
-          "field_note": "Draft PL localization pending native pass. The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.",
-          "terminal": "Draft PL localization pending native pass. ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.",
-          "audio": "Draft PL localization pending native pass. A name is evidence only when the room can prove the job.",
-          "in_game_wiki": "Draft PL localization pending native pass. The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
-          "external_site": "Draft PL localization pending native pass. Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise."
+          "scanner": "PL LOC HOLD: The colony roster is large enough to feel inhabited and small enough to stay authored.",
+          "field_note": "PL LOC HOLD: The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.",
+          "terminal": "PL LOC HOLD: ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.",
+          "audio": "PL LOC HOLD: A name is evidence only when the room can prove the job.",
+          "in_game_wiki": "PL LOC HOLD: The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
+          "external_site": "PL LOC HOLD: Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise."
         },
         "uk_UA": {
           "title": "Worker Roster Size Rule",
-          "scanner": "Draft UA localization pending native pass. The colony roster is large enough to feel inhabited and small enough to stay authored.",
-          "field_note": "Draft UA localization pending native pass. The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.",
-          "terminal": "Draft UA localization pending native pass. ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.",
-          "audio": "Draft UA localization pending native pass. A name is evidence only when the room can prove the job.",
-          "in_game_wiki": "Draft UA localization pending native pass. The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
-          "external_site": "Draft UA localization pending native pass. Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise."
+          "scanner": "UA LOC HOLD: The colony roster is large enough to feel inhabited and small enough to stay authored.",
+          "field_note": "UA LOC HOLD: The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.",
+          "terminal": "UA LOC HOLD: ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.",
+          "audio": "UA LOC HOLD: A name is evidence only when the room can prove the job.",
+          "in_game_wiki": "UA LOC HOLD: The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
+          "external_site": "UA LOC HOLD: Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise."
         },
         "ar_SA": {
           "title": "Worker Roster Size Rule",
-          "scanner": "Draft AR localization pending native pass. The colony roster is large enough to feel inhabited and small enough to stay authored.",
-          "field_note": "Draft AR localization pending native pass. The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.",
-          "terminal": "Draft AR localization pending native pass. ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.",
-          "audio": "Draft AR localization pending native pass. A name is evidence only when the room can prove the job.",
-          "in_game_wiki": "Draft AR localization pending native pass. The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
-          "external_site": "Draft AR localization pending native pass. Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise."
+          "scanner": "AR LOC HOLD: The colony roster is large enough to feel inhabited and small enough to stay authored.",
+          "field_note": "AR LOC HOLD: The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.",
+          "terminal": "AR LOC HOLD: ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.",
+          "audio": "AR LOC HOLD: A name is evidence only when the room can prove the job.",
+          "in_game_wiki": "AR LOC HOLD: The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
+          "external_site": "AR LOC HOLD: Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise."
         },
         "id_ID": {
           "title": "Worker Roster Size Rule",
-          "scanner": "Draft ID localization pending native pass. The colony roster is large enough to feel inhabited and small enough to stay authored.",
-          "field_note": "Draft ID localization pending native pass. The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.",
-          "terminal": "Draft ID localization pending native pass. ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.",
-          "audio": "Draft ID localization pending native pass. A name is evidence only when the room can prove the job.",
-          "in_game_wiki": "Draft ID localization pending native pass. The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
-          "external_site": "Draft ID localization pending native pass. Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise."
+          "scanner": "ID LOC HOLD: The colony roster is large enough to feel inhabited and small enough to stay authored.",
+          "field_note": "ID LOC HOLD: The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.",
+          "terminal": "ID LOC HOLD: ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.",
+          "audio": "ID LOC HOLD: A name is evidence only when the room can prove the job.",
+          "in_game_wiki": "ID LOC HOLD: The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
+          "external_site": "ID LOC HOLD: Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise."
         },
         "ko_KR": {
           "title": "Worker Roster Size Rule",
-          "scanner": "Draft KO localization pending native pass. The colony roster is large enough to feel inhabited and small enough to stay authored.",
-          "field_note": "Draft KO localization pending native pass. The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.",
-          "terminal": "Draft KO localization pending native pass. ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.",
-          "audio": "Draft KO localization pending native pass. A name is evidence only when the room can prove the job.",
-          "in_game_wiki": "Draft KO localization pending native pass. The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
-          "external_site": "Draft KO localization pending native pass. Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise."
+          "scanner": "KO LOC HOLD: The colony roster is large enough to feel inhabited and small enough to stay authored.",
+          "field_note": "KO LOC HOLD: The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.",
+          "terminal": "KO LOC HOLD: ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.",
+          "audio": "KO LOC HOLD: A name is evidence only when the room can prove the job.",
+          "in_game_wiki": "KO LOC HOLD: The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
+          "external_site": "KO LOC HOLD: Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise."
         },
         "he_IL": {
           "title": "Worker Roster Size Rule",
-          "scanner": "Draft HE localization pending native pass. The colony roster is large enough to feel inhabited and small enough to stay authored.",
-          "field_note": "Draft HE localization pending native pass. The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.",
-          "terminal": "Draft HE localization pending native pass. ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.",
-          "audio": "Draft HE localization pending native pass. A name is evidence only when the room can prove the job.",
-          "in_game_wiki": "Draft HE localization pending native pass. The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
-          "external_site": "Draft HE localization pending native pass. Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise."
+          "scanner": "HE LOC HOLD: The colony roster is large enough to feel inhabited and small enough to stay authored.",
+          "field_note": "HE LOC HOLD: The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.",
+          "terminal": "HE LOC HOLD: ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.",
+          "audio": "HE LOC HOLD: A name is evidence only when the room can prove the job.",
+          "in_game_wiki": "HE LOC HOLD: The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
+          "external_site": "HE LOC HOLD: Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise."
         },
         "pt_BR": {
           "title": "Worker Roster Size Rule",
-          "scanner": "Draft PT localization pending native pass. The colony roster is large enough to feel inhabited and small enough to stay authored.",
-          "field_note": "Draft PT localization pending native pass. The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.",
-          "terminal": "Draft PT localization pending native pass. ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.",
-          "audio": "Draft PT localization pending native pass. A name is evidence only when the room can prove the job.",
-          "in_game_wiki": "Draft PT localization pending native pass. The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
-          "external_site": "Draft PT localization pending native pass. Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise."
+          "scanner": "PT LOC HOLD: The colony roster is large enough to feel inhabited and small enough to stay authored.",
+          "field_note": "PT LOC HOLD: The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.",
+          "terminal": "PT LOC HOLD: ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.",
+          "audio": "PT LOC HOLD: A name is evidence only when the room can prove the job.",
+          "in_game_wiki": "PT LOC HOLD: The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
+          "external_site": "PT LOC HOLD: Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise."
         },
         "nl_NL": {
           "title": "Worker Roster Size Rule",
-          "scanner": "Draft NL localization pending native pass. The colony roster is large enough to feel inhabited and small enough to stay authored.",
-          "field_note": "Draft NL localization pending native pass. The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.",
-          "terminal": "Draft NL localization pending native pass. ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.",
-          "audio": "Draft NL localization pending native pass. A name is evidence only when the room can prove the job.",
-          "in_game_wiki": "Draft NL localization pending native pass. The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
-          "external_site": "Draft NL localization pending native pass. Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise."
+          "scanner": "NL LOC HOLD: The colony roster is large enough to feel inhabited and small enough to stay authored.",
+          "field_note": "NL LOC HOLD: The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.",
+          "terminal": "NL LOC HOLD: ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.",
+          "audio": "NL LOC HOLD: A name is evidence only when the room can prove the job.",
+          "in_game_wiki": "NL LOC HOLD: The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
+          "external_site": "NL LOC HOLD: Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise."
         }
       }
     },
@@ -193,128 +193,128 @@
         "ru_RU": {
           "title": "Таблица pressure crew archetypes",
           "scanner": "Бригады это verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
-          "field_note": "Draft RU localization pending native pass. Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.",
+          "field_note": "RU LOC HOLD: Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.",
           "terminal": "CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Имена сначала крепятся к route function.",
           "audio": "Сначала работа. Потом память. Так колония выживает.",
           "in_game_wiki": "Pressure crew archetypes держат worker evidence привязанным к системам, которые игрок понимает и чинит.",
-          "external_site": "Draft RU localization pending native pass. Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness."
+          "external_site": "RU LOC HOLD: Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness."
         },
         "ja_JP": {
           "title": "Pressure Crew Archetype Table",
-          "scanner": "Draft JP localization pending native pass. Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
-          "field_note": "Draft JP localization pending native pass. Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.",
-          "terminal": "Draft JP localization pending native pass. CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
-          "audio": "Draft JP localization pending native pass. Job first. Memory second. That is how the colony survives.",
-          "in_game_wiki": "Draft JP localization pending native pass. Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
-          "external_site": "Draft JP localization pending native pass. Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness."
+          "scanner": "JP LOC HOLD: Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
+          "field_note": "JP LOC HOLD: Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.",
+          "terminal": "JP LOC HOLD: CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
+          "audio": "JP LOC HOLD: Job first. Memory second. That is how the colony survives.",
+          "in_game_wiki": "JP LOC HOLD: Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
+          "external_site": "JP LOC HOLD: Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness."
         },
         "zh_CN": {
           "title": "Pressure Crew Archetype Table",
-          "scanner": "Draft CN localization pending native pass. Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
-          "field_note": "Draft CN localization pending native pass. Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.",
-          "terminal": "Draft CN localization pending native pass. CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
-          "audio": "Draft CN localization pending native pass. Job first. Memory second. That is how the colony survives.",
-          "in_game_wiki": "Draft CN localization pending native pass. Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
-          "external_site": "Draft CN localization pending native pass. Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness."
+          "scanner": "CN LOC HOLD: Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
+          "field_note": "CN LOC HOLD: Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.",
+          "terminal": "CN LOC HOLD: CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
+          "audio": "CN LOC HOLD: Job first. Memory second. That is how the colony survives.",
+          "in_game_wiki": "CN LOC HOLD: Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
+          "external_site": "CN LOC HOLD: Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness."
         },
         "fr_FR": {
           "title": "Pressure Crew Archetype Table",
-          "scanner": "Draft FR localization pending native pass. Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
-          "field_note": "Draft FR localization pending native pass. Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.",
-          "terminal": "Draft FR localization pending native pass. CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
-          "audio": "Draft FR localization pending native pass. Job first. Memory second. That is how the colony survives.",
-          "in_game_wiki": "Draft FR localization pending native pass. Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
-          "external_site": "Draft FR localization pending native pass. Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness."
+          "scanner": "FR LOC HOLD: Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
+          "field_note": "FR LOC HOLD: Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.",
+          "terminal": "FR LOC HOLD: CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
+          "audio": "FR LOC HOLD: Job first. Memory second. That is how the colony survives.",
+          "in_game_wiki": "FR LOC HOLD: Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
+          "external_site": "FR LOC HOLD: Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness."
         },
         "es_ES": {
           "title": "Pressure Crew Archetype Table",
-          "scanner": "Draft ES localization pending native pass. Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
-          "field_note": "Draft ES localization pending native pass. Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.",
-          "terminal": "Draft ES localization pending native pass. CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
-          "audio": "Draft ES localization pending native pass. Job first. Memory second. That is how the colony survives.",
-          "in_game_wiki": "Draft ES localization pending native pass. Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
-          "external_site": "Draft ES localization pending native pass. Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness."
+          "scanner": "ES LOC HOLD: Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
+          "field_note": "ES LOC HOLD: Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.",
+          "terminal": "ES LOC HOLD: CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
+          "audio": "ES LOC HOLD: Job first. Memory second. That is how the colony survives.",
+          "in_game_wiki": "ES LOC HOLD: Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
+          "external_site": "ES LOC HOLD: Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness."
         },
         "de_DE": {
           "title": "Pressure Crew Archetype Table",
-          "scanner": "Draft DE localization pending native pass. Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
-          "field_note": "Draft DE localization pending native pass. Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.",
-          "terminal": "Draft DE localization pending native pass. CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
-          "audio": "Draft DE localization pending native pass. Job first. Memory second. That is how the colony survives.",
-          "in_game_wiki": "Draft DE localization pending native pass. Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
-          "external_site": "Draft DE localization pending native pass. Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness."
+          "scanner": "DE LOC HOLD: Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
+          "field_note": "DE LOC HOLD: Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.",
+          "terminal": "DE LOC HOLD: CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
+          "audio": "DE LOC HOLD: Job first. Memory second. That is how the colony survives.",
+          "in_game_wiki": "DE LOC HOLD: Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
+          "external_site": "DE LOC HOLD: Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness."
         },
         "pl_PL": {
           "title": "Pressure Crew Archetype Table",
-          "scanner": "Draft PL localization pending native pass. Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
-          "field_note": "Draft PL localization pending native pass. Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.",
-          "terminal": "Draft PL localization pending native pass. CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
-          "audio": "Draft PL localization pending native pass. Job first. Memory second. That is how the colony survives.",
-          "in_game_wiki": "Draft PL localization pending native pass. Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
-          "external_site": "Draft PL localization pending native pass. Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness."
+          "scanner": "PL LOC HOLD: Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
+          "field_note": "PL LOC HOLD: Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.",
+          "terminal": "PL LOC HOLD: CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
+          "audio": "PL LOC HOLD: Job first. Memory second. That is how the colony survives.",
+          "in_game_wiki": "PL LOC HOLD: Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
+          "external_site": "PL LOC HOLD: Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness."
         },
         "uk_UA": {
           "title": "Pressure Crew Archetype Table",
-          "scanner": "Draft UA localization pending native pass. Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
-          "field_note": "Draft UA localization pending native pass. Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.",
-          "terminal": "Draft UA localization pending native pass. CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
-          "audio": "Draft UA localization pending native pass. Job first. Memory second. That is how the colony survives.",
-          "in_game_wiki": "Draft UA localization pending native pass. Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
-          "external_site": "Draft UA localization pending native pass. Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness."
+          "scanner": "UA LOC HOLD: Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
+          "field_note": "UA LOC HOLD: Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.",
+          "terminal": "UA LOC HOLD: CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
+          "audio": "UA LOC HOLD: Job first. Memory second. That is how the colony survives.",
+          "in_game_wiki": "UA LOC HOLD: Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
+          "external_site": "UA LOC HOLD: Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness."
         },
         "ar_SA": {
           "title": "Pressure Crew Archetype Table",
-          "scanner": "Draft AR localization pending native pass. Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
-          "field_note": "Draft AR localization pending native pass. Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.",
-          "terminal": "Draft AR localization pending native pass. CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
-          "audio": "Draft AR localization pending native pass. Job first. Memory second. That is how the colony survives.",
-          "in_game_wiki": "Draft AR localization pending native pass. Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
-          "external_site": "Draft AR localization pending native pass. Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness."
+          "scanner": "AR LOC HOLD: Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
+          "field_note": "AR LOC HOLD: Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.",
+          "terminal": "AR LOC HOLD: CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
+          "audio": "AR LOC HOLD: Job first. Memory second. That is how the colony survives.",
+          "in_game_wiki": "AR LOC HOLD: Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
+          "external_site": "AR LOC HOLD: Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness."
         },
         "id_ID": {
           "title": "Pressure Crew Archetype Table",
-          "scanner": "Draft ID localization pending native pass. Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
-          "field_note": "Draft ID localization pending native pass. Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.",
-          "terminal": "Draft ID localization pending native pass. CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
-          "audio": "Draft ID localization pending native pass. Job first. Memory second. That is how the colony survives.",
-          "in_game_wiki": "Draft ID localization pending native pass. Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
-          "external_site": "Draft ID localization pending native pass. Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness."
+          "scanner": "ID LOC HOLD: Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
+          "field_note": "ID LOC HOLD: Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.",
+          "terminal": "ID LOC HOLD: CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
+          "audio": "ID LOC HOLD: Job first. Memory second. That is how the colony survives.",
+          "in_game_wiki": "ID LOC HOLD: Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
+          "external_site": "ID LOC HOLD: Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness."
         },
         "ko_KR": {
           "title": "Pressure Crew Archetype Table",
-          "scanner": "Draft KO localization pending native pass. Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
-          "field_note": "Draft KO localization pending native pass. Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.",
-          "terminal": "Draft KO localization pending native pass. CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
-          "audio": "Draft KO localization pending native pass. Job first. Memory second. That is how the colony survives.",
-          "in_game_wiki": "Draft KO localization pending native pass. Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
-          "external_site": "Draft KO localization pending native pass. Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness."
+          "scanner": "KO LOC HOLD: Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
+          "field_note": "KO LOC HOLD: Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.",
+          "terminal": "KO LOC HOLD: CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
+          "audio": "KO LOC HOLD: Job first. Memory second. That is how the colony survives.",
+          "in_game_wiki": "KO LOC HOLD: Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
+          "external_site": "KO LOC HOLD: Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness."
         },
         "he_IL": {
           "title": "Pressure Crew Archetype Table",
-          "scanner": "Draft HE localization pending native pass. Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
-          "field_note": "Draft HE localization pending native pass. Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.",
-          "terminal": "Draft HE localization pending native pass. CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
-          "audio": "Draft HE localization pending native pass. Job first. Memory second. That is how the colony survives.",
-          "in_game_wiki": "Draft HE localization pending native pass. Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
-          "external_site": "Draft HE localization pending native pass. Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness."
+          "scanner": "HE LOC HOLD: Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
+          "field_note": "HE LOC HOLD: Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.",
+          "terminal": "HE LOC HOLD: CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
+          "audio": "HE LOC HOLD: Job first. Memory second. That is how the colony survives.",
+          "in_game_wiki": "HE LOC HOLD: Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
+          "external_site": "HE LOC HOLD: Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness."
         },
         "pt_BR": {
           "title": "Pressure Crew Archetype Table",
-          "scanner": "Draft PT localization pending native pass. Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
-          "field_note": "Draft PT localization pending native pass. Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.",
-          "terminal": "Draft PT localization pending native pass. CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
-          "audio": "Draft PT localization pending native pass. Job first. Memory second. That is how the colony survives.",
-          "in_game_wiki": "Draft PT localization pending native pass. Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
-          "external_site": "Draft PT localization pending native pass. Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness."
+          "scanner": "PT LOC HOLD: Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
+          "field_note": "PT LOC HOLD: Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.",
+          "terminal": "PT LOC HOLD: CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
+          "audio": "PT LOC HOLD: Job first. Memory second. That is how the colony survives.",
+          "in_game_wiki": "PT LOC HOLD: Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
+          "external_site": "PT LOC HOLD: Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness."
         },
         "nl_NL": {
           "title": "Pressure Crew Archetype Table",
-          "scanner": "Draft NL localization pending native pass. Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
-          "field_note": "Draft NL localization pending native pass. Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.",
-          "terminal": "Draft NL localization pending native pass. CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
-          "audio": "Draft NL localization pending native pass. Job first. Memory second. That is how the colony survives.",
-          "in_game_wiki": "Draft NL localization pending native pass. Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
-          "external_site": "Draft NL localization pending native pass. Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness."
+          "scanner": "NL LOC HOLD: Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
+          "field_note": "NL LOC HOLD: Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.",
+          "terminal": "NL LOC HOLD: CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
+          "audio": "NL LOC HOLD: Job first. Memory second. That is how the colony survives.",
+          "in_game_wiki": "NL LOC HOLD: Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
+          "external_site": "NL LOC HOLD: Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness."
         }
       }
     },
@@ -352,124 +352,124 @@
           "terminal": "ANCHOR SET A: shallow и industrial-shelf recurrence. Каждое имя связывать с одним инструментом, одним route permission и одним поврежденным work object.",
           "audio": "Не оплакивай имя, пока инструмент не сказал зачем.",
           "in_game_wiki": "Anchor Worker Name Set A держит ранние имена колонии стабильными в lockers, ledgers и первых evidence chains.",
-          "external_site": "Draft RU localization pending native pass. Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects."
+          "external_site": "RU LOC HOLD: Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects."
         },
         "ja_JP": {
           "title": "Anchor Worker Name Set A",
-          "scanner": "Draft JP localization pending native pass. Anchor names should reappear through work, not personal exposition.",
-          "field_note": "Draft JP localization pending native pass. Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
-          "terminal": "Draft JP localization pending native pass. ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
-          "audio": "Draft JP localization pending native pass. Do not mourn the name until the tool tells you why.",
-          "in_game_wiki": "Draft JP localization pending native pass. Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
-          "external_site": "Draft JP localization pending native pass. Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects."
+          "scanner": "JP LOC HOLD: Anchor names should reappear through work, not personal exposition.",
+          "field_note": "JP LOC HOLD: Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
+          "terminal": "JP LOC HOLD: ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
+          "audio": "JP LOC HOLD: Do not mourn the name until the tool tells you why.",
+          "in_game_wiki": "JP LOC HOLD: Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
+          "external_site": "JP LOC HOLD: Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects."
         },
         "zh_CN": {
           "title": "Anchor Worker Name Set A",
-          "scanner": "Draft CN localization pending native pass. Anchor names should reappear through work, not personal exposition.",
-          "field_note": "Draft CN localization pending native pass. Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
-          "terminal": "Draft CN localization pending native pass. ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
-          "audio": "Draft CN localization pending native pass. Do not mourn the name until the tool tells you why.",
-          "in_game_wiki": "Draft CN localization pending native pass. Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
-          "external_site": "Draft CN localization pending native pass. Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects."
+          "scanner": "CN LOC HOLD: Anchor names should reappear through work, not personal exposition.",
+          "field_note": "CN LOC HOLD: Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
+          "terminal": "CN LOC HOLD: ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
+          "audio": "CN LOC HOLD: Do not mourn the name until the tool tells you why.",
+          "in_game_wiki": "CN LOC HOLD: Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
+          "external_site": "CN LOC HOLD: Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects."
         },
         "fr_FR": {
           "title": "Anchor Worker Name Set A",
-          "scanner": "Draft FR localization pending native pass. Anchor names should reappear through work, not personal exposition.",
-          "field_note": "Draft FR localization pending native pass. Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
-          "terminal": "Draft FR localization pending native pass. ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
-          "audio": "Draft FR localization pending native pass. Do not mourn the name until the tool tells you why.",
-          "in_game_wiki": "Draft FR localization pending native pass. Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
-          "external_site": "Draft FR localization pending native pass. Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects."
+          "scanner": "FR LOC HOLD: Anchor names should reappear through work, not personal exposition.",
+          "field_note": "FR LOC HOLD: Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
+          "terminal": "FR LOC HOLD: ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
+          "audio": "FR LOC HOLD: Do not mourn the name until the tool tells you why.",
+          "in_game_wiki": "FR LOC HOLD: Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
+          "external_site": "FR LOC HOLD: Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects."
         },
         "es_ES": {
           "title": "Anchor Worker Name Set A",
-          "scanner": "Draft ES localization pending native pass. Anchor names should reappear through work, not personal exposition.",
-          "field_note": "Draft ES localization pending native pass. Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
-          "terminal": "Draft ES localization pending native pass. ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
-          "audio": "Draft ES localization pending native pass. Do not mourn the name until the tool tells you why.",
-          "in_game_wiki": "Draft ES localization pending native pass. Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
-          "external_site": "Draft ES localization pending native pass. Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects."
+          "scanner": "ES LOC HOLD: Anchor names should reappear through work, not personal exposition.",
+          "field_note": "ES LOC HOLD: Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
+          "terminal": "ES LOC HOLD: ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
+          "audio": "ES LOC HOLD: Do not mourn the name until the tool tells you why.",
+          "in_game_wiki": "ES LOC HOLD: Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
+          "external_site": "ES LOC HOLD: Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects."
         },
         "de_DE": {
           "title": "Anchor Worker Name Set A",
-          "scanner": "Draft DE localization pending native pass. Anchor names should reappear through work, not personal exposition.",
-          "field_note": "Draft DE localization pending native pass. Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
-          "terminal": "Draft DE localization pending native pass. ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
-          "audio": "Draft DE localization pending native pass. Do not mourn the name until the tool tells you why.",
-          "in_game_wiki": "Draft DE localization pending native pass. Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
-          "external_site": "Draft DE localization pending native pass. Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects."
+          "scanner": "DE LOC HOLD: Anchor names should reappear through work, not personal exposition.",
+          "field_note": "DE LOC HOLD: Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
+          "terminal": "DE LOC HOLD: ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
+          "audio": "DE LOC HOLD: Do not mourn the name until the tool tells you why.",
+          "in_game_wiki": "DE LOC HOLD: Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
+          "external_site": "DE LOC HOLD: Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects."
         },
         "pl_PL": {
           "title": "Anchor Worker Name Set A",
-          "scanner": "Draft PL localization pending native pass. Anchor names should reappear through work, not personal exposition.",
-          "field_note": "Draft PL localization pending native pass. Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
-          "terminal": "Draft PL localization pending native pass. ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
-          "audio": "Draft PL localization pending native pass. Do not mourn the name until the tool tells you why.",
-          "in_game_wiki": "Draft PL localization pending native pass. Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
-          "external_site": "Draft PL localization pending native pass. Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects."
+          "scanner": "PL LOC HOLD: Anchor names should reappear through work, not personal exposition.",
+          "field_note": "PL LOC HOLD: Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
+          "terminal": "PL LOC HOLD: ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
+          "audio": "PL LOC HOLD: Do not mourn the name until the tool tells you why.",
+          "in_game_wiki": "PL LOC HOLD: Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
+          "external_site": "PL LOC HOLD: Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects."
         },
         "uk_UA": {
           "title": "Anchor Worker Name Set A",
-          "scanner": "Draft UA localization pending native pass. Anchor names should reappear through work, not personal exposition.",
-          "field_note": "Draft UA localization pending native pass. Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
-          "terminal": "Draft UA localization pending native pass. ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
-          "audio": "Draft UA localization pending native pass. Do not mourn the name until the tool tells you why.",
-          "in_game_wiki": "Draft UA localization pending native pass. Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
-          "external_site": "Draft UA localization pending native pass. Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects."
+          "scanner": "UA LOC HOLD: Anchor names should reappear through work, not personal exposition.",
+          "field_note": "UA LOC HOLD: Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
+          "terminal": "UA LOC HOLD: ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
+          "audio": "UA LOC HOLD: Do not mourn the name until the tool tells you why.",
+          "in_game_wiki": "UA LOC HOLD: Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
+          "external_site": "UA LOC HOLD: Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects."
         },
         "ar_SA": {
           "title": "Anchor Worker Name Set A",
-          "scanner": "Draft AR localization pending native pass. Anchor names should reappear through work, not personal exposition.",
-          "field_note": "Draft AR localization pending native pass. Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
-          "terminal": "Draft AR localization pending native pass. ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
-          "audio": "Draft AR localization pending native pass. Do not mourn the name until the tool tells you why.",
-          "in_game_wiki": "Draft AR localization pending native pass. Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
-          "external_site": "Draft AR localization pending native pass. Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects."
+          "scanner": "AR LOC HOLD: Anchor names should reappear through work, not personal exposition.",
+          "field_note": "AR LOC HOLD: Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
+          "terminal": "AR LOC HOLD: ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
+          "audio": "AR LOC HOLD: Do not mourn the name until the tool tells you why.",
+          "in_game_wiki": "AR LOC HOLD: Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
+          "external_site": "AR LOC HOLD: Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects."
         },
         "id_ID": {
           "title": "Anchor Worker Name Set A",
-          "scanner": "Draft ID localization pending native pass. Anchor names should reappear through work, not personal exposition.",
-          "field_note": "Draft ID localization pending native pass. Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
-          "terminal": "Draft ID localization pending native pass. ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
-          "audio": "Draft ID localization pending native pass. Do not mourn the name until the tool tells you why.",
-          "in_game_wiki": "Draft ID localization pending native pass. Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
-          "external_site": "Draft ID localization pending native pass. Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects."
+          "scanner": "ID LOC HOLD: Anchor names should reappear through work, not personal exposition.",
+          "field_note": "ID LOC HOLD: Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
+          "terminal": "ID LOC HOLD: ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
+          "audio": "ID LOC HOLD: Do not mourn the name until the tool tells you why.",
+          "in_game_wiki": "ID LOC HOLD: Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
+          "external_site": "ID LOC HOLD: Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects."
         },
         "ko_KR": {
           "title": "Anchor Worker Name Set A",
-          "scanner": "Draft KO localization pending native pass. Anchor names should reappear through work, not personal exposition.",
-          "field_note": "Draft KO localization pending native pass. Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
-          "terminal": "Draft KO localization pending native pass. ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
-          "audio": "Draft KO localization pending native pass. Do not mourn the name until the tool tells you why.",
-          "in_game_wiki": "Draft KO localization pending native pass. Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
-          "external_site": "Draft KO localization pending native pass. Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects."
+          "scanner": "KO LOC HOLD: Anchor names should reappear through work, not personal exposition.",
+          "field_note": "KO LOC HOLD: Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
+          "terminal": "KO LOC HOLD: ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
+          "audio": "KO LOC HOLD: Do not mourn the name until the tool tells you why.",
+          "in_game_wiki": "KO LOC HOLD: Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
+          "external_site": "KO LOC HOLD: Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects."
         },
         "he_IL": {
           "title": "Anchor Worker Name Set A",
-          "scanner": "Draft HE localization pending native pass. Anchor names should reappear through work, not personal exposition.",
-          "field_note": "Draft HE localization pending native pass. Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
-          "terminal": "Draft HE localization pending native pass. ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
-          "audio": "Draft HE localization pending native pass. Do not mourn the name until the tool tells you why.",
-          "in_game_wiki": "Draft HE localization pending native pass. Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
-          "external_site": "Draft HE localization pending native pass. Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects."
+          "scanner": "HE LOC HOLD: Anchor names should reappear through work, not personal exposition.",
+          "field_note": "HE LOC HOLD: Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
+          "terminal": "HE LOC HOLD: ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
+          "audio": "HE LOC HOLD: Do not mourn the name until the tool tells you why.",
+          "in_game_wiki": "HE LOC HOLD: Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
+          "external_site": "HE LOC HOLD: Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects."
         },
         "pt_BR": {
           "title": "Anchor Worker Name Set A",
-          "scanner": "Draft PT localization pending native pass. Anchor names should reappear through work, not personal exposition.",
-          "field_note": "Draft PT localization pending native pass. Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
-          "terminal": "Draft PT localization pending native pass. ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
-          "audio": "Draft PT localization pending native pass. Do not mourn the name until the tool tells you why.",
-          "in_game_wiki": "Draft PT localization pending native pass. Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
-          "external_site": "Draft PT localization pending native pass. Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects."
+          "scanner": "PT LOC HOLD: Anchor names should reappear through work, not personal exposition.",
+          "field_note": "PT LOC HOLD: Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
+          "terminal": "PT LOC HOLD: ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
+          "audio": "PT LOC HOLD: Do not mourn the name until the tool tells you why.",
+          "in_game_wiki": "PT LOC HOLD: Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
+          "external_site": "PT LOC HOLD: Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects."
         },
         "nl_NL": {
           "title": "Anchor Worker Name Set A",
-          "scanner": "Draft NL localization pending native pass. Anchor names should reappear through work, not personal exposition.",
-          "field_note": "Draft NL localization pending native pass. Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
-          "terminal": "Draft NL localization pending native pass. ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
-          "audio": "Draft NL localization pending native pass. Do not mourn the name until the tool tells you why.",
-          "in_game_wiki": "Draft NL localization pending native pass. Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
-          "external_site": "Draft NL localization pending native pass. Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects."
+          "scanner": "NL LOC HOLD: Anchor names should reappear through work, not personal exposition.",
+          "field_note": "NL LOC HOLD: Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
+          "terminal": "NL LOC HOLD: ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
+          "audio": "NL LOC HOLD: Do not mourn the name until the tool tells you why.",
+          "in_game_wiki": "NL LOC HOLD: Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
+          "external_site": "NL LOC HOLD: Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects."
         }
       }
     },
@@ -502,129 +502,129 @@
         },
         "ru_RU": {
           "title": "Anchor Worker Name Set B",
-          "scanner": "Draft RU localization pending native pass. Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.",
+          "scanner": "RU LOC HOLD: Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.",
           "field_note": "Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
-          "terminal": "Draft RU localization pending native pass. ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.",
-          "audio": "Draft RU localization pending native pass. A deep name costs more because the water has already proved what happened.",
+          "terminal": "RU LOC HOLD: ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.",
+          "audio": "RU LOC HOLD: A deep name costs more because the water has already proved what happened.",
           "in_game_wiki": "Anchor Worker Name Set B несет colony evidence в brine canyon и abyssal machine field layers.",
-          "external_site": "Draft RU localization pending native pass. Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood."
+          "external_site": "RU LOC HOLD: Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood."
         },
         "ja_JP": {
           "title": "Anchor Worker Name Set B",
-          "scanner": "Draft JP localization pending native pass. Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.",
-          "field_note": "Draft JP localization pending native pass. Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
-          "terminal": "Draft JP localization pending native pass. ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.",
-          "audio": "Draft JP localization pending native pass. A deep name costs more because the water has already proved what happened.",
-          "in_game_wiki": "Draft JP localization pending native pass. Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
-          "external_site": "Draft JP localization pending native pass. Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood."
+          "scanner": "JP LOC HOLD: Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.",
+          "field_note": "JP LOC HOLD: Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
+          "terminal": "JP LOC HOLD: ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.",
+          "audio": "JP LOC HOLD: A deep name costs more because the water has already proved what happened.",
+          "in_game_wiki": "JP LOC HOLD: Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
+          "external_site": "JP LOC HOLD: Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood."
         },
         "zh_CN": {
           "title": "Anchor Worker Name Set B",
-          "scanner": "Draft CN localization pending native pass. Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.",
-          "field_note": "Draft CN localization pending native pass. Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
-          "terminal": "Draft CN localization pending native pass. ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.",
-          "audio": "Draft CN localization pending native pass. A deep name costs more because the water has already proved what happened.",
-          "in_game_wiki": "Draft CN localization pending native pass. Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
-          "external_site": "Draft CN localization pending native pass. Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood."
+          "scanner": "CN LOC HOLD: Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.",
+          "field_note": "CN LOC HOLD: Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
+          "terminal": "CN LOC HOLD: ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.",
+          "audio": "CN LOC HOLD: A deep name costs more because the water has already proved what happened.",
+          "in_game_wiki": "CN LOC HOLD: Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
+          "external_site": "CN LOC HOLD: Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood."
         },
         "fr_FR": {
           "title": "Anchor Worker Name Set B",
-          "scanner": "Draft FR localization pending native pass. Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.",
-          "field_note": "Draft FR localization pending native pass. Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
-          "terminal": "Draft FR localization pending native pass. ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.",
-          "audio": "Draft FR localization pending native pass. A deep name costs more because the water has already proved what happened.",
-          "in_game_wiki": "Draft FR localization pending native pass. Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
-          "external_site": "Draft FR localization pending native pass. Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood."
+          "scanner": "FR LOC HOLD: Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.",
+          "field_note": "FR LOC HOLD: Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
+          "terminal": "FR LOC HOLD: ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.",
+          "audio": "FR LOC HOLD: A deep name costs more because the water has already proved what happened.",
+          "in_game_wiki": "FR LOC HOLD: Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
+          "external_site": "FR LOC HOLD: Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood."
         },
         "es_ES": {
           "title": "Anchor Worker Name Set B",
-          "scanner": "Draft ES localization pending native pass. Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.",
-          "field_note": "Draft ES localization pending native pass. Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
-          "terminal": "Draft ES localization pending native pass. ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.",
-          "audio": "Draft ES localization pending native pass. A deep name costs more because the water has already proved what happened.",
-          "in_game_wiki": "Draft ES localization pending native pass. Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
-          "external_site": "Draft ES localization pending native pass. Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood."
+          "scanner": "ES LOC HOLD: Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.",
+          "field_note": "ES LOC HOLD: Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
+          "terminal": "ES LOC HOLD: ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.",
+          "audio": "ES LOC HOLD: A deep name costs more because the water has already proved what happened.",
+          "in_game_wiki": "ES LOC HOLD: Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
+          "external_site": "ES LOC HOLD: Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood."
         },
         "de_DE": {
           "title": "Anchor Worker Name Set B",
-          "scanner": "Draft DE localization pending native pass. Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.",
-          "field_note": "Draft DE localization pending native pass. Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
-          "terminal": "Draft DE localization pending native pass. ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.",
-          "audio": "Draft DE localization pending native pass. A deep name costs more because the water has already proved what happened.",
-          "in_game_wiki": "Draft DE localization pending native pass. Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
-          "external_site": "Draft DE localization pending native pass. Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood."
+          "scanner": "DE LOC HOLD: Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.",
+          "field_note": "DE LOC HOLD: Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
+          "terminal": "DE LOC HOLD: ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.",
+          "audio": "DE LOC HOLD: A deep name costs more because the water has already proved what happened.",
+          "in_game_wiki": "DE LOC HOLD: Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
+          "external_site": "DE LOC HOLD: Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood."
         },
         "pl_PL": {
           "title": "Anchor Worker Name Set B",
-          "scanner": "Draft PL localization pending native pass. Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.",
-          "field_note": "Draft PL localization pending native pass. Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
-          "terminal": "Draft PL localization pending native pass. ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.",
-          "audio": "Draft PL localization pending native pass. A deep name costs more because the water has already proved what happened.",
-          "in_game_wiki": "Draft PL localization pending native pass. Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
-          "external_site": "Draft PL localization pending native pass. Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood."
+          "scanner": "PL LOC HOLD: Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.",
+          "field_note": "PL LOC HOLD: Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
+          "terminal": "PL LOC HOLD: ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.",
+          "audio": "PL LOC HOLD: A deep name costs more because the water has already proved what happened.",
+          "in_game_wiki": "PL LOC HOLD: Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
+          "external_site": "PL LOC HOLD: Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood."
         },
         "uk_UA": {
           "title": "Anchor Worker Name Set B",
-          "scanner": "Draft UA localization pending native pass. Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.",
-          "field_note": "Draft UA localization pending native pass. Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
-          "terminal": "Draft UA localization pending native pass. ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.",
-          "audio": "Draft UA localization pending native pass. A deep name costs more because the water has already proved what happened.",
-          "in_game_wiki": "Draft UA localization pending native pass. Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
-          "external_site": "Draft UA localization pending native pass. Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood."
+          "scanner": "UA LOC HOLD: Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.",
+          "field_note": "UA LOC HOLD: Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
+          "terminal": "UA LOC HOLD: ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.",
+          "audio": "UA LOC HOLD: A deep name costs more because the water has already proved what happened.",
+          "in_game_wiki": "UA LOC HOLD: Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
+          "external_site": "UA LOC HOLD: Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood."
         },
         "ar_SA": {
           "title": "Anchor Worker Name Set B",
-          "scanner": "Draft AR localization pending native pass. Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.",
-          "field_note": "Draft AR localization pending native pass. Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
-          "terminal": "Draft AR localization pending native pass. ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.",
-          "audio": "Draft AR localization pending native pass. A deep name costs more because the water has already proved what happened.",
-          "in_game_wiki": "Draft AR localization pending native pass. Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
-          "external_site": "Draft AR localization pending native pass. Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood."
+          "scanner": "AR LOC HOLD: Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.",
+          "field_note": "AR LOC HOLD: Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
+          "terminal": "AR LOC HOLD: ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.",
+          "audio": "AR LOC HOLD: A deep name costs more because the water has already proved what happened.",
+          "in_game_wiki": "AR LOC HOLD: Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
+          "external_site": "AR LOC HOLD: Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood."
         },
         "id_ID": {
           "title": "Anchor Worker Name Set B",
-          "scanner": "Draft ID localization pending native pass. Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.",
-          "field_note": "Draft ID localization pending native pass. Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
-          "terminal": "Draft ID localization pending native pass. ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.",
-          "audio": "Draft ID localization pending native pass. A deep name costs more because the water has already proved what happened.",
-          "in_game_wiki": "Draft ID localization pending native pass. Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
-          "external_site": "Draft ID localization pending native pass. Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood."
+          "scanner": "ID LOC HOLD: Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.",
+          "field_note": "ID LOC HOLD: Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
+          "terminal": "ID LOC HOLD: ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.",
+          "audio": "ID LOC HOLD: A deep name costs more because the water has already proved what happened.",
+          "in_game_wiki": "ID LOC HOLD: Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
+          "external_site": "ID LOC HOLD: Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood."
         },
         "ko_KR": {
           "title": "Anchor Worker Name Set B",
-          "scanner": "Draft KO localization pending native pass. Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.",
-          "field_note": "Draft KO localization pending native pass. Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
-          "terminal": "Draft KO localization pending native pass. ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.",
-          "audio": "Draft KO localization pending native pass. A deep name costs more because the water has already proved what happened.",
-          "in_game_wiki": "Draft KO localization pending native pass. Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
-          "external_site": "Draft KO localization pending native pass. Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood."
+          "scanner": "KO LOC HOLD: Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.",
+          "field_note": "KO LOC HOLD: Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
+          "terminal": "KO LOC HOLD: ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.",
+          "audio": "KO LOC HOLD: A deep name costs more because the water has already proved what happened.",
+          "in_game_wiki": "KO LOC HOLD: Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
+          "external_site": "KO LOC HOLD: Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood."
         },
         "he_IL": {
           "title": "Anchor Worker Name Set B",
-          "scanner": "Draft HE localization pending native pass. Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.",
-          "field_note": "Draft HE localization pending native pass. Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
-          "terminal": "Draft HE localization pending native pass. ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.",
-          "audio": "Draft HE localization pending native pass. A deep name costs more because the water has already proved what happened.",
-          "in_game_wiki": "Draft HE localization pending native pass. Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
-          "external_site": "Draft HE localization pending native pass. Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood."
+          "scanner": "HE LOC HOLD: Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.",
+          "field_note": "HE LOC HOLD: Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
+          "terminal": "HE LOC HOLD: ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.",
+          "audio": "HE LOC HOLD: A deep name costs more because the water has already proved what happened.",
+          "in_game_wiki": "HE LOC HOLD: Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
+          "external_site": "HE LOC HOLD: Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood."
         },
         "pt_BR": {
           "title": "Anchor Worker Name Set B",
-          "scanner": "Draft PT localization pending native pass. Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.",
-          "field_note": "Draft PT localization pending native pass. Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
-          "terminal": "Draft PT localization pending native pass. ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.",
-          "audio": "Draft PT localization pending native pass. A deep name costs more because the water has already proved what happened.",
-          "in_game_wiki": "Draft PT localization pending native pass. Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
-          "external_site": "Draft PT localization pending native pass. Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood."
+          "scanner": "PT LOC HOLD: Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.",
+          "field_note": "PT LOC HOLD: Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
+          "terminal": "PT LOC HOLD: ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.",
+          "audio": "PT LOC HOLD: A deep name costs more because the water has already proved what happened.",
+          "in_game_wiki": "PT LOC HOLD: Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
+          "external_site": "PT LOC HOLD: Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood."
         },
         "nl_NL": {
           "title": "Anchor Worker Name Set B",
-          "scanner": "Draft NL localization pending native pass. Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.",
-          "field_note": "Draft NL localization pending native pass. Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
-          "terminal": "Draft NL localization pending native pass. ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.",
-          "audio": "Draft NL localization pending native pass. A deep name costs more because the water has already proved what happened.",
-          "in_game_wiki": "Draft NL localization pending native pass. Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
-          "external_site": "Draft NL localization pending native pass. Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood."
+          "scanner": "NL LOC HOLD: Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.",
+          "field_note": "NL LOC HOLD: Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
+          "terminal": "NL LOC HOLD: ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.",
+          "audio": "NL LOC HOLD: A deep name costs more because the water has already proved what happened.",
+          "in_game_wiki": "NL LOC HOLD: Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
+          "external_site": "NL LOC HOLD: Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood."
         }
       }
     },
@@ -662,124 +662,124 @@
           "terminal": "SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Локализация может annotate; она не должна переписывать identity.",
           "audio": "Random не авторство. Привяжи имя к работе.",
           "in_game_wiki": "Грамматика seed-role имен дает replay менять worker evidence, сохраняя authored human texture.",
-          "external_site": "Draft RU localization pending native pass. Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant."
+          "external_site": "RU LOC HOLD: Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant."
         },
         "ja_JP": {
           "title": "Seed Role Name Grammar",
-          "scanner": "Draft JP localization pending native pass. A seed can move a worker's evidence order, not turn them into disposable text.",
-          "field_note": "Draft JP localization pending native pass. Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
-          "terminal": "Draft JP localization pending native pass. SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
-          "audio": "Draft JP localization pending native pass. Random is not authorship. Bind the name to a job.",
-          "in_game_wiki": "Draft JP localization pending native pass. Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
-          "external_site": "Draft JP localization pending native pass. Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant."
+          "scanner": "JP LOC HOLD: A seed can move a worker's evidence order, not turn them into disposable text.",
+          "field_note": "JP LOC HOLD: Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
+          "terminal": "JP LOC HOLD: SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
+          "audio": "JP LOC HOLD: Random is not authorship. Bind the name to a job.",
+          "in_game_wiki": "JP LOC HOLD: Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
+          "external_site": "JP LOC HOLD: Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant."
         },
         "zh_CN": {
           "title": "Seed Role Name Grammar",
-          "scanner": "Draft CN localization pending native pass. A seed can move a worker's evidence order, not turn them into disposable text.",
-          "field_note": "Draft CN localization pending native pass. Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
-          "terminal": "Draft CN localization pending native pass. SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
-          "audio": "Draft CN localization pending native pass. Random is not authorship. Bind the name to a job.",
-          "in_game_wiki": "Draft CN localization pending native pass. Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
-          "external_site": "Draft CN localization pending native pass. Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant."
+          "scanner": "CN LOC HOLD: A seed can move a worker's evidence order, not turn them into disposable text.",
+          "field_note": "CN LOC HOLD: Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
+          "terminal": "CN LOC HOLD: SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
+          "audio": "CN LOC HOLD: Random is not authorship. Bind the name to a job.",
+          "in_game_wiki": "CN LOC HOLD: Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
+          "external_site": "CN LOC HOLD: Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant."
         },
         "fr_FR": {
           "title": "Seed Role Name Grammar",
-          "scanner": "Draft FR localization pending native pass. A seed can move a worker's evidence order, not turn them into disposable text.",
-          "field_note": "Draft FR localization pending native pass. Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
-          "terminal": "Draft FR localization pending native pass. SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
-          "audio": "Draft FR localization pending native pass. Random is not authorship. Bind the name to a job.",
-          "in_game_wiki": "Draft FR localization pending native pass. Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
-          "external_site": "Draft FR localization pending native pass. Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant."
+          "scanner": "FR LOC HOLD: A seed can move a worker's evidence order, not turn them into disposable text.",
+          "field_note": "FR LOC HOLD: Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
+          "terminal": "FR LOC HOLD: SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
+          "audio": "FR LOC HOLD: Random is not authorship. Bind the name to a job.",
+          "in_game_wiki": "FR LOC HOLD: Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
+          "external_site": "FR LOC HOLD: Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant."
         },
         "es_ES": {
           "title": "Seed Role Name Grammar",
-          "scanner": "Draft ES localization pending native pass. A seed can move a worker's evidence order, not turn them into disposable text.",
-          "field_note": "Draft ES localization pending native pass. Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
-          "terminal": "Draft ES localization pending native pass. SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
-          "audio": "Draft ES localization pending native pass. Random is not authorship. Bind the name to a job.",
-          "in_game_wiki": "Draft ES localization pending native pass. Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
-          "external_site": "Draft ES localization pending native pass. Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant."
+          "scanner": "ES LOC HOLD: A seed can move a worker's evidence order, not turn them into disposable text.",
+          "field_note": "ES LOC HOLD: Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
+          "terminal": "ES LOC HOLD: SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
+          "audio": "ES LOC HOLD: Random is not authorship. Bind the name to a job.",
+          "in_game_wiki": "ES LOC HOLD: Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
+          "external_site": "ES LOC HOLD: Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant."
         },
         "de_DE": {
           "title": "Seed Role Name Grammar",
-          "scanner": "Draft DE localization pending native pass. A seed can move a worker's evidence order, not turn them into disposable text.",
-          "field_note": "Draft DE localization pending native pass. Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
-          "terminal": "Draft DE localization pending native pass. SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
-          "audio": "Draft DE localization pending native pass. Random is not authorship. Bind the name to a job.",
-          "in_game_wiki": "Draft DE localization pending native pass. Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
-          "external_site": "Draft DE localization pending native pass. Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant."
+          "scanner": "DE LOC HOLD: A seed can move a worker's evidence order, not turn them into disposable text.",
+          "field_note": "DE LOC HOLD: Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
+          "terminal": "DE LOC HOLD: SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
+          "audio": "DE LOC HOLD: Random is not authorship. Bind the name to a job.",
+          "in_game_wiki": "DE LOC HOLD: Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
+          "external_site": "DE LOC HOLD: Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant."
         },
         "pl_PL": {
           "title": "Seed Role Name Grammar",
-          "scanner": "Draft PL localization pending native pass. A seed can move a worker's evidence order, not turn them into disposable text.",
-          "field_note": "Draft PL localization pending native pass. Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
-          "terminal": "Draft PL localization pending native pass. SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
-          "audio": "Draft PL localization pending native pass. Random is not authorship. Bind the name to a job.",
-          "in_game_wiki": "Draft PL localization pending native pass. Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
-          "external_site": "Draft PL localization pending native pass. Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant."
+          "scanner": "PL LOC HOLD: A seed can move a worker's evidence order, not turn them into disposable text.",
+          "field_note": "PL LOC HOLD: Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
+          "terminal": "PL LOC HOLD: SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
+          "audio": "PL LOC HOLD: Random is not authorship. Bind the name to a job.",
+          "in_game_wiki": "PL LOC HOLD: Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
+          "external_site": "PL LOC HOLD: Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant."
         },
         "uk_UA": {
           "title": "Seed Role Name Grammar",
-          "scanner": "Draft UA localization pending native pass. A seed can move a worker's evidence order, not turn them into disposable text.",
-          "field_note": "Draft UA localization pending native pass. Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
-          "terminal": "Draft UA localization pending native pass. SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
-          "audio": "Draft UA localization pending native pass. Random is not authorship. Bind the name to a job.",
-          "in_game_wiki": "Draft UA localization pending native pass. Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
-          "external_site": "Draft UA localization pending native pass. Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant."
+          "scanner": "UA LOC HOLD: A seed can move a worker's evidence order, not turn them into disposable text.",
+          "field_note": "UA LOC HOLD: Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
+          "terminal": "UA LOC HOLD: SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
+          "audio": "UA LOC HOLD: Random is not authorship. Bind the name to a job.",
+          "in_game_wiki": "UA LOC HOLD: Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
+          "external_site": "UA LOC HOLD: Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant."
         },
         "ar_SA": {
           "title": "Seed Role Name Grammar",
-          "scanner": "Draft AR localization pending native pass. A seed can move a worker's evidence order, not turn them into disposable text.",
-          "field_note": "Draft AR localization pending native pass. Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
-          "terminal": "Draft AR localization pending native pass. SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
-          "audio": "Draft AR localization pending native pass. Random is not authorship. Bind the name to a job.",
-          "in_game_wiki": "Draft AR localization pending native pass. Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
-          "external_site": "Draft AR localization pending native pass. Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant."
+          "scanner": "AR LOC HOLD: A seed can move a worker's evidence order, not turn them into disposable text.",
+          "field_note": "AR LOC HOLD: Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
+          "terminal": "AR LOC HOLD: SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
+          "audio": "AR LOC HOLD: Random is not authorship. Bind the name to a job.",
+          "in_game_wiki": "AR LOC HOLD: Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
+          "external_site": "AR LOC HOLD: Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant."
         },
         "id_ID": {
           "title": "Seed Role Name Grammar",
-          "scanner": "Draft ID localization pending native pass. A seed can move a worker's evidence order, not turn them into disposable text.",
-          "field_note": "Draft ID localization pending native pass. Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
-          "terminal": "Draft ID localization pending native pass. SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
-          "audio": "Draft ID localization pending native pass. Random is not authorship. Bind the name to a job.",
-          "in_game_wiki": "Draft ID localization pending native pass. Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
-          "external_site": "Draft ID localization pending native pass. Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant."
+          "scanner": "ID LOC HOLD: A seed can move a worker's evidence order, not turn them into disposable text.",
+          "field_note": "ID LOC HOLD: Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
+          "terminal": "ID LOC HOLD: SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
+          "audio": "ID LOC HOLD: Random is not authorship. Bind the name to a job.",
+          "in_game_wiki": "ID LOC HOLD: Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
+          "external_site": "ID LOC HOLD: Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant."
         },
         "ko_KR": {
           "title": "Seed Role Name Grammar",
-          "scanner": "Draft KO localization pending native pass. A seed can move a worker's evidence order, not turn them into disposable text.",
-          "field_note": "Draft KO localization pending native pass. Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
-          "terminal": "Draft KO localization pending native pass. SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
-          "audio": "Draft KO localization pending native pass. Random is not authorship. Bind the name to a job.",
-          "in_game_wiki": "Draft KO localization pending native pass. Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
-          "external_site": "Draft KO localization pending native pass. Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant."
+          "scanner": "KO LOC HOLD: A seed can move a worker's evidence order, not turn them into disposable text.",
+          "field_note": "KO LOC HOLD: Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
+          "terminal": "KO LOC HOLD: SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
+          "audio": "KO LOC HOLD: Random is not authorship. Bind the name to a job.",
+          "in_game_wiki": "KO LOC HOLD: Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
+          "external_site": "KO LOC HOLD: Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant."
         },
         "he_IL": {
           "title": "Seed Role Name Grammar",
-          "scanner": "Draft HE localization pending native pass. A seed can move a worker's evidence order, not turn them into disposable text.",
-          "field_note": "Draft HE localization pending native pass. Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
-          "terminal": "Draft HE localization pending native pass. SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
-          "audio": "Draft HE localization pending native pass. Random is not authorship. Bind the name to a job.",
-          "in_game_wiki": "Draft HE localization pending native pass. Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
-          "external_site": "Draft HE localization pending native pass. Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant."
+          "scanner": "HE LOC HOLD: A seed can move a worker's evidence order, not turn them into disposable text.",
+          "field_note": "HE LOC HOLD: Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
+          "terminal": "HE LOC HOLD: SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
+          "audio": "HE LOC HOLD: Random is not authorship. Bind the name to a job.",
+          "in_game_wiki": "HE LOC HOLD: Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
+          "external_site": "HE LOC HOLD: Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant."
         },
         "pt_BR": {
           "title": "Seed Role Name Grammar",
-          "scanner": "Draft PT localization pending native pass. A seed can move a worker's evidence order, not turn them into disposable text.",
-          "field_note": "Draft PT localization pending native pass. Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
-          "terminal": "Draft PT localization pending native pass. SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
-          "audio": "Draft PT localization pending native pass. Random is not authorship. Bind the name to a job.",
-          "in_game_wiki": "Draft PT localization pending native pass. Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
-          "external_site": "Draft PT localization pending native pass. Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant."
+          "scanner": "PT LOC HOLD: A seed can move a worker's evidence order, not turn them into disposable text.",
+          "field_note": "PT LOC HOLD: Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
+          "terminal": "PT LOC HOLD: SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
+          "audio": "PT LOC HOLD: Random is not authorship. Bind the name to a job.",
+          "in_game_wiki": "PT LOC HOLD: Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
+          "external_site": "PT LOC HOLD: Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant."
         },
         "nl_NL": {
           "title": "Seed Role Name Grammar",
-          "scanner": "Draft NL localization pending native pass. A seed can move a worker's evidence order, not turn them into disposable text.",
-          "field_note": "Draft NL localization pending native pass. Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
-          "terminal": "Draft NL localization pending native pass. SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
-          "audio": "Draft NL localization pending native pass. Random is not authorship. Bind the name to a job.",
-          "in_game_wiki": "Draft NL localization pending native pass. Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
-          "external_site": "Draft NL localization pending native pass. Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant."
+          "scanner": "NL LOC HOLD: A seed can move a worker's evidence order, not turn them into disposable text.",
+          "field_note": "NL LOC HOLD: Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
+          "terminal": "NL LOC HOLD: SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
+          "audio": "NL LOC HOLD: Random is not authorship. Bind the name to a job.",
+          "in_game_wiki": "NL LOC HOLD: Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
+          "external_site": "NL LOC HOLD: Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant."
         }
       }
     }

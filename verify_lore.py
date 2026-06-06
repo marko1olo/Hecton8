@@ -14,7 +14,7 @@ banned_phrases = [
 ]
 
 def check_file(filepath):
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, "r", encoding="utf-8-sig") as f:
         content = f.read()
 
     issues = []

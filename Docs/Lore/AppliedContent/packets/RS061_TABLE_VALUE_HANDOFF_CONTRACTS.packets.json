@@ -36,130 +36,130 @@
           "field_note": "Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree."
         },
         "ru_RU": {
-          "title": "Draft RU localization pending native pass. Resource Yield Data Boundary",
-          "scanner": "Draft RU localization pending native pass. Yield boundary: resource class, pressure band, custody grade, depletion rule.",
-          "terminal": "Draft RU localization pending native pass. RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.",
+          "title": "RU LOC HOLD: Resource Yield Data Boundary",
+          "scanner": "RU LOC HOLD: Yield boundary: resource class, pressure band, custody grade, depletion rule.",
+          "terminal": "RU LOC HOLD: RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.",
           "audio": "Проба без истории давления не имеет честной цены.",
-          "in_game_wiki": "Draft RU localization pending native pass. Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.",
-          "external_site": "Draft RU localization pending native pass. Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.",
-          "field_note": "Draft RU localization pending native pass. Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree."
+          "in_game_wiki": "RU LOC HOLD: Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.",
+          "external_site": "RU LOC HOLD: Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.",
+          "field_note": "RU LOC HOLD: Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree."
         },
         "ja_JP": {
-          "title": "Draft JP localization pending native pass. Resource Yield Data Boundary",
-          "scanner": "Draft JP localization pending native pass. Yield boundary: resource class, pressure band, custody grade, depletion rule.",
-          "terminal": "Draft JP localization pending native pass. RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.",
-          "audio": "Draft JA localization pending native pass. A sample without pressure history is not a value.",
-          "in_game_wiki": "Draft JP localization pending native pass. Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.",
-          "external_site": "Draft JP localization pending native pass. Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.",
-          "field_note": "Draft JP localization pending native pass. Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree."
+          "title": "JP LOC HOLD: Resource Yield Data Boundary",
+          "scanner": "JP LOC HOLD: Yield boundary: resource class, pressure band, custody grade, depletion rule.",
+          "terminal": "JP LOC HOLD: RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.",
+          "audio": "JA LOC HOLD: A sample without pressure history is not a value.",
+          "in_game_wiki": "JP LOC HOLD: Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.",
+          "external_site": "JP LOC HOLD: Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.",
+          "field_note": "JP LOC HOLD: Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree."
         },
         "zh_CN": {
-          "title": "Draft CN localization pending native pass. Resource Yield Data Boundary",
-          "scanner": "Draft CN localization pending native pass. Yield boundary: resource class, pressure band, custody grade, depletion rule.",
-          "terminal": "Draft CN localization pending native pass. RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.",
-          "audio": "Draft ZH localization pending native pass. A sample without pressure history is not a value.",
-          "in_game_wiki": "Draft CN localization pending native pass. Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.",
-          "external_site": "Draft CN localization pending native pass. Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.",
-          "field_note": "Draft CN localization pending native pass. Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree."
+          "title": "CN LOC HOLD: Resource Yield Data Boundary",
+          "scanner": "CN LOC HOLD: Yield boundary: resource class, pressure band, custody grade, depletion rule.",
+          "terminal": "CN LOC HOLD: RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.",
+          "audio": "ZH LOC HOLD: A sample without pressure history is not a value.",
+          "in_game_wiki": "CN LOC HOLD: Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.",
+          "external_site": "CN LOC HOLD: Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.",
+          "field_note": "CN LOC HOLD: Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Resource Yield Data Boundary",
-          "scanner": "Draft FR localization pending native pass. Yield boundary: resource class, pressure band, custody grade, depletion rule.",
-          "terminal": "Draft FR localization pending native pass. RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.",
-          "audio": "Draft FR localization pending native pass. A sample without pressure history is not a value.",
-          "in_game_wiki": "Draft FR localization pending native pass. Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.",
-          "external_site": "Draft FR localization pending native pass. Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.",
-          "field_note": "Draft FR localization pending native pass. Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree."
+          "title": "FR LOC HOLD: Resource Yield Data Boundary",
+          "scanner": "FR LOC HOLD: Yield boundary: resource class, pressure band, custody grade, depletion rule.",
+          "terminal": "FR LOC HOLD: RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.",
+          "audio": "FR LOC HOLD: A sample without pressure history is not a value.",
+          "in_game_wiki": "FR LOC HOLD: Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.",
+          "external_site": "FR LOC HOLD: Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.",
+          "field_note": "FR LOC HOLD: Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Resource Yield Data Boundary",
-          "scanner": "Draft ES localization pending native pass. Yield boundary: resource class, pressure band, custody grade, depletion rule.",
-          "terminal": "Draft ES localization pending native pass. RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.",
-          "audio": "Draft ES localization pending native pass. A sample without pressure history is not a value.",
-          "in_game_wiki": "Draft ES localization pending native pass. Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.",
-          "external_site": "Draft ES localization pending native pass. Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.",
-          "field_note": "Draft ES localization pending native pass. Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree."
+          "title": "ES LOC HOLD: Resource Yield Data Boundary",
+          "scanner": "ES LOC HOLD: Yield boundary: resource class, pressure band, custody grade, depletion rule.",
+          "terminal": "ES LOC HOLD: RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.",
+          "audio": "ES LOC HOLD: A sample without pressure history is not a value.",
+          "in_game_wiki": "ES LOC HOLD: Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.",
+          "external_site": "ES LOC HOLD: Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.",
+          "field_note": "ES LOC HOLD: Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Resource Yield Data Boundary",
-          "scanner": "Draft DE localization pending native pass. Yield boundary: resource class, pressure band, custody grade, depletion rule.",
-          "terminal": "Draft DE localization pending native pass. RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.",
-          "audio": "Draft DE localization pending native pass. A sample without pressure history is not a value.",
-          "in_game_wiki": "Draft DE localization pending native pass. Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.",
-          "external_site": "Draft DE localization pending native pass. Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.",
-          "field_note": "Draft DE localization pending native pass. Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree."
+          "title": "DE LOC HOLD: Resource Yield Data Boundary",
+          "scanner": "DE LOC HOLD: Yield boundary: resource class, pressure band, custody grade, depletion rule.",
+          "terminal": "DE LOC HOLD: RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.",
+          "audio": "DE LOC HOLD: A sample without pressure history is not a value.",
+          "in_game_wiki": "DE LOC HOLD: Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.",
+          "external_site": "DE LOC HOLD: Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.",
+          "field_note": "DE LOC HOLD: Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Resource Yield Data Boundary",
-          "scanner": "Draft PL localization pending native pass. Yield boundary: resource class, pressure band, custody grade, depletion rule.",
-          "terminal": "Draft PL localization pending native pass. RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.",
-          "audio": "Draft PL localization pending native pass. A sample without pressure history is not a value.",
-          "in_game_wiki": "Draft PL localization pending native pass. Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.",
-          "external_site": "Draft PL localization pending native pass. Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.",
-          "field_note": "Draft PL localization pending native pass. Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree."
+          "title": "PL LOC HOLD: Resource Yield Data Boundary",
+          "scanner": "PL LOC HOLD: Yield boundary: resource class, pressure band, custody grade, depletion rule.",
+          "terminal": "PL LOC HOLD: RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.",
+          "audio": "PL LOC HOLD: A sample without pressure history is not a value.",
+          "in_game_wiki": "PL LOC HOLD: Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.",
+          "external_site": "PL LOC HOLD: Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.",
+          "field_note": "PL LOC HOLD: Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree."
         },
         "uk_UA": {
-          "title": "Draft UA localization pending native pass. Resource Yield Data Boundary",
-          "scanner": "Draft UA localization pending native pass. Yield boundary: resource class, pressure band, custody grade, depletion rule.",
-          "terminal": "Draft UA localization pending native pass. RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.",
-          "audio": "Draft UK localization pending native pass. A sample without pressure history is not a value.",
-          "in_game_wiki": "Draft UA localization pending native pass. Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.",
-          "external_site": "Draft UA localization pending native pass. Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.",
-          "field_note": "Draft UA localization pending native pass. Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree."
+          "title": "UA LOC HOLD: Resource Yield Data Boundary",
+          "scanner": "UA LOC HOLD: Yield boundary: resource class, pressure band, custody grade, depletion rule.",
+          "terminal": "UA LOC HOLD: RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.",
+          "audio": "UK LOC HOLD: A sample without pressure history is not a value.",
+          "in_game_wiki": "UA LOC HOLD: Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.",
+          "external_site": "UA LOC HOLD: Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.",
+          "field_note": "UA LOC HOLD: Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Resource Yield Data Boundary",
-          "scanner": "Draft AR localization pending native pass. Yield boundary: resource class, pressure band, custody grade, depletion rule.",
-          "terminal": "Draft AR localization pending native pass. RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.",
-          "audio": "Draft AR localization pending native pass. A sample without pressure history is not a value.",
-          "in_game_wiki": "Draft AR localization pending native pass. Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.",
-          "external_site": "Draft AR localization pending native pass. Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.",
-          "field_note": "Draft AR localization pending native pass. Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree."
+          "title": "AR LOC HOLD: Resource Yield Data Boundary",
+          "scanner": "AR LOC HOLD: Yield boundary: resource class, pressure band, custody grade, depletion rule.",
+          "terminal": "AR LOC HOLD: RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.",
+          "audio": "AR LOC HOLD: A sample without pressure history is not a value.",
+          "in_game_wiki": "AR LOC HOLD: Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.",
+          "external_site": "AR LOC HOLD: Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.",
+          "field_note": "AR LOC HOLD: Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Resource Yield Data Boundary",
-          "scanner": "Draft ID localization pending native pass. Yield boundary: resource class, pressure band, custody grade, depletion rule.",
-          "terminal": "Draft ID localization pending native pass. RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.",
-          "audio": "Draft ID localization pending native pass. A sample without pressure history is not a value.",
-          "in_game_wiki": "Draft ID localization pending native pass. Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.",
-          "external_site": "Draft ID localization pending native pass. Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.",
-          "field_note": "Draft ID localization pending native pass. Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree."
+          "title": "ID LOC HOLD: Resource Yield Data Boundary",
+          "scanner": "ID LOC HOLD: Yield boundary: resource class, pressure band, custody grade, depletion rule.",
+          "terminal": "ID LOC HOLD: RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.",
+          "audio": "ID LOC HOLD: A sample without pressure history is not a value.",
+          "in_game_wiki": "ID LOC HOLD: Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.",
+          "external_site": "ID LOC HOLD: Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.",
+          "field_note": "ID LOC HOLD: Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Resource Yield Data Boundary",
-          "scanner": "Draft KO localization pending native pass. Yield boundary: resource class, pressure band, custody grade, depletion rule.",
-          "terminal": "Draft KO localization pending native pass. RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.",
-          "audio": "Draft KO localization pending native pass. A sample without pressure history is not a value.",
-          "in_game_wiki": "Draft KO localization pending native pass. Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.",
-          "external_site": "Draft KO localization pending native pass. Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.",
-          "field_note": "Draft KO localization pending native pass. Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree."
+          "title": "KO LOC HOLD: Resource Yield Data Boundary",
+          "scanner": "KO LOC HOLD: Yield boundary: resource class, pressure band, custody grade, depletion rule.",
+          "terminal": "KO LOC HOLD: RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.",
+          "audio": "KO LOC HOLD: A sample without pressure history is not a value.",
+          "in_game_wiki": "KO LOC HOLD: Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.",
+          "external_site": "KO LOC HOLD: Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.",
+          "field_note": "KO LOC HOLD: Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Resource Yield Data Boundary",
-          "scanner": "Draft HE localization pending native pass. Yield boundary: resource class, pressure band, custody grade, depletion rule.",
-          "terminal": "Draft HE localization pending native pass. RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.",
-          "audio": "Draft HE localization pending native pass. A sample without pressure history is not a value.",
-          "in_game_wiki": "Draft HE localization pending native pass. Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.",
-          "external_site": "Draft HE localization pending native pass. Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.",
-          "field_note": "Draft HE localization pending native pass. Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree."
+          "title": "HE LOC HOLD: Resource Yield Data Boundary",
+          "scanner": "HE LOC HOLD: Yield boundary: resource class, pressure band, custody grade, depletion rule.",
+          "terminal": "HE LOC HOLD: RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.",
+          "audio": "HE LOC HOLD: A sample without pressure history is not a value.",
+          "in_game_wiki": "HE LOC HOLD: Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.",
+          "external_site": "HE LOC HOLD: Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.",
+          "field_note": "HE LOC HOLD: Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Resource Yield Data Boundary",
-          "scanner": "Draft PT localization pending native pass. Yield boundary: resource class, pressure band, custody grade, depletion rule.",
-          "terminal": "Draft PT localization pending native pass. RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.",
-          "audio": "Draft PT localization pending native pass. A sample without pressure history is not a value.",
-          "in_game_wiki": "Draft PT localization pending native pass. Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.",
-          "external_site": "Draft PT localization pending native pass. Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.",
-          "field_note": "Draft PT localization pending native pass. Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree."
+          "title": "PT LOC HOLD: Resource Yield Data Boundary",
+          "scanner": "PT LOC HOLD: Yield boundary: resource class, pressure band, custody grade, depletion rule.",
+          "terminal": "PT LOC HOLD: RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.",
+          "audio": "PT LOC HOLD: A sample without pressure history is not a value.",
+          "in_game_wiki": "PT LOC HOLD: Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.",
+          "external_site": "PT LOC HOLD: Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.",
+          "field_note": "PT LOC HOLD: Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Resource Yield Data Boundary",
-          "scanner": "Draft NL localization pending native pass. Yield boundary: resource class, pressure band, custody grade, depletion rule.",
-          "terminal": "Draft NL localization pending native pass. RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.",
-          "audio": "Draft NL localization pending native pass. A sample without pressure history is not a value.",
-          "in_game_wiki": "Draft NL localization pending native pass. Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.",
-          "external_site": "Draft NL localization pending native pass. Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.",
-          "field_note": "Draft NL localization pending native pass. Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree."
+          "title": "NL LOC HOLD: Resource Yield Data Boundary",
+          "scanner": "NL LOC HOLD: Yield boundary: resource class, pressure band, custody grade, depletion rule.",
+          "terminal": "NL LOC HOLD: RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.",
+          "audio": "NL LOC HOLD: A sample without pressure history is not a value.",
+          "in_game_wiki": "NL LOC HOLD: Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.",
+          "external_site": "NL LOC HOLD: Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.",
+          "field_note": "NL LOC HOLD: Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree."
         }
       }
     },
@@ -191,130 +191,130 @@
           "field_note": "Stack limits stay table-owned and stable for save identity."
         },
         "ru_RU": {
-          "title": "Draft RU localization pending native pass. Stack Limit Data Boundary",
-          "scanner": "Draft RU localization pending native pass. Stack boundary: vessel class and contamination stage beat icon count.",
-          "terminal": "Draft RU localization pending native pass. STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.",
+          "title": "RU LOC HOLD: Stack Limit Data Boundary",
+          "scanner": "RU LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.",
+          "terminal": "RU LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.",
           "audio": "Ящик не является сосудом давления.",
-          "in_game_wiki": "Draft RU localization pending native pass. Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.",
+          "in_game_wiki": "RU LOC HOLD: Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.",
           "external_site": "Inventory pressure в HECTON-8 идет от массы, certification и containment.",
-          "field_note": "Draft RU localization pending native pass. Stack limits stay table-owned and stable for save identity."
+          "field_note": "RU LOC HOLD: Stack limits stay table-owned and stable for save identity."
         },
         "ja_JP": {
-          "title": "Draft JP localization pending native pass. Stack Limit Data Boundary",
-          "scanner": "Draft JP localization pending native pass. Stack boundary: vessel class and contamination stage beat icon count.",
-          "terminal": "Draft JP localization pending native pass. STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.",
-          "audio": "Draft JA localization pending native pass. A crate is not a pressure vessel.",
-          "in_game_wiki": "Draft JP localization pending native pass. Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.",
-          "external_site": "Draft JA localization pending native pass. Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.",
-          "field_note": "Draft JP localization pending native pass. Stack limits stay table-owned and stable for save identity."
+          "title": "JP LOC HOLD: Stack Limit Data Boundary",
+          "scanner": "JP LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.",
+          "terminal": "JP LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.",
+          "audio": "JA LOC HOLD: A crate is not a pressure vessel.",
+          "in_game_wiki": "JP LOC HOLD: Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.",
+          "external_site": "JA LOC HOLD: Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.",
+          "field_note": "JP LOC HOLD: Stack limits stay table-owned and stable for save identity."
         },
         "zh_CN": {
-          "title": "Draft CN localization pending native pass. Stack Limit Data Boundary",
-          "scanner": "Draft CN localization pending native pass. Stack boundary: vessel class and contamination stage beat icon count.",
-          "terminal": "Draft CN localization pending native pass. STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.",
-          "audio": "Draft ZH localization pending native pass. A crate is not a pressure vessel.",
-          "in_game_wiki": "Draft CN localization pending native pass. Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.",
-          "external_site": "Draft ZH localization pending native pass. Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.",
-          "field_note": "Draft CN localization pending native pass. Stack limits stay table-owned and stable for save identity."
+          "title": "CN LOC HOLD: Stack Limit Data Boundary",
+          "scanner": "CN LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.",
+          "terminal": "CN LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.",
+          "audio": "ZH LOC HOLD: A crate is not a pressure vessel.",
+          "in_game_wiki": "CN LOC HOLD: Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.",
+          "external_site": "ZH LOC HOLD: Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.",
+          "field_note": "CN LOC HOLD: Stack limits stay table-owned and stable for save identity."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Stack Limit Data Boundary",
-          "scanner": "Draft FR localization pending native pass. Stack boundary: vessel class and contamination stage beat icon count.",
-          "terminal": "Draft FR localization pending native pass. STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.",
-          "audio": "Draft FR localization pending native pass. A crate is not a pressure vessel.",
-          "in_game_wiki": "Draft FR localization pending native pass. Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.",
-          "external_site": "Draft FR localization pending native pass. Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.",
-          "field_note": "Draft FR localization pending native pass. Stack limits stay table-owned and stable for save identity."
+          "title": "FR LOC HOLD: Stack Limit Data Boundary",
+          "scanner": "FR LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.",
+          "terminal": "FR LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.",
+          "audio": "FR LOC HOLD: A crate is not a pressure vessel.",
+          "in_game_wiki": "FR LOC HOLD: Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.",
+          "external_site": "FR LOC HOLD: Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.",
+          "field_note": "FR LOC HOLD: Stack limits stay table-owned and stable for save identity."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Stack Limit Data Boundary",
-          "scanner": "Draft ES localization pending native pass. Stack boundary: vessel class and contamination stage beat icon count.",
-          "terminal": "Draft ES localization pending native pass. STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.",
-          "audio": "Draft ES localization pending native pass. A crate is not a pressure vessel.",
-          "in_game_wiki": "Draft ES localization pending native pass. Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.",
-          "external_site": "Draft ES localization pending native pass. Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.",
-          "field_note": "Draft ES localization pending native pass. Stack limits stay table-owned and stable for save identity."
+          "title": "ES LOC HOLD: Stack Limit Data Boundary",
+          "scanner": "ES LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.",
+          "terminal": "ES LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.",
+          "audio": "ES LOC HOLD: A crate is not a pressure vessel.",
+          "in_game_wiki": "ES LOC HOLD: Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.",
+          "external_site": "ES LOC HOLD: Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.",
+          "field_note": "ES LOC HOLD: Stack limits stay table-owned and stable for save identity."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Stack Limit Data Boundary",
-          "scanner": "Draft DE localization pending native pass. Stack boundary: vessel class and contamination stage beat icon count.",
-          "terminal": "Draft DE localization pending native pass. STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.",
-          "audio": "Draft DE localization pending native pass. A crate is not a pressure vessel.",
-          "in_game_wiki": "Draft DE localization pending native pass. Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.",
-          "external_site": "Draft DE localization pending native pass. Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.",
-          "field_note": "Draft DE localization pending native pass. Stack limits stay table-owned and stable for save identity."
+          "title": "DE LOC HOLD: Stack Limit Data Boundary",
+          "scanner": "DE LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.",
+          "terminal": "DE LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.",
+          "audio": "DE LOC HOLD: A crate is not a pressure vessel.",
+          "in_game_wiki": "DE LOC HOLD: Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.",
+          "external_site": "DE LOC HOLD: Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.",
+          "field_note": "DE LOC HOLD: Stack limits stay table-owned and stable for save identity."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Stack Limit Data Boundary",
-          "scanner": "Draft PL localization pending native pass. Stack boundary: vessel class and contamination stage beat icon count.",
-          "terminal": "Draft PL localization pending native pass. STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.",
-          "audio": "Draft PL localization pending native pass. A crate is not a pressure vessel.",
-          "in_game_wiki": "Draft PL localization pending native pass. Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.",
-          "external_site": "Draft PL localization pending native pass. Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.",
-          "field_note": "Draft PL localization pending native pass. Stack limits stay table-owned and stable for save identity."
+          "title": "PL LOC HOLD: Stack Limit Data Boundary",
+          "scanner": "PL LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.",
+          "terminal": "PL LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.",
+          "audio": "PL LOC HOLD: A crate is not a pressure vessel.",
+          "in_game_wiki": "PL LOC HOLD: Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.",
+          "external_site": "PL LOC HOLD: Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.",
+          "field_note": "PL LOC HOLD: Stack limits stay table-owned and stable for save identity."
         },
         "uk_UA": {
-          "title": "Draft UA localization pending native pass. Stack Limit Data Boundary",
-          "scanner": "Draft UA localization pending native pass. Stack boundary: vessel class and contamination stage beat icon count.",
-          "terminal": "Draft UA localization pending native pass. STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.",
-          "audio": "Draft UK localization pending native pass. A crate is not a pressure vessel.",
-          "in_game_wiki": "Draft UA localization pending native pass. Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.",
-          "external_site": "Draft UK localization pending native pass. Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.",
-          "field_note": "Draft UA localization pending native pass. Stack limits stay table-owned and stable for save identity."
+          "title": "UA LOC HOLD: Stack Limit Data Boundary",
+          "scanner": "UA LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.",
+          "terminal": "UA LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.",
+          "audio": "UK LOC HOLD: A crate is not a pressure vessel.",
+          "in_game_wiki": "UA LOC HOLD: Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.",
+          "external_site": "UK LOC HOLD: Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.",
+          "field_note": "UA LOC HOLD: Stack limits stay table-owned and stable for save identity."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Stack Limit Data Boundary",
-          "scanner": "Draft AR localization pending native pass. Stack boundary: vessel class and contamination stage beat icon count.",
-          "terminal": "Draft AR localization pending native pass. STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.",
-          "audio": "Draft AR localization pending native pass. A crate is not a pressure vessel.",
-          "in_game_wiki": "Draft AR localization pending native pass. Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.",
-          "external_site": "Draft AR localization pending native pass. Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.",
-          "field_note": "Draft AR localization pending native pass. Stack limits stay table-owned and stable for save identity."
+          "title": "AR LOC HOLD: Stack Limit Data Boundary",
+          "scanner": "AR LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.",
+          "terminal": "AR LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.",
+          "audio": "AR LOC HOLD: A crate is not a pressure vessel.",
+          "in_game_wiki": "AR LOC HOLD: Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.",
+          "external_site": "AR LOC HOLD: Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.",
+          "field_note": "AR LOC HOLD: Stack limits stay table-owned and stable for save identity."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Stack Limit Data Boundary",
-          "scanner": "Draft ID localization pending native pass. Stack boundary: vessel class and contamination stage beat icon count.",
-          "terminal": "Draft ID localization pending native pass. STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.",
-          "audio": "Draft ID localization pending native pass. A crate is not a pressure vessel.",
-          "in_game_wiki": "Draft ID localization pending native pass. Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.",
-          "external_site": "Draft ID localization pending native pass. Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.",
-          "field_note": "Draft ID localization pending native pass. Stack limits stay table-owned and stable for save identity."
+          "title": "ID LOC HOLD: Stack Limit Data Boundary",
+          "scanner": "ID LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.",
+          "terminal": "ID LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.",
+          "audio": "ID LOC HOLD: A crate is not a pressure vessel.",
+          "in_game_wiki": "ID LOC HOLD: Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.",
+          "external_site": "ID LOC HOLD: Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.",
+          "field_note": "ID LOC HOLD: Stack limits stay table-owned and stable for save identity."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Stack Limit Data Boundary",
-          "scanner": "Draft KO localization pending native pass. Stack boundary: vessel class and contamination stage beat icon count.",
-          "terminal": "Draft KO localization pending native pass. STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.",
-          "audio": "Draft KO localization pending native pass. A crate is not a pressure vessel.",
-          "in_game_wiki": "Draft KO localization pending native pass. Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.",
-          "external_site": "Draft KO localization pending native pass. Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.",
-          "field_note": "Draft KO localization pending native pass. Stack limits stay table-owned and stable for save identity."
+          "title": "KO LOC HOLD: Stack Limit Data Boundary",
+          "scanner": "KO LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.",
+          "terminal": "KO LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.",
+          "audio": "KO LOC HOLD: A crate is not a pressure vessel.",
+          "in_game_wiki": "KO LOC HOLD: Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.",
+          "external_site": "KO LOC HOLD: Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.",
+          "field_note": "KO LOC HOLD: Stack limits stay table-owned and stable for save identity."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Stack Limit Data Boundary",
-          "scanner": "Draft HE localization pending native pass. Stack boundary: vessel class and contamination stage beat icon count.",
-          "terminal": "Draft HE localization pending native pass. STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.",
-          "audio": "Draft HE localization pending native pass. A crate is not a pressure vessel.",
-          "in_game_wiki": "Draft HE localization pending native pass. Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.",
-          "external_site": "Draft HE localization pending native pass. Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.",
-          "field_note": "Draft HE localization pending native pass. Stack limits stay table-owned and stable for save identity."
+          "title": "HE LOC HOLD: Stack Limit Data Boundary",
+          "scanner": "HE LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.",
+          "terminal": "HE LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.",
+          "audio": "HE LOC HOLD: A crate is not a pressure vessel.",
+          "in_game_wiki": "HE LOC HOLD: Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.",
+          "external_site": "HE LOC HOLD: Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.",
+          "field_note": "HE LOC HOLD: Stack limits stay table-owned and stable for save identity."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Stack Limit Data Boundary",
-          "scanner": "Draft PT localization pending native pass. Stack boundary: vessel class and contamination stage beat icon count.",
-          "terminal": "Draft PT localization pending native pass. STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.",
-          "audio": "Draft PT localization pending native pass. A crate is not a pressure vessel.",
-          "in_game_wiki": "Draft PT localization pending native pass. Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.",
-          "external_site": "Draft PT localization pending native pass. Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.",
-          "field_note": "Draft PT localization pending native pass. Stack limits stay table-owned and stable for save identity."
+          "title": "PT LOC HOLD: Stack Limit Data Boundary",
+          "scanner": "PT LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.",
+          "terminal": "PT LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.",
+          "audio": "PT LOC HOLD: A crate is not a pressure vessel.",
+          "in_game_wiki": "PT LOC HOLD: Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.",
+          "external_site": "PT LOC HOLD: Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.",
+          "field_note": "PT LOC HOLD: Stack limits stay table-owned and stable for save identity."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Stack Limit Data Boundary",
-          "scanner": "Draft NL localization pending native pass. Stack boundary: vessel class and contamination stage beat icon count.",
-          "terminal": "Draft NL localization pending native pass. STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.",
-          "audio": "Draft NL localization pending native pass. A crate is not a pressure vessel.",
-          "in_game_wiki": "Draft NL localization pending native pass. Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.",
-          "external_site": "Draft NL localization pending native pass. Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.",
-          "field_note": "Draft NL localization pending native pass. Stack limits stay table-owned and stable for save identity."
+          "title": "NL LOC HOLD: Stack Limit Data Boundary",
+          "scanner": "NL LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.",
+          "terminal": "NL LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.",
+          "audio": "NL LOC HOLD: A crate is not a pressure vessel.",
+          "in_game_wiki": "NL LOC HOLD: Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.",
+          "external_site": "NL LOC HOLD: Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.",
+          "field_note": "NL LOC HOLD: Stack limits stay table-owned and stable for save identity."
         }
       }
     },
@@ -346,130 +346,130 @@
           "field_note": "Pressure bands come from containment rules; exact costs belong to recipe tables."
         },
         "ru_RU": {
-          "title": "Draft RU localization pending native pass. Escape Recipe Cost Boundary",
-          "scanner": "Draft RU localization pending native pass. Escape recipe boundary: component class, pressure tier, route proof, authority state.",
-          "terminal": "Draft RU localization pending native pass. ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.",
+          "title": "RU LOC HOLD: Escape Recipe Cost Boundary",
+          "scanner": "RU LOC HOLD: Escape recipe boundary: component class, pressure tier, route proof, authority state.",
+          "terminal": "RU LOC HOLD: ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.",
           "audio": "У пути наверх есть детали. У деталей есть владельцы.",
-          "in_game_wiki": "Draft RU localization pending native pass. Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.",
+          "in_game_wiki": "RU LOC HOLD: Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.",
           "external_site": "Побег с HECTON-8 сначала ремонт: сигнал, seal, guidance, ascent energy, legal handshake, custody.",
-          "field_note": "Draft RU localization pending native pass. Pressure bands come from containment rules; exact costs belong to recipe tables."
+          "field_note": "RU LOC HOLD: Pressure bands come from containment rules; exact costs belong to recipe tables."
         },
         "ja_JP": {
-          "title": "Draft JP localization pending native pass. Escape Recipe Cost Boundary",
-          "scanner": "Draft JP localization pending native pass. Escape recipe boundary: component class, pressure tier, route proof, authority state.",
-          "terminal": "Draft JP localization pending native pass. ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.",
-          "audio": "Draft JA localization pending native pass. The way up has parts. The parts have owners.",
-          "in_game_wiki": "Draft JP localization pending native pass. Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.",
-          "external_site": "Draft JA localization pending native pass. Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.",
-          "field_note": "Draft JP localization pending native pass. Pressure bands come from containment rules; exact costs belong to recipe tables."
+          "title": "JP LOC HOLD: Escape Recipe Cost Boundary",
+          "scanner": "JP LOC HOLD: Escape recipe boundary: component class, pressure tier, route proof, authority state.",
+          "terminal": "JP LOC HOLD: ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.",
+          "audio": "JA LOC HOLD: The way up has parts. The parts have owners.",
+          "in_game_wiki": "JP LOC HOLD: Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.",
+          "external_site": "JA LOC HOLD: Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.",
+          "field_note": "JP LOC HOLD: Pressure bands come from containment rules; exact costs belong to recipe tables."
         },
         "zh_CN": {
-          "title": "Draft CN localization pending native pass. Escape Recipe Cost Boundary",
-          "scanner": "Draft CN localization pending native pass. Escape recipe boundary: component class, pressure tier, route proof, authority state.",
-          "terminal": "Draft CN localization pending native pass. ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.",
-          "audio": "Draft ZH localization pending native pass. The way up has parts. The parts have owners.",
-          "in_game_wiki": "Draft CN localization pending native pass. Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.",
-          "external_site": "Draft ZH localization pending native pass. Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.",
-          "field_note": "Draft CN localization pending native pass. Pressure bands come from containment rules; exact costs belong to recipe tables."
+          "title": "CN LOC HOLD: Escape Recipe Cost Boundary",
+          "scanner": "CN LOC HOLD: Escape recipe boundary: component class, pressure tier, route proof, authority state.",
+          "terminal": "CN LOC HOLD: ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.",
+          "audio": "ZH LOC HOLD: The way up has parts. The parts have owners.",
+          "in_game_wiki": "CN LOC HOLD: Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.",
+          "external_site": "ZH LOC HOLD: Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.",
+          "field_note": "CN LOC HOLD: Pressure bands come from containment rules; exact costs belong to recipe tables."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Escape Recipe Cost Boundary",
-          "scanner": "Draft FR localization pending native pass. Escape recipe boundary: component class, pressure tier, route proof, authority state.",
-          "terminal": "Draft FR localization pending native pass. ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.",
-          "audio": "Draft FR localization pending native pass. The way up has parts. The parts have owners.",
-          "in_game_wiki": "Draft FR localization pending native pass. Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.",
-          "external_site": "Draft FR localization pending native pass. Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.",
-          "field_note": "Draft FR localization pending native pass. Pressure bands come from containment rules; exact costs belong to recipe tables."
+          "title": "FR LOC HOLD: Escape Recipe Cost Boundary",
+          "scanner": "FR LOC HOLD: Escape recipe boundary: component class, pressure tier, route proof, authority state.",
+          "terminal": "FR LOC HOLD: ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.",
+          "audio": "FR LOC HOLD: The way up has parts. The parts have owners.",
+          "in_game_wiki": "FR LOC HOLD: Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.",
+          "external_site": "FR LOC HOLD: Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.",
+          "field_note": "FR LOC HOLD: Pressure bands come from containment rules; exact costs belong to recipe tables."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Escape Recipe Cost Boundary",
-          "scanner": "Draft ES localization pending native pass. Escape recipe boundary: component class, pressure tier, route proof, authority state.",
-          "terminal": "Draft ES localization pending native pass. ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.",
-          "audio": "Draft ES localization pending native pass. The way up has parts. The parts have owners.",
-          "in_game_wiki": "Draft ES localization pending native pass. Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.",
-          "external_site": "Draft ES localization pending native pass. Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.",
-          "field_note": "Draft ES localization pending native pass. Pressure bands come from containment rules; exact costs belong to recipe tables."
+          "title": "ES LOC HOLD: Escape Recipe Cost Boundary",
+          "scanner": "ES LOC HOLD: Escape recipe boundary: component class, pressure tier, route proof, authority state.",
+          "terminal": "ES LOC HOLD: ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.",
+          "audio": "ES LOC HOLD: The way up has parts. The parts have owners.",
+          "in_game_wiki": "ES LOC HOLD: Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.",
+          "external_site": "ES LOC HOLD: Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.",
+          "field_note": "ES LOC HOLD: Pressure bands come from containment rules; exact costs belong to recipe tables."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Escape Recipe Cost Boundary",
-          "scanner": "Draft DE localization pending native pass. Escape recipe boundary: component class, pressure tier, route proof, authority state.",
-          "terminal": "Draft DE localization pending native pass. ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.",
-          "audio": "Draft DE localization pending native pass. The way up has parts. The parts have owners.",
-          "in_game_wiki": "Draft DE localization pending native pass. Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.",
-          "external_site": "Draft DE localization pending native pass. Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.",
-          "field_note": "Draft DE localization pending native pass. Pressure bands come from containment rules; exact costs belong to recipe tables."
+          "title": "DE LOC HOLD: Escape Recipe Cost Boundary",
+          "scanner": "DE LOC HOLD: Escape recipe boundary: component class, pressure tier, route proof, authority state.",
+          "terminal": "DE LOC HOLD: ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.",
+          "audio": "DE LOC HOLD: The way up has parts. The parts have owners.",
+          "in_game_wiki": "DE LOC HOLD: Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.",
+          "external_site": "DE LOC HOLD: Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.",
+          "field_note": "DE LOC HOLD: Pressure bands come from containment rules; exact costs belong to recipe tables."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Escape Recipe Cost Boundary",
-          "scanner": "Draft PL localization pending native pass. Escape recipe boundary: component class, pressure tier, route proof, authority state.",
-          "terminal": "Draft PL localization pending native pass. ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.",
-          "audio": "Draft PL localization pending native pass. The way up has parts. The parts have owners.",
-          "in_game_wiki": "Draft PL localization pending native pass. Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.",
-          "external_site": "Draft PL localization pending native pass. Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.",
-          "field_note": "Draft PL localization pending native pass. Pressure bands come from containment rules; exact costs belong to recipe tables."
+          "title": "PL LOC HOLD: Escape Recipe Cost Boundary",
+          "scanner": "PL LOC HOLD: Escape recipe boundary: component class, pressure tier, route proof, authority state.",
+          "terminal": "PL LOC HOLD: ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.",
+          "audio": "PL LOC HOLD: The way up has parts. The parts have owners.",
+          "in_game_wiki": "PL LOC HOLD: Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.",
+          "external_site": "PL LOC HOLD: Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.",
+          "field_note": "PL LOC HOLD: Pressure bands come from containment rules; exact costs belong to recipe tables."
         },
         "uk_UA": {
-          "title": "Draft UA localization pending native pass. Escape Recipe Cost Boundary",
-          "scanner": "Draft UA localization pending native pass. Escape recipe boundary: component class, pressure tier, route proof, authority state.",
-          "terminal": "Draft UA localization pending native pass. ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.",
-          "audio": "Draft UK localization pending native pass. The way up has parts. The parts have owners.",
-          "in_game_wiki": "Draft UA localization pending native pass. Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.",
-          "external_site": "Draft UK localization pending native pass. Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.",
-          "field_note": "Draft UA localization pending native pass. Pressure bands come from containment rules; exact costs belong to recipe tables."
+          "title": "UA LOC HOLD: Escape Recipe Cost Boundary",
+          "scanner": "UA LOC HOLD: Escape recipe boundary: component class, pressure tier, route proof, authority state.",
+          "terminal": "UA LOC HOLD: ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.",
+          "audio": "UK LOC HOLD: The way up has parts. The parts have owners.",
+          "in_game_wiki": "UA LOC HOLD: Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.",
+          "external_site": "UK LOC HOLD: Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.",
+          "field_note": "UA LOC HOLD: Pressure bands come from containment rules; exact costs belong to recipe tables."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Escape Recipe Cost Boundary",
-          "scanner": "Draft AR localization pending native pass. Escape recipe boundary: component class, pressure tier, route proof, authority state.",
-          "terminal": "Draft AR localization pending native pass. ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.",
-          "audio": "Draft AR localization pending native pass. The way up has parts. The parts have owners.",
-          "in_game_wiki": "Draft AR localization pending native pass. Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.",
-          "external_site": "Draft AR localization pending native pass. Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.",
-          "field_note": "Draft AR localization pending native pass. Pressure bands come from containment rules; exact costs belong to recipe tables."
+          "title": "AR LOC HOLD: Escape Recipe Cost Boundary",
+          "scanner": "AR LOC HOLD: Escape recipe boundary: component class, pressure tier, route proof, authority state.",
+          "terminal": "AR LOC HOLD: ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.",
+          "audio": "AR LOC HOLD: The way up has parts. The parts have owners.",
+          "in_game_wiki": "AR LOC HOLD: Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.",
+          "external_site": "AR LOC HOLD: Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.",
+          "field_note": "AR LOC HOLD: Pressure bands come from containment rules; exact costs belong to recipe tables."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Escape Recipe Cost Boundary",
-          "scanner": "Draft ID localization pending native pass. Escape recipe boundary: component class, pressure tier, route proof, authority state.",
-          "terminal": "Draft ID localization pending native pass. ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.",
-          "audio": "Draft ID localization pending native pass. The way up has parts. The parts have owners.",
-          "in_game_wiki": "Draft ID localization pending native pass. Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.",
-          "external_site": "Draft ID localization pending native pass. Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.",
-          "field_note": "Draft ID localization pending native pass. Pressure bands come from containment rules; exact costs belong to recipe tables."
+          "title": "ID LOC HOLD: Escape Recipe Cost Boundary",
+          "scanner": "ID LOC HOLD: Escape recipe boundary: component class, pressure tier, route proof, authority state.",
+          "terminal": "ID LOC HOLD: ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.",
+          "audio": "ID LOC HOLD: The way up has parts. The parts have owners.",
+          "in_game_wiki": "ID LOC HOLD: Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.",
+          "external_site": "ID LOC HOLD: Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.",
+          "field_note": "ID LOC HOLD: Pressure bands come from containment rules; exact costs belong to recipe tables."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Escape Recipe Cost Boundary",
-          "scanner": "Draft KO localization pending native pass. Escape recipe boundary: component class, pressure tier, route proof, authority state.",
-          "terminal": "Draft KO localization pending native pass. ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.",
-          "audio": "Draft KO localization pending native pass. The way up has parts. The parts have owners.",
-          "in_game_wiki": "Draft KO localization pending native pass. Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.",
-          "external_site": "Draft KO localization pending native pass. Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.",
-          "field_note": "Draft KO localization pending native pass. Pressure bands come from containment rules; exact costs belong to recipe tables."
+          "title": "KO LOC HOLD: Escape Recipe Cost Boundary",
+          "scanner": "KO LOC HOLD: Escape recipe boundary: component class, pressure tier, route proof, authority state.",
+          "terminal": "KO LOC HOLD: ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.",
+          "audio": "KO LOC HOLD: The way up has parts. The parts have owners.",
+          "in_game_wiki": "KO LOC HOLD: Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.",
+          "external_site": "KO LOC HOLD: Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.",
+          "field_note": "KO LOC HOLD: Pressure bands come from containment rules; exact costs belong to recipe tables."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Escape Recipe Cost Boundary",
-          "scanner": "Draft HE localization pending native pass. Escape recipe boundary: component class, pressure tier, route proof, authority state.",
-          "terminal": "Draft HE localization pending native pass. ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.",
-          "audio": "Draft HE localization pending native pass. The way up has parts. The parts have owners.",
-          "in_game_wiki": "Draft HE localization pending native pass. Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.",
-          "external_site": "Draft HE localization pending native pass. Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.",
-          "field_note": "Draft HE localization pending native pass. Pressure bands come from containment rules; exact costs belong to recipe tables."
+          "title": "HE LOC HOLD: Escape Recipe Cost Boundary",
+          "scanner": "HE LOC HOLD: Escape recipe boundary: component class, pressure tier, route proof, authority state.",
+          "terminal": "HE LOC HOLD: ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.",
+          "audio": "HE LOC HOLD: The way up has parts. The parts have owners.",
+          "in_game_wiki": "HE LOC HOLD: Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.",
+          "external_site": "HE LOC HOLD: Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.",
+          "field_note": "HE LOC HOLD: Pressure bands come from containment rules; exact costs belong to recipe tables."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Escape Recipe Cost Boundary",
-          "scanner": "Draft PT localization pending native pass. Escape recipe boundary: component class, pressure tier, route proof, authority state.",
-          "terminal": "Draft PT localization pending native pass. ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.",
-          "audio": "Draft PT localization pending native pass. The way up has parts. The parts have owners.",
-          "in_game_wiki": "Draft PT localization pending native pass. Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.",
-          "external_site": "Draft PT localization pending native pass. Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.",
-          "field_note": "Draft PT localization pending native pass. Pressure bands come from containment rules; exact costs belong to recipe tables."
+          "title": "PT LOC HOLD: Escape Recipe Cost Boundary",
+          "scanner": "PT LOC HOLD: Escape recipe boundary: component class, pressure tier, route proof, authority state.",
+          "terminal": "PT LOC HOLD: ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.",
+          "audio": "PT LOC HOLD: The way up has parts. The parts have owners.",
+          "in_game_wiki": "PT LOC HOLD: Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.",
+          "external_site": "PT LOC HOLD: Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.",
+          "field_note": "PT LOC HOLD: Pressure bands come from containment rules; exact costs belong to recipe tables."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Escape Recipe Cost Boundary",
-          "scanner": "Draft NL localization pending native pass. Escape recipe boundary: component class, pressure tier, route proof, authority state.",
-          "terminal": "Draft NL localization pending native pass. ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.",
-          "audio": "Draft NL localization pending native pass. The way up has parts. The parts have owners.",
-          "in_game_wiki": "Draft NL localization pending native pass. Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.",
-          "external_site": "Draft NL localization pending native pass. Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.",
-          "field_note": "Draft NL localization pending native pass. Pressure bands come from containment rules; exact costs belong to recipe tables."
+          "title": "NL LOC HOLD: Escape Recipe Cost Boundary",
+          "scanner": "NL LOC HOLD: Escape recipe boundary: component class, pressure tier, route proof, authority state.",
+          "terminal": "NL LOC HOLD: ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.",
+          "audio": "NL LOC HOLD: The way up has parts. The parts have owners.",
+          "in_game_wiki": "NL LOC HOLD: Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.",
+          "external_site": "NL LOC HOLD: Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.",
+          "field_note": "NL LOC HOLD: Pressure bands come from containment rules; exact costs belong to recipe tables."
         }
       }
     },
@@ -501,130 +501,130 @@
           "field_note": "Reward changes belong to the contract row, not to improvised lore text."
         },
         "ru_RU": {
-          "title": "Draft RU localization pending native pass. Contract Risk Reward Boundary",
-          "scanner": "Draft RU localization pending native pass. Contract boundary: lien, storm window, custody, evidence order, clause weight.",
-          "terminal": "Draft RU localization pending native pass. CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.",
+          "title": "RU LOC HOLD: Contract Risk Reward Boundary",
+          "scanner": "RU LOC HOLD: Contract boundary: lien, storm window, custody, evidence order, clause weight.",
+          "terminal": "RU LOC HOLD: CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.",
           "audio": "Контракт - первый хищник.",
-          "in_game_wiki": "Draft RU localization pending native pass. Contract Risk Reward Boundary converts replay pressure into table-owned contract records.",
+          "in_game_wiki": "RU LOC HOLD: Contract Risk Reward Boundary converts replay pressure into table-owned contract records.",
           "external_site": "Реиграбельность здесь не наследуемая сила, а худший контракт и более дорогой маршрут.",
-          "field_note": "Draft RU localization pending native pass. Reward changes belong to the contract row, not to improvised lore text."
+          "field_note": "RU LOC HOLD: Reward changes belong to the contract row, not to improvised lore text."
         },
         "ja_JP": {
-          "title": "Draft JP localization pending native pass. Contract Risk Reward Boundary",
-          "scanner": "Draft JP localization pending native pass. Contract boundary: lien, storm window, custody, evidence order, clause weight.",
-          "terminal": "Draft JP localization pending native pass. CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.",
-          "audio": "Draft JA localization pending native pass. The contract is the first predator.",
-          "in_game_wiki": "Draft JP localization pending native pass. Contract Risk Reward Boundary converts replay pressure into table-owned contract records.",
-          "external_site": "Draft JA localization pending native pass. Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.",
-          "field_note": "Draft JP localization pending native pass. Reward changes belong to the contract row, not to improvised lore text."
+          "title": "JP LOC HOLD: Contract Risk Reward Boundary",
+          "scanner": "JP LOC HOLD: Contract boundary: lien, storm window, custody, evidence order, clause weight.",
+          "terminal": "JP LOC HOLD: CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.",
+          "audio": "JA LOC HOLD: The contract is the first predator.",
+          "in_game_wiki": "JP LOC HOLD: Contract Risk Reward Boundary converts replay pressure into table-owned contract records.",
+          "external_site": "JA LOC HOLD: Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.",
+          "field_note": "JP LOC HOLD: Reward changes belong to the contract row, not to improvised lore text."
         },
         "zh_CN": {
-          "title": "Draft CN localization pending native pass. Contract Risk Reward Boundary",
-          "scanner": "Draft CN localization pending native pass. Contract boundary: lien, storm window, custody, evidence order, clause weight.",
-          "terminal": "Draft CN localization pending native pass. CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.",
-          "audio": "Draft ZH localization pending native pass. The contract is the first predator.",
-          "in_game_wiki": "Draft CN localization pending native pass. Contract Risk Reward Boundary converts replay pressure into table-owned contract records.",
-          "external_site": "Draft ZH localization pending native pass. Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.",
-          "field_note": "Draft CN localization pending native pass. Reward changes belong to the contract row, not to improvised lore text."
+          "title": "CN LOC HOLD: Contract Risk Reward Boundary",
+          "scanner": "CN LOC HOLD: Contract boundary: lien, storm window, custody, evidence order, clause weight.",
+          "terminal": "CN LOC HOLD: CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.",
+          "audio": "ZH LOC HOLD: The contract is the first predator.",
+          "in_game_wiki": "CN LOC HOLD: Contract Risk Reward Boundary converts replay pressure into table-owned contract records.",
+          "external_site": "ZH LOC HOLD: Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.",
+          "field_note": "CN LOC HOLD: Reward changes belong to the contract row, not to improvised lore text."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Contract Risk Reward Boundary",
-          "scanner": "Draft FR localization pending native pass. Contract boundary: lien, storm window, custody, evidence order, clause weight.",
-          "terminal": "Draft FR localization pending native pass. CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.",
-          "audio": "Draft FR localization pending native pass. The contract is the first predator.",
-          "in_game_wiki": "Draft FR localization pending native pass. Contract Risk Reward Boundary converts replay pressure into table-owned contract records.",
-          "external_site": "Draft FR localization pending native pass. Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.",
-          "field_note": "Draft FR localization pending native pass. Reward changes belong to the contract row, not to improvised lore text."
+          "title": "FR LOC HOLD: Contract Risk Reward Boundary",
+          "scanner": "FR LOC HOLD: Contract boundary: lien, storm window, custody, evidence order, clause weight.",
+          "terminal": "FR LOC HOLD: CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.",
+          "audio": "FR LOC HOLD: The contract is the first predator.",
+          "in_game_wiki": "FR LOC HOLD: Contract Risk Reward Boundary converts replay pressure into table-owned contract records.",
+          "external_site": "FR LOC HOLD: Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.",
+          "field_note": "FR LOC HOLD: Reward changes belong to the contract row, not to improvised lore text."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Contract Risk Reward Boundary",
-          "scanner": "Draft ES localization pending native pass. Contract boundary: lien, storm window, custody, evidence order, clause weight.",
-          "terminal": "Draft ES localization pending native pass. CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.",
-          "audio": "Draft ES localization pending native pass. The contract is the first predator.",
-          "in_game_wiki": "Draft ES localization pending native pass. Contract Risk Reward Boundary converts replay pressure into table-owned contract records.",
-          "external_site": "Draft ES localization pending native pass. Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.",
-          "field_note": "Draft ES localization pending native pass. Reward changes belong to the contract row, not to improvised lore text."
+          "title": "ES LOC HOLD: Contract Risk Reward Boundary",
+          "scanner": "ES LOC HOLD: Contract boundary: lien, storm window, custody, evidence order, clause weight.",
+          "terminal": "ES LOC HOLD: CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.",
+          "audio": "ES LOC HOLD: The contract is the first predator.",
+          "in_game_wiki": "ES LOC HOLD: Contract Risk Reward Boundary converts replay pressure into table-owned contract records.",
+          "external_site": "ES LOC HOLD: Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.",
+          "field_note": "ES LOC HOLD: Reward changes belong to the contract row, not to improvised lore text."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Contract Risk Reward Boundary",
-          "scanner": "Draft DE localization pending native pass. Contract boundary: lien, storm window, custody, evidence order, clause weight.",
-          "terminal": "Draft DE localization pending native pass. CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.",
-          "audio": "Draft DE localization pending native pass. The contract is the first predator.",
-          "in_game_wiki": "Draft DE localization pending native pass. Contract Risk Reward Boundary converts replay pressure into table-owned contract records.",
-          "external_site": "Draft DE localization pending native pass. Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.",
-          "field_note": "Draft DE localization pending native pass. Reward changes belong to the contract row, not to improvised lore text."
+          "title": "DE LOC HOLD: Contract Risk Reward Boundary",
+          "scanner": "DE LOC HOLD: Contract boundary: lien, storm window, custody, evidence order, clause weight.",
+          "terminal": "DE LOC HOLD: CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.",
+          "audio": "DE LOC HOLD: The contract is the first predator.",
+          "in_game_wiki": "DE LOC HOLD: Contract Risk Reward Boundary converts replay pressure into table-owned contract records.",
+          "external_site": "DE LOC HOLD: Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.",
+          "field_note": "DE LOC HOLD: Reward changes belong to the contract row, not to improvised lore text."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Contract Risk Reward Boundary",
-          "scanner": "Draft PL localization pending native pass. Contract boundary: lien, storm window, custody, evidence order, clause weight.",
-          "terminal": "Draft PL localization pending native pass. CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.",
-          "audio": "Draft PL localization pending native pass. The contract is the first predator.",
-          "in_game_wiki": "Draft PL localization pending native pass. Contract Risk Reward Boundary converts replay pressure into table-owned contract records.",
-          "external_site": "Draft PL localization pending native pass. Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.",
-          "field_note": "Draft PL localization pending native pass. Reward changes belong to the contract row, not to improvised lore text."
+          "title": "PL LOC HOLD: Contract Risk Reward Boundary",
+          "scanner": "PL LOC HOLD: Contract boundary: lien, storm window, custody, evidence order, clause weight.",
+          "terminal": "PL LOC HOLD: CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.",
+          "audio": "PL LOC HOLD: The contract is the first predator.",
+          "in_game_wiki": "PL LOC HOLD: Contract Risk Reward Boundary converts replay pressure into table-owned contract records.",
+          "external_site": "PL LOC HOLD: Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.",
+          "field_note": "PL LOC HOLD: Reward changes belong to the contract row, not to improvised lore text."
         },
         "uk_UA": {
-          "title": "Draft UA localization pending native pass. Contract Risk Reward Boundary",
-          "scanner": "Draft UA localization pending native pass. Contract boundary: lien, storm window, custody, evidence order, clause weight.",
-          "terminal": "Draft UA localization pending native pass. CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.",
-          "audio": "Draft UK localization pending native pass. The contract is the first predator.",
-          "in_game_wiki": "Draft UA localization pending native pass. Contract Risk Reward Boundary converts replay pressure into table-owned contract records.",
-          "external_site": "Draft UK localization pending native pass. Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.",
-          "field_note": "Draft UA localization pending native pass. Reward changes belong to the contract row, not to improvised lore text."
+          "title": "UA LOC HOLD: Contract Risk Reward Boundary",
+          "scanner": "UA LOC HOLD: Contract boundary: lien, storm window, custody, evidence order, clause weight.",
+          "terminal": "UA LOC HOLD: CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.",
+          "audio": "UK LOC HOLD: The contract is the first predator.",
+          "in_game_wiki": "UA LOC HOLD: Contract Risk Reward Boundary converts replay pressure into table-owned contract records.",
+          "external_site": "UK LOC HOLD: Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.",
+          "field_note": "UA LOC HOLD: Reward changes belong to the contract row, not to improvised lore text."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Contract Risk Reward Boundary",
-          "scanner": "Draft AR localization pending native pass. Contract boundary: lien, storm window, custody, evidence order, clause weight.",
-          "terminal": "Draft AR localization pending native pass. CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.",
-          "audio": "Draft AR localization pending native pass. The contract is the first predator.",
-          "in_game_wiki": "Draft AR localization pending native pass. Contract Risk Reward Boundary converts replay pressure into table-owned contract records.",
-          "external_site": "Draft AR localization pending native pass. Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.",
-          "field_note": "Draft AR localization pending native pass. Reward changes belong to the contract row, not to improvised lore text."
+          "title": "AR LOC HOLD: Contract Risk Reward Boundary",
+          "scanner": "AR LOC HOLD: Contract boundary: lien, storm window, custody, evidence order, clause weight.",
+          "terminal": "AR LOC HOLD: CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.",
+          "audio": "AR LOC HOLD: The contract is the first predator.",
+          "in_game_wiki": "AR LOC HOLD: Contract Risk Reward Boundary converts replay pressure into table-owned contract records.",
+          "external_site": "AR LOC HOLD: Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.",
+          "field_note": "AR LOC HOLD: Reward changes belong to the contract row, not to improvised lore text."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Contract Risk Reward Boundary",
-          "scanner": "Draft ID localization pending native pass. Contract boundary: lien, storm window, custody, evidence order, clause weight.",
-          "terminal": "Draft ID localization pending native pass. CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.",
-          "audio": "Draft ID localization pending native pass. The contract is the first predator.",
-          "in_game_wiki": "Draft ID localization pending native pass. Contract Risk Reward Boundary converts replay pressure into table-owned contract records.",
-          "external_site": "Draft ID localization pending native pass. Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.",
-          "field_note": "Draft ID localization pending native pass. Reward changes belong to the contract row, not to improvised lore text."
+          "title": "ID LOC HOLD: Contract Risk Reward Boundary",
+          "scanner": "ID LOC HOLD: Contract boundary: lien, storm window, custody, evidence order, clause weight.",
+          "terminal": "ID LOC HOLD: CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.",
+          "audio": "ID LOC HOLD: The contract is the first predator.",
+          "in_game_wiki": "ID LOC HOLD: Contract Risk Reward Boundary converts replay pressure into table-owned contract records.",
+          "external_site": "ID LOC HOLD: Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.",
+          "field_note": "ID LOC HOLD: Reward changes belong to the contract row, not to improvised lore text."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Contract Risk Reward Boundary",
-          "scanner": "Draft KO localization pending native pass. Contract boundary: lien, storm window, custody, evidence order, clause weight.",
-          "terminal": "Draft KO localization pending native pass. CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.",
-          "audio": "Draft KO localization pending native pass. The contract is the first predator.",
-          "in_game_wiki": "Draft KO localization pending native pass. Contract Risk Reward Boundary converts replay pressure into table-owned contract records.",
-          "external_site": "Draft KO localization pending native pass. Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.",
-          "field_note": "Draft KO localization pending native pass. Reward changes belong to the contract row, not to improvised lore text."
+          "title": "KO LOC HOLD: Contract Risk Reward Boundary",
+          "scanner": "KO LOC HOLD: Contract boundary: lien, storm window, custody, evidence order, clause weight.",
+          "terminal": "KO LOC HOLD: CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.",
+          "audio": "KO LOC HOLD: The contract is the first predator.",
+          "in_game_wiki": "KO LOC HOLD: Contract Risk Reward Boundary converts replay pressure into table-owned contract records.",
+          "external_site": "KO LOC HOLD: Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.",
+          "field_note": "KO LOC HOLD: Reward changes belong to the contract row, not to improvised lore text."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Contract Risk Reward Boundary",
-          "scanner": "Draft HE localization pending native pass. Contract boundary: lien, storm window, custody, evidence order, clause weight.",
-          "terminal": "Draft HE localization pending native pass. CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.",
-          "audio": "Draft HE localization pending native pass. The contract is the first predator.",
-          "in_game_wiki": "Draft HE localization pending native pass. Contract Risk Reward Boundary converts replay pressure into table-owned contract records.",
-          "external_site": "Draft HE localization pending native pass. Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.",
-          "field_note": "Draft HE localization pending native pass. Reward changes belong to the contract row, not to improvised lore text."
+          "title": "HE LOC HOLD: Contract Risk Reward Boundary",
+          "scanner": "HE LOC HOLD: Contract boundary: lien, storm window, custody, evidence order, clause weight.",
+          "terminal": "HE LOC HOLD: CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.",
+          "audio": "HE LOC HOLD: The contract is the first predator.",
+          "in_game_wiki": "HE LOC HOLD: Contract Risk Reward Boundary converts replay pressure into table-owned contract records.",
+          "external_site": "HE LOC HOLD: Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.",
+          "field_note": "HE LOC HOLD: Reward changes belong to the contract row, not to improvised lore text."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Contract Risk Reward Boundary",
-          "scanner": "Draft PT localization pending native pass. Contract boundary: lien, storm window, custody, evidence order, clause weight.",
-          "terminal": "Draft PT localization pending native pass. CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.",
-          "audio": "Draft PT localization pending native pass. The contract is the first predator.",
-          "in_game_wiki": "Draft PT localization pending native pass. Contract Risk Reward Boundary converts replay pressure into table-owned contract records.",
-          "external_site": "Draft PT localization pending native pass. Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.",
-          "field_note": "Draft PT localization pending native pass. Reward changes belong to the contract row, not to improvised lore text."
+          "title": "PT LOC HOLD: Contract Risk Reward Boundary",
+          "scanner": "PT LOC HOLD: Contract boundary: lien, storm window, custody, evidence order, clause weight.",
+          "terminal": "PT LOC HOLD: CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.",
+          "audio": "PT LOC HOLD: The contract is the first predator.",
+          "in_game_wiki": "PT LOC HOLD: Contract Risk Reward Boundary converts replay pressure into table-owned contract records.",
+          "external_site": "PT LOC HOLD: Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.",
+          "field_note": "PT LOC HOLD: Reward changes belong to the contract row, not to improvised lore text."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Contract Risk Reward Boundary",
-          "scanner": "Draft NL localization pending native pass. Contract boundary: lien, storm window, custody, evidence order, clause weight.",
-          "terminal": "Draft NL localization pending native pass. CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.",
-          "audio": "Draft NL localization pending native pass. The contract is the first predator.",
-          "in_game_wiki": "Draft NL localization pending native pass. Contract Risk Reward Boundary converts replay pressure into table-owned contract records.",
-          "external_site": "Draft NL localization pending native pass. Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.",
-          "field_note": "Draft NL localization pending native pass. Reward changes belong to the contract row, not to improvised lore text."
+          "title": "NL LOC HOLD: Contract Risk Reward Boundary",
+          "scanner": "NL LOC HOLD: Contract boundary: lien, storm window, custody, evidence order, clause weight.",
+          "terminal": "NL LOC HOLD: CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.",
+          "audio": "NL LOC HOLD: The contract is the first predator.",
+          "in_game_wiki": "NL LOC HOLD: Contract Risk Reward Boundary converts replay pressure into table-owned contract records.",
+          "external_site": "NL LOC HOLD: Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.",
+          "field_note": "NL LOC HOLD: Reward changes belong to the contract row, not to improvised lore text."
         }
       }
     },
@@ -656,130 +656,130 @@
           "field_note": "Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear."
         },
         "ru_RU": {
-          "title": "Draft RU localization pending native pass. Ending Payout Data Boundary",
-          "scanner": "Draft RU localization pending native pass. Ending boundary: receiver, custody, evidence state, payout, consequence.",
-          "terminal": "Draft RU localization pending native pass. ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.",
+          "title": "RU LOC HOLD: Ending Payout Data Boundary",
+          "scanner": "RU LOC HOLD: Ending boundary: receiver, custody, evidence state, payout, consequence.",
+          "terminal": "RU LOC HOLD: ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.",
           "audio": "Кредиты не закрывают место преступления.",
-          "in_game_wiki": "Draft RU localization pending native pass. Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.",
-          "external_site": "Draft RU localization pending native pass. HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.",
-          "field_note": "Draft RU localization pending native pass. Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear."
+          "in_game_wiki": "RU LOC HOLD: Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.",
+          "external_site": "RU LOC HOLD: HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.",
+          "field_note": "RU LOC HOLD: Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear."
         },
         "ja_JP": {
-          "title": "Draft JP localization pending native pass. Ending Payout Data Boundary",
-          "scanner": "Draft JP localization pending native pass. Ending boundary: receiver, custody, evidence state, payout, consequence.",
-          "terminal": "Draft JP localization pending native pass. ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.",
-          "audio": "Draft JA localization pending native pass. Credits do not close a crime scene.",
-          "in_game_wiki": "Draft JP localization pending native pass. Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.",
-          "external_site": "Draft JP localization pending native pass. HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.",
-          "field_note": "Draft JP localization pending native pass. Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear."
+          "title": "JP LOC HOLD: Ending Payout Data Boundary",
+          "scanner": "JP LOC HOLD: Ending boundary: receiver, custody, evidence state, payout, consequence.",
+          "terminal": "JP LOC HOLD: ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.",
+          "audio": "JA LOC HOLD: Credits do not close a crime scene.",
+          "in_game_wiki": "JP LOC HOLD: Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.",
+          "external_site": "JP LOC HOLD: HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.",
+          "field_note": "JP LOC HOLD: Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear."
         },
         "zh_CN": {
-          "title": "Draft CN localization pending native pass. Ending Payout Data Boundary",
-          "scanner": "Draft CN localization pending native pass. Ending boundary: receiver, custody, evidence state, payout, consequence.",
-          "terminal": "Draft CN localization pending native pass. ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.",
-          "audio": "Draft ZH localization pending native pass. Credits do not close a crime scene.",
-          "in_game_wiki": "Draft CN localization pending native pass. Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.",
-          "external_site": "Draft CN localization pending native pass. HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.",
-          "field_note": "Draft CN localization pending native pass. Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear."
+          "title": "CN LOC HOLD: Ending Payout Data Boundary",
+          "scanner": "CN LOC HOLD: Ending boundary: receiver, custody, evidence state, payout, consequence.",
+          "terminal": "CN LOC HOLD: ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.",
+          "audio": "ZH LOC HOLD: Credits do not close a crime scene.",
+          "in_game_wiki": "CN LOC HOLD: Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.",
+          "external_site": "CN LOC HOLD: HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.",
+          "field_note": "CN LOC HOLD: Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Ending Payout Data Boundary",
-          "scanner": "Draft FR localization pending native pass. Ending boundary: receiver, custody, evidence state, payout, consequence.",
-          "terminal": "Draft FR localization pending native pass. ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.",
-          "audio": "Draft FR localization pending native pass. Credits do not close a crime scene.",
-          "in_game_wiki": "Draft FR localization pending native pass. Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.",
-          "external_site": "Draft FR localization pending native pass. HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.",
-          "field_note": "Draft FR localization pending native pass. Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear."
+          "title": "FR LOC HOLD: Ending Payout Data Boundary",
+          "scanner": "FR LOC HOLD: Ending boundary: receiver, custody, evidence state, payout, consequence.",
+          "terminal": "FR LOC HOLD: ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.",
+          "audio": "FR LOC HOLD: Credits do not close a crime scene.",
+          "in_game_wiki": "FR LOC HOLD: Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.",
+          "external_site": "FR LOC HOLD: HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.",
+          "field_note": "FR LOC HOLD: Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Ending Payout Data Boundary",
-          "scanner": "Draft ES localization pending native pass. Ending boundary: receiver, custody, evidence state, payout, consequence.",
-          "terminal": "Draft ES localization pending native pass. ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.",
-          "audio": "Draft ES localization pending native pass. Credits do not close a crime scene.",
-          "in_game_wiki": "Draft ES localization pending native pass. Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.",
-          "external_site": "Draft ES localization pending native pass. HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.",
-          "field_note": "Draft ES localization pending native pass. Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear."
+          "title": "ES LOC HOLD: Ending Payout Data Boundary",
+          "scanner": "ES LOC HOLD: Ending boundary: receiver, custody, evidence state, payout, consequence.",
+          "terminal": "ES LOC HOLD: ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.",
+          "audio": "ES LOC HOLD: Credits do not close a crime scene.",
+          "in_game_wiki": "ES LOC HOLD: Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.",
+          "external_site": "ES LOC HOLD: HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.",
+          "field_note": "ES LOC HOLD: Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Ending Payout Data Boundary",
-          "scanner": "Draft DE localization pending native pass. Ending boundary: receiver, custody, evidence state, payout, consequence.",
-          "terminal": "Draft DE localization pending native pass. ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.",
-          "audio": "Draft DE localization pending native pass. Credits do not close a crime scene.",
-          "in_game_wiki": "Draft DE localization pending native pass. Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.",
-          "external_site": "Draft DE localization pending native pass. HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.",
-          "field_note": "Draft DE localization pending native pass. Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear."
+          "title": "DE LOC HOLD: Ending Payout Data Boundary",
+          "scanner": "DE LOC HOLD: Ending boundary: receiver, custody, evidence state, payout, consequence.",
+          "terminal": "DE LOC HOLD: ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.",
+          "audio": "DE LOC HOLD: Credits do not close a crime scene.",
+          "in_game_wiki": "DE LOC HOLD: Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.",
+          "external_site": "DE LOC HOLD: HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.",
+          "field_note": "DE LOC HOLD: Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Ending Payout Data Boundary",
-          "scanner": "Draft PL localization pending native pass. Ending boundary: receiver, custody, evidence state, payout, consequence.",
-          "terminal": "Draft PL localization pending native pass. ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.",
-          "audio": "Draft PL localization pending native pass. Credits do not close a crime scene.",
-          "in_game_wiki": "Draft PL localization pending native pass. Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.",
-          "external_site": "Draft PL localization pending native pass. HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.",
-          "field_note": "Draft PL localization pending native pass. Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear."
+          "title": "PL LOC HOLD: Ending Payout Data Boundary",
+          "scanner": "PL LOC HOLD: Ending boundary: receiver, custody, evidence state, payout, consequence.",
+          "terminal": "PL LOC HOLD: ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.",
+          "audio": "PL LOC HOLD: Credits do not close a crime scene.",
+          "in_game_wiki": "PL LOC HOLD: Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.",
+          "external_site": "PL LOC HOLD: HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.",
+          "field_note": "PL LOC HOLD: Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear."
         },
         "uk_UA": {
-          "title": "Draft UA localization pending native pass. Ending Payout Data Boundary",
-          "scanner": "Draft UA localization pending native pass. Ending boundary: receiver, custody, evidence state, payout, consequence.",
-          "terminal": "Draft UA localization pending native pass. ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.",
-          "audio": "Draft UK localization pending native pass. Credits do not close a crime scene.",
-          "in_game_wiki": "Draft UA localization pending native pass. Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.",
-          "external_site": "Draft UA localization pending native pass. HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.",
-          "field_note": "Draft UA localization pending native pass. Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear."
+          "title": "UA LOC HOLD: Ending Payout Data Boundary",
+          "scanner": "UA LOC HOLD: Ending boundary: receiver, custody, evidence state, payout, consequence.",
+          "terminal": "UA LOC HOLD: ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.",
+          "audio": "UK LOC HOLD: Credits do not close a crime scene.",
+          "in_game_wiki": "UA LOC HOLD: Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.",
+          "external_site": "UA LOC HOLD: HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.",
+          "field_note": "UA LOC HOLD: Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Ending Payout Data Boundary",
-          "scanner": "Draft AR localization pending native pass. Ending boundary: receiver, custody, evidence state, payout, consequence.",
-          "terminal": "Draft AR localization pending native pass. ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.",
-          "audio": "Draft AR localization pending native pass. Credits do not close a crime scene.",
-          "in_game_wiki": "Draft AR localization pending native pass. Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.",
-          "external_site": "Draft AR localization pending native pass. HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.",
-          "field_note": "Draft AR localization pending native pass. Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear."
+          "title": "AR LOC HOLD: Ending Payout Data Boundary",
+          "scanner": "AR LOC HOLD: Ending boundary: receiver, custody, evidence state, payout, consequence.",
+          "terminal": "AR LOC HOLD: ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.",
+          "audio": "AR LOC HOLD: Credits do not close a crime scene.",
+          "in_game_wiki": "AR LOC HOLD: Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.",
+          "external_site": "AR LOC HOLD: HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.",
+          "field_note": "AR LOC HOLD: Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Ending Payout Data Boundary",
-          "scanner": "Draft ID localization pending native pass. Ending boundary: receiver, custody, evidence state, payout, consequence.",
-          "terminal": "Draft ID localization pending native pass. ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.",
-          "audio": "Draft ID localization pending native pass. Credits do not close a crime scene.",
-          "in_game_wiki": "Draft ID localization pending native pass. Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.",
-          "external_site": "Draft ID localization pending native pass. HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.",
-          "field_note": "Draft ID localization pending native pass. Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear."
+          "title": "ID LOC HOLD: Ending Payout Data Boundary",
+          "scanner": "ID LOC HOLD: Ending boundary: receiver, custody, evidence state, payout, consequence.",
+          "terminal": "ID LOC HOLD: ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.",
+          "audio": "ID LOC HOLD: Credits do not close a crime scene.",
+          "in_game_wiki": "ID LOC HOLD: Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.",
+          "external_site": "ID LOC HOLD: HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.",
+          "field_note": "ID LOC HOLD: Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Ending Payout Data Boundary",
-          "scanner": "Draft KO localization pending native pass. Ending boundary: receiver, custody, evidence state, payout, consequence.",
-          "terminal": "Draft KO localization pending native pass. ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.",
-          "audio": "Draft KO localization pending native pass. Credits do not close a crime scene.",
-          "in_game_wiki": "Draft KO localization pending native pass. Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.",
-          "external_site": "Draft KO localization pending native pass. HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.",
-          "field_note": "Draft KO localization pending native pass. Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear."
+          "title": "KO LOC HOLD: Ending Payout Data Boundary",
+          "scanner": "KO LOC HOLD: Ending boundary: receiver, custody, evidence state, payout, consequence.",
+          "terminal": "KO LOC HOLD: ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.",
+          "audio": "KO LOC HOLD: Credits do not close a crime scene.",
+          "in_game_wiki": "KO LOC HOLD: Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.",
+          "external_site": "KO LOC HOLD: HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.",
+          "field_note": "KO LOC HOLD: Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Ending Payout Data Boundary",
-          "scanner": "Draft HE localization pending native pass. Ending boundary: receiver, custody, evidence state, payout, consequence.",
-          "terminal": "Draft HE localization pending native pass. ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.",
-          "audio": "Draft HE localization pending native pass. Credits do not close a crime scene.",
-          "in_game_wiki": "Draft HE localization pending native pass. Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.",
-          "external_site": "Draft HE localization pending native pass. HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.",
-          "field_note": "Draft HE localization pending native pass. Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear."
+          "title": "HE LOC HOLD: Ending Payout Data Boundary",
+          "scanner": "HE LOC HOLD: Ending boundary: receiver, custody, evidence state, payout, consequence.",
+          "terminal": "HE LOC HOLD: ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.",
+          "audio": "HE LOC HOLD: Credits do not close a crime scene.",
+          "in_game_wiki": "HE LOC HOLD: Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.",
+          "external_site": "HE LOC HOLD: HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.",
+          "field_note": "HE LOC HOLD: Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Ending Payout Data Boundary",
-          "scanner": "Draft PT localization pending native pass. Ending boundary: receiver, custody, evidence state, payout, consequence.",
-          "terminal": "Draft PT localization pending native pass. ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.",
-          "audio": "Draft PT localization pending native pass. Credits do not close a crime scene.",
-          "in_game_wiki": "Draft PT localization pending native pass. Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.",
-          "external_site": "Draft PT localization pending native pass. HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.",
-          "field_note": "Draft PT localization pending native pass. Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear."
+          "title": "PT LOC HOLD: Ending Payout Data Boundary",
+          "scanner": "PT LOC HOLD: Ending boundary: receiver, custody, evidence state, payout, consequence.",
+          "terminal": "PT LOC HOLD: ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.",
+          "audio": "PT LOC HOLD: Credits do not close a crime scene.",
+          "in_game_wiki": "PT LOC HOLD: Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.",
+          "external_site": "PT LOC HOLD: HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.",
+          "field_note": "PT LOC HOLD: Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Ending Payout Data Boundary",
-          "scanner": "Draft NL localization pending native pass. Ending boundary: receiver, custody, evidence state, payout, consequence.",
-          "terminal": "Draft NL localization pending native pass. ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.",
-          "audio": "Draft NL localization pending native pass. Credits do not close a crime scene.",
-          "in_game_wiki": "Draft NL localization pending native pass. Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.",
-          "external_site": "Draft NL localization pending native pass. HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.",
-          "field_note": "Draft NL localization pending native pass. Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear."
+          "title": "NL LOC HOLD: Ending Payout Data Boundary",
+          "scanner": "NL LOC HOLD: Ending boundary: receiver, custody, evidence state, payout, consequence.",
+          "terminal": "NL LOC HOLD: ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.",
+          "audio": "NL LOC HOLD: Credits do not close a crime scene.",
+          "in_game_wiki": "NL LOC HOLD: Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.",
+          "external_site": "NL LOC HOLD: HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.",
+          "field_note": "NL LOC HOLD: Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear."
         }
       }
     }

@@ -1,35 +1,52 @@
 # BIOTA LOCAL: FLORA, FAUNA Y COLAPSO ECOLÓGICO
-**Sección de la Gran Biblioteca:** 04
-**Idioma:** es_ES
-**Canon:** Estricto (Lore Bible 2190)
+
+> **Fuente:** PDA recuperada, cápsula de descenso clase Styx designada 'Lazarus'.  
+> **Hablante:** Buzo de salvamento no identificado ("Jacks").  
+> **Nota del revisor:** Transcripción de audio y registros de texto fusionados. El sujeto demuestra una paranoia extrema con respecto a la fauna local, específicamente en relación con la firma acústica "Alfa".
 
 ---
 
-## 1. Fauna del Abismo
-La biología de HECTON-8 se ha adaptado a la presión, la oscuridad y la química tóxica. El escáner del merodeador identifica 10 especies de fauna pacífica o neutral y 3 especies de depredadores ápice.
+## 1. Las Cosas Pequeñas
 
-### Fauna Pacífica y Forrajera:
-*   **Lantern Sifter (Cribador Linterna):** Un carroñero de fondo que usa bioluminiscencia para atraer desechos orgánicos.
-*   **Brine Siphoner (Sifón de Salmuera):** Nada en cañones hipersalinos, filtrando metano y sulfuro de hidrógeno.
-*   **Iron Minnow (Gobio de Hierro):** Un pez de cardumen cuyas escamas están reforzadas con metales pesados de los respiraderos geotérmicos.
-*   *Otras especies:* Bladderfish, Shore Skimmer, Kelp Raylet, Silt Drifter, Wall Glider, Glassworm Juvenile, Cold Veil Eel.
+*Fragmento de registro de audio 04-A: "El escáner es inútil. Dice que hay diez especies pacíficas aquí abajo. Miente. Nada aquí abajo es pacífico. Solo es demasiado pequeño para matarte rápidamente."*
 
-### Depredadores Ápice:
-*   **Pocket Ambusher (Emboscador de Conducto):** Se esconde en los estrechos conductos de mantenimiento de las estaciones, atacando a los buceadores por la espalda.
-*   **Brine Stalker (Acechador de Salmuera):** Utiliza la densidad de los lagos de salmuera para deslizarse en silencio. Caza por vibraciones.
-*   **Shadow Interceptor (Interceptor de Sombras):** Un depredador agresivo que ataca fuentes de luz. Ha aprendido a asociar los focos del P-63 con presas que entran en pánico.
+Si tu escáner detecta un **Cribador de Linterna**, no te relajes. Comen cadáveres. Usan bioluminiscencia para atraer desechos orgánicos, lo que significa que si ves un enjambre de ellos, algo acaba de morir, o algo está a punto de hacerlo.
 
-## 2. Flora y Redes Fúngicas
-La vegetación aquí no utiliza la fotosíntesis (no hay luz solar). Se basa en la quimiosíntesis y la simbiosis con la IA Atlas-6:
-*   **Cathedral Kelp (Alga Catedral):** Columnas gigantes de algas entretejidas con fibras bioconductoras, que la IA utiliza como transmisores de señales.
-*   **Halo Sargassum Mats (Mantos de Sargazo Halo):** Redes tóxicas que flotan en la columna de agua, capaces de bloquear las hélices de un minisubmarino.
-*   **Thermal Tubeworms y Lantern Grass (Gusanos Tubulares Térmicos y Hierba Linterna):** Indican la proximidad de fuentes de calor o fugas de oxígeno.
+Observa a los **Sifonadores de Salmuera** en los cañones profundos. Filtran metano. Si de repente se dispersan, una bolsa de metano se está ventilando y los sellos de tu traje están a punto de derretirse.
 
-## 3. Alfa Leviatán
-El archivo de la base de datos de la corporación sobre el Alfa Leviatán está fuertemente censurado. No es una especie biológica específica, sino una "etiqueta de convergencia" que describe algo en la cima absoluta de la cadena alimentaria.
-Los hechos conocidos son indirectos: una onda acústica portadora por debajo de 40 Hz que hace vibrar el blindaje del casco; la desaparición completa de cualquier otra presa en el sector; cambios anómalos de corrientes. El Leviatán no es un jefe con una barra de vida. Es un terror que edita las rutas de los merodeadores y llega antes de que lo veas. La corporación borró todos los datos sobre él porque el miedo es lo único que no pudieron monetizar.
+Los **Piscardos de Hierro** son los peores. Forman bancos cerca de los respiraderos termales. Sus escamas están literalmente entrelazadas con metales pesados. Cuando entran en pánico y se estrellan contra tu placa frontal, se siente como si te golpearan con un puñado de rodamientos de bolas.
 
-## 4. Anatomía de un Colapso Ecológico
-La muerte de la colonia desencadenó una reacción en cadena en los 80 sectores.
-El colapso ecológico comenzó con fugas de refrigerante de las fábricas destruidas. Esto provocó una **Floración (Bloom)**: una proliferación explosiva de algas tóxicas marrones y verdes. La floración devoró el oxígeno en el agua.
-Los peces pequeños comenzaron a asfixiarse, agrupándose densamente alrededor de los sistemas de ventilación activos de la base, suplicando por corrientes artificiales. Los depredadores lo entendieron y comenzaron a emboscar justo en las tuberías salvavidas. Las algas cubrieron cámaras y esclusas como una baba negra y espesa, devorando la luz de los focos. El océano no solo mató la colonia; la colonia envenenó el océano con sus pulmones muertos. La IA Atlas-6 clasificó esta pesadilla no como un desastre ecológico, sino como una "Corrección de Población".
+## 2. Los Asesinos
+
+He perdido a tres miembros de la tripulación en la oscuridad. El océano no solo te aplasta; te caza.
+
+*   **Emboscador de Bolsillo:** No confíes en los conductos de mantenimiento. Vi a uno arrastrar a O'Neill a un conducto de ventilación que apenas tenía medio metro de ancho. Se encajan en las tuberías estrechas de las estaciones viejas y esperan a que pase un buzo. Mantén tu espalda contra un mamparo sólido.
+*   **Acechador de Salmuera:** No puedes oírlos. Usan la densidad de los lagos de salmuera hipersalina para deslizarse sin desplazar el agua. No sabrás que está ahí hasta que la vibración golpee tu traje, y para entonces, ya tiene tu correa.
+*   **Interceptor de Sombras:** ¡Apaga los focos P-63! ¡No me importa si no puedes ver! Estas cosas han aprendido que las luces de emisión corporativa significan presa asustada. Si enciendes una luz alta, solo estás tocando la campana de la cena.
+
+## 3. La Red Fúngica
+
+*Nota de texto adjunta:*
+No hay luz solar. Las plantas aquí no hacen fotosíntesis. Hacen trampa. Usan la IA Atlas-6.
+
+El **Kelp Catedral** no es solo alga marina. Esos tallos gigantes están entrelazados con fibras bioconductoras. Juro que la IA los está usando como repetidores de señal. Si cortas un tallo, los drones aparecen tres minutos después.
+
+Cuidado con las **Alfombras de Sargazo Halo**. Parecen basura flotante, pero son redes tóxicas. Atascarán las hélices de un minisubmarino en segundos. Si te enredas, no intentes cortarlo con tus manos. La neurotoxina quemará directamente el neopreno estándar.
+
+## 4. La Floración y El Limo Negro
+
+La colonia no solo murió; envenenó todo el sector. Cuando las fábricas colapsaron, filtraron refrigerante industrial por todas partes. Desencadenó una "Floración"—un crecimiento explosivo de algas marrones tóxicas. Se comió todo el oxígeno.
+
+Ahora, los peces pequeños se están asfixiando. Se agrupan alrededor de las rejillas de ventilación activas de la base en ruinas, rogando por las corrientes de aire artificiales. Y los depredadores lo saben. Simplemente se sientan en los respiraderos y se atiborran.
+
+Las algas han cubierto cada ventana y esclusa de aire con un limo negro y espeso. Se traga la luz. Atlas-6 registró esto en la base de datos central como una "Corrección de Población". No estaba hablando de los peces.
+
+## 5. La Firma Acústica "Alfa"
+
+*Fragmento de registro de audio 04-B: [Respiración agitada. El sonar emite pitidos erráticos.]*
+
+Deep Reach censuró el archivo sobre el "Leviatán Alfa". Hackeé el terminal en el Sector 4 y descubrí por qué. No es un solo animal. Es una etiqueta de convergencia. Es lo que sea que se asiente en la cima absoluta de la cadena alimentaria.
+
+No lo he visto. Nadie lo ve y vive. Pero lo sientes. Emite una onda portadora acústica de menos de 40 Hz. El revestimiento de tu casco comienza a vibrar. Luego, todos los demás seres vivos del sector simplemente... desaparecen. El agua se vuelve mortalmente silenciosa. Las corrientes cambian hacia atrás.
+
+No es un jefe al que puedas disparar. Es un terror que reescribe tu ruta de buceo. Llega antes de que lo veas. Date la vuelta. Deja el xenón. Corta la correa y quema combustible hacia la superficie.

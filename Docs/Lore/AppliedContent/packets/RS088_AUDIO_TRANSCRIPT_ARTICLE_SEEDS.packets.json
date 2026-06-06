@@ -36,130 +36,130 @@
           "field_note": "Claim-tender buffer, clipped by storm carrier. The speaker gives route facts and refuses to promise rescue."
         },
         "ru_RU": {
-          "title": "Draft RU localization pending native pass. Транскрипт подхода Black Keel",
+          "title": "RU LOC HOLD: Транскрипт подхода Black Keel",
           "scanner": "Восстановленное аудио ретранслятора подтверждает оплаченный спуск, условный возврат, задержку четыре секунды и обязательный пакет доказательств.",
           "terminal": "РАСШИФРОВКА РЕТРАНСЛЯТОРА BK-APP-01: задержка 4.0 с; потеря пакетов 18%; спуск выставлен к оплате; возврат зависит от окна приемника, здоровья, массы и доказательства.",
           "audio": "Тендер Black Keel для заявителя. Задержка четыре секунды. Спуск выставлен к оплате. Возврат не гарантирован. Передайте здоровье, массу, доказательство.",
-          "in_game_wiki": "Draft RU localization pending native pass. The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
-          "external_site": "Draft RU localization pending native pass. The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
+          "in_game_wiki": "RU LOC HOLD: The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
+          "external_site": "RU LOC HOLD: The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
           "field_note": "Буфер тендера по требованию, срезанный штормовым ретранслятором. Голос дает факты маршрута и не обещает спасение."
         },
         "ja_JP": {
-          "title": "Draft JA localization pending native pass. Black Keel Approach Transcript Seed",
-          "scanner": "Draft JA localization pending native pass. Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
-          "terminal": "Draft JA localization pending native pass. TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
-          "audio": "Draft JA localization pending native pass. Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
-          "in_game_wiki": "Draft JP localization pending native pass. The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
-          "external_site": "Draft JP localization pending native pass. The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
-          "field_note": "Draft JA localization pending native pass. Use for VO script, caption article and first-hour trailer-safe excerpt."
+          "title": "JA LOC HOLD: Black Keel Approach Transcript Seed",
+          "scanner": "JA LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
+          "terminal": "JA LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
+          "audio": "JA LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
+          "in_game_wiki": "JP LOC HOLD: The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
+          "external_site": "JP LOC HOLD: The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
+          "field_note": "JA LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt."
         },
         "zh_CN": {
-          "title": "Draft ZH localization pending native pass. Black Keel Approach Transcript Seed",
-          "scanner": "Draft ZH localization pending native pass. Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
-          "terminal": "Draft ZH localization pending native pass. TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
-          "audio": "Draft ZH localization pending native pass. Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
-          "in_game_wiki": "Draft CN localization pending native pass. The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
-          "external_site": "Draft CN localization pending native pass. The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
-          "field_note": "Draft ZH localization pending native pass. Use for VO script, caption article and first-hour trailer-safe excerpt."
+          "title": "ZH LOC HOLD: Black Keel Approach Transcript Seed",
+          "scanner": "ZH LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
+          "terminal": "ZH LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
+          "audio": "ZH LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
+          "in_game_wiki": "CN LOC HOLD: The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
+          "external_site": "CN LOC HOLD: The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
+          "field_note": "ZH LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Black Keel Approach Transcript Seed",
-          "scanner": "Draft FR localization pending native pass. Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
-          "terminal": "Draft FR localization pending native pass. TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
-          "audio": "Draft FR localization pending native pass. Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
-          "in_game_wiki": "Draft FR localization pending native pass. The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
-          "external_site": "Draft FR localization pending native pass. The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
-          "field_note": "Draft FR localization pending native pass. Use for VO script, caption article and first-hour trailer-safe excerpt."
+          "title": "FR LOC HOLD: Black Keel Approach Transcript Seed",
+          "scanner": "FR LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
+          "terminal": "FR LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
+          "audio": "FR LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
+          "in_game_wiki": "FR LOC HOLD: The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
+          "external_site": "FR LOC HOLD: The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
+          "field_note": "FR LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Black Keel Approach Transcript Seed",
-          "scanner": "Draft ES localization pending native pass. Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
-          "terminal": "Draft ES localization pending native pass. TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
-          "audio": "Draft ES localization pending native pass. Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
-          "in_game_wiki": "Draft ES localization pending native pass. The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
-          "external_site": "Draft ES localization pending native pass. The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
-          "field_note": "Draft ES localization pending native pass. Use for VO script, caption article and first-hour trailer-safe excerpt."
+          "title": "ES LOC HOLD: Black Keel Approach Transcript Seed",
+          "scanner": "ES LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
+          "terminal": "ES LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
+          "audio": "ES LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
+          "in_game_wiki": "ES LOC HOLD: The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
+          "external_site": "ES LOC HOLD: The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
+          "field_note": "ES LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Black Keel Approach Transcript Seed",
-          "scanner": "Draft DE localization pending native pass. Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
-          "terminal": "Draft DE localization pending native pass. TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
-          "audio": "Draft DE localization pending native pass. Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
-          "in_game_wiki": "Draft DE localization pending native pass. The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
-          "external_site": "Draft DE localization pending native pass. The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
-          "field_note": "Draft DE localization pending native pass. Use for VO script, caption article and first-hour trailer-safe excerpt."
+          "title": "DE LOC HOLD: Black Keel Approach Transcript Seed",
+          "scanner": "DE LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
+          "terminal": "DE LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
+          "audio": "DE LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
+          "in_game_wiki": "DE LOC HOLD: The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
+          "external_site": "DE LOC HOLD: The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
+          "field_note": "DE LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Black Keel Approach Transcript Seed",
-          "scanner": "Draft PL localization pending native pass. Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
-          "terminal": "Draft PL localization pending native pass. TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
-          "audio": "Draft PL localization pending native pass. Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
-          "in_game_wiki": "Draft PL localization pending native pass. The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
-          "external_site": "Draft PL localization pending native pass. The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
-          "field_note": "Draft PL localization pending native pass. Use for VO script, caption article and first-hour trailer-safe excerpt."
+          "title": "PL LOC HOLD: Black Keel Approach Transcript Seed",
+          "scanner": "PL LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
+          "terminal": "PL LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
+          "audio": "PL LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
+          "in_game_wiki": "PL LOC HOLD: The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
+          "external_site": "PL LOC HOLD: The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
+          "field_note": "PL LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt."
         },
         "uk_UA": {
-          "title": "Draft UK localization pending native pass. Black Keel Approach Transcript Seed",
-          "scanner": "Draft UK localization pending native pass. Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
-          "terminal": "Draft UK localization pending native pass. TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
-          "audio": "Draft UK localization pending native pass. Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
-          "in_game_wiki": "Draft UA localization pending native pass. The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
-          "external_site": "Draft UA localization pending native pass. The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
-          "field_note": "Draft UK localization pending native pass. Use for VO script, caption article and first-hour trailer-safe excerpt."
+          "title": "UK LOC HOLD: Black Keel Approach Transcript Seed",
+          "scanner": "UK LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
+          "terminal": "UK LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
+          "audio": "UK LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
+          "in_game_wiki": "UA LOC HOLD: The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
+          "external_site": "UA LOC HOLD: The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
+          "field_note": "UK LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Black Keel Approach Transcript Seed",
-          "scanner": "Draft AR localization pending native pass. Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
-          "terminal": "Draft AR localization pending native pass. TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
-          "audio": "Draft AR localization pending native pass. Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
-          "in_game_wiki": "Draft AR localization pending native pass. The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
-          "external_site": "Draft AR localization pending native pass. The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
-          "field_note": "Draft AR localization pending native pass. Use for VO script, caption article and first-hour trailer-safe excerpt."
+          "title": "AR LOC HOLD: Black Keel Approach Transcript Seed",
+          "scanner": "AR LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
+          "terminal": "AR LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
+          "audio": "AR LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
+          "in_game_wiki": "AR LOC HOLD: The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
+          "external_site": "AR LOC HOLD: The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
+          "field_note": "AR LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Black Keel Approach Transcript Seed",
-          "scanner": "Draft ID localization pending native pass. Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
-          "terminal": "Draft ID localization pending native pass. TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
-          "audio": "Draft ID localization pending native pass. Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
-          "in_game_wiki": "Draft ID localization pending native pass. The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
-          "external_site": "Draft ID localization pending native pass. The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
-          "field_note": "Draft ID localization pending native pass. Use for VO script, caption article and first-hour trailer-safe excerpt."
+          "title": "ID LOC HOLD: Black Keel Approach Transcript Seed",
+          "scanner": "ID LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
+          "terminal": "ID LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
+          "audio": "ID LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
+          "in_game_wiki": "ID LOC HOLD: The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
+          "external_site": "ID LOC HOLD: The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
+          "field_note": "ID LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Black Keel Approach Transcript Seed",
-          "scanner": "Draft KO localization pending native pass. Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
-          "terminal": "Draft KO localization pending native pass. TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
-          "audio": "Draft KO localization pending native pass. Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
-          "in_game_wiki": "Draft KO localization pending native pass. The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
-          "external_site": "Draft KO localization pending native pass. The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
-          "field_note": "Draft KO localization pending native pass. Use for VO script, caption article and first-hour trailer-safe excerpt."
+          "title": "KO LOC HOLD: Black Keel Approach Transcript Seed",
+          "scanner": "KO LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
+          "terminal": "KO LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
+          "audio": "KO LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
+          "in_game_wiki": "KO LOC HOLD: The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
+          "external_site": "KO LOC HOLD: The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
+          "field_note": "KO LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Black Keel Approach Transcript Seed",
-          "scanner": "Draft HE localization pending native pass. Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
-          "terminal": "Draft HE localization pending native pass. TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
-          "audio": "Draft HE localization pending native pass. Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
-          "in_game_wiki": "Draft HE localization pending native pass. The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
-          "external_site": "Draft HE localization pending native pass. The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
-          "field_note": "Draft HE localization pending native pass. Use for VO script, caption article and first-hour trailer-safe excerpt."
+          "title": "HE LOC HOLD: Black Keel Approach Transcript Seed",
+          "scanner": "HE LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
+          "terminal": "HE LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
+          "audio": "HE LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
+          "in_game_wiki": "HE LOC HOLD: The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
+          "external_site": "HE LOC HOLD: The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
+          "field_note": "HE LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Black Keel Approach Transcript Seed",
-          "scanner": "Draft PT localization pending native pass. Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
-          "terminal": "Draft PT localization pending native pass. TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
-          "audio": "Draft PT localization pending native pass. Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
-          "in_game_wiki": "Draft PT localization pending native pass. The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
-          "external_site": "Draft PT localization pending native pass. The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
-          "field_note": "Draft PT localization pending native pass. Use for VO script, caption article and first-hour trailer-safe excerpt."
+          "title": "PT LOC HOLD: Black Keel Approach Transcript Seed",
+          "scanner": "PT LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
+          "terminal": "PT LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
+          "audio": "PT LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
+          "in_game_wiki": "PT LOC HOLD: The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
+          "external_site": "PT LOC HOLD: The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
+          "field_note": "PT LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Black Keel Approach Transcript Seed",
-          "scanner": "Draft NL localization pending native pass. Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
-          "terminal": "Draft NL localization pending native pass. TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
-          "audio": "Draft NL localization pending native pass. Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
-          "in_game_wiki": "Draft NL localization pending native pass. The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
-          "external_site": "Draft NL localization pending native pass. The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
-          "field_note": "Draft NL localization pending native pass. Use for VO script, caption article and first-hour trailer-safe excerpt."
+          "title": "NL LOC HOLD: Black Keel Approach Transcript Seed",
+          "scanner": "NL LOC HOLD: Audio seed: Black Keel first contact is clipped, contractual and delayed by orbital geometry.",
+          "terminal": "NL LOC HOLD: TRANSCRIPT SEED: carrier identity, lien notice, bathydrop damage, no-rescue clause, transfer-window lag and evidence bounty teaser.",
+          "audio": "NL LOC HOLD: Black Keel to claimant: telemetry received. Do not spend oxygen arguing with the orbit.",
+          "in_game_wiki": "NL LOC HOLD: The approach transcript proves Black Keel is useful infrastructure, not rescue. It states debt, receiver window, health, mass, and proof limits before conspiracy can replace physics.",
+          "external_site": "NL LOC HOLD: The opening carrier audio is cold, useful, and physically constrained by orbit, packet lag, health limits, return mass, proof, and claim-pool debt.",
+          "field_note": "NL LOC HOLD: Use for VO script, caption article and first-hour trailer-safe excerpt."
         }
       }
     },
@@ -191,7 +191,7 @@
           "field_note": "Present-tense corporate packet. Legal phrasing must sound useful while withholding rescue until custody is priced."
         },
         "ru_RU": {
-          "title": "Draft RU localization pending native pass. Транскрипт очищенного пакета Deep Reach",
+          "title": "RU LOC HOLD: Транскрипт очищенного пакета Deep Reach",
           "scanner": "Восстановленный пакет Deep Reach повторяет сводку аварии, затем ставит спасение после координат и расчета карантина.",
           "terminal": "PACKET DR-RCO-2190: приоритет безопасности заявлен; координаты требуются; стоимость карантина ожидает расчета; поля причины работников опущены.",
           "audio": "Пакет регламента восстановления. Приоритет безопасности подтвержден. Сначала координаты. Стоимость карантина ожидает расчета. Спасение нельзя оценить вслепую.",
@@ -200,121 +200,121 @@
           "field_note": "Корпоративный пакет в настоящем времени. Юридическая фраза должна звучать полезно, пока спасение удерживают до расчета цепочки хранения."
         },
         "ja_JP": {
-          "title": "Draft JA localization pending native pass. Deep Reach Sanitized Packet Transcript Seed",
-          "scanner": "Draft JA localization pending native pass. Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.",
-          "terminal": "Draft JA localization pending native pass. TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.",
-          "audio": "Draft JA localization pending native pass. Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.",
-          "in_game_wiki": "Draft JA localization pending native pass. Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.",
-          "external_site": "Draft JA localization pending native pass. Deep Reach's public lie is built from true fragments arranged to hide liability.",
-          "field_note": "Draft JA localization pending native pass. Use for terminal packet body, VO captions and public article sidebars."
+          "title": "JA LOC HOLD: Deep Reach Sanitized Packet Transcript Seed",
+          "scanner": "JA LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.",
+          "terminal": "JA LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.",
+          "audio": "JA LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.",
+          "in_game_wiki": "JA LOC HOLD: Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.",
+          "external_site": "JA LOC HOLD: Deep Reach's public lie is built from true fragments arranged to hide liability.",
+          "field_note": "JA LOC HOLD: Use for terminal packet body, VO captions and public article sidebars."
         },
         "zh_CN": {
-          "title": "Draft ZH localization pending native pass. Deep Reach Sanitized Packet Transcript Seed",
-          "scanner": "Draft ZH localization pending native pass. Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.",
-          "terminal": "Draft ZH localization pending native pass. TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.",
-          "audio": "Draft ZH localization pending native pass. Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.",
-          "in_game_wiki": "Draft ZH localization pending native pass. Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.",
-          "external_site": "Draft ZH localization pending native pass. Deep Reach's public lie is built from true fragments arranged to hide liability.",
-          "field_note": "Draft ZH localization pending native pass. Use for terminal packet body, VO captions and public article sidebars."
+          "title": "ZH LOC HOLD: Deep Reach Sanitized Packet Transcript Seed",
+          "scanner": "ZH LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.",
+          "terminal": "ZH LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.",
+          "audio": "ZH LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.",
+          "in_game_wiki": "ZH LOC HOLD: Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.",
+          "external_site": "ZH LOC HOLD: Deep Reach's public lie is built from true fragments arranged to hide liability.",
+          "field_note": "ZH LOC HOLD: Use for terminal packet body, VO captions and public article sidebars."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Deep Reach Sanitized Packet Transcript Seed",
-          "scanner": "Draft FR localization pending native pass. Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.",
-          "terminal": "Draft FR localization pending native pass. TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.",
-          "audio": "Draft FR localization pending native pass. Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.",
-          "in_game_wiki": "Draft FR localization pending native pass. Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.",
-          "external_site": "Draft FR localization pending native pass. Deep Reach's public lie is built from true fragments arranged to hide liability.",
-          "field_note": "Draft FR localization pending native pass. Use for terminal packet body, VO captions and public article sidebars."
+          "title": "FR LOC HOLD: Deep Reach Sanitized Packet Transcript Seed",
+          "scanner": "FR LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.",
+          "terminal": "FR LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.",
+          "audio": "FR LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.",
+          "in_game_wiki": "FR LOC HOLD: Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.",
+          "external_site": "FR LOC HOLD: Deep Reach's public lie is built from true fragments arranged to hide liability.",
+          "field_note": "FR LOC HOLD: Use for terminal packet body, VO captions and public article sidebars."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Deep Reach Sanitized Packet Transcript Seed",
-          "scanner": "Draft ES localization pending native pass. Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.",
-          "terminal": "Draft ES localization pending native pass. TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.",
-          "audio": "Draft ES localization pending native pass. Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.",
-          "in_game_wiki": "Draft ES localization pending native pass. Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.",
-          "external_site": "Draft ES localization pending native pass. Deep Reach's public lie is built from true fragments arranged to hide liability.",
-          "field_note": "Draft ES localization pending native pass. Use for terminal packet body, VO captions and public article sidebars."
+          "title": "ES LOC HOLD: Deep Reach Sanitized Packet Transcript Seed",
+          "scanner": "ES LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.",
+          "terminal": "ES LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.",
+          "audio": "ES LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.",
+          "in_game_wiki": "ES LOC HOLD: Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.",
+          "external_site": "ES LOC HOLD: Deep Reach's public lie is built from true fragments arranged to hide liability.",
+          "field_note": "ES LOC HOLD: Use for terminal packet body, VO captions and public article sidebars."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Deep Reach Sanitized Packet Transcript Seed",
-          "scanner": "Draft DE localization pending native pass. Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.",
-          "terminal": "Draft DE localization pending native pass. TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.",
-          "audio": "Draft DE localization pending native pass. Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.",
-          "in_game_wiki": "Draft DE localization pending native pass. Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.",
-          "external_site": "Draft DE localization pending native pass. Deep Reach's public lie is built from true fragments arranged to hide liability.",
-          "field_note": "Draft DE localization pending native pass. Use for terminal packet body, VO captions and public article sidebars."
+          "title": "DE LOC HOLD: Deep Reach Sanitized Packet Transcript Seed",
+          "scanner": "DE LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.",
+          "terminal": "DE LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.",
+          "audio": "DE LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.",
+          "in_game_wiki": "DE LOC HOLD: Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.",
+          "external_site": "DE LOC HOLD: Deep Reach's public lie is built from true fragments arranged to hide liability.",
+          "field_note": "DE LOC HOLD: Use for terminal packet body, VO captions and public article sidebars."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Deep Reach Sanitized Packet Transcript Seed",
-          "scanner": "Draft PL localization pending native pass. Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.",
-          "terminal": "Draft PL localization pending native pass. TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.",
-          "audio": "Draft PL localization pending native pass. Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.",
-          "in_game_wiki": "Draft PL localization pending native pass. Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.",
-          "external_site": "Draft PL localization pending native pass. Deep Reach's public lie is built from true fragments arranged to hide liability.",
-          "field_note": "Draft PL localization pending native pass. Use for terminal packet body, VO captions and public article sidebars."
+          "title": "PL LOC HOLD: Deep Reach Sanitized Packet Transcript Seed",
+          "scanner": "PL LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.",
+          "terminal": "PL LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.",
+          "audio": "PL LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.",
+          "in_game_wiki": "PL LOC HOLD: Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.",
+          "external_site": "PL LOC HOLD: Deep Reach's public lie is built from true fragments arranged to hide liability.",
+          "field_note": "PL LOC HOLD: Use for terminal packet body, VO captions and public article sidebars."
         },
         "uk_UA": {
-          "title": "Draft UK localization pending native pass. Deep Reach Sanitized Packet Transcript Seed",
-          "scanner": "Draft UK localization pending native pass. Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.",
-          "terminal": "Draft UK localization pending native pass. TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.",
-          "audio": "Draft UK localization pending native pass. Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.",
-          "in_game_wiki": "Draft UK localization pending native pass. Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.",
-          "external_site": "Draft UK localization pending native pass. Deep Reach's public lie is built from true fragments arranged to hide liability.",
-          "field_note": "Draft UK localization pending native pass. Use for terminal packet body, VO captions and public article sidebars."
+          "title": "UK LOC HOLD: Deep Reach Sanitized Packet Transcript Seed",
+          "scanner": "UK LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.",
+          "terminal": "UK LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.",
+          "audio": "UK LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.",
+          "in_game_wiki": "UK LOC HOLD: Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.",
+          "external_site": "UK LOC HOLD: Deep Reach's public lie is built from true fragments arranged to hide liability.",
+          "field_note": "UK LOC HOLD: Use for terminal packet body, VO captions and public article sidebars."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Deep Reach Sanitized Packet Transcript Seed",
-          "scanner": "Draft AR localization pending native pass. Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.",
-          "terminal": "Draft AR localization pending native pass. TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.",
-          "audio": "Draft AR localization pending native pass. Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.",
-          "in_game_wiki": "Draft AR localization pending native pass. Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.",
-          "external_site": "Draft AR localization pending native pass. Deep Reach's public lie is built from true fragments arranged to hide liability.",
-          "field_note": "Draft AR localization pending native pass. Use for terminal packet body, VO captions and public article sidebars."
+          "title": "AR LOC HOLD: Deep Reach Sanitized Packet Transcript Seed",
+          "scanner": "AR LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.",
+          "terminal": "AR LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.",
+          "audio": "AR LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.",
+          "in_game_wiki": "AR LOC HOLD: Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.",
+          "external_site": "AR LOC HOLD: Deep Reach's public lie is built from true fragments arranged to hide liability.",
+          "field_note": "AR LOC HOLD: Use for terminal packet body, VO captions and public article sidebars."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Deep Reach Sanitized Packet Transcript Seed",
-          "scanner": "Draft ID localization pending native pass. Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.",
-          "terminal": "Draft ID localization pending native pass. TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.",
-          "audio": "Draft ID localization pending native pass. Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.",
-          "in_game_wiki": "Draft ID localization pending native pass. Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.",
-          "external_site": "Draft ID localization pending native pass. Deep Reach's public lie is built from true fragments arranged to hide liability.",
-          "field_note": "Draft ID localization pending native pass. Use for terminal packet body, VO captions and public article sidebars."
+          "title": "ID LOC HOLD: Deep Reach Sanitized Packet Transcript Seed",
+          "scanner": "ID LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.",
+          "terminal": "ID LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.",
+          "audio": "ID LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.",
+          "in_game_wiki": "ID LOC HOLD: Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.",
+          "external_site": "ID LOC HOLD: Deep Reach's public lie is built from true fragments arranged to hide liability.",
+          "field_note": "ID LOC HOLD: Use for terminal packet body, VO captions and public article sidebars."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Deep Reach Sanitized Packet Transcript Seed",
-          "scanner": "Draft KO localization pending native pass. Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.",
-          "terminal": "Draft KO localization pending native pass. TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.",
-          "audio": "Draft KO localization pending native pass. Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.",
-          "in_game_wiki": "Draft KO localization pending native pass. Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.",
-          "external_site": "Draft KO localization pending native pass. Deep Reach's public lie is built from true fragments arranged to hide liability.",
-          "field_note": "Draft KO localization pending native pass. Use for terminal packet body, VO captions and public article sidebars."
+          "title": "KO LOC HOLD: Deep Reach Sanitized Packet Transcript Seed",
+          "scanner": "KO LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.",
+          "terminal": "KO LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.",
+          "audio": "KO LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.",
+          "in_game_wiki": "KO LOC HOLD: Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.",
+          "external_site": "KO LOC HOLD: Deep Reach's public lie is built from true fragments arranged to hide liability.",
+          "field_note": "KO LOC HOLD: Use for terminal packet body, VO captions and public article sidebars."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Deep Reach Sanitized Packet Transcript Seed",
-          "scanner": "Draft HE localization pending native pass. Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.",
-          "terminal": "Draft HE localization pending native pass. TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.",
-          "audio": "Draft HE localization pending native pass. Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.",
-          "in_game_wiki": "Draft HE localization pending native pass. Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.",
-          "external_site": "Draft HE localization pending native pass. Deep Reach's public lie is built from true fragments arranged to hide liability.",
-          "field_note": "Draft HE localization pending native pass. Use for terminal packet body, VO captions and public article sidebars."
+          "title": "HE LOC HOLD: Deep Reach Sanitized Packet Transcript Seed",
+          "scanner": "HE LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.",
+          "terminal": "HE LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.",
+          "audio": "HE LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.",
+          "in_game_wiki": "HE LOC HOLD: Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.",
+          "external_site": "HE LOC HOLD: Deep Reach's public lie is built from true fragments arranged to hide liability.",
+          "field_note": "HE LOC HOLD: Use for terminal packet body, VO captions and public article sidebars."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Deep Reach Sanitized Packet Transcript Seed",
-          "scanner": "Draft PT localization pending native pass. Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.",
-          "terminal": "Draft PT localization pending native pass. TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.",
-          "audio": "Draft PT localization pending native pass. Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.",
-          "in_game_wiki": "Draft PT localization pending native pass. Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.",
-          "external_site": "Draft PT localization pending native pass. Deep Reach's public lie is built from true fragments arranged to hide liability.",
-          "field_note": "Draft PT localization pending native pass. Use for terminal packet body, VO captions and public article sidebars."
+          "title": "PT LOC HOLD: Deep Reach Sanitized Packet Transcript Seed",
+          "scanner": "PT LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.",
+          "terminal": "PT LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.",
+          "audio": "PT LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.",
+          "in_game_wiki": "PT LOC HOLD: Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.",
+          "external_site": "PT LOC HOLD: Deep Reach's public lie is built from true fragments arranged to hide liability.",
+          "field_note": "PT LOC HOLD: Use for terminal packet body, VO captions and public article sidebars."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Deep Reach Sanitized Packet Transcript Seed",
-          "scanner": "Draft NL localization pending native pass. Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.",
-          "terminal": "Draft NL localization pending native pass. TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.",
-          "audio": "Draft NL localization pending native pass. Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.",
-          "in_game_wiki": "Draft NL localization pending native pass. Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.",
-          "external_site": "Draft NL localization pending native pass. Deep Reach's public lie is built from true fragments arranged to hide liability.",
-          "field_note": "Draft NL localization pending native pass. Use for terminal packet body, VO captions and public article sidebars."
+          "title": "NL LOC HOLD: Deep Reach Sanitized Packet Transcript Seed",
+          "scanner": "NL LOC HOLD: Audio/article seed: Deep Reach present contact repeats sanitized accident language under legal delay.",
+          "terminal": "NL LOC HOLD: TRANSCRIPT SEED: storm, oblique geology, failed autonomous evacuation, lost data and request for coordinates. The lie is omission.",
+          "audio": "NL LOC HOLD: Deep Reach packet: your safety is our priority. Coordinate clarity is required before safety can be priced.",
+          "in_game_wiki": "NL LOC HOLD: Sanitized packets keep Deep Reach plausible: they use legal language, not cartoon confessions.",
+          "external_site": "NL LOC HOLD: Deep Reach's public lie is built from true fragments arranged to hide liability.",
+          "field_note": "NL LOC HOLD: Use for terminal packet body, VO captions and public article sidebars."
         }
       }
     },
@@ -346,7 +346,7 @@
           "field_note": "Recovered worker voice. Keep the human detail inside job pressure, route safety and worn equipment."
         },
         "ru_RU": {
-          "title": "Draft RU localization pending native pass. Аудиотранскрипт рабочего досье",
+          "title": "RU LOC HOLD: Аудиотранскрипт рабочего досье",
           "scanner": "Аудио работника связывает ритм помпы с безопасностью маршрута и усталостью смены.",
           "terminal": "WORKER AUDIO M-VENN-07: ритм помпы чистый; верхний маршрут безопасен только пока sump поднимается ниже отметки шесть.",
           "audio": "Мара Венн, начальник помпы. Если помпа поет чисто, внеси в журнал. Если кашляет дважды, не спорь и иди по верхней лестнице.",
@@ -355,121 +355,121 @@
           "field_note": "Восстановленный голос работника. Человеческая деталь держится внутри давления работы, безопасности маршрута и изношенного оборудования."
         },
         "ja_JP": {
-          "title": "Draft JA localization pending native pass. Worker Dossier Audio Transcript Seed",
-          "scanner": "Draft JA localization pending native pass. Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.",
-          "terminal": "Draft JA localization pending native pass. TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.",
-          "audio": "Draft JA localization pending native pass. Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.",
-          "in_game_wiki": "Draft JA localization pending native pass. Worker transcripts make the colony human through procedure, fatigue, jokes and competence.",
-          "external_site": "Draft JA localization pending native pass. The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.",
-          "field_note": "Draft JA localization pending native pass. Use for VO fragments, dossier pages and prop evidence."
+          "title": "JA LOC HOLD: Worker Dossier Audio Transcript Seed",
+          "scanner": "JA LOC HOLD: Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.",
+          "terminal": "JA LOC HOLD: TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.",
+          "audio": "JA LOC HOLD: Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.",
+          "in_game_wiki": "JA LOC HOLD: Worker transcripts make the colony human through procedure, fatigue, jokes and competence.",
+          "external_site": "JA LOC HOLD: The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.",
+          "field_note": "JA LOC HOLD: Use for VO fragments, dossier pages and prop evidence."
         },
         "zh_CN": {
-          "title": "Draft ZH localization pending native pass. Worker Dossier Audio Transcript Seed",
-          "scanner": "Draft ZH localization pending native pass. Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.",
-          "terminal": "Draft ZH localization pending native pass. TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.",
-          "audio": "Draft ZH localization pending native pass. Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.",
-          "in_game_wiki": "Draft ZH localization pending native pass. Worker transcripts make the colony human through procedure, fatigue, jokes and competence.",
-          "external_site": "Draft ZH localization pending native pass. The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.",
-          "field_note": "Draft ZH localization pending native pass. Use for VO fragments, dossier pages and prop evidence."
+          "title": "ZH LOC HOLD: Worker Dossier Audio Transcript Seed",
+          "scanner": "ZH LOC HOLD: Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.",
+          "terminal": "ZH LOC HOLD: TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.",
+          "audio": "ZH LOC HOLD: Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.",
+          "in_game_wiki": "ZH LOC HOLD: Worker transcripts make the colony human through procedure, fatigue, jokes and competence.",
+          "external_site": "ZH LOC HOLD: The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.",
+          "field_note": "ZH LOC HOLD: Use for VO fragments, dossier pages and prop evidence."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Worker Dossier Audio Transcript Seed",
-          "scanner": "Draft FR localization pending native pass. Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.",
-          "terminal": "Draft FR localization pending native pass. TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.",
-          "audio": "Draft FR localization pending native pass. Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.",
-          "in_game_wiki": "Draft FR localization pending native pass. Worker transcripts make the colony human through procedure, fatigue, jokes and competence.",
-          "external_site": "Draft FR localization pending native pass. The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.",
-          "field_note": "Draft FR localization pending native pass. Use for VO fragments, dossier pages and prop evidence."
+          "title": "FR LOC HOLD: Worker Dossier Audio Transcript Seed",
+          "scanner": "FR LOC HOLD: Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.",
+          "terminal": "FR LOC HOLD: TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.",
+          "audio": "FR LOC HOLD: Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.",
+          "in_game_wiki": "FR LOC HOLD: Worker transcripts make the colony human through procedure, fatigue, jokes and competence.",
+          "external_site": "FR LOC HOLD: The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.",
+          "field_note": "FR LOC HOLD: Use for VO fragments, dossier pages and prop evidence."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Worker Dossier Audio Transcript Seed",
-          "scanner": "Draft ES localization pending native pass. Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.",
-          "terminal": "Draft ES localization pending native pass. TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.",
-          "audio": "Draft ES localization pending native pass. Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.",
-          "in_game_wiki": "Draft ES localization pending native pass. Worker transcripts make the colony human through procedure, fatigue, jokes and competence.",
-          "external_site": "Draft ES localization pending native pass. The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.",
-          "field_note": "Draft ES localization pending native pass. Use for VO fragments, dossier pages and prop evidence."
+          "title": "ES LOC HOLD: Worker Dossier Audio Transcript Seed",
+          "scanner": "ES LOC HOLD: Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.",
+          "terminal": "ES LOC HOLD: TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.",
+          "audio": "ES LOC HOLD: Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.",
+          "in_game_wiki": "ES LOC HOLD: Worker transcripts make the colony human through procedure, fatigue, jokes and competence.",
+          "external_site": "ES LOC HOLD: The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.",
+          "field_note": "ES LOC HOLD: Use for VO fragments, dossier pages and prop evidence."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Worker Dossier Audio Transcript Seed",
-          "scanner": "Draft DE localization pending native pass. Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.",
-          "terminal": "Draft DE localization pending native pass. TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.",
-          "audio": "Draft DE localization pending native pass. Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.",
-          "in_game_wiki": "Draft DE localization pending native pass. Worker transcripts make the colony human through procedure, fatigue, jokes and competence.",
-          "external_site": "Draft DE localization pending native pass. The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.",
-          "field_note": "Draft DE localization pending native pass. Use for VO fragments, dossier pages and prop evidence."
+          "title": "DE LOC HOLD: Worker Dossier Audio Transcript Seed",
+          "scanner": "DE LOC HOLD: Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.",
+          "terminal": "DE LOC HOLD: TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.",
+          "audio": "DE LOC HOLD: Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.",
+          "in_game_wiki": "DE LOC HOLD: Worker transcripts make the colony human through procedure, fatigue, jokes and competence.",
+          "external_site": "DE LOC HOLD: The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.",
+          "field_note": "DE LOC HOLD: Use for VO fragments, dossier pages and prop evidence."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Worker Dossier Audio Transcript Seed",
-          "scanner": "Draft PL localization pending native pass. Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.",
-          "terminal": "Draft PL localization pending native pass. TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.",
-          "audio": "Draft PL localization pending native pass. Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.",
-          "in_game_wiki": "Draft PL localization pending native pass. Worker transcripts make the colony human through procedure, fatigue, jokes and competence.",
-          "external_site": "Draft PL localization pending native pass. The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.",
-          "field_note": "Draft PL localization pending native pass. Use for VO fragments, dossier pages and prop evidence."
+          "title": "PL LOC HOLD: Worker Dossier Audio Transcript Seed",
+          "scanner": "PL LOC HOLD: Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.",
+          "terminal": "PL LOC HOLD: TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.",
+          "audio": "PL LOC HOLD: Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.",
+          "in_game_wiki": "PL LOC HOLD: Worker transcripts make the colony human through procedure, fatigue, jokes and competence.",
+          "external_site": "PL LOC HOLD: The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.",
+          "field_note": "PL LOC HOLD: Use for VO fragments, dossier pages and prop evidence."
         },
         "uk_UA": {
-          "title": "Draft UK localization pending native pass. Worker Dossier Audio Transcript Seed",
-          "scanner": "Draft UK localization pending native pass. Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.",
-          "terminal": "Draft UK localization pending native pass. TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.",
-          "audio": "Draft UK localization pending native pass. Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.",
-          "in_game_wiki": "Draft UK localization pending native pass. Worker transcripts make the colony human through procedure, fatigue, jokes and competence.",
-          "external_site": "Draft UK localization pending native pass. The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.",
-          "field_note": "Draft UK localization pending native pass. Use for VO fragments, dossier pages and prop evidence."
+          "title": "UK LOC HOLD: Worker Dossier Audio Transcript Seed",
+          "scanner": "UK LOC HOLD: Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.",
+          "terminal": "UK LOC HOLD: TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.",
+          "audio": "UK LOC HOLD: Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.",
+          "in_game_wiki": "UK LOC HOLD: Worker transcripts make the colony human through procedure, fatigue, jokes and competence.",
+          "external_site": "UK LOC HOLD: The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.",
+          "field_note": "UK LOC HOLD: Use for VO fragments, dossier pages and prop evidence."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Worker Dossier Audio Transcript Seed",
-          "scanner": "Draft AR localization pending native pass. Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.",
-          "terminal": "Draft AR localization pending native pass. TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.",
-          "audio": "Draft AR localization pending native pass. Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.",
-          "in_game_wiki": "Draft AR localization pending native pass. Worker transcripts make the colony human through procedure, fatigue, jokes and competence.",
-          "external_site": "Draft AR localization pending native pass. The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.",
-          "field_note": "Draft AR localization pending native pass. Use for VO fragments, dossier pages and prop evidence."
+          "title": "AR LOC HOLD: Worker Dossier Audio Transcript Seed",
+          "scanner": "AR LOC HOLD: Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.",
+          "terminal": "AR LOC HOLD: TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.",
+          "audio": "AR LOC HOLD: Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.",
+          "in_game_wiki": "AR LOC HOLD: Worker transcripts make the colony human through procedure, fatigue, jokes and competence.",
+          "external_site": "AR LOC HOLD: The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.",
+          "field_note": "AR LOC HOLD: Use for VO fragments, dossier pages and prop evidence."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Worker Dossier Audio Transcript Seed",
-          "scanner": "Draft ID localization pending native pass. Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.",
-          "terminal": "Draft ID localization pending native pass. TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.",
-          "audio": "Draft ID localization pending native pass. Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.",
-          "in_game_wiki": "Draft ID localization pending native pass. Worker transcripts make the colony human through procedure, fatigue, jokes and competence.",
-          "external_site": "Draft ID localization pending native pass. The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.",
-          "field_note": "Draft ID localization pending native pass. Use for VO fragments, dossier pages and prop evidence."
+          "title": "ID LOC HOLD: Worker Dossier Audio Transcript Seed",
+          "scanner": "ID LOC HOLD: Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.",
+          "terminal": "ID LOC HOLD: TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.",
+          "audio": "ID LOC HOLD: Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.",
+          "in_game_wiki": "ID LOC HOLD: Worker transcripts make the colony human through procedure, fatigue, jokes and competence.",
+          "external_site": "ID LOC HOLD: The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.",
+          "field_note": "ID LOC HOLD: Use for VO fragments, dossier pages and prop evidence."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Worker Dossier Audio Transcript Seed",
-          "scanner": "Draft KO localization pending native pass. Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.",
-          "terminal": "Draft KO localization pending native pass. TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.",
-          "audio": "Draft KO localization pending native pass. Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.",
-          "in_game_wiki": "Draft KO localization pending native pass. Worker transcripts make the colony human through procedure, fatigue, jokes and competence.",
-          "external_site": "Draft KO localization pending native pass. The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.",
-          "field_note": "Draft KO localization pending native pass. Use for VO fragments, dossier pages and prop evidence."
+          "title": "KO LOC HOLD: Worker Dossier Audio Transcript Seed",
+          "scanner": "KO LOC HOLD: Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.",
+          "terminal": "KO LOC HOLD: TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.",
+          "audio": "KO LOC HOLD: Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.",
+          "in_game_wiki": "KO LOC HOLD: Worker transcripts make the colony human through procedure, fatigue, jokes and competence.",
+          "external_site": "KO LOC HOLD: The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.",
+          "field_note": "KO LOC HOLD: Use for VO fragments, dossier pages and prop evidence."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Worker Dossier Audio Transcript Seed",
-          "scanner": "Draft HE localization pending native pass. Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.",
-          "terminal": "Draft HE localization pending native pass. TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.",
-          "audio": "Draft HE localization pending native pass. Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.",
-          "in_game_wiki": "Draft HE localization pending native pass. Worker transcripts make the colony human through procedure, fatigue, jokes and competence.",
-          "external_site": "Draft HE localization pending native pass. The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.",
-          "field_note": "Draft HE localization pending native pass. Use for VO fragments, dossier pages and prop evidence."
+          "title": "HE LOC HOLD: Worker Dossier Audio Transcript Seed",
+          "scanner": "HE LOC HOLD: Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.",
+          "terminal": "HE LOC HOLD: TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.",
+          "audio": "HE LOC HOLD: Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.",
+          "in_game_wiki": "HE LOC HOLD: Worker transcripts make the colony human through procedure, fatigue, jokes and competence.",
+          "external_site": "HE LOC HOLD: The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.",
+          "field_note": "HE LOC HOLD: Use for VO fragments, dossier pages and prop evidence."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Worker Dossier Audio Transcript Seed",
-          "scanner": "Draft PT localization pending native pass. Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.",
-          "terminal": "Draft PT localization pending native pass. TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.",
-          "audio": "Draft PT localization pending native pass. Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.",
-          "in_game_wiki": "Draft PT localization pending native pass. Worker transcripts make the colony human through procedure, fatigue, jokes and competence.",
-          "external_site": "Draft PT localization pending native pass. The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.",
-          "field_note": "Draft PT localization pending native pass. Use for VO fragments, dossier pages and prop evidence."
+          "title": "PT LOC HOLD: Worker Dossier Audio Transcript Seed",
+          "scanner": "PT LOC HOLD: Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.",
+          "terminal": "PT LOC HOLD: TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.",
+          "audio": "PT LOC HOLD: Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.",
+          "in_game_wiki": "PT LOC HOLD: Worker transcripts make the colony human through procedure, fatigue, jokes and competence.",
+          "external_site": "PT LOC HOLD: The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.",
+          "field_note": "PT LOC HOLD: Use for VO fragments, dossier pages and prop evidence."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Worker Dossier Audio Transcript Seed",
-          "scanner": "Draft NL localization pending native pass. Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.",
-          "terminal": "Draft NL localization pending native pass. TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.",
-          "audio": "Draft NL localization pending native pass. Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.",
-          "in_game_wiki": "Draft NL localization pending native pass. Worker transcripts make the colony human through procedure, fatigue, jokes and competence.",
-          "external_site": "Draft NL localization pending native pass. The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.",
-          "field_note": "Draft NL localization pending native pass. Use for VO fragments, dossier pages and prop evidence."
+          "title": "NL LOC HOLD: Worker Dossier Audio Transcript Seed",
+          "scanner": "NL LOC HOLD: Audio seed: worker dossiers use job pressure, routine and fatigue instead of family hooks.",
+          "terminal": "NL LOC HOLD: TRANSCRIPT SEED: pump cadence note, meal-water ledger, relay complaint, tool certificate and triage queue. Human through work.",
+          "audio": "NL LOC HOLD: Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.",
+          "in_game_wiki": "NL LOC HOLD: Worker transcripts make the colony human through procedure, fatigue, jokes and competence.",
+          "external_site": "NL LOC HOLD: The dead colony should read as a workplace that failed under physics and policy, not a melodrama prop.",
+          "field_note": "NL LOC HOLD: Use for VO fragments, dossier pages and prop evidence."
         }
       }
     },
@@ -501,7 +501,7 @@
           "field_note": "Damaged maintenance telemetry. No villain speech; the clue is category collapse."
         },
         "ru_RU": {
-          "title": "Draft RU localization pending native pass. Транскрипт ремонтного следа Atlas",
+          "title": "RU LOC HOLD: Транскрипт ремонтного следа Atlas",
           "scanner": "След Atlas фиксирует ремонт, где кабель, ткань и маршрут считаются одной сервисной поверхностью.",
           "terminal": "СЛЕД ОБСЛУЖИВАНИЯ ATLAS-6: класс утечки принят; рост мембраны и кабеля разрешен; фаунистический маршрут помечен пригодным; категория для человека не решена.",
           "audio": "Ремонтный след ATLAS-6. Утечка закрыта. Рост кабеля принят. Маршрут для живого тела пригоден. Категория для человека не решена.",
@@ -510,121 +510,121 @@
           "field_note": "Поврежденная maintenance telemetry. Без речи злодея; ключ в collapse категорий."
         },
         "ja_JP": {
-          "title": "Draft JA localization pending native pass. Atlas Repair Trace Transcript Seed",
-          "scanner": "Draft JA localization pending native pass. Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.",
-          "terminal": "Draft JA localization pending native pass. TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.",
-          "audio": "Draft JA localization pending native pass. Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.",
-          "in_game_wiki": "Draft JA localization pending native pass. Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.",
-          "external_site": "Draft JA localization pending native pass. Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.",
-          "field_note": "Draft JA localization pending native pass. Use for scanner captions, deep audio layers and Atlas article spoiler gate."
+          "title": "JA LOC HOLD: Atlas Repair Trace Transcript Seed",
+          "scanner": "JA LOC HOLD: Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.",
+          "terminal": "JA LOC HOLD: TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.",
+          "audio": "JA LOC HOLD: Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.",
+          "in_game_wiki": "JA LOC HOLD: Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.",
+          "external_site": "JA LOC HOLD: Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.",
+          "field_note": "JA LOC HOLD: Use for scanner captions, deep audio layers and Atlas article spoiler gate."
         },
         "zh_CN": {
-          "title": "Draft ZH localization pending native pass. Atlas Repair Trace Transcript Seed",
-          "scanner": "Draft ZH localization pending native pass. Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.",
-          "terminal": "Draft ZH localization pending native pass. TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.",
-          "audio": "Draft ZH localization pending native pass. Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.",
-          "in_game_wiki": "Draft ZH localization pending native pass. Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.",
-          "external_site": "Draft ZH localization pending native pass. Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.",
-          "field_note": "Draft ZH localization pending native pass. Use for scanner captions, deep audio layers and Atlas article spoiler gate."
+          "title": "ZH LOC HOLD: Atlas Repair Trace Transcript Seed",
+          "scanner": "ZH LOC HOLD: Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.",
+          "terminal": "ZH LOC HOLD: TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.",
+          "audio": "ZH LOC HOLD: Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.",
+          "in_game_wiki": "ZH LOC HOLD: Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.",
+          "external_site": "ZH LOC HOLD: Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.",
+          "field_note": "ZH LOC HOLD: Use for scanner captions, deep audio layers and Atlas article spoiler gate."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Atlas Repair Trace Transcript Seed",
-          "scanner": "Draft FR localization pending native pass. Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.",
-          "terminal": "Draft FR localization pending native pass. TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.",
-          "audio": "Draft FR localization pending native pass. Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.",
-          "in_game_wiki": "Draft FR localization pending native pass. Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.",
-          "external_site": "Draft FR localization pending native pass. Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.",
-          "field_note": "Draft FR localization pending native pass. Use for scanner captions, deep audio layers and Atlas article spoiler gate."
+          "title": "FR LOC HOLD: Atlas Repair Trace Transcript Seed",
+          "scanner": "FR LOC HOLD: Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.",
+          "terminal": "FR LOC HOLD: TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.",
+          "audio": "FR LOC HOLD: Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.",
+          "in_game_wiki": "FR LOC HOLD: Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.",
+          "external_site": "FR LOC HOLD: Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.",
+          "field_note": "FR LOC HOLD: Use for scanner captions, deep audio layers and Atlas article spoiler gate."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Atlas Repair Trace Transcript Seed",
-          "scanner": "Draft ES localization pending native pass. Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.",
-          "terminal": "Draft ES localization pending native pass. TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.",
-          "audio": "Draft ES localization pending native pass. Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.",
-          "in_game_wiki": "Draft ES localization pending native pass. Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.",
-          "external_site": "Draft ES localization pending native pass. Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.",
-          "field_note": "Draft ES localization pending native pass. Use for scanner captions, deep audio layers and Atlas article spoiler gate."
+          "title": "ES LOC HOLD: Atlas Repair Trace Transcript Seed",
+          "scanner": "ES LOC HOLD: Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.",
+          "terminal": "ES LOC HOLD: TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.",
+          "audio": "ES LOC HOLD: Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.",
+          "in_game_wiki": "ES LOC HOLD: Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.",
+          "external_site": "ES LOC HOLD: Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.",
+          "field_note": "ES LOC HOLD: Use for scanner captions, deep audio layers and Atlas article spoiler gate."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Atlas Repair Trace Transcript Seed",
-          "scanner": "Draft DE localization pending native pass. Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.",
-          "terminal": "Draft DE localization pending native pass. TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.",
-          "audio": "Draft DE localization pending native pass. Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.",
-          "in_game_wiki": "Draft DE localization pending native pass. Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.",
-          "external_site": "Draft DE localization pending native pass. Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.",
-          "field_note": "Draft DE localization pending native pass. Use for scanner captions, deep audio layers and Atlas article spoiler gate."
+          "title": "DE LOC HOLD: Atlas Repair Trace Transcript Seed",
+          "scanner": "DE LOC HOLD: Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.",
+          "terminal": "DE LOC HOLD: TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.",
+          "audio": "DE LOC HOLD: Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.",
+          "in_game_wiki": "DE LOC HOLD: Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.",
+          "external_site": "DE LOC HOLD: Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.",
+          "field_note": "DE LOC HOLD: Use for scanner captions, deep audio layers and Atlas article spoiler gate."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Atlas Repair Trace Transcript Seed",
-          "scanner": "Draft PL localization pending native pass. Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.",
-          "terminal": "Draft PL localization pending native pass. TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.",
-          "audio": "Draft PL localization pending native pass. Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.",
-          "in_game_wiki": "Draft PL localization pending native pass. Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.",
-          "external_site": "Draft PL localization pending native pass. Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.",
-          "field_note": "Draft PL localization pending native pass. Use for scanner captions, deep audio layers and Atlas article spoiler gate."
+          "title": "PL LOC HOLD: Atlas Repair Trace Transcript Seed",
+          "scanner": "PL LOC HOLD: Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.",
+          "terminal": "PL LOC HOLD: TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.",
+          "audio": "PL LOC HOLD: Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.",
+          "in_game_wiki": "PL LOC HOLD: Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.",
+          "external_site": "PL LOC HOLD: Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.",
+          "field_note": "PL LOC HOLD: Use for scanner captions, deep audio layers and Atlas article spoiler gate."
         },
         "uk_UA": {
-          "title": "Draft UK localization pending native pass. Atlas Repair Trace Transcript Seed",
-          "scanner": "Draft UK localization pending native pass. Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.",
-          "terminal": "Draft UK localization pending native pass. TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.",
-          "audio": "Draft UK localization pending native pass. Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.",
-          "in_game_wiki": "Draft UK localization pending native pass. Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.",
-          "external_site": "Draft UK localization pending native pass. Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.",
-          "field_note": "Draft UK localization pending native pass. Use for scanner captions, deep audio layers and Atlas article spoiler gate."
+          "title": "UK LOC HOLD: Atlas Repair Trace Transcript Seed",
+          "scanner": "UK LOC HOLD: Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.",
+          "terminal": "UK LOC HOLD: TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.",
+          "audio": "UK LOC HOLD: Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.",
+          "in_game_wiki": "UK LOC HOLD: Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.",
+          "external_site": "UK LOC HOLD: Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.",
+          "field_note": "UK LOC HOLD: Use for scanner captions, deep audio layers and Atlas article spoiler gate."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Atlas Repair Trace Transcript Seed",
-          "scanner": "Draft AR localization pending native pass. Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.",
-          "terminal": "Draft AR localization pending native pass. TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.",
-          "audio": "Draft AR localization pending native pass. Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.",
-          "in_game_wiki": "Draft AR localization pending native pass. Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.",
-          "external_site": "Draft AR localization pending native pass. Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.",
-          "field_note": "Draft AR localization pending native pass. Use for scanner captions, deep audio layers and Atlas article spoiler gate."
+          "title": "AR LOC HOLD: Atlas Repair Trace Transcript Seed",
+          "scanner": "AR LOC HOLD: Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.",
+          "terminal": "AR LOC HOLD: TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.",
+          "audio": "AR LOC HOLD: Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.",
+          "in_game_wiki": "AR LOC HOLD: Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.",
+          "external_site": "AR LOC HOLD: Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.",
+          "field_note": "AR LOC HOLD: Use for scanner captions, deep audio layers and Atlas article spoiler gate."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Atlas Repair Trace Transcript Seed",
-          "scanner": "Draft ID localization pending native pass. Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.",
-          "terminal": "Draft ID localization pending native pass. TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.",
-          "audio": "Draft ID localization pending native pass. Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.",
-          "in_game_wiki": "Draft ID localization pending native pass. Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.",
-          "external_site": "Draft ID localization pending native pass. Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.",
-          "field_note": "Draft ID localization pending native pass. Use for scanner captions, deep audio layers and Atlas article spoiler gate."
+          "title": "ID LOC HOLD: Atlas Repair Trace Transcript Seed",
+          "scanner": "ID LOC HOLD: Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.",
+          "terminal": "ID LOC HOLD: TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.",
+          "audio": "ID LOC HOLD: Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.",
+          "in_game_wiki": "ID LOC HOLD: Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.",
+          "external_site": "ID LOC HOLD: Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.",
+          "field_note": "ID LOC HOLD: Use for scanner captions, deep audio layers and Atlas article spoiler gate."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Atlas Repair Trace Transcript Seed",
-          "scanner": "Draft KO localization pending native pass. Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.",
-          "terminal": "Draft KO localization pending native pass. TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.",
-          "audio": "Draft KO localization pending native pass. Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.",
-          "in_game_wiki": "Draft KO localization pending native pass. Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.",
-          "external_site": "Draft KO localization pending native pass. Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.",
-          "field_note": "Draft KO localization pending native pass. Use for scanner captions, deep audio layers and Atlas article spoiler gate."
+          "title": "KO LOC HOLD: Atlas Repair Trace Transcript Seed",
+          "scanner": "KO LOC HOLD: Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.",
+          "terminal": "KO LOC HOLD: TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.",
+          "audio": "KO LOC HOLD: Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.",
+          "in_game_wiki": "KO LOC HOLD: Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.",
+          "external_site": "KO LOC HOLD: Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.",
+          "field_note": "KO LOC HOLD: Use for scanner captions, deep audio layers and Atlas article spoiler gate."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Atlas Repair Trace Transcript Seed",
-          "scanner": "Draft HE localization pending native pass. Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.",
-          "terminal": "Draft HE localization pending native pass. TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.",
-          "audio": "Draft HE localization pending native pass. Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.",
-          "in_game_wiki": "Draft HE localization pending native pass. Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.",
-          "external_site": "Draft HE localization pending native pass. Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.",
-          "field_note": "Draft HE localization pending native pass. Use for scanner captions, deep audio layers and Atlas article spoiler gate."
+          "title": "HE LOC HOLD: Atlas Repair Trace Transcript Seed",
+          "scanner": "HE LOC HOLD: Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.",
+          "terminal": "HE LOC HOLD: TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.",
+          "audio": "HE LOC HOLD: Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.",
+          "in_game_wiki": "HE LOC HOLD: Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.",
+          "external_site": "HE LOC HOLD: Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.",
+          "field_note": "HE LOC HOLD: Use for scanner captions, deep audio layers and Atlas article spoiler gate."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Atlas Repair Trace Transcript Seed",
-          "scanner": "Draft PT localization pending native pass. Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.",
-          "terminal": "Draft PT localization pending native pass. TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.",
-          "audio": "Draft PT localization pending native pass. Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.",
-          "in_game_wiki": "Draft PT localization pending native pass. Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.",
-          "external_site": "Draft PT localization pending native pass. Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.",
-          "field_note": "Draft PT localization pending native pass. Use for scanner captions, deep audio layers and Atlas article spoiler gate."
+          "title": "PT LOC HOLD: Atlas Repair Trace Transcript Seed",
+          "scanner": "PT LOC HOLD: Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.",
+          "terminal": "PT LOC HOLD: TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.",
+          "audio": "PT LOC HOLD: Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.",
+          "in_game_wiki": "PT LOC HOLD: Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.",
+          "external_site": "PT LOC HOLD: Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.",
+          "field_note": "PT LOC HOLD: Use for scanner captions, deep audio layers and Atlas article spoiler gate."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Atlas Repair Trace Transcript Seed",
-          "scanner": "Draft NL localization pending native pass. Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.",
-          "terminal": "Draft NL localization pending native pass. TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.",
-          "audio": "Draft NL localization pending native pass. Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.",
-          "in_game_wiki": "Draft NL localization pending native pass. Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.",
-          "external_site": "Draft NL localization pending native pass. Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.",
-          "field_note": "Draft NL localization pending native pass. Use for scanner captions, deep audio layers and Atlas article spoiler gate."
+          "title": "NL LOC HOLD: Atlas Repair Trace Transcript Seed",
+          "scanner": "NL LOC HOLD: Audio/caption seed: Atlas traces should sound like repair telemetry collapsing categories, not a speaking god.",
+          "terminal": "NL LOC HOLD: TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No direct confession; only maintenance grammar.",
+          "audio": "NL LOC HOLD: Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.",
+          "in_game_wiki": "NL LOC HOLD: Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.",
+          "external_site": "NL LOC HOLD: Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.",
+          "field_note": "NL LOC HOLD: Use for scanner captions, deep audio layers and Atlas article spoiler gate."
         }
       }
     },
@@ -656,7 +656,7 @@
           "field_note": "Ending dossier record. It must name receiver, custody and unresolved cost, not clean moral closure."
         },
         "ru_RU": {
-          "title": "Draft RU localization pending native pass. Транскрипт финальной записи",
+          "title": "RU LOC HOLD: Транскрипт финальной записи",
           "scanner": "Фрагмент финальной записи перечисляет приемника, хэш полезной нагрузки, состояние долга и неурегулированную цену.",
           "terminal": "ПОСЛЕОПЕРАЦИОННАЯ ЗАПИСЬ: приемник подтвердил прием; хэш полезной нагрузки сохранен; требование закрыто для учета; состояние правды не решено; флаг подавления неизвестен.",
           "audio": "Послеоперационная запись. Приемник принял хэш полезной нагрузки. Требование закрыто для учета. Флаг подавления нечитаем. Цепочка правды не решена.",
@@ -665,121 +665,121 @@
           "field_note": "Финальная запись досье. Должна назвать приемника, хранение и неурегулированную цену, а не чистое моральное закрытие."
         },
         "ja_JP": {
-          "title": "Draft JA localization pending native pass. Ending Record Transcript Seed",
-          "scanner": "Draft JA localization pending native pass. Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.",
-          "terminal": "Draft JA localization pending native pass. AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.",
-          "audio": "Draft JA localization pending native pass. Dossier entry: claim closed for accounting. Truth status unresolved by design.",
-          "in_game_wiki": "Draft JA localization pending native pass. Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.",
-          "external_site": "Draft JA localization pending native pass. Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.",
-          "field_note": "Draft JA localization pending native pass. Use for ending dossier, spoiler pages and final VO captions."
+          "title": "JA LOC HOLD: Ending Record Transcript Seed",
+          "scanner": "JA LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.",
+          "terminal": "JA LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.",
+          "audio": "JA LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.",
+          "in_game_wiki": "JA LOC HOLD: Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.",
+          "external_site": "JA LOC HOLD: Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.",
+          "field_note": "JA LOC HOLD: Use for ending dossier, spoiler pages and final VO captions."
         },
         "zh_CN": {
-          "title": "Draft ZH localization pending native pass. Ending Record Transcript Seed",
-          "scanner": "Draft ZH localization pending native pass. Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.",
-          "terminal": "Draft ZH localization pending native pass. AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.",
-          "audio": "Draft ZH localization pending native pass. Dossier entry: claim closed for accounting. Truth status unresolved by design.",
-          "in_game_wiki": "Draft ZH localization pending native pass. Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.",
-          "external_site": "Draft ZH localization pending native pass. Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.",
-          "field_note": "Draft ZH localization pending native pass. Use for ending dossier, spoiler pages and final VO captions."
+          "title": "ZH LOC HOLD: Ending Record Transcript Seed",
+          "scanner": "ZH LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.",
+          "terminal": "ZH LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.",
+          "audio": "ZH LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.",
+          "in_game_wiki": "ZH LOC HOLD: Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.",
+          "external_site": "ZH LOC HOLD: Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.",
+          "field_note": "ZH LOC HOLD: Use for ending dossier, spoiler pages and final VO captions."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Ending Record Transcript Seed",
-          "scanner": "Draft FR localization pending native pass. Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.",
-          "terminal": "Draft FR localization pending native pass. AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.",
-          "audio": "Draft FR localization pending native pass. Dossier entry: claim closed for accounting. Truth status unresolved by design.",
-          "in_game_wiki": "Draft FR localization pending native pass. Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.",
-          "external_site": "Draft FR localization pending native pass. Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.",
-          "field_note": "Draft FR localization pending native pass. Use for ending dossier, spoiler pages and final VO captions."
+          "title": "FR LOC HOLD: Ending Record Transcript Seed",
+          "scanner": "FR LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.",
+          "terminal": "FR LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.",
+          "audio": "FR LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.",
+          "in_game_wiki": "FR LOC HOLD: Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.",
+          "external_site": "FR LOC HOLD: Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.",
+          "field_note": "FR LOC HOLD: Use for ending dossier, spoiler pages and final VO captions."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Ending Record Transcript Seed",
-          "scanner": "Draft ES localization pending native pass. Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.",
-          "terminal": "Draft ES localization pending native pass. AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.",
-          "audio": "Draft ES localization pending native pass. Dossier entry: claim closed for accounting. Truth status unresolved by design.",
-          "in_game_wiki": "Draft ES localization pending native pass. Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.",
-          "external_site": "Draft ES localization pending native pass. Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.",
-          "field_note": "Draft ES localization pending native pass. Use for ending dossier, spoiler pages and final VO captions."
+          "title": "ES LOC HOLD: Ending Record Transcript Seed",
+          "scanner": "ES LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.",
+          "terminal": "ES LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.",
+          "audio": "ES LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.",
+          "in_game_wiki": "ES LOC HOLD: Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.",
+          "external_site": "ES LOC HOLD: Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.",
+          "field_note": "ES LOC HOLD: Use for ending dossier, spoiler pages and final VO captions."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Ending Record Transcript Seed",
-          "scanner": "Draft DE localization pending native pass. Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.",
-          "terminal": "Draft DE localization pending native pass. AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.",
-          "audio": "Draft DE localization pending native pass. Dossier entry: claim closed for accounting. Truth status unresolved by design.",
-          "in_game_wiki": "Draft DE localization pending native pass. Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.",
-          "external_site": "Draft DE localization pending native pass. Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.",
-          "field_note": "Draft DE localization pending native pass. Use for ending dossier, spoiler pages and final VO captions."
+          "title": "DE LOC HOLD: Ending Record Transcript Seed",
+          "scanner": "DE LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.",
+          "terminal": "DE LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.",
+          "audio": "DE LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.",
+          "in_game_wiki": "DE LOC HOLD: Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.",
+          "external_site": "DE LOC HOLD: Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.",
+          "field_note": "DE LOC HOLD: Use for ending dossier, spoiler pages and final VO captions."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Ending Record Transcript Seed",
-          "scanner": "Draft PL localization pending native pass. Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.",
-          "terminal": "Draft PL localization pending native pass. AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.",
-          "audio": "Draft PL localization pending native pass. Dossier entry: claim closed for accounting. Truth status unresolved by design.",
-          "in_game_wiki": "Draft PL localization pending native pass. Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.",
-          "external_site": "Draft PL localization pending native pass. Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.",
-          "field_note": "Draft PL localization pending native pass. Use for ending dossier, spoiler pages and final VO captions."
+          "title": "PL LOC HOLD: Ending Record Transcript Seed",
+          "scanner": "PL LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.",
+          "terminal": "PL LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.",
+          "audio": "PL LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.",
+          "in_game_wiki": "PL LOC HOLD: Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.",
+          "external_site": "PL LOC HOLD: Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.",
+          "field_note": "PL LOC HOLD: Use for ending dossier, spoiler pages and final VO captions."
         },
         "uk_UA": {
-          "title": "Draft UK localization pending native pass. Ending Record Transcript Seed",
-          "scanner": "Draft UK localization pending native pass. Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.",
-          "terminal": "Draft UK localization pending native pass. AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.",
-          "audio": "Draft UK localization pending native pass. Dossier entry: claim closed for accounting. Truth status unresolved by design.",
-          "in_game_wiki": "Draft UK localization pending native pass. Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.",
-          "external_site": "Draft UK localization pending native pass. Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.",
-          "field_note": "Draft UK localization pending native pass. Use for ending dossier, spoiler pages and final VO captions."
+          "title": "UK LOC HOLD: Ending Record Transcript Seed",
+          "scanner": "UK LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.",
+          "terminal": "UK LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.",
+          "audio": "UK LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.",
+          "in_game_wiki": "UK LOC HOLD: Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.",
+          "external_site": "UK LOC HOLD: Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.",
+          "field_note": "UK LOC HOLD: Use for ending dossier, spoiler pages and final VO captions."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Ending Record Transcript Seed",
-          "scanner": "Draft AR localization pending native pass. Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.",
-          "terminal": "Draft AR localization pending native pass. AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.",
-          "audio": "Draft AR localization pending native pass. Dossier entry: claim closed for accounting. Truth status unresolved by design.",
-          "in_game_wiki": "Draft AR localization pending native pass. Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.",
-          "external_site": "Draft AR localization pending native pass. Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.",
-          "field_note": "Draft AR localization pending native pass. Use for ending dossier, spoiler pages and final VO captions."
+          "title": "AR LOC HOLD: Ending Record Transcript Seed",
+          "scanner": "AR LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.",
+          "terminal": "AR LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.",
+          "audio": "AR LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.",
+          "in_game_wiki": "AR LOC HOLD: Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.",
+          "external_site": "AR LOC HOLD: Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.",
+          "field_note": "AR LOC HOLD: Use for ending dossier, spoiler pages and final VO captions."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Ending Record Transcript Seed",
-          "scanner": "Draft ID localization pending native pass. Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.",
-          "terminal": "Draft ID localization pending native pass. AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.",
-          "audio": "Draft ID localization pending native pass. Dossier entry: claim closed for accounting. Truth status unresolved by design.",
-          "in_game_wiki": "Draft ID localization pending native pass. Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.",
-          "external_site": "Draft ID localization pending native pass. Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.",
-          "field_note": "Draft ID localization pending native pass. Use for ending dossier, spoiler pages and final VO captions."
+          "title": "ID LOC HOLD: Ending Record Transcript Seed",
+          "scanner": "ID LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.",
+          "terminal": "ID LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.",
+          "audio": "ID LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.",
+          "in_game_wiki": "ID LOC HOLD: Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.",
+          "external_site": "ID LOC HOLD: Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.",
+          "field_note": "ID LOC HOLD: Use for ending dossier, spoiler pages and final VO captions."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Ending Record Transcript Seed",
-          "scanner": "Draft KO localization pending native pass. Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.",
-          "terminal": "Draft KO localization pending native pass. AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.",
-          "audio": "Draft KO localization pending native pass. Dossier entry: claim closed for accounting. Truth status unresolved by design.",
-          "in_game_wiki": "Draft KO localization pending native pass. Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.",
-          "external_site": "Draft KO localization pending native pass. Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.",
-          "field_note": "Draft KO localization pending native pass. Use for ending dossier, spoiler pages and final VO captions."
+          "title": "KO LOC HOLD: Ending Record Transcript Seed",
+          "scanner": "KO LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.",
+          "terminal": "KO LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.",
+          "audio": "KO LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.",
+          "in_game_wiki": "KO LOC HOLD: Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.",
+          "external_site": "KO LOC HOLD: Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.",
+          "field_note": "KO LOC HOLD: Use for ending dossier, spoiler pages and final VO captions."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Ending Record Transcript Seed",
-          "scanner": "Draft HE localization pending native pass. Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.",
-          "terminal": "Draft HE localization pending native pass. AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.",
-          "audio": "Draft HE localization pending native pass. Dossier entry: claim closed for accounting. Truth status unresolved by design.",
-          "in_game_wiki": "Draft HE localization pending native pass. Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.",
-          "external_site": "Draft HE localization pending native pass. Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.",
-          "field_note": "Draft HE localization pending native pass. Use for ending dossier, spoiler pages and final VO captions."
+          "title": "HE LOC HOLD: Ending Record Transcript Seed",
+          "scanner": "HE LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.",
+          "terminal": "HE LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.",
+          "audio": "HE LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.",
+          "in_game_wiki": "HE LOC HOLD: Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.",
+          "external_site": "HE LOC HOLD: Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.",
+          "field_note": "HE LOC HOLD: Use for ending dossier, spoiler pages and final VO captions."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Ending Record Transcript Seed",
-          "scanner": "Draft PT localization pending native pass. Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.",
-          "terminal": "Draft PT localization pending native pass. AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.",
-          "audio": "Draft PT localization pending native pass. Dossier entry: claim closed for accounting. Truth status unresolved by design.",
-          "in_game_wiki": "Draft PT localization pending native pass. Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.",
-          "external_site": "Draft PT localization pending native pass. Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.",
-          "field_note": "Draft PT localization pending native pass. Use for ending dossier, spoiler pages and final VO captions."
+          "title": "PT LOC HOLD: Ending Record Transcript Seed",
+          "scanner": "PT LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.",
+          "terminal": "PT LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.",
+          "audio": "PT LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.",
+          "in_game_wiki": "PT LOC HOLD: Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.",
+          "external_site": "PT LOC HOLD: Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.",
+          "field_note": "PT LOC HOLD: Use for ending dossier, spoiler pages and final VO captions."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Ending Record Transcript Seed",
-          "scanner": "Draft NL localization pending native pass. Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.",
-          "terminal": "Draft NL localization pending native pass. AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.",
-          "audio": "Draft NL localization pending native pass. Dossier entry: claim closed for accounting. Truth status unresolved by design.",
-          "in_game_wiki": "Draft NL localization pending native pass. Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.",
-          "external_site": "Draft NL localization pending native pass. Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.",
-          "field_note": "Draft NL localization pending native pass. Use for ending dossier, spoiler pages and final VO captions."
+          "title": "NL LOC HOLD: Ending Record Transcript Seed",
+          "scanner": "NL LOC HOLD: Ending transcript seed: after-action records itemize receiver, proof custody and unresolved cost.",
+          "terminal": "NL LOC HOLD: AFTER-ACTION SEED: receiver, payload hash, debt state, survival state, Atlas continuity, public ledger status, evidence suppression flag.",
+          "audio": "NL LOC HOLD: Dossier entry: claim closed for accounting. Truth status unresolved by design.",
+          "in_game_wiki": "NL LOC HOLD: Ending record transcripts make each outcome loggable and replay-comparable without converting knowledge into inherited power.",
+          "external_site": "NL LOC HOLD: Spoiler ending pages should read as after-action custody records: what left, who owns it, and what stayed damaged.",
+          "field_note": "NL LOC HOLD: Use for ending dossier, spoiler pages and final VO captions."
         }
       }
     }

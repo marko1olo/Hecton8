@@ -1,29 +1,44 @@
 # MOTORONTWERP EN INTERSTELLAIRE LOGISTIEK
-**Sectie van de Grote Bibliotheek:** 02
-**Taal:** nl_NL
-**Canon:** Strikt (Lore Bible 2190)
+
+> **Bron:** Technische Syllabus, Barnard-werven. Document 44-A. Verplichte lectuur voor alle vertrekkende aannemers.  
+> **Spreker:** Silas Vane, Voortstuwingstechnicus Eerste Klasse (gepensioneerd).  
+> **Opmerking van de beoordelaar:** Deze syllabus wordt na de cryo-ontwaking aan aannemers verstrekt. Het bevat geen geheime telemetrie van Deep Reach.
 
 ---
 
-## 1. Geen Magie, Alleen Fysica
-In het HECTON-8-universum zijn er **GEEN sneller-dan-licht (FTL) aandrijvingen**. Er zijn geen spronghekken, hyperruimte, ansibles (directe communicatie) of reactieloze aandrijvingen die het behoud van impuls schenden.
+## 1. De Fictie van Snelheid
 
-De expansie van de mensheid is langzaam, moeilijk en kost kolossale bedragen. Dit is precies waarom de "diepe ruimte" aan megabedrijven toebehoort — alleen zij kunnen het zich veroorloven om decennia te wachten op een rendement op hun investering.
+Laat me dit duidelijk maken voordat je in de koude buis stapt: er is geen magische knop. Jullie zijn opgegroeid met video's over sprongpoorten en hyperspace. Wis ze uit je geheugen. In het universum bestaat er geen aandrijving die sneller gaat dan het licht. Er zijn geen ansibles voor een instant praatje met je moeder. Er zijn geen reactieloze boegschroeven die het behoud van impuls bedriegen.
 
-## 2. Scheps- en Aandrijftypen
+Ruimte-expansie is traag, slopend en verbrandt geld op een schaal die natiestaten doet huilen. Dit is precies de reden waarom de diepe ruimte van de megacorporaties is. Alleen een entiteit met een financiële horizon van een eeuw kan het zich veroorloven om twintig jaar te wachten op een rendement op een investering.
 
-### A. Bundelondersteunde Sondes en Autonome Pakketten
-De eersten die in het Aegir-systeem (HECTON-8) arriveerden waren geautomatiseerde sondes. Ze werden versneld met behulp van kolossale orbitale pelletbundellasers. Sondes zijn klein, snel, onbemand en goedkoop genoeg om over een route te "gooien" voordat iemand de veiligheid bevestigt.
+Wanneer je dit dok verlaat, ben je gebonden aan de fysica, niet aan poëzie.
 
-### B. Fusiepuls / Fusie-elektrische Vrachtschepen
-Zware kolonieschepen van de "Atlas"-klasse, die fabrieken, infrastructuur en een in sluimer (torpor) verkerende bemanning vervoeren, gebruiken fusie-elektrische of pulsaandrijvingen. De vlucht naar het Aegir-systeem duurt jaren. Zo'n schip is letterlijk een "hypotheek met motoren".
+## 2. Hoe we daar komen
 
-### C. Magnetische Zeilen en Aerobraking
-Het grootste probleem van vliegen met bijna-lichtsnelheid is niet versnellen, maar stoppen. De zware schepen van Deep Reach ontplooien gigantische magnetische zeilen (Magsails) die zich honderden kilometers uitstrekken om te remmen tegen het interstellaire medium. In de laatste fase gebruiken ze aerobraking tegen de atmosferen van gasreuzen of de dichte stormhuls van HECTON-8 zelf.
+De logistieke keten naar Aegir is afhankelijk van drie harde technische feiten:
 
-## 3. Transit- en Reddingsdoctrine
-Omdat er geen FTL-reizen zijn, is redding vanuit de kern van de menselijke werelden **onmogelijk**. Als er een ramp plaatsvindt op HECTON-8, zal het antwoord van de Aarde of Tau Ceti pas 10-15 jaar later arriveren.
+### A. De Pellet-Beam Push
+De eerste dingen die Aegir bereikten waren geen schepen; het waren autonome sondes. We hebben er geen raketten aan vastgebonden. We hebben orbitale laser-arrays gebouwd — kolossale pellet-beam installaties bij Luyten Junction — en hebben ze letterlijk door de leegte geschoten. De sondes zijn klein, onbemand en goedkoop genoeg dat de Corporation er een dozijn door een doorvoercorridor kan gooien voordat iemand zelfs maar weet of de route veilig is. Het was een van deze wegwerpverkenners die voor het eerst de Xenon-Omega-signatuur oppikte.
 
-Wanneer een plunderaar naar het oceaanoppervlak afdaalt, wordt hij gedropt vanuit een orbitaal bevoorradingsschip (Black Keel) in een capsule van de "Styx"-klasse. Deze capsule is ontworpen voor eenrichtingsafdaling. Het frame vervormt onder de druk en de avionica wordt overspoeld. Om terug te keren naar de baan moet de plunderaar thermochemische stijgladingen vinden, repareren of stelen uit de dode kolonie.
+### B. De Vliegende Hypotheek
+Je gaat mee op een zwaar koloniaal vrachtschip van de *Atlas*-klasse. Het wordt aangedreven door fusie-elektrische pulsmotoren. Het vervoert fabrieken, booreilanden en jullie — slapend in torpor, zodat je de winstmarge niet opeet. De overtocht duurt jaren.
 
-Je bent geen passagier. Je bezit geen schip. Je bent wegwerpmateriaal aan het uiteinde van een zeer lang, zeer langzaam touw dat over de leegte is gespannen.
+Romantiseer het schip niet. Het is letterlijk een hypotheek met motoren. Deep Reach verbrandt geen reactiemassa om een gestrande technicus te redden. Ze sturen alleen een vrachtschip als de wiskunde bewijst dat de lading meer waard is dan de brandstof.
+
+### C. Het Remprobleem
+Versnellen tot bijna de lichtsnelheid is eenvoudig; stoppen is de nachtmerrie. Wanneer je schip Aegir nadert, draait het niet zomaar om de stuwraketten af te vuren. Dat verspilt massa. In plaats daarvan zet het vrachtschip Magsails in — gigantische magnetische zeilen die zich honderden kilometers uitstrekken. Je zult remmen tegen het interstellaire medium zelf. In de laatste, gewelddadige stadia van baaninjectie zal het schip aerodynamisch remmen, stuiterend als een steen over de atmosfeer van gasreuzen, of zijn buik door de stormen van HECTON-8 zelf slepend. Als de berekening er een fractie van een procent naast zit, verbrandt het schip.
+
+## 3. De Reddingsdoctrine (Of het Ontbreken Daarvan)
+
+Omdat de lichtsnelheid de absolute limiet is, is redding vanaf de kernwerelden fysiek onmogelijk.
+
+Als een drukcascade een sector op HECTON-8 wegvaagt, duurt het meer dan tien jaar voordat het noodsignaal de aarde bereikt. Het antwoord — als ze de moeite nemen er een te sturen — doet er nog eens tien jaar over om aan te komen.
+
+Dit is de reden waarom Deep Reach de Atlas-6 AI heeft geïnstalleerd. Het was gebouwd om een "Fabrieksgouverneur" te zijn, die de kolonie in stand kon houden zonder naar huis te hoeven bellen. Hij moest het licht aan en de pompen draaiende houden.
+
+Wanneer je afdaalt naar het oceaanoppervlak, word je gedropt vanaf het orbitale moederschip *Black Keel*. Je rijdt in een pod van de "Styx"-klasse. Begrijp dit goed: de Styx is ontworpen voor een enkele reis. Het frame is gebouwd om te vervormen onder abyssale druk, en de elektronica is bedoeld om onder te lopen zodra je de bodem raakt.
+
+Om terug te keren naar een baan om de planeet, moet je thermochemische stijgladingen zien te vinden, te repareren of los te wrikken uit de handen van de dode kolonie.
+
+Je bent geen ontdekkingsreiziger. Je bent geen passagier. Je bent vervangbare massa aan het einde van een zeer lange, zeer trage touw dat over de leegte is gespannen. Handel ernaar.

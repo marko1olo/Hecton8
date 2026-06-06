@@ -1,32 +1,44 @@
 # CONCEPTION DES MOTEURS ET LOGISTIQUE INTERSTELLAIRE
-**Section de la Grande Bibliothèque:** 02
-**Langue:** fr_FR
-**Canon:** Strict (Lore Bible 2190)
+
+> **Source :** Programme Technique, Chantiers Barnard. Document 44-A. Lecture obligatoire pour tous les sous-traitants en partance.  
+> **Intervenant :** Silas Vane, Technicien de Propulsion de Première Classe (retraité).  
+> **Note du réviseur :** Ce programme est fourni aux sous-traitants à leur sortie de cryostase. Il ne contient aucune télémétrie confidentielle de Deep Reach.
 
 ---
 
-## 1. Pas de Magie, Seulement de la Physique
-Dans l'univers HECTON-8, il n'y a **AUCUN moteur supraluminique (FTL)**. Il n'y a pas de portes de saut, d'hyperespace, d'ansibles (communication instantanée) ou de moteurs sans réaction qui violent la conservation de la quantité de mouvement.
+## 1. La fiction de la vitesse
 
-L'expansion de l'humanité est lente, difficile et coûte des sommes colossales. C'est exactement pourquoi l'« espace lointain » appartient aux mégacorporations : elles seules peuvent se permettre d'attendre des décennies pour un retour sur investissement.
+Laissez-moi mettre les choses au clair avant que vous ne montiez dans le tube froid : il n'y a pas de bouton magique. Vous avez grandi en regardant des vidéos sur les portails de saut et l'hyperespace. Effacez-les de votre mémoire. Dans l'univers, il n'existe pas de moteur supraluminique. Il n'y a pas d'ansible pour discuter instantanément avec maman. Il n'y a pas de propulseurs sans réaction qui trichent avec la conservation de la quantité de mouvement.
 
-## 2. Types de Vaisseaux et de Moteurs
-La logistique interstellaire repose sur trois principaux types de transit :
+L'expansion spatiale est lente, exténuante et brûle de l'argent à une échelle qui fait pleurer les États-nations. C'est exactement pour cela que l'espace profond appartient aux mégacorporations. Seule une entité avec un horizon financier d'un siècle peut se permettre d'attendre vingt ans pour un retour sur investissement.
 
-### A. Sondes assistées par faisceau et Paquets Autonomes
-Les premiers à arriver dans le système Aegir (HECTON-8) furent des sondes automatisées. Elles ont été accélérées à l'aide de colossaux lasers orbitaux à faisceau de pastilles installés dans le système solaire ou à des nœuds intermédiaires comme la jonction de Luyten. Les sondes sont petites, rapides, sans pilote et suffisamment bon marché pour être « jetées » sur une route avant que quiconque ne confirme qu'elle est sûre. Ce sont ces sondes qui ont ramené les premières données sur l'isotope Xénon-Oméga.
+Quand vous quitterez ce quai, vous serez liés par la physique, pas par la poésie.
 
-### B. Vaisseaux Cargos à Impulsion de Fusion / Électriques de Fusion
-Les lourds vaisseaux coloniaux de classe « Atlas », transportant des usines, des infrastructures et un équipage dormant en léthargie, utilisent des moteurs électriques de fusion ou à impulsion. Le vol vers le système Aegir prend des années.
-Un tel vaisseau est littéralement une « hypothèque avec des moteurs ». La société n'exploite pas un transport lourd juste pour sauver un ou deux maraudeurs. Un vaisseau n'est envoyé que lorsque la route est rentable.
+## 2. Comment on s'y rend
 
-### C. Voiles Magnétiques et Aérofreinage
-Le principal problème du vol à une vitesse proche de celle de la lumière n'est pas d'accélérer, mais de s'arrêter. Les vaisseaux lourds de Deep Reach déploient des voiles magnétiques géantes (Magsails) s'étendant sur des centaines de kilomètres pour freiner contre le milieu interstellaire à l'approche du système Aegir. Dans la phase finale, ils utilisent le freinage aérodynamique contre les atmosphères des géantes gazeuses ou l'enveloppe de tempête dense d'HECTON-8 lui-même.
+La chaîne logistique vers Aegir repose sur trois dures réalités de l'ingénierie :
 
-## 3. Doctrine de Transit et de Sauvetage
-Puisqu'il n'y a pas de voyage FTL, le sauvetage depuis le cœur des mondes humains est **impossible**. Si une catastrophe se produit sur HECTON-8, la réponse de la Terre ou de Tau Ceti arrivera 10 à 15 ans plus tard.
+### A. La Poussée par faisceau de granulés
+Les premières choses à atteindre Aegir n'étaient pas des vaisseaux ; c'étaient des sondes autonomes. Nous ne leur avons pas attaché de fusées. Nous avons construit des réseaux de lasers orbitaux — des installations colossales de faisceaux de granulés au Carrefour Luyten — et nous les avons littéralement tirées à travers le vide. Les sondes sont petites, sans équipage et suffisamment bon marché pour que la Corporation puisse en lancer une douzaine dans un couloir de transit avant même de savoir si la route est dégagée. C'est l'un de ces éclaireurs jetables qui a détecté la signature du Xénon-Oméga en premier.
 
-C'est précisément pour cette raison que Deep Reach a déployé l'IA Atlas-6 en tant que « Gouverneur d'Usine ». Elle était censée maintenir l'autonomie de la colonie.
-Lorsqu'un maraudeur descend à la surface de l'océan, il est largué d'un navire ravitailleur orbital (Black Keel) dans une capsule de classe « Styx ». Cette capsule est conçue pour une descente sans retour. Sa structure se déforme sous la pression et son avionique est inondée. Pour retourner en orbite, le maraudeur doit trouver, réparer ou voler des charges d'ascension thermochimiques dans la colonie morte.
+### B. L'Hypothèque volante
+Vous partez sur un cargo colonial lourd de classe *Atlas*. Il est propulsé par des moteurs à impulsion fusion-électrique. Il transporte des usines, des plates-formes de forage et vous — dormant en léthargie pour ne pas ronger la marge bénéficiaire. Le trajet prend des années.
 
-Vous n'êtes pas un passager. Vous ne possédez pas de vaisseau. Vous êtes du matériel sacrifiable au bout d'une corde très longue et très lente tendue à travers le vide.
+Ne romancez pas le vaisseau. C'est littéralement une hypothèque avec des moteurs. Deep Reach ne brûle pas de masse de réaction pour secourir un technicien bloqué. Ils n'envoient un cargo que lorsque les mathématiques prouvent que la cargaison vaut plus que le carburant.
+
+### C. Le problème du freinage
+Accélérer à une vitesse proche de celle de la lumière est facile ; s'arrêter est un cauchemar. Quand votre vaisseau s'approchera d'Aegir, il ne va pas simplement faire demi-tour et allumer ses propulseurs. Ça gaspille de la masse. À la place, le cargo déploie des voiles magnétiques (Magsails) — des voiles géantes s'étirant sur des centaines de kilomètres. Vous freinerez contre le milieu interstellaire lui-même. Dans les phases finales et violentes de l'insertion orbitale, le vaisseau utilisera un freinage aérodynamique, ricochant comme un galet sur l'atmosphère des géantes gazeuses, ou traînant son ventre dans l'enveloppe de tempêtes de HECTON-8 elle-même. Si les mathématiques se trompent d'une fraction de pourcentage, le vaisseau brûle.
+
+## 3. La doctrine de sauvetage (ou son absence)
+
+Parce que la vitesse de la lumière est la limite absolue, un sauvetage depuis les mondes centraux est physiquement impossible.
+
+Si une cascade de pression raye de la carte un secteur sur HECTON-8, le signal de détresse met plus de dix ans à atteindre la Terre. La réponse — s'ils prennent même la peine d'en envoyer une — met encore dix ans à arriver.
+
+C'est pourquoi Deep Reach a installé l'IA Atlas-6. Elle a été construite pour être un "Gouverneur d'Usine", maintenant la colonie sans avoir besoin d'appeler à la maison. Elle était censée garder les lumières allumées et les pompes en marche.
+
+Quand vous descendrez à la surface de l'océan, vous serez largués par le ravitailleur orbital *Black Keel*. Vous voyagerez dans une capsule de classe "Styx". Comprenez bien ceci : la Styx est conçue pour un aller simple. Sa structure est construite pour se déformer sous la pression abyssale, et son avionique est prévue pour être inondée une fois que vous touchez le fond.
+
+Pour retourner en orbite, vous devrez trouver, réparer ou arracher les charges d'ascension thermochimiques des mains de la colonie morte.
+
+Vous n'êtes pas des explorateurs. Vous n'êtes pas des passagers. Vous êtes de la masse sacrifiable au bout d'une corde très longue et très lente tendue à travers le vide. Agissez en conséquence.

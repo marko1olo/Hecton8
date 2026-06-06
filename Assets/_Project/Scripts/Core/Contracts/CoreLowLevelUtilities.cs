@@ -327,7 +327,10 @@ namespace Hecton8.Core
 
     public static class DispatcherJobFence
     {
+        private const string IllegalForcedCompletionWarningMessage = "[DispatcherJobFence] Forced JobHandle.Complete outside dispatcher swap window.";
+
         private static int _activeSwapWindowDepth;
+        private static int _illegalForcedCompletionWarningLogged;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void BeginPreSimulationSwapWindow() => _activeSwapWindowDepth++;
@@ -372,6 +375,9 @@ namespace Hecton8.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryComplete(ref JobHandle handle, bool forceComplete)
         {
+            if (forceComplete && !handle.IsCompleted && !IsInsideSwapWindow())
+                WarnIllegalForcedCompletion();
+
             if (!forceComplete && !handle.IsCompleted)
                 return false;
 
@@ -389,6 +395,21 @@ namespace Hecton8.Core
             handle.Complete();
             handle = default;
             return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsInsideSwapWindow()
+        {
+            return Volatile.Read(ref _activeSwapWindowDepth) > 0;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void WarnIllegalForcedCompletion()
+        {
+            if (Interlocked.Exchange(ref _illegalForcedCompletionWarningLogged, 1) != 0)
+                return;
+
+            Hecton8.Core.H8Debug.LogWarning(IllegalForcedCompletionWarningMessage);
         }
     }
 

@@ -1,35 +1,52 @@
 # LOCAL BIOTA: FLORA, FAUNA, AND ECOLOGICAL COLLAPSE
-**Grand Library Section:** 04
-**Language:** en_US
-**Canon:** Strict (Lore Bible 2190)
+
+> **Source:** Recovered PDA, Styx-class descent pod designated 'Lazarus'.  
+> **Speaker:** Unidentified salvage diver ("Jacks").  
+> **Reviewer note:** Audio transcription and text logs merged. The subject demonstrates extreme paranoia regarding local fauna, specifically regarding the "Alpha" acoustic signature.
 
 ---
 
-## 1. Fauna of the Abyss
-The biology of HECTON-8 has adapted to pressure, darkness, and toxic chemistry. The marauder's scanner identifies 10 species of peaceful or neutral fauna and 3 species of apex predators.
+## 1. The Small Stuff
 
-### Peaceful and Forage Fauna:
-*   **Lantern Sifter:** A bottom-feeding scavenger that uses bioluminescence to lure organic debris.
-*   **Brine Siphoner:** Swims in hypersaline canyons, filtering methane and hydrogen sulfide.
-*   **Iron Minnow:** A schooling fish whose scales are reinforced with heavy metals from geothermal vents.
-*   *Other species:* Bladderfish, Shore Skimmer, Kelp Raylet, Silt Drifter, Wall Glider, Glassworm Juvenile, Cold Veil Eel.
+*Audio log fragment 04-A: "Scanner is useless. It says there are ten peaceful species down here. It lies. Nothing down here is peaceful. It's just too small to kill you quickly."*
 
-### Apex Predators:
-*   **Pocket Ambusher:** Hides in the narrow maintenance shafts of stations, attacking divers from behind.
-*   **Brine Stalker:** Uses the density of brine lakes to glide silently. Hunts by vibrations.
-*   **Shadow Interceptor:** An aggressive predator that attacks light sources. It has learned to associate P-63 spotlights with panicking prey.
+If your scanner pings a **Lantern Sifter**, don't relax. They eat corpses. They use bioluminescence to lure organic debris, which means if you see a swarm of them, something just died, or something is about to. 
 
-## 2. Flora and Fungal Networks
-Vegetation here does not use photosynthesis (there is no sunlight). It relies on chemosynthesis and symbiosis with the Atlas-6 AI:
-*   **Cathedral Kelp:** Giant columns of kelp threaded with bio-conductive fibers, which the AI uses as signal transmitters.
-*   **Halo Sargassum Mats:** Toxic nets floating in the water column, capable of jamming a mini-sub's propellers.
-*   **Thermal Tubeworms and Lantern Grass:** Indicate the proximity of heat sources or oxygen leaks.
+Watch the **Brine Siphoners** in the deep canyons. They filter methane. If they suddenly scatter, a methane pocket is venting and your suit seals are about to melt. 
 
-## 3. Alpha Leviathan
-The file in the corporation's database regarding the Alpha Leviathan is heavily redacted. It is not a specific biological species, but a "convergence label" describing something at the very top of the food chain.
-Known facts are indirect: a sub-40 Hz acoustic carrier wave that vibrates hull plating; the complete disappearance of any other prey in the sector; anomalous current shifts. The Leviathan is not a boss with a health bar. It is a terror that edits marauders' routes and arrives before you even see it. The corporation erased all data on it because fear is the only thing they couldn't monetize.
+The **Iron Minnows** are the worst. They school near the thermal vents. Their scales are literally laced with heavy metals. When they panic and slam into your faceplate, it feels like getting hit with a fistful of ball bearings. 
 
-## 4. Anatomy of an Ecological Collapse
-The death of the colony triggered a chain reaction across all 80 sectors.
-The ecological collapse started with coolant leaks from destroyed factories. This provoked a **Bloom**—an explosive proliferation of toxic brown and green algae. The bloom devoured the oxygen in the water.
-Small fish began to suffocate, schooling tightly around the base's active ventilation systems, begging for artificial currents. Predators figured this out and began ambushing right at the life-saving pipes. The algae covered cameras and airlocks like a thick black slime, swallowing the light from spotlights. The ocean didn't just kill the colony; the colony poisoned the ocean with its dead lungs. The Atlas-6 AI classified this nightmare not as an ecological disaster, but as a "Population Correction."
+## 2. The Killers
+
+I’ve lost three crew to the dark. The ocean doesn’t just crush you; it hunts you.
+
+*   **Pocket Ambusher:** Do not trust the maintenance shafts. I saw one drag O'Neill into a ventilation duct that was barely half a meter wide. They wedge themselves in the narrow pipes of the old stations and wait for a diver to swim past. Keep your back to a solid bulkhead.
+*   **Brine Stalker:** You can't hear them. They use the density of the hypersaline brine lakes to glide without displacing water. You won't know it's there until the vibration hits your suit, and by then, it's already got your tether.
+*   **Shadow Interceptor:** Turn off the P-63 spotlights! I don't care if you can't see! These things have learned that the corporate-issue lights mean panicked prey. If you turn on a high-beam, you're just ringing a dinner bell.
+
+## 3. The Fungal Network
+
+*Text note appended:* 
+There is no sunlight. The plants here don't photosynthesize. They cheat. They use the Atlas-6 AI. 
+
+The **Cathedral Kelp** isn't just seaweed. Those giant stalks are threaded with bio-conductive fibers. I swear the AI is using them as signal repeaters. If you cut a stalk, the drones show up three minutes later. 
+
+Watch out for the **Halo Sargassum Mats**. They look like floating garbage, but they are toxic nets. They will jam a mini-sub's propellers in seconds. If you get tangled, do not try to cut it free with your hands. The neurotoxin will burn right through standard neoprene.
+
+## 4. The Bloom and The Black Slime
+
+The colony didn't just die; it poisoned the whole sector. When the factories collapsed, they leaked industrial coolant everywhere. It triggered a "Bloom"—an explosive growth of toxic brown algae. It ate all the oxygen. 
+
+Now, the small fish are suffocating. They cluster around the active ventilation grates of the ruined base, begging for the artificial air currents. And the predators know it. They just sit at the vents and gorge themselves. 
+
+The algae has covered every window and airlock with a thick, black slime. It swallows the light. Atlas-6 logged this in the central database as a "Population Correction." It wasn't talking about the fish.
+
+## 5. The "Alpha" Acoustic Signature
+
+*Audio log fragment 04-B: [Breathing heavy. Sonar pings erratically.]*
+
+Deep Reach redacted the file on the "Alpha Leviathan." I hacked the terminal in Sector 4 and found out why. It's not a single animal. It's a convergence label. It's whatever sits at the absolute top of the food chain. 
+
+I haven't seen it. Nobody sees it and lives. But you feel it. It broadcasts a sub-40 Hz acoustic carrier wave. Your hull plating starts to vibrate. Then, every other living thing in the sector just... disappears. The water goes dead quiet. The currents shift backwards. 
+
+It's not a boss you can shoot. It's a terror that rewrites your dive route. It arrives before you even see it. Turn around. Leave the xenon. Cut the tether and burn for the surface.

@@ -146,6 +146,8 @@ def collect_generated_pages(root: Path, packet_globs: tuple[str, ...]) -> list[P
         if not surface_root.exists():
             continue
         for path in sorted(surface_root.glob("*/*.md"), key=lambda item: str(item).lower()):
+            if path.parent.name.startswith("_"):
+                continue
             if page_matches(path, packet_globs):
                 pages.append(path)
     return pages

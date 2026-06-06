@@ -1,32 +1,44 @@
-# KONSTRUKCJA SILNIKÓW I LOGISTYKA MIĘDZYGWIEZDNA
-**Sekcja Wielkiej Biblioteki:** 02
-**Język:** pl_PL
-**Kanon:** Ścisły (Lore Bible 2190)
+# PROJEKT SILNIKÓW I LOGISTYKA MIĘDZYGWIEZDNA
+
+> **Źródło:** Sylabus Techniczny, Stocznie Barnarda. Dokument 44-A. Lektura obowiązkowa dla wszystkich wyjeżdżających wykonawców.  
+> **Prelegent:** Silas Vane, Technik Napędu Pierwszej Klasy (w stanie spoczynku).  
+> **Uwaga recenzenta:** Niniejszy sylabus udostępniany jest wykonawcom po wybudzeniu z kriostazy. Nie zawiera żadnej zastrzeżonej telemetrii Deep Reach.
 
 ---
 
-## 1. Żadnej Magii, Tylko Fizyka
-We wszechświecie HECTON-8 **NIE MA napędu nadświetlnego (FTL)**. Nie istnieją bramy skokowe, nadprzestrzeń, ansible (natychmiastowa komunikacja) ani silniki bezreakcyjne naruszające zasadę zachowania pędu.
+## 1. Fikcja Prędkości
 
-Ekspansja ludzkości jest powolna, trudna i kosztuje kolosalne sumy pieniędzy. Dokładnie dlatego "głęboka przestrzeń" należy do megakorporacji — tylko one mogą sobie pozwolić na czekanie dekadami na zwrot z inwestycji.
+Pozwólcie, że wyjaśnię to, zanim wejdziecie do zimnej tuby: nie ma żadnego magicznego przycisku. Dorastaliście, oglądając filmy o wrotach skokowych i nadprzestrzeni. Wymażcie je z pamięci. W uniwersum nie istnieje napęd szybszy od światła. Nie ma ansibli do błyskawicznych pogaduszek z mamą. Nie ma bezodrzutowych pędników oszukujących zasadę zachowania pędu.
 
-## 2. Typy Statków i Silników
-Logistyka międzygwiezdna opiera się na trzech głównych typach tranzytu:
+Ekspansja kosmiczna jest powolna, wyczerpująca i spala pieniądze na skalę, która przyprawia państwa narodowe o płacz. To dokładnie ten powód, dla którego głęboki kosmos należy do megakorporacji. Tylko podmiot z finansowym horyzontem mierzonym w stuleciach może pozwolić sobie na dwadzieścia lat czekania na zwrot z inwestycji.
 
-### A. Sondy Wspomagane Wiązką i Pakiety Autonomiczne
-Pierwszymi, którzy dotarli do systemu Aegir (HECTON-8), były zautomatyzowane sondy. Były przyspieszane za pomocą kolosalnych orbitalnych laserów wiązkowych zainstalowanych w Układzie Słonecznym lub w węzłach pośrednich, takich jak Luyten Junction. Sondy są małe, szybkie, bezzałogowe i wystarczająco tanie, by "wyrzucić" je na trasę, zanim ktokolwiek potwierdzi, że jest bezpieczna. To właśnie te sondy przyniosły pierwsze dane o izotopie Xenon-Omega.
+Kiedy opuścicie ten dok, będziecie podlegać fizyce, a nie poezji.
 
-### B. Statki Towarowe z Napędem Fuzyjnym Impulsowym / Fuzyjnym Elektrycznym
-Ciężkie statki kolonialne klasy "Atlas", przewożące fabryki, infrastrukturę i załogę śpiącą w letargu (torpor), wykorzystują silniki fuzyjne elektryczne lub impulsowe. Lot do systemu Aegir trwa lata.
-Taki statek to dosłownie "hipoteka z silnikami". Korporacja nie uruchamia ciężkiego transportowca tylko po to, by uratować jednego czy dwóch szabrowników. Statek jest wysyłany tylko wtedy, gdy trasa jest opłacalna.
+## 2. Jak tam dotrzemy
 
-### C. Żagle Magnetyczne i Hamowanie Aerodynamiczne
-Głównym problemem lotu z prędkością bliską światła nie jest przyspieszanie, lecz hamowanie. Ciężkie statki Deep Reach rozkładają gigantyczne żagle magnetyczne (Magsails) rozciągające się na setki kilometrów, by hamować o ośrodek międzygwiezdny w miarę zbliżania się do systemu Aegir. W fazie końcowej wykorzystują hamowanie aerodynamiczne o atmosfery gazowych olbrzymów lub gęstą burzową powłokę samego HECTON-8.
+Łańcuch logistyczny do Aegira opiera się na trzech twardych faktach inżynieryjnych:
 
-## 3. Doktryna Tranzytu i Ratunku
-Ponieważ nie ma podróży FTL, ratunek z centrum ludzkich światów jest **niemożliwy**. Jeśli na HECTON-8 dojdzie do katastrofy, odpowiedź z Ziemi lub Tau Ceti dotrze za 10-15 lat.
+### A. Pchnięcie wiązką peletów
+Pierwszymi rzeczami, które dotarły do Aegira, nie były statki, lecz autonomiczne sondy. Nie doczepiliśmy do nich rakiet. Zbudowaliśmy orbitalne sieci laserowe — kolosalne instalacje wiązek peletów w Węźle Luytena — i dosłownie wystrzeliliśmy je przez pustkę. Sondy są małe, bezzałogowe i na tyle tanie, że Korporacja może wrzucić tuzin w korytarz tranzytowy, zanim w ogóle dowie się, czy trasa jest bezpieczna. To właśnie jeden z takich jednorazowych zwiadowców po raz pierwszy wykrył sygnaturę Ksenonu-Omega.
 
-Dokładnie dlatego Deep Reach rozmieścił AI Atlas-6 jako "Gubernatora Fabryki". Miał on utrzymywać autonomię kolonii.
-Kiedy szabrownik zstępuje na powierzchnię oceanu, jest zrzucany z orbitalnego statku zaopatrzeniowego (Black Keel) w kapsule klasy "Styx". Ta kapsuła jest zaprojektowana do jednokierunkowego zejścia. Jej rama odkształca się pod ciśnieniem, a awionika zostaje zalana. Aby wrócić na orbitę, szabrownik musi znaleźć, naprawić lub ukraść termochemiczne ładunki wznoszące z martwej kolonii.
+### B. Latająca hipoteka
+Polecicie ciężkim frachtowcem kolonialnym klasy *Atlas*. Napędzany jest impulsowymi silnikami termojądrowo-elektrycznymi. Przewozi fabryki, platformy wiertnicze i was — śpiących w letargu, żebyście nie zjadali marży zysku. Podróż zajmuje lata.
 
-Nie jesteś pasażerem. Nie posiadasz statku. Jesteś materiałem jednorazowego użytku na końcu bardzo długiej, bardzo wolnej liny rozciągniętej przez pustkę.
+Nie romantyzujcie statku. To dosłownie hipoteka z silnikami. Deep Reach nie spala masy reakcyjnej, aby ratować porzuconego technika. Wysyłają frachtowiec tylko wtedy, gdy matematyka udowodni, że ładunek jest wart więcej niż paliwo.
+
+### C. Problem hamowania
+Przyspieszenie do prędkości bliskiej światłu jest proste; zatrzymanie się to koszmar. Kiedy wasz statek zbliży się do Aegira, nie zawróci po prostu i nie odpali silników. To marnowanie masy. Zamiast tego frachtowiec rozwija Żagle Magnetyczne (Magsails) — gigantyczne żagle ciągnące się przez setki kilometrów. Będziecie hamować o sam ośrodek międzygwiazdowy. W ostatnich, gwałtownych etapach wejścia na orbitę, statek użyje hamowania aerodynamicznego, odbijając się jak kamień od atmosfery gazowych gigantów lub szorując brzuchem przez powłokę burzową samego HECTON-8. Jeśli matematyka pomyli się o ułamek procenta, statek spłonie.
+
+## 3. Doktryna ratunkowa (lub jej brak)
+
+Ponieważ prędkość światła jest twardym limitem, ratunek ze światów jądra jest fizycznie niemożliwy.
+
+Jeśli kaskada ciśnienia zniszczy sektor na HECTON-8, sygnał ratunkowy będzie potrzebował ponad dziesięciu lat, aby dotrzeć na Ziemię. Odpowiedź — jeśli w ogóle zadadzą sobie trud jej wysłania — potrzebuje kolejnych dziesięciu lat na dotarcie.
+
+Właśnie dlatego Deep Reach zainstalowało AI Atlas-6. Została zbudowana, aby być "Zarządcą Fabryki", utrzymując kolonię bez potrzeby dzwonienia do domu. Miała utrzymać włączone światła i działające pompy.
+
+Kiedy zejdziecie na powierzchnię oceanu, zostaniecie zrzuceni z orbitalnego nosiciela *Black Keel*. Polecicie w kapsule klasy "Styx". Zrozumcie jedno: Styx jest zaprojektowany w jedną stronę. Jego rama jest zbudowana tak, by odkształcać się pod ciśnieniem abisalnym, a awionika ma zostać zalana w momencie uderzenia o dno.
+
+Aby wrócić na orbitę, musicie znaleźć, naprawić lub wydrzeć z rąk martwej kolonii termochemiczne ładunki wznoszące.
+
+Nie jesteście odkrywcami. Nie jesteście pasażerami. Jesteście zużywalną masą na końcu bardzo długiej, bardzo powolnej liny rozciągniętej przez pustkę. Działajcie odpowiednio.

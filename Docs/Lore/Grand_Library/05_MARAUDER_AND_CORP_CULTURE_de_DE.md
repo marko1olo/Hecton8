@@ -1,36 +1,39 @@
-# KONZERNBÜROKRATIE UND PLÜNDERERKULTUR
-**Abschnitt der Großen Bibliothek:** 05
-**Sprache:** de_DE
-**Kanon:** Streng (Lore Bible 2190)
+# CORPORATE COMPLIANCE UND MARAUDER-SUBKULTUR
+
+> **Quelle:** Recovery Compliance Office, Leitfaden zur Einarbeitung von Subunternehmern (Formular 88-C).  
+> **Sprecher:** Automatisiertes Aufnahmesystem / Supervisor K. Ren.  
+> **Anmerkung des Prüfers:** Unautorisierte Graffiti (gekennzeichnet als *[Randnotiz: ... ]*) wurden aus dem Inneren der Styx-Kapsel 'Lazarus' geborgen. Diese Notizen skizzieren die illegale "Marauder"-Subkultur.
 
 ---
 
-## 1. Deep Reach: Struktur des Feindes
-Das *Deep Reach Extraterrestrial Development Combine* ist kein Pappkamerad-Bösewicht mit schwarzem Umhang. Es ist eine bürokratische Maschine, die Menschen mit Tabellenkalkulationen tötet. Ihre Drecksarbeit auf Aegir ist durch ein System von Briefkastenfirmen und Abteilungen aufgeteilt, damit niemand persönliche Verantwortung für die Leichen trägt:
+## 1. Deep Reach Unternehmensstruktur
 
-*   **Aegir Continuity Holdings:** Die Frontier-Briefkastenfirma, die die Papiere für den Planeten HECTON-8 hält.
-*   **Atlas Continuity Office:** Die Rechtsabteilung, die die Formulierungen im Atlas-6 KI-Code verteidigt und die Kontinuität der Isotopen-Extraktion garantiert.
-*   **Keelmark Loss Desk:** Die Versicherungsabteilung. Ihre Aufgabe ist es, die Namen toter Arbeiter in "Lastkategorien und finanzielle Risiken" zu verwandeln.
-*   **Recovery Compliance Office:** Sie sind diejenigen, die uns Plünderer im Jahr 2190 anheuern. Sie koordinieren das orbitale Versorgungsschiff *Black Keel*, fordern Nachweise über das Vorhandensein von Xenon und stellen die Verschwiegenheit der Auftragnehmer sicher.
+Willkommen im Aegir-System. Sie sind nun lizenzierte, unabhängige Auftragnehmer, die unter der Gerichtsbarkeit des Deep Reach Extraterrestrial Development Combine operieren. Um eine reibungslose Integration zu gewährleisten, prägen Sie sich die folgenden Abteilungszuständigkeiten ein:
 
-Das Grauen von Deep Reach liegt nicht darin, dass sie einen geheimen Thronsaal haben. Das Grauen liegt darin, dass jedes Dokument, das sie produzieren, technisch einwandfrei und juristisch vertretbar ist, selbst während Menschen hinter einer verschlossenen Tür ersticken.
+*   **Aegir Continuity Holdings:** Die Grenzabteilung, die alle planetaren Pachtverträge für HECTON-8 hält. Sie sind Ihr ultimativer Arbeitgeber.
+*   **Atlas Continuity Office:** Die Rechts- und Softwareabteilung, die den Atlas-6-KI-Kern verwaltet. Versuchen Sie nicht, ohne Autorisierung auf Atlas-6 zuzugreifen.
+*   **Keelmark Loss Desk:** Die Underwriting-Abteilung. Im Falle eines katastrophalen Ausrüstungsversagens bewertet Keelmark das finanzielle Risiko Ihres Verlustes.
+*   **Recovery Compliance Office:** Wir sind Ihre direkten Betreuer auf dem orbitalen Versorgungsschiff *Black Keel*. Wir erteilen Ihre Tauchkoordinaten, fordern den Beweis für das Vorhandensein von Xenon-Omega ein und setzen das Auftragnehmer-Schweigeprotokoll durch.
 
-## 2. Plündererkultur
-Wir sind keine romantischen Weltraumpiraten aus Abenteuerromanen. Das Wort "Plünderer" (Marauders) war ursprünglich eine Konzernbeleidigung für unabhängige Crews, die verlassene Module aufbrachen, bevor die Versicherungsinspektoren eintrafen. Die Crews behielten das Wort, weil es die richtigen Leute erschreckte.
+*[Randnotiz: Sie sind keine bösen Genies. Sie sind Tabellenkalkulationen. Niemand übernimmt die Schuld, wenn du stirbst, weil ihr Papierkram technisch einwandfrei ist.]*
 
-Ein Plünderer ist ein Berger, ein Vertragsbrecher, ein bankrotter Pilot oder ein geächteter Schweißer, der gelernt hat: "Eine Rettungsklausel in einem Konzernvertrag ist nur eine weitere Art, deine Leiche zu besitzen."
+## 2. Die "Marauder"-Unterscheidung
+
+Sie sind offiziell als "Unabhängige Bergungsunternehmer" klassifiziert. Jegliche Bezeichnung als "Marauder" ist ein Verstoß gegen den Verhaltenskodex des Unternehmens. Der Begriff hat seinen Ursprung in einer abfälligen rechtlichen Klassifizierung für Crews, die verlassene Module aufbrechen, bevor die Keelmark-Inspektoren eintreffen.
+
+*[Randnotiz: Wir haben den Namen behalten, weil er die Anzugträger erschreckt. Eine Rettungsklausel in einem Unternehmensvertrag ist für sie nur ein weiterer Weg, deine Leiche zu besitzen. Wir sind bankrotte Piloten, abtrünnige Schweißer und Vertragsbrecher.]*
 
 ## 3. Die drei Hauptbücher
-Die Wirtschaft der Plünderer-Crews baut auf drei Konzepten auf: **Luft, Schulden und Die Toten**.
 
-*   **Luft:** Gezählt in Minuten, Partialdruck, Hitze des CO2-Wäschers und der hässlichen Stille, die einem defekten Ventil folgt.
-*   **Schulden:** Gezählt in Werkzeugverschleiß, Batteriezyklen, Gefälligkeiten und Namen, die aus den Versicherungslisten von Deep Reach gestrichen wurden. Das anfängliche Pfandrecht eines Plünderers beträgt 4,8 Tonnen-Äquivalent (Orbithubmasse), das abgearbeitet werden muss, bevor man auf die Black Keel steigen darf.
-*   **Die Toten:** Ein vermisster Arbeiter ist kein Fund, bis jemand beweist, ob er verlassen, versetzt, "in die Biomasse-Buchhaltung aufgelöst" oder einfach hinter einer Tür eingesperrt wurde, die der Konzern immer noch als "sicher" bezeichnet. Plünderer romantisieren diese Arbeit nicht. Sie inventarisieren sie.
+Als unabhängige Auftragnehmer wird Ihre Bezahlung streng nach der Masse des geborgenen Xenon-Omega-Substrats berechnet. Ihr Startpfandrecht beträgt den Gegenwert von 4,8 Tonnen (Orbitale Hubmasse). Sie müssen diese Schuld abarbeiten, bevor Ihnen dauerhafte Quartiere auf der *Black Keel* zugewiesen werden.
 
-## 4. Die Sprache des Überlebens
-Innerhalb eines überfluteten Komplexes gehört der Rang der Kompetenz. Ein Schneider öffnet eine Tür erst, nachdem der Späher die Rückwegmarkierung gesetzt hat. Ein Techniker kann einen Piloten überstimmen, wenn die Anzeigen lügen. Ein grüner Plünderer verdient sich Vertrauen nicht durch Heldenmut, sondern indem er kleine Ausfälle meldet, bevor sie zu Katastrophen werden: Reif um eine Luke, eine Stimme, die auf einem toten Kanal widerhallt, ein Fischschwarm, der sich gegen die Strömung zusammendrückt.
+*[Randnotiz: Das Unternehmenshauptbuch ist gefälscht. Die echte Marauder-Wirtschaft läuft mit Luft, Schulden und den Toten.*
+*Luft: Gezählt in Minuten, Partialdruck, CO2-Wäscherhitze und der hässlichen Stille, nachdem ein Ventil gebrochen ist.*
+*Schulden: Gezählt in Werkzeugverschleiß, Batteriezyklen, Gefälligkeiten und Namen, die von den Keelmark-Listen gestrichen wurden.*
+*Die Toten: Ein vermisster Arbeiter ist für sie keine Tragödie; es ist eine "ungelöste Systemlast". Wir inventarisieren die Toten, damit die Corporation nicht so tun kann, als hätte es sie nie gegeben.]*
 
-Die Konzernleute schreiben: "vorübergehende atmosphärische Abweichung". Ein Plünderer schreibt: "CO2 frisst zuerst das Urteilsvermögen."
-Die Konzernleute schreiben: "Priorität der Vermögenssicherung". Ein Plünderer schreibt: "Sie haben den Xenon-Tank gerettet und den Wohnbereich entlüftet."
+## 4. Operative Terminologie
 
-Die Ehre eines Plünderers ist keine saubere Moral. Es ist ein wiederholbares, ausfallsicheres Verfahren unter tödlichem Druck. Wir stehlen vom Konzern und treiben Schulden von den Toten ein. Das ist die einzige Grenze, die Plünderer davon abhält, zu Konzernleuten mit billigeren Anzügen zu werden.
+Bitte halten Sie sich bei der Protokollierung von Vorfällen an die Standardterminologie des Unternehmens. Für Druckschwankungen sollte "vorübergehende atmosphärische Varianz" verwendet werden. "Priorität der Anlagen-Eindämmung" bezieht sich auf die notwendige Versiegelung von Xenon-Gewölben in Notfällen.
+
+*[Randnotiz: In einem überfluteten Komplex ist der einzige Rang Kompetenz. Ein Schneider schneidet eine Tür erst auf, nachdem der Scout den Rückweg markiert hat. Ein Techniker überstimmt einen Piloten, wenn die Anzeigen lügen. Ein grüner Marauder verdient sich Vertrauen, indem er kleinere Ausfälle meldet: Frost, der um eine Luke blüht, ein Echo auf einem toten Kanal, ein Fischschwarm, der sich gegen die Strömung zusammendrängt. Die Corpos sagen "Anlagen-Eindämmung". Wir sagen "Sie haben den Xenon-Tank gerettet und die Wohnquartiere entlüftet". Wir stehlen von der Corporation, um Schulden bei den Toten einzutreiben. Das ist das Einzige, was uns davon abhält, wie sie zu werden.]*

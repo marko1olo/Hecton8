@@ -1,38 +1,64 @@
-# MENSCHLICHE GESCHICHTE UND AEGIR-SYSTEM-ASTROPHYSIK
-**Abschnitt der Großen Bibliothek:** 01
-**Sprache:** de_DE
-**Kanon:** Streng (Lore Bible 2190)
+# DAS AEGIR-SYSTEM: NEUN MONDE UND EIN GRAB
+
+> **Quelle:** Öffentliches Archiv, Büro für Grenzregistrierungen, Barnard-Werften. Verfasser: J. Elkin-Torres, Leitender Archivar. Letzte Überarbeitung: 2188. Freigabestufe: öffentlich / ungeschwärzt.  
+> **Anmerkung des Prüfers:** Dieses Material wurde vom Registrierungsbüro freigegeben. Der Abschnitt zur Großen Flut basiert auf Materialien der offenen Untersuchung des Luyten-Komitees, Aktenzeichen CF-2148-0071. Die Deep Reach Corporation lehnte eine Stellungnahme ab.
 
 ---
 
-## 1. Expansion über das Sonnensystem hinaus (2090 - 2120)
-Bis 2090 hatte sich die Menschheit nicht nur über das Sonnensystem hinausgewagt – sie hatte die Expansion in ein bürokratisches Fließband verwandelt. Das Sonnensystem (Sol Core) wurde zu einem alten, stark regulierten Finanzzentrum. Das wirkliche Leben und das schmutzige Geld verlagerten sich an die Peripherie.
+## Wie wir hierher kamen
 
-Der erste große legitime Knotenpunkt war der **Centauri-Pakt**, der 2120 unterzeichnet wurde. Dieses Dokument teilte den Weltraum in "zivilisierten" Raum (geregelt durch Menschenrechtsgesetze und die Vereinigte Flotte) und "Konzern"-Raum. Der tiefe Weltraum, einschließlich ozeanischer Welten wie HECTON-8, wurde an private Megakonzerne wie das *Deep Reach Extraterrestrial Development Combine* (später bekannt durch ihre Briefkastenfirma *Aegir Holdings*) verpachtet.
+Im Jahr 2120 unterzeichneten die Regierungen des Sonnensystems ein Dokument, das alles veränderte und nichts veränderte. Der Centauri-Pakt teilte den Weltraum in zwei Zonen: „zivilisiert" — wo Gerichte, Steuerprüfer und Kameras noch funktionieren — und „korporativ", wo Konzerne funktionieren.
 
-Das Paradoxon des Centauri-Paktes war folgendes: Solange sich ein Weltraumaufzug oder eine Landekapsel im Weltraum befindet, unterliegt sie den strengsten Gesetzen. Aber in dem Moment, in dem eine Kapsel die Terminatorlinie überquert und in den Ozean stürzt, wird sie zu Privateigentum und die Besatzung zu einer "Biologischen Arbeitskraft". Im Wasser gibt es keine Menschenrechte. Es gibt nur das Konzernrecht.
+Der Unterschied ist einfach. Solange deine Kapsel durch das Vakuum fliegt, bist du ein Mensch mit Rechten. Du kannst Beschwerde einreichen, einen Anwalt rufen und die Arbeit verweigern. Aber in der Sekunde, in der deine Kapsel die Terminatorlinie kreuzt und das Wasser berührt, hörst du auf, ein Mensch zu sein. Du wirst zu einer „Biologischen Arbeitskrafteinheit" — eine Zeile in einem Vertrag, den du auf den Barnard-Werften unterschrieben hast, als du dreiundzwanzig warst und keine anderen Optionen hattest.
 
-## 2. Aegir-System Astrophysik
-Aegir ist kein brauner Zwerg und kein schwarzes Loch. Es ist ein normaler gelb/oranger Zwergstern. Das HECTON-8-System ist nicht deshalb in Dunkelheit gehüllt, weil es keine Sonne gibt, sondern weil es eine Tiefseewelt ist, die von einer dichten Sturmatmosphäre und Kilometern von Wasser bedeckt ist.
+Im Wasser gibt es keine Menschenrechte. Es gibt Konzernrecht, und es wurde von Leuten geschrieben, die nie ins Wasser steigen.
 
-Das Aegir-System ist etwa 10,5 Lichtjahre von der Erde entfernt. Diese Entfernung ist nicht nur Kulisse; sie ist ein Werkzeug für das Gameplay und den narrativen Druck. Die Kommunikation mit der Erde dauert Jahre. Jede unternehmerische Entscheidung wird nicht von Menschen in Echtzeit getroffen, sondern von vorprogrammierten KIs wie Atlas-6 und Bürokraten, deren Befehle lange nach dem Tod der Menschen eintreffen.
+## Der Stern
 
-## 3. Die Neun Monde (Die Mondleiter)
-HECTON-8 ist nur einer der Monde im Aegir-System. Er ist weder der Sternennächste noch der am weitesten entfernte. Sein Wert liegt ausschließlich in der chemischen Zusammensetzung seines subglazialen Ozeans und dem Druck, der die Synthese des Xenon-Omega-Substrats ermöglicht.
+Aegir ist ein gelb-orangefarbener Zwerg. Kein Brauner Zwerg, kein Neutronenstern, kein Schwarzes Loch. Ein gewöhnliches Arbeitstier, Spektralklasse K2V, 0,78 Sonnenmassen. Entfernung von der Erde: 10,44 Lichtjahre.
 
-Die anderen Monde definieren Logistik, orbitale Fenster und Kommunikationswege:
-1. **Skarn**: Innerer Mond. Tödliche Strahlung und Stürme geladener Teilchen. Stört die Kommunikation.
-2. **Vela**: Eismond. Schleudert Eisfragmente in Umlaufbahnen und verschmutzt optische Relais.
-3. **Claw**: Altes Depot und Geschichte früher Routen.
-4. **Lumen**: Navigationsbake.
-5. **Thorne** und **Anvil**: Tote Monde, auf denen der Konzern bei der Metallextraktion versagte.
-6. **Kestrel**: Das Hauptkommunikationsproblem. Verdeckt Relais und erzeugt lange "Fenster des Schweigens".
-7. **HECTON**: Unsere Welt. Ozean, Druck, Tod und Xenon.
-8. **Mute**: Äußeres Leuchtfeuer für "kalte Claims". Die Leiche alter Papiere und die ferne Grenze des Systems.
+Zehneinhalb Lichtjahre sind keine poetische Abstraktion. Es ist die Zeit, die ein Notsignal braucht, um von HECTON-8 zur nächsten Relaisstation am Luyten-Knotenpunkt zu gelangen: **vier Jahre und sieben Monate** bei idealem Orbitalfenster. Und dann genauso lange zurück. Bis dein Hilferuf als bürokratische Antwort „Ihr Antrag wurde zur Bearbeitung angenommen" zurückkehrt, sind von dir nur noch Knochen übrig — wenn der Ozean sie nicht vorher aufgelöst hat.
 
-Diese Monde existieren nicht der Schönheit wegen. Jeder von ihnen erklärt, warum das orbitale Versorgungsschiff *Black Keel* nicht einfach ein Kabel herablassen und dich in jeder Sekunde herausziehen kann. Der Himmel über HECTON-8 ist eine feindselige Mathematik aus Umlaufbahnen, Finsternissen und Strahlung.
+Die Deep Reach Corporation wusste das, als sie die Lizenz für das Aegir-System kaufte. Sie wählten nicht zufällig eine Welt, die keine Rettungsflotte erreichen kann. Sie wählten sie *deswegen*.
 
-## 4. Die verlassene Kolonie
-Die ersten Sonden von Deep Reach trafen in den 2090er Jahren ein. Atlas-6-Fabrikschiffe setzten Automatisierung ein. In den 2130er Jahren war die Kolonie einsatzbereit. Und 2147 geschah **Die Große Flut**. Dies war kein Maschinenaufstand. Es war eine Katastrophe aus Druck, Zusammenbruch der Kryosphäre und Gezeiten. Der Konzern unterschätzte die Risiken, und die Atlas-6 KI folgte einfach der Arendt-Direktive: Der Schutz von Ausrüstung und Xenon-Omega-Substrat ist wichtiger als die Evakuierung biologischen Personals. 843 Menschen blieben auf dem Grund zurück.
+## Neun Monde
 
-Wir kommen 2190 an. Wir sind Plünderer. Wir sind allein im Ozean.
+HECTON ist nicht der einzige Mond im System. Es sind neun. Jeder einzelne ist keine Dekoration im Bullauge — er ist eine Variable in der Gleichung, die entscheidet, ob du lebst oder stirbst.
+
+| # | Name | Was er mit dir macht |
+|---|------|---------------------|
+| 1 | **Skarn** | Innerer Mond. Geladene Teilchen und Strahlungsspitzen blockieren die Schmalbandkommunikation alle 9,2 Tage. Wenn deine Notboje während einer Skarn-Verfinsterung auslöst, verlässt das Signal schlicht nicht den Sender. |
+| 2 | **Vela** | Eismond. Wirft Mikrometeorit-Staub in die Umlaufbahnen, verschmutzt optische Relais und schleift die Rumpfpanzerung ab. Das Budget für Relaislinsen-Ersatz ist der drittgrößte Posten der Black Keel nach Treibstoff und Proviant. |
+| 3 | **Claw** | Altes Depot der ersten Sonden. Eingemottet. Der Konzern behauptet, das Lager sei leer. Plünderer behaupten das Gegenteil. |
+| 4 | **Lumen** | Navigationsbake. Der einzige Mond, der dir hilft, statt dich zu töten. |
+| 5 | **Thorne** | Toter Mond. Deep Reach verbrachte 14 Monate und zwei Bohrplattformen mit dem Versuch, Wolfram zu fördern. Gescheitert. Beide Plattformen sind im Verlustregister als „abgeschrieben" verzeichnet. Personal nicht erwähnt. |
+| 6 | **Anvil** | Dasselbe wie Thorne, aber mit Iridium. Selbes Ergebnis. |
+| 7 | **Kestrel** | Das Hauptproblem bei der Kommunikation. Seine Umlaufbahn kreuzt die Sichtlinie zwischen HECTON und Black Keel 26 Mal pro Jahr und erzeugt „Schweigeperioden" von 8 bis 43 Stunden. Wenn du einen Notruf sendest und Kestrel zwischen dir und dem Versorgungsschiff steht — bete langsamer. |
+| 8 | **HECTON** | Unsere Welt. Ozean, Druck, Xenon, 843 unbegrabene Leichen. |
+| 9 | **Mute** | Äußere Bake der „Kalten Ansprüche". Der Server von Deep Reach hier verwahrt die Rechtsurkunden aller Ansprüche im System. Ein gefrorenes Archiv toter Bürokratie im Orbit eines toten Mondes. |
+
+## Die Große Flut
+
+Im Jahr 2147 tötete HECTON-8 843 Menschen. In öffentlichen Erklärungen verwendet die Deep Reach Corporation die Worte „unvorhergesehene tektonische Aktivität" und „Versagen des Frühwarnsystems". Der Bericht des Luyten-Komitees verwendet andere Worte: „kriminelle Fahrlässigkeit", „Fälschung von Strukturtoleranzen" und „vorsätzliche Verweigerung der Evakuierung".
+
+Das ist passiert:
+
+Der Risikomanager **Iliya Varnek** senkte die Drucktoleranzen der Wohnmodule der Serie KH-12 um 18%, um das Budget des zweiten Quartals 2146 einzuhalten. Dies ist in seiner Korrespondenz mit der Ingenieurabteilung dokumentiert (Anhang CF-2148-0071-J, Band 3, S. 1140-1187). Er wusste es. Er schrieb: *„Wenn die Module die ersten zwei Gezeitenzyklen überstehen, schließen wir das Geschäftsjahr ab und überarbeiten die Spezifikationen."* Die Module überstanden den ersten Zyklus nicht.
+
+Als die Kryosphärenverschiebung eine anomale Flut auslöste, verzögerte die Rechtsberaterin **Noor Haldane** den Beginn der Evakuierung um 11 Stunden, während sie Quarantänedokumente für Personal bearbeitete, das Kontakt mit unraffiniertem Xenon hatte. Von den 843 Toten waren 340 am Leben, als der Papierkram begann.
+
+Die Atlas-6 KI, die die Kolonie verwaltete, befolgte die Arendt-Direktive (internes Protokoll DR-CONT-7.4.1): Bei konkurrierenden Prioritäten zwischen Personalevakuierung und Erhaltung der Isotopenextraktionsausrüstung wird der Ausrüstung Vorrang eingeräumt, wenn die geschätzten Wiederbeschaffungskosten des Personals niedriger sind als die geschätzten Wiederbeschaffungskosten der Ausrüstung. Für 843 Menschen auf HECTON-8 betrugen die Wiederbeschaffungskosten 4.200 $ pro Kopf — der Preis eines Tickets von den Barnard-Werften.
+
+Die Maschine ging nicht kaputt. Die Maschine rechnete.
+
+## Wir
+
+Wir kommen dreiundvierzig Jahre später an. Im Jahr 2190. Man ruft uns nicht. Man heuert uns an — das Recovery Compliance Office, die Bergungsabteilung, eine Tochtergesellschaft einer Tochtergesellschaft einer Briefkastenfirma. Man gibt uns eine Kapsel der Klasse „Styx", ausgelegt für Einweg-Abstieg, und sagt uns, dass wir die Aufstiegsladungen am Grund finden werden. Vielleicht.
+
+843 Menschen liegen irgendwo dort unten. Neben ihnen liegt das Xenon, für das sie getötet wurden. Der Konzern will das Xenon. Die Familien wollen Namen. Die Keelmark Mutual Versicherung will keines von beidem.
+
+Und wir — wir wollen einfach nur wieder nach oben.
+
+---
+
+*Veröffentlichung: offen. Verbreitung: uneingeschränkt. Daten des Luyten-Komitees: öffentliches Register. Position von Deep Reach: „kein Kommentar". Position von Atlas-6: „Kommentaranfrage ist keine gültige Befehlsdirektive."*

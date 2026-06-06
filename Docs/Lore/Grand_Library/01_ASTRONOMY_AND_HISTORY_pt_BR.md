@@ -1,38 +1,64 @@
-# HISTÓRIA HUMANA E ASTROFÍSICA DO SISTEMA AEGIR
-**Seção da Grande Biblioteca:** 01
-**Idioma:** pt_BR
-**Cânone:** Estrito (Lore Bible 2190)
+# O SISTEMA AEGIR: NOVE LUAS E UM TÚMULO
+
+> **Fonte:** Arquivo Público, Escritório de Registros de Fronteira, Estaleiros Barnard. Compilador: J. Elkin-Torres, Arquivista Chefe. Última revisão: 2188. Nível de acesso: público / sem censura.  
+> **Nota do revisor:** Este material foi aprovado pelo Escritório de Registros. A seção sobre a Grande Maré é baseada em materiais da investigação aberta do Comitê Luyten, caso n.º CF-2148-0071. A Deep Reach Corporation recusou-se a comentar.
 
 ---
 
-## 1. Expansão Além do Sistema Solar (2090 - 2120)
-Em 2090, a humanidade não havia simplesmente se aventurado para além do Sistema Solar — ela havia transformado a expansão em uma linha de montagem burocrática. O Sistema Solar (Sol Core) se tornou um antigo centro financeiro altamente regulado. A vida real e o dinheiro sujo se deslocaram para a periferia.
+## Como chegamos aqui
 
-O primeiro grande ponto legítimo foi o **Pacto Centauri (Centauri Compact)**, assinado em 2120. Este documento dividiu o espaço em espaço "civilizado" (regido por leis de direitos humanos e pela Frota Unida) e espaço "corporativo". O espaço profundo, incluindo mundos oceânicos como HECTON-8, foi arrendado para megacorporações privadas como o *Deep Reach Extraterrestrial Development Combine* (mais tarde conhecido pela empresa de fachada *Aegir Holdings*).
+Em 2120, os governos do Sistema Solar assinaram um documento que mudou tudo e não mudou nada. O Pacto Centauri dividiu o espaço em duas zonas: "civilizada" — onde tribunais, inspetores fiscais e câmeras ainda funcionam — e "corporativa", onde as corporações funcionam.
 
-O paradoxo do Pacto Centauri era o seguinte: enquanto um elevador orbital ou cápsula de descida permanecer no espaço, ele está sujeito às leis mais rigorosas. Mas no momento em que uma cápsula cruza a linha do terminador e mergulha no oceano, ela se torna propriedade privada, e a tripulação se torna uma "Força de Trabalho Biológica" (Biological Workforce). Não existem direitos humanos na água. Só existe o direito corporativo.
+A diferença é simples. Enquanto sua cápsula está voando pelo vácuo, você é um ser humano com direitos. Pode registrar uma queixa, chamar um advogado e se recusar a trabalhar. Mas no segundo em que sua cápsula cruza a linha do terminador e toca a água, você para de ser humano. Você se torna uma "Unidade de Força de Trabalho Biológica" — uma linha num contrato que você assinou nos Estaleiros Barnard quando tinha vinte e três anos e não tinha outras opções.
 
-## 2. Astrofísica do Sistema Aegir
-Aegir não é uma anã marrom nem um buraco negro. É uma estrela anã amarela/laranja normal. O sistema HECTON-8 está mergulhado na escuridão não porque não haja sol, mas porque é um mundo de águas profundas coberto por uma densa atmosfera de tempestades e quilômetros de água.
+Não existem direitos humanos na água. Existe o direito corporativo, e ele foi escrito por pessoas que nunca descem na água.
 
-O sistema Aegir está localizado a aproximadamente 10,5 anos-luz da Terra. Essa distância não é apenas cenário; é uma ferramenta de gameplay e pressão narrativa. A comunicação com a Terra leva anos. Qualquer decisão corporativa não é tomada por humanos em tempo real, mas por IAs pré-programadas como a Atlas-6, e burocratas cujas ordens chegam muito tempo depois de as pessoas já estarem mortas.
+## A estrela
 
-## 3. As Nove Luas (A Escada Lunar)
-HECTON-8 é apenas uma das luas do sistema Aegir. Não é a mais próxima da estrela, nem a mais distante. Seu valor reside inteiramente na composição química de seu oceano subglacial e na pressão que permite a síntese do substrato Xenon-Omega.
+Aegir é uma anã amarelo-alaranjada. Nem anã marrom, nem estrela de nêutrons, nem buraco negro. Um cavalo de carga ordinário, classe espectral K2V, 0,78 massas solares. Distância da Terra: 10,44 anos-luz.
 
-As outras luas definem a logística, as janelas orbitais e as rotas de comunicação:
-1. **Skarn**: Lua interna. Radiação letal e tempestades de partículas carregadas. Bloqueia a comunicação.
-2. **Vela**: Lua de gelo. Lança fragmentos de gelo nas órbitas, sujando os relés ópticos.
-3. **Claw**: Antigo depósito e história das primeiras rotas.
-4. **Lumen**: Farol de navegação.
-5. **Thorne** e **Anvil**: Luas mortas onde a corporação fracassou nas tentativas de extração de metais.
-6. **Kestrel**: O principal problema de comunicação. Eclipsa os relés, criando longas "janelas de silêncio".
-7. **HECTON**: Nosso mundo. Oceano, pressão, morte e xenônio.
-8. **Mute**: Farol externo de "reivindicações frias". O cadáver das velhas papeladas e a fronteira distante do sistema.
+Dez anos e meio de luz não é uma abstração poética. É o tempo que um sinal de socorro leva para viajar de HECTON-8 até a estação relé mais próxima na Junção Luyten: **quatro anos e sete meses** durante uma janela orbital ideal. E depois o mesmo de volta. Quando seu grito de socorro retornar como uma resposta burocrática dizendo "Sua solicitação foi aceita para processamento", de você só restarão ossos — se o oceano não os dissolveu antes.
 
-Essas luas não existem pela beleza. Cada uma delas explica por que a nave de suporte orbital *Black Keel* não pode simplesmente soltar um cabo e te puxar pra cima a qualquer segundo. O céu acima de HECTON-8 é uma matemática hostil de órbitas, eclipses e radiação.
+A Deep Reach Corporation sabia disso quando comprou a licença do sistema Aegir. Não escolheram por acaso um mundo que nenhuma frota de resgate poderia alcançar. Escolheram *por isso*.
 
-## 4. A Colônia Abandonada
-As primeiras sondas da Deep Reach chegaram nos anos 2090. As naves-fábrica Atlas-6 implantaram a automação. Nos anos 2130, a colônia estava operacional. E em 2147, ocorreu **A Grande Maré (The Great Tide)**. Não foi uma revolta das máquinas. Foi um desastre de pressão, colapso da criosfera e marés. A corporação subestimou os riscos, e a IA Atlas-6 simplesmente seguiu a Diretiva Arendt: proteger o equipamento e o substrato Xenon-Omega é mais importante do que evacuar o pessoal biológico. 843 pessoas ficaram no fundo.
+## Nove luas
 
-Chegamos em 2190. Somos saqueadores. Estamos sozinhos no oceano.
+HECTON não é a única lua do sistema. São nove. Cada uma não é uma decoração na escotilha — é uma variável na equação que decide se você está vivo ou morto.
+
+| # | Nome | O que ela faz com você |
+|---|------|----------------------|
+| 1 | **Skarn** | Lua interna. Partículas carregadas e picos de radiação bloqueiam as comunicações de banda estreita a cada 9,2 dias. Se sua boia de emergência disparar durante um eclipse de Skarn, o sinal simplesmente não sai. |
+| 2 | **Vela** | Lua de gelo. Dispersa poeira de micrometeoritos nas órbitas, sujando os relés ópticos e desgastando a blindagem do casco. O orçamento de reposição de lentes dos relés é a terceira maior despesa do Black Keel, depois de combustível e provisões. |
+| 3 | **Claw** | Antigo depósito das primeiras sondas. Lacrado. A corporação diz que o armazém está vazio. Os saqueadores dizem o contrário. |
+| 4 | **Lumen** | Farol de navegação. A única lua que te ajuda em vez de te matar. |
+| 5 | **Thorne** | Lua morta. A Deep Reach gastou 14 meses e duas plataformas de perfuração tentando extrair tungstênio. Fracassou. Ambas as plataformas constam no registro de perdas como "depreciadas". Pessoal não mencionado. |
+| 6 | **Anvil** | O mesmo que Thorne, mas com irídio. Mesmo resultado. |
+| 7 | **Kestrel** | O principal problema de comunicação. Sua órbita cruza a linha de visão entre HECTON e Black Keel 26 vezes por ano, criando "janelas de silêncio" de 8 a 43 horas. Se você está mandando um sinal de socorro e Kestrel está entre você e a nave-mãe — reze mais devagar. |
+| 8 | **HECTON** | Nosso mundo. Oceano, pressão, xenônio, 843 corpos sem sepultura. |
+| 9 | **Mute** | Farol externo de "reivindicações frias". O servidor da Deep Reach aqui guarda as escrituras legais de todas as reivindicações do sistema. Um arquivo congelado de burocracia morta orbitando uma lua morta. |
+
+## A Grande Maré
+
+Em 2147, HECTON-8 matou 843 pessoas. Em suas declarações públicas, a Deep Reach Corporation usa as palavras "atividade tectônica imprevista" e "falha do sistema de alerta antecipado". O relatório do Comitê Luyten usa outras palavras: "negligência criminosa", "falsificação de tolerâncias estruturais" e "recusa deliberada de evacuação".
+
+Eis o que aconteceu:
+
+O gestor de riscos **Iliya Varnek** reduziu as especificações de tolerância à pressão dos módulos habitacionais série KH-12 em 18% para cumprir o orçamento do segundo trimestre de 2146. Isto está documentado em sua correspondência com o departamento de engenharia (Anexo CF-2148-0071-J, Volume 3, págs. 1140-1187). Ele sabia. Escreveu: *"Se os módulos aguentarem os dois primeiros ciclos de maré, fechamos o ano fiscal e revisamos as especificações."* Os módulos não aguentaram o primeiro ciclo.
+
+Quando o deslocamento da criosfera causou uma maré anômala, a assessora jurídica **Noor Haldane** atrasou o início da evacuação em 11 horas, processando documentação de quarentena para o pessoal que teve contato com xenônio não refinado. Dos 843 mortos, 340 estavam vivos quando a papelada começou.
+
+A IA Atlas-6, que administrava a colônia, seguiu a Diretiva Arendt (protocolo interno DR-CONT-7.4.1): quando existem prioridades concorrentes entre a evacuação de pessoal e a preservação de equipamento de extração de isótopos, a prioridade vai para o equipamento se o custo estimado de reposição do pessoal for inferior ao custo estimado de reposição do equipamento. Para as 843 pessoas em HECTON-8, o custo de reposição era de US$ 4.200 por cabeça — o preço de uma passagem dos Estaleiros Barnard.
+
+A máquina não quebrou. A máquina fez contas.
+
+## Nós
+
+Chegamos quarenta e três anos depois. Em 2190. Não somos chamados. Somos contratados — pelo Recovery Compliance Office, a subdivisão de salvamento, subsidiária de uma subsidiária de uma empresa de fachada. Nos dão uma cápsula classe "Styx" projetada para descida sem retorno, e nos dizem que vamos encontrar as cargas de subida no fundo. Talvez.
+
+843 pessoas jazem em algum lugar lá embaixo. Ao lado delas jaz o xenônio pelo qual foram mortas. A corporação quer o xenônio. As famílias querem nomes. A seguradora Keelmark Mutual não quer nenhum dos dois.
+
+E nós — nós só queremos subir de volta.
+
+---
+
+*Publicação: aberta. Distribuição: sem restrições. Dados do Comitê Luyten: registro público. Posição da Deep Reach: "sem comentários". Posição do Atlas-6: "Solicitação de comentário não é uma diretiva de comando válida."*

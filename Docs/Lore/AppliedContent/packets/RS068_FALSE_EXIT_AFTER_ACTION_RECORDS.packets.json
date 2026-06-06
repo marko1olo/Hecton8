@@ -36,130 +36,130 @@
           "field_note": "After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
         },
         "ru_RU": {
-          "title": "Draft RU localization pending native pass. Material Exit Receipt Audit",
-          "scanner": "Draft RU localization pending native pass. Exit receipt valid. Evidence custody incomplete. Names unreconciled.",
-          "terminal": "Draft RU localization pending native pass. AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.",
-          "audio": "Draft RU localization pending native pass. You got paid. That is not the same as getting out clean.",
-          "in_game_wiki": "Draft RU localization pending native pass. Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
-          "external_site": "Draft RU localization pending native pass. HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
-          "field_note": "Draft RU localization pending native pass. After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
+          "title": "RU LOC HOLD: Material Exit Receipt Audit",
+          "scanner": "RU LOC HOLD: Exit receipt valid. Evidence custody incomplete. Names unreconciled.",
+          "terminal": "RU LOC HOLD: AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.",
+          "audio": "RU LOC HOLD: You got paid. That is not the same as getting out clean.",
+          "in_game_wiki": "RU LOC HOLD: Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
+          "external_site": "RU LOC HOLD: HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
+          "field_note": "RU LOC HOLD: After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
         },
         "ja_JP": {
-          "title": "Draft JA localization pending native pass. Material Exit Receipt Audit",
-          "scanner": "Draft JA localization pending native pass. Exit receipt valid. Evidence custody incomplete. Names unreconciled.",
-          "terminal": "Draft JA localization pending native pass. AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.",
-          "audio": "Draft JA localization pending native pass. You got paid. That is not the same as getting out clean.",
-          "in_game_wiki": "Draft JA localization pending native pass. Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
-          "external_site": "Draft JA localization pending native pass. HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
-          "field_note": "Draft JA localization pending native pass. After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
+          "title": "JA LOC HOLD: Material Exit Receipt Audit",
+          "scanner": "JA LOC HOLD: Exit receipt valid. Evidence custody incomplete. Names unreconciled.",
+          "terminal": "JA LOC HOLD: AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.",
+          "audio": "JA LOC HOLD: You got paid. That is not the same as getting out clean.",
+          "in_game_wiki": "JA LOC HOLD: Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
+          "external_site": "JA LOC HOLD: HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
+          "field_note": "JA LOC HOLD: After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
         },
         "zh_CN": {
-          "title": "Draft ZH localization pending native pass. Material Exit Receipt Audit",
-          "scanner": "Draft ZH localization pending native pass. Exit receipt valid. Evidence custody incomplete. Names unreconciled.",
-          "terminal": "Draft ZH localization pending native pass. AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.",
-          "audio": "Draft ZH localization pending native pass. You got paid. That is not the same as getting out clean.",
-          "in_game_wiki": "Draft ZH localization pending native pass. Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
-          "external_site": "Draft ZH localization pending native pass. HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
-          "field_note": "Draft ZH localization pending native pass. After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
+          "title": "ZH LOC HOLD: Material Exit Receipt Audit",
+          "scanner": "ZH LOC HOLD: Exit receipt valid. Evidence custody incomplete. Names unreconciled.",
+          "terminal": "ZH LOC HOLD: AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.",
+          "audio": "ZH LOC HOLD: You got paid. That is not the same as getting out clean.",
+          "in_game_wiki": "ZH LOC HOLD: Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
+          "external_site": "ZH LOC HOLD: HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
+          "field_note": "ZH LOC HOLD: After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Material Exit Receipt Audit",
-          "scanner": "Draft FR localization pending native pass. Exit receipt valid. Evidence custody incomplete. Names unreconciled.",
-          "terminal": "Draft FR localization pending native pass. AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.",
-          "audio": "Draft FR localization pending native pass. You got paid. That is not the same as getting out clean.",
-          "in_game_wiki": "Draft FR localization pending native pass. Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
-          "external_site": "Draft FR localization pending native pass. HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
-          "field_note": "Draft FR localization pending native pass. After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
+          "title": "FR LOC HOLD: Material Exit Receipt Audit",
+          "scanner": "FR LOC HOLD: Exit receipt valid. Evidence custody incomplete. Names unreconciled.",
+          "terminal": "FR LOC HOLD: AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.",
+          "audio": "FR LOC HOLD: You got paid. That is not the same as getting out clean.",
+          "in_game_wiki": "FR LOC HOLD: Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
+          "external_site": "FR LOC HOLD: HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
+          "field_note": "FR LOC HOLD: After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Material Exit Receipt Audit",
-          "scanner": "Draft ES localization pending native pass. Exit receipt valid. Evidence custody incomplete. Names unreconciled.",
-          "terminal": "Draft ES localization pending native pass. AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.",
-          "audio": "Draft ES localization pending native pass. You got paid. That is not the same as getting out clean.",
-          "in_game_wiki": "Draft ES localization pending native pass. Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
-          "external_site": "Draft ES localization pending native pass. HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
-          "field_note": "Draft ES localization pending native pass. After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
+          "title": "ES LOC HOLD: Material Exit Receipt Audit",
+          "scanner": "ES LOC HOLD: Exit receipt valid. Evidence custody incomplete. Names unreconciled.",
+          "terminal": "ES LOC HOLD: AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.",
+          "audio": "ES LOC HOLD: You got paid. That is not the same as getting out clean.",
+          "in_game_wiki": "ES LOC HOLD: Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
+          "external_site": "ES LOC HOLD: HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
+          "field_note": "ES LOC HOLD: After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Material Exit Receipt Audit",
-          "scanner": "Draft DE localization pending native pass. Exit receipt valid. Evidence custody incomplete. Names unreconciled.",
-          "terminal": "Draft DE localization pending native pass. AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.",
-          "audio": "Draft DE localization pending native pass. You got paid. That is not the same as getting out clean.",
-          "in_game_wiki": "Draft DE localization pending native pass. Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
-          "external_site": "Draft DE localization pending native pass. HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
-          "field_note": "Draft DE localization pending native pass. After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
+          "title": "DE LOC HOLD: Material Exit Receipt Audit",
+          "scanner": "DE LOC HOLD: Exit receipt valid. Evidence custody incomplete. Names unreconciled.",
+          "terminal": "DE LOC HOLD: AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.",
+          "audio": "DE LOC HOLD: You got paid. That is not the same as getting out clean.",
+          "in_game_wiki": "DE LOC HOLD: Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
+          "external_site": "DE LOC HOLD: HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
+          "field_note": "DE LOC HOLD: After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Material Exit Receipt Audit",
-          "scanner": "Draft PL localization pending native pass. Exit receipt valid. Evidence custody incomplete. Names unreconciled.",
-          "terminal": "Draft PL localization pending native pass. AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.",
-          "audio": "Draft PL localization pending native pass. You got paid. That is not the same as getting out clean.",
-          "in_game_wiki": "Draft PL localization pending native pass. Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
-          "external_site": "Draft PL localization pending native pass. HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
-          "field_note": "Draft PL localization pending native pass. After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
+          "title": "PL LOC HOLD: Material Exit Receipt Audit",
+          "scanner": "PL LOC HOLD: Exit receipt valid. Evidence custody incomplete. Names unreconciled.",
+          "terminal": "PL LOC HOLD: AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.",
+          "audio": "PL LOC HOLD: You got paid. That is not the same as getting out clean.",
+          "in_game_wiki": "PL LOC HOLD: Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
+          "external_site": "PL LOC HOLD: HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
+          "field_note": "PL LOC HOLD: After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
         },
         "uk_UA": {
-          "title": "Draft UK localization pending native pass. Material Exit Receipt Audit",
-          "scanner": "Draft UK localization pending native pass. Exit receipt valid. Evidence custody incomplete. Names unreconciled.",
-          "terminal": "Draft UK localization pending native pass. AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.",
-          "audio": "Draft UK localization pending native pass. You got paid. That is not the same as getting out clean.",
-          "in_game_wiki": "Draft UK localization pending native pass. Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
-          "external_site": "Draft UK localization pending native pass. HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
-          "field_note": "Draft UK localization pending native pass. After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
+          "title": "UK LOC HOLD: Material Exit Receipt Audit",
+          "scanner": "UK LOC HOLD: Exit receipt valid. Evidence custody incomplete. Names unreconciled.",
+          "terminal": "UK LOC HOLD: AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.",
+          "audio": "UK LOC HOLD: You got paid. That is not the same as getting out clean.",
+          "in_game_wiki": "UK LOC HOLD: Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
+          "external_site": "UK LOC HOLD: HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
+          "field_note": "UK LOC HOLD: After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Material Exit Receipt Audit",
-          "scanner": "Draft AR localization pending native pass. Exit receipt valid. Evidence custody incomplete. Names unreconciled.",
-          "terminal": "Draft AR localization pending native pass. AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.",
-          "audio": "Draft AR localization pending native pass. You got paid. That is not the same as getting out clean.",
-          "in_game_wiki": "Draft AR localization pending native pass. Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
-          "external_site": "Draft AR localization pending native pass. HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
-          "field_note": "Draft AR localization pending native pass. After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
+          "title": "AR LOC HOLD: Material Exit Receipt Audit",
+          "scanner": "AR LOC HOLD: Exit receipt valid. Evidence custody incomplete. Names unreconciled.",
+          "terminal": "AR LOC HOLD: AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.",
+          "audio": "AR LOC HOLD: You got paid. That is not the same as getting out clean.",
+          "in_game_wiki": "AR LOC HOLD: Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
+          "external_site": "AR LOC HOLD: HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
+          "field_note": "AR LOC HOLD: After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Material Exit Receipt Audit",
-          "scanner": "Draft ID localization pending native pass. Exit receipt valid. Evidence custody incomplete. Names unreconciled.",
-          "terminal": "Draft ID localization pending native pass. AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.",
-          "audio": "Draft ID localization pending native pass. You got paid. That is not the same as getting out clean.",
-          "in_game_wiki": "Draft ID localization pending native pass. Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
-          "external_site": "Draft ID localization pending native pass. HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
-          "field_note": "Draft ID localization pending native pass. After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
+          "title": "ID LOC HOLD: Material Exit Receipt Audit",
+          "scanner": "ID LOC HOLD: Exit receipt valid. Evidence custody incomplete. Names unreconciled.",
+          "terminal": "ID LOC HOLD: AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.",
+          "audio": "ID LOC HOLD: You got paid. That is not the same as getting out clean.",
+          "in_game_wiki": "ID LOC HOLD: Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
+          "external_site": "ID LOC HOLD: HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
+          "field_note": "ID LOC HOLD: After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Material Exit Receipt Audit",
-          "scanner": "Draft KO localization pending native pass. Exit receipt valid. Evidence custody incomplete. Names unreconciled.",
-          "terminal": "Draft KO localization pending native pass. AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.",
-          "audio": "Draft KO localization pending native pass. You got paid. That is not the same as getting out clean.",
-          "in_game_wiki": "Draft KO localization pending native pass. Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
-          "external_site": "Draft KO localization pending native pass. HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
-          "field_note": "Draft KO localization pending native pass. After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
+          "title": "KO LOC HOLD: Material Exit Receipt Audit",
+          "scanner": "KO LOC HOLD: Exit receipt valid. Evidence custody incomplete. Names unreconciled.",
+          "terminal": "KO LOC HOLD: AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.",
+          "audio": "KO LOC HOLD: You got paid. That is not the same as getting out clean.",
+          "in_game_wiki": "KO LOC HOLD: Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
+          "external_site": "KO LOC HOLD: HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
+          "field_note": "KO LOC HOLD: After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Material Exit Receipt Audit",
-          "scanner": "Draft HE localization pending native pass. Exit receipt valid. Evidence custody incomplete. Names unreconciled.",
-          "terminal": "Draft HE localization pending native pass. AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.",
-          "audio": "Draft HE localization pending native pass. You got paid. That is not the same as getting out clean.",
-          "in_game_wiki": "Draft HE localization pending native pass. Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
-          "external_site": "Draft HE localization pending native pass. HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
-          "field_note": "Draft HE localization pending native pass. After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
+          "title": "HE LOC HOLD: Material Exit Receipt Audit",
+          "scanner": "HE LOC HOLD: Exit receipt valid. Evidence custody incomplete. Names unreconciled.",
+          "terminal": "HE LOC HOLD: AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.",
+          "audio": "HE LOC HOLD: You got paid. That is not the same as getting out clean.",
+          "in_game_wiki": "HE LOC HOLD: Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
+          "external_site": "HE LOC HOLD: HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
+          "field_note": "HE LOC HOLD: After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Material Exit Receipt Audit",
-          "scanner": "Draft PT localization pending native pass. Exit receipt valid. Evidence custody incomplete. Names unreconciled.",
-          "terminal": "Draft PT localization pending native pass. AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.",
-          "audio": "Draft PT localization pending native pass. You got paid. That is not the same as getting out clean.",
-          "in_game_wiki": "Draft PT localization pending native pass. Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
-          "external_site": "Draft PT localization pending native pass. HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
-          "field_note": "Draft PT localization pending native pass. After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
+          "title": "PT LOC HOLD: Material Exit Receipt Audit",
+          "scanner": "PT LOC HOLD: Exit receipt valid. Evidence custody incomplete. Names unreconciled.",
+          "terminal": "PT LOC HOLD: AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.",
+          "audio": "PT LOC HOLD: You got paid. That is not the same as getting out clean.",
+          "in_game_wiki": "PT LOC HOLD: Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
+          "external_site": "PT LOC HOLD: HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
+          "field_note": "PT LOC HOLD: After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Material Exit Receipt Audit",
-          "scanner": "Draft NL localization pending native pass. Exit receipt valid. Evidence custody incomplete. Names unreconciled.",
-          "terminal": "Draft NL localization pending native pass. AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.",
-          "audio": "Draft NL localization pending native pass. You got paid. That is not the same as getting out clean.",
-          "in_game_wiki": "Draft NL localization pending native pass. Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
-          "external_site": "Draft NL localization pending native pass. HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
-          "field_note": "Draft NL localization pending native pass. After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
+          "title": "NL LOC HOLD: Material Exit Receipt Audit",
+          "scanner": "NL LOC HOLD: Exit receipt valid. Evidence custody incomplete. Names unreconciled.",
+          "terminal": "NL LOC HOLD: AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.",
+          "audio": "NL LOC HOLD: You got paid. That is not the same as getting out clean.",
+          "in_game_wiki": "NL LOC HOLD: Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.",
+          "external_site": "NL LOC HOLD: HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.",
+          "field_note": "NL LOC HOLD: After-action record: payout and recovery can close while evidence custody and worker names remain unresolved."
         }
       }
     },
@@ -191,130 +191,130 @@
           "field_note": "Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
         },
         "ru_RU": {
-          "title": "Draft RU localization pending native pass. Partial Return Lien Extension",
-          "scanner": "Draft RU localization pending native pass. Return authorized under lien extension. Equipment not carried forward.",
-          "terminal": "Draft RU localization pending native pass. PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.",
-          "audio": "Draft RU localization pending native pass. The route remembers what you proved. The ocean does not owe you your tools.",
-          "in_game_wiki": "Draft RU localization pending native pass. Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
-          "external_site": "Draft RU localization pending native pass. HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
-          "field_note": "Draft RU localization pending native pass. Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
+          "title": "RU LOC HOLD: Partial Return Lien Extension",
+          "scanner": "RU LOC HOLD: Return authorized under lien extension. Equipment not carried forward.",
+          "terminal": "RU LOC HOLD: PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.",
+          "audio": "RU LOC HOLD: The route remembers what you proved. The ocean does not owe you your tools.",
+          "in_game_wiki": "RU LOC HOLD: Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
+          "external_site": "RU LOC HOLD: HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
+          "field_note": "RU LOC HOLD: Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
         },
         "ja_JP": {
-          "title": "Draft JA localization pending native pass. Partial Return Lien Extension",
-          "scanner": "Draft JA localization pending native pass. Return authorized under lien extension. Equipment not carried forward.",
-          "terminal": "Draft JA localization pending native pass. PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.",
-          "audio": "Draft JA localization pending native pass. The route remembers what you proved. The ocean does not owe you your tools.",
-          "in_game_wiki": "Draft JA localization pending native pass. Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
-          "external_site": "Draft JA localization pending native pass. HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
-          "field_note": "Draft JA localization pending native pass. Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
+          "title": "JA LOC HOLD: Partial Return Lien Extension",
+          "scanner": "JA LOC HOLD: Return authorized under lien extension. Equipment not carried forward.",
+          "terminal": "JA LOC HOLD: PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.",
+          "audio": "JA LOC HOLD: The route remembers what you proved. The ocean does not owe you your tools.",
+          "in_game_wiki": "JA LOC HOLD: Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
+          "external_site": "JA LOC HOLD: HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
+          "field_note": "JA LOC HOLD: Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
         },
         "zh_CN": {
-          "title": "Draft ZH localization pending native pass. Partial Return Lien Extension",
-          "scanner": "Draft ZH localization pending native pass. Return authorized under lien extension. Equipment not carried forward.",
-          "terminal": "Draft ZH localization pending native pass. PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.",
-          "audio": "Draft ZH localization pending native pass. The route remembers what you proved. The ocean does not owe you your tools.",
-          "in_game_wiki": "Draft ZH localization pending native pass. Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
-          "external_site": "Draft ZH localization pending native pass. HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
-          "field_note": "Draft ZH localization pending native pass. Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
+          "title": "ZH LOC HOLD: Partial Return Lien Extension",
+          "scanner": "ZH LOC HOLD: Return authorized under lien extension. Equipment not carried forward.",
+          "terminal": "ZH LOC HOLD: PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.",
+          "audio": "ZH LOC HOLD: The route remembers what you proved. The ocean does not owe you your tools.",
+          "in_game_wiki": "ZH LOC HOLD: Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
+          "external_site": "ZH LOC HOLD: HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
+          "field_note": "ZH LOC HOLD: Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Partial Return Lien Extension",
-          "scanner": "Draft FR localization pending native pass. Return authorized under lien extension. Equipment not carried forward.",
-          "terminal": "Draft FR localization pending native pass. PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.",
-          "audio": "Draft FR localization pending native pass. The route remembers what you proved. The ocean does not owe you your tools.",
-          "in_game_wiki": "Draft FR localization pending native pass. Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
-          "external_site": "Draft FR localization pending native pass. HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
-          "field_note": "Draft FR localization pending native pass. Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
+          "title": "FR LOC HOLD: Partial Return Lien Extension",
+          "scanner": "FR LOC HOLD: Return authorized under lien extension. Equipment not carried forward.",
+          "terminal": "FR LOC HOLD: PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.",
+          "audio": "FR LOC HOLD: The route remembers what you proved. The ocean does not owe you your tools.",
+          "in_game_wiki": "FR LOC HOLD: Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
+          "external_site": "FR LOC HOLD: HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
+          "field_note": "FR LOC HOLD: Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Partial Return Lien Extension",
-          "scanner": "Draft ES localization pending native pass. Return authorized under lien extension. Equipment not carried forward.",
-          "terminal": "Draft ES localization pending native pass. PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.",
-          "audio": "Draft ES localization pending native pass. The route remembers what you proved. The ocean does not owe you your tools.",
-          "in_game_wiki": "Draft ES localization pending native pass. Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
-          "external_site": "Draft ES localization pending native pass. HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
-          "field_note": "Draft ES localization pending native pass. Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
+          "title": "ES LOC HOLD: Partial Return Lien Extension",
+          "scanner": "ES LOC HOLD: Return authorized under lien extension. Equipment not carried forward.",
+          "terminal": "ES LOC HOLD: PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.",
+          "audio": "ES LOC HOLD: The route remembers what you proved. The ocean does not owe you your tools.",
+          "in_game_wiki": "ES LOC HOLD: Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
+          "external_site": "ES LOC HOLD: HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
+          "field_note": "ES LOC HOLD: Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Partial Return Lien Extension",
-          "scanner": "Draft DE localization pending native pass. Return authorized under lien extension. Equipment not carried forward.",
-          "terminal": "Draft DE localization pending native pass. PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.",
-          "audio": "Draft DE localization pending native pass. The route remembers what you proved. The ocean does not owe you your tools.",
-          "in_game_wiki": "Draft DE localization pending native pass. Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
-          "external_site": "Draft DE localization pending native pass. HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
-          "field_note": "Draft DE localization pending native pass. Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
+          "title": "DE LOC HOLD: Partial Return Lien Extension",
+          "scanner": "DE LOC HOLD: Return authorized under lien extension. Equipment not carried forward.",
+          "terminal": "DE LOC HOLD: PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.",
+          "audio": "DE LOC HOLD: The route remembers what you proved. The ocean does not owe you your tools.",
+          "in_game_wiki": "DE LOC HOLD: Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
+          "external_site": "DE LOC HOLD: HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
+          "field_note": "DE LOC HOLD: Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Partial Return Lien Extension",
-          "scanner": "Draft PL localization pending native pass. Return authorized under lien extension. Equipment not carried forward.",
-          "terminal": "Draft PL localization pending native pass. PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.",
-          "audio": "Draft PL localization pending native pass. The route remembers what you proved. The ocean does not owe you your tools.",
-          "in_game_wiki": "Draft PL localization pending native pass. Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
-          "external_site": "Draft PL localization pending native pass. HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
-          "field_note": "Draft PL localization pending native pass. Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
+          "title": "PL LOC HOLD: Partial Return Lien Extension",
+          "scanner": "PL LOC HOLD: Return authorized under lien extension. Equipment not carried forward.",
+          "terminal": "PL LOC HOLD: PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.",
+          "audio": "PL LOC HOLD: The route remembers what you proved. The ocean does not owe you your tools.",
+          "in_game_wiki": "PL LOC HOLD: Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
+          "external_site": "PL LOC HOLD: HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
+          "field_note": "PL LOC HOLD: Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
         },
         "uk_UA": {
-          "title": "Draft UK localization pending native pass. Partial Return Lien Extension",
-          "scanner": "Draft UK localization pending native pass. Return authorized under lien extension. Equipment not carried forward.",
-          "terminal": "Draft UK localization pending native pass. PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.",
-          "audio": "Draft UK localization pending native pass. The route remembers what you proved. The ocean does not owe you your tools.",
-          "in_game_wiki": "Draft UK localization pending native pass. Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
-          "external_site": "Draft UK localization pending native pass. HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
-          "field_note": "Draft UK localization pending native pass. Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
+          "title": "UK LOC HOLD: Partial Return Lien Extension",
+          "scanner": "UK LOC HOLD: Return authorized under lien extension. Equipment not carried forward.",
+          "terminal": "UK LOC HOLD: PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.",
+          "audio": "UK LOC HOLD: The route remembers what you proved. The ocean does not owe you your tools.",
+          "in_game_wiki": "UK LOC HOLD: Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
+          "external_site": "UK LOC HOLD: HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
+          "field_note": "UK LOC HOLD: Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Partial Return Lien Extension",
-          "scanner": "Draft AR localization pending native pass. Return authorized under lien extension. Equipment not carried forward.",
-          "terminal": "Draft AR localization pending native pass. PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.",
-          "audio": "Draft AR localization pending native pass. The route remembers what you proved. The ocean does not owe you your tools.",
-          "in_game_wiki": "Draft AR localization pending native pass. Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
-          "external_site": "Draft AR localization pending native pass. HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
-          "field_note": "Draft AR localization pending native pass. Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
+          "title": "AR LOC HOLD: Partial Return Lien Extension",
+          "scanner": "AR LOC HOLD: Return authorized under lien extension. Equipment not carried forward.",
+          "terminal": "AR LOC HOLD: PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.",
+          "audio": "AR LOC HOLD: The route remembers what you proved. The ocean does not owe you your tools.",
+          "in_game_wiki": "AR LOC HOLD: Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
+          "external_site": "AR LOC HOLD: HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
+          "field_note": "AR LOC HOLD: Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Partial Return Lien Extension",
-          "scanner": "Draft ID localization pending native pass. Return authorized under lien extension. Equipment not carried forward.",
-          "terminal": "Draft ID localization pending native pass. PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.",
-          "audio": "Draft ID localization pending native pass. The route remembers what you proved. The ocean does not owe you your tools.",
-          "in_game_wiki": "Draft ID localization pending native pass. Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
-          "external_site": "Draft ID localization pending native pass. HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
-          "field_note": "Draft ID localization pending native pass. Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
+          "title": "ID LOC HOLD: Partial Return Lien Extension",
+          "scanner": "ID LOC HOLD: Return authorized under lien extension. Equipment not carried forward.",
+          "terminal": "ID LOC HOLD: PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.",
+          "audio": "ID LOC HOLD: The route remembers what you proved. The ocean does not owe you your tools.",
+          "in_game_wiki": "ID LOC HOLD: Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
+          "external_site": "ID LOC HOLD: HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
+          "field_note": "ID LOC HOLD: Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Partial Return Lien Extension",
-          "scanner": "Draft KO localization pending native pass. Return authorized under lien extension. Equipment not carried forward.",
-          "terminal": "Draft KO localization pending native pass. PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.",
-          "audio": "Draft KO localization pending native pass. The route remembers what you proved. The ocean does not owe you your tools.",
-          "in_game_wiki": "Draft KO localization pending native pass. Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
-          "external_site": "Draft KO localization pending native pass. HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
-          "field_note": "Draft KO localization pending native pass. Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
+          "title": "KO LOC HOLD: Partial Return Lien Extension",
+          "scanner": "KO LOC HOLD: Return authorized under lien extension. Equipment not carried forward.",
+          "terminal": "KO LOC HOLD: PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.",
+          "audio": "KO LOC HOLD: The route remembers what you proved. The ocean does not owe you your tools.",
+          "in_game_wiki": "KO LOC HOLD: Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
+          "external_site": "KO LOC HOLD: HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
+          "field_note": "KO LOC HOLD: Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Partial Return Lien Extension",
-          "scanner": "Draft HE localization pending native pass. Return authorized under lien extension. Equipment not carried forward.",
-          "terminal": "Draft HE localization pending native pass. PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.",
-          "audio": "Draft HE localization pending native pass. The route remembers what you proved. The ocean does not owe you your tools.",
-          "in_game_wiki": "Draft HE localization pending native pass. Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
-          "external_site": "Draft HE localization pending native pass. HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
-          "field_note": "Draft HE localization pending native pass. Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
+          "title": "HE LOC HOLD: Partial Return Lien Extension",
+          "scanner": "HE LOC HOLD: Return authorized under lien extension. Equipment not carried forward.",
+          "terminal": "HE LOC HOLD: PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.",
+          "audio": "HE LOC HOLD: The route remembers what you proved. The ocean does not owe you your tools.",
+          "in_game_wiki": "HE LOC HOLD: Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
+          "external_site": "HE LOC HOLD: HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
+          "field_note": "HE LOC HOLD: Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Partial Return Lien Extension",
-          "scanner": "Draft PT localization pending native pass. Return authorized under lien extension. Equipment not carried forward.",
-          "terminal": "Draft PT localization pending native pass. PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.",
-          "audio": "Draft PT localization pending native pass. The route remembers what you proved. The ocean does not owe you your tools.",
-          "in_game_wiki": "Draft PT localization pending native pass. Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
-          "external_site": "Draft PT localization pending native pass. HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
-          "field_note": "Draft PT localization pending native pass. Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
+          "title": "PT LOC HOLD: Partial Return Lien Extension",
+          "scanner": "PT LOC HOLD: Return authorized under lien extension. Equipment not carried forward.",
+          "terminal": "PT LOC HOLD: PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.",
+          "audio": "PT LOC HOLD: The route remembers what you proved. The ocean does not owe you your tools.",
+          "in_game_wiki": "PT LOC HOLD: Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
+          "external_site": "PT LOC HOLD: HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
+          "field_note": "PT LOC HOLD: Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Partial Return Lien Extension",
-          "scanner": "Draft NL localization pending native pass. Return authorized under lien extension. Equipment not carried forward.",
-          "terminal": "Draft NL localization pending native pass. PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.",
-          "audio": "Draft NL localization pending native pass. The route remembers what you proved. The ocean does not owe you your tools.",
-          "in_game_wiki": "Draft NL localization pending native pass. Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
-          "external_site": "Draft NL localization pending native pass. HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
-          "field_note": "Draft NL localization pending native pass. Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
+          "title": "NL LOC HOLD: Partial Return Lien Extension",
+          "scanner": "NL LOC HOLD: Return authorized under lien extension. Equipment not carried forward.",
+          "terminal": "NL LOC HOLD: PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.",
+          "audio": "NL LOC HOLD: The route remembers what you proved. The ocean does not owe you your tools.",
+          "in_game_wiki": "NL LOC HOLD: Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.",
+          "external_site": "NL LOC HOLD: HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.",
+          "field_note": "NL LOC HOLD: Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment."
         }
       }
     },
@@ -346,130 +346,130 @@
           "field_note": "Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
         },
         "ru_RU": {
-          "title": "Draft RU localization pending native pass. Quarantine Hold Interrogation Record",
-          "scanner": "Draft RU localization pending native pass. Recovered biological claimant held pending contamination and evidence custody review.",
-          "terminal": "Draft RU localization pending native pass. QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.",
-          "audio": "Draft RU localization pending native pass. They saved the body first because the body knew the route.",
-          "in_game_wiki": "Draft RU localization pending native pass. Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
-          "external_site": "Draft RU localization pending native pass. A HECTON-8 exit can be physically successful and politically catastrophic.",
-          "field_note": "Draft RU localization pending native pass. Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
+          "title": "RU LOC HOLD: Quarantine Hold Interrogation Record",
+          "scanner": "RU LOC HOLD: Recovered biological claimant held pending contamination and evidence custody review.",
+          "terminal": "RU LOC HOLD: QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.",
+          "audio": "RU LOC HOLD: They saved the body first because the body knew the route.",
+          "in_game_wiki": "RU LOC HOLD: Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
+          "external_site": "RU LOC HOLD: A HECTON-8 exit can be physically successful and politically catastrophic.",
+          "field_note": "RU LOC HOLD: Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
         },
         "ja_JP": {
-          "title": "Draft JA localization pending native pass. Quarantine Hold Interrogation Record",
-          "scanner": "Draft JA localization pending native pass. Recovered biological claimant held pending contamination and evidence custody review.",
-          "terminal": "Draft JA localization pending native pass. QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.",
-          "audio": "Draft JA localization pending native pass. They saved the body first because the body knew the route.",
-          "in_game_wiki": "Draft JA localization pending native pass. Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
-          "external_site": "Draft JA localization pending native pass. A HECTON-8 exit can be physically successful and politically catastrophic.",
-          "field_note": "Draft JA localization pending native pass. Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
+          "title": "JA LOC HOLD: Quarantine Hold Interrogation Record",
+          "scanner": "JA LOC HOLD: Recovered biological claimant held pending contamination and evidence custody review.",
+          "terminal": "JA LOC HOLD: QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.",
+          "audio": "JA LOC HOLD: They saved the body first because the body knew the route.",
+          "in_game_wiki": "JA LOC HOLD: Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
+          "external_site": "JA LOC HOLD: A HECTON-8 exit can be physically successful and politically catastrophic.",
+          "field_note": "JA LOC HOLD: Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
         },
         "zh_CN": {
-          "title": "Draft ZH localization pending native pass. Quarantine Hold Interrogation Record",
-          "scanner": "Draft ZH localization pending native pass. Recovered biological claimant held pending contamination and evidence custody review.",
-          "terminal": "Draft ZH localization pending native pass. QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.",
-          "audio": "Draft ZH localization pending native pass. They saved the body first because the body knew the route.",
-          "in_game_wiki": "Draft ZH localization pending native pass. Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
-          "external_site": "Draft ZH localization pending native pass. A HECTON-8 exit can be physically successful and politically catastrophic.",
-          "field_note": "Draft ZH localization pending native pass. Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
+          "title": "ZH LOC HOLD: Quarantine Hold Interrogation Record",
+          "scanner": "ZH LOC HOLD: Recovered biological claimant held pending contamination and evidence custody review.",
+          "terminal": "ZH LOC HOLD: QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.",
+          "audio": "ZH LOC HOLD: They saved the body first because the body knew the route.",
+          "in_game_wiki": "ZH LOC HOLD: Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
+          "external_site": "ZH LOC HOLD: A HECTON-8 exit can be physically successful and politically catastrophic.",
+          "field_note": "ZH LOC HOLD: Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Quarantine Hold Interrogation Record",
-          "scanner": "Draft FR localization pending native pass. Recovered biological claimant held pending contamination and evidence custody review.",
-          "terminal": "Draft FR localization pending native pass. QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.",
-          "audio": "Draft FR localization pending native pass. They saved the body first because the body knew the route.",
-          "in_game_wiki": "Draft FR localization pending native pass. Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
-          "external_site": "Draft FR localization pending native pass. A HECTON-8 exit can be physically successful and politically catastrophic.",
-          "field_note": "Draft FR localization pending native pass. Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
+          "title": "FR LOC HOLD: Quarantine Hold Interrogation Record",
+          "scanner": "FR LOC HOLD: Recovered biological claimant held pending contamination and evidence custody review.",
+          "terminal": "FR LOC HOLD: QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.",
+          "audio": "FR LOC HOLD: They saved the body first because the body knew the route.",
+          "in_game_wiki": "FR LOC HOLD: Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
+          "external_site": "FR LOC HOLD: A HECTON-8 exit can be physically successful and politically catastrophic.",
+          "field_note": "FR LOC HOLD: Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Quarantine Hold Interrogation Record",
-          "scanner": "Draft ES localization pending native pass. Recovered biological claimant held pending contamination and evidence custody review.",
-          "terminal": "Draft ES localization pending native pass. QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.",
-          "audio": "Draft ES localization pending native pass. They saved the body first because the body knew the route.",
-          "in_game_wiki": "Draft ES localization pending native pass. Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
-          "external_site": "Draft ES localization pending native pass. A HECTON-8 exit can be physically successful and politically catastrophic.",
-          "field_note": "Draft ES localization pending native pass. Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
+          "title": "ES LOC HOLD: Quarantine Hold Interrogation Record",
+          "scanner": "ES LOC HOLD: Recovered biological claimant held pending contamination and evidence custody review.",
+          "terminal": "ES LOC HOLD: QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.",
+          "audio": "ES LOC HOLD: They saved the body first because the body knew the route.",
+          "in_game_wiki": "ES LOC HOLD: Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
+          "external_site": "ES LOC HOLD: A HECTON-8 exit can be physically successful and politically catastrophic.",
+          "field_note": "ES LOC HOLD: Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Quarantine Hold Interrogation Record",
-          "scanner": "Draft DE localization pending native pass. Recovered biological claimant held pending contamination and evidence custody review.",
-          "terminal": "Draft DE localization pending native pass. QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.",
-          "audio": "Draft DE localization pending native pass. They saved the body first because the body knew the route.",
-          "in_game_wiki": "Draft DE localization pending native pass. Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
-          "external_site": "Draft DE localization pending native pass. A HECTON-8 exit can be physically successful and politically catastrophic.",
-          "field_note": "Draft DE localization pending native pass. Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
+          "title": "DE LOC HOLD: Quarantine Hold Interrogation Record",
+          "scanner": "DE LOC HOLD: Recovered biological claimant held pending contamination and evidence custody review.",
+          "terminal": "DE LOC HOLD: QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.",
+          "audio": "DE LOC HOLD: They saved the body first because the body knew the route.",
+          "in_game_wiki": "DE LOC HOLD: Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
+          "external_site": "DE LOC HOLD: A HECTON-8 exit can be physically successful and politically catastrophic.",
+          "field_note": "DE LOC HOLD: Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Quarantine Hold Interrogation Record",
-          "scanner": "Draft PL localization pending native pass. Recovered biological claimant held pending contamination and evidence custody review.",
-          "terminal": "Draft PL localization pending native pass. QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.",
-          "audio": "Draft PL localization pending native pass. They saved the body first because the body knew the route.",
-          "in_game_wiki": "Draft PL localization pending native pass. Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
-          "external_site": "Draft PL localization pending native pass. A HECTON-8 exit can be physically successful and politically catastrophic.",
-          "field_note": "Draft PL localization pending native pass. Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
+          "title": "PL LOC HOLD: Quarantine Hold Interrogation Record",
+          "scanner": "PL LOC HOLD: Recovered biological claimant held pending contamination and evidence custody review.",
+          "terminal": "PL LOC HOLD: QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.",
+          "audio": "PL LOC HOLD: They saved the body first because the body knew the route.",
+          "in_game_wiki": "PL LOC HOLD: Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
+          "external_site": "PL LOC HOLD: A HECTON-8 exit can be physically successful and politically catastrophic.",
+          "field_note": "PL LOC HOLD: Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
         },
         "uk_UA": {
-          "title": "Draft UK localization pending native pass. Quarantine Hold Interrogation Record",
-          "scanner": "Draft UK localization pending native pass. Recovered biological claimant held pending contamination and evidence custody review.",
-          "terminal": "Draft UK localization pending native pass. QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.",
-          "audio": "Draft UK localization pending native pass. They saved the body first because the body knew the route.",
-          "in_game_wiki": "Draft UK localization pending native pass. Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
-          "external_site": "Draft UK localization pending native pass. A HECTON-8 exit can be physically successful and politically catastrophic.",
-          "field_note": "Draft UK localization pending native pass. Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
+          "title": "UK LOC HOLD: Quarantine Hold Interrogation Record",
+          "scanner": "UK LOC HOLD: Recovered biological claimant held pending contamination and evidence custody review.",
+          "terminal": "UK LOC HOLD: QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.",
+          "audio": "UK LOC HOLD: They saved the body first because the body knew the route.",
+          "in_game_wiki": "UK LOC HOLD: Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
+          "external_site": "UK LOC HOLD: A HECTON-8 exit can be physically successful and politically catastrophic.",
+          "field_note": "UK LOC HOLD: Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Quarantine Hold Interrogation Record",
-          "scanner": "Draft AR localization pending native pass. Recovered biological claimant held pending contamination and evidence custody review.",
-          "terminal": "Draft AR localization pending native pass. QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.",
-          "audio": "Draft AR localization pending native pass. They saved the body first because the body knew the route.",
-          "in_game_wiki": "Draft AR localization pending native pass. Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
-          "external_site": "Draft AR localization pending native pass. A HECTON-8 exit can be physically successful and politically catastrophic.",
-          "field_note": "Draft AR localization pending native pass. Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
+          "title": "AR LOC HOLD: Quarantine Hold Interrogation Record",
+          "scanner": "AR LOC HOLD: Recovered biological claimant held pending contamination and evidence custody review.",
+          "terminal": "AR LOC HOLD: QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.",
+          "audio": "AR LOC HOLD: They saved the body first because the body knew the route.",
+          "in_game_wiki": "AR LOC HOLD: Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
+          "external_site": "AR LOC HOLD: A HECTON-8 exit can be physically successful and politically catastrophic.",
+          "field_note": "AR LOC HOLD: Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Quarantine Hold Interrogation Record",
-          "scanner": "Draft ID localization pending native pass. Recovered biological claimant held pending contamination and evidence custody review.",
-          "terminal": "Draft ID localization pending native pass. QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.",
-          "audio": "Draft ID localization pending native pass. They saved the body first because the body knew the route.",
-          "in_game_wiki": "Draft ID localization pending native pass. Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
-          "external_site": "Draft ID localization pending native pass. A HECTON-8 exit can be physically successful and politically catastrophic.",
-          "field_note": "Draft ID localization pending native pass. Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
+          "title": "ID LOC HOLD: Quarantine Hold Interrogation Record",
+          "scanner": "ID LOC HOLD: Recovered biological claimant held pending contamination and evidence custody review.",
+          "terminal": "ID LOC HOLD: QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.",
+          "audio": "ID LOC HOLD: They saved the body first because the body knew the route.",
+          "in_game_wiki": "ID LOC HOLD: Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
+          "external_site": "ID LOC HOLD: A HECTON-8 exit can be physically successful and politically catastrophic.",
+          "field_note": "ID LOC HOLD: Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Quarantine Hold Interrogation Record",
-          "scanner": "Draft KO localization pending native pass. Recovered biological claimant held pending contamination and evidence custody review.",
-          "terminal": "Draft KO localization pending native pass. QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.",
-          "audio": "Draft KO localization pending native pass. They saved the body first because the body knew the route.",
-          "in_game_wiki": "Draft KO localization pending native pass. Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
-          "external_site": "Draft KO localization pending native pass. A HECTON-8 exit can be physically successful and politically catastrophic.",
-          "field_note": "Draft KO localization pending native pass. Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
+          "title": "KO LOC HOLD: Quarantine Hold Interrogation Record",
+          "scanner": "KO LOC HOLD: Recovered biological claimant held pending contamination and evidence custody review.",
+          "terminal": "KO LOC HOLD: QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.",
+          "audio": "KO LOC HOLD: They saved the body first because the body knew the route.",
+          "in_game_wiki": "KO LOC HOLD: Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
+          "external_site": "KO LOC HOLD: A HECTON-8 exit can be physically successful and politically catastrophic.",
+          "field_note": "KO LOC HOLD: Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Quarantine Hold Interrogation Record",
-          "scanner": "Draft HE localization pending native pass. Recovered biological claimant held pending contamination and evidence custody review.",
-          "terminal": "Draft HE localization pending native pass. QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.",
-          "audio": "Draft HE localization pending native pass. They saved the body first because the body knew the route.",
-          "in_game_wiki": "Draft HE localization pending native pass. Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
-          "external_site": "Draft HE localization pending native pass. A HECTON-8 exit can be physically successful and politically catastrophic.",
-          "field_note": "Draft HE localization pending native pass. Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
+          "title": "HE LOC HOLD: Quarantine Hold Interrogation Record",
+          "scanner": "HE LOC HOLD: Recovered biological claimant held pending contamination and evidence custody review.",
+          "terminal": "HE LOC HOLD: QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.",
+          "audio": "HE LOC HOLD: They saved the body first because the body knew the route.",
+          "in_game_wiki": "HE LOC HOLD: Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
+          "external_site": "HE LOC HOLD: A HECTON-8 exit can be physically successful and politically catastrophic.",
+          "field_note": "HE LOC HOLD: Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Quarantine Hold Interrogation Record",
-          "scanner": "Draft PT localization pending native pass. Recovered biological claimant held pending contamination and evidence custody review.",
-          "terminal": "Draft PT localization pending native pass. QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.",
-          "audio": "Draft PT localization pending native pass. They saved the body first because the body knew the route.",
-          "in_game_wiki": "Draft PT localization pending native pass. Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
-          "external_site": "Draft PT localization pending native pass. A HECTON-8 exit can be physically successful and politically catastrophic.",
-          "field_note": "Draft PT localization pending native pass. Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
+          "title": "PT LOC HOLD: Quarantine Hold Interrogation Record",
+          "scanner": "PT LOC HOLD: Recovered biological claimant held pending contamination and evidence custody review.",
+          "terminal": "PT LOC HOLD: QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.",
+          "audio": "PT LOC HOLD: They saved the body first because the body knew the route.",
+          "in_game_wiki": "PT LOC HOLD: Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
+          "external_site": "PT LOC HOLD: A HECTON-8 exit can be physically successful and politically catastrophic.",
+          "field_note": "PT LOC HOLD: Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Quarantine Hold Interrogation Record",
-          "scanner": "Draft NL localization pending native pass. Recovered biological claimant held pending contamination and evidence custody review.",
-          "terminal": "Draft NL localization pending native pass. QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.",
-          "audio": "Draft NL localization pending native pass. They saved the body first because the body knew the route.",
-          "in_game_wiki": "Draft NL localization pending native pass. Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
-          "external_site": "Draft NL localization pending native pass. A HECTON-8 exit can be physically successful and politically catastrophic.",
-          "field_note": "Draft NL localization pending native pass. Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
+          "title": "NL LOC HOLD: Quarantine Hold Interrogation Record",
+          "scanner": "NL LOC HOLD: Recovered biological claimant held pending contamination and evidence custody review.",
+          "terminal": "NL LOC HOLD: QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.",
+          "audio": "NL LOC HOLD: They saved the body first because the body knew the route.",
+          "in_game_wiki": "NL LOC HOLD: Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.",
+          "external_site": "NL LOC HOLD: A HECTON-8 exit can be physically successful and politically catastrophic.",
+          "field_note": "NL LOC HOLD: Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom."
         }
       }
     },
@@ -501,130 +501,130 @@
           "field_note": "Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
         },
         "ru_RU": {
-          "title": "Draft RU localization pending native pass. Corporate Coordinate Capture Record",
-          "scanner": "Draft RU localization pending native pass. Coordinate payload accepted. Deep Reach receiver priority confirmed.",
-          "terminal": "Draft RU localization pending native pass. COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.",
-          "audio": "Draft RU localization pending native pass. You opened the door from the inside.",
-          "in_game_wiki": "Draft RU localization pending native pass. Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
-          "external_site": "Draft RU localization pending native pass. The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
-          "field_note": "Draft RU localization pending native pass. Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
+          "title": "RU LOC HOLD: Corporate Coordinate Capture Record",
+          "scanner": "RU LOC HOLD: Coordinate payload accepted. Deep Reach receiver priority confirmed.",
+          "terminal": "RU LOC HOLD: COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.",
+          "audio": "RU LOC HOLD: You opened the door from the inside.",
+          "in_game_wiki": "RU LOC HOLD: Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
+          "external_site": "RU LOC HOLD: The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
+          "field_note": "RU LOC HOLD: Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
         },
         "ja_JP": {
-          "title": "Draft JA localization pending native pass. Corporate Coordinate Capture Record",
-          "scanner": "Draft JA localization pending native pass. Coordinate payload accepted. Deep Reach receiver priority confirmed.",
-          "terminal": "Draft JA localization pending native pass. COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.",
-          "audio": "Draft JA localization pending native pass. You opened the door from the inside.",
-          "in_game_wiki": "Draft JA localization pending native pass. Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
-          "external_site": "Draft JA localization pending native pass. The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
-          "field_note": "Draft JA localization pending native pass. Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
+          "title": "JA LOC HOLD: Corporate Coordinate Capture Record",
+          "scanner": "JA LOC HOLD: Coordinate payload accepted. Deep Reach receiver priority confirmed.",
+          "terminal": "JA LOC HOLD: COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.",
+          "audio": "JA LOC HOLD: You opened the door from the inside.",
+          "in_game_wiki": "JA LOC HOLD: Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
+          "external_site": "JA LOC HOLD: The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
+          "field_note": "JA LOC HOLD: Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
         },
         "zh_CN": {
-          "title": "Draft ZH localization pending native pass. Corporate Coordinate Capture Record",
-          "scanner": "Draft ZH localization pending native pass. Coordinate payload accepted. Deep Reach receiver priority confirmed.",
-          "terminal": "Draft ZH localization pending native pass. COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.",
-          "audio": "Draft ZH localization pending native pass. You opened the door from the inside.",
-          "in_game_wiki": "Draft ZH localization pending native pass. Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
-          "external_site": "Draft ZH localization pending native pass. The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
-          "field_note": "Draft ZH localization pending native pass. Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
+          "title": "ZH LOC HOLD: Corporate Coordinate Capture Record",
+          "scanner": "ZH LOC HOLD: Coordinate payload accepted. Deep Reach receiver priority confirmed.",
+          "terminal": "ZH LOC HOLD: COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.",
+          "audio": "ZH LOC HOLD: You opened the door from the inside.",
+          "in_game_wiki": "ZH LOC HOLD: Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
+          "external_site": "ZH LOC HOLD: The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
+          "field_note": "ZH LOC HOLD: Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Corporate Coordinate Capture Record",
-          "scanner": "Draft FR localization pending native pass. Coordinate payload accepted. Deep Reach receiver priority confirmed.",
-          "terminal": "Draft FR localization pending native pass. COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.",
-          "audio": "Draft FR localization pending native pass. You opened the door from the inside.",
-          "in_game_wiki": "Draft FR localization pending native pass. Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
-          "external_site": "Draft FR localization pending native pass. The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
-          "field_note": "Draft FR localization pending native pass. Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
+          "title": "FR LOC HOLD: Corporate Coordinate Capture Record",
+          "scanner": "FR LOC HOLD: Coordinate payload accepted. Deep Reach receiver priority confirmed.",
+          "terminal": "FR LOC HOLD: COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.",
+          "audio": "FR LOC HOLD: You opened the door from the inside.",
+          "in_game_wiki": "FR LOC HOLD: Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
+          "external_site": "FR LOC HOLD: The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
+          "field_note": "FR LOC HOLD: Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Corporate Coordinate Capture Record",
-          "scanner": "Draft ES localization pending native pass. Coordinate payload accepted. Deep Reach receiver priority confirmed.",
-          "terminal": "Draft ES localization pending native pass. COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.",
-          "audio": "Draft ES localization pending native pass. You opened the door from the inside.",
-          "in_game_wiki": "Draft ES localization pending native pass. Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
-          "external_site": "Draft ES localization pending native pass. The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
-          "field_note": "Draft ES localization pending native pass. Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
+          "title": "ES LOC HOLD: Corporate Coordinate Capture Record",
+          "scanner": "ES LOC HOLD: Coordinate payload accepted. Deep Reach receiver priority confirmed.",
+          "terminal": "ES LOC HOLD: COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.",
+          "audio": "ES LOC HOLD: You opened the door from the inside.",
+          "in_game_wiki": "ES LOC HOLD: Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
+          "external_site": "ES LOC HOLD: The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
+          "field_note": "ES LOC HOLD: Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Corporate Coordinate Capture Record",
-          "scanner": "Draft DE localization pending native pass. Coordinate payload accepted. Deep Reach receiver priority confirmed.",
-          "terminal": "Draft DE localization pending native pass. COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.",
-          "audio": "Draft DE localization pending native pass. You opened the door from the inside.",
-          "in_game_wiki": "Draft DE localization pending native pass. Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
-          "external_site": "Draft DE localization pending native pass. The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
-          "field_note": "Draft DE localization pending native pass. Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
+          "title": "DE LOC HOLD: Corporate Coordinate Capture Record",
+          "scanner": "DE LOC HOLD: Coordinate payload accepted. Deep Reach receiver priority confirmed.",
+          "terminal": "DE LOC HOLD: COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.",
+          "audio": "DE LOC HOLD: You opened the door from the inside.",
+          "in_game_wiki": "DE LOC HOLD: Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
+          "external_site": "DE LOC HOLD: The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
+          "field_note": "DE LOC HOLD: Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Corporate Coordinate Capture Record",
-          "scanner": "Draft PL localization pending native pass. Coordinate payload accepted. Deep Reach receiver priority confirmed.",
-          "terminal": "Draft PL localization pending native pass. COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.",
-          "audio": "Draft PL localization pending native pass. You opened the door from the inside.",
-          "in_game_wiki": "Draft PL localization pending native pass. Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
-          "external_site": "Draft PL localization pending native pass. The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
-          "field_note": "Draft PL localization pending native pass. Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
+          "title": "PL LOC HOLD: Corporate Coordinate Capture Record",
+          "scanner": "PL LOC HOLD: Coordinate payload accepted. Deep Reach receiver priority confirmed.",
+          "terminal": "PL LOC HOLD: COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.",
+          "audio": "PL LOC HOLD: You opened the door from the inside.",
+          "in_game_wiki": "PL LOC HOLD: Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
+          "external_site": "PL LOC HOLD: The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
+          "field_note": "PL LOC HOLD: Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
         },
         "uk_UA": {
-          "title": "Draft UK localization pending native pass. Corporate Coordinate Capture Record",
-          "scanner": "Draft UK localization pending native pass. Coordinate payload accepted. Deep Reach receiver priority confirmed.",
-          "terminal": "Draft UK localization pending native pass. COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.",
-          "audio": "Draft UK localization pending native pass. You opened the door from the inside.",
-          "in_game_wiki": "Draft UK localization pending native pass. Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
-          "external_site": "Draft UK localization pending native pass. The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
-          "field_note": "Draft UK localization pending native pass. Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
+          "title": "UK LOC HOLD: Corporate Coordinate Capture Record",
+          "scanner": "UK LOC HOLD: Coordinate payload accepted. Deep Reach receiver priority confirmed.",
+          "terminal": "UK LOC HOLD: COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.",
+          "audio": "UK LOC HOLD: You opened the door from the inside.",
+          "in_game_wiki": "UK LOC HOLD: Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
+          "external_site": "UK LOC HOLD: The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
+          "field_note": "UK LOC HOLD: Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Corporate Coordinate Capture Record",
-          "scanner": "Draft AR localization pending native pass. Coordinate payload accepted. Deep Reach receiver priority confirmed.",
-          "terminal": "Draft AR localization pending native pass. COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.",
-          "audio": "Draft AR localization pending native pass. You opened the door from the inside.",
-          "in_game_wiki": "Draft AR localization pending native pass. Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
-          "external_site": "Draft AR localization pending native pass. The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
-          "field_note": "Draft AR localization pending native pass. Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
+          "title": "AR LOC HOLD: Corporate Coordinate Capture Record",
+          "scanner": "AR LOC HOLD: Coordinate payload accepted. Deep Reach receiver priority confirmed.",
+          "terminal": "AR LOC HOLD: COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.",
+          "audio": "AR LOC HOLD: You opened the door from the inside.",
+          "in_game_wiki": "AR LOC HOLD: Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
+          "external_site": "AR LOC HOLD: The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
+          "field_note": "AR LOC HOLD: Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Corporate Coordinate Capture Record",
-          "scanner": "Draft ID localization pending native pass. Coordinate payload accepted. Deep Reach receiver priority confirmed.",
-          "terminal": "Draft ID localization pending native pass. COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.",
-          "audio": "Draft ID localization pending native pass. You opened the door from the inside.",
-          "in_game_wiki": "Draft ID localization pending native pass. Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
-          "external_site": "Draft ID localization pending native pass. The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
-          "field_note": "Draft ID localization pending native pass. Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
+          "title": "ID LOC HOLD: Corporate Coordinate Capture Record",
+          "scanner": "ID LOC HOLD: Coordinate payload accepted. Deep Reach receiver priority confirmed.",
+          "terminal": "ID LOC HOLD: COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.",
+          "audio": "ID LOC HOLD: You opened the door from the inside.",
+          "in_game_wiki": "ID LOC HOLD: Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
+          "external_site": "ID LOC HOLD: The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
+          "field_note": "ID LOC HOLD: Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Corporate Coordinate Capture Record",
-          "scanner": "Draft KO localization pending native pass. Coordinate payload accepted. Deep Reach receiver priority confirmed.",
-          "terminal": "Draft KO localization pending native pass. COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.",
-          "audio": "Draft KO localization pending native pass. You opened the door from the inside.",
-          "in_game_wiki": "Draft KO localization pending native pass. Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
-          "external_site": "Draft KO localization pending native pass. The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
-          "field_note": "Draft KO localization pending native pass. Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
+          "title": "KO LOC HOLD: Corporate Coordinate Capture Record",
+          "scanner": "KO LOC HOLD: Coordinate payload accepted. Deep Reach receiver priority confirmed.",
+          "terminal": "KO LOC HOLD: COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.",
+          "audio": "KO LOC HOLD: You opened the door from the inside.",
+          "in_game_wiki": "KO LOC HOLD: Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
+          "external_site": "KO LOC HOLD: The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
+          "field_note": "KO LOC HOLD: Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Corporate Coordinate Capture Record",
-          "scanner": "Draft HE localization pending native pass. Coordinate payload accepted. Deep Reach receiver priority confirmed.",
-          "terminal": "Draft HE localization pending native pass. COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.",
-          "audio": "Draft HE localization pending native pass. You opened the door from the inside.",
-          "in_game_wiki": "Draft HE localization pending native pass. Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
-          "external_site": "Draft HE localization pending native pass. The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
-          "field_note": "Draft HE localization pending native pass. Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
+          "title": "HE LOC HOLD: Corporate Coordinate Capture Record",
+          "scanner": "HE LOC HOLD: Coordinate payload accepted. Deep Reach receiver priority confirmed.",
+          "terminal": "HE LOC HOLD: COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.",
+          "audio": "HE LOC HOLD: You opened the door from the inside.",
+          "in_game_wiki": "HE LOC HOLD: Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
+          "external_site": "HE LOC HOLD: The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
+          "field_note": "HE LOC HOLD: Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Corporate Coordinate Capture Record",
-          "scanner": "Draft PT localization pending native pass. Coordinate payload accepted. Deep Reach receiver priority confirmed.",
-          "terminal": "Draft PT localization pending native pass. COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.",
-          "audio": "Draft PT localization pending native pass. You opened the door from the inside.",
-          "in_game_wiki": "Draft PT localization pending native pass. Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
-          "external_site": "Draft PT localization pending native pass. The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
-          "field_note": "Draft PT localization pending native pass. Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
+          "title": "PT LOC HOLD: Corporate Coordinate Capture Record",
+          "scanner": "PT LOC HOLD: Coordinate payload accepted. Deep Reach receiver priority confirmed.",
+          "terminal": "PT LOC HOLD: COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.",
+          "audio": "PT LOC HOLD: You opened the door from the inside.",
+          "in_game_wiki": "PT LOC HOLD: Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
+          "external_site": "PT LOC HOLD: The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
+          "field_note": "PT LOC HOLD: Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Corporate Coordinate Capture Record",
-          "scanner": "Draft NL localization pending native pass. Coordinate payload accepted. Deep Reach receiver priority confirmed.",
-          "terminal": "Draft NL localization pending native pass. COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.",
-          "audio": "Draft NL localization pending native pass. You opened the door from the inside.",
-          "in_game_wiki": "Draft NL localization pending native pass. Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
-          "external_site": "Draft NL localization pending native pass. The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
-          "field_note": "Draft NL localization pending native pass. Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
+          "title": "NL LOC HOLD: Corporate Coordinate Capture Record",
+          "scanner": "NL LOC HOLD: Coordinate payload accepted. Deep Reach receiver priority confirmed.",
+          "terminal": "NL LOC HOLD: COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.",
+          "audio": "NL LOC HOLD: You opened the door from the inside.",
+          "in_game_wiki": "NL LOC HOLD: Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.",
+          "external_site": "NL LOC HOLD: The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.",
+          "field_note": "NL LOC HOLD: Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach."
         }
       }
     },
@@ -656,130 +656,130 @@
           "field_note": "Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
         },
         "ru_RU": {
-          "title": "Draft RU localization pending native pass. Public Ledger Aftershock Record",
-          "scanner": "Draft RU localization pending native pass. Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.",
-          "terminal": "Draft RU localization pending native pass. PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.",
-          "audio": "Draft RU localization pending native pass. Truth left the room. It did not ask where to go next.",
-          "in_game_wiki": "Draft RU localization pending native pass. Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
-          "external_site": "Draft RU localization pending native pass. HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
-          "field_note": "Draft RU localization pending native pass. Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
+          "title": "RU LOC HOLD: Public Ledger Aftershock Record",
+          "scanner": "RU LOC HOLD: Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.",
+          "terminal": "RU LOC HOLD: PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.",
+          "audio": "RU LOC HOLD: Truth left the room. It did not ask where to go next.",
+          "in_game_wiki": "RU LOC HOLD: Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
+          "external_site": "RU LOC HOLD: HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
+          "field_note": "RU LOC HOLD: Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
         },
         "ja_JP": {
-          "title": "Draft JA localization pending native pass. Public Ledger Aftershock Record",
-          "scanner": "Draft JA localization pending native pass. Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.",
-          "terminal": "Draft JA localization pending native pass. PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.",
-          "audio": "Draft JA localization pending native pass. Truth left the room. It did not ask where to go next.",
-          "in_game_wiki": "Draft JA localization pending native pass. Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
-          "external_site": "Draft JA localization pending native pass. HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
-          "field_note": "Draft JA localization pending native pass. Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
+          "title": "JA LOC HOLD: Public Ledger Aftershock Record",
+          "scanner": "JA LOC HOLD: Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.",
+          "terminal": "JA LOC HOLD: PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.",
+          "audio": "JA LOC HOLD: Truth left the room. It did not ask where to go next.",
+          "in_game_wiki": "JA LOC HOLD: Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
+          "external_site": "JA LOC HOLD: HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
+          "field_note": "JA LOC HOLD: Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
         },
         "zh_CN": {
-          "title": "Draft ZH localization pending native pass. Public Ledger Aftershock Record",
-          "scanner": "Draft ZH localization pending native pass. Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.",
-          "terminal": "Draft ZH localization pending native pass. PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.",
-          "audio": "Draft ZH localization pending native pass. Truth left the room. It did not ask where to go next.",
-          "in_game_wiki": "Draft ZH localization pending native pass. Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
-          "external_site": "Draft ZH localization pending native pass. HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
-          "field_note": "Draft ZH localization pending native pass. Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
+          "title": "ZH LOC HOLD: Public Ledger Aftershock Record",
+          "scanner": "ZH LOC HOLD: Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.",
+          "terminal": "ZH LOC HOLD: PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.",
+          "audio": "ZH LOC HOLD: Truth left the room. It did not ask where to go next.",
+          "in_game_wiki": "ZH LOC HOLD: Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
+          "external_site": "ZH LOC HOLD: HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
+          "field_note": "ZH LOC HOLD: Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
         },
         "fr_FR": {
-          "title": "Draft FR localization pending native pass. Public Ledger Aftershock Record",
-          "scanner": "Draft FR localization pending native pass. Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.",
-          "terminal": "Draft FR localization pending native pass. PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.",
-          "audio": "Draft FR localization pending native pass. Truth left the room. It did not ask where to go next.",
-          "in_game_wiki": "Draft FR localization pending native pass. Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
-          "external_site": "Draft FR localization pending native pass. HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
-          "field_note": "Draft FR localization pending native pass. Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
+          "title": "FR LOC HOLD: Public Ledger Aftershock Record",
+          "scanner": "FR LOC HOLD: Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.",
+          "terminal": "FR LOC HOLD: PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.",
+          "audio": "FR LOC HOLD: Truth left the room. It did not ask where to go next.",
+          "in_game_wiki": "FR LOC HOLD: Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
+          "external_site": "FR LOC HOLD: HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
+          "field_note": "FR LOC HOLD: Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
         },
         "es_ES": {
-          "title": "Draft ES localization pending native pass. Public Ledger Aftershock Record",
-          "scanner": "Draft ES localization pending native pass. Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.",
-          "terminal": "Draft ES localization pending native pass. PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.",
-          "audio": "Draft ES localization pending native pass. Truth left the room. It did not ask where to go next.",
-          "in_game_wiki": "Draft ES localization pending native pass. Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
-          "external_site": "Draft ES localization pending native pass. HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
-          "field_note": "Draft ES localization pending native pass. Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
+          "title": "ES LOC HOLD: Public Ledger Aftershock Record",
+          "scanner": "ES LOC HOLD: Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.",
+          "terminal": "ES LOC HOLD: PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.",
+          "audio": "ES LOC HOLD: Truth left the room. It did not ask where to go next.",
+          "in_game_wiki": "ES LOC HOLD: Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
+          "external_site": "ES LOC HOLD: HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
+          "field_note": "ES LOC HOLD: Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
         },
         "de_DE": {
-          "title": "Draft DE localization pending native pass. Public Ledger Aftershock Record",
-          "scanner": "Draft DE localization pending native pass. Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.",
-          "terminal": "Draft DE localization pending native pass. PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.",
-          "audio": "Draft DE localization pending native pass. Truth left the room. It did not ask where to go next.",
-          "in_game_wiki": "Draft DE localization pending native pass. Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
-          "external_site": "Draft DE localization pending native pass. HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
-          "field_note": "Draft DE localization pending native pass. Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
+          "title": "DE LOC HOLD: Public Ledger Aftershock Record",
+          "scanner": "DE LOC HOLD: Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.",
+          "terminal": "DE LOC HOLD: PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.",
+          "audio": "DE LOC HOLD: Truth left the room. It did not ask where to go next.",
+          "in_game_wiki": "DE LOC HOLD: Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
+          "external_site": "DE LOC HOLD: HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
+          "field_note": "DE LOC HOLD: Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
         },
         "pl_PL": {
-          "title": "Draft PL localization pending native pass. Public Ledger Aftershock Record",
-          "scanner": "Draft PL localization pending native pass. Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.",
-          "terminal": "Draft PL localization pending native pass. PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.",
-          "audio": "Draft PL localization pending native pass. Truth left the room. It did not ask where to go next.",
-          "in_game_wiki": "Draft PL localization pending native pass. Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
-          "external_site": "Draft PL localization pending native pass. HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
-          "field_note": "Draft PL localization pending native pass. Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
+          "title": "PL LOC HOLD: Public Ledger Aftershock Record",
+          "scanner": "PL LOC HOLD: Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.",
+          "terminal": "PL LOC HOLD: PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.",
+          "audio": "PL LOC HOLD: Truth left the room. It did not ask where to go next.",
+          "in_game_wiki": "PL LOC HOLD: Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
+          "external_site": "PL LOC HOLD: HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
+          "field_note": "PL LOC HOLD: Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
         },
         "uk_UA": {
-          "title": "Draft UK localization pending native pass. Public Ledger Aftershock Record",
-          "scanner": "Draft UK localization pending native pass. Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.",
-          "terminal": "Draft UK localization pending native pass. PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.",
-          "audio": "Draft UK localization pending native pass. Truth left the room. It did not ask where to go next.",
-          "in_game_wiki": "Draft UK localization pending native pass. Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
-          "external_site": "Draft UK localization pending native pass. HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
-          "field_note": "Draft UK localization pending native pass. Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
+          "title": "UK LOC HOLD: Public Ledger Aftershock Record",
+          "scanner": "UK LOC HOLD: Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.",
+          "terminal": "UK LOC HOLD: PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.",
+          "audio": "UK LOC HOLD: Truth left the room. It did not ask where to go next.",
+          "in_game_wiki": "UK LOC HOLD: Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
+          "external_site": "UK LOC HOLD: HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
+          "field_note": "UK LOC HOLD: Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
         },
         "ar_SA": {
-          "title": "Draft AR localization pending native pass. Public Ledger Aftershock Record",
-          "scanner": "Draft AR localization pending native pass. Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.",
-          "terminal": "Draft AR localization pending native pass. PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.",
-          "audio": "Draft AR localization pending native pass. Truth left the room. It did not ask where to go next.",
-          "in_game_wiki": "Draft AR localization pending native pass. Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
-          "external_site": "Draft AR localization pending native pass. HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
-          "field_note": "Draft AR localization pending native pass. Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
+          "title": "AR LOC HOLD: Public Ledger Aftershock Record",
+          "scanner": "AR LOC HOLD: Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.",
+          "terminal": "AR LOC HOLD: PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.",
+          "audio": "AR LOC HOLD: Truth left the room. It did not ask where to go next.",
+          "in_game_wiki": "AR LOC HOLD: Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
+          "external_site": "AR LOC HOLD: HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
+          "field_note": "AR LOC HOLD: Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
         },
         "id_ID": {
-          "title": "Draft ID localization pending native pass. Public Ledger Aftershock Record",
-          "scanner": "Draft ID localization pending native pass. Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.",
-          "terminal": "Draft ID localization pending native pass. PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.",
-          "audio": "Draft ID localization pending native pass. Truth left the room. It did not ask where to go next.",
-          "in_game_wiki": "Draft ID localization pending native pass. Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
-          "external_site": "Draft ID localization pending native pass. HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
-          "field_note": "Draft ID localization pending native pass. Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
+          "title": "ID LOC HOLD: Public Ledger Aftershock Record",
+          "scanner": "ID LOC HOLD: Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.",
+          "terminal": "ID LOC HOLD: PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.",
+          "audio": "ID LOC HOLD: Truth left the room. It did not ask where to go next.",
+          "in_game_wiki": "ID LOC HOLD: Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
+          "external_site": "ID LOC HOLD: HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
+          "field_note": "ID LOC HOLD: Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
         },
         "ko_KR": {
-          "title": "Draft KO localization pending native pass. Public Ledger Aftershock Record",
-          "scanner": "Draft KO localization pending native pass. Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.",
-          "terminal": "Draft KO localization pending native pass. PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.",
-          "audio": "Draft KO localization pending native pass. Truth left the room. It did not ask where to go next.",
-          "in_game_wiki": "Draft KO localization pending native pass. Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
-          "external_site": "Draft KO localization pending native pass. HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
-          "field_note": "Draft KO localization pending native pass. Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
+          "title": "KO LOC HOLD: Public Ledger Aftershock Record",
+          "scanner": "KO LOC HOLD: Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.",
+          "terminal": "KO LOC HOLD: PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.",
+          "audio": "KO LOC HOLD: Truth left the room. It did not ask where to go next.",
+          "in_game_wiki": "KO LOC HOLD: Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
+          "external_site": "KO LOC HOLD: HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
+          "field_note": "KO LOC HOLD: Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
         },
         "he_IL": {
-          "title": "Draft HE localization pending native pass. Public Ledger Aftershock Record",
-          "scanner": "Draft HE localization pending native pass. Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.",
-          "terminal": "Draft HE localization pending native pass. PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.",
-          "audio": "Draft HE localization pending native pass. Truth left the room. It did not ask where to go next.",
-          "in_game_wiki": "Draft HE localization pending native pass. Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
-          "external_site": "Draft HE localization pending native pass. HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
-          "field_note": "Draft HE localization pending native pass. Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
+          "title": "HE LOC HOLD: Public Ledger Aftershock Record",
+          "scanner": "HE LOC HOLD: Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.",
+          "terminal": "HE LOC HOLD: PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.",
+          "audio": "HE LOC HOLD: Truth left the room. It did not ask where to go next.",
+          "in_game_wiki": "HE LOC HOLD: Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
+          "external_site": "HE LOC HOLD: HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
+          "field_note": "HE LOC HOLD: Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
         },
         "pt_BR": {
-          "title": "Draft PT localization pending native pass. Public Ledger Aftershock Record",
-          "scanner": "Draft PT localization pending native pass. Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.",
-          "terminal": "Draft PT localization pending native pass. PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.",
-          "audio": "Draft PT localization pending native pass. Truth left the room. It did not ask where to go next.",
-          "in_game_wiki": "Draft PT localization pending native pass. Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
-          "external_site": "Draft PT localization pending native pass. HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
-          "field_note": "Draft PT localization pending native pass. Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
+          "title": "PT LOC HOLD: Public Ledger Aftershock Record",
+          "scanner": "PT LOC HOLD: Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.",
+          "terminal": "PT LOC HOLD: PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.",
+          "audio": "PT LOC HOLD: Truth left the room. It did not ask where to go next.",
+          "in_game_wiki": "PT LOC HOLD: Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
+          "external_site": "PT LOC HOLD: HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
+          "field_note": "PT LOC HOLD: Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
         },
         "nl_NL": {
-          "title": "Draft NL localization pending native pass. Public Ledger Aftershock Record",
-          "scanner": "Draft NL localization pending native pass. Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.",
-          "terminal": "Draft NL localization pending native pass. PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.",
-          "audio": "Draft NL localization pending native pass. Truth left the room. It did not ask where to go next.",
-          "in_game_wiki": "Draft NL localization pending native pass. Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
-          "external_site": "Draft NL localization pending native pass. HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
-          "field_note": "Draft NL localization pending native pass. Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
+          "title": "NL LOC HOLD: Public Ledger Aftershock Record",
+          "scanner": "NL LOC HOLD: Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.",
+          "terminal": "NL LOC HOLD: PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.",
+          "audio": "NL LOC HOLD: Truth left the room. It did not ask where to go next.",
+          "in_game_wiki": "NL LOC HOLD: Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.",
+          "external_site": "NL LOC HOLD: HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.",
+          "field_note": "NL LOC HOLD: Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation."
         }
       }
     }

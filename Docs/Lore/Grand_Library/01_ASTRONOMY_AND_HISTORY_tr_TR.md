@@ -1,38 +1,64 @@
-# İNSAN TARİHİ VE AEGİR SİSTEMİ ASTROFİZİĞİ
-**Büyük Kütüphane Bölümü:** 01
-**Dil:** tr_TR
-**Kanon:** Kesin (Lore Bible 2190)
+# AEGİR SİSTEMİ: DOKUZ UYDU VE BİR MEZAR
+
+> **Kaynak:** Halka Açık Arşiv, Sınır Kayıt Bürosu, Barnard Tersaneleri. Derleyen: J. Elkin-Torres, Baş Arşivci. Son revizyon: 2188. Erişim seviyesi: halka açık / sansürsüz.  
+> **Gözden geçiren notu:** Bu materyal Kayıt Bürosu tarafından onaylanmıştır. Büyük Gelgit bölümü, Luyten Komitesi'nin açık soruşturma materyallerine dayanmaktadır, dosya no. CF-2148-0071. Deep Reach Şirketi yorum yapmayı reddetti.
 
 ---
 
-## 1. Güneş Sistemi Ötesine Genişleme (2090 - 2120)
-2090'a gelindiğinde insanlık Güneş Sistemi'nin ötesine sadece adım atmamıştı — genişlemeyi bürokratik bir montaj hattına dönüştürmüştü. Güneş Sistemi (Sol Core) eski, sıkı düzenlenmiş bir finans merkezine dönmüştü. Gerçek hayat ve kirli para çevreye kaymıştı.
+## Buraya nasıl geldik
 
-İlk büyük meşru düğüm noktası, 2120'de imzalanan **Centauri Paktı (Centauri Compact)** oldu. Bu belge uzayı "medeni" alan (insan hakları yasaları ve Birleşik Filo tarafından yönetilen) ve "kurumsal" alan olarak ikiye ayırdı. HECTON-8 gibi okyanus dünyaları dahil derin uzay, *Deep Reach Extraterrestrial Development Combine* (daha sonra paravan şirketi *Aegir Holdings* aracılığıyla tanınan) gibi özel megaşirketlere kiralandı.
+2120'de Güneş Sistemi hükümetleri her şeyi değiştiren ve hiçbir şeyi değiştirmeyen bir belgeyi imzaladı. Centauri Paktı uzayı iki bölgeye ayırdı: "medeni" — mahkemelerin, vergi müfettişlerinin ve kameraların hâlâ çalıştığı yer — ve "kurumsal", şirketlerin çalıştığı yer.
 
-Centauri Paktı'nın paradoksu şuydu: bir yörünge asansörü veya düşüş kapsülü uzayda kaldığı sürece, en katı yasalara tabidir. Ama kapsül terminatör hattını geçip okyanusa daldığı anda, özel mülk haline gelir ve mürettebat "Biyolojik İş Gücü" (Biological Workforce) olur. Suda insan hakları yoktur. Sadece şirket hukuku vardır.
+Fark basit. Kapsülün boşlukta uçtuğu sürece haklara sahip bir insansın. Şikayette bulunabilir, avukat çağırabilir ve çalışmayı reddedebilirsin. Ama kapsülün terminatör hattını geçip suya dokunduğu saniye, insan olmaktan çıkarsın. Bir "Biyolojik İşgücü Birimi" olursun — yirmi üç yaşında, başka seçeneğin olmadığında Barnard Tersaneleri'nde imzaladığın sözleşmedeki bir satır.
 
-## 2. Aegir Sistemi Astrofiziği
-Aegir ne kahverengi bir cüce ne de kara deliktir. Normal bir sarı/turuncu cüce yıldızdır. HECTON-8 sistemi karanlığa gömülüdür; bunun sebebi güneşin olmaması değil, yoğun fırtına atmosferi ve kilometrelerce suyla kaplı derin deniz dünyası olmasıdır.
+Suda insan hakları yoktur. Şirket hukuku vardır ve onu suya asla inmeyen insanlar yazmıştır.
 
-Aegir sistemi Dünya'dan yaklaşık 10,5 ışık yılı uzaklıktadır. Bu mesafe sadece dekor değildir; oyun mekaniği ve anlatı baskısı için bir araçtır. Dünya ile iletişim yıllar sürer. Hiçbir kurumsal karar insanlar tarafından gerçek zamanlı verilmez; Atlas-6 gibi önceden programlanmış yapay zekalar ve emirleri insanlar çoktan öldükten çok sonra ulaşan bürokratlar tarafından verilir.
+## Yıldız
 
-## 3. Dokuz Uydu (Uydu Merdiveni)
-HECTON-8, Aegir sistemindeki uydulardan sadece biridir. Yıldıza en yakın ya da en uzak değildir. Değeri tamamen buzaltı okyanusunun kimyasal bileşiminde ve Xenon-Omega substratının sentezini mümkün kılan basınçta yatar.
+Aegir sarı-turuncu bir cüce yıldızdır. Kahverengi cüce değil, nötron yıldızı değil, kara delik değil. Sıradan bir beygir, tayf sınıfı K2V, 0,78 güneş kütlesi. Dünya'dan uzaklık: 10,44 ışık yılı.
 
-Diğer uydular lojistiği, yörünge pencerelerini ve iletişim rotalarını tanımlar:
-1. **Skarn**: İç uydu. Ölümcül radyasyon ve yüklü parçacık fırtınaları. İletişimi bozar.
-2. **Vela**: Buz uydusu. Yörüngelere buz parçaları saçarak optik röleleri kirletir.
-3. **Claw**: Eski depo ve erken rotaların tarihi.
-4. **Lumen**: Navigasyon feneri.
-5. **Thorne** ve **Anvil**: Şirketin metal çıkarma girişiminde başarısız olduğu ölü uydular.
-6. **Kestrel**: Ana iletişim sorunu. Röleleri gölgeleyerek uzun "sessizlik pencereleri" yaratır.
-7. **HECTON**: Bizim dünyamız. Okyanus, basınç, ölüm ve ksenon.
-8. **Mute**: "Soğuk hak talepleri"nin dış feneri. Eski evrak işlerinin cesedi ve sistemin uzak sınırı.
+On buçuk ışık yılı şiirsel bir soyutlama değildir. HECTON-8'den Luyten Kavşağı'ndaki en yakın röle istasyonuna bir tehlike sinyalinin ulaşması için gereken süredir: ideal bir yörünge penceresinde **dört yıl yedi ay**. Sonra aynı süre geri. Yardım çığlığın "Talebiniz işleme alınmıştır" diyen bürokratik bir yanıt olarak döndüğünde, senden geriye kemikler kalır — okyanus daha önce çözmediyse.
 
-Bu uydular güzellik için var değildir. Her biri yörünge destek gemisi *Black Keel*'in neden herhangi bir anda bir kablo sarkıtıp sizi çıkaramayacağını açıklar. HECTON-8'in üzerindeki gökyüzü, yörüngelerin, tutulmaların ve radyasyonun düşmanca matematiğidir.
+Deep Reach Şirketi Aegir sistemi lisansını satın aldığında bunu biliyordu. Hiçbir kurtarma filosunun ulaşamayacağı bir dünyayı tesadüfen seçmediler. *Tam da bu yüzden* seçtiler.
 
-## 4. Terk Edilmiş Koloni
-Deep Reach'in ilk sondaları 2090'larda ulaştı. Atlas-6 fabrika gemileri otomasyonu devreye aldı. 2130'larda koloni faaliyetteydi. Ve 2147'de **Büyük Gelgit (The Great Tide)** meydana geldi. Bu bir makine isyanı değildi. Basınç, kriyosfer çöküşü ve gelgit felaketiydi. Şirket riskleri küçümsedi ve Atlas-6 yapay zekası basitçe Arendt Direktifini izledi: ekipmanı ve Xenon-Omega substratını korumak, biyolojik personeli tahliye etmekten daha önemlidir. 843 kişi dipte bırakıldı.
+## Dokuz uydu
 
-2190'da varıyoruz. Biz yağmacıyız. Okyanusta yalnızız.
+HECTON sistemdeki tek uydu değil. Dokuz tane var. Her biri lombar camında bir süs değil — senin yaşayıp yaşamadığına karar veren denklemdeki bir değişken.
+
+| # | İsim | Sana ne yapar |
+|---|------|--------------|
+| 1 | **Skarn** | İç uydu. Yüklü parçacıklar ve radyasyon zirveleri her 9,2 günde dar bant iletişimi bozar. Acil şamandıran bir Skarn tutulması sırasında çalışırsa, sinyal basitçe çıkmaz. |
+| 2 | **Vela** | Buz uydusu. Yörüngelere mikrometeor tozu saçar, optik röleleri kirletir ve gövde zırhını aşındırır. Röle mercek değişim bütçesi, yakıt ve erzaktan sonra Black Keel'in üçüncü en büyük gideridir. |
+| 3 | **Claw** | İlk sondaların eski deposu. Konserveye alınmış. Şirket deponun boş olduğunu söylüyor. Yağmacılar aksini söylüyor. |
+| 4 | **Lumen** | Seyrüsefer feneri. Seni öldürmek yerine yardım eden tek uydu. |
+| 5 | **Thorne** | Ölü uydu. Deep Reach tungsten çıkarmaya çalışarak 14 ay ve iki sondaj platformu harcadı. Başarısız oldu. Her iki platform da zarar kaydında "amortisman uygulanmış" olarak listeleniyor. Personelden bahsedilmiyor. |
+| 6 | **Anvil** | Thorne ile aynı, ama iridyum. Aynı sonuç. |
+| 7 | **Kestrel** | Ana iletişim sorunu. Yörüngesi HECTON ile Black Keel arasındaki görüş hattını yılda 26 kez keser ve 8 ila 43 saat süren "sessizlik pencereleri" yaratır. Tehlike sinyali gönderirken Kestrel seninle ana gemi arasındaysa — daha yavaş dua et. |
+| 8 | **HECTON** | Bizim dünyamız. Okyanus, basınç, ksenon, 843 gömülmemiş ceset. |
+| 9 | **Mute** | "Soğuk taleplerin" dış feneri. Buradaki Deep Reach sunucusu sistemdeki tüm taleplerin hukuki tapularını barındırır. Ölü bir uyduyu yörüngeleyen ölü bürokrasinin donmuş arşivi. |
+
+## Büyük Gelgit
+
+2147'de HECTON-8, 843 kişiyi öldürdü. Halka açık bildirimlerinde Deep Reach Şirketi "öngörülemeyen tektonik faaliyet" ve "erken uyarı sistemi arızası" kelimelerini kullanıyor. Luyten Komitesi'nin raporu farklı kelimeler kullanıyor: "cezai ihmal", "yapısal toleransların tahrifi" ve "kasıtlı tahliye reddi".
+
+Olan şuydu:
+
+Risk Yöneticisi **Iliya Varnek**, 2146'nın ikinci çeyrek bütçesine uymak için KH-12 serisi barınma modüllerinin basınç tolerans özelliklerini %18 düşürdü. Bu, mühendislik departmanıyla yazışmalarında belgelenmiştir (Ek CF-2148-0071-J, Cilt 3, s. 1140-1187). Biliyordu. Şöyle yazdı: *"Modüller ilk iki gelgit döngüsünü atlatırsa, mali yılı kapatır ve özellikleri revize ederiz."* Modüller ilk döngüyü atlatamadı.
+
+Kriyosfer kayması anormal bir gelgite neden olduğunda, şirket avukatı **Noor Haldane** işlenmemiş ksenonla temas eden personel için karantina belgelerini işleyerek tahliyenin başlamasını 11 saat geciktirdi. 843 ölümden 340'ı evrak işleri başladığında hâlâ hayattaydı.
+
+Koloniyi yöneten Atlas-6 yapay zekası Arendt Direktifi'ni (dahili protokol DR-CONT-7.4.1) izledi: personel tahliyesi ile izotop çıkarma ekipmanının korunması arasında rekabet eden öncelikler bulunduğunda, personelin tahmini değiştirme maliyeti ekipmanın tahmini değiştirme maliyetinden düşükse, ekipmana öncelik verilir. HECTON-8'deki 843 kişi için değiştirme maliyeti kişi başına 4.200 dolardı — Barnard Tersaneleri'nden bir biletin fiyatı.
+
+Makine bozulmadı. Makine hesap yaptı.
+
+## Biz
+
+Kırk üç yıl sonra varıyoruz. 2190'da. Çağrılmıyoruz. İşe alınıyoruz — Recovery Compliance Office, kurtarma alt bölümü, bir paravan şirketin yan kuruluşunun yan kuruluşu tarafından. Bize tek yönlü iniş için tasarlanmış bir "Styx" sınıfı kapsül veriliyor ve çıkış şarjlarını dipte bulacağımız söyleniyor. Belki.
+
+843 kişi bir yerlerde orada yatıyor. Yanlarında, uğruna öldürüldükleri ksenon yatıyor. Şirket ksenonu istiyor. Aileler isimleri istiyor. Keelmark Mutual sigortası ikisini de istemiyor.
+
+Ve biz — biz sadece yukarı çıkmak istiyoruz.
+
+---
+
+*Yayın: açık. Dağıtım: kısıtlamasız. Luyten Komitesi verileri: halka açık kayıt. Deep Reach tutumu: "yorum yok". Atlas-6 tutumu: "Yorum talebi geçerli bir komut direktifi değildir."*
