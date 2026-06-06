@@ -38,7 +38,9 @@ namespace Hecton8.Gameplay
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private const float DoseDecayPerSimulationStep = 0.999f;
         private const float RadiationSlowTickIntervalSeconds = 0.1f;
-        private const float DefaultCellSizeMeters = 4f;
+        private const float DefaultCellSizeMeters = SaveData.RadiationGridDefaultCellSizeMeters;
+        private const float MinCellSizeMeters = SaveData.RadiationGridMinCellSizeMeters;
+        private const float MaxCellSizeMeters = SaveData.RadiationGridMaxCellSizeMeters;
         private const float DefaultSourceRadiusMeters = 18f;
         private const float StaticVfxThreshold = 0.5f;
         private const float IodineDoseReduction = 50f;
@@ -144,7 +146,7 @@ namespace Hecton8.Gameplay
             }
         }
 
-        [SerializeField, Min(0.5f)] private float cellSizeMeters = DefaultCellSizeMeters;
+        [SerializeField, Min(MinCellSizeMeters)] private float cellSizeMeters = DefaultCellSizeMeters;
         [FormerlySerializedAs("doseScalePerFrostTick")]
         [SerializeField, Min(0f)] private float doseScalePerSimulationSecond = 1f;
         [SerializeField] private TextAsset radiationProfilesCsv;
@@ -571,7 +573,7 @@ namespace Hecton8.Gameplay
             EnsureNativeBuffers();
             CompleteDiffusionJobIfReady();
             data.radiationDose = math.max(0f, math.isfinite(_accumulatedRadiationDose) ? _accumulatedRadiationDose : 0f);
-            data.radiationGridCellSizeMeters = SanitizeRange(cellSizeMeters, DefaultCellSizeMeters, 0.5f, 1000f);
+            data.radiationGridCellSizeMeters = SanitizeRange(cellSizeMeters, DefaultCellSizeMeters, MinCellSizeMeters, MaxCellSizeMeters);
             double3 origin = _hasGridOrigin ? _gridOriginAup.ToAbsoluteDouble3() : double3.zero;
             data.radiationGridOriginX = origin.x;
             data.radiationGridOriginY = origin.y;
@@ -598,11 +600,26 @@ namespace Hecton8.Gameplay
             ClearGrid(_gridRead);
             ClearGrid(_gridWrite);
             ClearGrid(_gridSource);
+            RepairRadiationSourceCountFromBuffer();
+            _hasGridOrigin = false;
+            _lastRadiationState = default;
+            _lastGridIntensity01 = 0f;
+            _lastExternalIntensity01 = 0f;
+            _pendingExternalDoseRad = 0f;
+            _pendingIodineDoseReductionRad = 0f;
+            _lastShieldingFactor01 = 0f;
+            _lastCellularDegradation01 = 0f;
+            _geigerPhase = 0f;
+            _lastItemSignalDrainFrame = -1;
+            _lastItemSignalDeferFrame = -1;
+            _lastSourceSignalDrainFrame = -1;
+            _lastSourceSignalPreserveFrame = -1;
+            _lastExternalDoseSignalDrainFrame = -1;
 
             if (data == null)
             {
                 _accumulatedRadiationDose = 0f;
-                _lastRadiationState = default;
+                RestoreGridOriginFromActiveSourceOrDefault();
                 if (_radiationStates.IsCreated && _radiationStates.Length > 0)
                     _radiationStates[0] = default;
                 return;
@@ -616,8 +633,10 @@ namespace Hecton8.Gameplay
                 state.CurrentExposureRate = SanitizeNonNegative(_lastGridIntensity01);
                 _radiationStates[0] = state;
             }
-            cellSizeMeters = SanitizeRange(data.radiationGridCellSizeMeters, DefaultCellSizeMeters, 0.5f, 1000f);
-            if (math.isfinite(data.radiationGridOriginX) &&
+            cellSizeMeters = SanitizeRange(data.radiationGridCellSizeMeters, DefaultCellSizeMeters, MinCellSizeMeters, MaxCellSizeMeters);
+            int persistedRleLength = ClampPersistedRadiationRleLength(data.radiationGridRle, data.radiationGridRleLength);
+            if (persistedRleLength >= RlePacketSizeBytes &&
+                math.isfinite(data.radiationGridOriginX) &&
                 math.isfinite(data.radiationGridOriginY) &&
                 math.isfinite(data.radiationGridOriginZ))
             {
@@ -627,8 +646,14 @@ namespace Hecton8.Gameplay
                     data.radiationGridOriginZ));
                 _hasGridOrigin = true;
             }
+            else
+            {
+                RestoreGridOriginFromActiveSourceOrDefault();
+            }
 
-            DecodeSparseRle(data.radiationGridRle, data.radiationGridRleLength);
+            if (_hasGridOrigin && persistedRleLength >= RlePacketSizeBytes)
+                DecodeSparseRle(data.radiationGridRle, persistedRleLength);
+
             if (applyPlayerContext)
                 ApplyDoseToPlayerContext(ResolvePlayerRuntimeContext(), _accumulatedRadiationDose, _lastGridIntensity01);
         }
@@ -740,6 +765,71 @@ namespace Hecton8.Gameplay
             };
             _sourceVersion++;
             return true;
+        }
+
+        private void RepairRadiationSourceCountFromBuffer()
+        {
+            int activeCount = 0;
+            if (_sources.IsCreated)
+            {
+                int capacity = math.clamp(MaxSourceCount, 0, _sources.Length);
+                for (int i = 0; i < capacity; i++)
+                {
+                    RadiationSource source = _sources[i];
+                    if (source.Active == 0 || source.Intensity01 <= 0f)
+                        continue;
+
+                    activeCount++;
+                }
+            }
+
+            if (_activeSourceCount == activeCount)
+            {
+                if (_sourceCountLane.IsCreated && _sourceCountLane.Length > 0 && _sourceCountLane[0] != activeCount)
+                    _sourceCountLane[0] = activeCount;
+                return;
+            }
+
+            _activeSourceCount = activeCount;
+            if (_sourceCountLane.IsCreated && _sourceCountLane.Length > 0)
+                _sourceCountLane[0] = activeCount;
+            _sourceVersion++;
+        }
+
+        private void RestoreGridOriginFromActiveSourceOrDefault()
+        {
+            if (TryResolveFirstActiveRadiationSourceOrigin(out AbsoluteUniversePosition sourceAup))
+            {
+                _gridOriginAup = sourceAup;
+                _hasGridOrigin = true;
+                return;
+            }
+
+            _gridOriginAup = default;
+            _hasGridOrigin = false;
+        }
+
+        private bool TryResolveFirstActiveRadiationSourceOrigin(out AbsoluteUniversePosition sourceAup)
+        {
+            sourceAup = default;
+            if (!_sources.IsCreated)
+                return false;
+
+            int capacity = math.clamp(MaxSourceCount, 0, _sources.Length);
+            for (int i = 0; i < capacity; i++)
+            {
+                RadiationSource source = _sources[i];
+                if (source.Active == 0 || source.Intensity01 <= 0f)
+                    continue;
+
+                if (!math.all(math.isfinite(source.PositionAup)))
+                    continue;
+
+                sourceAup = AbsoluteUniversePosition.FromAbsolutePosition(source.PositionAup);
+                return AbsoluteUniversePosition.IsFinite(in sourceAup);
+            }
+
+            return false;
         }
 
         private void UnregisterSourceInternal(int sourceId)
@@ -1394,7 +1484,7 @@ namespace Hecton8.Gameplay
                 return;
 
             double3 origin = _gridOriginAup.ToAbsoluteDouble3();
-            float safeCellSize = SanitizeRange(cellSizeMeters, DefaultCellSizeMeters, 0.5f, 1000f);
+            float safeCellSize = SanitizeRange(cellSizeMeters, DefaultCellSizeMeters, MinCellSizeMeters, MaxCellSizeMeters);
             int half = GridResolution >> 1;
 
             for (int sourceIndex = 0; sourceIndex < MaxSourceCount; sourceIndex++)
@@ -2010,7 +2100,7 @@ namespace Hecton8.Gameplay
             if (!math.all(math.isfinite(offset)))
                 return false;
 
-            float safeCellSize = SanitizeRange(cellSizeMeters, DefaultCellSizeMeters, 0.5f, 1000f);
+            float safeCellSize = SanitizeRange(cellSizeMeters, DefaultCellSizeMeters, MinCellSizeMeters, MaxCellSizeMeters);
             double maxOffsetMeters = (double)safeCellSize * GridResolution;
             if (math.abs(offset.x) > maxOffsetMeters ||
                 math.abs(offset.y) > maxOffsetMeters ||
@@ -2404,6 +2494,20 @@ namespace Hecton8.Gameplay
         {
             if (data.radiationGridRle == null || data.radiationGridRle.Length < MaxRlePayloadBytes)
                 data.radiationGridRle = new byte[MaxRlePayloadBytes];
+        }
+
+        public static bool HasPersistedRadiationGridPayload(byte[] payload, int byteLength)
+        {
+            return ClampPersistedRadiationRleLength(payload, byteLength) >= RlePacketSizeBytes;
+        }
+
+        private static int ClampPersistedRadiationRleLength(byte[] payload, int byteLength)
+        {
+            if (payload == null)
+                return 0;
+
+            int payloadCapacity = math.min(payload.Length, MaxRlePayloadBytes);
+            return math.clamp(byteLength, 0, payloadCapacity);
         }
 
         private static byte QuantizeCell(float value)

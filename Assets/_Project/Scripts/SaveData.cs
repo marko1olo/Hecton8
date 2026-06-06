@@ -55,8 +55,15 @@ namespace Hecton8.SaveSystem
 
         /// <summary>Save version that first persisted delayed hazard zone toxicity dose state.</summary>
         public const int HazardZoneRuntimePersistenceVersion = 74;
-        internal const float HazardZoneMaxPersistedToxicityDose = 64f;
-        internal const float HazardZoneMaxPersistedToxicityPulseSeconds = 0.5f;
+        public const float HazardZoneMaxPersistedToxicityDose = 64f;
+        public const float HazardZoneToxicityDamageDoseThreshold = 1f;
+        public const float HazardZoneMaxPersistedToxicityPulseSeconds = 0.5f;
+        public const int RadiationGridPersistenceVersion = 68;
+        public const int FirstHourDtoLockPersistenceVersion = 72;
+        public const float PlayerKinematicVelocityHardCapMetersPerSecond = 80f;
+        public const float PlayerKinematicVelocityHardCapSq =
+            PlayerKinematicVelocityHardCapMetersPerSecond * PlayerKinematicVelocityHardCapMetersPerSecond;
+        public const float PlayerStatsNitrogenBuildUpHardCap = 160f;
 
         /// <summary>Tekuschaya versiya formata. Ispolzuetsya dlya migratsii.</summary>
         public const int CurrentVersion = HazardZoneRuntimePersistenceVersion; // v74: delayed hazard zone toxicity state.
@@ -261,7 +268,7 @@ namespace Hecton8.SaveSystem
         public double radiationGridOriginZ;
 
         /// <summary>Radiation grid cell size in meters. v68 RADIATION.</summary>
-        public float radiationGridCellSizeMeters = 4f;
+        public float radiationGridCellSizeMeters = RadiationGridDefaultCellSizeMeters;
 
         /// <summary>Sparse RLE byte count for quantized radiation grid payload. v68 RADIATION.</summary>
         public int radiationGridRleLength;
@@ -387,7 +394,7 @@ namespace Hecton8.SaveSystem
                 radiationGridOriginX = 0d,
                 radiationGridOriginY = 0d,
                 radiationGridOriginZ = 0d,
-                radiationGridCellSizeMeters = 4f,
+                radiationGridCellSizeMeters = RadiationGridDefaultCellSizeMeters,
                 radiationGridRleLength = 0,
                 radiationGridRle = new byte[RadiationGridRleMaxBytes],
                 rtgDecayCount = 0,
@@ -428,6 +435,15 @@ namespace Hecton8.SaveSystem
 
         /// <summary>Persisted radiation grid cell count. v68 RADIATION.</summary>
         public const int RadiationGridCellCount = RadiationGridResolution * RadiationGridResolution * RadiationGridResolution;
+
+        /// <summary>Default persisted radiation grid cell size in meters. v68 RADIATION.</summary>
+        public const float RadiationGridDefaultCellSizeMeters = 4f;
+
+        /// <summary>Minimum persisted radiation grid cell size in meters. v68 RADIATION.</summary>
+        public const float RadiationGridMinCellSizeMeters = 0.5f;
+
+        /// <summary>Maximum persisted radiation grid cell size in meters. v68 RADIATION.</summary>
+        public const float RadiationGridMaxCellSizeMeters = 1000f;
 
         /// <summary>Persisted sparse RLE packet byte width: ushort start, byte value, ushort run. v68 RADIATION.</summary>
         public const int RadiationGridRlePacketSizeBytes = sizeof(ushort) + sizeof(byte) + sizeof(ushort);

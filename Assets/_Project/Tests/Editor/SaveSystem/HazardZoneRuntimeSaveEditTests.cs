@@ -204,6 +204,40 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void HazardZoneRuntime_WriteClearsInactivePulseBelowDamageThreshold()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.hazardZones.toxicityDose = SaveData.HazardZoneToxicityDamageDoseThreshold * 0.5f;
+            data.hazardZones.toxicityPulseAccumulatorSeconds = 0.25f;
+
+            byte[] payload = new byte[BinaryPayloadScratchBytes];
+            fixed (byte* payloadPtr = payload)
+            {
+                bool wrote = SaveBinaryPayloadCodec.TryWrite(
+                    data,
+                    payloadPtr,
+                    payload.Length,
+                    out int bytesWritten,
+                    out string writeError);
+
+                Assert.IsTrue(wrote, writeError);
+                Assert.Greater(bytesWritten, 0);
+
+                bool read = SaveBinaryPayloadCodec.TryRead(
+                    payloadPtr,
+                    bytesWritten,
+                    out SaveData restored,
+                    out int bytesRead,
+                    out string readError);
+
+                Assert.IsTrue(read, readError);
+                Assert.AreEqual(bytesWritten, bytesRead);
+                Assert.AreEqual(data.hazardZones.toxicityDose, restored.hazardZones.toxicityDose);
+                Assert.AreEqual(0f, restored.hazardZones.toxicityPulseAccumulatorSeconds);
+            }
+        }
+
+        [Test]
         public void HazardZoneRuntime_ReadClampsNonFiniteFileValues()
         {
             const float hazardDoseMarker = 12.25f;
@@ -266,10 +300,41 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(SaveData.RadiationGridCellCount, RadiationHazardGrid.GridCellCount);
             Assert.AreEqual(SaveData.RadiationGridRlePacketSizeBytes, RadiationHazardGrid.RlePacketSizeBytes);
             Assert.AreEqual(SaveData.RadiationGridRleMaxBytes, RadiationHazardGrid.MaxRlePayloadBytes);
+            Assert.AreEqual(4f, SaveData.RadiationGridDefaultCellSizeMeters);
+            Assert.AreEqual(0.5f, SaveData.RadiationGridMinCellSizeMeters);
+            Assert.AreEqual(1000f, SaveData.RadiationGridMaxCellSizeMeters);
 
             SaveData data = SaveData.CreateNew(0.0);
             Assert.IsNotNull(data.radiationGridRle);
             Assert.AreEqual(SaveData.RadiationGridRleMaxBytes, data.radiationGridRle.Length);
+            Assert.IsFalse(RadiationHazardGrid.HasPersistedRadiationGridPayload(null, SaveData.RadiationGridRleMaxBytes));
+            Assert.IsFalse(RadiationHazardGrid.HasPersistedRadiationGridPayload(
+                new byte[SaveData.RadiationGridRlePacketSizeBytes - 1],
+                SaveData.RadiationGridRlePacketSizeBytes - 1));
+            Assert.IsTrue(RadiationHazardGrid.HasPersistedRadiationGridPayload(
+                new byte[SaveData.RadiationGridRlePacketSizeBytes],
+                SaveData.RadiationGridRlePacketSizeBytes));
+        }
+
+        [Test]
+        public void RadiationGridLoad_ClearsTransientStateWithoutDroppingRegisteredSources()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs"));
+
+            Assert.IsFalse(source.Contains("ClearRadiationSourcesForLoad"));
+            StringAssert.Contains("ClearGrid(_gridRead);", source);
+            StringAssert.Contains("ClearGrid(_gridWrite);", source);
+            StringAssert.Contains("ClearGrid(_gridSource);", source);
+            StringAssert.Contains("RepairRadiationSourceCountFromBuffer();", source);
+            StringAssert.Contains("private void RepairRadiationSourceCountFromBuffer()", source);
+            StringAssert.Contains("_hasGridOrigin = false;", source);
+            StringAssert.Contains("RestoreGridOriginFromActiveSourceOrDefault();", source);
+            StringAssert.Contains("TryResolveFirstActiveRadiationSourceOrigin", source);
+            StringAssert.Contains("_lastExternalIntensity01 = 0f;", source);
+            StringAssert.Contains("_lastSourceSignalDrainFrame = -1;", source);
+            StringAssert.Contains("_lastExternalDoseSignalDrainFrame = -1;", source);
         }
 
         [Test]
@@ -489,6 +554,82 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void RadiationGridRuntimeMigration_PreV68DropsUnpersistedGrid()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.version = SaveData.RadiationGridPersistenceVersion - 1;
+            data.radiationDose = 7.25f;
+            data.radiationGridOriginX = 101.25d;
+            data.radiationGridOriginY = -202.5d;
+            data.radiationGridOriginZ = 303.75d;
+            data.radiationGridCellSizeMeters = 6.5f;
+            data.radiationGridRleLength = SaveData.RadiationGridRlePacketSizeBytes;
+
+            bool changed = SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary);
+
+            Assert.IsTrue(changed, summary);
+            Assert.AreEqual(SaveData.RadiationGridPersistenceVersion - 1, originalVersion);
+            Assert.AreEqual(SaveData.CurrentVersion, data.version);
+            Assert.AreEqual(0f, data.radiationDose);
+            Assert.AreEqual(0d, data.radiationGridOriginX);
+            Assert.AreEqual(0d, data.radiationGridOriginY);
+            Assert.AreEqual(0d, data.radiationGridOriginZ);
+            Assert.AreEqual(4f, data.radiationGridCellSizeMeters);
+            Assert.AreEqual(0, data.radiationGridRleLength);
+            Assert.IsNotNull(data.radiationGridRle);
+            Assert.AreEqual(SaveData.RadiationGridRleMaxBytes, data.radiationGridRle.Length);
+            StringAssert.Contains("radiation grid state repaired", summary);
+        }
+
+        [Test]
+        public void RadiationGridRuntimeMigration_V68ClampsNonFiniteAndOversizedPayload()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.version = SaveData.RadiationGridPersistenceVersion;
+            data.radiationDose = float.NaN;
+            data.radiationGridOriginX = double.PositiveInfinity;
+            data.radiationGridOriginY = double.NaN;
+            data.radiationGridOriginZ = double.NegativeInfinity;
+            data.radiationGridCellSizeMeters = float.NaN;
+            data.radiationGridRle = new byte[SaveData.RadiationGridRleMaxBytes + 16];
+            data.radiationGridRleLength = SaveData.RadiationGridRleMaxBytes + 16;
+
+            bool changed = SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary);
+
+            Assert.IsTrue(changed, summary);
+            Assert.AreEqual(SaveData.RadiationGridPersistenceVersion, originalVersion);
+            Assert.AreEqual(SaveData.CurrentVersion, data.version);
+            Assert.AreEqual(0f, data.radiationDose);
+            Assert.AreEqual(0d, data.radiationGridOriginX);
+            Assert.AreEqual(0d, data.radiationGridOriginY);
+            Assert.AreEqual(0d, data.radiationGridOriginZ);
+            Assert.AreEqual(4f, data.radiationGridCellSizeMeters);
+            Assert.AreEqual(SaveData.RadiationGridRleMaxBytes, data.radiationGridRleLength);
+            Assert.IsNotNull(data.radiationGridRle);
+            Assert.AreEqual(SaveData.RadiationGridRleMaxBytes, data.radiationGridRle.Length);
+            StringAssert.Contains("radiation grid state repaired", summary);
+        }
+
+        [Test]
+        public void RadiationGridRuntimeMigration_CurrentRepairsMissingPayloadBuffer()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.version = SaveData.CurrentVersion;
+            data.radiationGridRle = null;
+            data.radiationGridRleLength = SaveData.RadiationGridRlePacketSizeBytes;
+
+            bool changed = SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary);
+
+            Assert.IsTrue(changed, summary);
+            Assert.AreEqual(SaveData.CurrentVersion, originalVersion);
+            Assert.AreEqual(SaveData.CurrentVersion, data.version);
+            Assert.AreEqual(0, data.radiationGridRleLength);
+            Assert.IsNotNull(data.radiationGridRle);
+            Assert.AreEqual(SaveData.RadiationGridRleMaxBytes, data.radiationGridRle.Length);
+            StringAssert.Contains("radiation grid state repaired", summary);
+        }
+
+        [Test]
         public void PlayerStatsRuntime_ReadClampsNonFiniteResourceFileValues()
         {
             SaveData data = SaveData.CreateNew(0.0);
@@ -628,6 +769,125 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void PlayerStatsRuntimeMigration_CurrentClampsNonFiniteResourceValues()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.version = SaveData.CurrentVersion;
+            data.playerStats.oxygen = float.NaN;
+            data.playerStats.energy = float.PositiveInfinity;
+            data.playerStats.integrity = float.NegativeInfinity;
+            data.playerStats.weight = float.NaN;
+            data.playerStats.hunger = float.PositiveInfinity;
+            data.playerStats.thirst = float.NegativeInfinity;
+            data.playerStats.currentLifeLowestOxygenNormalized = float.NaN;
+            data.playerStats.currentLifeLowestEnergyNormalized = float.PositiveInfinity;
+            data.playerStats.currentLifeLowestIntegrityNormalized = float.NegativeInfinity;
+            data.playerStats.nitrogenBuildUp = SaveData.PlayerStatsNitrogenBuildUpHardCap * 2f;
+
+            bool changed = SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary);
+
+            Assert.IsTrue(changed, summary);
+            Assert.AreEqual(SaveData.CurrentVersion, originalVersion);
+            Assert.AreEqual(SaveData.CurrentVersion, data.version);
+            Assert.AreEqual(0f, data.playerStats.oxygen);
+            Assert.AreEqual(0f, data.playerStats.energy);
+            Assert.AreEqual(0f, data.playerStats.integrity);
+            Assert.AreEqual(0f, data.playerStats.weight);
+            Assert.AreEqual(0f, data.playerStats.hunger);
+            Assert.AreEqual(0f, data.playerStats.thirst);
+            Assert.AreEqual(1f, data.playerStats.currentLifeLowestOxygenNormalized);
+            Assert.AreEqual(1f, data.playerStats.currentLifeLowestEnergyNormalized);
+            Assert.AreEqual(1f, data.playerStats.currentLifeLowestIntegrityNormalized);
+            Assert.AreEqual(SaveData.PlayerStatsNitrogenBuildUpHardCap, data.playerStats.nitrogenBuildUp);
+            StringAssert.Contains("player survival state repaired", summary);
+        }
+
+        [Test]
+        public void PlayerKinematicRuntimeMigration_CurrentUsesDedicatedKinematicState()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.version = SaveData.CurrentVersion;
+            data.playerStats.posX = 100f;
+            data.playerStats.posY = 200f;
+            data.playerStats.posZ = 300f;
+            data.playerKinematicState.posX = 12.25f;
+            data.playerKinematicState.posY = 23.5f;
+            data.playerKinematicState.posZ = 34.75f;
+            data.playerKinematicState.rotX = 0f;
+            data.playerKinematicState.rotY = 0f;
+            data.playerKinematicState.rotZ = 0f;
+            data.playerKinematicState.rotW = 0f;
+            data.playerKinematicState.velX = 160f;
+            data.playerKinematicState.velY = 0f;
+            data.playerKinematicState.velZ = 0f;
+            data.playerKinematicState.flags = 7;
+
+            bool changed = SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary);
+
+            Assert.IsTrue(changed, summary);
+            Assert.AreEqual(SaveData.CurrentVersion, originalVersion);
+            Assert.AreEqual(12.25f, data.playerKinematicState.posX);
+            Assert.AreEqual(23.5f, data.playerKinematicState.posY);
+            Assert.AreEqual(34.75f, data.playerKinematicState.posZ);
+            Assert.AreEqual(0f, data.playerKinematicState.rotX);
+            Assert.AreEqual(0f, data.playerKinematicState.rotY);
+            Assert.AreEqual(0f, data.playerKinematicState.rotZ);
+            Assert.AreEqual(1f, data.playerKinematicState.rotW);
+            Assert.AreEqual(SaveData.PlayerKinematicVelocityHardCapMetersPerSecond, data.playerKinematicState.velX, 0.0001f);
+            Assert.AreEqual(0f, data.playerKinematicState.velY);
+            Assert.AreEqual(0f, data.playerKinematicState.velZ);
+            Assert.AreEqual(7, data.playerKinematicState.flags);
+            Assert.AreEqual(data.playerKinematicState.posX, data.playerStats.posX);
+            Assert.AreEqual(data.playerKinematicState.posY, data.playerStats.posY);
+            Assert.AreEqual(data.playerKinematicState.posZ, data.playerStats.posZ);
+            Assert.AreEqual(data.playerKinematicState.rotW, data.playerStats.rotW);
+            Assert.AreEqual(data.playerKinematicState.velX, data.playerStats.velX, 0.0001f);
+            StringAssert.Contains("player survival state repaired", summary);
+        }
+
+        [Test]
+        public void PlayerKinematicRuntimeMigration_PreV72CopiesLegacyStatsToKinematicState()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.version = SaveData.FirstHourDtoLockPersistenceVersion - 1;
+            data.playerStats.posX = 44.25f;
+            data.playerStats.posY = 55.5f;
+            data.playerStats.posZ = 66.75f;
+            data.playerStats.rotX = 0.5f;
+            data.playerStats.rotY = 0.5f;
+            data.playerStats.rotZ = 0.5f;
+            data.playerStats.rotW = 0.5f;
+            data.playerStats.velX = 6f;
+            data.playerStats.velY = 7f;
+            data.playerStats.velZ = 8f;
+            data.playerKinematicState.posX = 999f;
+            data.playerKinematicState.posY = 999f;
+            data.playerKinematicState.posZ = 999f;
+            data.playerKinematicState.flags = 99;
+
+            bool changed = SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary);
+
+            Assert.IsTrue(changed, summary);
+            Assert.AreEqual(SaveData.FirstHourDtoLockPersistenceVersion - 1, originalVersion);
+            Assert.AreEqual(SaveData.CurrentVersion, data.version);
+            Assert.AreEqual(44.25f, data.playerKinematicState.posX);
+            Assert.AreEqual(55.5f, data.playerKinematicState.posY);
+            Assert.AreEqual(66.75f, data.playerKinematicState.posZ);
+            Assert.AreEqual(0.5f, data.playerKinematicState.rotX);
+            Assert.AreEqual(0.5f, data.playerKinematicState.rotY);
+            Assert.AreEqual(0.5f, data.playerKinematicState.rotZ);
+            Assert.AreEqual(0.5f, data.playerKinematicState.rotW);
+            Assert.AreEqual(6f, data.playerKinematicState.velX);
+            Assert.AreEqual(7f, data.playerKinematicState.velY);
+            Assert.AreEqual(8f, data.playerKinematicState.velZ);
+            Assert.AreEqual(1, data.playerKinematicState.flags);
+            Assert.AreEqual(data.playerKinematicState.posX, data.playerStats.posX);
+            Assert.AreEqual(data.playerKinematicState.posY, data.playerStats.posY);
+            Assert.AreEqual(data.playerKinematicState.posZ, data.playerStats.posZ);
+            StringAssert.Contains("player survival state repaired", summary);
+        }
+
+        [Test]
         public void HazardZoneRuntimeMigration_PreV74DropsUnpersistedToxicity()
         {
             SaveData data = SaveData.CreateNew(0.0);
@@ -659,6 +919,24 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(SaveData.HazardZoneRuntimePersistenceVersion, originalVersion);
             Assert.AreEqual(SaveData.CurrentVersion, data.version);
             Assert.AreEqual(0f, data.hazardZones.toxicityDose);
+            Assert.AreEqual(0f, data.hazardZones.toxicityPulseAccumulatorSeconds);
+            StringAssert.Contains("hazard zone toxicity state repaired", summary);
+        }
+
+        [Test]
+        public void HazardZoneRuntimeMigration_V74ClearsInactivePulseBelowDamageThreshold()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.version = SaveData.HazardZoneRuntimePersistenceVersion;
+            data.hazardZones.toxicityDose = SaveData.HazardZoneToxicityDamageDoseThreshold * 0.5f;
+            data.hazardZones.toxicityPulseAccumulatorSeconds = 0.25f;
+
+            bool changed = SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary);
+
+            Assert.IsTrue(changed, summary);
+            Assert.AreEqual(SaveData.HazardZoneRuntimePersistenceVersion, originalVersion);
+            Assert.AreEqual(SaveData.CurrentVersion, data.version);
+            Assert.AreEqual(SaveData.HazardZoneToxicityDamageDoseThreshold * 0.5f, data.hazardZones.toxicityDose);
             Assert.AreEqual(0f, data.hazardZones.toxicityPulseAccumulatorSeconds);
             StringAssert.Contains("hazard zone toxicity state repaired", summary);
         }

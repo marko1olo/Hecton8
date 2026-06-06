@@ -246,6 +246,8 @@ namespace Hecton8.SaveSystem
             changed |= EnsureNarrative(ref data, steps);
 
             changed |= EnsureHazardZoneRuntime(ref data.hazardZones, sourceVersion, steps);
+            changed |= EnsureRadiationGrid(data, sourceVersion, steps);
+            changed |= EnsurePlayerStatsAndKinematics(data, sourceVersion, steps);
             changed |= EnsureInventory(ref data.inventory, steps);
             changed |= EnsureWorldState(ref data.worldState, steps);
             changed |= EnsureProceduralWorldState(ref data.proceduralWorldState, steps);
@@ -292,7 +294,7 @@ namespace Hecton8.SaveSystem
                 ? ClampFinite(dto.toxicityPulseAccumulatorSeconds, 0f, SaveData.HazardZoneMaxPersistedToxicityPulseSeconds)
                 : 0f;
 
-            if (safeHazardToxicityDose <= 0f)
+            if (safeHazardToxicityDose <= SaveData.HazardZoneToxicityDamageDoseThreshold)
                 safePulseAccumulator = 0f;
 
             bool changed = !Approximately(dto.toxicityDose, safeHazardToxicityDose) ||
@@ -307,14 +309,109 @@ namespace Hecton8.SaveSystem
             return changed;
         }
 
+        private static bool EnsureRadiationGrid(SaveData data, int sourceVersion, List<string> steps)
+        {
+            float safeRadiationDose = sourceVersion >= SaveData.RadiationGridPersistenceVersion
+                ? (math.isfinite(data.radiationDose) ? math.max(0f, data.radiationDose) : 0f)
+                : 0f;
+            double safeOriginX = sourceVersion >= SaveData.RadiationGridPersistenceVersion && math.isfinite(data.radiationGridOriginX)
+                ? data.radiationGridOriginX
+                : 0d;
+            double safeOriginY = sourceVersion >= SaveData.RadiationGridPersistenceVersion && math.isfinite(data.radiationGridOriginY)
+                ? data.radiationGridOriginY
+                : 0d;
+            double safeOriginZ = sourceVersion >= SaveData.RadiationGridPersistenceVersion && math.isfinite(data.radiationGridOriginZ)
+                ? data.radiationGridOriginZ
+                : 0d;
+            float safeCellSize = sourceVersion >= SaveData.RadiationGridPersistenceVersion
+                ? ClampFinite(
+                    data.radiationGridCellSizeMeters,
+                    SaveData.RadiationGridDefaultCellSizeMeters,
+                    SaveData.RadiationGridMinCellSizeMeters,
+                    SaveData.RadiationGridMaxCellSizeMeters)
+                : SaveData.RadiationGridDefaultCellSizeMeters;
+            int safeRleLength = sourceVersion >= SaveData.RadiationGridPersistenceVersion
+                ? ClampRadiationGridRleLength(data.radiationGridRle, data.radiationGridRleLength)
+                : 0;
+            bool resizedPayload = data.radiationGridRle == null ||
+                                  data.radiationGridRle.Length != SaveData.RadiationGridRleMaxBytes;
+
+            bool changed = !Approximately(data.radiationDose, safeRadiationDose) ||
+                           !Approximately(data.radiationGridOriginX, safeOriginX) ||
+                           !Approximately(data.radiationGridOriginY, safeOriginY) ||
+                           !Approximately(data.radiationGridOriginZ, safeOriginZ) ||
+                           !Approximately(data.radiationGridCellSizeMeters, safeCellSize) ||
+                           data.radiationGridRleLength != safeRleLength ||
+                           resizedPayload;
+
+            data.radiationDose = safeRadiationDose;
+            data.radiationGridOriginX = safeOriginX;
+            data.radiationGridOriginY = safeOriginY;
+            data.radiationGridOriginZ = safeOriginZ;
+            data.radiationGridCellSizeMeters = safeCellSize;
+            data.radiationGridRleLength = safeRleLength;
+            if (resizedPayload)
+                SaveData.EnsureExactArrayCapacity(ref data.radiationGridRle, SaveData.RadiationGridRleMaxBytes);
+
+            if (changed)
+                steps.Add("radiation grid state repaired");
+
+            return changed;
+        }
+
+        private static bool EnsurePlayerStatsAndKinematics(SaveData data, int sourceVersion, List<string> steps)
+        {
+            PlayerStatsDTO safeStats = data.playerStats;
+            SaveDataPlayerSurvivalSanitizer.SanitizePlayerStats(ref safeStats);
+
+            PlayerKinematicStateDTO safeKinematic = sourceVersion >= SaveData.FirstHourDtoLockPersistenceVersion
+                ? data.playerKinematicState
+                : PlayerKinematicStateDTO.FromPlayerStats(in safeStats);
+            SaveDataPlayerSurvivalSanitizer.SanitizePlayerKinematicState(ref safeKinematic);
+            safeKinematic.ApplyTo(ref safeStats);
+            SaveDataPlayerSurvivalSanitizer.SanitizePlayerStats(ref safeStats);
+
+            bool changed = !SaveDataPlayerSurvivalSanitizer.PlayerStatsEqual(in data.playerStats, in safeStats) ||
+                           !SaveDataPlayerSurvivalSanitizer.PlayerKinematicStateEqual(
+                               in data.playerKinematicState,
+                               in safeKinematic);
+
+            data.playerStats = safeStats;
+            data.playerKinematicState = safeKinematic;
+
+            if (changed)
+                steps.Add("player survival state repaired");
+
+            return changed;
+        }
+
         private static float ClampFinite(float value, float min, float max)
         {
             return math.isfinite(value) ? math.clamp(value, min, max) : min;
         }
 
+        private static float ClampFinite(float value, float fallback, float min, float max)
+        {
+            return math.isfinite(value) ? math.clamp(value, min, max) : math.clamp(fallback, min, max);
+        }
+
+        private static int ClampRadiationGridRleLength(byte[] payload, int byteLength)
+        {
+            if (payload == null)
+                return 0;
+
+            int payloadCapacity = math.min(payload.Length, SaveData.RadiationGridRleMaxBytes);
+            return math.clamp(byteLength, 0, payloadCapacity);
+        }
+
         private static bool Approximately(float a, float b)
         {
             return math.abs(a - b) <= 0.000001f;
+        }
+
+        private static bool Approximately(double a, double b)
+        {
+            return math.abs(a - b) <= 0.000001d;
         }
 
         private static bool EnsureInventory(ref InventoryDTO dto, List<string> steps)

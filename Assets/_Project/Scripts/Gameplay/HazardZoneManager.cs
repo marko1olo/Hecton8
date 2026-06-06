@@ -296,14 +296,14 @@ namespace Hecton8.Gameplay
         private const uint TelemetryFlagPendingMutation = 1u << 4;
         private const uint TelemetryFlagPendingUnregisterOverflow = 1u << 5;
         private const uint TelemetryFlagNonFinite = 1u << 6;
-        private const float ToxicityDoseThreshold = 1f;
+        private const float ToxicityDoseThreshold = SaveData.HazardZoneToxicityDamageDoseThreshold;
         private const float ToxicityDoseDecayPerSecond = 0.18f;
-        private const float ToxicityDamagePulseIntervalSeconds = 0.5f;
+        private const float ToxicityDamagePulseIntervalSeconds = SaveData.HazardZoneMaxPersistedToxicityPulseSeconds;
         private const float ToxicityDamagePerPulse = 1.1f;
         private const float ToxicityOverdoseDamageScale = 0.85f;
         private const float ToxicityPoisonStatusDurationSeconds = 5f;
         private const float ToxicityExposureToxemiaScale = 0.08f;
-        private const float MaxPersistedToxicityDose = 64f;
+        private const float MaxPersistedToxicityDose = SaveData.HazardZoneMaxPersistedToxicityDose;
         private const float RadiationClarityTransferScale = 0.85f;
         private const float ThermalClarityTransferDenominator = 18f;
         private const float ToxicClarityTransferScale = 1.35f;

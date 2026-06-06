@@ -40,19 +40,15 @@ namespace Hecton8.SaveSystem
         private const float BiologicalDecayRatePerSecond = 0.001f;
         private const int NullCollectionCount = -1;
         private const int SuitUpgradeMaskSaveVersion = 65;
-        private const int RadiationGridSaveVersion = 68;
+        private const int RadiationGridSaveVersion = SaveData.RadiationGridPersistenceVersion;
         private const int RtgDecaySaveVersion = 70;
         private const int MetaCampaignSaveVersion = 71;
-        private const int FirstHourDtoLockSaveVersion = 72;
+        private const int FirstHourDtoLockSaveVersion = SaveData.FirstHourDtoLockPersistenceVersion;
         private const int ContractAuthoritySaveVersion = 73;
         private const int HazardZoneRuntimeSaveVersion = SaveData.HazardZoneRuntimePersistenceVersion;
-        private const float PlayerKinematicVelocityHardCapMetersPerSecond = 80f;
-        private const float PlayerKinematicVelocityHardCapSq =
-            PlayerKinematicVelocityHardCapMetersPerSecond * PlayerKinematicVelocityHardCapMetersPerSecond;
-        private const float PlayerStatsNitrogenBuildUpHardCap = 160f;
-        private const float RadiationGridDefaultCellSizeMeters = 4f;
-        private const float RadiationGridMinCellSizeMeters = 0.5f;
-        private const float RadiationGridMaxCellSizeMeters = 1000f;
+        private const float RadiationGridDefaultCellSizeMeters = SaveData.RadiationGridDefaultCellSizeMeters;
+        private const float RadiationGridMinCellSizeMeters = SaveData.RadiationGridMinCellSizeMeters;
+        private const float RadiationGridMaxCellSizeMeters = SaveData.RadiationGridMaxCellSizeMeters;
         private const int ProceduralFaunaStateStrideBytes = 16;
         private const int HibernatedFaunaStateStrideBytes = 112;
         private const int ModuleSorterBufferSlotMax = 8;
@@ -705,7 +701,7 @@ namespace Hecton8.SaveSystem
             PlayerKinematicStateDTO playerState = data != null
                 ? PlayerKinematicStateDTO.FromPlayerStats(in data.playerStats)
                 : default;
-            SanitizePlayerKinematicState(ref playerState);
+            SaveDataPlayerSurvivalSanitizer.SanitizePlayerKinematicState(ref playerState);
             InventoryShadowDTO inventoryShadow = data != null
                 ? InventoryShadowDTO.FromInventory(
                     in data.inventory,
@@ -782,9 +778,9 @@ namespace Hecton8.SaveSystem
                     return false;
             }
 
-            SanitizePlayerKinematicState(ref data.playerKinematicState);
+            SaveDataPlayerSurvivalSanitizer.SanitizePlayerKinematicState(ref data.playerKinematicState);
             data.playerKinematicState.ApplyTo(ref data.playerStats);
-            SanitizePlayerStats(ref data.playerStats);
+            SaveDataPlayerSurvivalSanitizer.SanitizePlayerStats(ref data.playerStats);
             data.construction.habitatFloodStateCount = floodStateCount;
             return true;
         }
@@ -1265,7 +1261,7 @@ namespace Hecton8.SaveSystem
 
         private static bool WritePlayerStats(ref BufferWriter writer, PlayerStatsDTO value)
         {
-            SanitizePlayerStats(ref value);
+            SaveDataPlayerSurvivalSanitizer.SanitizePlayerStats(ref value);
             return writer.WriteFloat(value.oxygen)
                 && writer.WriteFloat(value.energy)
                 && writer.WriteFloat(value.integrity)
@@ -1355,7 +1351,7 @@ namespace Hecton8.SaveSystem
             if (!read)
                 return false;
 
-            SanitizePlayerStats(ref value);
+            SaveDataPlayerSurvivalSanitizer.SanitizePlayerStats(ref value);
             return true;
         }
 
@@ -1372,124 +1368,6 @@ namespace Hecton8.SaveSystem
             return reader.ReadFloat(out value.velX)
                 && reader.ReadFloat(out value.velY)
                 && reader.ReadFloat(out value.velZ);
-        }
-
-        private static void SanitizePlayerStats(ref PlayerStatsDTO value)
-        {
-            value.oxygen = SanitizeNonNegativeFinite(value.oxygen);
-            value.energy = SanitizeNonNegativeFinite(value.energy);
-            value.integrity = SanitizeNonNegativeFinite(value.integrity);
-            value.weight = SanitizeNonNegativeFinite(value.weight);
-            value.hunger = SanitizeNonNegativeFinite(value.hunger);
-            value.thirst = SanitizeNonNegativeFinite(value.thirst);
-
-            value.currentLifeDurationSeconds = SanitizeNonNegativeFinite(value.currentLifeDurationSeconds);
-            value.currentLifePeakDepthMeters = SanitizeNonNegativeFinite(value.currentLifePeakDepthMeters);
-            value.currentLifeLowestOxygenNormalized = Sanitize01(value.currentLifeLowestOxygenNormalized, 1f);
-            value.currentLifeLowestEnergyNormalized = Sanitize01(value.currentLifeLowestEnergyNormalized, 1f);
-            value.currentLifeLowestIntegrityNormalized = Sanitize01(value.currentLifeLowestIntegrityNormalized, 1f);
-
-            value.bleedingSecondsRemaining = SanitizeNonNegativeFinite(value.bleedingSecondsRemaining);
-            value.bleedingDamagePerSecond = SanitizeNonNegativeFinite(value.bleedingDamagePerSecond);
-            value.bleedingSeverity01 = Sanitize01(value.bleedingSeverity01, 0f);
-            value.fractureSecondsRemaining = SanitizeNonNegativeFinite(value.fractureSecondsRemaining);
-            value.fracturePenalty01 = Sanitize01(value.fracturePenalty01, 0f);
-            value.environmentTemperature = SanitizeFinite(value.environmentTemperature, 0f);
-            value.coldStressSeverity01 = Sanitize01(value.coldStressSeverity01, 0f);
-            value.heatStressSeverity01 = Sanitize01(value.heatStressSeverity01, 0f);
-            value.nitrogenBuildUp = math.clamp(
-                SanitizeNonNegativeFinite(value.nitrogenBuildUp),
-                0f,
-                PlayerStatsNitrogenBuildUpHardCap);
-
-            SanitizePosition(ref value.lastDeathPosX, ref value.lastDeathPosY, ref value.lastDeathPosZ);
-            value.lastDeathLifeDurationSeconds = SanitizeNonNegativeFinite(value.lastDeathLifeDurationSeconds);
-            value.lastDeathPeakDepthMeters = SanitizeNonNegativeFinite(value.lastDeathPeakDepthMeters);
-            value.lastDeathLowestOxygenNormalized = Sanitize01(value.lastDeathLowestOxygenNormalized, 1f);
-            value.lastDeathLowestEnergyNormalized = Sanitize01(value.lastDeathLowestEnergyNormalized, 1f);
-            value.lastDeathLowestIntegrityNormalized = Sanitize01(value.lastDeathLowestIntegrityNormalized, 1f);
-
-            SanitizePosition(ref value.posX, ref value.posY, ref value.posZ);
-            SanitizeQuaternion(ref value.rotX, ref value.rotY, ref value.rotZ, ref value.rotW);
-            SanitizeVelocity(ref value.velX, ref value.velY, ref value.velZ);
-        }
-
-        private static void SanitizePlayerKinematicState(ref PlayerKinematicStateDTO value)
-        {
-            SanitizePosition(ref value.posX, ref value.posY, ref value.posZ);
-            SanitizeQuaternion(ref value.rotX, ref value.rotY, ref value.rotZ, ref value.rotW);
-            SanitizeVelocity(ref value.velX, ref value.velY, ref value.velZ);
-        }
-
-        private static void SanitizePosition(ref float x, ref float y, ref float z)
-        {
-            if (math.all(math.isfinite(new float3(x, y, z))))
-                return;
-
-            x = 0f;
-            y = 0f;
-            z = 0f;
-        }
-
-        private static void SanitizeQuaternion(ref float x, ref float y, ref float z, ref float w)
-        {
-            float4 quaternion = new float4(x, y, z, w);
-            float lengthSq = math.lengthsq(quaternion);
-            if (!math.all(math.isfinite(quaternion)) || !math.isfinite(lengthSq) || lengthSq <= 0.000001f)
-            {
-                x = 0f;
-                y = 0f;
-                z = 0f;
-                w = 1f;
-                return;
-            }
-
-            float invLength = math.rsqrt(lengthSq);
-            x *= invLength;
-            y *= invLength;
-            z *= invLength;
-            w *= invLength;
-        }
-
-        private static void SanitizeVelocity(ref float x, ref float y, ref float z)
-        {
-            float3 velocity = new float3(x, y, z);
-            float speedSq = math.lengthsq(velocity);
-            if (!math.all(math.isfinite(velocity)) || !math.isfinite(speedSq) || speedSq <= 0.000001f)
-            {
-                x = 0f;
-                y = 0f;
-                z = 0f;
-                return;
-            }
-
-            if (speedSq <= PlayerKinematicVelocityHardCapSq)
-                return;
-
-            velocity *= PlayerKinematicVelocityHardCapMetersPerSecond * math.rsqrt(speedSq);
-            x = velocity.x;
-            y = velocity.y;
-            z = velocity.z;
-        }
-
-        private static float SanitizeFinite(float value, float fallback)
-        {
-            return math.isfinite(value) ? value : fallback;
-        }
-
-        private static float SanitizeNonNegativeFinite(float value)
-        {
-            return math.isfinite(value) ? math.max(0f, value) : 0f;
-        }
-
-        private static double SanitizeNonNegativeFinite(double value)
-        {
-            return math.isfinite(value) ? math.max(0d, value) : 0d;
-        }
-
-        private static float Sanitize01(float value, float fallback)
-        {
-            return math.isfinite(value) ? math.saturate(value) : math.saturate(fallback);
         }
 
         private static bool ReadNitrogenBuildUp(ref BufferReader reader, int version, ref PlayerStatsDTO value)
@@ -1834,7 +1712,7 @@ namespace Hecton8.SaveSystem
             value.toxicityPulseAccumulatorSeconds = math.isfinite(value.toxicityPulseAccumulatorSeconds)
                 ? math.clamp(value.toxicityPulseAccumulatorSeconds, 0f, SaveData.HazardZoneMaxPersistedToxicityPulseSeconds)
                 : 0f;
-            if (value.toxicityDose <= 0f)
+            if (value.toxicityDose <= SaveData.HazardZoneToxicityDamageDoseThreshold)
                 value.toxicityPulseAccumulatorSeconds = 0f;
         }
 
