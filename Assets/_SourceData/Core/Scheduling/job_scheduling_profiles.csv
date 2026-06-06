@@ -2,6 +2,10 @@
 Hecton8.World.RadiusBasedStreamingJob,64,256
 Hecton8.AI.PredatorCognitionDomain+SwarmAnalysisJob,64,256
 Hecton8.AI.PredatorCognitionDomain+PredatorCognitionJob,32,128
+Hecton8.AI.PredatorCognitionDomain+GenerateMockSdfObstaclesJob,128,512
+Hecton8.AI.PredatorCognitionDomain+PopulateLeviathanSteeringParamsJob,32,128
+Hecton8.AI.PredatorCognitionDomain+EvaluateSdfAvoidanceJob,32,128
+Hecton8.AI.PredatorCognitionDomain+IntegrateSteeringVectorsJob,32,128
 Hecton8.AI.MesofaunaBehaviorJob,32,128
 Hecton8.Equipment.Auxiliary.GenerateMockAuxiliaryDeploymentsJob,32,128
 Hecton8.Equipment.Auxiliary.UpdateDeployedAuxiliaryJob,32,128

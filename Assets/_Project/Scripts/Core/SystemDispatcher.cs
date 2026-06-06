@@ -4139,9 +4139,19 @@ namespace Hecton8.Core
 
         private void RefreshJobAdmissionDependency()
         {
+            IJobAdmissionService previousAdmission = JobAdmissionSchedulerBridge.Service;
             IJobAdmissionService jobAdmission = GlobalRegistry.JobAdmission;
             if (jobAdmission != null)
+            {
                 _jobAdmission = jobAdmission;
+                JobAdmissionSchedulerBridge.SetService(jobAdmission);
+            }
+            else
+            {
+                _jobAdmission = null;
+                if (previousAdmission != null)
+                    JobAdmissionSchedulerBridge.ClearService(previousAdmission);
+            }
         }
 
         private void RefreshInputDeterminismDependency()
@@ -4199,12 +4209,18 @@ namespace Hecton8.Core
                     _cachedDispatcherDataVault = _dataVault;
                     if (_dataVault != null)
                         VaultSovereigntyTelemetry.EnsureRing(_dataVault);
+                    JobSchedulingProfileCatalog.LoadColdBootProfiles(_dataVault);
                     break;
                 case GlobalRegistryServiceSlot.Input:
                     _inputDeterminism = currentService as IInputDeterminismService;
                     break;
                 case GlobalRegistryServiceSlot.JobAdmissionRuntime:
+                    IJobAdmissionService previousAdmission = JobAdmissionSchedulerBridge.Service;
                     _jobAdmission = currentService as IJobAdmissionService;
+                    if (_jobAdmission != null)
+                        JobAdmissionSchedulerBridge.SetService(_jobAdmission);
+                    else if (previousAdmission != null)
+                        JobAdmissionSchedulerBridge.ClearService(previousAdmission);
                     break;
                 case GlobalRegistryServiceSlot.SimulationBucketerRuntime:
                     _simulationBucketer = currentService as ISimulationBucketer;

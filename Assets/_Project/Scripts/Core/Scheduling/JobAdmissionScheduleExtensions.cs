@@ -78,18 +78,7 @@ namespace Hecton8.Core.Scheduling
             }
 
             uint jobHash = JobAdmissionHash<TJob>.Value;
-            int minBatch = innerloopBatchCount > 0 ? innerloopBatchCount : 1;
-            int maxBatch = innerloopBatchCount > 0 ? innerloopBatchCount << 2 : 4;
-            if (JobSchedulingProfileCatalog.TryResolveBatchBounds(jobHash, out int profileMinBatch, out int profileMaxBatch))
-            {
-                minBatch = profileMinBatch;
-                maxBatch = profileMaxBatch;
-            }
-
-            int safeBatchCount = ResolveInnerloopBatchCount(
-                arrayLength,
-                minBatch,
-                maxBatch);
+            int safeBatchCount = ResolveProfiledInnerloopBatchCount(jobHash, arrayLength, innerloopBatchCount);
             IJobAdmissionService service = JobAdmissionSchedulerBridge.Service;
             if (service != null && !service.TryAdmitJob(lane, jobHash, out _))
             {
@@ -99,6 +88,29 @@ namespace Hecton8.Core.Scheduling
 
             handle = jobData.Schedule(arrayLength, safeBatchCount, dependsOn);
             return true;
+        }
+
+        /// <summary>
+        /// Resolves a safe IJobParallelFor batch size from the caller default and any cold-boot scheduling profile.
+        /// </summary>
+        public static int ResolveProfiledInnerloopBatchCount(uint jobHash, int elementCount, int innerloopBatchCount)
+        {
+            int minBatch = innerloopBatchCount > 0 ? innerloopBatchCount : 1;
+            int maxBatch = innerloopBatchCount > 0 ? ResolveDefaultMaxBatch(innerloopBatchCount) : 4;
+            if (JobSchedulingProfileCatalog.TryResolveBatchBounds(jobHash, out int profileMinBatch, out int profileMaxBatch))
+            {
+                minBatch = profileMinBatch;
+                maxBatch = profileMaxBatch;
+            }
+
+            return ResolveInnerloopBatchCount(elementCount, minBatch, maxBatch);
+        }
+
+        private static int ResolveDefaultMaxBatch(int innerloopBatchCount)
+        {
+            return innerloopBatchCount > int.MaxValue / 4
+                ? int.MaxValue
+                : innerloopBatchCount << 2;
         }
 
         private static int ResolveInnerloopBatchCount(int elementCount, int minBatch, int maxBatch)

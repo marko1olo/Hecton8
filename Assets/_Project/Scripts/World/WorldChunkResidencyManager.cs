@@ -8,6 +8,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Scheduling;
 using Hecton8.Data;
 using Hecton8.Gameplay;
 using Hecton8.Optimization;
@@ -2882,7 +2883,7 @@ namespace Hecton8.World
             where TJob : struct, IJob
         {
             IJobAdmissionService service = _jobAdmissionService;
-            uint jobHash = WorldJobAdmissionHash<TJob>.Value;
+            uint jobHash = JobAdmissionHash<TJob>.Value;
             if (service != null && !service.TryAdmitJob(lane, jobHash, out _))
             {
                 handle = dependsOn;
@@ -2902,15 +2903,22 @@ namespace Hecton8.World
             out JobHandle handle)
             where TJob : struct, IJobParallelFor
         {
+            if (arrayLength <= 0)
+            {
+                handle = dependsOn;
+                return arrayLength == 0;
+            }
+
             IJobAdmissionService service = _jobAdmissionService;
-            uint jobHash = WorldJobAdmissionHash<TJob>.Value;
+            uint jobHash = JobAdmissionHash<TJob>.Value;
+            int safeBatchCount = JobAdmissionScheduleExtensions.ResolveProfiledInnerloopBatchCount(jobHash, arrayLength, innerloopBatchCount);
             if (service != null && !service.TryAdmitJob(lane, jobHash, out _))
             {
                 handle = dependsOn;
                 return false;
             }
 
-            handle = jobData.Schedule(arrayLength, innerloopBatchCount, dependsOn);
+            handle = jobData.Schedule(arrayLength, safeBatchCount, dependsOn);
             return true;
         }
 
@@ -2921,13 +2929,7 @@ namespace Hecton8.World
             if (service == null)
                 return;
 
-            service.ReportJobCompleted(lane, WorldJobAdmissionHash<TJob>.Value, measuredCompleteMs);
-        }
-
-        private static class WorldJobAdmissionHash<TJob>
-            where TJob : struct
-        {
-            public static readonly uint Value = ComputeJobAdmissionHash(typeof(TJob).FullName ?? typeof(TJob).Name);
+            service.ReportJobCompleted(lane, JobAdmissionHash<TJob>.Value, measuredCompleteMs);
         }
 
         private void ProcessResidencyResults()
@@ -6360,23 +6362,6 @@ namespace Hecton8.World
             hash ^= value;
             hash *= 1099511628211UL;
             return hash;
-        }
-
-        private static uint ComputeJobAdmissionHash(string text)
-        {
-            const uint fnvOffset = 2166136261u;
-            const uint fnvPrime = 16777619u;
-            uint hash = fnvOffset;
-            if (!string.IsNullOrEmpty(text))
-            {
-                for (int i = 0; i < text.Length; i++)
-                {
-                    hash ^= text[i];
-                    hash *= fnvPrime;
-                }
-            }
-
-            return hash == 0u ? 1u : hash;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

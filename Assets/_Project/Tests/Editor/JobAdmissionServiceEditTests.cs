@@ -3,6 +3,7 @@ using System.IO;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Scheduling;
+using Hecton8.World;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -106,6 +107,8 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Contain("ComputeBlackboxHash(uint jobHash, float estimatedCostMs, float remainingBudgetMs, byte flags)"));
             Assert.That(source, Does.Contain("hash = (hash ^ (uint)flags) * 16777619u;"));
             Assert.That(source, Does.Contain("entry.Flags = flags;"));
+            Assert.That(source, Does.Contain("entry.StateHash = ComputeBlackboxHash(jobHash, entry.EstimatedCostMs, entry.RemainingBudgetMs, flags);"));
+            Assert.That(source, Does.Contain("private const uint AdmissionBlackboxDumpVersion = 2u;"));
         }
 
         [Test]
@@ -150,6 +153,175 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Contain("using Hecton8.Core.Contracts;"));
         }
 
+        [Test]
+        public void WorldChunkResidency_SourceUsesSharedAdmissionHashAndBatchProfile()
+        {
+            string source = File.ReadAllText(WorldChunkResidencyManagerPath());
+
+            Assert.That(source, Does.Contain("using Hecton8.Core.Scheduling;"));
+            Assert.That(source, Does.Contain("uint jobHash = JobAdmissionHash<TJob>.Value;"));
+            Assert.That(source, Does.Contain("int safeBatchCount = JobAdmissionScheduleExtensions.ResolveProfiledInnerloopBatchCount(jobHash, arrayLength, innerloopBatchCount);"));
+            Assert.That(source, Does.Contain("handle = jobData.Schedule(arrayLength, safeBatchCount, dependsOn);"));
+            Assert.That(source, Does.Not.Contain("WorldJobAdmissionHash"));
+            Assert.That(source, Does.Not.Contain("ComputeJobAdmissionHash"));
+            Assert.That(source, Does.Not.Contain("private static int ResolveInnerloopBatchCount"));
+        }
+
+        [Test]
+        public void JobAdmissionScheduleExtensions_SourceOwnsProfiledBatchResolution()
+        {
+            string source = File.ReadAllText(JobAdmissionScheduleExtensionsPath());
+
+            Assert.That(source, Does.Contain("int safeBatchCount = ResolveProfiledInnerloopBatchCount(jobHash, arrayLength, innerloopBatchCount);"));
+            Assert.That(source, Does.Contain("public static int ResolveProfiledInnerloopBatchCount(uint jobHash, int elementCount, int innerloopBatchCount)"));
+            Assert.That(source, Does.Contain("int maxBatch = innerloopBatchCount > 0 ? ResolveDefaultMaxBatch(innerloopBatchCount) : 4;"));
+            Assert.That(source, Does.Contain("JobSchedulingProfileCatalog.TryResolveBatchBounds(jobHash"));
+            Assert.That(source, Does.Contain("return ResolveInnerloopBatchCount(elementCount, minBatch, maxBatch);"));
+            Assert.That(source, Does.Contain("private static int ResolveDefaultMaxBatch(int innerloopBatchCount)"));
+            Assert.That(source, Does.Contain("innerloopBatchCount > int.MaxValue / 4"));
+        }
+
+        [Test]
+        public void ProfiledBatchResolver_DefaultsAreBoundedWithoutProfile()
+        {
+            Assert.AreEqual(128, JobAdmissionScheduleExtensions.ResolveProfiledInnerloopBatchCount(0u, 1000, 32));
+            Assert.AreEqual(4, JobAdmissionScheduleExtensions.ResolveProfiledInnerloopBatchCount(0u, 100, 0));
+            Assert.Greater(JobAdmissionScheduleExtensions.ResolveProfiledInnerloopBatchCount(0u, 100, int.MaxValue), 0);
+        }
+
+        [Test]
+        public void SystemDispatcher_SourceSyncsJobAdmissionSchedulerBridgeOnRefreshAndRebound()
+        {
+            string source = File.ReadAllText(SystemDispatcherPath());
+
+            Assert.That(source, Does.Contain("private void RefreshJobAdmissionDependency()"));
+            Assert.That(source, Does.Contain("case GlobalRegistryServiceSlot.JobAdmissionRuntime:"));
+            Assert.That(source, Does.Contain("IJobAdmissionService previousAdmission = JobAdmissionSchedulerBridge.Service;"));
+            Assert.That(source, Does.Contain("JobAdmissionSchedulerBridge.SetService(jobAdmission);"));
+            Assert.That(source, Does.Contain("JobAdmissionSchedulerBridge.SetService(_jobAdmission);"));
+            Assert.That(source, Does.Contain("_jobAdmission = null;"));
+            Assert.That(source, Does.Contain("JobAdmissionSchedulerBridge.ClearService(previousAdmission);"));
+        }
+
+        [Test]
+        public void SystemDispatcher_SourceReloadsJobSchedulingProfilesOnColdBootAndDataVaultRebound()
+        {
+            string source = File.ReadAllText(SystemDispatcherPath());
+
+            Assert.GreaterOrEqual(CountOccurrences(source, "JobSchedulingProfileCatalog.LoadColdBootProfiles(_dataVault);"), 2);
+            Assert.That(source, Does.Contain("case GlobalRegistryServiceSlot.DataVault:"));
+            Assert.That(source, Does.Contain("VaultSovereigntyTelemetry.EnsureRing(_dataVault);"));
+            Assert.That(source, Does.Contain("JobSchedulingProfileCatalog.LoadColdBootProfiles(_dataVault);"));
+        }
+
+        [Test]
+        public void JobSchedulingProfiles_SourceKeepsWorldResidencyProfileOnSharedHashName()
+        {
+            string csv = File.ReadAllText(JobSchedulingProfilesPath());
+            string typeName = typeof(RadiusBasedStreamingJob).FullName;
+
+            Assert.AreEqual("Hecton8.World.RadiusBasedStreamingJob", typeName);
+            Assert.That(csv, Does.Contain(typeName + ",64,256"));
+            Assert.That(csv, Does.Not.Contain("WorldChunkResidencyManager+RadiusBasedStreamingJob"));
+        }
+
+        [Test]
+        public void JobSchedulingProfiles_SourceKeepsFaunaSteeringParallelProfilesOnNestedNames()
+        {
+            string csv = File.ReadAllText(JobSchedulingProfilesPath());
+            string steeringSource = File.ReadAllText(PredatorCognitionDomainSteeringPath());
+
+            Assert.That(steeringSource, Does.Contain("private unsafe struct GenerateMockSdfObstaclesJob : IJobParallelFor"));
+            Assert.That(steeringSource, Does.Contain("private unsafe struct PopulateLeviathanSteeringParamsJob : IJobParallelFor"));
+            Assert.That(steeringSource, Does.Contain("private unsafe struct EvaluateSdfAvoidanceJob : IJobParallelFor"));
+            Assert.That(steeringSource, Does.Contain("private unsafe struct IntegrateSteeringVectorsJob : IJobParallelFor"));
+            Assert.That(steeringSource, Does.Contain("private unsafe struct RecordSteeringTelemetryJob : IJob"));
+
+            Assert.That(csv, Does.Contain("Hecton8.AI.PredatorCognitionDomain+GenerateMockSdfObstaclesJob,128,512"));
+            Assert.That(csv, Does.Contain("Hecton8.AI.PredatorCognitionDomain+PopulateLeviathanSteeringParamsJob,32,128"));
+            Assert.That(csv, Does.Contain("Hecton8.AI.PredatorCognitionDomain+EvaluateSdfAvoidanceJob,32,128"));
+            Assert.That(csv, Does.Contain("Hecton8.AI.PredatorCognitionDomain+IntegrateSteeringVectorsJob,32,128"));
+            Assert.That(csv, Does.Not.Contain("RecordSteeringTelemetryJob"));
+        }
+
+        [Test]
+        public void JobSchedulingProfileCatalog_SourceSkipsUtf8BomBeforeCommentHeader()
+        {
+            string source = File.ReadAllText(JobSchedulingProfileCatalogPath());
+
+            Assert.That(source, Does.Contain("c == 0xEF && csvBytes[1] == 0xBB && csvBytes[2] == 0xBF"));
+            Assert.That(source, Does.Contain("i += 2;"));
+        }
+
+        [Test]
+        public void TelemetryDumpValidator_SourceDecodesJobAdmissionBlackboxAsDedicatedLayout()
+        {
+            string source = File.ReadAllText(TelemetryDumpValidatorWindowPath());
+
+            Assert.That(source, Does.Contain("private const ulong JobAdmissionDumpMagic = 0x00384E4F54434548UL;"));
+            Assert.That(source, Does.Contain("private const int JobAdmissionDumpHeaderBytes = 32;"));
+            Assert.That(source, Does.Contain("private const int JobAdmissionDumpEntrySizeBytes = 64;"));
+            Assert.That(source, Does.Contain("if (TryParseJobAdmissionDump(path, bytes, span))"));
+            Assert.That(source, Does.Contain("private static bool IsJobAdmissionDumpPath(string path)"));
+            Assert.That(source, Does.Contain("fileName.IndexOf(\"JobAdmission\", StringComparison.OrdinalIgnoreCase)"));
+            Assert.That(source, Does.Contain("ReadU64(span, 0) != JobAdmissionDumpMagic"));
+            Assert.That(source, Does.Contain("entrySize == JobAdmissionDumpEntrySizeBytes"));
+            Assert.That(source, Does.Contain("reserved == 0u"));
+            Assert.That(source, Does.Contain("JobAdmissionDumpHeaderBytes + (long)entryCount * entrySize <= span.Length"));
+            Assert.That(source, Does.Contain("BuildInvalidJobAdmissionHeaderSummary("));
+            Assert.That(source, Does.Contain("invalid job-admission blackbox header"));
+            Assert.That(source, Does.Contain("builder.Append(\" | reserved=0x\")"));
+            Assert.That(source, Does.Contain("ComputeXxHash64(bytes, JobAdmissionDumpHeaderBytes, payloadBytes)"));
+            Assert.That(source, Does.Contain("layout=job-admission-blackbox"));
+            Assert.GreaterOrEqual(CountOccurrences(source, "math.min(nonEmptyEntryCount, MaxDisplayedFrames).ToString(CultureInfo.InvariantCulture)"), 2);
+            Assert.That(source, Does.Contain("ResolveJobAdmissionFlagsLabel(version, flags)"));
+            Assert.That(source, Does.Contain("\"legacy-starved\""));
+            Assert.That(source, Does.Contain("\"budget\""));
+            Assert.That(source, Does.Contain("ComputeJobAdmissionStateHash("));
+            Assert.That(source, Does.Contain("hashOk="));
+        }
+
+        [Test]
+        public void TelemetryDumpValidator_SourceDecodesSimulationBucketBlackboxAsDedicatedLayout()
+        {
+            string source = File.ReadAllText(TelemetryDumpValidatorWindowPath());
+
+            Assert.That(source, Does.Contain("private const ulong SimulationBucketDumpMagic = 0x00384E4F54434548UL;"));
+            Assert.That(source, Does.Contain("private const int SimulationBucketDumpHeaderBytes = 32;"));
+            Assert.That(source, Does.Contain("private const int SimulationBucketDumpEntrySizeBytes = 64;"));
+            Assert.That(source, Does.Contain("if (TryParseSimulationBucketDump(path, bytes, span))"));
+            Assert.That(source, Does.Contain("private static bool IsSimulationBucketDumpPath(string path)"));
+            Assert.That(source, Does.Contain("\"Dump_SIMULATION_BUCKET_DISTRIBUTOR.bin\""));
+            Assert.That(source, Does.Contain("layout=simulation-bucket-blackbox"));
+            Assert.That(source, Does.Contain("BuildInvalidSimulationBucketHeaderSummary("));
+            Assert.That(source, Does.Contain("BuildSimulationBucketEntryLine("));
+            Assert.That(source, Does.Contain("ComputeXxHash64(bytes, SimulationBucketDumpHeaderBytes, payloadBytes)"));
+            Assert.That(source, Does.Contain("builder.Append(\" activeSlow=\")"));
+            Assert.That(source, Does.Contain("builder.Append(\" state=0x\")"));
+        }
+
+        [Test]
+        public void TelemetryDumpValidator_SourceDecodesCrashTelemetryBufferAsDedicatedLayout()
+        {
+            string source = File.ReadAllText(TelemetryDumpValidatorWindowPath());
+
+            Assert.That(source, Does.Contain("private const ulong CrashTelemetryDumpMagic = 0x00384E4F54434548UL;"));
+            Assert.That(source, Does.Contain("private const int CrashTelemetryDumpHeaderBytes = 16;"));
+            Assert.That(source, Does.Contain("private const int CrashTelemetryDumpEntrySizeBytes = 64;"));
+            Assert.That(source, Does.Contain("if (TryParseCrashTelemetryDump(path, bytes, span))"));
+            Assert.That(source, Does.Contain("private static bool IsCrashTelemetryDumpPath(string path)"));
+            Assert.That(source, Does.Contain("\"Dump_CRASH_TELEMETRY_BUFFER.bin\""));
+            Assert.That(source, Does.Contain("\"BLACKBOX_CRASH.bin\""));
+            Assert.That(source, Does.Contain("layout=crash-telemetry-buffer"));
+            Assert.That(source, Does.Contain("BuildInvalidCrashTelemetryHeaderSummary("));
+            Assert.That(source, Does.Contain("BuildCrashTelemetryEntryLine("));
+            Assert.That(source, Does.Contain("ComputeXxHash64(bytes, CrashTelemetryDumpHeaderBytes, payloadBytes)"));
+            Assert.That(source, Does.Contain("builder.Append(\" errors=0x\")"));
+            Assert.That(source, Does.Contain("builder.Append(\" reason=0x\")"));
+            Assert.That(source, Does.Contain("builder.Append(\" spike=\")"));
+            Assert.That(source, Does.Contain("builder.Append(\" memFault=\")"));
+        }
+
         private static float ResolveLane1BudgetAfterRefill(float globalQualityWeight01)
         {
             using (GlobalDataVault vault = GlobalDataVault.Create(64, GlobalDataVault.MinimumQualityArenaLimitBytes))
@@ -189,6 +361,97 @@ namespace Hecton8.Tests.Editor
                 "_Project",
                 "Scripts",
                 "CrashTelemetryBuffer.cs");
+        }
+
+        private static int CountOccurrences(string source, string value)
+        {
+            int count = 0;
+            int index = 0;
+            while (index < source.Length)
+            {
+                int found = source.IndexOf(value, index, StringComparison.Ordinal);
+                if (found < 0)
+                    break;
+
+                count++;
+                index = found + value.Length;
+            }
+
+            return count;
+        }
+
+        private static string SystemDispatcherPath()
+        {
+            return Path.Combine(
+                Application.dataPath,
+                "_Project",
+                "Scripts",
+                "Core",
+                "SystemDispatcher.cs");
+        }
+
+        private static string JobAdmissionScheduleExtensionsPath()
+        {
+            return Path.Combine(
+                Application.dataPath,
+                "_Project",
+                "Scripts",
+                "Core",
+                "Scheduling",
+                "JobAdmissionScheduleExtensions.cs");
+        }
+
+        private static string JobSchedulingProfileCatalogPath()
+        {
+            return Path.Combine(
+                Application.dataPath,
+                "_Project",
+                "Scripts",
+                "Core",
+                "Scheduling",
+                "JobSchedulingProfileCatalog.cs");
+        }
+
+        private static string WorldChunkResidencyManagerPath()
+        {
+            return Path.Combine(
+                Application.dataPath,
+                "_Project",
+                "Scripts",
+                "World",
+                "WorldChunkResidencyManager.cs");
+        }
+
+        private static string PredatorCognitionDomainSteeringPath()
+        {
+            return Path.Combine(
+                Application.dataPath,
+                "_Project",
+                "Scripts",
+                "Fauna",
+                "PredatorCognitionDomain_Steering.cs");
+        }
+
+        private static string TelemetryDumpValidatorWindowPath()
+        {
+            return Path.Combine(
+                Application.dataPath,
+                "_Project",
+                "Scripts",
+                "Editor",
+                "TelemetryDumpValidatorWindow.cs");
+        }
+
+        private static string JobSchedulingProfilesPath()
+        {
+            return Path.GetFullPath(Path.Combine(
+                Application.dataPath,
+                "..",
+                "Assets",
+                "_SourceData",
+                "Core",
+                "Scheduling",
+                "job_scheduling_profiles.csv"));
         }
 
         private sealed class CapturingJobAdmissionTelemetrySink : IJobAdmissionTelemetrySink

@@ -135,6 +135,12 @@ namespace Hecton8.Core.Scheduling
                 bool end = i == csvBytes.Length;
                 byte c = end ? (byte)'\n' : csvBytes[i];
 
+                if (i == 0 && csvBytes.Length >= 3 && c == 0xEF && csvBytes[1] == 0xBB && csvBytes[2] == 0xBF)
+                {
+                    i += 2;
+                    continue;
+                }
+
                 if (comment)
                 {
                     if (c == '\n' || c == '\r' || end)

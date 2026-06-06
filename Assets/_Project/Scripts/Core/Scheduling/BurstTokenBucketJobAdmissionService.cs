@@ -20,7 +20,7 @@ namespace Hecton8.Core.Scheduling
         private const int BlackboxEntrySizeBytes = 64;
         private const string AdmissionBlackboxDumpPath = "Docs/AgentLogs/Dump_SIMULATION_BUCKET_DISTRIBUTOR_JobAdmission.bin";
         private const ulong AdmissionBlackboxDumpMagic = 0x00384E4F54434548ul; // HECTON8\0
-        private const uint AdmissionBlackboxDumpVersion = 1u;
+        private const uint AdmissionBlackboxDumpVersion = 2u;
         private const int CriticalDebtKillFrames = 60;
         private const float DefaultEstimatedCostMs = 0.025f;
         private const float OverflowEstimatedCostMs = 0.20f;
@@ -1075,7 +1075,7 @@ namespace Hecton8.Core.Scheduling
                 entry.Flags = flags;
                 entry.KillSwitchMask = _systemKillSwitchMask;
                 entry.Reserved = 0;
-                entry.StateHash = ComputeBlackboxHash(jobHash, estimatedCostMs, remainingBudgetMs, flags);
+                entry.StateHash = ComputeBlackboxHash(jobHash, entry.EstimatedCostMs, entry.RemainingBudgetMs, flags);
                 blackbox[slot] = entry;
             }
             finally

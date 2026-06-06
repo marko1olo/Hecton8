@@ -27,6 +27,26 @@ namespace Hecton8.EditorTools
         private const int GlobalTelemetrySourcePayloadStrideBytes = 64;
         private const uint GlobalTelemetrySurvivalSourceHash = 0x53555256u; // SURV
         private const int GlobalTelemetrySurvivalDeathCauseShift = 24;
+        private const ulong CrashTelemetryDumpMagic = 0x00384E4F54434548UL; // HECTON8\0
+        private const int CrashTelemetryDumpHeaderBytes = 16;
+        private const int CrashTelemetryDumpEntrySizeBytes = 64;
+        private const float CrashTelemetrySpikeFrameTimeSeconds = 0.033f;
+        private const uint CrashTelemetryMemoryFaultMask =
+            (1u << 23) |
+            (1u << 24) |
+            (1u << 25) |
+            (1u << 26) |
+            (1u << 27) |
+            (1u << 28);
+        private const ulong JobAdmissionDumpMagic = 0x00384E4F54434548UL; // HECTON8\0
+        private const int JobAdmissionDumpHeaderBytes = 32;
+        private const int JobAdmissionDumpEntrySizeBytes = 64;
+        private const uint JobAdmissionDumpMinVersion = 1u;
+        private const uint JobAdmissionDumpMaxVersion = 2u;
+        private const ulong SimulationBucketDumpMagic = 0x00384E4F54434548UL; // HECTON8\0
+        private const int SimulationBucketDumpHeaderBytes = 32;
+        private const int SimulationBucketDumpEntrySizeBytes = 64;
+        private const uint SimulationBucketDumpVersion = 1u;
         private readonly List<string> _rows = new List<string>(MaxDisplayedFrames);
         private TextField _pathField;
         private Label _summaryLabel;
@@ -139,6 +159,13 @@ namespace Hecton8.EditorTools
             int globalSourcePayloadOffsetBytes = GlobalTelemetrySourcePayloadOffsetBytes;
             string layoutName = "indexed";
             bool indexedLayout = false;
+
+            if (TryParseCrashTelemetryDump(path, bytes, span))
+                return;
+            if (TryParseJobAdmissionDump(path, bytes, span))
+                return;
+            if (TryParseSimulationBucketDump(path, bytes, span))
+                return;
 
             uint metadataMagic = bytes.Length >= GlobalTelemetryMetadataOffset + 4
                 ? ReadU32(span, GlobalTelemetryMetadataOffset)
@@ -374,6 +401,664 @@ namespace Hecton8.EditorTools
                     globalSourcePayloadOffsetBytes);
 
             return BuildGenericEntryLine(displayIndex, sourceIndex, offset, entry);
+        }
+
+        private bool TryParseCrashTelemetryDump(string path, byte[] bytes, ReadOnlySpan<byte> span)
+        {
+            if (!IsCrashTelemetryDumpPath(path) ||
+                span.Length < CrashTelemetryDumpHeaderBytes ||
+                ReadU64(span, 0) != CrashTelemetryDumpMagic)
+            {
+                return false;
+            }
+
+            uint entryCountRaw = ReadU32(span, 8);
+            uint entrySizeRaw = ReadU32(span, 12);
+            bool valid =
+                IsSaneCount(entryCountRaw) &&
+                entrySizeRaw == CrashTelemetryDumpEntrySizeBytes &&
+                CrashTelemetryDumpHeaderBytes + (long)entryCountRaw * entrySizeRaw <= span.Length;
+
+            if (!valid)
+            {
+                SetSummary(BuildInvalidCrashTelemetryHeaderSummary(
+                    path,
+                    span.Length,
+                    entryCountRaw,
+                    entrySizeRaw));
+                return true;
+            }
+
+            int entryCount = (int)entryCountRaw;
+            int entrySize = (int)entrySizeRaw;
+            int displayedEntryCount = math.min(entryCount, MaxDisplayedFrames);
+            int skip = math.max(0, entryCount - displayedEntryCount);
+            int payloadBytes = entryCount * entrySize;
+            ulong payloadHash = ComputeXxHash64(bytes, CrashTelemetryDumpHeaderBytes, payloadBytes);
+            StringBuilder builder = new StringBuilder(256);
+            builder.Append(Path.GetFileName(path));
+            builder.Append(" | bytes=");
+            builder.Append(span.Length.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | magic=HECTON8");
+            builder.Append(" | layout=crash-telemetry-buffer");
+            builder.Append(" | entries=");
+            builder.Append(entryCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | displayed=");
+            builder.Append(displayedEntryCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | entrySize=");
+            builder.Append(entrySize.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | xxHash3[payload]=0x");
+            builder.Append(payloadHash.ToString("X16", CultureInfo.InvariantCulture));
+            SetSummary(builder.ToString());
+
+            for (int i = skip; i < entryCount; i++)
+            {
+                int offset = CrashTelemetryDumpHeaderBytes + i * entrySize;
+                ReadOnlySpan<byte> entry = span.Slice(offset, entrySize);
+                _rows.Add(BuildCrashTelemetryEntryLine(i - skip, i, offset, entry));
+            }
+
+            return true;
+        }
+
+        private static string BuildInvalidCrashTelemetryHeaderSummary(
+            string path,
+            int byteCount,
+            uint entryCount,
+            uint entrySize)
+        {
+            StringBuilder builder = new StringBuilder(160);
+            builder.Append(Path.GetFileName(path));
+            builder.Append(" | invalid crash-telemetry-buffer header");
+            builder.Append(" | bytes=");
+            builder.Append(byteCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | entries=");
+            builder.Append(entryCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | entrySize=");
+            builder.Append(entrySize.ToString(CultureInfo.InvariantCulture));
+            return builder.ToString();
+        }
+
+        private static bool IsCrashTelemetryDumpPath(string path)
+        {
+            string fileName = Path.GetFileName(path) ?? string.Empty;
+            return string.Equals(
+                       fileName,
+                       "Dump_CRASH_TELEMETRY_BUFFER.bin",
+                       StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(
+                       fileName,
+                       "BLACKBOX_CRASH.bin",
+                       StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string BuildCrashTelemetryEntryLine(
+            int displayIndex,
+            int sourceIndex,
+            int offset,
+            ReadOnlySpan<byte> entry)
+        {
+            uint frame = ReadU32(entry, 0);
+            uint systemMask = ReadU32(entry, 4);
+            float deltaTimeSeconds = ReadF32(entry, 8);
+            float latencyMs = ReadF32(entry, 12);
+            float gpuFrameTimeMs = ReadF32(entry, 16);
+            float memoryUsedMb = ReadF32(entry, 20);
+            float playerX = ReadF32(entry, 24);
+            float playerY = ReadF32(entry, 28);
+            float playerZ = ReadF32(entry, 32);
+            uint activeChunks = ReadU32(entry, 36);
+            uint errorFlags = ReadU32(entry, 40);
+            uint exportReason = ReadU32(entry, 44);
+            uint aupShiftSequence = ReadU32(entry, 48);
+            uint payload0 = ReadU32(entry, 52);
+            uint payload1 = ReadU32(entry, 56);
+            uint lastOriginShiftFrame = ReadU32(entry, 60);
+
+            StringBuilder builder = new StringBuilder(260);
+            builder.Append('#');
+            builder.Append(displayIndex.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" slot=");
+            builder.Append(sourceIndex.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" @");
+            builder.Append(offset.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" frame=");
+            builder.Append(frame.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" dtMs=");
+            builder.Append((deltaTimeSeconds * 1000f).ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append(" latency=");
+            builder.Append(latencyMs.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append(" gpu=");
+            builder.Append(gpuFrameTimeMs.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append(" mem=");
+            builder.Append(memoryUsedMb.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append(" chunks=");
+            builder.Append(activeChunks.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" system=0x");
+            builder.Append(systemMask.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(" errors=0x");
+            builder.Append(errorFlags.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(" reason=0x");
+            builder.Append(exportReason.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(" aupSeq=");
+            builder.Append(aupShiftSequence.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" originFrame=");
+            builder.Append(lastOriginShiftFrame.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" pos=");
+            builder.Append(playerX.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(playerY.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(playerZ.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append(" payload=0x");
+            builder.Append(payload0.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(payload1.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(" spike=");
+            builder.Append(deltaTimeSeconds >= CrashTelemetrySpikeFrameTimeSeconds ? "1" : "0");
+            builder.Append(" memFault=");
+            builder.Append((errorFlags & CrashTelemetryMemoryFaultMask) != 0u ? "1" : "0");
+            return builder.ToString();
+        }
+
+        private bool TryParseSimulationBucketDump(string path, byte[] bytes, ReadOnlySpan<byte> span)
+        {
+            if (!IsSimulationBucketDumpPath(path) ||
+                span.Length < SimulationBucketDumpHeaderBytes ||
+                ReadU64(span, 0) != SimulationBucketDumpMagic)
+            {
+                return false;
+            }
+
+            uint version = ReadU32(span, 8);
+            int entryCount = ReadI32(span, 12);
+            int entrySize = ReadI32(span, 16);
+            int cursor = ReadI32(span, 20);
+            int frame = ReadI32(span, 24);
+            uint rebalanceSequence = ReadU32(span, 28);
+            bool valid =
+                version == SimulationBucketDumpVersion &&
+                entryCount >= 0 &&
+                entryCount <= 100000 &&
+                entrySize == SimulationBucketDumpEntrySizeBytes &&
+                cursor >= 0 &&
+                (entryCount == 0 || cursor < entryCount) &&
+                SimulationBucketDumpHeaderBytes + (long)entryCount * entrySize <= span.Length;
+
+            if (!valid)
+            {
+                SetSummary(BuildInvalidSimulationBucketHeaderSummary(
+                    path,
+                    span.Length,
+                    version,
+                    entryCount,
+                    entrySize,
+                    cursor,
+                    frame,
+                    rebalanceSequence));
+                return true;
+            }
+
+            int nonEmptyEntryCount = CountSimulationBucketEntriesWithPayload(span, entryCount);
+            int payloadBytes = entryCount * entrySize;
+            ulong payloadHash = ComputeXxHash64(bytes, SimulationBucketDumpHeaderBytes, payloadBytes);
+            StringBuilder builder = new StringBuilder(256);
+            builder.Append(Path.GetFileName(path));
+            builder.Append(" | bytes=");
+            builder.Append(span.Length.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | magic=HECTON8");
+            builder.Append(" | version=");
+            builder.Append(version.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | layout=simulation-bucket-blackbox");
+            builder.Append(" | entries=");
+            builder.Append(entryCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | displayed=");
+            builder.Append(math.min(nonEmptyEntryCount, MaxDisplayedFrames).ToString(CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(nonEmptyEntryCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | entrySize=");
+            builder.Append(entrySize.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | cursor=");
+            builder.Append(cursor.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | frame=");
+            builder.Append(frame.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | rebalance=");
+            builder.Append(rebalanceSequence.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | xxHash3[payload]=0x");
+            builder.Append(payloadHash.ToString("X16", CultureInfo.InvariantCulture));
+            SetSummary(builder.ToString());
+
+            int skip = math.max(0, nonEmptyEntryCount - MaxDisplayedFrames);
+            int seen = 0;
+            for (int i = 0; i < entryCount; i++)
+            {
+                int offset = SimulationBucketDumpHeaderBytes + i * entrySize;
+                ReadOnlySpan<byte> entry = span.Slice(offset, entrySize);
+                if (IsEmptySimulationBucketEntry(entry))
+                    continue;
+
+                if (seen++ < skip)
+                    continue;
+
+                _rows.Add(BuildSimulationBucketEntryLine(seen - 1, i, offset, entry));
+            }
+
+            return true;
+        }
+
+        private static string BuildInvalidSimulationBucketHeaderSummary(
+            string path,
+            int byteCount,
+            uint version,
+            int entryCount,
+            int entrySize,
+            int cursor,
+            int frame,
+            uint rebalanceSequence)
+        {
+            StringBuilder builder = new StringBuilder(192);
+            builder.Append(Path.GetFileName(path));
+            builder.Append(" | invalid simulation-bucket blackbox header");
+            builder.Append(" | bytes=");
+            builder.Append(byteCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | version=");
+            builder.Append(version.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | entries=");
+            builder.Append(entryCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | entrySize=");
+            builder.Append(entrySize.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | cursor=");
+            builder.Append(cursor.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | frame=");
+            builder.Append(frame.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | rebalance=");
+            builder.Append(rebalanceSequence.ToString(CultureInfo.InvariantCulture));
+            return builder.ToString();
+        }
+
+        private static bool IsSimulationBucketDumpPath(string path)
+        {
+            string fileName = Path.GetFileName(path) ?? string.Empty;
+            return string.Equals(
+                fileName,
+                "Dump_SIMULATION_BUCKET_DISTRIBUTOR.bin",
+                StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static int CountSimulationBucketEntriesWithPayload(ReadOnlySpan<byte> bytes, int entryCount)
+        {
+            int count = 0;
+            for (int i = 0; i < entryCount; i++)
+            {
+                int offset = SimulationBucketDumpHeaderBytes + i * SimulationBucketDumpEntrySizeBytes;
+                if (offset < 0 || offset + SimulationBucketDumpEntrySizeBytes > bytes.Length)
+                    break;
+
+                if (!IsEmptySimulationBucketEntry(bytes.Slice(offset, SimulationBucketDumpEntrySizeBytes)))
+                    count++;
+            }
+
+            return count;
+        }
+
+        private static bool IsEmptySimulationBucketEntry(ReadOnlySpan<byte> entry)
+        {
+            int scanned = math.min(SimulationBucketDumpEntrySizeBytes, entry.Length);
+            for (int i = 0; i < scanned; i++)
+            {
+                if (entry[i] != 0)
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static string BuildSimulationBucketEntryLine(
+            int displayIndex,
+            int sourceIndex,
+            int offset,
+            ReadOnlySpan<byte> entry)
+        {
+            int frame = ReadI32(entry, 0);
+            int fast = ReadI32(entry, 4);
+            int slow = ReadI32(entry, 8);
+            int cold = ReadI32(entry, 12);
+            int slowCount = ReadI32(entry, 16);
+            int debt = ReadI32(entry, 20);
+            uint pacingFlags = ReadU32(entry, 24);
+            uint rebalanceSequence = ReadU32(entry, 28);
+            float activeLoadMs = ReadF32(entry, 32);
+            float jitterMs = ReadF32(entry, 36);
+            float expectedMaxMs = ReadF32(entry, 40);
+            float expectedMeanMs = ReadF32(entry, 44);
+            float preSimulationCostMs = ReadF32(entry, 48);
+            float interpolationAlpha = ReadF32(entry, 52);
+            byte activeSlowBucketCount = entry.Length > 56 ? entry[56] : (byte)0;
+            byte aupBarrierActive = entry.Length > 57 ? entry[57] : (byte)0;
+            ushort reserved = ReadU16(entry, 58);
+            uint stateHash = ReadU32(entry, 60);
+
+            StringBuilder builder = new StringBuilder(240);
+            builder.Append('#');
+            builder.Append(displayIndex.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" slot=");
+            builder.Append(sourceIndex.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" @");
+            builder.Append(offset.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" frame=");
+            builder.Append(frame.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" buckets=");
+            builder.Append(fast.ToString(CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(slow.ToString(CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(cold.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" slowCount=");
+            builder.Append(slowCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" activeSlow=");
+            builder.Append(activeSlowBucketCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" debt=");
+            builder.Append(debt.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" flags=0x");
+            builder.Append(pacingFlags.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(" rebalance=");
+            builder.Append(rebalanceSequence.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" load=");
+            builder.Append(activeLoadMs.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append(" jitter=");
+            builder.Append(jitterMs.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append(" expected=");
+            builder.Append(expectedMeanMs.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(expectedMaxMs.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append(" pre=");
+            builder.Append(preSimulationCostMs.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append(" alpha=");
+            builder.Append(interpolationAlpha.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append(" aup=");
+            builder.Append(aupBarrierActive != 0 ? "1" : "0");
+            builder.Append(" reserved=0x");
+            builder.Append(reserved.ToString("X4", CultureInfo.InvariantCulture));
+            builder.Append(" state=0x");
+            builder.Append(stateHash.ToString("X8", CultureInfo.InvariantCulture));
+            return builder.ToString();
+        }
+
+        private bool TryParseJobAdmissionDump(string path, byte[] bytes, ReadOnlySpan<byte> span)
+        {
+            if (!IsJobAdmissionDumpPath(path) ||
+                span.Length < JobAdmissionDumpHeaderBytes ||
+                ReadU64(span, 0) != JobAdmissionDumpMagic)
+            {
+                return false;
+            }
+
+            uint version = ReadU32(span, 8);
+            int entryCount = ReadI32(span, 12);
+            int entrySize = ReadI32(span, 16);
+            int cursor = ReadI32(span, 20);
+            uint frameSequence = ReadU32(span, 24);
+            uint reserved = ReadU32(span, 28);
+            bool valid =
+                version >= JobAdmissionDumpMinVersion &&
+                version <= JobAdmissionDumpMaxVersion &&
+                entryCount >= 0 &&
+                entryCount <= 100000 &&
+                entrySize == JobAdmissionDumpEntrySizeBytes &&
+                cursor >= 0 &&
+                (entryCount == 0 || cursor < entryCount) &&
+                reserved == 0u &&
+                JobAdmissionDumpHeaderBytes + (long)entryCount * entrySize <= span.Length;
+
+            if (!valid)
+            {
+                SetSummary(BuildInvalidJobAdmissionHeaderSummary(
+                    path,
+                    span.Length,
+                    version,
+                    entryCount,
+                    entrySize,
+                    cursor,
+                    frameSequence,
+                    reserved));
+                return true;
+            }
+
+            int nonEmptyEntryCount = CountJobAdmissionEntriesWithPayload(span, entryCount);
+            int payloadBytes = entryCount * entrySize;
+            ulong payloadHash = ComputeXxHash64(bytes, JobAdmissionDumpHeaderBytes, payloadBytes);
+            StringBuilder builder = new StringBuilder(256);
+            builder.Append(Path.GetFileName(path));
+            builder.Append(" | bytes=");
+            builder.Append(span.Length.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | magic=HECTON8");
+            builder.Append(" | version=");
+            builder.Append(version.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | layout=job-admission-blackbox");
+            builder.Append(" | entries=");
+            builder.Append(entryCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | displayed=");
+            builder.Append(math.min(nonEmptyEntryCount, MaxDisplayedFrames).ToString(CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(nonEmptyEntryCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | entrySize=");
+            builder.Append(entrySize.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | cursor=");
+            builder.Append(cursor.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | frame=");
+            builder.Append(frameSequence.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | xxHash3[payload]=0x");
+            builder.Append(payloadHash.ToString("X16", CultureInfo.InvariantCulture));
+            SetSummary(builder.ToString());
+
+            int skip = math.max(0, nonEmptyEntryCount - MaxDisplayedFrames);
+            int seen = 0;
+            for (int i = 0; i < entryCount; i++)
+            {
+                int offset = JobAdmissionDumpHeaderBytes + i * entrySize;
+                ReadOnlySpan<byte> entry = span.Slice(offset, entrySize);
+                if (IsEmptyJobAdmissionEntry(entry))
+                    continue;
+
+                if (seen++ < skip)
+                    continue;
+
+                _rows.Add(BuildJobAdmissionEntryLine(version, seen - 1, i, offset, entry));
+            }
+
+            return true;
+        }
+
+        private static string BuildInvalidJobAdmissionHeaderSummary(
+            string path,
+            int byteCount,
+            uint version,
+            int entryCount,
+            int entrySize,
+            int cursor,
+            uint frameSequence,
+            uint reserved)
+        {
+            StringBuilder builder = new StringBuilder(192);
+            builder.Append(Path.GetFileName(path));
+            builder.Append(" | invalid job-admission blackbox header");
+            builder.Append(" | bytes=");
+            builder.Append(byteCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | version=");
+            builder.Append(version.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | entries=");
+            builder.Append(entryCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | entrySize=");
+            builder.Append(entrySize.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | cursor=");
+            builder.Append(cursor.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | frame=");
+            builder.Append(frameSequence.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | reserved=0x");
+            builder.Append(reserved.ToString("X8", CultureInfo.InvariantCulture));
+            return builder.ToString();
+        }
+
+        private static bool IsJobAdmissionDumpPath(string path)
+        {
+            string fileName = Path.GetFileName(path) ?? string.Empty;
+            return fileName.IndexOf("JobAdmission", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static int CountJobAdmissionEntriesWithPayload(ReadOnlySpan<byte> bytes, int entryCount)
+        {
+            int count = 0;
+            for (int i = 0; i < entryCount; i++)
+            {
+                int offset = JobAdmissionDumpHeaderBytes + i * JobAdmissionDumpEntrySizeBytes;
+                if (offset < 0 || offset + JobAdmissionDumpEntrySizeBytes > bytes.Length)
+                    break;
+
+                if (!IsEmptyJobAdmissionEntry(bytes.Slice(offset, JobAdmissionDumpEntrySizeBytes)))
+                    count++;
+            }
+
+            return count;
+        }
+
+        private static bool IsEmptyJobAdmissionEntry(ReadOnlySpan<byte> entry)
+        {
+            int scanned = math.min(32, entry.Length);
+            for (int i = 0; i < scanned; i++)
+            {
+                if (entry[i] != 0)
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static string BuildJobAdmissionEntryLine(
+            uint version,
+            int displayIndex,
+            int sourceIndex,
+            int offset,
+            ReadOnlySpan<byte> entry)
+        {
+            uint frameSequence = ReadU32(entry, 0);
+            uint jobHash = ReadU32(entry, 4);
+            float estimatedCostMs = ReadF32(entry, 8);
+            float remainingBudgetMs = ReadF32(entry, 12);
+            int criticalDebtFrames = ReadI32(entry, 16);
+            uint killSwitchMask = ReadU32(entry, 20);
+            byte lane = entry.Length > 24 ? entry[24] : (byte)0;
+            byte flags = entry.Length > 25 ? entry[25] : (byte)0;
+            uint stateHash = ReadU32(entry, 28);
+            uint computedStateHash = ComputeJobAdmissionStateHash(
+                frameSequence,
+                jobHash,
+                estimatedCostMs,
+                remainingBudgetMs,
+                criticalDebtFrames,
+                killSwitchMask,
+                flags);
+
+            StringBuilder builder = new StringBuilder(220);
+            builder.Append('#');
+            builder.Append(displayIndex.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" slot=");
+            builder.Append(sourceIndex.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" @");
+            builder.Append(offset.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" frame=");
+            builder.Append(frameSequence.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" lane=");
+            builder.Append(lane.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" job=0x");
+            builder.Append(jobHash.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(" est=");
+            builder.Append(estimatedCostMs.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append(" rem=");
+            builder.Append(remainingBudgetMs.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append(" debt=");
+            builder.Append(criticalDebtFrames.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" kill=0x");
+            builder.Append(killSwitchMask.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(" flags=0x");
+            builder.Append(flags.ToString("X2", CultureInfo.InvariantCulture));
+            builder.Append(' ');
+            builder.Append(ResolveJobAdmissionFlagsLabel(version, flags));
+            builder.Append(" hash=0x");
+            builder.Append(stateHash.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(" hashOk=");
+            builder.Append(stateHash == computedStateHash ? "yes" : "no");
+            if (stateHash != computedStateHash)
+            {
+                builder.Append(" calc=0x");
+                builder.Append(computedStateHash.ToString("X8", CultureInfo.InvariantCulture));
+            }
+
+            return builder.ToString();
+        }
+
+        private static string ResolveJobAdmissionFlagsLabel(uint version, byte flags)
+        {
+            if (flags == 0)
+                return "none";
+
+            StringBuilder builder = new StringBuilder(80);
+            if (version >= 2u)
+            {
+                AppendFlagLabel(builder, (flags & (1 << 0)) != 0, "admitted");
+                AppendFlagLabel(builder, (flags & (1 << 1)) != 0, "denied");
+                AppendFlagLabel(builder, (flags & (1 << 2)) != 0, "aup");
+                AppendFlagLabel(builder, (flags & (1 << 3)) != 0, "kill");
+                AppendFlagLabel(builder, (flags & (1 << 4)) != 0, "budget");
+                AppendFlagLabel(builder, (flags & (1 << 5)) != 0, "nonfinite");
+            }
+            else
+            {
+                AppendFlagLabel(builder, (flags & (1 << 0)) != 0, "legacy-starved");
+                AppendFlagLabel(builder, (flags & (1 << 1)) != 0, "legacy-nonfinite");
+            }
+
+            return builder.Length == 0 ? "unknown" : builder.ToString();
+        }
+
+        private static void AppendFlagLabel(StringBuilder builder, bool active, string label)
+        {
+            if (!active)
+                return;
+
+            if (builder.Length != 0)
+                builder.Append('|');
+
+            builder.Append(label);
+        }
+
+        private static uint ComputeJobAdmissionStateHash(
+            uint frameSequence,
+            uint jobHash,
+            float estimatedCostMs,
+            float remainingBudgetMs,
+            int criticalDebtFrames,
+            uint killSwitchMask,
+            byte flags)
+        {
+            unchecked
+            {
+                uint hash = 2166136261u;
+                hash = (hash ^ frameSequence) * 16777619u;
+                hash = (hash ^ jobHash) * 16777619u;
+                hash = (hash ^ FloatBitsOrZero(estimatedCostMs)) * 16777619u;
+                hash = (hash ^ FloatBitsOrZero(remainingBudgetMs)) * 16777619u;
+                hash = (hash ^ (uint)criticalDebtFrames) * 16777619u;
+                hash = (hash ^ killSwitchMask) * 16777619u;
+                hash = (hash ^ flags) * 16777619u;
+                return hash;
+            }
+        }
+
+        private static uint FloatBitsOrZero(float value)
+        {
+            return float.IsNaN(value) || float.IsInfinity(value)
+                ? 0u
+                : math.asuint(value);
         }
 
         private static int ResolveGlobalTelemetrySourceSlot(
@@ -905,6 +1590,13 @@ namespace Hecton8.EditorTools
             if (offset < 0 || offset + 4 > bytes.Length)
                 return 0u;
             return BinaryPrimitives.ReadUInt32LittleEndian(bytes.Slice(offset, 4));
+        }
+
+        private static ushort ReadU16(ReadOnlySpan<byte> bytes, int offset)
+        {
+            if (offset < 0 || offset + 2 > bytes.Length)
+                return 0;
+            return BinaryPrimitives.ReadUInt16LittleEndian(bytes.Slice(offset, 2));
         }
 
         private static ulong ReadU64(ReadOnlySpan<byte> bytes, int offset)
