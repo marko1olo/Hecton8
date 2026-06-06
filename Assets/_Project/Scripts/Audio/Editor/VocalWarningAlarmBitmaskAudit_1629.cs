@@ -171,6 +171,11 @@ namespace Hecton8.Audio.Editor
             string scheduleFrameBody = ExtractMethodBody(vwsText, "private JobHandle ScheduleVocalWarningFrame(");
             string visualSyncBody = ExtractMethodBody(vwsText, "private void VisualSyncPresentationTick()");
             string clearQueuesBody = ExtractMethodBody(vwsText, "private void CancelRendererPlaybackAndClearQueues()");
+            string vocalEnsureStorageBody = ExtractMethodBody(vocalRuntimeText, "private void EnsureVaultStorage()");
+            string vocalOpenBankBody = ExtractMethodBody(vocalRuntimeText, "private void OpenOrGenerateBankCold()");
+            string vocalLoadBankBody = ExtractMethodBody(vocalRuntimeText, "private bool TryLoadBankIntoVaultCold(");
+            string vocalGenerateMockBody = ExtractMethodBody(vocalRuntimeText, "private void GenerateMockBankCold(");
+            string vocalReloadCsvBody = ExtractMethodBody(vocalRuntimeText, "private void ReloadDialogueCsvMetadataCold()");
             Require(Count(vocalRuntimeText, "TryAcquireWriteLock") == 0, "Vocal DSP runtime must not acquire DataVault write locks.");
             Require(Count(vwsText, "TryAcquireWriteLock") == 0, "VWS must not acquire DataVault write locks.");
             Require(Count(vwsText, "ReleaseWriteLock") == 0, "VWS must not release DataVault write locks.");
@@ -197,6 +202,35 @@ namespace Hecton8.Audio.Editor
                 "VWS teardown queue clear does not resolve owner views through the guarded vault.");
             Require(vocalRuntimeText.IndexOf("TryAcquireVocalMutationGuard", StringComparison.Ordinal) >= 0, "Vocal runtime guard scope missing.");
             Require(vocalRuntimeText.IndexOf("ReleaseVocalMutationGuard", StringComparison.Ordinal) >= 0, "Vocal runtime guard release missing.");
+            Require(vocalRuntimeText.IndexOf("private bool TryAcquireInitializeViews(IDataVault vault, out VocalVaultViews views", StringComparison.Ordinal) >= 0,
+                "Vocal runtime initialize view acquire overload must accept the guarded vault explicitly.");
+            Require(vocalRuntimeText.IndexOf("private bool TryAcquireBankBuildViews(IDataVault vault, out VocalVaultViews views", StringComparison.Ordinal) >= 0,
+                "Vocal runtime bank-build view acquire overload must accept the guarded vault explicitly.");
+            Require(vocalRuntimeText.IndexOf("private bool TryAcquireCsvViews(IDataVault vault, out VocalVaultViews views", StringComparison.Ordinal) >= 0,
+                "Vocal runtime CSV view acquire overload must accept the guarded vault explicitly.");
+            Require(vocalRuntimeText.IndexOf("private bool TryAcquireInitializeViews(out VocalVaultViews views", StringComparison.Ordinal) < 0,
+                "Vocal runtime initialize view acquire must not expose a no-arg _dataVault wrapper.");
+            Require(vocalRuntimeText.IndexOf("private bool TryAcquireBankBuildViews(out VocalVaultViews views", StringComparison.Ordinal) < 0,
+                "Vocal runtime bank-build view acquire must not expose a no-arg _dataVault wrapper.");
+            Require(vocalRuntimeText.IndexOf("private bool TryAcquireCsvViews(out VocalVaultViews views", StringComparison.Ordinal) < 0,
+                "Vocal runtime CSV view acquire must not expose a no-arg _dataVault wrapper.");
+            Require(vocalEnsureStorageBody.IndexOf("AreVaultViewsResolvable(vault)", StringComparison.Ordinal) >= 0 &&
+                    vocalEnsureStorageBody.IndexOf("TryAcquireInitializeViews(vault, out VocalVaultViews views", StringComparison.Ordinal) >= 0 &&
+                    vocalEnsureStorageBody.IndexOf("DisposeVaultStorage(vault)", StringComparison.Ordinal) >= 0,
+                "Vocal runtime cold storage initialization must resolve, mutate, and clean up through the same local vault.");
+            Require(vocalRuntimeText.IndexOf("private void DisposeVaultStorage(IDataVault vault)", StringComparison.Ordinal) >= 0,
+                "Vocal runtime vault storage disposal must accept an explicit vault.");
+            Require(vocalOpenBankBody.IndexOf("IDataVault vault = _dataVault", StringComparison.Ordinal) >= 0 &&
+                    vocalOpenBankBody.IndexOf("TryLoadBankIntoVaultCold(vault)", StringComparison.Ordinal) >= 0 &&
+                    vocalOpenBankBody.IndexOf("GenerateMockBankCold(vault)", StringComparison.Ordinal) >= 0,
+                "Vocal runtime cold bank loading must bind load and mock build to the same local vault.");
+            Require(vocalLoadBankBody.IndexOf("IDataVault vault = _dataVault", StringComparison.Ordinal) < 0,
+                "Vocal runtime bank loading must not re-read _dataVault after receiving an explicit vault.");
+            Require(vocalGenerateMockBody.IndexOf("TryAcquireBankBuildViews(vault, out VocalVaultViews views", StringComparison.Ordinal) >= 0,
+                "Vocal runtime mock bank generation must acquire bank-build views through the explicit vault.");
+            Require(vocalReloadCsvBody.IndexOf("IDataVault vault = _dataVault", StringComparison.Ordinal) >= 0 &&
+                    vocalReloadCsvBody.IndexOf("TryAcquireCsvViews(vault, out VocalVaultViews views", StringComparison.Ordinal) >= 0,
+                "Vocal runtime CSV reload must acquire CSV views through the captured vault.");
         }
 
         private static int Count(string source, string needle)

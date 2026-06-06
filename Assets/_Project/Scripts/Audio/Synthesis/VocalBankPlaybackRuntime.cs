@@ -520,9 +520,14 @@ namespace Hecton8.Audio.Synthesis
 
         private bool TryAcquireAudioCallbackViews(out VocalVaultViews views, out int lockMask, out IDataVault lockedVault)
         {
+            return TryAcquireAudioCallbackViews(_dataVault, out views, out lockMask, out lockedVault);
+        }
+
+        private bool TryAcquireAudioCallbackViews(IDataVault vault, out VocalVaultViews views, out int lockMask, out IDataVault lockedVault)
+        {
             views = default;
             lockMask = 0;
-            lockedVault = _dataVault;
+            lockedVault = vault;
             if (lockedVault == null)
                 return false;
 
@@ -562,9 +567,14 @@ namespace Hecton8.Audio.Synthesis
 
         private bool TryAcquireControlViews(out VocalVaultViews views, out int lockMask, out IDataVault lockedVault)
         {
+            return TryAcquireControlViews(_dataVault, out views, out lockMask, out lockedVault);
+        }
+
+        private bool TryAcquireControlViews(IDataVault vault, out VocalVaultViews views, out int lockMask, out IDataVault lockedVault)
+        {
             views = default;
             lockMask = 0;
-            lockedVault = _dataVault;
+            lockedVault = vault;
             if (lockedVault == null)
                 return false;
 
@@ -606,11 +616,11 @@ namespace Hecton8.Audio.Synthesis
             }
         }
 
-        private bool TryAcquireBankBuildViews(out VocalVaultViews views, out int lockMask, out IDataVault lockedVault)
+        private bool TryAcquireBankBuildViews(IDataVault vault, out VocalVaultViews views, out int lockMask, out IDataVault lockedVault)
         {
             views = default;
             lockMask = 0;
-            lockedVault = _dataVault;
+            lockedVault = vault;
             if (lockedVault == null)
                 return false;
 
@@ -640,11 +650,11 @@ namespace Hecton8.Audio.Synthesis
             }
         }
 
-        private bool TryAcquireInitializeViews(out VocalVaultViews views, out int lockMask, out IDataVault lockedVault)
+        private bool TryAcquireInitializeViews(IDataVault vault, out VocalVaultViews views, out int lockMask, out IDataVault lockedVault)
         {
             views = default;
             lockMask = 0;
-            lockedVault = _dataVault;
+            lockedVault = vault;
             if (lockedVault == null)
                 return false;
 
@@ -690,11 +700,11 @@ namespace Hecton8.Audio.Synthesis
         }
 
 #if UNITY_EDITOR
-        private bool TryAcquireCsvViews(out VocalVaultViews views, out int lockMask, out IDataVault lockedVault)
+        private bool TryAcquireCsvViews(IDataVault vault, out VocalVaultViews views, out int lockMask, out IDataVault lockedVault)
         {
             views = default;
             lockMask = 0;
-            lockedVault = _dataVault;
+            lockedVault = vault;
             if (lockedVault == null)
                 return false;
 
@@ -1148,7 +1158,7 @@ namespace Hecton8.Audio.Synthesis
         private void EnsureVaultStorage()
         {
             IDataVault vault = _dataVault;
-            if (Volatile.Read(ref _nativeAllocated) != 0 && AreVaultViewsResolvable())
+            if (Volatile.Read(ref _nativeAllocated) != 0 && AreVaultViewsResolvable(vault))
                 return;
 
             if (vault == null)
@@ -1165,9 +1175,9 @@ namespace Hecton8.Audio.Synthesis
             _csvMetadataHandle = vault.EnsureGenerationHandle<VocalDialogueMetadataDTO>(BufferID.AudioVocalSynthesisCsvMetadata, CsvMetadataCapacity, VaultOwner, NativeArrayOptions.UninitializedMemory);
 #endif
 
-            if (!TryAcquireInitializeViews(out VocalVaultViews views, out int lockMask, out IDataVault lockedVault))
+            if (!TryAcquireInitializeViews(vault, out VocalVaultViews views, out int lockMask, out IDataVault lockedVault))
             {
-                DisposeVaultStorage();
+                DisposeVaultStorage(vault);
                 return;
             }
 
@@ -1197,28 +1207,28 @@ namespace Hecton8.Audio.Synthesis
             }
         }
 
-        private bool AreVaultViewsResolvable()
+        private bool AreVaultViewsResolvable(IDataVault vault)
         {
-            return IsReadOnlyHandleResolvable(in _stateHandle, BufferID.AudioVocalSynthesisState, 1) &&
-                   IsReadOnlyHandleResolvable(in _codecHandle, BufferID.AudioVocalSynthesisCodecState, 1) &&
-                   IsReadOnlyHandleResolvable(in _telemetryHandle, BufferID.AudioVocalSynthesisTelemetry, TelemetryCapacity) &&
-                   IsReadOnlyHandleResolvable(in _countersHandle, BufferID.AudioVocalSynthesisTelemetryCursor, 1) &&
-                   IsReadOnlyHandleResolvable(in _waveformHandle, BufferID.AudioVocalSynthesisWaveform, WaveformCapacity) &&
-                   IsReadOnlyHandleResolvable(in _mockBankBytesHandle, BufferID.AudioVocalSynthesisMockBankBytes, 1) &&
-                   IsReadOnlyHandleResolvable(in _mockRecordsHandle, BufferID.AudioVocalSynthesisMockBankRecords, MockRecordCapacity)
+            return IsReadOnlyHandleResolvable(vault, in _stateHandle, BufferID.AudioVocalSynthesisState, 1) &&
+                   IsReadOnlyHandleResolvable(vault, in _codecHandle, BufferID.AudioVocalSynthesisCodecState, 1) &&
+                   IsReadOnlyHandleResolvable(vault, in _telemetryHandle, BufferID.AudioVocalSynthesisTelemetry, TelemetryCapacity) &&
+                   IsReadOnlyHandleResolvable(vault, in _countersHandle, BufferID.AudioVocalSynthesisTelemetryCursor, 1) &&
+                   IsReadOnlyHandleResolvable(vault, in _waveformHandle, BufferID.AudioVocalSynthesisWaveform, WaveformCapacity) &&
+                   IsReadOnlyHandleResolvable(vault, in _mockBankBytesHandle, BufferID.AudioVocalSynthesisMockBankBytes, 1) &&
+                   IsReadOnlyHandleResolvable(vault, in _mockRecordsHandle, BufferID.AudioVocalSynthesisMockBankRecords, MockRecordCapacity)
 #if UNITY_EDITOR
-                   && IsReadOnlyHandleResolvable(in _csvMetadataHandle, BufferID.AudioVocalSynthesisCsvMetadata, CsvMetadataCapacity)
+                   && IsReadOnlyHandleResolvable(vault, in _csvMetadataHandle, BufferID.AudioVocalSynthesisCsvMetadata, CsvMetadataCapacity)
 #endif
                    ;
         }
 
         private bool IsReadOnlyHandleResolvable<T>(
+            IDataVault vault,
             in VaultGenerationHandle<T> handle,
             BufferID expectedBufferId,
             int minimumLength)
             where T : struct
         {
-            IDataVault vault = _dataVault;
             return vault != null &&
                    IsVocalSynthesisVaultHandle(in handle, expectedBufferId) &&
                    vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly view) &&
@@ -1227,10 +1237,14 @@ namespace Hecton8.Audio.Synthesis
 
         private void DisposeVaultStorage()
         {
+            DisposeVaultStorage(_dataVault);
+        }
+
+        private void DisposeVaultStorage(IDataVault vault)
+        {
             if (!TryBeginBankMutationCold())
                 return;
 
-            IDataVault vault = _dataVault;
             try
             {
                 ForceReleaseVocalMutationGuard();
@@ -1295,26 +1309,26 @@ namespace Hecton8.Audio.Synthesis
             if (!TryBeginBankMutationCold())
                 return;
 
+            IDataVault vault = _dataVault;
             try
             {
                 _bankByteLength = 0;
                 Volatile.Write(ref _usingMockBank, 0);
-                if (TryLoadBankIntoVaultCold())
+                if (vault == null)
+                    return;
+
+                if (TryLoadBankIntoVaultCold(vault))
                     return;
 
                 if (_useMockBankWhenFileMissing)
                 {
-                    IDataVault vault = _dataVault;
-                    if (vault != null)
-                    {
-                        _mockBankBytesHandle = vault.EnsureGenerationHandle<byte>(
-                            BufferID.AudioVocalSynthesisMockBankBytes,
-                            MockBankByteCapacity,
-                            VaultOwner,
-                            NativeArrayOptions.UninitializedMemory);
-                    }
+                    _mockBankBytesHandle = vault.EnsureGenerationHandle<byte>(
+                        BufferID.AudioVocalSynthesisMockBankBytes,
+                        MockBankByteCapacity,
+                        VaultOwner,
+                        NativeArrayOptions.UninitializedMemory);
 
-                    GenerateMockBankCold();
+                    GenerateMockBankCold(vault);
                 }
             }
             finally
@@ -1323,7 +1337,7 @@ namespace Hecton8.Audio.Synthesis
             }
         }
 
-        private bool TryLoadBankIntoVaultCold()
+        private bool TryLoadBankIntoVaultCold(IDataVault vault)
         {
             string path = Path.Combine(Application.streamingAssetsPath, BankRelativePath);
             if (!File.Exists(path))
@@ -1337,7 +1351,6 @@ namespace Hecton8.Audio.Synthesis
                     if (bankLength <= 0 || bankLength > int.MaxValue)
                         return false;
 
-                    IDataVault vault = _dataVault;
                     if (vault == null)
                         return false;
 
@@ -1431,9 +1444,9 @@ namespace Hecton8.Audio.Synthesis
             }
         }
 
-        private void GenerateMockBankCold()
+        private void GenerateMockBankCold(IDataVault vault)
         {
-            if (!TryAcquireBankBuildViews(out VocalVaultViews views, out int lockMask, out IDataVault lockedVault))
+            if (!TryAcquireBankBuildViews(vault, out VocalVaultViews views, out int lockMask, out IDataVault lockedVault))
                 return;
 
             try
@@ -1494,7 +1507,8 @@ namespace Hecton8.Audio.Synthesis
 #if UNITY_EDITOR
         private void ReloadDialogueCsvMetadataCold()
         {
-            if (!TryAcquireCsvViews(out VocalVaultViews views, out int lockMask, out IDataVault lockedVault))
+            IDataVault vault = _dataVault;
+            if (!TryAcquireCsvViews(vault, out VocalVaultViews views, out int lockMask, out IDataVault lockedVault))
                 return;
 
             try
