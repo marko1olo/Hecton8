@@ -776,6 +776,7 @@ namespace Hecton8.Audio.Editor
                 string vocalColdServices = ExtractMethodBody(vocalWarning, "private void RefreshCachedServicesCold()");
                 string vocalTuningWrite = ExtractMethodBody(vocalWarning, "public unsafe bool EditorTryWriteTuning(");
                 string vocalTuningAcquire = ExtractMethodBody(vocalWarning, "private bool TryAcquireTuningMutationView(");
+                string vocalMockInject = ExtractMethodBody(vocalWarning, "public bool EditorInjectMockThreats(");
                 AssertContains(vocalWarning, "ResolveGlobalQualityWeight01()", "Vocal warning system derives radio presentation from continuous global quality", builder, ref failureCount);
                 AssertContains(vocalWarning, "ResolveRadioDistortion01(ref views, nextId)", "Vocal warning system resolves radio degradation through the warning payload path", builder, ref failureCount);
                 AssertContains(vocalWarning, "VocalWarningTuningMutationGuardMask", "Vocal warning tuning buffer has a dedicated mutation guard", builder, ref failureCount);
@@ -784,6 +785,9 @@ namespace Hecton8.Audio.Editor
                 AssertContains(vocalTuningWrite, "ReleaseVocalWarningMutationGuard", "Vocal warning editor tuning writes release mutation guard in finally", builder, ref failureCount);
                 AssertContains(vocalTuningAcquire, "TryAcquireMutationGuard(VocalWarningTuningMutationGuardMask)", "Vocal warning tuning view uses DataVault mutation guard", builder, ref failureCount);
                 AssertContains(vocalTuningAcquire, "TryResolveHandle(in _tuningHandle", "Vocal warning tuning view resolves the tuning handle after guard acquisition", builder, ref failureCount);
+                AssertContains(vocalMockInject, "TryAcquireVocalWarningFrameGuard", "Vocal warning mock threat injection acquires the frame mutation guard", builder, ref failureCount);
+                AssertContains(vocalMockInject, "TryResolveVwsOwnerViews", "Vocal warning mock threat injection resolves owner views only under frame guard", builder, ref failureCount);
+                AssertContains(vocalMockInject, "ReleaseVocalWarningFrameGuard", "Vocal warning mock threat injection releases frame mutation guard in finally", builder, ref failureCount);
                 AssertNotContains(vocalWarning, "ConsumeScalabilitySignals();", "Vocal warning system no longer drains binary scalability changes", builder, ref failureCount);
                 AssertNotContains(vocalWarning, "TryAcquireWriteLock", "Vocal warning system avoids direct DataVault write locks", builder, ref failureCount);
                 AssertNotContains(vocalWarning, "ReleaseWriteLock", "Vocal warning system avoids direct DataVault write-lock release calls", builder, ref failureCount);
@@ -1031,6 +1035,7 @@ namespace Hecton8.Audio.Editor
                 string audioLogSlowTick = ExtractMethodBody(audioLogSystem, "public void SlowTick()");
                 string audioLogQueueEnqueue = ExtractMethodBody(audioLogSystem, "private void EnqueuePlayback");
                 string audioLogQueueStart = ExtractMethodBody(audioLogSystem, "private void TryStartNextQueuedLog()");
+                string audioLogQueueDedupRebuild = ExtractMethodBody(audioLogSystem, "private void RebuildQueuedLogHashDedupFromQueue");
                 string audioLogStop = ExtractMethodBody(audioLogSystem, "public void StopPlayback()");
                 string audioLogAcquire = ExtractMethodBody(audioLogSystem, "private bool TryAcquireVaultMutation");
                 string audioLogTelemetry = ExtractMethodBody(audioLogSystem, "private void RecordVaultTelemetry");
@@ -1044,6 +1049,9 @@ namespace Hecton8.Audio.Editor
                 AssertContains(audioLogQueueEnqueue, "ReleaseVaultMutation", "Audio-log enqueue releases queue mutation guards in finally", builder, ref failureCount);
                 AssertContains(audioLogQueueStart, "TryAcquirePlaybackQueueMutationView", "Audio-log queue drain reads queued speech through mutation-guarded vault views", builder, ref failureCount);
                 AssertContains(audioLogQueueStart, "ReleaseVaultMutation", "Audio-log queue drain releases queue mutation guards before starting playback", builder, ref failureCount);
+                AssertContains(audioLogQueueStart, "RebuildQueuedLogHashDedupFromQueue(queue, _playbackQueueReadIndex, _queueCount)", "Audio-log queue drain repairs dedupe state after empty queue slots", builder, ref failureCount);
+                AssertContains(audioLogQueueDedupRebuild, "ClearQueuedLogHashes();", "Audio-log queue dedupe rebuild starts from a clean fixed buffer", builder, ref failureCount);
+                AssertContains(audioLogQueueDedupRebuild, "!IsPlaybackQueued(logHash)", "Audio-log queue dedupe rebuild preserves unique queued hashes only", builder, ref failureCount);
                 AssertContains(audioLogAcquire, "TryAcquireMutationGuard", "Audio-log vault mutation helper acquires mutation guards instead of write locks", builder, ref failureCount);
                 AssertContains(audioLogAcquire, "TryResolveHandle", "Audio-log vault mutation helper resolves owner views after guard acquisition", builder, ref failureCount);
                 AssertContains(audioLogTelemetry, "TryAcquireMutationGuard(TelemetryMutationGuardMask)", "Audio-log vault telemetry writes through a telemetry mutation guard", builder, ref failureCount);

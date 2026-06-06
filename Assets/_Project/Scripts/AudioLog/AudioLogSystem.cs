@@ -1118,19 +1118,40 @@ namespace Hecton8.Narrative
                 {
                     nextHash = queue[readIndex];
                     queue[readIndex] = 0u;
+
+                    _playbackQueueReadIndex = (readIndex + 1) % PlaybackQueueCapacity;
+                    _queueCount = math.max(0, _queueCount - 1);
+                    if (nextHash != 0u)
+                        RemoveQueuedLogHash(nextHash);
+                    else
+                        RebuildQueuedLogHashDedupFromQueue(queue, _playbackQueueReadIndex, _queueCount);
                 }
                 finally
                 {
                     ReleaseVaultMutation(guardVault, PlaybackQueueMutationGuardMask);
                 }
-
-                _playbackQueueReadIndex = (readIndex + 1) % PlaybackQueueCapacity;
-                _queueCount--;
-                RemoveQueuedLogHash(nextHash);
             }
 
             if (nextHash != 0u && _logLookupByHash.TryGetValue(nextHash, out AudioLogData next) && next != null)
                 PlayLogByHash(nextHash, next);
+        }
+
+        private void RebuildQueuedLogHashDedupFromQueue(NativeArray<uint> queue, int readIndex, int queueCount)
+        {
+            ClearQueuedLogHashes();
+            if (!queue.IsCreated || queue.Length < PlaybackQueueCapacity || queueCount <= 0)
+                return;
+
+            int count = math.min(queueCount, PlaybackQueueCapacity);
+            int index = math.clamp(readIndex, 0, PlaybackQueueCapacity - 1);
+            for (int i = 0; i < count; i++)
+            {
+                uint logHash = queue[index];
+                if (logHash != 0u && !IsPlaybackQueued(logHash))
+                    AddQueuedLogHash(logHash);
+
+                index = (index + 1) % PlaybackQueueCapacity;
+            }
         }
 
         private void TickAtmosphericWarningBlocker()

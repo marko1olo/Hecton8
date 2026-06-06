@@ -620,6 +620,7 @@ namespace Hecton8.Tests.Editor
             string flushBody = ExtractMethodBody(source, "private void FlushPendingPlaybackVisualSync()");
             string enqueueBody = ExtractMethodBody(source, "private void EnqueuePlayback");
             string startNextBody = ExtractMethodBody(source, "private void TryStartNextQueuedLog()");
+            string rebuildDedupBody = ExtractMethodBody(source, "private void RebuildQueuedLogHashDedupFromQueue");
             string stopBody = ExtractMethodBody(source, "public void StopPlayback()");
             string acquireBody = ExtractMethodBody(source, "private bool TryAcquireVaultMutation");
             string encryptedClearBody = ExtractMethodBody(source, "private unsafe bool TryClearEncryptedFragmentBuffer");
@@ -657,6 +658,12 @@ namespace Hecton8.Tests.Editor
                 startNextBody.IndexOf("TryAcquirePlaybackQueueMutationView", StringComparison.Ordinal));
             Assert.Greater(startNextBody.LastIndexOf("PlayLogByHash", StringComparison.Ordinal),
                 startNextBody.LastIndexOf("ReleaseVaultMutation", StringComparison.Ordinal));
+            StringAssert.Contains("RebuildQueuedLogHashDedupFromQueue(queue, _playbackQueueReadIndex, _queueCount)", startNextBody);
+            Assert.Greater(startNextBody.LastIndexOf("ReleaseVaultMutation", StringComparison.Ordinal),
+                startNextBody.IndexOf("RebuildQueuedLogHashDedupFromQueue", StringComparison.Ordinal));
+            StringAssert.Contains("ClearQueuedLogHashes();", rebuildDedupBody);
+            StringAssert.Contains("!IsPlaybackQueued(logHash)", rebuildDedupBody);
+            StringAssert.Contains("AddQueuedLogHash(logHash)", rebuildDedupBody);
             StringAssert.Contains("TryAcquireMutationGuard", acquireBody);
             StringAssert.Contains("TryResolveHandle", acquireBody);
             StringAssert.Contains("ReleaseVaultMutation", acquireBody);
