@@ -49,6 +49,7 @@ namespace Hecton8.Audio.Editor
         private const string DirectorAIPath = "Assets/_Project/Scripts/HectonDirectorAI.cs";
         private const string PrologueAcousticOrchestratorPath = "Assets/_Project/Scripts/Audio/Prologue/PrologueAcousticOrchestrator.cs";
         private const string VocalWarningSystemPath = "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs";
+        private const string VocalBankRuntimePath = "Assets/_Project/Scripts/Audio/Synthesis/VocalBankPlaybackRuntime.cs";
         private const string PlayerThrusterAudioPath = "Assets/_Project/Scripts/PlayerThrusterAudio.cs";
         private const string IndirectVegetationRendererPath = "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs";
         private const string DiegeticPanelControllerPath = "Assets/_Project/Scripts/UI/DiegeticPanelController.cs";
@@ -108,6 +109,7 @@ namespace Hecton8.Audio.Editor
             string directorAI = ReadAssetText(DirectorAIPath, builder, ref failureCount);
             string prologueAcoustic = ReadAssetText(PrologueAcousticOrchestratorPath, builder, ref failureCount);
             string vocalWarning = ReadAssetText(VocalWarningSystemPath, builder, ref failureCount);
+            string vocalBankRuntime = ReadAssetText(VocalBankRuntimePath, builder, ref failureCount);
             string playerThrusterAudio = ReadAssetText(PlayerThrusterAudioPath, builder, ref failureCount);
             string indirectVegetationRenderer = ReadAssetText(IndirectVegetationRendererPath, builder, ref failureCount);
             string diegeticPanelController = ReadAssetText(DiegeticPanelControllerPath, builder, ref failureCount);
@@ -396,6 +398,10 @@ namespace Hecton8.Audio.Editor
                 AssertContains(dynamicAudioCallback, "UnsafeUtility.MemCpy(destination, source", "Dynamic music managed callback copies prebuilt interleaved samples only", builder, ref failureCount);
                 AssertContains(dynamicLateFrame, "PublishAudioThreadCopyBufferLateFrame()", "Dynamic music publishes a dedicated audio-thread copy buffer from LateFrame", builder, ref failureCount);
                 AssertNotContains(dynamicMusicSynth, "PlayerStressSignal", "Dynamic music synth does not read player stress directly; the music director owns stress-to-activity policy", builder, ref failureCount);
+                AssertNotContains(dynamicMusicSynth, "IVocalWarningSystem", "Dynamic music synth does not read vocal-warning state directly; the music director owns speech foreground policy", builder, ref failureCount);
+                AssertNotContains(dynamicMusicSynth, "IAudioLogRuntime", "Dynamic music synth does not read audio-log state directly; the music director owns speech foreground policy", builder, ref failureCount);
+                AssertNotContains(dynamicMusicSynth, "GlobalRegistry.VocalWarnings", "Dynamic music synth does not poll vocal-warning runtime directly", builder, ref failureCount);
+                AssertNotContains(dynamicMusicSynth, "GlobalRegistry.AudioLogRuntime", "Dynamic music synth does not poll audio-log runtime directly", builder, ref failureCount);
                 AssertNotContains(dynamicAudioCallback, "TryAcquire", "Dynamic music managed callback must not acquire DataVault or mutation guards", builder, ref failureCount);
                 AssertNotContains(dynamicAudioCallback, "DataVault", "Dynamic music managed callback must not touch DataVault state", builder, ref failureCount);
                 AssertNotContains(dynamicAudioCallback, "GlobalRegistry", "Dynamic music managed callback must not query runtime registries", builder, ref failureCount);
@@ -510,6 +516,10 @@ namespace Hecton8.Audio.Editor
                 string musicSynthRuntime = ExtractMethodBody(musicDirector, "private void EnsureProceduralSynthRuntime()");
                 string musicResolveProfile = ExtractMethodBody(musicDirector, "private HectonMusicBiomeProfile ResolveProfile(");
                 string musicSoundscapeProfile = ExtractMethodBody(musicDirector, "private HectonMusicBiomeProfile ResolveSoundscapeTierProfile(");
+                string musicTickRoute = ExtractMethodBody(musicDirector, "private void RunMusicTick(");
+                string musicDiscoveryStinger = ExtractMethodBody(musicDirector, "public void PlayDiscoveryStinger()");
+                string musicDangerStinger = ExtractMethodBody(musicDirector, "public void PlayDangerStinger()");
+                string musicRecoveryStinger = ExtractMethodBody(musicDirector, "public void PlayRecoveryStinger()");
                 string musicActivityUpdate = ExtractMethodBody(musicDirector, "private void UpdateProceduralMusicActivity(");
                 string musicForceOpen = ExtractMethodBody(musicDirector, "private bool ShouldForceProceduralMusicOpen()");
                 string musicWait = ExtractMethodBody(musicDirector, "private void BeginProceduralWait(");
@@ -559,6 +569,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(musicReboundRuntime, "GlobalRegistryServiceSlot.SurfaceWeatherRuntime", "Music director handles surface-weather service hot swaps", builder, ref failureCount);
                 AssertContains(musicReboundRuntime, "GlobalRegistryServiceSlot.FirstHourRuntime", "Music director handles first-hour service hot swaps", builder, ref failureCount);
                 AssertContains(musicReboundRuntime, "GlobalRegistryServiceSlot.VocalWarningRuntime", "Music director handles vocal-warning runtime hot swaps", builder, ref failureCount);
+                AssertContains(musicReboundRuntime, "GlobalRegistryServiceSlot.AudioLogRuntime", "Music director handles audio-log runtime hot swaps", builder, ref failureCount);
                 AssertContains(musicDirector, "DrainAcousticZoneSignal();", "Music director drains acoustic-zone typed signals from tick lanes", builder, ref failureCount);
                 AssertContains(musicAcousticDrain, "ReadOnlySpan<AcousticZoneChangedEvent> signals = SignalBus<AcousticZoneChangedEvent>.GetFrameSnapshot();", "Music director consumes acoustic-zone changes through a ReadOnlySpan typed-lane snapshot", builder, ref failureCount);
                 AssertContains(musicAcousticDrain, "_lastAcousticZoneSignalFrame == frame", "Music director drains acoustic-zone signals at most once per frame", builder, ref failureCount);
@@ -585,6 +596,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(musicDirector, "VocalWarningMusicDuckDefault01 = 0.38f", "Music director softly ducks music under non-critical vocal warnings", builder, ref failureCount);
                 AssertContains(musicDirector, "VocalWarningMusicDuckCritical01 = 0.62f", "Music director strongly ducks music under critical vocal warnings", builder, ref failureCount);
                 AssertContains(musicDirector, "NarrativeAudioLogMusicDuck01 = 0.48f", "Music director ducks music while narrative audio logs own speech foreground", builder, ref failureCount);
+                AssertContains(musicDirector, "_lastForegroundSpeechDuckingRefreshFrame = -1", "Music director resets foreground-speech ducking cache on service clear/rebind", builder, ref failureCount);
                 AssertContains(musicDirector, "CacheVocalWarningSystem(GlobalRegistry.VocalWarnings, frame)", "Music director seeds vocal-warning runtime only through the cold cache path", builder, ref failureCount);
                 AssertContains(musicDirector, "CacheAudioLogRuntime(GlobalRegistry.AudioLogRuntime, frame)", "Music director seeds audio-log runtime only through the cold cache path", builder, ref failureCount);
                 AssertContains(musicVocalWarningStale, "frame < _nextVocalWarningResolveFrame", "Music director retry-cadences missing vocal-warning runtime resolution", builder, ref failureCount);
@@ -595,11 +607,23 @@ namespace Hecton8.Audio.Editor
                 AssertContains(musicVocalWarningDuck, "ResolveVocalWarningMusicDuck01(warningId)", "Music director maps warning identity to music duck strength", builder, ref failureCount);
                 AssertContains(musicForegroundSpeechRefresh, "RefreshVocalWarningMusicDucking();", "Foreground speech refresh includes vocal-warning state", builder, ref failureCount);
                 AssertContains(musicForegroundSpeechRefresh, "RefreshNarrativeAudioLogMusicDucking();", "Foreground speech refresh includes narrative audio-log state", builder, ref failureCount);
+                AssertContains(musicForegroundSpeechRefresh, "int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex", "Foreground speech refresh reads dispatcher frame once", builder, ref failureCount);
+                AssertContains(musicForegroundSpeechRefresh, "if (_lastForegroundSpeechDuckingRefreshFrame == frame)", "Foreground speech ducking refresh is cached per dispatcher frame", builder, ref failureCount);
+                AssertContains(musicForegroundSpeechRefresh, "_lastForegroundSpeechDuckingRefreshFrame = frame", "Foreground speech ducking cache records the refreshed dispatcher frame", builder, ref failureCount);
+                AssertContains(musicTickRoute, "RefreshForegroundSpeechMusicDucking();", "Music director refreshes speech ducking once from its tick route before stinger/scalar gates", builder, ref failureCount);
+                AssertContains(musicDiscoveryStinger, "RefreshForegroundSpeechMusicDucking();", "Discovery stinger refreshes cached speech foreground before reading the gate", builder, ref failureCount);
+                AssertContains(musicDangerStinger, "RefreshForegroundSpeechMusicDucking();", "Danger stinger refreshes cached speech foreground before reading the gate", builder, ref failureCount);
+                AssertContains(musicRecoveryStinger, "RefreshForegroundSpeechMusicDucking();", "Recovery stinger refreshes cached speech foreground before reading the gate", builder, ref failureCount);
                 AssertContains(musicNarrativeAudioLogDuck, "IAudioLogRuntime audioLogRuntime = ResolveAudioLogRuntime()", "Music director reads audio-log foreground state from the cached service", builder, ref failureCount);
                 AssertContains(musicNarrativeAudioLogDuck, "audioLogRuntime.IsPlaying || audioLogRuntime.IsNarrativeQueueBlocked", "Narrative audio-log playback or queue block owns speech foreground", builder, ref failureCount);
                 AssertContains(musicForegroundSpeechResolve, "math.max(_vocalWarningMusicDuck01, _narrativeAudioLogMusicDuck01)", "Foreground speech duck chooses the strongest active speech owner", builder, ref failureCount);
                 AssertContains(musicForegroundSpeechApply, "safeActivity01 * (1f - duck01)", "Music activity target is reduced by foreground speech duck before publishing", builder, ref failureCount);
-                AssertContains(musicForegroundSpeechActive, "RefreshForegroundSpeechMusicDucking();", "Stinger and scalar gates refresh speech state before foreground checks", builder, ref failureCount);
+                AssertNotContains(musicForegroundSpeechRefresh, "RefreshVocalWarningRuntimeIfStale", "Foreground speech per-frame refresh uses cached speech runtimes only", builder, ref failureCount);
+                AssertNotContains(musicForegroundSpeechRefresh, "RefreshAudioLogRuntimeIfStale", "Foreground speech per-frame refresh uses cached audio-log runtime only", builder, ref failureCount);
+                AssertNotContains(musicVocalWarningDuck, "GlobalRegistry.", "Vocal-warning speech duck reads the cached runtime only", builder, ref failureCount);
+                AssertNotContains(musicNarrativeAudioLogDuck, "GlobalRegistry.", "Narrative audio-log speech duck reads the cached runtime only", builder, ref failureCount);
+                AssertNotContains(musicForegroundSpeechActive, "RefreshForegroundSpeechMusicDucking", "Foreground speech active gate is read-only after tick/public stinger refresh", builder, ref failureCount);
+                AssertNotContains(musicForegroundSpeechActive, "GlobalRegistry.", "Foreground speech active gate does not poll registries", builder, ref failureCount);
                 AssertContains(musicVocalWarningResolve, "VocalWarningId.CrushDepth", "Crush-depth warnings receive critical music duck", builder, ref failureCount);
                 AssertContains(musicVocalWarningResolve, "VocalWarningId.HullBreach", "Hull-breach warnings receive critical music duck", builder, ref failureCount);
                 AssertContains(musicVocalWarningResolve, "VocalWarningId.OxygenLow", "Oxygen warnings receive critical music duck", builder, ref failureCount);
@@ -643,9 +667,15 @@ namespace Hecton8.Audio.Editor
                 AssertContains(musicScalarPublish, "emergencyBreathDominates || foregroundSpeechActive", "Speech foreground suppresses reactive music impulses without becoming a new synth source", builder, ref failureCount);
                 AssertContains(musicStopScalarPublish, "DynamicMusicScalarSignal.FlagExternalScalars | DynamicMusicScalarSignal.FlagSuppressReactiveImpulses", "Stopping procedural music immediately publishes zero activity and suppresses stale synth impulses", builder, ref failureCount);
                 AssertContains(musicStopInternal, "PublishProceduralMusicStopSignal();", "Procedural music stop pushes an immediate scalar instead of waiting for the next director tick", builder, ref failureCount);
+                AssertContains(musicOverrideStart, "RefreshForegroundSpeechMusicDucking();", "Forced override start refreshes cached speech foreground before publishing synth impulses", builder, ref failureCount);
                 AssertContains(musicOverrideStart, "bool emergencyBreathDominates = IsEmergencyBreathDominant();", "Forced override start evaluates emergency breath before publishing synth impulses", builder, ref failureCount);
-                AssertContains(musicOverrideStart, "float overrideSignal01 = emergencyBreathDominates ? 0f : _overrideVolume", "Forced override start publishes zero music activity while emergency breath dominates", builder, ref failureCount);
-                AssertContains(musicOverrideStart, "flags |= DynamicMusicScalarSignal.FlagSuppressReactiveImpulses", "Forced override start suppresses synth punches during emergency breath", builder, ref failureCount);
+                AssertContains(musicOverrideStart, "bool foregroundSpeechActive = IsForegroundSpeechActive();", "Forced override start evaluates speech foreground before publishing synth impulses", builder, ref failureCount);
+                AssertContains(musicOverrideStart, "bool suppressReactiveImpulses = emergencyBreathDominates || foregroundSpeechActive", "Forced override start merges emergency and speech foreground suppression", builder, ref failureCount);
+                AssertContains(musicOverrideStart, "float overrideActivity01 = emergencyBreathDominates ? 0f : ApplyForegroundSpeechMusicDuck01(_overrideVolume)", "Forced override start publishes ducked music activity while speech foreground owns the mix", builder, ref failureCount);
+                AssertContains(musicOverrideStart, "float overrideImpulse01 = suppressReactiveImpulses ? 0f : _overrideVolume", "Forced override start zeros reactive impulses during emergency or speech foreground", builder, ref failureCount);
+                AssertContains(musicOverrideStart, "float overridePitchKick01 = suppressReactiveImpulses ? 0f : 1f", "Forced override start zeros pitch kicks during emergency or speech foreground", builder, ref failureCount);
+                AssertContains(musicOverrideStart, "flags |= DynamicMusicScalarSignal.FlagSuppressReactiveImpulses", "Forced override start suppresses synth punches during emergency or speech foreground", builder, ref failureCount);
+                AssertContains(musicOverrideStart, "else if (!foregroundSpeechActive)", "Forced override start only publishes override impulse flags when speech foreground is clear", builder, ref failureCount);
                 AssertContains(soundscapeSlowTick, "SyncMusicDirectorSoundscapeContext(newTier, depth)", "Soundscape runtime mirrors depth-tier context into the music director", builder, ref failureCount);
                 AssertContains(soundscapeDepthTier, "director.SetSoundscapeTierContext(CalculateTier(depthMeters, _currentTier), depthMeters)", "Biome depth-tier events refresh music soundscape context", builder, ref failureCount);
                 AssertContains(soundscapeSyncMusic, "director.SetSoundscapeTierContext(tier, depthMeters)", "Soundscape music sync is routed through one bounded helper", builder, ref failureCount);
@@ -759,6 +789,16 @@ namespace Hecton8.Audio.Editor
                 AssertNotContains(vocalSlowTick, ".ToString(", "Vocal warning SlowTick has no string formatting", builder, ref failureCount);
                 AssertNotContains(vocalTick, "Debug.Log", "Vocal warning Tick has no debug log allocation path", builder, ref failureCount);
                 AssertNotContains(vocalSlowTick, "Debug.Log", "Vocal warning SlowTick has no debug log allocation path", builder, ref failureCount);
+            }
+
+            if (vocalBankRuntime.Length > 0)
+            {
+                string vocalReleaseCallback = ExtractMethodBodyAfter(vocalBankRuntime, "#if !UNITY_EDITOR && !DEVELOPMENT_BUILD", "private void OnAudioFilterRead(float[] data, int channels)");
+                AssertContains(vocalReleaseCallback, "ZeroManagedAudioBuffer(data", "Release vocal audio callback fails closed by zero-filling the managed buffer", builder, ref failureCount);
+                AssertNotContains(vocalReleaseCallback, "VocalDecodeKernel.DecodeIntoAudioBuffer", "Release vocal audio callback does not decode speech on the managed audio thread", builder, ref failureCount);
+                AssertNotContains(vocalReleaseCallback, "TryAcquireAudioCallbackViews", "Release vocal audio callback does not acquire DataVault views", builder, ref failureCount);
+                AssertNotContains(vocalReleaseCallback, "Stopwatch.GetTimestamp", "Release vocal audio callback does not measure timing on the managed audio thread", builder, ref failureCount);
+                AssertNotContains(vocalReleaseCallback, "GlobalRegistry", "Release vocal audio callback does not query runtime registries", builder, ref failureCount);
             }
 
             if (playerThrusterAudio.Length > 0)
@@ -1030,6 +1070,15 @@ namespace Hecton8.Audio.Editor
             }
 
             return string.Empty;
+        }
+
+        private static string ExtractMethodBodyAfter(string source, string anchor, string signature)
+        {
+            int anchorIndex = source.IndexOf(anchor, StringComparison.Ordinal);
+            if (anchorIndex < 0)
+                return string.Empty;
+
+            return ExtractMethodBody(source.Substring(anchorIndex), signature);
         }
 
         private static void AssertContains(string source, string needle, string message, StringBuilder builder, ref int failureCount)

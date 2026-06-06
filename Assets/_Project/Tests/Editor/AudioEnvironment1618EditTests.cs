@@ -288,12 +288,16 @@ namespace Hecton8.Tests.Editor
             string musicDirector = Read(MusicDirectorPath);
             string update = ExtractMethodBody(musicDirector, "private void UpdateProceduralMusicActivity(");
             string forceOpen = ExtractMethodBody(musicDirector, "private bool ShouldForceProceduralMusicOpen()");
+            string tickRoute = ExtractMethodBody(musicDirector, "private void RunMusicTick(");
             string wait = ExtractMethodBody(musicDirector, "private void BeginProceduralWait(");
             string phrase = ExtractMethodBody(musicDirector, "private float ResolveProceduralPhraseSeconds(");
             string target = ExtractMethodBody(musicDirector, "private float ResolveProceduralMusicActivityTarget01()");
             string publish = ExtractMethodBody(musicDirector, "private void PublishDynamicMusicScalars(");
             string stopPublish = ExtractMethodBody(musicDirector, "private void PublishProceduralMusicStopSignal()");
             string stinger = ExtractMethodBody(musicDirector, "private void InjectProceduralStinger(");
+            string discoveryStinger = ExtractMethodBody(musicDirector, "public void PlayDiscoveryStinger()");
+            string dangerStinger = ExtractMethodBody(musicDirector, "public void PlayDangerStinger()");
+            string recoveryStinger = ExtractMethodBody(musicDirector, "public void PlayRecoveryStinger()");
             string overrideStart = ExtractMethodBody(musicDirector, "private void ForceOverrideTrackInternal(");
             string stop = ExtractMethodBody(musicDirector, "private void StopMusicInternal(");
             string stressRefresh = ExtractMethodBody(musicDirector, "private void RefreshPlayerCriticalStressSignal()");
@@ -306,6 +310,7 @@ namespace Hecton8.Tests.Editor
             string speechActive = ExtractMethodBody(musicDirector, "private bool IsForegroundSpeechActive()");
             string audioLogDuck = ExtractMethodBody(musicDirector, "private void RefreshNarrativeAudioLogMusicDucking()");
             string speechDuckResolve = ExtractMethodBody(musicDirector, "private float ResolveForegroundSpeechMusicDuck01()");
+            string runtimeRebind = ExtractMethodBody(musicDirector, "private void CacheReboundRuntimeService(");
 
             StringAssert.Contains("public enum MusicActivityReason", musicDirector);
             StringAssert.Contains("CurrentMusicActivity01 => math.saturate(_proceduralMusicActivity01)", musicDirector);
@@ -320,6 +325,7 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("VocalWarningMusicDuckDefault01 = 0.38f", musicDirector);
             StringAssert.Contains("VocalWarningMusicDuckCritical01 = 0.62f", musicDirector);
             StringAssert.Contains("NarrativeAudioLogMusicDuck01 = 0.48f", musicDirector);
+            StringAssert.Contains("_lastForegroundSpeechDuckingRefreshFrame = -1", musicDirector);
             StringAssert.Contains("RefreshPlayerCriticalStressSignal();", musicDirector);
             StringAssert.Contains("SignalBus<PlayerStressSignal>.TryGetLatest", stressRefresh);
             StringAssert.Contains("_lastPlayerStressSignalSeenFrame == int.MinValue", stressRefresh);
@@ -328,19 +334,29 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("_playerCriticalStress01 = 0f", stressRefresh);
             StringAssert.Contains("math.max(_oxygenDanger01, _playerCriticalStress01)", emergencyDominance);
             StringAssert.Contains("_playerCriticalStress01 >= CriticalPlayerStressDominatesThreshold", emergencyGate);
-            StringAssert.Contains("RefreshVocalWarningRuntimeIfStale();", warningDuck);
+            StringAssert.Contains("GlobalRegistryServiceSlot.VocalWarningRuntime", runtimeRebind);
+            StringAssert.Contains("GlobalRegistryServiceSlot.AudioLogRuntime", runtimeRebind);
+            StringAssert.Contains("RefreshForegroundSpeechMusicDucking();", tickRoute);
             StringAssert.Contains("IVocalWarningSystem vocalWarningSystem = ResolveVocalWarningSystem()", warningDuck);
             StringAssert.Contains("vocalWarningSystem.IsWarningActive", warningDuck);
             StringAssert.Contains("ResolveVocalWarningMusicDuck01(warningId)", warningDuck);
             StringAssert.Contains("RefreshVocalWarningMusicDucking();", speechDuck);
             StringAssert.Contains("RefreshNarrativeAudioLogMusicDucking();", speechDuck);
+            StringAssert.Contains("int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex", speechDuck);
+            StringAssert.Contains("if (_lastForegroundSpeechDuckingRefreshFrame == frame)", speechDuck);
+            StringAssert.Contains("_lastForegroundSpeechDuckingRefreshFrame = frame", speechDuck);
             StringAssert.Contains("safeActivity01 * (1f - duck01)", speechApply);
-            StringAssert.Contains("RefreshForegroundSpeechMusicDucking();", speechActive);
             StringAssert.Contains("ResolveForegroundSpeechMusicDuck01() > 0.001f", speechActive);
             StringAssert.Contains("IAudioLogRuntime audioLogRuntime = ResolveAudioLogRuntime()", audioLogDuck);
             StringAssert.Contains("audioLogRuntime.IsPlaying || audioLogRuntime.IsNarrativeQueueBlocked", audioLogDuck);
             StringAssert.Contains("NarrativeAudioLogMusicDuck01", audioLogDuck);
             StringAssert.Contains("math.max(_vocalWarningMusicDuck01, _narrativeAudioLogMusicDuck01)", speechDuckResolve);
+            Assert.That(warningDuck.IndexOf("GlobalRegistry.", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(audioLogDuck.IndexOf("GlobalRegistry.", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(speechDuck.IndexOf("RefreshVocalWarningRuntimeIfStale", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(speechDuck.IndexOf("RefreshAudioLogRuntimeIfStale", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(speechActive.IndexOf("RefreshForegroundSpeechMusicDucking", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(speechActive.IndexOf("GlobalRegistry.", StringComparison.Ordinal), Is.LessThan(0));
             StringAssert.Contains("VocalWarningId.CrushDepth", warningDuckResolve);
             StringAssert.Contains("VocalWarningId.HullBreach", warningDuckResolve);
             StringAssert.Contains("VocalWarningId.OxygenLow", warningDuckResolve);
@@ -378,12 +394,26 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("PublishProceduralMusicStopSignal();", stop);
             StringAssert.Contains("signal.MusicActivity01 = math.saturate", musicDirector);
             StringAssert.Contains("if (IsEmergencyBreathDominant() || IsForegroundSpeechActive())", stinger);
+            StringAssert.Contains("RefreshForegroundSpeechMusicDucking();", discoveryStinger);
+            StringAssert.Contains("RefreshForegroundSpeechMusicDucking();", dangerStinger);
+            StringAssert.Contains("RefreshForegroundSpeechMusicDucking();", recoveryStinger);
+            StringAssert.Contains("RefreshForegroundSpeechMusicDucking();", overrideStart);
             StringAssert.Contains("bool emergencyBreathDominates = IsEmergencyBreathDominant();", overrideStart);
-            StringAssert.Contains("float overrideSignal01 = emergencyBreathDominates ? 0f : _overrideVolume", overrideStart);
+            StringAssert.Contains("bool foregroundSpeechActive = IsForegroundSpeechActive();", overrideStart);
+            StringAssert.Contains("bool suppressReactiveImpulses = emergencyBreathDominates || foregroundSpeechActive", overrideStart);
+            StringAssert.Contains("float overrideActivity01 = emergencyBreathDominates ? 0f : ApplyForegroundSpeechMusicDuck01(_overrideVolume)", overrideStart);
+            StringAssert.Contains("float overrideImpulse01 = suppressReactiveImpulses ? 0f : _overrideVolume", overrideStart);
+            StringAssert.Contains("float overridePitchKick01 = suppressReactiveImpulses ? 0f : 1f", overrideStart);
             StringAssert.Contains("flags |= DynamicMusicScalarSignal.FlagSuppressReactiveImpulses", overrideStart);
             StringAssert.Contains("_musicActivityReason = MusicActivityReason.Emergency", overrideStart);
+            StringAssert.Contains("else if (!foregroundSpeechActive)", overrideStart);
             StringAssert.Contains("flags |= DynamicMusicScalarSignal.FlagStingerImpulse | DynamicMusicScalarSignal.FlagOverrideImpulse", overrideStart);
+            AssertTextBefore(overrideStart, "RefreshForegroundSpeechMusicDucking();", "bool emergencyBreathDominates = IsEmergencyBreathDominant();");
             AssertTextBefore(overrideStart, "bool emergencyBreathDominates = IsEmergencyBreathDominant();", "PushDynamicMusicSignal(");
+            AssertTextBefore(overrideStart, "bool foregroundSpeechActive = IsForegroundSpeechActive();", "PushDynamicMusicSignal(");
+            AssertTextBefore(discoveryStinger, "RefreshForegroundSpeechMusicDucking();", "IsForegroundSpeechActive()");
+            AssertTextBefore(dangerStinger, "RefreshForegroundSpeechMusicDucking();", "IsForegroundSpeechActive()");
+            AssertTextBefore(recoveryStinger, "RefreshForegroundSpeechMusicDucking();", "IsForegroundSpeechActive()");
             AssertTextBefore(target, "if (IsEmergencyBreathDominant())", "if (_overrideActive)");
             AssertTextBefore(target, "if (IsEmergencyBreathDominant())", "if (_menuSceneActive)");
             AssertTextBefore(publish, "bool emergencyBreathDominates = IsEmergencyBreathDominant();", "float activity01 = emergencyBreathDominates ? 0f");
@@ -621,6 +651,11 @@ namespace Hecton8.Tests.Editor
             AssertTextBefore(drain, "!_allowMockPlaybackWithoutDirector", "_pendingStingerImpulse = math.saturate(stingerImpulse);");
             Assert.That(route.IndexOf("GlobalRegistry.", StringComparison.Ordinal), Is.LessThan(0));
             Assert.That(fallback.IndexOf("GlobalRegistry.", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(synth.IndexOf("PlayerStressSignal", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(synth.IndexOf("IVocalWarningSystem", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(synth.IndexOf("IAudioLogRuntime", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(synth.IndexOf("GlobalRegistry.VocalWarnings", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(synth.IndexOf("GlobalRegistry.AudioLogRuntime", StringComparison.Ordinal), Is.LessThan(0));
             Assert.That(callback.IndexOf("ResolveFallbackMusicHostVolume01", StringComparison.Ordinal), Is.LessThan(0));
             Assert.That(callback.IndexOf("SettingsManager", StringComparison.Ordinal), Is.LessThan(0));
             Assert.That(callback.IndexOf("MusicDirector", StringComparison.Ordinal), Is.LessThan(0));
@@ -651,16 +686,24 @@ namespace Hecton8.Tests.Editor
         public void ManagedAudioCallbacksStayTransferOnlyAndDirectLookupFree()
         {
             string dynamicMusic = ExtractMethodBody(Read(DynamicMusicSynthPath), "private void OnAudioFilterRead(");
-            string vocalBank = ExtractMethodBody(Read(VocalBankRuntimePath), "private void OnAudioFilterRead(");
+            string vocalRuntime = Read(VocalBankRuntimePath);
+            string vocalRelease = ExtractMethodBodyAfter(vocalRuntime, "#if !UNITY_EDITOR && !DEVELOPMENT_BUILD", "private void OnAudioFilterRead(");
+            string vocalDevelopment = ExtractMethodBodyAfter(vocalRuntime, "#else", "private void OnAudioFilterRead(");
 
             AssertNoDirectManagedCallbackHazards(dynamicMusic);
-            AssertNoDirectManagedCallbackHazards(vocalBank);
+            AssertNoDirectManagedCallbackHazards(vocalRelease);
             StringAssert.Contains("ZeroManagedAudioBuffer(data", dynamicMusic);
-            StringAssert.Contains("ZeroManagedAudioBuffer(data", vocalBank);
+            StringAssert.Contains("ZeroManagedAudioBuffer(data", vocalRelease);
+            StringAssert.Contains("ZeroManagedAudioBuffer(data", vocalDevelopment);
             StringAssert.Contains("Volatile.Read", dynamicMusic);
-            StringAssert.Contains("Volatile.Read", vocalBank);
+            StringAssert.Contains("Volatile.Read", vocalDevelopment);
             StringAssert.Contains("fixed (float* destination = data)", dynamicMusic);
-            StringAssert.Contains("fixed (float* output = data)", vocalBank);
+            StringAssert.Contains("fixed (float* output = data)", vocalDevelopment);
+            StringAssert.Contains("VocalDecodeKernel.DecodeIntoAudioBuffer", vocalDevelopment);
+            Assert.That(vocalRelease.IndexOf("VocalDecodeKernel.DecodeIntoAudioBuffer", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(vocalRelease.IndexOf("TryAcquireAudioCallbackViews", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(vocalRelease.IndexOf("TryAcquireLockedView", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(vocalRelease.IndexOf("Stopwatch.GetTimestamp", StringComparison.Ordinal), Is.LessThan(0));
         }
 
         [Test]
@@ -810,6 +853,13 @@ namespace Hecton8.Tests.Editor
 
             Assert.Fail("Unterminated method body: " + signature);
             return string.Empty;
+        }
+
+        private static string ExtractMethodBodyAfter(string source, string anchor, string signature)
+        {
+            int anchorIndex = source.IndexOf(anchor, StringComparison.Ordinal);
+            Assert.That(anchorIndex, Is.GreaterThanOrEqualTo(0), "Missing anchor: " + anchor);
+            return ExtractMethodBody(source.Substring(anchorIndex), signature);
         }
 
         private static void AssertNoForbiddenHotTokens(string source)

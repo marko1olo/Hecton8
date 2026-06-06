@@ -423,6 +423,7 @@ namespace Hecton8.Audio
         private float _vocalWarningMusicDuck01;
         private float _narrativeAudioLogMusicDuck01;
         private byte _vocalWarningId;
+        private int _lastForegroundSpeechDuckingRefreshFrame = -1;
         private int _lastPlayerStressSignalSequence;
         private int _lastPlayerStressSignalSeenFrame = int.MinValue;
         private float _biomeGradientBlend01;
@@ -864,6 +865,7 @@ namespace Hecton8.Audio
         /// </summary>
         public void PlayDiscoveryStinger()
         {
+            RefreshForegroundSpeechMusicDucking();
             if (_overrideActive || _combatLatched || _currentBaseContext || IsEmergencyBreathDominant() || IsForegroundSpeechActive())
                 return;
 
@@ -876,6 +878,7 @@ namespace Hecton8.Audio
         /// </summary>
         public void PlayDangerStinger()
         {
+            RefreshForegroundSpeechMusicDucking();
             if (_overrideActive || _currentBaseContext || IsEmergencyBreathDominant() || IsForegroundSpeechActive())
                 return;
 
@@ -888,6 +891,7 @@ namespace Hecton8.Audio
         /// </summary>
         public void PlayRecoveryStinger()
         {
+            RefreshForegroundSpeechMusicDucking();
             if (_overrideActive || _currentBaseContext || IsEmergencyBreathDominant() || IsForegroundSpeechActive())
                 return;
 
@@ -1201,6 +1205,7 @@ namespace Hecton8.Audio
             _vocalWarningMusicDuck01 = 0f;
             _narrativeAudioLogMusicDuck01 = 0f;
             _vocalWarningId = 0;
+            _lastForegroundSpeechDuckingRefreshFrame = -1;
             _lastPlayerStressSignalSequence = 0;
             _lastPlayerStressSignalSeenFrame = int.MinValue;
             _debugPlayerCriticalStress01 = 0f;
@@ -1359,12 +1364,14 @@ namespace Hecton8.Audio
         {
             _cachedVocalWarningSystem = vocalWarningSystem != null && vocalWarningSystem.IsInitialized ? vocalWarningSystem : null;
             _nextVocalWarningResolveFrame = frame + DependencyRetryFrameInterval;
+            _lastForegroundSpeechDuckingRefreshFrame = -1;
         }
 
         private void CacheAudioLogRuntime(IAudioLogRuntime audioLogRuntime, int frame)
         {
             _cachedAudioLogRuntime = audioLogRuntime;
             _nextAudioLogResolveFrame = frame + DependencyRetryFrameInterval;
+            _lastForegroundSpeechDuckingRefreshFrame = -1;
         }
 
         private void CacheAcousticZone(IAcousticZoneReadModel acousticZone, int frame)
@@ -2209,7 +2216,6 @@ namespace Hecton8.Audio
 
         private void RefreshVocalWarningMusicDucking()
         {
-            RefreshVocalWarningRuntimeIfStale();
             IVocalWarningSystem vocalWarningSystem = ResolveVocalWarningSystem();
             if (vocalWarningSystem == null)
             {
@@ -2230,7 +2236,6 @@ namespace Hecton8.Audio
 
         private void RefreshNarrativeAudioLogMusicDucking()
         {
-            RefreshAudioLogRuntimeIfStale();
             IAudioLogRuntime audioLogRuntime = ResolveAudioLogRuntime();
             bool active = audioLogRuntime != null &&
                           (audioLogRuntime.IsPlaying || audioLogRuntime.IsNarrativeQueueBlocked);
@@ -2240,13 +2245,17 @@ namespace Hecton8.Audio
 
         private void RefreshForegroundSpeechMusicDucking()
         {
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            if (_lastForegroundSpeechDuckingRefreshFrame == frame)
+                return;
+
+            _lastForegroundSpeechDuckingRefreshFrame = frame;
             RefreshVocalWarningMusicDucking();
             RefreshNarrativeAudioLogMusicDucking();
         }
 
         private bool IsForegroundSpeechActive()
         {
-            RefreshForegroundSpeechMusicDucking();
             return ResolveForegroundSpeechMusicDuck01() > 0.001f;
         }
 
@@ -3487,17 +3496,24 @@ namespace Hecton8.Audio
             if (ProceduralSynthOwnsMusicPlayback)
             {
                 EnsureProceduralSynthRuntime();
+                RefreshForegroundSpeechMusicDucking();
                 bool emergencyBreathDominates = IsEmergencyBreathDominant();
-                float overrideSignal01 = emergencyBreathDominates ? 0f : _overrideVolume;
+                bool foregroundSpeechActive = IsForegroundSpeechActive();
+                bool suppressReactiveImpulses = emergencyBreathDominates || foregroundSpeechActive;
+                float overrideActivity01 = emergencyBreathDominates ? 0f : ApplyForegroundSpeechMusicDuck01(_overrideVolume);
+                float overrideImpulse01 = suppressReactiveImpulses ? 0f : _overrideVolume;
+                float overridePitchKick01 = suppressReactiveImpulses ? 0f : 1f;
                 uint flags = DynamicMusicScalarSignal.FlagExternalScalars;
+                if (suppressReactiveImpulses)
+                    flags |= DynamicMusicScalarSignal.FlagSuppressReactiveImpulses;
+
                 if (emergencyBreathDominates)
                 {
-                    flags |= DynamicMusicScalarSignal.FlagSuppressReactiveImpulses;
                     _proceduralMusicActivity01 = 0f;
                     _debugMusicActivity01 = 0f;
                     _musicActivityReason = MusicActivityReason.Emergency;
                 }
-                else
+                else if (!foregroundSpeechActive)
                 {
                     flags |= DynamicMusicScalarSignal.FlagStingerImpulse | DynamicMusicScalarSignal.FlagOverrideImpulse;
                 }
@@ -3506,10 +3522,10 @@ namespace Hecton8.Audio
                     math.saturate(math.isfinite(_resolvedTension01) ? _resolvedTension01 : 0f),
                     ResolveLayerDepthMeters(),
                     math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 1f),
-                    overrideSignal01,
-                    overrideSignal01,
-                    emergencyBreathDominates ? 0f : 1f,
-                    overrideSignal01,
+                    overrideImpulse01,
+                    overrideImpulse01,
+                    overridePitchKick01,
+                    overrideActivity01,
                     flags);
 
                 _activeVoiceIndex = InvalidVoiceIndex;

@@ -52,7 +52,7 @@ Player-facing intent:
 - combat, tense exploration, base shelter, menu, and prologue can force music open immediately
 - emergency breath, oxygen panic, and critical `PlayerStressSignal` foreground audio win over music; reactive synth punches and stingers are suppressed while player-critical audio dominates
 - before the hard emergency cutoff, player stress still raises rhythm, bass, and danger-layer pressure so music tightens instead of switching binary on/off
-- active vocal warnings own the speech foreground: music activity is ducked and stingers/reactive synth impulses are suppressed while the warning is speaking
+- active vocal warnings and narrative audio logs own the speech foreground: music activity is ducked and stingers/reactive synth impulses are suppressed while speech is active
 - when music owns the emotional foreground, the underwater ambient loop ducks subtly instead of fighting the score
 
 Runtime signals:
@@ -64,7 +64,7 @@ Runtime signals:
 - `DynamicMusicScalarSignal.MusicActivity01` mirrors that activity into the granular synth scalar lane
 - `DynamicMusicScalarSignal.FlagSuppressReactiveImpulses` tells the granular synth to clear damage/stinger impulses during emergency or no-director suppression
 - `PlayerStressSignal.Stress01` is consumed only by `HectonMusicDirector` on the main thread; the granular synth receives the director's sanitized activity/suppression policy, not a direct stress read
-- `IVocalWarningSystem.IsWarningActive` is consumed only through the cached `GlobalRegistry.VocalWarnings` read-model; vocal warnings do not push music signals directly
+- `IVocalWarningSystem.IsWarningActive` and `IAudioLogRuntime.IsPlaying` / `IsNarrativeQueueBlocked` are consumed only through cached read-models on the music director; speech systems do not push music signals directly
 - `StopMusic` / director disable publishes an immediate zero-activity scalar with reactive suppression so stale synth foreground does not linger
 - `SoundscapeSystem` mirrors current `SoundscapeTier` and depth into `HectonMusicDirector.SetSoundscapeTierContext`
 - `AcousticZoneController` reads the cached music director on the game thread and sidechains only the underwater ambient loop volume
@@ -84,7 +84,7 @@ Mixer routing:
 Music activity policy:
 
 - `Emergency`: music activity publishes `0`, reactive impulses are suppressed, stingers do not fire, and forced override starts publish suppression instead of a synth punch; oxygen danger and critical player stress both enter this gate
-- `Vocal warning active`: music keeps its current reason but target activity is sidechained down; critical warning IDs like crush depth, hull breach, and oxygen low duck harder than routine radiation / power warnings
+- `Speech foreground active`: music keeps its current reason but target activity is sidechained down; critical warning IDs like crush depth, hull breach, and oxygen low duck harder than routine radiation / power warnings, while narrative audio logs use a steady speech duck
 - `Rest` / `Silent`: no ambient duck, world sound owns the foreground
 - `Exploration`: low to medium activity, phrase/rest cadence depends on soundscape tier, ambient duck is intentionally subtle
 - `Base`: small stable bed, longer pauses, ambient duck remains mild
