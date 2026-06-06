@@ -606,10 +606,10 @@ namespace Hecton8.Audio
             IDataVault vault = _dataVault;
             if (Volatile.Read(ref _nativeAllocated) != 0)
             {
-                if (AreStemVaultBuffersCreated())
+                if (AreStemVaultBuffersCreated(vault))
                     return;
 
-                DisposeVaultStorage();
+                DisposeVaultStorage(vault);
                 _dataVault = vault;
             }
 
@@ -664,9 +664,9 @@ namespace Hecton8.Audio
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
 
-            if (!TryAcquireStemFrameMutationView(out AdaptiveStemVaultViews views, out IDataVault guardVault))
+            if (!TryAcquireStemFrameMutationView(vault, out AdaptiveStemVaultViews views, out IDataVault guardVault))
             {
-                DisposeVaultStorage();
+                DisposeVaultStorage(vault);
                 return;
             }
 
@@ -696,7 +696,11 @@ namespace Hecton8.Audio
 
         private void DisposeVaultStorage()
         {
-            IDataVault vault = _dataVault;
+            DisposeVaultStorage(_dataVault);
+        }
+
+        private void DisposeVaultStorage(IDataVault vault)
+        {
             ReleaseVaultBuffer(vault, ref _stemStateHandle, BufferID.AudioStemState);
             ReleaseVaultBuffer(vault, ref _stemCommandsHandle, BufferID.AudioStemCommands);
             ReleaseVaultBuffer(vault, ref _mixFrameHandle, BufferID.AudioStemMixFrame);
@@ -750,9 +754,8 @@ namespace Hecton8.Audio
                    IsAdaptiveStemVaultHandle(in _telemetryCursorHandle, BufferID.AudioStemTelemetryCursor);
         }
 
-        private bool AreStemVaultBuffersCreated()
+        private bool AreStemVaultBuffersCreated(IDataVault vault)
         {
-            IDataVault vault = _dataVault;
             if (vault == null || !AreAdaptiveStemVaultHandlesExact())
                 return false;
 
@@ -847,8 +850,13 @@ namespace Hecton8.Audio
 
         private bool TryAcquireStemFrameMutationView(out AdaptiveStemVaultViews views, out IDataVault guardVault)
         {
+            return TryAcquireStemFrameMutationView(_dataVault, out views, out guardVault);
+        }
+
+        private bool TryAcquireStemFrameMutationView(IDataVault vault, out AdaptiveStemVaultViews views, out IDataVault guardVault)
+        {
             views = default;
-            guardVault = _dataVault;
+            guardVault = vault;
             if (guardVault == null ||
                 !AreAdaptiveStemVaultHandlesExact() ||
                 guardVault.IsCompactionFenceActive ||

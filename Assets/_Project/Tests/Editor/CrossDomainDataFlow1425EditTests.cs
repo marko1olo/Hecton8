@@ -252,6 +252,7 @@ namespace Hecton8.Tests.Editor
             string ownerViewBody = ExtractMethodBody(source, "private bool TryResolveStemOwnerViews");
             string ruleWriteBody = ExtractMethodBody(source, "private bool TryWriteRuleForOwnerRoute(");
             string ruleAcquireBody = ExtractMethodBody(source, "private bool TryAcquireRuleMutationView(");
+            string ensureVaultStorageBody = ExtractMethodBody(source, "private void EnsureVaultStorage()");
 
             StringAssert.Contains("TryResolveStemOwnerViews", tickBody);
             StringAssert.Contains("AudioStemRulesMutationGuardMask", source);
@@ -259,6 +260,11 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("ReleaseAdaptiveStemMutationGuard", ruleWriteBody);
             StringAssert.Contains("TryAcquireMutationGuard(AudioStemRulesMutationGuardMask)", ruleAcquireBody);
             StringAssert.Contains("TryResolveHandle(in _rulesHandle", ruleAcquireBody);
+            StringAssert.Contains("AreStemVaultBuffersCreated(vault)", ensureVaultStorageBody);
+            StringAssert.Contains("TryAcquireStemFrameMutationView(vault,", ensureVaultStorageBody);
+            StringAssert.Contains("DisposeVaultStorage(vault)", ensureVaultStorageBody);
+            StringAssert.Contains("private bool AreStemVaultBuffersCreated(IDataVault vault)", source);
+            StringAssert.Contains("private bool TryAcquireStemFrameMutationView(IDataVault vault,", source);
             StringAssert.Contains("return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);", source);
             StringAssert.DoesNotContain("TryAcquireStemWriteViews", source);
             StringAssert.DoesNotContain("ReleaseStemWriteViews", source);
