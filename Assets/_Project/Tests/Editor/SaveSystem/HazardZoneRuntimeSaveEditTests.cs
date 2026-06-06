@@ -407,6 +407,80 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void SaveRootTime_WriteSanitizesNonFiniteSessionValues()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.totalPlayTime = double.NaN;
+            data.firstHourSessionTime = float.PositiveInfinity;
+            data.corporatePendingOrderIds.Add("order.a");
+            data.corporatePendingOrderTimers.Add(float.NegativeInfinity);
+
+            byte[] payload = new byte[BinaryPayloadScratchBytes];
+            fixed (byte* payloadPtr = payload)
+            {
+                bool wrote = SaveBinaryPayloadCodec.TryWrite(
+                    data,
+                    payloadPtr,
+                    payload.Length,
+                    out int bytesWritten,
+                    out string writeError);
+
+                Assert.IsTrue(wrote, writeError);
+                Assert.Greater(bytesWritten, 0);
+
+                bool read = SaveBinaryPayloadCodec.TryRead(
+                    payloadPtr,
+                    bytesWritten,
+                    out SaveData restored,
+                    out int bytesRead,
+                    out string readError);
+
+                Assert.IsTrue(read, readError);
+                Assert.AreEqual(bytesWritten, bytesRead);
+                Assert.AreEqual(0d, restored.totalPlayTime);
+                Assert.AreEqual(0f, restored.firstHourSessionTime);
+                Assert.AreEqual(1, restored.corporatePendingOrderTimers.Count);
+                Assert.AreEqual(0f, restored.corporatePendingOrderTimers[0]);
+            }
+        }
+
+        [Test]
+        public void ToolDurabilityRuntime_WriteSanitizesNonFiniteDurabilityValues()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.toolDurabilityMap["tool.nan"] = float.NaN;
+            data.toolDurabilityMap["tool.negative"] = -12.5f;
+            data.toolDurabilityMap["tool.ok"] = 42.5f;
+
+            byte[] payload = new byte[BinaryPayloadScratchBytes];
+            fixed (byte* payloadPtr = payload)
+            {
+                bool wrote = SaveBinaryPayloadCodec.TryWrite(
+                    data,
+                    payloadPtr,
+                    payload.Length,
+                    out int bytesWritten,
+                    out string writeError);
+
+                Assert.IsTrue(wrote, writeError);
+                Assert.Greater(bytesWritten, 0);
+
+                bool read = SaveBinaryPayloadCodec.TryRead(
+                    payloadPtr,
+                    bytesWritten,
+                    out SaveData restored,
+                    out int bytesRead,
+                    out string readError);
+
+                Assert.IsTrue(read, readError);
+                Assert.AreEqual(bytesWritten, bytesRead);
+                Assert.AreEqual(0f, restored.toolDurabilityMap["tool.nan"]);
+                Assert.AreEqual(0f, restored.toolDurabilityMap["tool.negative"]);
+                Assert.AreEqual(42.5f, restored.toolDurabilityMap["tool.ok"]);
+            }
+        }
+
+        [Test]
         public void SaveDataMigration_DoesNotDowngradeFutureSaveDataVersion()
         {
             SaveData data = SaveData.CreateNew(0.0);
@@ -421,6 +495,53 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(futureVersion, data.version);
             Assert.AreEqual(12f, data.hazardZones.toxicityDose);
             StringAssert.Contains("unsupported future save data version", summary);
+        }
+
+        [Test]
+        public void SaveRootTimeMigration_CurrentRepairsNonFiniteSessionValues()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.version = SaveData.CurrentVersion;
+            data.totalPlayTime = double.NegativeInfinity;
+            data.firstHourSessionTime = float.NaN;
+            data.corporatePendingOrderIds.Add("order.a");
+            data.corporatePendingOrderIds.Add("order.b");
+            data.corporatePendingOrderTimers.Add(-1f);
+            data.corporatePendingOrderTimers.Add(float.PositiveInfinity);
+
+            bool changed = SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary);
+
+            Assert.IsTrue(changed, summary);
+            Assert.AreEqual(SaveData.CurrentVersion, originalVersion);
+            Assert.AreEqual(SaveData.CurrentVersion, data.version);
+            Assert.AreEqual(0d, data.totalPlayTime);
+            Assert.AreEqual(0f, data.firstHourSessionTime);
+            Assert.AreEqual(2, data.corporatePendingOrderTimers.Count);
+            Assert.AreEqual(0f, data.corporatePendingOrderTimers[0]);
+            Assert.AreEqual(0f, data.corporatePendingOrderTimers[1]);
+            StringAssert.Contains("total play time repaired", summary);
+            StringAssert.Contains("first hour session time repaired", summary);
+            StringAssert.Contains("corporate order timers repaired", summary);
+        }
+
+        [Test]
+        public void ToolDurabilityMigration_CurrentRepairsNonFiniteDurabilityValues()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.version = SaveData.CurrentVersion;
+            data.toolDurabilityMap["tool.inf"] = float.PositiveInfinity;
+            data.toolDurabilityMap["tool.negative"] = -0.25f;
+            data.toolDurabilityMap["tool.ok"] = 13.75f;
+
+            bool changed = SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary);
+
+            Assert.IsTrue(changed, summary);
+            Assert.AreEqual(SaveData.CurrentVersion, originalVersion);
+            Assert.AreEqual(SaveData.CurrentVersion, data.version);
+            Assert.AreEqual(0f, data.toolDurabilityMap["tool.inf"]);
+            Assert.AreEqual(0f, data.toolDurabilityMap["tool.negative"]);
+            Assert.AreEqual(13.75f, data.toolDurabilityMap["tool.ok"]);
+            StringAssert.Contains("tool durability values repaired", summary);
         }
 
         [Test]
@@ -627,6 +748,101 @@ namespace Hecton8.Tests.Editor
             Assert.IsNotNull(data.radiationGridRle);
             Assert.AreEqual(SaveData.RadiationGridRleMaxBytes, data.radiationGridRle.Length);
             StringAssert.Contains("radiation grid state repaired", summary);
+        }
+
+        [Test]
+        public void InventoryRuntime_WriteSanitizesMalformedInventoryState()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.inventory.EnsureCapacity();
+            data.inventory.cellCount = 1;
+            data.inventory.itemHashIds[0] = 12345;
+            data.inventory.packedCellCoordinates[0] = InventoryDTO.PackCellCoordinate(2, 3);
+            data.inventory.stackCounts[0] = 0;
+            data.inventory.itemGeneticsWords[0] = 0xFF;
+            data.inventory.qualityMilli[0] = 2000;
+            data.inventory.totalWeight = float.NaN;
+            data.inventory.gridColumns = -5;
+            data.inventory.gridRows = InventoryDTO.MaxCells + 100;
+            data.inventory.itemDurabilityRle = new byte[InventoryDTO.MaxDurabilityRleBytes + 16];
+            data.inventory.itemDurabilityRleLength = data.inventory.itemDurabilityRle.Length;
+
+            byte[] payload = new byte[BinaryPayloadScratchBytes];
+            fixed (byte* payloadPtr = payload)
+            {
+                bool wrote = SaveBinaryPayloadCodec.TryWrite(
+                    data,
+                    payloadPtr,
+                    payload.Length,
+                    out int bytesWritten,
+                    out string writeError);
+
+                Assert.IsTrue(wrote, writeError);
+                Assert.Greater(bytesWritten, 0);
+
+                bool read = SaveBinaryPayloadCodec.TryRead(
+                    payloadPtr,
+                    bytesWritten,
+                    out SaveData restored,
+                    out int bytesRead,
+                    out string readError);
+
+                Assert.IsTrue(read, readError);
+                Assert.AreEqual(bytesWritten, bytesRead);
+                Assert.AreEqual(1, restored.inventory.cellCount);
+                Assert.AreEqual(1, restored.inventory.stackCounts[0]);
+                Assert.AreEqual(SaveData.InventoryDefaultQualityMilli, restored.inventory.qualityMilli[0]);
+                Assert.AreEqual(SaveData.InventoryItemGeneticsSupportedFlagsMask, restored.inventory.itemGeneticsWords[0]);
+                Assert.AreEqual(0f, restored.inventory.totalWeight);
+                Assert.AreEqual(0, restored.inventory.gridColumns);
+                Assert.AreEqual(InventoryDTO.MaxCells, restored.inventory.gridRows);
+                Assert.AreEqual(InventoryDTO.MaxDurabilityRleBytes, restored.inventory.itemDurabilityRleLength);
+            }
+        }
+
+        [Test]
+        public void InventoryRuntimeMigration_CurrentRepairsMalformedInventoryState()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.version = SaveData.CurrentVersion;
+            data.inventory.cellCount = 4;
+            data.inventory.itemHashIds = new[] { 101, 202 };
+            data.inventory.packedCellCoordinates = new[]
+            {
+                InventoryDTO.PackCellCoordinate(1, 1),
+                InventoryDTO.PackCellCoordinate(2, 2)
+            };
+            data.inventory.stackCounts = new ushort[] { 0, 3 };
+            data.inventory.itemStateFlags = new ushort[] { 0, 0 };
+            data.inventory.itemGeneticsWords = new byte[] { 0xFF, 0x10 };
+            data.inventory.qualityMilli = new ushort[] { 0, 2000 };
+            data.inventory.lastUpdateUnixSeconds = new uint[] { 0u, 123u };
+            data.inventory.itemDurabilityRle = new byte[] { 11, 22 };
+            data.inventory.itemDurabilityRleLength = 99;
+            data.inventory.totalWeight = float.NegativeInfinity;
+            data.inventory.gridColumns = -1;
+            data.inventory.gridRows = InventoryDTO.MaxCells + 1;
+
+            bool changed = SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary);
+
+            Assert.IsTrue(changed, summary);
+            Assert.AreEqual(SaveData.CurrentVersion, originalVersion);
+            Assert.AreEqual(SaveData.CurrentVersion, data.version);
+            Assert.AreEqual(2, data.inventory.cellCount);
+            Assert.AreEqual(InventoryDTO.MaxCells, data.inventory.itemHashIds.Length);
+            Assert.AreEqual(InventoryDTO.MaxCells, data.inventory.stackCounts.Length);
+            Assert.AreEqual(InventoryDTO.MaxDurabilityRleBytes, data.inventory.itemDurabilityRle.Length);
+            Assert.AreEqual(1, data.inventory.stackCounts[0]);
+            Assert.AreEqual(3, data.inventory.stackCounts[1]);
+            Assert.AreEqual(SaveData.InventoryDefaultQualityMilli, data.inventory.qualityMilli[0]);
+            Assert.AreEqual(SaveData.InventoryDefaultQualityMilli, data.inventory.qualityMilli[1]);
+            Assert.AreEqual(SaveData.InventoryItemGeneticsSupportedFlagsMask, data.inventory.itemGeneticsWords[0]);
+            Assert.AreEqual(0x00, data.inventory.itemGeneticsWords[1]);
+            Assert.AreEqual(2, data.inventory.itemDurabilityRleLength);
+            Assert.AreEqual(0f, data.inventory.totalWeight);
+            Assert.AreEqual(0, data.inventory.gridColumns);
+            Assert.AreEqual(InventoryDTO.MaxCells, data.inventory.gridRows);
+            StringAssert.Contains("inventory state repaired", summary);
         }
 
         [Test]

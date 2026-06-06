@@ -17,15 +17,11 @@ namespace Hecton8.SaveSystem
     {
         internal const int ProtectedLz4BlockSizeBytes = 16 * 1024;
         private const ushort BiologicalItemStateMask = 1 << 6;
-        private const ushort DefaultQualityMilli = 1000;
+        private const ushort DefaultQualityMilli = SaveData.InventoryDefaultQualityMilli;
         private const byte ItemGeneticsGlowFlag = 1 << 0;
         private const byte ItemGeneticsToxicFlag = 1 << 1;
         private const byte ItemGeneticsEdibleFlag = 1 << 2;
         private const byte ItemGeneticsHarvestableFlag = 1 << 3;
-        private const byte ItemGeneticsSupportedFlagsMask = ItemGeneticsGlowFlag |
-                                                            ItemGeneticsToxicFlag |
-                                                            ItemGeneticsEdibleFlag |
-                                                            ItemGeneticsHarvestableFlag;
         private const ulong LegacyGlowGeneMask = 1UL << 0;
         private const ulong LegacyOxygenGeneMask = 1UL << 1;
         private const ulong LegacyToxicGeneMask = 1UL << 2;
@@ -446,12 +442,14 @@ namespace Hecton8.SaveSystem
                 data.corporatePendingOrderIds,
                 data.corporatePendingOrderTimers,
                 SaveData.MaxCorporateOrderIds);
+            double totalPlayTime = SanitizeNonNegativeFinite(data.totalPlayTime);
+            float firstHourSessionTime = SanitizeNonNegativeFinite(data.firstHourSessionTime);
 
             return writer.WriteInt(data.version)
                 && writer.WriteStruct(data.contractVersionHashLo)
                 && writer.WriteStruct(data.contractVersionHashHi)
                 && writer.WriteString(data.timestamp)
-                && writer.WriteDouble(data.totalPlayTime)
+                && writer.WriteDouble(totalPlayTime)
                 && WritePlayerStats(ref writer, data.playerStats)
                 && WriteInventory(ref writer, data)
                 && WriteWorldState(ref writer, data.worldState)
@@ -508,7 +506,7 @@ namespace Hecton8.SaveSystem
                 && WriteStringList(ref writer, data.corporateReceivedOrderIds, SaveData.MaxCorporateOrderIds)
                 && WriteStringList(ref writer, data.corporatePendingOrderIds, corporatePendingOrderCount)
                 && WriteFloatList(ref writer, data.corporatePendingOrderTimers, corporatePendingOrderCount)
-                && writer.WriteFloat(data.firstHourSessionTime)
+                && writer.WriteFloat(firstHourSessionTime)
                 && writer.WriteInt(data.firstHourMilestones)
                 && writer.WriteInt(data.firstHourGuidanceFlags)
                 && writer.WriteInt(data.endingChoice)
@@ -691,6 +689,9 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            data.totalPlayTime = SanitizeNonNegativeFinite(data.totalPlayTime);
+            data.firstHourSessionTime = SanitizeNonNegativeFinite(data.firstHourSessionTime);
+            SanitizeNonNegativeFiniteList(data.corporatePendingOrderTimers);
             ApplyInventoryBiologicalDecay(ref data.inventory, data.playerStats.environmentTemperature);
             data.voxelDeltaPersistence = VoxelDeltaPersistenceDTO.CreateDefault();
             return true;
@@ -1229,6 +1230,7 @@ namespace Hecton8.SaveSystem
 
         private static bool WriteInventory(ref BufferWriter writer, InventoryDTO value)
         {
+            SaveDataInventorySanitizer.SanitizeInventory(ref value);
             int logicalCellCount = Math.Clamp(value.cellCount, 0, InventoryDTO.MaxCells);
             return writer.WriteInt(logicalCellCount)
                 && writer.WriteStructArraySlice(value.itemHashIds, logicalCellCount)
@@ -1385,12 +1387,18 @@ namespace Hecton8.SaveSystem
         {
             value = 0d;
             if (version >= 39)
-                return reader.ReadDouble(out value);
+            {
+                if (!reader.ReadDouble(out value))
+                    return false;
+
+                value = SanitizeNonNegativeFinite(value);
+                return true;
+            }
 
             if (!reader.ReadFloat(out float legacyValue))
                 return false;
 
-            value = legacyValue;
+            value = SanitizeNonNegativeFinite(legacyValue);
             return true;
         }
 
@@ -1405,6 +1413,25 @@ namespace Hecton8.SaveSystem
 
             value = legacyValue;
             return true;
+        }
+
+        private static float SanitizeNonNegativeFinite(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
+        }
+
+        private static double SanitizeNonNegativeFinite(double value)
+        {
+            return math.isfinite(value) ? math.max(0d, value) : 0d;
+        }
+
+        private static void SanitizeNonNegativeFiniteList(List<float> values)
+        {
+            if (values == null)
+                return;
+
+            for (int i = 0; i < values.Count; i++)
+                values[i] = SanitizeNonNegativeFinite(values[i]);
         }
 
         private static bool ReadInventory(ref BufferReader reader, int version, out InventoryDTO value)
@@ -1429,7 +1456,7 @@ namespace Hecton8.SaveSystem
                 if (!ok)
                     return false;
 
-                value.EnsureCapacity();
+                SaveDataInventorySanitizer.SanitizeInventory(ref value);
                 return true;
             }
 
@@ -1455,6 +1482,7 @@ namespace Hecton8.SaveSystem
                 value.qualityMilli[i] = DefaultQualityMilli;
             }
 
+            SaveDataInventorySanitizer.SanitizeInventory(ref value);
             return true;
         }
 
@@ -1533,6 +1561,7 @@ namespace Hecton8.SaveSystem
             for (int i = 0; i < safeCount; i++)
                 value.qualityMilli[i] = DefaultQualityMilli;
 
+            SaveDataInventorySanitizer.SanitizeInventory(ref value);
             return true;
         }
 
@@ -1623,7 +1652,7 @@ namespace Hecton8.SaveSystem
             if ((geneticsMask & LegacyHarvestableGeneMask) != 0UL)
                 flags |= ItemGeneticsHarvestableFlag;
 
-            return (byte)(flags & ItemGeneticsSupportedFlagsMask);
+            return (byte)(flags & SaveData.InventoryItemGeneticsSupportedFlagsMask);
         }
 
         private static void ApplyInventoryBiologicalDecay(ref InventoryDTO value, float ambientTemperature)
@@ -1668,10 +1697,17 @@ namespace Hecton8.SaveSystem
                 }
 
                 uint elapsedSeconds = now >= lastUpdate ? now - lastUpdate : 0u;
-                float currentQuality = Math.Clamp((value.qualityMilli[i] > 0 ? value.qualityMilli[i] : DefaultQualityMilli) / 1000f, 0f, 1f);
+                float currentQuality = Math.Clamp(
+                    (value.qualityMilli[i] > 0 ? value.qualityMilli[i] : DefaultQualityMilli) /
+                    (float)SaveData.InventoryDefaultQualityMilli,
+                    0f,
+                    1f);
                 float qualityDelta = elapsedSeconds * BiologicalDecayRatePerSecond * tempFactor;
                 float decayedQuality = Math.Clamp(currentQuality - qualityDelta, 0f, 1f);
-                value.qualityMilli[i] = (ushort)Math.Clamp((int)Math.Round(decayedQuality * 1000f), 0, 1000);
+                value.qualityMilli[i] = (ushort)Math.Clamp(
+                    (int)Math.Round(decayedQuality * SaveData.InventoryDefaultQualityMilli),
+                    0,
+                    SaveData.InventoryDefaultQualityMilli);
                 value.lastUpdateUnixSeconds[i] = now;
             }
         }
@@ -3537,7 +3573,7 @@ namespace Hecton8.SaveSystem
 
             for (int i = 0; i < count; i++)
             {
-                if (!writer.WriteFloat(values[i]))
+                if (!writer.WriteFloat(SanitizeNonNegativeFinite(values[i])))
                     return false;
             }
 
@@ -3566,7 +3602,7 @@ namespace Hecton8.SaveSystem
                 if (!reader.ReadFloat(out float item))
                     return false;
 
-                values.Add(item);
+                values.Add(SanitizeNonNegativeFinite(item));
             }
 
             return true;
@@ -3589,7 +3625,7 @@ namespace Hecton8.SaveSystem
             while (written < count && enumerator.MoveNext())
             {
                 KeyValuePair<string, float> pair = enumerator.Current;
-                if (!writer.WriteString(pair.Key) || !writer.WriteFloat(pair.Value))
+                if (!writer.WriteString(pair.Key) || !writer.WriteFloat(SanitizeNonNegativeFinite(pair.Value)))
                     return false;
 
                 written++;
@@ -3621,7 +3657,7 @@ namespace Hecton8.SaveSystem
                 if (!reader.ReadString(out string key) || !reader.ReadFloat(out float entryValue))
                     return false;
 
-                values[key] = entryValue;
+                values[key] = SanitizeNonNegativeFinite(entryValue);
             }
 
             return true;

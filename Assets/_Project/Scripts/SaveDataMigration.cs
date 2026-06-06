@@ -161,6 +161,22 @@ namespace Hecton8.SaveSystem
                 steps.Add("timestamp repaired");
             }
 
+            double safeTotalPlayTime = SanitizeNonNegativeFinite(data.totalPlayTime);
+            if (!Approximately(data.totalPlayTime, safeTotalPlayTime))
+            {
+                data.totalPlayTime = safeTotalPlayTime;
+                changed = true;
+                steps.Add("total play time repaired");
+            }
+
+            float safeFirstHourSessionTime = SanitizeNonNegativeFinite(data.firstHourSessionTime);
+            if (!Approximately(data.firstHourSessionTime, safeFirstHourSessionTime))
+            {
+                data.firstHourSessionTime = safeFirstHourSessionTime;
+                changed = true;
+                steps.Add("first hour session time repaired");
+            }
+
             if (data.toolDurabilityMap == null)
             {
                 data.toolDurabilityMap = new Dictionary<string, float>(SaveData.MaxToolDurabilityRecords);
@@ -171,6 +187,10 @@ namespace Hecton8.SaveSystem
                 data.toolDurabilityMap,
                 SaveData.MaxToolDurabilityRecords,
                 "tool durability map capped",
+                steps);
+            changed |= EnsureNonNegativeFiniteFloatDictionary(
+                data.toolDurabilityMap,
+                "tool durability values repaired",
                 steps);
 
             if (data.toolBrokenMap == null)
@@ -414,69 +434,82 @@ namespace Hecton8.SaveSystem
             return math.abs(a - b) <= 0.000001d;
         }
 
+        private static float SanitizeNonNegativeFinite(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
+        }
+
+        private static double SanitizeNonNegativeFinite(double value)
+        {
+            return math.isfinite(value) ? math.max(0d, value) : 0d;
+        }
+
+        private static bool EnsureNonNegativeFiniteFloatList(List<float> values, string step, List<string> steps)
+        {
+            if (values == null)
+                return false;
+
+            bool changed = false;
+            for (int i = 0; i < values.Count; i++)
+            {
+                float safeValue = SanitizeNonNegativeFinite(values[i]);
+                if (Approximately(values[i], safeValue))
+                    continue;
+
+                values[i] = safeValue;
+                changed = true;
+            }
+
+            if (changed)
+                steps.Add(step);
+
+            return changed;
+        }
+
+        private static bool EnsureNonNegativeFiniteFloatDictionary(
+            Dictionary<string, float> values,
+            string step,
+            List<string> steps)
+        {
+            if (values == null)
+                return false;
+
+            List<string> repairedKeys = null;
+            Dictionary<string, float>.Enumerator enumerator = values.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                KeyValuePair<string, float> pair = enumerator.Current;
+                float safeValue = SanitizeNonNegativeFinite(pair.Value);
+                if (Approximately(pair.Value, safeValue))
+                    continue;
+
+                repairedKeys ??= new List<string>(4);
+                repairedKeys.Add(pair.Key);
+            }
+
+            enumerator.Dispose();
+
+            bool changed = repairedKeys != null;
+            if (changed)
+            {
+                for (int i = 0; i < repairedKeys.Count; i++)
+                {
+                    string key = repairedKeys[i];
+                    values[key] = SanitizeNonNegativeFinite(values[key]);
+                }
+            }
+
+            if (changed)
+                steps.Add(step);
+
+            return changed;
+        }
+
         private static bool EnsureInventory(ref InventoryDTO dto, List<string> steps)
         {
-            bool changed = false;
-            int cellBound = ClampArrayLength(dto.itemHashIds, InventoryDTO.MaxCells);
-            cellBound = math.min(cellBound, ClampArrayLength(dto.packedCellCoordinates, InventoryDTO.MaxCells));
-            cellBound = math.min(cellBound, ClampArrayLength(dto.stackCounts, InventoryDTO.MaxCells));
-            int durabilityBound = ClampArrayLength(dto.itemDurabilityRle, InventoryDTO.MaxDurabilityRleBytes);
-
-            if (dto.itemHashIds == null ||
-                dto.itemHashIds.Length != InventoryDTO.MaxCells ||
-                dto.packedCellCoordinates == null ||
-                dto.packedCellCoordinates.Length != InventoryDTO.MaxCells ||
-                dto.stackCounts == null ||
-                dto.stackCounts.Length != InventoryDTO.MaxCells ||
-                dto.itemStateFlags == null ||
-                dto.itemStateFlags.Length != InventoryDTO.MaxCells ||
-                dto.itemGeneticsWords == null ||
-                dto.itemGeneticsWords.Length != InventoryDTO.MaxCells ||
-                dto.qualityMilli == null ||
-                dto.qualityMilli.Length != InventoryDTO.MaxCells ||
-                dto.lastUpdateUnixSeconds == null ||
-                dto.lastUpdateUnixSeconds.Length != InventoryDTO.MaxCells ||
-                dto.itemDurabilityRle == null ||
-                dto.itemDurabilityRle.Length != InventoryDTO.MaxDurabilityRleBytes)
-            {
-                dto.EnsureCapacity();
-                changed = true;
-                steps.Add("inventory SOA capacity repaired");
-            }
-
-            int clampedDurabilityRleLength = math.clamp(
-                dto.itemDurabilityRleLength,
-                0,
-                durabilityBound);
-            if (clampedDurabilityRleLength != dto.itemDurabilityRleLength)
-            {
-                dto.itemDurabilityRleLength = clampedDurabilityRleLength;
-                changed = true;
-                steps.Add("inventory durability RLE length clamped");
-            }
-
-            int clamped = math.clamp(dto.cellCount, 0, cellBound);
-            if (clamped != dto.cellCount)
-            {
-                dto.cellCount = clamped;
-                changed = true;
-                steps.Add("inventory count clamped");
-            }
-
-            for (int i = 0; i < dto.cellCount; i++)
-            {
-                if (dto.stackCounts[i] <= 0)
-                {
-                    dto.stackCounts[i] = 1;
-                    changed = true;
-                }
-
-                if (dto.qualityMilli[i] <= 0)
-                {
-                    dto.qualityMilli[i] = 1000;
-                    changed = true;
-                }
-            }
+            bool changed = SaveDataInventorySanitizer.SanitizeInventory(ref dto);
+            if (changed)
+                steps.Add("inventory state repaired");
 
             return changed;
         }
@@ -1896,6 +1929,10 @@ namespace Hecton8.SaveSystem
                 data.corporatePendingOrderTimers,
                 SaveData.MaxCorporateOrderIds,
                 "corporate pending orders capped",
+                steps);
+            changed |= EnsureNonNegativeFiniteFloatList(
+                data.corporatePendingOrderTimers,
+                "corporate order timers repaired",
                 steps);
 
             if (data.missionActiveIds == null)

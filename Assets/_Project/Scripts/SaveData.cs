@@ -64,6 +64,8 @@ namespace Hecton8.SaveSystem
         public const float PlayerKinematicVelocityHardCapSq =
             PlayerKinematicVelocityHardCapMetersPerSecond * PlayerKinematicVelocityHardCapMetersPerSecond;
         public const float PlayerStatsNitrogenBuildUpHardCap = 160f;
+        public const ushort InventoryDefaultQualityMilli = 1000;
+        public const byte InventoryItemGeneticsSupportedFlagsMask = 0x0F;
 
         /// <summary>Tekuschaya versiya formata. Ispolzuetsya dlya migratsii.</summary>
         public const int CurrentVersion = HazardZoneRuntimePersistenceVersion; // v74: delayed hazard zone toxicity state.
