@@ -261,6 +261,144 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["runtimeForbiddenDirectConstructors"], 1)
             self.assertEqual(payload["editorOfflineTransientScratchDirectConstructors"], 3)
 
+    def test_try_get_latest_created_runtime_fallback_is_gate_relevant(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="h8_vault_latest_created_runtime_") as temp_dir:
+            root = Path(temp_dir)
+            source = root / "Assets" / "_Project" / "Scripts"
+            runtime = source / "Gameplay" / "HazardRuntime.cs"
+            runtime.parent.mkdir(parents=True)
+            runtime.write_text(
+                "public sealed class HazardRuntime\n"
+                "{\n"
+                "    public bool TryResolve()\n"
+                "    {\n"
+                "        // GlobalDataVault.TryGetLatestCreated(out ignored) must stay ignored.\n"
+                "        string text = \"GlobalDataVault.TryGetLatestCreated(out ignored)\";\n"
+                "        return GlobalDataVault.TryGetLatestCreated(out GlobalDataVault vault);\n"
+                "    }\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            latest_findings = audit.scan_latest_created_fallback_tree(source, root)
+            payload = audit.build_audit_payload(
+                [],
+                source,
+                root,
+                latest_created_fallback_findings=latest_findings,
+            )
+
+            self.assertEqual(payload["totalLatestCreatedFallbacks"], 1)
+            self.assertEqual(payload["forbiddenLatestCreatedFallbacks"], 1)
+            self.assertEqual(payload["runtimeForbiddenLatestCreatedFallbacks"], 1)
+            self.assertEqual(payload["forbiddenLatestCreatedFallbackFileCount"], 1)
+            self.assertEqual(payload["latestCreatedFallbackFindings"][0]["forbiddenLines"], [7])
+
+    def test_try_get_latest_created_allows_bootstrap_editor_and_diagnostics_routes(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="h8_vault_latest_created_allowed_") as temp_dir:
+            root = Path(temp_dir)
+            source = root / "Assets" / "_Project" / "Scripts"
+            bootstrap = source / "Bootstrap" / "VaultBootstrapProbe.cs"
+            editor = source / "World" / "Editor" / "VaultXRayWindow.cs"
+            diagnostics = source / "Core" / "Diagnostics" / "VaultMemoryGizmoVisualizer.cs"
+            bootstrap.parent.mkdir(parents=True)
+            editor.parent.mkdir(parents=True)
+            diagnostics.parent.mkdir(parents=True)
+            bootstrap.write_text(
+                "public sealed class VaultBootstrapProbe\n"
+                "{\n"
+                "    public bool TryResolve() => GlobalDataVault.TryGetLatestCreated(out GlobalDataVault vault);\n"
+                "}\n",
+                encoding="utf-8",
+            )
+            editor.write_text(
+                "public sealed class VaultXRayWindow\n"
+                "{\n"
+                "    public bool TryResolve() => GlobalDataVault.TryGetLatestCreated(out GlobalDataVault vault);\n"
+                "}\n",
+                encoding="utf-8",
+            )
+            diagnostics.write_text(
+                "public sealed class VaultMemoryGizmoVisualizer\n"
+                "{\n"
+                "    public bool TryResolve() => GlobalDataVault.TryGetLatestCreated(out GlobalDataVault vault);\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            latest_findings = audit.scan_latest_created_fallback_tree(source, root)
+            payload = audit.build_audit_payload(
+                [],
+                source,
+                root,
+                latest_created_fallback_findings=latest_findings,
+            )
+
+            self.assertEqual(payload["totalLatestCreatedFallbacks"], 3)
+            self.assertEqual(payload["allowedLatestCreatedFallbacks"], 3)
+            self.assertEqual(payload["forbiddenLatestCreatedFallbacks"], 0)
+            self.assertEqual(payload["runtimeForbiddenLatestCreatedFallbacks"], 0)
+
+    def test_try_get_latest_created_partial_editor_guard_counts_runtime_only(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="h8_vault_latest_created_partial_") as temp_dir:
+            root = Path(temp_dir)
+            source = root / "Assets" / "_Project" / "Scripts"
+            runtime = source / "Inventory" / "CargoTransferRuntime.cs"
+            runtime.parent.mkdir(parents=True)
+            runtime.write_text(
+                "public sealed class CargoTransferRuntime\n"
+                "{\n"
+                "#if UNITY_EDITOR\n"
+                "    public bool TryEditor() => GlobalDataVault.TryGetLatestCreated(out GlobalDataVault editorVault);\n"
+                "#endif\n"
+                "    public bool TryRuntime() => GlobalDataVault.TryGetLatestCreated(out GlobalDataVault runtimeVault);\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            latest_findings = audit.scan_latest_created_fallback_tree(source, root)
+            payload = audit.build_audit_payload(
+                [],
+                source,
+                root,
+                latest_created_fallback_findings=latest_findings,
+            )
+
+            self.assertEqual(payload["totalLatestCreatedFallbacks"], 2)
+            self.assertEqual(payload["allowedLatestCreatedFallbacks"], 1)
+            self.assertEqual(payload["forbiddenLatestCreatedFallbacks"], 1)
+            self.assertEqual(payload["runtimeForbiddenLatestCreatedFallbacks"], 1)
+            self.assertEqual(
+                payload["latestCreatedFallbackFindings"][0]["lineExecutionSurfaces"],
+                ["Editor", "Runtime"],
+            )
+
+    def test_try_get_latest_created_diagnostic_name_alone_does_not_allow_runtime(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="h8_vault_latest_created_diag_name_") as temp_dir:
+            root = Path(temp_dir)
+            source = root / "Assets" / "_Project" / "Scripts"
+            runtime = source / "Gameplay" / "DiagnosticHazardRuntime.cs"
+            runtime.parent.mkdir(parents=True)
+            runtime.write_text(
+                "public sealed class DiagnosticHazardRuntime\n"
+                "{\n"
+                "    public bool TryResolve() => GlobalDataVault.TryGetLatestCreated(out GlobalDataVault vault);\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            latest_findings = audit.scan_latest_created_fallback_tree(source, root)
+            payload = audit.build_audit_payload(
+                [],
+                source,
+                root,
+                latest_created_fallback_findings=latest_findings,
+            )
+
+            self.assertEqual(payload["totalLatestCreatedFallbacks"], 1)
+            self.assertEqual(payload["forbiddenLatestCreatedFallbacks"], 1)
+            self.assertEqual(payload["runtimeForbiddenLatestCreatedFallbacks"], 1)
+
     def test_editor_sentinel_tracked_constructor_wrapper_is_not_raw_ownership_debt(self) -> None:
         with tempfile.TemporaryDirectory(prefix="h8_vault_sentinel_wrapper_") as temp_dir:
             root = Path(temp_dir)
@@ -626,9 +764,68 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
 
             loaded = json.loads(path.read_text(encoding="utf-8"))
 
+            self.assertEqual(loaded["schema"], audit.BASELINE_SCHEMA)
+            self.assertEqual(loaded["forbiddenByFile"]["Assets/_Project/Scripts/World/BadWorld.cs"], 2)
+            self.assertEqual(loaded["forbiddenDeclarationsByFile"]["Assets/_Project/Scripts/World/BadWorld.cs"], 1)
+
+    def test_baseline_round_trip_preserves_latest_created_fallback_counts(self) -> None:
+        payload = {
+            "sourceRoot": "Assets/_Project/Scripts",
+            "pattern": audit.NATIVE_ARRAY_CONSTRUCTOR_RE.pattern,
+            "declarationPattern": audit.NATIVE_ARRAY_DECLARATION_RE.pattern,
+            "latestCreatedFallbackPattern": audit.LATEST_CREATED_FALLBACK_RE.pattern,
+            "totalDirectConstructors": 0,
+            "allowedDirectConstructors": 0,
+            "forbiddenDirectConstructors": 0,
+            "forbiddenFileCount": 0,
+            "totalLatestCreatedFallbacks": 2,
+            "allowedLatestCreatedFallbacks": 1,
+            "forbiddenLatestCreatedFallbacks": 1,
+            "runtimeForbiddenLatestCreatedFallbacks": 1,
+            "forbiddenLatestCreatedFallbackFileCount": 1,
+            "allowedPathSuffixes": list(audit.DEFAULT_ALLOWED_PATH_SUFFIXES),
+            "declarationAllowedPathSuffixes": list(audit.DEFAULT_ALLOWED_DECLARATION_PATH_SUFFIXES),
+            "latestCreatedAllowedPathSuffixes": list(audit.DEFAULT_ALLOWED_LATEST_CREATED_PATH_SUFFIXES),
+            "findings": [],
+            "declarationFindings": [],
+            "latestCreatedFallbackFindings": [
+                {
+                    "path": "Assets/_Project/Scripts/Gameplay/BadRuntime.cs",
+                    "count": 1,
+                    "lines": [8],
+                    "allowed": False,
+                    "forbiddenCount": 1,
+                    "forbiddenLineExecutionSurfaceCounts": {"Runtime": 1},
+                    "allowedCount": 0,
+                },
+                {
+                    "path": "Assets/_Project/Scripts/Bootstrap/BootstrapProbe.cs",
+                    "count": 1,
+                    "lines": [4],
+                    "allowed": True,
+                    "forbiddenCount": 0,
+                    "forbiddenLineExecutionSurfaceCounts": {},
+                    "allowedCount": 1,
+                },
+            ],
+        }
+
+        with tempfile.TemporaryDirectory(prefix="h8_vault_latest_baseline_") as temp_dir:
+            path = Path(temp_dir) / "baseline.json"
+            baseline = audit.build_baseline(payload)
+            audit.write_json(path, baseline)
+
+            loaded = json.loads(path.read_text(encoding="utf-8"))
+
         self.assertEqual(loaded["schema"], audit.BASELINE_SCHEMA)
-        self.assertEqual(loaded["forbiddenByFile"]["Assets/_Project/Scripts/World/BadWorld.cs"], 2)
-        self.assertEqual(loaded["forbiddenDeclarationsByFile"]["Assets/_Project/Scripts/World/BadWorld.cs"], 1)
+        self.assertEqual(
+            loaded["forbiddenLatestCreatedFallbacksByFile"]["Assets/_Project/Scripts/Gameplay/BadRuntime.cs"],
+            1,
+        )
+        self.assertEqual(
+            loaded["runtimeForbiddenLatestCreatedFallbacksByFile"]["Assets/_Project/Scripts/Gameplay/BadRuntime.cs"],
+            1,
+        )
 
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using System.Threading;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Systems.AI;
@@ -760,7 +761,8 @@ namespace Hecton8.Core
             if (instance == null || !instance._ringBuffer.IsCreated)
                 return;
 
-            instance.WriteJobAdmissionTelemetry(lane, jobHash, 0f, value, 0, 2);
+            byte nonFiniteFlags = (byte)(JobAdmissionTelemetryFlags.Denied | JobAdmissionTelemetryFlags.NonFinite);
+            instance.WriteJobAdmissionTelemetry(lane, jobHash, 0f, value, 0, nonFiniteFlags);
             instance.TryExportSnapshot(ExportReason.JobAdmissionStarvation, flags, bypassCooldown: true);
         }
 

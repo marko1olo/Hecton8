@@ -938,11 +938,10 @@ namespace Hecton8.Core.Diagnostics
             AllocateColdManagedObjects();
             _storageReady = TryAcquireVaultStorage();
             LoadEndpointConfigurationCold();
-            if (_storageReady)
-            {
+            if (_storageReady && StartWorker())
                 Volatile.Write(ref _acceptingIngress, 1);
-                StartWorker();
-            }
+            else if (_storageReady)
+                ReleaseWorkerStorageAfterStartFailure();
 
             if (!_dispatcherRegistered && GlobalRegistry.TryRegisterDispatcherSystem(this))
                 _dispatcherRegistered = true;
@@ -1059,11 +1058,21 @@ namespace Hecton8.Core.Diagnostics
 
         private void ReleaseVaultHandle<T>(ref VaultGenerationHandle<T> handle) where T : struct
         {
-            IDataVault vault = _dataVault;
-            if (vault != null && IsVaultHandleCreated(in handle))
-                vault.ReleaseBuffer(in handle);
-
-            handle = default;
+            try
+            {
+                IDataVault vault = _dataVault;
+                if (vault != null && IsVaultHandleCreated(in handle))
+                    vault.ReleaseBuffer(in handle);
+            }
+            catch (Exception)
+            {
+                Interlocked.Increment(ref _workerFaultCount);
+                SetWorkerFlag(WorkerFlagFaulted);
+            }
+            finally
+            {
+                handle = default;
+            }
         }
 
         private void ReleaseVaultHandles()
@@ -1255,8 +1264,10 @@ namespace Hecton8.Core.Diagnostics
             if (!_storageReady)
                 return;
 
-            Volatile.Write(ref _acceptingIngress, 1);
-            StartWorker();
+            if (StartWorker())
+                Volatile.Write(ref _acceptingIngress, 1);
+            else
+                ReleaseWorkerStorageAfterStartFailure();
         }
 
         private void TryRegisterHotSwapListener()
@@ -1317,10 +1328,21 @@ namespace Hecton8.Core.Diagnostics
             if (!_workerBuffersLocked)
                 return;
 
-            IDataVault vault = _dataVault;
-            if (vault != null)
-                vault.ReleaseMutationGuard(WorkerVaultMutationGuardMask);
-            _workerBuffersLocked = false;
+            try
+            {
+                IDataVault vault = _dataVault;
+                if (vault != null)
+                    vault.ReleaseMutationGuard(WorkerVaultMutationGuardMask);
+            }
+            catch (Exception)
+            {
+                Interlocked.Increment(ref _workerFaultCount);
+                SetWorkerFlag(WorkerFlagFaulted);
+            }
+            finally
+            {
+                _workerBuffersLocked = false;
+            }
         }
 
         private AnalyticsTuningDTO CreateDefaultTuning()
@@ -1862,7 +1884,7 @@ namespace Hecton8.Core.Diagnostics
                 Volatile.Write(ref _pendingBatchIndex, batchIndex);
                 Volatile.Write(ref _pendingBatchCount, safeCount);
                 Interlocked.Exchange(ref _pendingBatchState, BatchStatePending);
-                _flushSignal.Set();
+                SignalWorkerNoThrow();
             }
         }
 
@@ -1873,59 +1895,110 @@ namespace Hecton8.Core.Diagnostics
                 : CreateLockedWorkerView(in _handoffBHandle, MaxHandoffEvents);
         }
 
-        private void StartWorker()
+        private bool StartWorker()
         {
             if (_workerThread != null)
             {
                 if (!_workerThread.IsAlive)
                 {
                     _workerThread = null;
-                    if (_flushSignal != null)
-                    {
-                        _flushSignal.Dispose();
-                        _flushSignal = null;
-                    }
+                    DisposeWorkerSignalNoThrow();
                 }
                 else
                 {
-                    return;
+                    return true;
                 }
             }
 
             if (!_workerBuffersLocked)
+                return false;
+
+            try
+            {
+                Volatile.Write(ref _shutdownRequested, 0);
+                if (_flushSignal == null)
+                    AllocateColdManagedObjects();
+                // COLD ALLOC: Thread[1] - isolated analytics compression and I/O worker - owner: AsynchronousTelemetryExporter
+                Thread workerThread = new Thread(WorkerLoop)
+                {
+                    IsBackground = true,
+                    Name = "H8_Analytics_IO",
+                    Priority = System.Threading.ThreadPriority.BelowNormal
+                };
+                _workerThread = workerThread;
+                workerThread.Start();
+                return true;
+            }
+            catch (Exception)
+            {
+                Volatile.Write(ref _shutdownRequested, 1);
+                _workerThread = null;
+                Interlocked.Increment(ref _workerFaultCount);
+                SetWorkerFlag(WorkerFlagFaulted);
+                return false;
+            }
+        }
+
+        private void ReleaseWorkerStorageAfterStartFailure()
+        {
+            Volatile.Write(ref _acceptingIngress, 0);
+            _storageReady = false;
+            ReleaseVaultHandles();
+            DisposeWorkerSignalNoThrow();
+        }
+
+        private void DisposeWorkerSignalNoThrow()
+        {
+            if (_flushSignal == null)
                 return;
 
-            Volatile.Write(ref _shutdownRequested, 0);
-            if (_flushSignal == null)
-                AllocateColdManagedObjects();
-            // COLD ALLOC: Thread[1] - isolated analytics compression and I/O worker - owner: AsynchronousTelemetryExporter
-            _workerThread = new Thread(WorkerLoop)
+            try
             {
-                IsBackground = true,
-                Name = "H8_Analytics_IO",
-                Priority = System.Threading.ThreadPriority.BelowNormal
-            };
-            _workerThread.Start();
+                _flushSignal.Dispose();
+            }
+            catch (Exception)
+            {
+            }
+            finally
+            {
+                _flushSignal = null;
+            }
+        }
+
+        private bool SignalWorkerNoThrow()
+        {
+            AutoResetEvent signal = _flushSignal;
+            if (signal == null)
+                return false;
+
+            try
+            {
+                signal.Set();
+                return true;
+            }
+            catch (Exception)
+            {
+                Interlocked.Increment(ref _workerFaultCount);
+                SetWorkerFlag(WorkerFlagFaulted);
+                return false;
+            }
         }
 
         private bool StopWorker()
         {
             Volatile.Write(ref _shutdownRequested, 1);
-            if (_flushSignal != null)
-                _flushSignal.Set();
+            SignalWorkerNoThrow();
 
             Thread thread = _workerThread;
-            if (thread != null && thread.IsAlive)
-                thread.Join(WorkerJoinMilliseconds);
+            TryJoinWorkerNoThrow(thread);
 
             if (thread != null && thread.IsAlive)
             {
                 HttpWebRequest request = Volatile.Read(ref _activeRequest);
                 if (request != null)
                     request.Abort();
-                if (_flushSignal != null)
-                    _flushSignal.Set();
-                thread.Join(WorkerJoinMilliseconds);
+                SignalWorkerNoThrow();
+                TryJoinWorkerNoThrow(thread);
             }
 
             if (thread != null && thread.IsAlive)
@@ -1938,14 +2011,28 @@ namespace Hecton8.Core.Diagnostics
             }
 
             _workerThread = null;
-            if (_flushSignal != null)
-            {
-                _flushSignal.Dispose();
-                _flushSignal = null;
-            }
+            DisposeWorkerSignalNoThrow();
             UnlockWorkerVaultBuffers();
 
             return true;
+        }
+
+        private bool TryJoinWorkerNoThrow(Thread thread)
+        {
+            if (thread == null || !thread.IsAlive)
+                return true;
+
+            try
+            {
+                thread.Join(WorkerJoinMilliseconds);
+                return true;
+            }
+            catch (Exception)
+            {
+                Interlocked.Increment(ref _workerFaultCount);
+                SetWorkerFlag(WorkerFlagFaulted);
+                return false;
+            }
         }
 
         private int ReadWorkerAccumCount()
@@ -2566,8 +2653,7 @@ namespace Hecton8.Core.Diagnostics
 
                 Volatile.Write(ref _pendingDumpBytes, offset);
                 Interlocked.Exchange(ref _pendingDumpState, DumpStatePending);
-                if (_flushSignal != null)
-                    _flushSignal.Set();
+                SignalWorkerNoThrow();
             }
             catch
             {
@@ -2621,14 +2707,27 @@ namespace Hecton8.Core.Diagnostics
             {
                 int byteCount = math.clamp(Volatile.Read(ref _pendingDumpBytes), 0, DumpSnapshotBytes);
                 if (byteCount <= 0)
+                {
+                    Interlocked.Increment(ref _workerFaultCount);
+                    SetWorkerFlag(WorkerFlagFaulted);
                     return;
+                }
 
                 if (!TryReadWorkerBuffer(in _dumpSnapshotHandle, DumpSnapshotBytes, out NativeArray<byte>.ReadOnly snapshot))
+                {
+                    Interlocked.Increment(ref _workerFaultCount);
+                    SetWorkerFlag(WorkerFlagFaulted);
                     return;
+                }
 
                 ReadOnlySpan<byte> payload = AsReadOnlySpan(snapshot, byteCount);
-                Hecton8.Core.NativeFaultDumpWriter.TryWriteAll("Docs/AgentLogs/Dump_SHINOBU_160.bin", payload, byteCount);
-                Hecton8.Core.NativeFaultDumpWriter.TryWriteAll("Docs/AgentLogs/Dump_ANALYTICS_CRASH.bin", payload, byteCount);
+                bool wroteTimestampedDump = Hecton8.Core.NativeFaultDumpWriter.TryWriteAll(BuildAnalyticsCrashDumpPath(DateTime.UtcNow.Ticks), payload, byteCount);
+                bool wroteLatestDump = Hecton8.Core.NativeFaultDumpWriter.TryWriteAll("Docs/AgentLogs/Dump_ANALYTICS_CRASH.bin", payload, byteCount);
+                if (!wroteTimestampedDump && !wroteLatestDump)
+                {
+                    Interlocked.Increment(ref _workerFaultCount);
+                    SetWorkerFlag(WorkerFlagFaulted);
+                }
             }
             catch
             {
@@ -2640,6 +2739,11 @@ namespace Hecton8.Core.Diagnostics
                 Volatile.Write(ref _pendingDumpBytes, 0);
                 Interlocked.Exchange(ref _pendingDumpState, DumpStateIdle);
             }
+        }
+
+        private static string BuildAnalyticsCrashDumpPath(long utcTicks)
+        {
+            return "Docs/AgentLogs/Dump_ANALYTICS_CRASH_" + utcTicks.ToString("X16") + ".bin";
         }
 
         private string ResolveFallbackDirectory()

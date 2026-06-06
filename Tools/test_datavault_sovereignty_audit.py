@@ -3,11 +3,17 @@
 
 from __future__ import annotations
 
+import sys
 import unittest
 from pathlib import Path
 
+TOOLS_ROOT = Path(__file__).resolve().parent
+if str(TOOLS_ROOT) not in sys.path:
+    sys.path.insert(0, str(TOOLS_ROOT))
+
 from DataVaultSovereigntyAudit import (
     BASELINE_SCHEMA,
+    REPORT_SCHEMA,
     aggregate_regression_details,
     aggregate_regression_details_by_surface,
     build_report_payload,
@@ -178,7 +184,7 @@ class DataVaultRegressionDrilldownTests(unittest.TestCase):
         errors, details = collect_regression_details(payload, baseline)
         report = build_report_payload(payload, Path("baseline.json"), baseline, errors, details)
 
-        self.assertEqual(report["schema"], "hecton8.datavault_sovereignty_audit_report.v2")
+        self.assertEqual(report["schema"], REPORT_SCHEMA)
         self.assertEqual(report["regressionDetails"][0]["domain"], "Core")
         self.assertEqual(report["regressionDetails"][0]["executionSurface"], "Runtime")
         self.assertEqual(report["regressionByDomain"][0]["domain"], "Core")

@@ -197,6 +197,82 @@ namespace Hecton8.Tests.Editor
                 });
         }
 
+        [Test]
+        public void WorkerIngressAcceptanceWaitsForSuccessfulWorkerStart()
+        {
+            string path = Path.Combine(Application.dataPath, "_Project/Scripts/Core/Diagnostics/AsynchronousTelemetryExporter.cs");
+            string source = File.ReadAllText(path);
+            string onEnable = ExtractMethodBody(source, "private void OnEnable()");
+            string rebind = ExtractMethodBody(source, "private void RebindDataVault(IDataVault nextVault)");
+            string startWorker = ExtractMethodBody(source, "private bool StartWorker()");
+            string releaseFailure = ExtractMethodBody(source, "private void ReleaseWorkerStorageAfterStartFailure()");
+            string disposeSignal = ExtractMethodBody(source, "private void DisposeWorkerSignalNoThrow()");
+            string stopWorker = ExtractMethodBody(source, "private bool StopWorker()");
+            string joinWorker = ExtractMethodBody(source, "private bool TryJoinWorkerNoThrow(Thread thread)");
+            string signalWorker = ExtractMethodBody(source, "private bool SignalWorkerNoThrow()");
+            string releaseVaultHandle = ExtractMethodBody(source, "private void ReleaseVaultHandle<T>(ref VaultGenerationHandle<T> handle)");
+            string unlockWorkerVault = ExtractMethodBody(source, "private void UnlockWorkerVaultBuffers()");
+
+            StringAssert.Contains("if (_storageReady && StartWorker())", onEnable);
+            Assert.That(
+                onEnable.IndexOf("StartWorker()", StringComparison.Ordinal),
+                Is.LessThan(onEnable.IndexOf("Volatile.Write(ref _acceptingIngress, 1);", StringComparison.Ordinal)));
+
+            StringAssert.Contains("if (StartWorker())", rebind);
+            StringAssert.Contains("ReleaseWorkerStorageAfterStartFailure();", rebind);
+
+            StringAssert.Contains("workerThread.Start();", startWorker);
+            StringAssert.Contains("return true;", startWorker);
+            StringAssert.Contains("return false;", startWorker);
+            StringAssert.Contains("catch (Exception)", startWorker);
+            StringAssert.Contains("SetWorkerFlag(WorkerFlagFaulted);", startWorker);
+
+            StringAssert.Contains("Volatile.Write(ref _acceptingIngress, 0);", releaseFailure);
+            StringAssert.Contains("_storageReady = false;", releaseFailure);
+            StringAssert.Contains("ReleaseVaultHandles();", releaseFailure);
+            StringAssert.Contains("DisposeWorkerSignalNoThrow();", releaseFailure);
+            StringAssert.Contains("_flushSignal.Dispose();", disposeSignal);
+            StringAssert.Contains("catch (Exception)", disposeSignal);
+            StringAssert.Contains("_flushSignal = null;", disposeSignal);
+            Assert.AreEqual(1, CountOccurrences(source, "_flushSignal.Dispose();"));
+
+            Assert.AreEqual(0, CountOccurrences(source, "_flushSignal.Set();"));
+            StringAssert.Contains("signal.Set();", signalWorker);
+            StringAssert.Contains("catch (Exception)", signalWorker);
+            StringAssert.Contains("SetWorkerFlag(WorkerFlagFaulted);", signalWorker);
+
+            StringAssert.Contains("TryJoinWorkerNoThrow(thread);", stopWorker);
+            StringAssert.Contains("thread.Join(WorkerJoinMilliseconds);", joinWorker);
+            StringAssert.Contains("catch (Exception)", joinWorker);
+            StringAssert.Contains("SetWorkerFlag(WorkerFlagFaulted);", joinWorker);
+
+            StringAssert.Contains("vault.ReleaseBuffer(in handle);", releaseVaultHandle);
+            StringAssert.Contains("catch (Exception)", releaseVaultHandle);
+            StringAssert.Contains("finally", releaseVaultHandle);
+            StringAssert.Contains("handle = default;", releaseVaultHandle);
+            StringAssert.Contains("vault.ReleaseMutationGuard(WorkerVaultMutationGuardMask);", unlockWorkerVault);
+            StringAssert.Contains("catch (Exception)", unlockWorkerVault);
+            StringAssert.Contains("finally", unlockWorkerVault);
+            StringAssert.Contains("_workerBuffersLocked = false;", unlockWorkerVault);
+        }
+
+        [Test]
+        public void PendingBlackBoxDumpUsesRuntimeTimestampPathAndCountsDoubleWriteFailure()
+        {
+            string path = Path.Combine(Application.dataPath, "_Project/Scripts/Core/Diagnostics/AsynchronousTelemetryExporter.cs");
+            string source = File.ReadAllText(path);
+            string method = ExtractMethodBody(source, "private void TryWritePendingBlackBoxDump()");
+
+            StringAssert.Contains("BuildAnalyticsCrashDumpPath(DateTime.UtcNow.Ticks)", method);
+            StringAssert.Contains("bool wroteTimestampedDump = Hecton8.Core.NativeFaultDumpWriter.TryWriteAll", method);
+            StringAssert.Contains("bool wroteLatestDump = Hecton8.Core.NativeFaultDumpWriter.TryWriteAll", method);
+            StringAssert.Contains("Docs/AgentLogs/Dump_ANALYTICS_CRASH.bin", method);
+            StringAssert.Contains("if (!wroteTimestampedDump && !wroteLatestDump)", method);
+            StringAssert.Contains("Interlocked.Increment(ref _workerFaultCount);", method);
+            StringAssert.Contains("SetWorkerFlag(WorkerFlagFaulted);", method);
+            StringAssert.DoesNotContain("Dump_SHINOBU_160.bin", method);
+        }
+
         private static int InvokeStartIndex(int cursorValue, int ringLength, bool ringHasWrapped)
         {
             MethodInfo method = ResolvePrivateStaticMethod("ResolveTelemetryDumpStartIndex");
@@ -242,6 +318,53 @@ namespace Hecton8.Tests.Editor
                 if (!requiredFound[i])
                     Assert.Fail(path + " missing token: " + required[i]);
             }
+        }
+
+        private static string ExtractMethodBody(string source, string signature)
+        {
+            int signatureIndex = source.IndexOf(signature, StringComparison.Ordinal);
+            Assert.GreaterOrEqual(signatureIndex, 0, signature);
+
+            int braceStart = source.IndexOf('{', signatureIndex);
+            Assert.Greater(braceStart, signatureIndex, signature);
+
+            int depth = 0;
+            for (int i = braceStart; i < source.Length; i++)
+            {
+                char c = source[i];
+                if (c == '{')
+                {
+                    depth++;
+                    continue;
+                }
+
+                if (c != '}')
+                    continue;
+
+                depth--;
+                if (depth == 0)
+                    return source.Substring(braceStart, i - braceStart + 1);
+            }
+
+            Assert.Fail("Could not find method body for " + signature);
+            return string.Empty;
+        }
+
+        private static int CountOccurrences(string source, string token)
+        {
+            int count = 0;
+            int index = 0;
+            while (index < source.Length)
+            {
+                index = source.IndexOf(token, index, StringComparison.Ordinal);
+                if (index < 0)
+                    return count;
+
+                count++;
+                index += token.Length;
+            }
+
+            return count;
         }
     }
 }

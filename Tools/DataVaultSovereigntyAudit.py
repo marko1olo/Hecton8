@@ -83,7 +83,6 @@ DEFAULT_ALLOWED_LATEST_CREATED_PATH_SUFFIXES = (
 LATEST_CREATED_ALLOWED_PATH_TOKENS = (
     "/bootstrap/",
     "/diagnostics/",
-    "/diagnostic",
     "/gizmo",
     "/xray",
     "/validator",
@@ -1546,24 +1545,35 @@ def collect_regression_details(
             errors.append("Baseline forbiddenLatestCreatedFallbacksByFile is missing or invalid.")
             baseline_latest_by_file = {}
 
+        baseline_runtime_latest_by_file = baseline.get("runtimeForbiddenLatestCreatedFallbacksByFile", {})
+        if not isinstance(baseline_runtime_latest_by_file, dict):
+            errors.append("Baseline runtimeForbiddenLatestCreatedFallbacksByFile is missing or invalid.")
+            baseline_runtime_latest_by_file = {}
+
+        current_runtime_latest_by_file = forbidden_latest_created_fallbacks_by_file(payload, runtime_only=True)
         for path, count in sorted(forbidden_latest_created_fallbacks_by_file(payload).items()):
             baseline_count = int(baseline_latest_by_file.get(path, 0))
             if count > baseline_count:
-                delta = count - baseline_count
                 errors.append(
                     f"{path}: forbidden TryGetLatestCreated fallbacks increased from {baseline_count} to {count}."
                 )
-                details.append(
-                    {
-                        "kind": "latestCreatedFallback",
-                        "domain": extract_domain(path),
-                        "executionSurface": extract_execution_surface(path),
-                        "path": path,
-                        "baseline": baseline_count,
-                        "current": count,
-                        "delta": delta,
-                    }
-                )
+                current_runtime_count = int(current_runtime_latest_by_file.get(path, 0))
+                baseline_runtime_count = int(baseline_runtime_latest_by_file.get(path, 0))
+                current_non_runtime_count = max(0, count - current_runtime_count)
+                baseline_non_runtime_count = max(0, baseline_count - baseline_runtime_count)
+                if current_non_runtime_count > baseline_non_runtime_count:
+                    delta = current_non_runtime_count - baseline_non_runtime_count
+                    details.append(
+                        {
+                            "kind": "latestCreatedFallback",
+                            "domain": extract_domain(path),
+                            "executionSurface": extract_execution_surface(path),
+                            "path": path,
+                            "baseline": baseline_non_runtime_count,
+                            "current": current_non_runtime_count,
+                            "delta": delta,
+                        }
+                    )
 
         current_runtime_latest_total = int(payload.get("runtimeForbiddenLatestCreatedFallbacks", 0))
         baseline_runtime_latest_total = int(baseline.get("runtimeForbiddenLatestCreatedFallbacks", -1))
@@ -1573,12 +1583,7 @@ def collect_regression_details(
                 f"from {baseline_runtime_latest_total} to {current_runtime_latest_total}."
             )
 
-        baseline_runtime_latest_by_file = baseline.get("runtimeForbiddenLatestCreatedFallbacksByFile", {})
-        if not isinstance(baseline_runtime_latest_by_file, dict):
-            errors.append("Baseline runtimeForbiddenLatestCreatedFallbacksByFile is missing or invalid.")
-            baseline_runtime_latest_by_file = {}
-
-        for path, count in sorted(forbidden_latest_created_fallbacks_by_file(payload, runtime_only=True).items()):
+        for path, count in sorted(current_runtime_latest_by_file.items()):
             baseline_count = int(baseline_runtime_latest_by_file.get(path, 0))
             if count > baseline_count:
                 delta = count - baseline_count
@@ -1645,6 +1650,7 @@ def aggregate_regression_details(details: Sequence[dict[str, Any]]) -> list[dict
                 "delta": 0,
                 "directConstructorDelta": 0,
                 "fieldDeclarationDelta": 0,
+                "latestCreatedFallbackDelta": 0,
                 "fileCount": 0,
                 "files": set(),
             },
@@ -1655,6 +1661,8 @@ def aggregate_regression_details(details: Sequence[dict[str, Any]]) -> list[dict
             entry["directConstructorDelta"] += delta
         elif detail.get("kind") == "fieldDeclaration":
             entry["fieldDeclarationDelta"] += delta
+        elif detail.get("kind") in {"latestCreatedFallback", "latestCreatedRuntimeFallback"}:
+            entry["latestCreatedFallbackDelta"] += delta
         path = str(detail.get("path", ""))
         if path:
             entry["files"].add(path)
@@ -1668,6 +1676,7 @@ def aggregate_regression_details(details: Sequence[dict[str, Any]]) -> list[dict
                 "delta": entry["delta"],
                 "directConstructorDelta": entry["directConstructorDelta"],
                 "fieldDeclarationDelta": entry["fieldDeclarationDelta"],
+                "latestCreatedFallbackDelta": entry["latestCreatedFallbackDelta"],
                 "fileCount": len(files),
                 "files": files,
             }
@@ -1687,6 +1696,7 @@ def aggregate_regression_details_by_surface(details: Sequence[dict[str, Any]]) -
                 "delta": 0,
                 "directConstructorDelta": 0,
                 "fieldDeclarationDelta": 0,
+                "latestCreatedFallbackDelta": 0,
                 "fileCount": 0,
                 "files": set(),
             },
@@ -1697,6 +1707,8 @@ def aggregate_regression_details_by_surface(details: Sequence[dict[str, Any]]) -
             entry["directConstructorDelta"] += delta
         elif detail.get("kind") == "fieldDeclaration":
             entry["fieldDeclarationDelta"] += delta
+        elif detail.get("kind") in {"latestCreatedFallback", "latestCreatedRuntimeFallback"}:
+            entry["latestCreatedFallbackDelta"] += delta
         path = str(detail.get("path", ""))
         if path:
             entry["files"].add(path)
@@ -1710,6 +1722,7 @@ def aggregate_regression_details_by_surface(details: Sequence[dict[str, Any]]) -
                 "delta": entry["delta"],
                 "directConstructorDelta": entry["directConstructorDelta"],
                 "fieldDeclarationDelta": entry["fieldDeclarationDelta"],
+                "latestCreatedFallbackDelta": entry["latestCreatedFallbackDelta"],
                 "fileCount": len(files),
                 "files": files,
             }
@@ -1773,8 +1786,9 @@ def write_markdown_report(
     elif (
         int(payload["forbiddenDirectConstructors"]) == 0
         and int(payload.get("forbiddenNativeArrayDeclarations", 0)) == 0
+        and int(payload.get("forbiddenLatestCreatedFallbacks", 0)) == 0
     ):
-        status = "PASS_ZERO_FORBIDDEN_NATIVEARRAY_DEBT"
+        status = "PASS_ZERO_FORBIDDEN_DATAVAULT_DEBT"
 
     lines: list[str] = [
         "# DataVault Sovereignty Audit - VAULT_SOVEREIGNTY_ENFORCER",
@@ -1807,6 +1821,11 @@ def write_markdown_report(
         f"| Native view/payload/kernel struct declarations | {payload.get('nativeViewNativeCollectionDeclarations', 0)} |",
         f"| Unknown struct native collection declarations | {payload.get('unknownStructNativeCollectionDeclarations', 0)} |",
         f"| Files with forbidden declarations | {payload.get('declarationFileCount', 0)} |",
+        f"| Total `GlobalDataVault.TryGetLatestCreated` fallbacks | {payload.get('totalLatestCreatedFallbacks', 0)} |",
+        f"| Allowed bootstrap/editor/diagnostic fallbacks | {payload.get('allowedLatestCreatedFallbacks', 0)} |",
+        f"| Forbidden domain runtime fallbacks | {payload.get('forbiddenLatestCreatedFallbacks', 0)} |",
+        f"| Runtime forbidden domain fallbacks | {payload.get('runtimeForbiddenLatestCreatedFallbacks', 0)} |",
+        f"| Files with forbidden domain fallbacks | {payload.get('forbiddenLatestCreatedFallbackFileCount', 0)} |",
         "",
     ]
 
@@ -1858,6 +1877,20 @@ def write_markdown_report(
             lines.append(f"| `{allocator}` | {count} |")
         lines.append("")
 
+    latest_created_surface_totals = payload.get("forbiddenLatestCreatedFallbacksByExecutionSurface", {})
+    if latest_created_surface_totals:
+        lines.extend(
+            [
+                "## Current Forbidden TryGetLatestCreated Fallbacks By Execution Surface",
+                "",
+                "| Surface | Count |",
+                "|---|---:|",
+            ]
+        )
+        for surface, count in sorted(latest_created_surface_totals.items()):
+            lines.append(f"| `{surface}` | {count} |")
+        lines.append("")
+
     domain_regressions = aggregate_regression_details(regression_details)
     surface_regressions = aggregate_regression_details_by_surface(regression_details)
     if surface_regressions:
@@ -1865,14 +1898,15 @@ def write_markdown_report(
             [
                 "## Regression Delta By Execution Surface",
                 "",
-                "| Surface | Delta | Direct constructor delta | Field declaration delta | Files |",
-                "|---|---:|---:|---:|---:|",
+                "| Surface | Delta | Direct constructor delta | Field declaration delta | TryGetLatestCreated delta | Files |",
+                "|---|---:|---:|---:|---:|---:|",
             ]
         )
         for item in surface_regressions:
             lines.append(
                 f"| `{item['executionSurface']}` | {item['delta']} | "
                 f"{item['directConstructorDelta']} | {item['fieldDeclarationDelta']} | "
+                f"{item['latestCreatedFallbackDelta']} | "
                 f"{item['fileCount']} |"
             )
         lines.append("")
@@ -1882,14 +1916,15 @@ def write_markdown_report(
             [
                 "## Regression Delta By Domain",
                 "",
-                "| Domain | Delta | Direct constructor delta | Field declaration delta | Files |",
-                "|---|---:|---:|---:|---:|",
+                "| Domain | Delta | Direct constructor delta | Field declaration delta | TryGetLatestCreated delta | Files |",
+                "|---|---:|---:|---:|---:|---:|",
             ]
         )
         for item in domain_regressions:
             lines.append(
                 f"| `{item['domain']}` | {item['delta']} | "
                 f"{item['directConstructorDelta']} | {item['fieldDeclarationDelta']} | "
+                f"{item['latestCreatedFallbackDelta']} | "
                 f"{item['fileCount']} |"
             )
         lines.append("")
@@ -1954,6 +1989,30 @@ def write_markdown_report(
     lines.extend(
         [
             "",
+            f"## Top {top_limit} Forbidden TryGetLatestCreated Fallback Files",
+            "",
+            "| Count | Path | Lines |",
+            "|---:|---|---|",
+        ]
+    )
+    forbidden_latest = top_findings(
+        {"findings": payload.get("latestCreatedFallbackFindings", [])},
+        allowed=False,
+        limit=top_limit,
+    )
+    if forbidden_latest:
+        for finding in forbidden_latest:
+            count = int(finding.get("forbiddenCount", finding["count"]))
+            lines_sample = finding.get("forbiddenLines", finding["lines"])
+            lines.append(
+                f"| {count} | `{finding['path']}` | {format_line_samples(lines_sample)} |"
+            )
+    else:
+        lines.append("| 0 | none | |")
+
+    lines.extend(
+        [
+            "",
             "## Allowed Allocator-Internal Sites",
             "",
             "| Count | Path | Lines |",
@@ -2001,8 +2060,8 @@ def write_markdown_report(
             "python Tools\\DataVaultSovereigntyAudit.py --fail-on-any",
             "```",
             "",
-            "`--fail-on-regression` blocks any new or increased forbidden constructor or field-declaration count against the baseline.",
-            "`--fail-on-any` is the final zero-debt gate and currently fails until all legacy debt is migrated.",
+            "`--fail-on-regression` blocks any new or increased forbidden constructor, field-declaration, or domain `TryGetLatestCreated` fallback count against the baseline.",
+            "`--fail-on-any` is the final zero-debt gate and currently fails until all legacy DataVault debt is migrated.",
             "",
         ]
     )
@@ -2024,7 +2083,7 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         action="store_true",
         help="Exit nonzero only for runtime constructor or field declaration regressions.",
     )
-    parser.add_argument("--fail-on-any", action="store_true", help="Exit nonzero if any forbidden constructors remain.")
+    parser.add_argument("--fail-on-any", action="store_true", help="Exit nonzero if any forbidden DataVault debt remains.")
     parser.add_argument("--no-report", action="store_true", help="Do not write the Markdown report.")
     parser.add_argument("--top", type=int, default=40, help="Number of findings to include in the report.")
     return parser.parse_args(argv)
@@ -2033,7 +2092,13 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
     findings, declaration_findings = scan_source_tree_with_declarations(args.root)
-    payload = build_audit_payload(findings, args.root, declaration_findings=declaration_findings)
+    latest_created_fallback_findings = scan_latest_created_fallback_tree(args.root)
+    payload = build_audit_payload(
+        findings,
+        args.root,
+        declaration_findings=declaration_findings,
+        latest_created_fallback_findings=latest_created_fallback_findings,
+    )
     baseline = load_json(args.baseline)
 
     if args.write_baseline:
@@ -2071,6 +2136,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         failure_reasons.append(
             f"{payload['forbiddenNativeArrayDeclarations']} forbidden NativeArray field declarations remain."
         )
+    if args.fail_on_any and int(payload.get("forbiddenLatestCreatedFallbacks", 0)) > 0:
+        failure_reasons.append(
+            f"{payload['forbiddenLatestCreatedFallbacks']} forbidden GlobalDataVault.TryGetLatestCreated fallbacks remain."
+        )
 
     status = "PASS"
     if failure_reasons:
@@ -2093,7 +2162,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         f"editorSessionScratchDeclarations={payload.get('editorOfflineSessionScratchNativeCollectionDeclarations', 0)}, "
         f"editorPreviewPersistentDeclarations={payload.get('editorOfflinePersistentPreviewNativeCollectionDeclarations', 0)}, "
         f"jobInputDeclarations={payload.get('jobInputNativeCollectionDeclarations', 0)}, "
-        f"declarationFiles={payload.get('declarationFileCount', 0)}"
+        f"declarationFiles={payload.get('declarationFileCount', 0)}, "
+        f"latestCreatedFallbacks={payload.get('totalLatestCreatedFallbacks', 0)}, "
+        f"forbiddenLatestCreatedFallbacks={payload.get('forbiddenLatestCreatedFallbacks', 0)}, "
+        f"runtimeForbiddenLatestCreatedFallbacks={payload.get('runtimeForbiddenLatestCreatedFallbacks', 0)}"
     )
     for reason in failure_reasons:
         print(f"ERROR: {reason}", file=sys.stderr)

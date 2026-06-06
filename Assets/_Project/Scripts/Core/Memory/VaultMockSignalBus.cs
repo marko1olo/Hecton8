@@ -1,6 +1,7 @@
 #if UNITY_EDITOR || UNITY_INCLUDE_TESTS
 using System;
 using System.Runtime.InteropServices;
+using Hecton8.Core;
 using Unity.Collections;
 
 namespace Hecton8.Core.Memory
@@ -33,12 +34,25 @@ namespace Hecton8.Core.Memory
     /// </summary>
     public struct MockSignalBus<T> : IDisposable where T : unmanaged
     {
+        private const int MinimumExpectedCapacity = 1;
+        private const string NativeMemoryOwner = "MockSignalBus";
+        private const string QueueLabel = "_queue";
+
         private NativeQueue<T> _queue;
+        private int _sentinelRegistrationId;
 
         /// <summary>Creates the local queue.</summary>
-        public MockSignalBus(Allocator allocator)
+        public MockSignalBus(Allocator allocator, int expectedCapacity = MinimumExpectedCapacity)
         {
+            int capacity = Math.Max(MinimumExpectedCapacity, expectedCapacity);
             _queue = new NativeQueue<T>(allocator);
+            _sentinelRegistrationId = NativeMemorySentinel.RegisterNativeQueue(
+                _queue,
+                capacity,
+                NativeMemoryOwner,
+                QueueLabel,
+                ToNativeAllocationLifetime(allocator));
+            PrewarmQueue(ref _queue, capacity);
         }
 
         /// <summary>True when the queue is allocated.</summary>
@@ -64,7 +78,39 @@ namespace Hecton8.Core.Memory
         public void Dispose()
         {
             if (_queue.IsCreated)
+            {
+                NativeMemorySentinel.Unregister(_sentinelRegistrationId);
+                _sentinelRegistrationId = 0;
                 _queue.Dispose();
+            }
+        }
+
+        private static NativeAllocationLifetime ToNativeAllocationLifetime(Allocator allocator)
+        {
+            switch (allocator)
+            {
+                case Allocator.Persistent:
+                    return NativeAllocationLifetime.Session;
+                case Allocator.TempJob:
+                    return NativeAllocationLifetime.TempJob;
+                case Allocator.Temp:
+                    return NativeAllocationLifetime.Temp;
+                default:
+                    return NativeAllocationLifetime.Temp;
+            }
+        }
+
+        private static void PrewarmQueue(ref NativeQueue<T> queue, int capacity)
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
+            }
         }
     }
 }
