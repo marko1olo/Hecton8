@@ -22,6 +22,7 @@ namespace Hecton8.Tests.Editor
         private const string SystemsDebugUiPath = "Assets/_Project/Scripts/UI/HectonSystemsDebugUI.cs";
         private const string SettingsManagerPath = "Assets/_Project/Scripts/UI/SettingsManager.cs";
         private const string ObjectPoolManagerPath = "Assets/_Project/Scripts/ObjectPoolManager.cs";
+        private const string AudioLogPickupPath = "Assets/_Project/Scripts/AudioLog/AudioLogPickup.cs";
         private const string VocalBankRuntimePath = "Assets/_Project/Scripts/Audio/Synthesis/VocalBankPlaybackRuntime.cs";
         private const string VocalWarningSystemPath = "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs";
         private const string SoundscapeSystemPath = "Assets/_Project/Scripts/World/SoundscapeSystem.cs";
@@ -312,6 +313,10 @@ namespace Hecton8.Tests.Editor
             string speechActive = ExtractMethodBody(musicDirector, "private bool IsForegroundSpeechActive()");
             string audioLogDuck = ExtractMethodBody(musicDirector, "private void RefreshNarrativeAudioLogMusicDucking()");
             string speechDuckResolve = ExtractMethodBody(musicDirector, "private float ResolveForegroundSpeechMusicDuck01()");
+            string audioLogResolve = ExtractMethodBody(musicDirector, "private IAudioLogRuntime ResolveAudioLogRuntime()");
+            string audioLogCache = ExtractMethodBody(musicDirector, "private void CacheAudioLogRuntime(");
+            string audioLogStale = ExtractMethodBody(musicDirector, "private void RefreshAudioLogRuntimeIfStale()");
+            string audioLogUsable = ExtractMethodBody(musicDirector, "private static bool IsAudioLogRuntimeUsable(");
             string runtimeRebind = ExtractMethodBody(musicDirector, "private void CacheReboundRuntimeService(");
 
             StringAssert.Contains("public enum MusicActivityReason", musicDirector);
@@ -353,6 +358,12 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("audioLogRuntime.IsPlaying || audioLogRuntime.IsNarrativeQueueBlocked", audioLogDuck);
             StringAssert.Contains("NarrativeAudioLogMusicDuck01", audioLogDuck);
             StringAssert.Contains("math.max(_vocalWarningMusicDuck01, _narrativeAudioLogMusicDuck01)", speechDuckResolve);
+            StringAssert.Contains("return IsAudioLogRuntimeUsable(audioLogRuntime) ? audioLogRuntime : null", audioLogResolve);
+            StringAssert.Contains("_cachedAudioLogRuntime = IsAudioLogRuntimeUsable(audioLogRuntime) ? audioLogRuntime : null", audioLogCache);
+            StringAssert.Contains("if (IsAudioLogRuntimeUsable(audioLogRuntime))", audioLogStale);
+            StringAssert.Contains("_cachedAudioLogRuntime = null", audioLogStale);
+            StringAssert.Contains("audioLogRuntime is Behaviour behaviour", audioLogUsable);
+            StringAssert.Contains("return behaviour != null && behaviour.isActiveAndEnabled", audioLogUsable);
             Assert.That(warningDuck.IndexOf("GlobalRegistry.", StringComparison.Ordinal), Is.LessThan(0));
             Assert.That(audioLogDuck.IndexOf("GlobalRegistry.", StringComparison.Ordinal), Is.LessThan(0));
             Assert.That(speechDuck.IndexOf("RefreshVocalWarningRuntimeIfStale", StringComparison.Ordinal), Is.LessThan(0));
@@ -433,8 +444,14 @@ namespace Hecton8.Tests.Editor
             string musicDirector = Read(MusicDirectorPath);
             string slowTick = ExtractMethodBody(soundscape, "public void SlowTick()");
             string onEnable = ExtractMethodBody(soundscape, "private void OnEnable()");
+            string onDisable = ExtractMethodBody(soundscape, "private void OnDisable()");
+            string onDestroy = ExtractMethodBody(soundscape, "private void OnDestroy()");
             string depthTier = ExtractMethodBody(soundscape, "void IBiomeMatrixEventListener.OnDepthTierChanged(");
+            string rebound = ExtractMethodBody(soundscape, "void IGlobalRegistryHotSwapRefListener.OnGlobalRegistryServiceRebound(");
+            string hotSwap = ExtractMethodBody(soundscape, "void IGlobalRegistryHotSwapListener.OnGlobalRegistryServiceReplaced(");
             string sync = ExtractMethodBody(soundscape, "private void SyncMusicDirectorSoundscapeContext(");
+            string syncCached = ExtractMethodBody(soundscape, "private void SyncCachedMusicDirectorSoundscapeContext(");
+            string cacheMusic = ExtractMethodBody(soundscape, "private void CacheMusicDirector(");
             string setContext = ExtractMethodBody(musicDirector, "public void SetSoundscapeTierContext(");
             string resolveProfile = ExtractMethodBody(musicDirector, "private HectonMusicBiomeProfile ResolveProfile(");
             string soundscapeProfile = ExtractMethodBody(musicDirector, "private HectonMusicBiomeProfile ResolveSoundscapeTierProfile(");
@@ -442,11 +459,28 @@ namespace Hecton8.Tests.Editor
             string tension = ExtractMethodBody(musicDirector, "private float ResolveTension01()");
             string route = ExtractMethodBody(musicDirector, "private void UpdateLayerRouting(");
 
+            StringAssert.Contains("CacheMusicDirector(GlobalRegistry.MusicDirector)", onEnable);
             StringAssert.Contains("SyncMusicDirectorSoundscapeContext(_currentTier", onEnable);
+            StringAssert.Contains("_musicDirector = null", onDisable);
+            StringAssert.Contains("_musicDirector = null", onDestroy);
             StringAssert.Contains("SyncMusicDirectorSoundscapeContext(newTier, depth)", slowTick);
             AssertTextBefore(slowTick, "SyncMusicDirectorSoundscapeContext(newTier, depth)", "if (newTier == _currentTier)");
             StringAssert.Contains("director.SetSoundscapeTierContext(CalculateTier(depthMeters, _currentTier), depthMeters)", depthTier);
+            StringAssert.Contains("GlobalRegistryServiceSlot.MusicDirectorRuntime", rebound);
+            StringAssert.Contains("CacheMusicDirector(currentService as HectonMusicDirector)", rebound);
+            StringAssert.Contains("SyncCachedMusicDirectorSoundscapeContext(_currentTier, survivalSystem != null ? survivalSystem.Depth : 0f)", rebound);
+            StringAssert.Contains("GlobalRegistryServiceSlot.Player", rebound);
+            StringAssert.Contains("SyncMusicDirectorSoundscapeContext(_currentTier, survivalSystem != null ? survivalSystem.Depth : 0f)", rebound);
+            StringAssert.Contains("GlobalRegistryServiceSlot.MusicDirectorRuntime", hotSwap);
+            StringAssert.Contains("CacheMusicDirector(currentService as HectonMusicDirector)", hotSwap);
+            StringAssert.Contains("SyncCachedMusicDirectorSoundscapeContext(_currentTier, survivalSystem != null ? survivalSystem.Depth : 0f)", hotSwap);
+            StringAssert.Contains("GlobalRegistryServiceSlot.Player", hotSwap);
+            StringAssert.Contains("SyncMusicDirectorSoundscapeContext(_currentTier, survivalSystem != null ? survivalSystem.Depth : 0f)", hotSwap);
             StringAssert.Contains("director.SetSoundscapeTierContext(tier, depthMeters)", sync);
+            StringAssert.Contains("HectonMusicDirector director = _musicDirector", syncCached);
+            StringAssert.Contains("director == null || !director.isActiveAndEnabled", syncCached);
+            StringAssert.Contains("director.SetSoundscapeTierContext(tier, depthMeters)", syncCached);
+            StringAssert.Contains("musicDirector != null && musicDirector.isActiveAndEnabled", cacheMusic);
             StringAssert.Contains("SoundscapeTier safeTier = SanitizeSoundscapeTier(tier)", setContext);
             StringAssert.Contains("ResolveSoundscapeDepthHintMeters(safeTier)", setContext);
             StringAssert.Contains("float pressure01 = ResolveSoundscapePressure01(safeTier)", setContext);
@@ -613,6 +647,10 @@ namespace Hecton8.Tests.Editor
         public void DynamicMusicHostRoutingUsesMusicDirectorAndSettingsOnlyOffAudioThread()
         {
             string synth = Read(DynamicMusicSynthPath);
+            string awake = ExtractMethodBody(synth, "private void Awake()");
+            string onEnable = ExtractMethodBody(synth, "private void OnEnable()");
+            string unregister = ExtractMethodBody(synth, "private void UnregisterRuntime()");
+            string clearCached = ExtractMethodBody(synth, "private void ClearCachedRuntimeServices()");
             string coldTick = ExtractMethodBody(synth, "public void ColdTick()");
             string hotSwap = ExtractMethodBody(synth, "public void OnGlobalRegistryServiceReplaced(");
             string route = ExtractMethodBody(synth, "private void ApplyAudioHostMixerRoute()");
@@ -622,13 +660,26 @@ namespace Hecton8.Tests.Editor
             string mockJob = ExtractMethodBody(synth, "private unsafe struct GenerateMockTensionJob");
             string callback = ExtractMethodBody(synth, "private void OnAudioFilterRead(");
 
+            StringAssert.Contains("CacheMusicDirectorCold();", awake);
+            StringAssert.Contains("CacheSettingsManagerCold();", awake);
+            StringAssert.Contains("CacheMusicDirectorCold();", onEnable);
+            StringAssert.Contains("CacheSettingsManagerCold();", onEnable);
+            AssertTextBefore(awake, "CacheMusicDirectorCold();", "ConfigureAudioHostCold();");
+            AssertTextBefore(awake, "CacheSettingsManagerCold();", "ConfigureAudioHostCold();");
+            AssertTextBefore(onEnable, "CacheMusicDirectorCold();", "ConfigureAudioHostCold();");
+            AssertTextBefore(onEnable, "CacheSettingsManagerCold();", "ConfigureAudioHostCold();");
             StringAssert.Contains("CacheMusicDirectorCold();", coldTick);
             StringAssert.Contains("CacheSettingsManagerCold();", coldTick);
             StringAssert.Contains("GlobalRegistryServiceSlot.SettingsRuntime", hotSwap);
             StringAssert.Contains("CacheSettingsManager(currentService as SettingsManager)", hotSwap);
             StringAssert.Contains("GlobalRegistryServiceSlot.MusicDirectorRuntime", hotSwap);
             StringAssert.Contains("CacheMusicDirector(currentService as HectonMusicDirector)", hotSwap);
+            StringAssert.Contains("ClearCachedRuntimeServices();", unregister);
+            StringAssert.Contains("_cachedAudioService = null", clearCached);
+            StringAssert.Contains("_cachedMusicDirector = null", clearCached);
+            StringAssert.Contains("_cachedSettingsManager = null", clearCached);
             StringAssert.Contains("HectonMusicDirector musicDirector = _cachedMusicDirector", route);
+            StringAssert.Contains("musicDirector != null && musicDirector.isActiveAndEnabled ? musicDirector.DedicatedMusicMixerGroup : null", route);
             StringAssert.Contains("musicDirector.DedicatedMusicMixerGroup", route);
             StringAssert.Contains("_hostSource.volume = ResolveFallbackMusicHostVolume01();", route);
             StringAssert.Contains("audioService.AmbientGroup", route);
@@ -663,6 +714,42 @@ namespace Hecton8.Tests.Editor
             Assert.That(callback.IndexOf("ResolveFallbackMusicHostVolume01", StringComparison.Ordinal), Is.LessThan(0));
             Assert.That(callback.IndexOf("SettingsManager", StringComparison.Ordinal), Is.LessThan(0));
             Assert.That(callback.IndexOf("MusicDirector", StringComparison.Ordinal), Is.LessThan(0));
+        }
+
+        [Test]
+        public void AudioLogPickupUsesOnlyUsableCachedRuntime()
+        {
+            string pickup = Read(AudioLogPickupPath);
+            string onEnable = ExtractMethodBody(pickup, "private void OnEnable()");
+            string onDisable = ExtractMethodBody(pickup, "private void OnDisable()");
+            string onDestroy = ExtractMethodBody(pickup, "private void OnDestroy()");
+            string hotSwap = ExtractMethodBody(pickup, "public void OnGlobalRegistryServiceReplaced(");
+            string interact = ExtractMethodBody(pickup, "public void Interact(");
+            string coldCache = ExtractMethodBody(pickup, "private void CacheRegistryServicesCold()");
+            string clear = ExtractMethodBody(pickup, "private void ClearCachedRegistryServices()");
+            string cache = ExtractMethodBody(pickup, "private void CacheAudioLogSystem(");
+            string resolve = ExtractMethodBody(pickup, "private IAudioLogRuntime ResolveAudioLogSystem()");
+            string usable = ExtractMethodBody(pickup, "private static bool IsAudioLogRuntimeUsable(");
+            string refreshDiscovery = ExtractMethodBody(pickup, "private void RefreshDiscoveryStateFromAudioLogSystem()");
+            string configureRecovery = ExtractMethodBody(pickup, "internal void ConfigureRecoveryPickup(");
+
+            StringAssert.Contains("ResolveAudioLogSystem()", onEnable);
+            StringAssert.Contains("CacheAudioLogSystem(currentService as IAudioLogRuntime)", hotSwap);
+            StringAssert.Contains("ClearCachedRegistryServices();", onDisable);
+            StringAssert.Contains("ClearCachedRegistryServices();", onDestroy);
+            StringAssert.Contains("IAudioLogRuntime system = ResolveAudioLogSystem()", interact);
+            StringAssert.Contains("CacheAudioLogSystem(Hecton8.Core.GlobalRegistry.AudioLogRuntime)", coldCache);
+            StringAssert.Contains("_cachedAudioLogSystem = null", clear);
+            StringAssert.Contains("_cachedLocalization = null", clear);
+            StringAssert.Contains("_cachedAudioLogSystem = IsAudioLogRuntimeUsable(audioLogSystem) ? audioLogSystem : null", cache);
+            StringAssert.Contains("if (IsAudioLogRuntimeUsable(audioLogSystem))", resolve);
+            StringAssert.Contains("_cachedAudioLogSystem = null", resolve);
+            StringAssert.Contains("audioLogSystem is Behaviour behaviour", usable);
+            StringAssert.Contains("return behaviour != null && behaviour.isActiveAndEnabled", usable);
+            StringAssert.Contains("IAudioLogRuntime audioLogSystem = ResolveAudioLogSystem()", refreshDiscovery);
+            StringAssert.Contains("ResolveAudioLogSystem() != null", configureRecovery);
+            Assert.That(interact.IndexOf("_cachedAudioLogSystem", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(refreshDiscovery.IndexOf("_cachedAudioLogSystem", StringComparison.Ordinal), Is.LessThan(0));
         }
 
         [Test]
@@ -773,9 +860,13 @@ namespace Hecton8.Tests.Editor
         public void VocalWarningFrameAndVisualSyncResolveGuardedVaultOnly()
         {
             string vocalWarning = Read(VocalWarningSystemPath);
+            string ensureNative = ExtractMethodBody(vocalWarning, "private void EnsureNativeStorage()");
             string scheduleFrame = ExtractMethodBody(vocalWarning, "private JobHandle ScheduleVocalWarningFrame(");
             string visualSync = ExtractMethodBody(vocalWarning, "private void VisualSyncPresentationTick()");
 
+            StringAssert.Contains("TryAcquireVocalWarningFrameGuard", ensureNative);
+            StringAssert.Contains("TryResolveVwsOwnerViews(guardVault, out VwsVaultViews views)", ensureNative);
+            StringAssert.Contains("ReleaseVocalWarningFrameGuard", ensureNative);
             StringAssert.Contains("TryAcquireVocalWarningFrameGuard", scheduleFrame);
             StringAssert.Contains("TryResolveVwsOwnerViews(guardVault, out VwsVaultViews views)", scheduleFrame);
             StringAssert.Contains("_pendingVocalWarningGuardVault = guardVault", scheduleFrame);

@@ -754,13 +754,26 @@ namespace Hecton8.Audio
                 return;
 
             BindVaultStorage(vault);
-            if (!TryResolveVwsOwnerViews(vault, out VwsVaultViews views))
+            if (!TryAcquireVocalWarningFrameGuard(out IDataVault guardVault))
             {
                 ClearVaultDescriptors();
                 return;
             }
 
-            InitializeVaultStorage(ref views);
+            try
+            {
+                if (!TryResolveVwsOwnerViews(guardVault, out VwsVaultViews views))
+                {
+                    ClearVaultDescriptors();
+                    return;
+                }
+
+                InitializeVaultStorage(ref views);
+            }
+            finally
+            {
+                ReleaseVocalWarningFrameGuard(guardVault);
+            }
 
             Volatile.Write(ref _nativeAllocated, 1);
         }

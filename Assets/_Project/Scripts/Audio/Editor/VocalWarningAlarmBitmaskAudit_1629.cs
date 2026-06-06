@@ -166,6 +166,7 @@ namespace Hecton8.Audio.Editor
 
         private static void RequireWriteLockFlattening(string vwsText, string vocalRuntimeText)
         {
+            string ensureNativeBody = ExtractMethodBody(vwsText, "private void EnsureNativeStorage()");
             string mockInjectBody = ExtractMethodBody(vwsText, "public bool EditorInjectMockThreats(");
             string scheduleFrameBody = ExtractMethodBody(vwsText, "private JobHandle ScheduleVocalWarningFrame(");
             string visualSyncBody = ExtractMethodBody(vwsText, "private void VisualSyncPresentationTick()");
@@ -178,6 +179,10 @@ namespace Hecton8.Audio.Editor
             Require(vwsText.IndexOf("ReleaseVocalWarningMutationGuard", StringComparison.Ordinal) >= 0, "VWS tuning mutation guard release missing.");
             Require(vwsText.IndexOf("private bool TryResolveVwsOwnerViews(IDataVault vault, out VwsVaultViews views)", StringComparison.Ordinal) >= 0,
                 "VWS guarded owner-view resolver overload missing.");
+            Require(ensureNativeBody.IndexOf("TryAcquireVocalWarningFrameGuard", StringComparison.Ordinal) >= 0 &&
+                    ensureNativeBody.IndexOf("TryResolveVwsOwnerViews(guardVault, out VwsVaultViews views)", StringComparison.Ordinal) >= 0 &&
+                    ensureNativeBody.IndexOf("ReleaseVocalWarningFrameGuard", StringComparison.Ordinal) >= 0,
+                "VWS cold native storage initialization does not resolve owner views through the guarded vault.");
             Require(mockInjectBody.IndexOf("TryAcquireVocalWarningFrameGuard", StringComparison.Ordinal) >= 0 &&
                     mockInjectBody.IndexOf("TryResolveVwsOwnerViews(guardVault, out VwsVaultViews views)", StringComparison.Ordinal) >= 0 &&
                     mockInjectBody.IndexOf("ReleaseVocalWarningFrameGuard", StringComparison.Ordinal) >= 0,
